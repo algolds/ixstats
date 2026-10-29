@@ -56,6 +56,14 @@ jest.mock("~/lib/national-issues/snapshot", () => ({
   }),
 }));
 
+// The derived soft scores and computed stability have their own suites; here the snapshot falls
+// back to the fixture's stored rows, so the pinned queries are the engine's own.
+jest.mock("~/lib/government/soft-scores-store", () => ({ loadSoftScores: async () => null }));
+jest.mock("~/lib/statecraft/stability-store", () => ({
+  ...jest.requireActual("~/lib/statecraft/stability-store"),
+  computeInternalStability: async () => null,
+}));
+
 // Every fixture nation is over executive bandwidth, so each evaluation raises the staffing shortage
 jest.mock("~/lib/government/exec-bandwidth", () => ({
   loadExecBandwidthState: async () => ({ used: 2195, capacity: 1168, overCapacity: true }),
@@ -439,7 +447,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "a87f894bc47f262f980c0055d2e6096c1c4b9691c780cd0d40d18dd7a9172236",
+    digest: "d56adc129833f77d698c88fd97b59732583fe491eeee3923dee5dd15e572ca67",
   },
   evaluateNeighborFallbackForcedDomain: {
     summary: {
@@ -482,7 +490,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "ab02a7b77a6ad8f1a99525bdded977256dd4e925af07af1b5786ce6414ce504f",
+    digest: "e5ef7c1720b16b84906ed2bb77ae0e23d45c2017c5e1f152ffaf2beed7295407",
   },
   evaluatePendingCap: {
     summary: {
@@ -512,7 +520,7 @@ const EXPECTED: Record<
         "nationalIssue.count",
       ],
     },
-    digest: "f7d6086d443ece7b307404eea7bfec334bcaee0039e0ee9fda6af16d917292ed",
+    digest: "837146cf777c73c81fd7fe2ab536b7d2bd38d7841fc5528caa43b622aab2ff70",
   },
   evaluateWeeklyCapReached: {
     summary: {
@@ -551,7 +559,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "670556216ed1ce573f719800701c759514376a0ee3de8c53867d0deaa6216595",
+    digest: "a309beb028088e4b0bd330ca7c9e76c9cbb53c809ca964b63316e6ea9dba37cd",
   },
   evaluateTargetLookupThrows: {
     summary: {
@@ -591,7 +599,7 @@ const EXPECTED: Record<
         "issueGenerationLog.create",
       ],
     },
-    digest: "7b37e0557de56dc64ddb2f83d28c249d769c8d092316480b6eb163e7d87f1096",
+    digest: "fbb012572c154d4e8cc89dec40b28c9f10953bed1e3ae364b353d807ab6d931b",
   },
   forceGenerateFollowUp: {
     summary: {
@@ -613,7 +621,7 @@ const EXPECTED: Record<
         "nationalIssue.create",
       ],
     },
-    digest: "8eab710400eb337494a56af49b231eb1229eb204c83b640dca24d6033f92e240",
+    digest: "f7883e3eb4939685afa72fc300cd5d511bc556339721d33a756f0221a8e68b3b",
   },
   forceGenerateInvalidOptions: {
     summary: {
@@ -634,7 +642,7 @@ const EXPECTED: Record<
         "intent.findMany",
       ],
     },
-    digest: "5a190458187a2ea7846a47e693b358681961a8b558890fc6ae2131ffa60a998b",
+    digest: "1901def0b7b011b47be3944b8c4330f04b2e2041ddb6b493c9dfd02a617d9270",
   },
 };
 

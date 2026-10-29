@@ -33,6 +33,8 @@ function caller() {
         realmId: "default",
         currentPopulation: 1_000_000,
       })),
+      // The soft-score loader (executive bandwidth reads the effective effectiveness)
+      findMany: jest.fn().mockResolvedValue([]),
     },
     policy: {
       create: jest.fn(async ({ data }: { data: object }) => ({ id: "policy_new", ...data })),

@@ -34,6 +34,7 @@ export interface PoliticalData {
   electionCycle: number; // Years since last election
   democracyIndex: number; // 0-100 scale
   protestFrequency: number; // Events per year
+  publicApproval?: number; // 0-100; 50 (neutral) when absent
 }
 
 /** The stored columns the formula's unit-sensitive inputs come from. */
@@ -66,6 +67,73 @@ export function stabilityInputsFromStored(stored: StoredStabilityUnits): {
     giniIndex: gini === null ? 35 : gini <= 1 ? gini * 100 : gini,
     politicalStability: Math.max(0, Math.min(100, stability)) / 20 - 2.5,
   };
+}
+
+/** A nation's state as the stability formula reads it (stored units; nulls take the defaults). */
+export interface StabilitySimState {
+  /** Realised GDP growth, a decimal. */
+  gdpGrowthDecimal: number | null;
+  /** 0-1 coefficient or Gini points. */
+  gini: number | null;
+  /** Recorded or estimated, percent. */
+  unemploymentRate: number;
+  /** Recorded or estimated, percent. */
+  inflationRate: number;
+  gdpPerCapita: number | null;
+  povertyRate: number | null;
+  population: number;
+  urbanPopulationPercent: number | null;
+  populationDensity: number | null;
+  ethnicDiversity: number | null;
+  religiousDiversity: number | null;
+  /** Effective governance scores, 0-100. */
+  governance: {
+    politicalStability: number;
+    politicalPolarization: number;
+    democracyIndex: number;
+    corruptionIndex: number;
+  };
+  electionCycle: number | null;
+  publicApproval: number | null;
+  budget: Omit<GovernmentData, "corruptionIndex">;
+}
+
+/** The formula's four inputs from a nation's state; the store and the founding preview share it. */
+export function stabilityFormulaArgs(
+  state: StabilitySimState
+): [EconomicData, GovernmentData, DemographicData, PoliticalData] {
+  const units = stabilityInputsFromStored({
+    gdpGrowthDecimal: state.gdpGrowthDecimal,
+    gini: state.gini,
+    politicalStability: state.governance.politicalStability,
+  });
+  return [
+    {
+      gdpGrowth: units.gdpGrowth,
+      unemploymentRate: state.unemploymentRate,
+      giniIndex: units.giniIndex,
+      inflationRate: state.inflationRate,
+      gdpPerCapita: state.gdpPerCapita ?? 35000,
+      povertyRate: state.povertyRate ?? 12,
+    },
+    { ...state.budget, corruptionIndex: state.governance.corruptionIndex },
+    {
+      population: state.population,
+      ethnicDiversity: state.ethnicDiversity ?? 50,
+      religiousDiversity: state.religiousDiversity ?? 50,
+      urbanizationRate: state.urbanPopulationPercent ?? 75,
+      youthUnemployment: state.unemploymentRate * 2, // Youth unemployment is typically 2x general
+      populationDensity: state.populationDensity ?? 100,
+    },
+    {
+      politicalStability: units.politicalStability,
+      politicalPolarization: state.governance.politicalPolarization,
+      electionCycle: state.electionCycle ?? 4,
+      democracyIndex: state.governance.democracyIndex,
+      protestFrequency: 8, // Overwritten by the calculation
+      publicApproval: state.publicApproval ?? 50,
+    },
+  ];
 }
 
 export interface RecentPolicy {
@@ -133,9 +201,9 @@ function calculateCrimeRate(
   // Urbanization concentrates crime
   const urbanFactor = (demographic.urbanizationRate / 100) * 5;
 
-  // Police budget effectiveness (per capita spending)
+  // Police budget effectiveness (per capita spending; 1,500 a head removes the term)
   const policingPerCapita = government.policingBudget / Math.max(1, demographic.population);
-  const policingFactor = Math.max(0, 10 - (policingPerCapita / 100) * 10);
+  const policingFactor = Math.max(0, 10 - policingPerCapita / 150);
 
   // Calculate base rates per 100k population
   const baseCrimeRate =
@@ -190,17 +258,28 @@ function calculatePolicingEffectiveness(
   government: GovernmentData,
   demographic: DemographicData
 ): number {
-  // Budget per capita
+  // Budget per capita: 1,500 a head (a rich nation's usual police and justice spend) is full
   const budgetPerCapita = government.policingBudget / Math.max(1, demographic.population);
-  const budgetFactor = Math.min(50, (budgetPerCapita / 200) * 50);
+  const budgetFactor = Math.min(50, (budgetPerCapita / 1500) * 50);
 
   // Corruption undermines effectiveness
   const corruptionPenalty = government.corruptionIndex * 0.3;
 
   // Base effectiveness
-  const effectiveness = 50 + budgetFactor - corruptionPenalty;
+  const effectiveness = 45 + budgetFactor - corruptionPenalty;
 
   return Math.max(10, Math.min(100, effectiveness));
+}
+
+/**
+ * Education and social services spending against 55% of the budget (the neutral welfare share), as
+ * points: -7.5 to +7.5. Feeds social cohesion and trust in government.
+ */
+export function welfareFactor(government: GovernmentData): number {
+  if (!(government.totalBudget > 0)) return 0;
+  const share =
+    (government.educationBudget + government.socialServicesBudget) / government.totalBudget;
+  return Math.max(-0.3, Math.min(0.3, share - 0.55)) * 25;
 }
 
 /**
@@ -209,7 +288,8 @@ function calculatePolicingEffectiveness(
 function calculateSocialCohesion(
   economic: EconomicData,
   demographic: DemographicData,
-  political: PoliticalData
+  political: PoliticalData,
+  government: GovernmentData
 ): number {
   // Economic growth fosters social cohesion
   const growthFactor = Math.min(10, Math.max(-10, economic.gdpGrowth * 3));
@@ -232,7 +312,8 @@ function calculateSocialCohesion(
     stabilityFactor -
     inequalityPenalty -
     polarizationPenalty +
-    diversityFactor;
+    diversityFactor +
+    welfareFactor(government);
 
   return Math.max(0, Math.min(100, cohesion));
 }
@@ -344,13 +425,18 @@ function calculateTrustInGovernment(
   // Polarization reduces trust
   const polarizationPenalty = political.politicalPolarization * 0.15;
 
+  // Approval and welfare spending build it
+  const approvalFactor = ((political.publicApproval ?? 50) - 50) * 0.3;
+
   const trust =
     30 + // Base level
     democracyFactor +
     economicFactor +
     stabilityFactor -
     corruptionPenalty -
-    polarizationPenalty;
+    polarizationPenalty +
+    approvalFactor +
+    welfareFactor(government);
 
   return Math.max(5, Math.min(95, trust));
 }
@@ -437,7 +523,7 @@ export function calculateStabilityMetrics(
   );
 
   // Calculate social metrics
-  const socialCohesion = calculateSocialCohesion(economic, demographic, political);
+  const socialCohesion = calculateSocialCohesion(economic, demographic, political, government);
   const ethnicTension = calculateEthnicTension(demographic, economic, political);
 
   // Calculate trust metrics

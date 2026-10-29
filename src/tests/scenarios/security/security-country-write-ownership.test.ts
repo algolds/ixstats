@@ -114,6 +114,8 @@ function context(who: Who, db: Db): MockCallerContext {
             ? { id: where.id, name: "Testland", ownerUserId: OWNER[where.id], cities: [] }
             : null
         ),
+        // The soft-score loader (executive bandwidth reads the effective effectiveness)
+        findMany: jest.fn().mockResolvedValue([]),
       },
       ...db,
     },

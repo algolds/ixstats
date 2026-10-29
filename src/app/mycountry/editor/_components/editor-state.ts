@@ -85,6 +85,14 @@ export function withSection(
         currentPopulation: source.currentPopulation,
         currentGdpPerCapita: source.currentGdpPerCapita,
       };
+    case "figures":
+      return {
+        ...target,
+        inflationRate: source.inflationRate,
+        unemploymentRate: source.unemploymentRate,
+        totalDebtGDPRatio: source.totalDebtGDPRatio,
+        figureEstimates: source.figureEstimates,
+      };
     default:
       return target;
   }

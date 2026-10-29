@@ -11,10 +11,14 @@
  *
  * With deadlines enforced it first settles each nation's overdue issues (settleOverdueIssues). No-ops entirely when
  * neither auto-generation nor deadline enforcement is on (narrative mode).
+ *
+ * Generation is paced (./evaluators/pacing.ts: one issue per gap, 2 to 3 a week) and every realm's rank table is built
+ * once per run (./realm-rank-store.ts).
  */
 import { db } from "~/server/db";
 import type { PrismaClient } from "@prisma/client";
 import { NationalIssuesEngine } from "./engine";
+import { createRankCache } from "./realm-rank-store";
 import { NationalIssuesConsequences } from "./consequences";
 import { GAMEPLAY_FLAGS } from "~/lib/gameplay-flags";
 import { findAllById } from "~/lib/system/find-all-by-id";
@@ -82,6 +86,8 @@ export async function generateNationalIssues(): Promise<IssuesGenerationResult> 
   result.countriesChecked = owned.length;
   const clocks = await realmClocks(db);
   const nowOf = realmNowsOnce(clocks);
+  // One rank table per realm per run, built the first time a nation of that realm is evaluated.
+  const ranks = createRankCache(db);
 
   for (const { id: countryId, realmId } of owned) {
     if (pickClock(clocks, realmId).paused) continue;
@@ -94,7 +100,11 @@ export async function generateNationalIssues(): Promise<IssuesGenerationResult> 
       const due = await NationalIssuesEngine.shouldEvaluate(countryId, db, now);
       if (!due) continue;
       result.countriesEvaluated++;
-      const evalResult = await NationalIssuesEngine.evaluateCountry(countryId, db, { now });
+      const evalResult = await NationalIssuesEngine.evaluateCountry(countryId, db, {
+        now,
+        ranks,
+        paced: true,
+      });
       result.issuesGenerated += evalResult.issuesGenerated;
     } catch (err) {
       console.error(`[IssuesCron] Failed to evaluate ${countryId}:`, err);

@@ -477,6 +477,11 @@ describe("vitality scores and the World Census", () => {
       allianceMember: { findMany: jest.fn(async () => []) },
       treaty: { findMany: jest.fn(async () => []) },
       foreignPolicyAction: { findMany: jest.fn(async () => []) },
+      // Infrastructure ranks by the effective rating (soft-score loader, realm clock)
+      governmentComponent: { findMany: jest.fn(async () => []) },
+      budgetAllocation: { findMany: jest.fn(async () => []) },
+      realm: { findUnique: jest.fn(async () => null) },
+      systemConfig: { findUnique: jest.fn(async () => null) },
     });
 
     const rankings = await generateRankings("c_census");

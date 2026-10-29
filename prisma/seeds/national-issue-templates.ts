@@ -44,20 +44,28 @@ const economicTemplates: IssueTemplateSeed[] = [
     description:
       "Labor unions in {{countryName}}'s {{sectorName}} sector are threatening a general strike over wages and working conditions.",
     longDescription:
-      "With unemployment at {{unemploymentRate}}% and inflation eroding real wages, workers in the {{sectorName}} sector have voted overwhelmingly to authorize strike action. Union leaders demand a {{percentageMedium}}% wage increase and improved safety standards.\n\nThe strike could affect {{workerCount}} workers and cost the economy an estimated {{amountMedium}} per day in lost productivity. Business leaders warn this could trigger similar actions across other sectors.",
+      "With unemployment at {{unemploymentRate}} and inflation eroding real wages, workers in the {{sectorName}} sector have voted overwhelmingly to authorize strike action. Union leaders demand a {{percentageMedium}}% wage increase and improved safety standards.\n\nThe strike could affect {{workerCount}} workers and cost the economy an estimated {{amountMedium}} per day in lost productivity. Business leaders warn this could trigger similar actions across other sectors.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 75,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "unemploymentRate", op: ">", value: 8 },
-        { field: "inflationRate", op: ">", value: 5 },
-        { random: 0.3 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "unemploymentRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "inflationRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 45,
+    cooldownDays: 14,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -151,9 +159,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "tradeBalance", op: "<", value: -5000000000 }, { random: 0.25 }],
+      "rank": {
+        "field": "tradeBalance"
+      }
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -229,13 +239,20 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "totalDebtGDPRatio", op: ">", value: 80 },
-        { field: "budgetDeficitSurplus", op: "<", value: -3 },
-        { random: 0.3 },
-      ],
+      "or": [
+        {
+          "rank": {
+            "field": "totalDebtGDPRatio"
+          }
+        },
+        {
+          "rank": {
+            "field": "budgetDeficitSurplus"
+          }
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -321,13 +338,23 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: ">", value: 3 },
-        { field: "politicalStability", op: ">", value: 50 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best"
+          }
+        },
+        {
+          "rank": {
+            "field": "politicalStability",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -394,13 +421,22 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: 30,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: ">", value: 2.5 },
-        { field: "inflationRate", op: ">", value: 4 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best"
+          }
+        },
+        {
+          "rank": {
+            "field": "inflationRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -472,13 +508,37 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "inflationRate", op: ">", value: 10 },
-        { field: "totalDebtGDPRatio", op: ">", value: 100 },
-        { random: 0.25 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "inflationRate"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "totalDebtGDPRatio",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "tradeBalance",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "budgetDeficitSurplus",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -551,13 +611,34 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "literacyRate", op: ">", value: 90 },
-        { field: "infrastructureRating", op: ">", value: 60 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating",
+            "side": "best"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "literacyRate",
+                "side": "best",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "currentGdpPerCapita",
+                "side": "best",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -597,7 +678,7 @@ const economicTemplates: IssueTemplateSeed[] = [
   },
   {
     slug: "unemployment_spike",
-    title: "Unemployment Surges to {{unemploymentRate}}%",
+    title: "Unemployment Surges to {{unemploymentRate}}",
     description:
       "Job losses across multiple sectors have pushed unemployment to crisis levels in {{countryName}}.",
     domain: "economic",
@@ -606,9 +687,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "unemploymentRate", op: ">", value: 15 }, { random: 0.35 }],
+      "rank": {
+        "field": "unemploymentRate"
+      }
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -673,7 +756,7 @@ const economicTemplates: IssueTemplateSeed[] = [
   },
   {
     slug: "inflation_spiral",
-    title: "Inflation Hits {{inflationRate}}%",
+    title: "Inflation Hits {{inflationRate}}",
     description:
       "Prices are rising rapidly across {{countryName}}, with food and energy costs hitting the poorest hardest.",
     domain: "economic",
@@ -682,9 +765,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 80,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "inflationRate", op: ">", value: 8 }, { random: 0.3 }],
+      "rank": {
+        "field": "inflationRate"
+      }
     }),
-    cooldownDays: 45,
+    cooldownDays: 14,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -750,13 +835,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 95,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "totalDebtGDPRatio", op: ">", value: 120 },
-        { field: "actualGdpGrowth", op: "<", value: -1 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "totalDebtGDPRatio"
+          }
+        },
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "share": 0.25
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -840,13 +933,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "corruptionIndex", op: ">", value: 40 },
-        { field: "totalDebtGDPRatio", op: ">", value: 60 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "corruptionIndex"
+          }
+        },
+        {
+          "rank": {
+            "field": "governmentEffectiveness",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -916,20 +1017,28 @@ const economicTemplates: IssueTemplateSeed[] = [
     slug: "recession_warning",
     title: "Economists Warn of Recession",
     description:
-      "Leading economists predict {{countryName}} will enter recession within months as growth slows to {{gdpGrowth}}%.",
+      "Leading economists predict {{countryName}} will enter recession within months as growth slows to {{gdpGrowth}}.",
     domain: "economic",
     category: "economic",
     baseSeverity: "high",
     baseUrgency: 65,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: "<", value: 0.5 },
-        { field: "unemploymentRate", op: ">", value: 7 },
-        { random: 0.3 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth"
+          }
+        },
+        {
+          "rank": {
+            "field": "unemploymentRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -996,13 +1105,31 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "totalDebtGDPRatio", op: ">", value: 100 },
-        { field: "budgetDeficitSurplus", op: "<", value: -5 },
-        { random: 0.25 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "totalDebtGDPRatio"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "budgetDeficitSurplus",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "actualGdpGrowth",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1083,9 +1210,30 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "tradeBalance", op: "<", value: 0 }, { random: 0.15 }],
+      "or": [
+        {
+          "rank": {
+            "field": "tradeBalance"
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "inflationRate"
+              }
+            },
+            {
+              "rank": {
+                "field": "currentGdpPerCapita",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1145,13 +1293,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "incomeInequalityGini", op: ">", value: 45 },
-        { field: "povertyRate", op: ">", value: 15 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "incomeInequalityGini"
+          }
+        },
+        {
+          "rank": {
+            "field": "protestFrequency",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1213,9 +1369,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "inflationRate", op: ">", value: 6 }, { random: 0.2 }],
+      "and": [
+        {
+          "rank": {
+            "field": "inflationRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "infrastructureRating",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1287,13 +1455,33 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "totalDebtGDPRatio", op: ">", value: 70 },
-        { field: "lifeExpectancy", op: ">", value: 75 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "totalDebtGDPRatio"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "lifeExpectancy",
+                "side": "best",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "currentGdpPerCapita",
+                "side": "best",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1363,13 +1551,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "unemploymentRate", op: ">", value: 10 },
-        { field: "publicApproval", op: "<", value: 40 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "unemploymentRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1430,9 +1626,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1504,9 +1702,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.15 }],
+      "rank": {
+        "field": "governmentEffectiveness"
+      }
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1573,13 +1773,31 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "povertyRate", op: ">", value: 12 },
-        { field: "inflationRate", op: ">", value: 3 },
-        { random: 0.2 },
-      ],
+      "or": [
+        {
+          "rank": {
+            "field": "povertyRate"
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "inflationRate"
+              }
+            },
+            {
+              "rank": {
+                "field": "democracyIndex",
+                "side": "best",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1635,13 +1853,21 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: "<", value: -0.5 },
-        { field: "inflationRate", op: ">", value: 7 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth"
+          }
+        },
+        {
+          "rank": {
+            "field": "inflationRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1707,9 +1933,20 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }],
+      "or": [
+        {
+          "field": "activeAllianceCount",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 0
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1768,9 +2005,11 @@ const economicTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "corruptionIndex", op: ">", value: 50 }, { random: 0.2 }],
+      "rank": {
+        "field": "corruptionIndex"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1853,13 +2092,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "politicalPolarization", op: ">", value: 60 },
-        { field: "publicApproval", op: "<", value: 45 },
-        { random: 0.25 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "politicalPolarization"
+          }
+        },
+        {
+          "rank": {
+            "field": "politicalStability",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -1932,9 +2179,22 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.2 }],
+      "or": [
+        {
+          "rank": {
+            "field": "corruptionIndex",
+            "share": 0.15
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.15
+          }
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2011,13 +2271,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "democracyIndex", op: "<", value: 55 },
-        { field: "publicApproval", op: "<", value: 50 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "politicalPolarization"
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2081,13 +2349,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "ethnicTension", op: ">", value: 40 },
-        { field: "socialCohesion", op: "<", value: 50 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ethnicTension"
+          }
+        },
+        {
+          "rank": {
+            "field": "socialCohesion",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2170,9 +2446,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "democracyIndex", op: "<", value: 50 }, { random: 0.2 }],
+      "and": [
+        {
+          "rank": {
+            "field": "ruleOfLaw"
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2248,13 +2536,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "ruleOfLaw", op: "<", value: 50 },
-        { field: "corruptionIndex", op: ">", value: 40 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ruleOfLaw"
+          }
+        },
+        {
+          "rank": {
+            "field": "corruptionIndex",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2324,13 +2620,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "publicApproval", op: "<", value: 30 },
-        { field: "protestFrequency", op: ">", value: 15 },
-        { random: 0.3 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "protestFrequency"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 45,
+    cooldownDays: 14,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2408,9 +2712,20 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "publicApproval", op: "<", value: 40 }, { random: 0.2 }],
+      "or": [
+        {
+          "rank": {
+            "field": "publicApproval"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment"
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2475,13 +2790,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 80,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [
-        { field: "ruleOfLaw", op: "<", value: 40 },
-        { field: "politicalPolarization", op: ">", value: 65 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ruleOfLaw"
+          }
+        },
+        {
+          "rank": {
+            "field": "politicalPolarization",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2559,9 +2882,11 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "democracyIndex", op: "<", value: 60 }, { random: 0.15 }],
+      "rank": {
+        "field": "democracyIndex"
+      }
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2626,13 +2951,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "governmentEffectiveness", op: "<", value: 45 },
-        { field: "totalDebtGDPRatio", op: ">", value: 60 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "governmentEffectiveness"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2704,9 +3037,11 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "trustInGovernment", op: "<", value: 40 }, { random: 0.15 }],
+      "rank": {
+        "field": "trustInGovernment"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2788,13 +3123,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 40 },
-        { field: "politicalPolarization", op: ">", value: 70 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "rank": {
+            "field": "politicalPolarization",
+            "share": 0.25
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2877,13 +3220,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "corruptionIndex", op: ">", value: 50 },
-        { field: "trustInGovernment", op: "<", value: 45 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "corruptionIndex"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -2954,13 +3305,21 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "ethnicTension", op: ">", value: 35 },
-        { field: "publicApproval", op: "<", value: 45 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ethnicTension"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3025,13 +3384,31 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 80,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "politicalPolarization", op: ">", value: 55 },
-        { field: "totalDebtGDPRatio", op: ">", value: 70 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "politicalPolarization"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "totalDebtGDPRatio",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "trustInGovernment",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3102,13 +3479,33 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "democracyIndex", op: "<", value: 55 },
-        { field: "publicApproval", op: ">", value: 55 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "democracyIndex"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "publicApproval",
+                "side": "best",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "politicalStability",
+                "side": "best",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3185,13 +3582,22 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "ethnicTension", op: ">", value: 30 },
-        { field: "democracyIndex", op: ">", value: 40 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ethnicTension"
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3267,13 +3673,22 @@ const politicalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "governmentEffectiveness", op: "<", value: 50 },
-        { field: "urbanPopulationPercent", op: ">", value: 50 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "governmentEffectiveness"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentPopulation",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3348,13 +3763,31 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 45 },
-        { field: "povertyRate", op: ">", value: 15 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "povertyRate",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "currentGdpPerCapita",
+                "share": 0.25
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3421,13 +3854,22 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: ">", value: 2 },
-        { field: "ethnicTension", op: "<", value: 50 },
-        { random: 0.2 },
-      ],
+      "or": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentGdpPerCapita",
+            "side": "best"
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3495,9 +3937,30 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "literacyRate", op: "<", value: 92 }, { random: 0.2 }],
+      "or": [
+        {
+          "rank": {
+            "field": "literacyRate"
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "currentGdpPerCapita"
+              }
+            },
+            {
+              "rank": {
+                "field": "governmentEffectiveness",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3558,13 +4021,20 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "povertyRate", op: ">", value: 12 },
-        { field: "urbanPopulationPercent", op: ">", value: 60 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "inflationRate"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3629,13 +4099,21 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "crimeRate", op: ">", value: 10 },
-        { field: "povertyRate", op: ">", value: 12 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "crimeRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "socialCohesion",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3717,13 +4195,11 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "unemploymentRate", op: ">", value: 10 },
-        { field: "publicApproval", op: "<", value: 50 },
-        { random: 0.2 },
-      ],
+      "rank": {
+        "field": "unemploymentRate"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3790,13 +4266,31 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 40 },
-        { field: "povertyRate", op: ">", value: 10 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "or": [
+            {
+              "rank": {
+                "field": "povertyRate",
+                "share": 0.5
+              }
+            },
+            {
+              "rank": {
+                "field": "governmentEffectiveness",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3852,9 +4346,11 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.15 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -3913,13 +4409,21 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "ethnicTension", op: ">", value: 40 },
-        { field: "socialCohesion", op: "<", value: 55 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "socialCohesion"
+          }
+        },
+        {
+          "rank": {
+            "field": "ethnicTension",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4001,13 +4505,21 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "unemploymentRate", op: ">", value: 8 },
-        { field: "socialCohesion", op: "<", value: 60 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "socialCohesion"
+          }
+        },
+        {
+          "rank": {
+            "field": "unemploymentRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4072,9 +4584,11 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [{ field: "governmentEffectiveness", op: "<", value: 45 }, { random: 0.15 }],
+      "rank": {
+        "field": "governmentEffectiveness"
+      }
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4141,9 +4655,12 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "democracyIndex", op: ">", value: 40 }, { random: 0.15 }],
+      "rank": {
+        "field": "democracyIndex",
+        "side": "best"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4208,13 +4725,32 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "lifeExpectancy", op: ">", value: 78 },
-        { field: "actualGdpGrowth", op: "<", value: 2 },
-        { random: 0.15 },
-      ],
+      "or": [
+        {
+          "rank": {
+            "field": "lifeExpectancy",
+            "side": "best"
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "currentGdpPerCapita",
+                "side": "best"
+              }
+            },
+            {
+              "rank": {
+                "field": "actualGdpGrowth",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4270,13 +4806,20 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 40 },
-        { field: "urbanPopulationPercent", op: ">", value: 50 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4347,13 +4890,21 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "crimeRate", op: ">", value: 12 },
-        { field: "policingEffectiveness", op: "<", value: 50 },
-        { random: 0.25 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "crimeRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "policingEffectiveness",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4432,9 +4983,11 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "politicalPolarization", op: ">", value: 50 }, { random: 0.12 }],
+      "rank": {
+        "field": "politicalPolarization"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4500,9 +5053,30 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "povertyRate", op: ">", value: 18 }, { random: 0.2 }],
+      "or": [
+        {
+          "rank": {
+            "field": "povertyRate"
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "currentGdpPerCapita"
+              }
+            },
+            {
+              "rank": {
+                "field": "unemploymentRate",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4564,13 +5138,22 @@ const socialTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "unemploymentRate", op: ">", value: 6 },
-        { field: "povertyRate", op: ">", value: 10 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "unemploymentRate"
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4634,13 +5217,20 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 95,
     deadlineDaysBase: 5,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 50 },
-        { field: "activeAllianceCount", op: "<", value: 2 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "field": "activeAllianceCount",
+          "op": "<",
+          "value": 2
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4709,9 +5299,22 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 80,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 55 }, { random: 0.15 }],
+      "and": [
+        {
+          "rank": {
+            "field": "policingEffectiveness"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentGdpPerCapita",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4772,9 +5375,21 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "totalDebtGDPRatio", op: "<", value: 80 }, { random: 0.15 }],
+      "and": [
+        {
+          "rank": {
+            "field": "currentTotalGdp",
+            "side": "best"
+          }
+        },
+        {
+          "field": "activeAllianceCount",
+          "op": "<",
+          "value": 3
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4834,13 +5449,21 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 55 },
-        { field: "unemploymentRate", op: ">", value: 8 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "rank": {
+            "field": "unemploymentRate",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4911,9 +5534,11 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.15 }],
+      "field": "activeAllianceCount",
+      "op": ">",
+      "value": 0
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -4972,13 +5597,21 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 5,
     triggerConditions: trigger({
-      and: [
-        { field: "publicApproval", op: "<", value: 25 },
-        { field: "stabilityScore", op: "<", value: 35 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "rank": {
+            "field": "trustInGovernment",
+            "share": 0.25
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5054,9 +5687,11 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeAllianceCount", op: ">", value: 1 }, { random: 0.15 }],
+      "field": "activeAllianceCount",
+      "op": ">",
+      "value": 1
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5115,9 +5750,22 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "corruptionIndex", op: ">", value: 45 }, { random: 0.12 }],
+      "or": [
+        {
+          "rank": {
+            "field": "corruptionIndex",
+            "share": 0.15
+          }
+        },
+        {
+          "rank": {
+            "field": "policingEffectiveness",
+            "share": 0.15
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5183,9 +5831,11 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "publicApproval", op: "<", value: 50 }, { random: 0.15 }],
+      "rank": {
+        "field": "trustInGovernment"
+      }
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5249,13 +5899,20 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 45 },
-        { field: "activeAllianceCount", op: "<", value: 3 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "politicalStability"
+          }
+        },
+        {
+          "field": "activeAllianceCount",
+          "op": "<",
+          "value": 3
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5327,13 +5984,22 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "corruptionIndex", op: ">", value: 45 },
-        { field: "totalDebtGDPRatio", op: ">", value: 60 },
-        { random: 0.12 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "corruptionIndex"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentTotalGdp",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5402,9 +6068,11 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.1 }],
+      "field": "activeAllianceCount",
+      "op": ">",
+      "value": 0
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5471,13 +6139,21 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 40 },
-        { field: "crimeRate", op: ">", value: 10 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "rank": {
+            "field": "crimeRate",
+            "share": 0.25
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5553,9 +6229,12 @@ const militaryTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "currentTotalGdp", op: ">", value: 500000000000 }, { random: 0.08 }],
+      "rank": {
+        "field": "currentTotalGdp",
+        "side": "best"
+      }
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5623,13 +6302,21 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "tradeBalance", op: ">", value: 2000000000 },
-        { field: "activeEmbassyCount", op: ">", value: 0 },
-        { random: 0.2 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "tradeBalance",
+            "side": "best"
+          }
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 0
+        }
+      ]
     }),
-    cooldownDays: 60,
+    cooldownDays: 15,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5701,13 +6388,20 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "activeAllianceCount", op: "<", value: 5 },
-        { field: "activeEmbassyCount", op: ">", value: 1 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "field": "activeAllianceCount",
+          "op": "<",
+          "value": 5
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 1
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5761,9 +6455,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 25,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.15 }],
+      "field": "activeEmbassyCount",
+      "op": ">",
+      "value": 0
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5814,13 +6510,21 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [
-        { field: "democracyIndex", op: "<", value: 40 },
-        { field: "corruptionIndex", op: ">", value: 55 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "democracyIndex"
+          }
+        },
+        {
+          "rank": {
+            "field": "corruptionIndex",
+            "share": 0.25
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5896,13 +6600,22 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "activeEmbassyCount", op: ">", value: 3 },
-        { field: "politicalStability", op: ">", value: 50 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 3
+        },
+        {
+          "rank": {
+            "field": "politicalStability",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -5947,13 +6660,20 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "activeTreatyCount", op: "<", value: 5 },
-        { field: "activeEmbassyCount", op: ">", value: 1 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "field": "activeTreatyCount",
+          "op": "<",
+          "value": 5
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 1
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6017,13 +6737,22 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "actualGdpGrowth", op: ">", value: 1 },
-        { field: "activeEmbassyCount", op: ">", value: 2 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best",
+            "share": 0.5
+          }
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 0
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6074,13 +6803,20 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "stabilityScore", op: "<", value: 60 },
-        { field: "activeAllianceCount", op: "<", value: 3 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "stabilityScore"
+          }
+        },
+        {
+          "field": "activeAllianceCount",
+          "op": "<",
+          "value": 3
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6147,9 +6883,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "stabilityScore", op: "<", value: 50 }, { random: 0.15 }],
+      "rank": {
+        "field": "stabilityScore"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6215,9 +6953,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeAllianceCount", op: ">", value: 0 }, { random: 0.12 }],
+      "field": "activeAllianceCount",
+      "op": ">",
+      "value": 0
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6277,9 +7017,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 1 }, { random: 0.15 }],
+      "field": "activeEmbassyCount",
+      "op": ">",
+      "value": 1
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6330,13 +7072,20 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 65,
     deadlineDaysBase: 21,
     triggerConditions: trigger({
-      and: [
-        { field: "tradeBalance", op: "<", value: 0 },
-        { field: "activeEmbassyCount", op: ">", value: 0 },
-        { random: 0.12 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "tradeBalance"
+          }
+        },
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 0
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6404,9 +7153,21 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.15 }],
+      "and": [
+        {
+          "field": "activeEmbassyCount",
+          "op": ">",
+          "value": 0
+        },
+        {
+          "rank": {
+            "field": "currentGdpPerCapita",
+            "side": "best"
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6477,9 +7238,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 0 }, { random: 0.12 }],
+      "field": "activeEmbassyCount",
+      "op": ">",
+      "value": 0
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6531,9 +7294,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 3 }, { random: 0.08 }],
+      "field": "activeEmbassyCount",
+      "op": ">",
+      "value": 3
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6592,13 +7357,23 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "currentGdpPerCapita", op: ">", value: 15000 },
-        { field: "democracyIndex", op: ">", value: 50 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "currentGdpPerCapita",
+            "side": "best"
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6652,9 +7427,12 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.15 }],
+      "rank": {
+        "field": "currentTotalGdp",
+        "side": "best"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6712,9 +7490,11 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "activeEmbassyCount", op: ">", value: 2 }, { random: 0.1 }],
+      "field": "activeEmbassyCount",
+      "op": ">",
+      "value": 2
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6767,9 +7547,12 @@ const diplomaticTemplates: IssueTemplateSeed[] = [
     baseUrgency: 25,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "currentPopulation", op: ">", value: 5000000 }, { random: 0.1 }],
+      "rank": {
+        "field": "currentPopulation",
+        "side": "best"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6820,9 +7603,11 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 90,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 35 }, { random: 0.2 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6895,13 +7680,22 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 50 },
-        { field: "totalDebtGDPRatio", op: "<", value: 80 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "rank": {
+            "field": "totalDebtGDPRatio",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -6957,13 +7751,22 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "urbanPopulationPercent", op: ">", value: 55 },
-        { field: "infrastructureRating", op: "<", value: 55 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentPopulation",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7030,13 +7833,22 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 50 },
-        { field: "actualGdpGrowth", op: ">", value: 0 },
-        { random: 0.12 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7106,9 +7918,11 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 60,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.2 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7180,13 +7994,22 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 35,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "currentTotalGdp", op: ">", value: 300000000000 },
-        { field: "infrastructureRating", op: "<", value: 55 },
-        { random: 0.1 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best"
+          }
+        },
+        {
+          "rank": {
+            "field": "infrastructureRating",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7252,13 +8075,20 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 35 },
-        { field: "urbanPopulationPercent", op: ">", value: 50 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7330,9 +8160,11 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "governmentEffectiveness", op: "<", value: 50 }, { random: 0.12 }],
+      "rank": {
+        "field": "governmentEffectiveness"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7403,9 +8235,11 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 85,
     deadlineDaysBase: 7,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 30 }, { random: 0.15 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7477,13 +8311,21 @@ const infrastructureTemplates: IssueTemplateSeed[] = [
     baseUrgency: 25,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: ">", value: 45 },
-        { field: "currentGdpPerCapita", op: ">", value: 20000 },
-        { random: 0.08 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating",
+            "side": "best"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7559,9 +8401,11 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 95,
     deadlineDaysBase: 5,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 45 }, { random: 0.12 }],
+      "rank": {
+        "field": "infrastructureRating"
+      }
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7634,9 +8478,33 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [{ field: "corruptionIndex", op: ">", value: 40 }, { random: 0.15 }],
+      "or": [
+        {
+          "rank": {
+            "field": "corruptionIndex",
+            "share": 0.15
+          }
+        },
+        {
+          "and": [
+            {
+              "rank": {
+                "field": "currentTotalGdp",
+                "side": "best",
+                "share": 0.25
+              }
+            },
+            {
+              "rank": {
+                "field": "ruleOfLaw",
+                "share": 0.5
+              }
+            }
+          ]
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7701,9 +8569,24 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 40,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "currentTotalGdp", op: ">", value: 200000000000 }, { random: 0.1 }],
+      "and": [
+        {
+          "rank": {
+            "field": "currentTotalGdp",
+            "side": "best",
+            "share": 0.4
+          }
+        },
+        {
+          "rank": {
+            "field": "democracyIndex",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 365,
+    cooldownDays: 91,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7773,13 +8656,22 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 45,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 50 },
-        { field: "actualGdpGrowth", op: ">", value: 2 },
-        { random: 0.12 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "ruleOfLaw"
+          }
+        },
+        {
+          "rank": {
+            "field": "actualGdpGrowth",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7838,13 +8730,22 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 70,
     deadlineDaysBase: 14,
     triggerConditions: trigger({
-      and: [
-        { field: "urbanPopulationPercent", op: ">", value: 55 },
-        { field: "infrastructureRating", op: "<", value: 45 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentPopulation",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 90,
+    cooldownDays: 23,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7911,9 +8812,12 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "currentTotalGdp", op: ">", value: 100000000000 }, { random: 0.12 }],
+      "rank": {
+        "field": "currentGdpPerCapita",
+        "side": "best"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -7980,9 +8884,11 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 30,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 50 }, { random: 0.1 }],
+      "rank": {
+        "field": "ruleOfLaw"
+      }
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -8041,13 +8947,20 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 50,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "urbanPopulationPercent", op: ">", value: 50 },
-        { field: "infrastructureRating", op: "<", value: 45 },
-        { random: 0.15 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -8124,13 +9037,20 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 55,
     deadlineDaysBase: null,
     triggerConditions: trigger({
-      and: [
-        { field: "infrastructureRating", op: "<", value: 45 },
-        { field: "urbanPopulationPercent", op: ">", value: 55 },
-        { random: 0.12 },
-      ],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "field": "urbanPopulationPercent",
+          "op": ">=",
+          "value": 50
+        }
+      ]
     }),
-    cooldownDays: 120,
+    cooldownDays: 30,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -8199,9 +9119,22 @@ const environmentalTemplates: IssueTemplateSeed[] = [
     baseUrgency: 75,
     deadlineDaysBase: 10,
     triggerConditions: trigger({
-      and: [{ field: "infrastructureRating", op: "<", value: 40 }, { random: 0.1 }],
+      "and": [
+        {
+          "rank": {
+            "field": "infrastructureRating"
+          }
+        },
+        {
+          "rank": {
+            "field": "currentPopulation",
+            "side": "best",
+            "share": 0.5
+          }
+        }
+      ]
     }),
-    cooldownDays: 180,
+    cooldownDays: 45,
     maxActivePerCountry: 1,
     responseOptions: options([
       {
@@ -8259,6 +9192,633 @@ const environmentalTemplates: IssueTemplateSeed[] = [
   },
 ];
 
+// ==================== ROUTINE TEMPLATES (12) ====================
+// Everyday governing any nation can get. The generation cron offers them only when no other template qualifies
+// (src/lib/national-issues/evaluators/pacing.ts, slug prefix routine_), so a quiet nation still has decisions to make.
+
+const ANY_NATION = trigger({ field: "currentPopulation", op: ">=", value: 0 });
+
+const routineTemplates: IssueTemplateSeed[] = [
+  {
+    slug: "routine_budget_priorities",
+    title: "Setting next year's spending priorities",
+    description:
+      "The finance ministry needs a steer on where {{countryName}}'s extra spending should go next year.",
+    longDescription:
+      "Revenue came in close to forecast, leaving a modest margin for new spending. {{ministerName}} has drawn up three options for the cabinet: invest in roads and utilities, put more into schools and clinics, or hold the money back and pay down debt.",
+    domain: "economic",
+    category: "economic",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 28,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "infrastructure",
+        label: "Roads and utilities",
+        description: "Fund repairs and upgrades to transport and utilities.",
+        consequences: [
+          { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { economicImpact: "Better infrastructure, a little more debt" },
+        outcomeText: "Work crews start on the backlog of repairs. Commuters notice by the end of the year.",
+      },
+      {
+        id: "services",
+        label: "Schools and clinics",
+        description: "Put the margin into teachers, nurses and equipment.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 0.5 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: 2, economicImpact: "A little more debt" },
+        outcomeText: "Class sizes shrink and clinic waiting lists shorten. Parents are pleased.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "restraint",
+        label: "Pay down debt",
+        description: "Leave spending flat and use the margin to reduce borrowing.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 0.5 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 1 },
+        ],
+        previewEffects: { publicApproval: -1, economicImpact: "Slightly lower debt" },
+        outcomeText: "Bond markets approve. Some voters wonder what the surplus was for.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "budget"]),
+  },
+  {
+    slug: "routine_public_works",
+    title: "Choosing the next public works project",
+    description: "Planners in {{cityName}} have three projects ready and money for one of them.",
+    longDescription:
+      "The public works fund can carry one large project this year. Engineers favour a new rail link, the regional councils want their roads repaired, and housing campaigners are pressing for new homes beside a city park.",
+    domain: "infrastructure",
+    category: "infrastructure",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 28,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "rail",
+        label: "Build the rail link",
+        description: "A long project that pays off for decades.",
+        consequences: [
+          { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+        ],
+        previewEffects: { economicImpact: "Growth and infrastructure up, debt up" },
+        outcomeText: "Ground is broken on the new line. Opening day is years away, but the work brings jobs now.",
+      },
+      {
+        id: "roads",
+        label: "Repair regional roads",
+        description: "Spread the money across many smaller repairs.",
+        consequences: [
+          { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Potholes are filled across the provinces. Rural voters feel listened to.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "housing",
+        label: "Homes beside the park",
+        description: "Build affordable homes and improve the park next to them.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { publicApproval: 2, stabilityImpact: "Positive" },
+        outcomeText: "Families move into the new homes by spring. The park fills up on weekends.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "public-works"]),
+  },
+  {
+    slug: "routine_cabinet_appointment",
+    title: "A cabinet post to fill",
+    description:
+      "A junior minister in {{countryName}} is retiring, and {{leaderName}} must choose a replacement.",
+    longDescription:
+      "The post is not glamorous, but it oversees a large department. The shortlist has three names: a long-serving civil servant, a loyal party figure, and an outside expert with no political record.",
+    domain: "political",
+    category: "governance",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 28,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "civil_servant",
+        label: "The career civil servant",
+        description: "Someone who knows how the department works.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 },
+        ],
+        previewEffects: { stabilityImpact: "Steady administration" },
+        outcomeText: "The department runs smoothly under a familiar hand.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "loyalist",
+        label: "The party loyalist",
+        description: "Reward a supporter and keep the party happy.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+          { targetModel: "GovernmentStructure", targetField: "corruptionIndex", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, stabilityImpact: "Questions about patronage" },
+        outcomeText: "The party base cheers. Commentators ask what the new minister knows about the brief.",
+      },
+      {
+        id: "expert",
+        label: "The outside expert",
+        description: "Bring in fresh knowledge from outside politics.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 },
+          { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "add", value: 3 },
+        ],
+        previewEffects: { stabilityImpact: "Trust up" },
+        outcomeText: "The appointment is well received, though the new minister takes time to learn the politics.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "appointments"]),
+  },
+  {
+    slug: "routine_national_festival",
+    title: "Planning the national festival",
+    description: "Organisers want to know how big {{countryName}}'s national day celebrations should be this year.",
+    longDescription:
+      "The national day falls in a few weeks. A full programme of parades, concerts and fireworks in {{capitalCity}} would cost real money. Smaller town events would cost little, and some backbenchers suggest skipping the celebrations altogether.",
+    domain: "social",
+    category: "social",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 35,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "grand",
+        label: "A full celebration",
+        description: "Parades, concerts and fireworks in the capital.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 3 },
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { publicApproval: 3, stabilityImpact: "Positive" },
+        outcomeText: "Crowds fill the streets of the capital. The fireworks are talked about for weeks.",
+      },
+      {
+        id: "local",
+        label: "Town events",
+        description: "Let each town hold its own modest celebration.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Village greens and town squares host fairs and picnics across the country.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "skip",
+        label: "Skip it this year",
+        description: "Save the money and mark the day with a statement.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 0.3 },
+        ],
+        previewEffects: { publicApproval: -2 },
+        outcomeText: "The day passes quietly. Many feel the government missed a chance to bring people together.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "culture"]),
+  },
+  {
+    slug: "routine_trade_delegation",
+    title: "A trade delegation asks for talks",
+    description: "Business leaders from {{partnerName}} want to meet {{countryName}}'s government about new deals.",
+    longDescription:
+      "The delegation represents firms in the {{sectorName}} sector. They hope for lower barriers and a visit from a senior minister. Domestic producers in the same sector are wary of new competition.",
+    domain: "economic",
+    category: "economic",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 28,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "open_talks",
+        label: "Open formal talks",
+        description: "Send a senior minister and negotiate in earnest.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "subtract", value: 1 },
+        ],
+        previewEffects: { publicApproval: -1, economicImpact: "Slightly faster growth" },
+        outcomeText: "The talks go well and new orders follow. Local producers grumble about the competition.",
+      },
+      {
+        id: "listen",
+        label: "Hear them out",
+        description: "Host the delegation and promise to study their proposals.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+        ],
+        previewEffects: { economicImpact: "Small gain" },
+        outcomeText: "The delegation leaves with a few modest agreements and an invitation to return.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "protect",
+        label: "Protect local producers",
+        description: "Decline new concessions for now.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "subtract", value: 0.05 },
+        ],
+        previewEffects: { publicApproval: 1, economicImpact: "Small cost" },
+        outcomeText: "Domestic firms thank the government. The visitors take their business elsewhere.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "trade"]),
+  },
+  {
+    slug: "routine_national_census",
+    title: "Running the national census",
+    description: "The statistics office says {{countryName}}'s population figures are getting out of date.",
+    longDescription:
+      "Good figures help every ministry plan. A full census means hiring thousands of enumerators. A sample survey is cheaper but less precise, and the office warns that postponing again will make planning harder.",
+    domain: "political",
+    category: "governance",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 42,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "full",
+        label: "A full census",
+        description: "Count every household.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Better planning, small cost" },
+        outcomeText: "Enumerators knock on every door. The new figures reshape several ministry plans.",
+      },
+      {
+        id: "sample",
+        label: "A sample survey",
+        description: "Survey a representative share of households.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 },
+        ],
+        previewEffects: { stabilityImpact: "Modest improvement" },
+        outcomeText: "The survey gives a usable picture at a fraction of the cost.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "postpone",
+        label: "Postpone it",
+        description: "Wait until the budget is less tight.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "subtract", value: 1 },
+        ],
+        previewEffects: { stabilityImpact: "Planning gets harder" },
+        outcomeText: "Ministries keep working from old numbers, and some programmes miss their targets.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "statistics"]),
+  },
+  {
+    slug: "routine_civil_service_pay",
+    title: "The civil service pay review",
+    description: "Public sector unions in {{countryName}} have submitted their annual pay claim.",
+    longDescription:
+      "Rising living costs have eaten into civil service pay. The unions want a rise in line with prices. The treasury would prefer a freeze, and some advisers suggest tying part of any rise to performance.",
+    domain: "political",
+    category: "governance",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 35,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "match_prices",
+        label: "Match the cost of living",
+        description: "Give a rise in line with prices.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.5 },
+        ],
+        previewEffects: { economicImpact: "A little more debt" },
+        outcomeText: "The unions accept. Morale in the ministries improves.",
+      },
+      {
+        id: "performance",
+        label: "Tie part to performance",
+        description: "A smaller rise plus bonuses for teams that hit their targets.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Small cost" },
+        outcomeText: "The scheme gets a cautious welcome. The first bonuses are paid at year end.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "freeze",
+        label: "Freeze pay",
+        description: "Hold pay flat for another year.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "subtract", value: 1 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "Small saving" },
+        outcomeText: "The treasury saves money. Some experienced staff leave for private jobs.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "civil-service"]),
+  },
+  {
+    slug: "routine_school_curriculum",
+    title: "Updating the school curriculum",
+    description: "The education ministry's ten-year curriculum review is ready for a decision.",
+    longDescription:
+      "Teachers, employers and parents all had their say. The review offers a choice of emphasis: practical and technical skills, civics and national history, or keeping the current curriculum with small fixes.",
+    domain: "social",
+    category: "social",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 42,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "skills",
+        label: "Practical and technical skills",
+        description: "More mathematics, science and vocational training.",
+        consequences: [
+          { targetModel: "Country", targetField: "literacyRate", operation: "add", value: 0.5 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+        ],
+        previewEffects: { economicImpact: "A better trained workforce" },
+        outcomeText: "Employers welcome the change. New workshops open in schools across the country.",
+      },
+      {
+        id: "civics",
+        label: "Civics and history",
+        description: "Teach how the country is governed and where it came from.",
+        consequences: [
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+        ],
+        previewEffects: { stabilityImpact: "Positive" },
+        outcomeText: "Pupils start debating clubs and visit the national archives.",
+      },
+      {
+        id: "minor",
+        label: "Small fixes only",
+        description: "Keep what works and update outdated material.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Teachers are relieved not to rewrite their lessons. Textbooks get a refresh.",
+        isAutoResolveDefault: true,
+      },
+    ]),
+    tags: JSON.stringify(["routine", "education"]),
+  },
+  {
+    slug: "routine_policing_plan",
+    title: "Agreeing the annual policing plan",
+    description: "Police chiefs have sent {{officialTitle}} their plan for the coming year.",
+    longDescription:
+      "Crime is neither rising nor falling much. The chiefs offer a choice between more neighbourhood officers, more spending on investigations and equipment, or keeping the current plan.",
+    domain: "social",
+    category: "security",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 35,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "neighbourhood",
+        label: "Neighbourhood officers",
+        description: "Put more officers on local beats.",
+        consequences: [
+          { targetModel: "InternalStabilityMetrics", targetField: "trustInGovernment", operation: "add", value: 3 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { stabilityImpact: "Trust up" },
+        outcomeText: "Familiar faces return to the high streets. Residents say they feel safer.",
+      },
+      {
+        id: "investigations",
+        label: "Investigations and equipment",
+        description: "Fund detectives, forensics and modern equipment.",
+        consequences: [
+          { targetModel: "InternalStabilityMetrics", targetField: "policingEffectiveness", operation: "add", value: 3 },
+          { targetModel: "InternalStabilityMetrics", targetField: "crimeRate", operation: "subtract", value: 1 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { stabilityImpact: "Less crime" },
+        outcomeText: "Clearance rates improve over the year as new labs come online.",
+      },
+      {
+        id: "steady",
+        label: "Keep the current plan",
+        description: "No changes this year.",
+        consequences: [],
+        previewEffects: {},
+        outcomeText: "Policing carries on as before.",
+        isAutoResolveDefault: true,
+      },
+    ]),
+    tags: JSON.stringify(["routine", "policing"]),
+  },
+  {
+    slug: "routine_tourism_campaign",
+    title: "Promoting the country abroad",
+    description: "The tourism board has proposals to bring more visitors to {{countryName}}.",
+    longDescription:
+      "Hotels and restaurants report a steady season. The board suggests an international advertising campaign, a smaller programme of regional fairs, or leaving promotion to the industry itself.",
+    domain: "economic",
+    category: "economic",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 35,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "campaign",
+        label: "An international campaign",
+        description: "Advertise the country's sights in major markets.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.1 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { economicImpact: "More visitors, small cost" },
+        outcomeText: "Bookings rise the following season, especially in the coastal towns.",
+      },
+      {
+        id: "fairs",
+        label: "Regional fairs",
+        description: "Fund local festivals that draw visitors to smaller towns.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+        ],
+        previewEffects: { publicApproval: 1 },
+        outcomeText: "Market towns enjoy busy weekends and full guesthouses.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "industry",
+        label: "Leave it to the industry",
+        description: "Spend nothing and let businesses promote themselves.",
+        consequences: [
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "subtract", value: 0.2 },
+        ],
+        previewEffects: { economicImpact: "Small saving" },
+        outcomeText: "The season goes much as the last one did.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "tourism"]),
+  },
+  {
+    slug: "routine_national_parks",
+    title: "Looking after the national parks",
+    description: "Park rangers say visitor numbers are up and the trails need work.",
+    longDescription:
+      "The parks service has three proposals: buy more land to protect, open new visitor centres and trails, or keep budgets flat and ask volunteers to help with upkeep.",
+    domain: "environmental",
+    category: "infrastructure",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 42,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "protect",
+        label: "Protect more land",
+        description: "Buy and protect neighbouring forest and wetland.",
+        consequences: [
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "totalDebtGDPRatio", operation: "add", value: 0.3 },
+        ],
+        previewEffects: { publicApproval: 2 },
+        outcomeText: "The parks grow by several thousand hectares. Conservation groups are delighted.",
+      },
+      {
+        id: "visitors",
+        label: "New trails and visitor centres",
+        description: "Make the parks easier to visit.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+          { targetModel: "Country", targetField: "infrastructureRating", operation: "add", value: 1 },
+        ],
+        previewEffects: { economicImpact: "More visitors" },
+        outcomeText: "New paths and centres open by summer, and nearby villages see more trade.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "volunteers",
+        label: "Ask for volunteers",
+        description: "Keep budgets flat and recruit volunteers for upkeep.",
+        consequences: [
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+        ],
+        previewEffects: { stabilityImpact: "Positive" },
+        outcomeText: "Hundreds sign up for weekend work parties. Some trails still wait for repairs.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "parks"]),
+  },
+  {
+    slug: "routine_honours_list",
+    title: "Approving the annual honours list",
+    description: "The honours committee has sent its recommendations for {{currentYear}}.",
+    longDescription:
+      "The list is a chance to recognise service to the country. This year the committee asks whether the emphasis should fall on community volunteers, on business and science, or on public servants.",
+    domain: "political",
+    category: "governance",
+    baseSeverity: "low",
+    baseUrgency: 30,
+    deadlineDaysBase: null,
+    triggerConditions: ANY_NATION,
+    cooldownDays: 42,
+    maxActivePerCountry: 1,
+    responseOptions: options([
+      {
+        id: "volunteers",
+        label: "Community volunteers",
+        description: "Honour carers, coaches and local organisers.",
+        consequences: [
+          { targetModel: "InternalStabilityMetrics", targetField: "socialCohesion", operation: "add", value: 2 },
+          { targetModel: "Country", targetField: "publicApproval", operation: "add", value: 1 },
+        ],
+        previewEffects: { publicApproval: 1, stabilityImpact: "Positive" },
+        outcomeText: "Local papers run stories about the honourees for weeks.",
+        isAutoResolveDefault: true,
+      },
+      {
+        id: "enterprise",
+        label: "Business and science",
+        description: "Honour founders, inventors and researchers.",
+        consequences: [
+          { targetModel: "Country", targetField: "actualGdpGrowth", operation: "add", value: 0.05 },
+        ],
+        previewEffects: { economicImpact: "A small boost to confidence" },
+        outcomeText: "The list is praised in business circles. A few honourees use the moment to announce new investment.",
+      },
+      {
+        id: "public_servants",
+        label: "Public servants",
+        description: "Honour long-serving nurses, teachers and officials.",
+        consequences: [
+          { targetModel: "GovernmentStructure", targetField: "governmentEffectiveness", operation: "add", value: 1 },
+        ],
+        previewEffects: { stabilityImpact: "Morale up" },
+        outcomeText: "Staff across the public sector take quiet pride in the recognition.",
+      },
+    ]),
+    tags: JSON.stringify(["routine", "honours"]),
+  },
+];
+
 export const NATIONAL_ISSUE_TEMPLATES: IssueTemplateSeed[] = [
   ...economicTemplates,
   ...politicalTemplates,
@@ -8267,4 +9827,5 @@ export const NATIONAL_ISSUE_TEMPLATES: IssueTemplateSeed[] = [
   ...diplomaticTemplates,
   ...infrastructureTemplates,
   ...environmentalTemplates,
+  ...routineTemplates,
 ];

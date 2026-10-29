@@ -46,6 +46,10 @@ const mockState = {
   currentGdpPerCapita: 30_000,
   baselinePopulation: 11_000_000,
   baselineGdpPerCapita: 28_000,
+  inflationRate: null,
+  unemploymentRate: 6.1,
+  totalDebtGDPRatio: null,
+  figureEstimates: { inflationRate: 2.4, unemploymentRate: 5.6, totalDebtGDPRatio: 58.2 },
   nationalIdentity: { demonym: "Testish", capitalCity: "Port Test", drivingSide: "right" },
   governmentStructure: {
     governmentType: "Parliamentary Republic",
@@ -93,6 +97,9 @@ jest.mock("~/trpc/react", () => ({
         useMutation: (opts: SaveCall["opts"]) => mockMutation("saveGovernmentComponents", opts),
       },
       saveSize: { useMutation: (opts: SaveCall["opts"]) => mockMutation("saveSize", opts) },
+      saveEconomicFigures: {
+        useMutation: (opts: SaveCall["opts"]) => mockMutation("saveEconomicFigures", opts),
+      },
     },
   },
 }));
@@ -204,6 +211,41 @@ describe("the country editor", () => {
         expected: { baselinePopulation: 11_000_000, baselineGdpPerCapita: 28_000 },
       },
     });
+  });
+
+  it("shows each blank figure's estimate, saves a typed one, clears one to null and refuses 0", () => {
+    render(<MyCountryEditorPage />);
+    const inflation = screen.getByLabelText("Inflation (% a year)");
+    const unemployment = screen.getByLabelText("Unemployment (% of the workforce)");
+    expect(inflation).toHaveValue("");
+    expect(inflation).toHaveAttribute("placeholder", "2.4");
+    expect(screen.getByText(/Estimated from your economy: 2.4%/)).toBeInTheDocument();
+    expect(unemployment).toHaveValue("6.1");
+    const save = screen.getByRole("button", { name: "Save economic figures" });
+    expect(save).toBeDisabled();
+
+    fireEvent.change(inflation, { target: { value: "0" } });
+    expect(screen.getByText(/0 counts as no figure here/)).toBeInTheDocument();
+    fireEvent.click(save);
+    expect(mockCalls).toHaveLength(0);
+
+    fireEvent.change(inflation, { target: { value: "3.5" } });
+    fireEvent.change(unemployment, { target: { value: "" } });
+    fireEvent.click(save);
+    expect(lastSave()).toMatchObject({
+      name: "saveEconomicFigures",
+      input: {
+        countryId: "c1",
+        figures: { inflationRate: 3.5, unemploymentRate: null },
+        expected: { inflationRate: null, unemploymentRate: 6.1 },
+      },
+    });
+    expect(lastSave().input.figures).not.toHaveProperty("totalDebtGDPRatio");
+
+    act(() => lastSave().opts.onSuccess({ inflationRate: 3.5, unemploymentRate: null }));
+    expect(screen.getByLabelText("Inflation (% a year)")).toHaveValue("3.5");
+    expect(screen.getByLabelText("Unemployment (% of the workforce)")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Save economic figures" })).toBeDisabled();
   });
 
   it("on a conflict, reloads only the section in conflict and keeps other unsaved edits", async () => {

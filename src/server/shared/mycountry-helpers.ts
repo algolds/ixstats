@@ -10,6 +10,9 @@
 
 import { db } from "~/server/db";
 import { globalCache } from "~/lib/cache";
+import { loadSoftScores, loadSoftScoresMany } from "~/lib/government/soft-scores-store";
+import { currentBudgetYear } from "~/lib/government/budget-year";
+import { clockForCountry } from "~/server/shared/realm-time";
 
 import type {
   CountryWithEconomicData,
@@ -203,16 +206,16 @@ export function scoreGovernmentalEfficiency(
   return Math.round(Math.min(100, Math.max(0, governmentEffectiveness)));
 }
 
-/** Read a country's government effectiveness (null when it has no GovernmentStructure). */
+/**
+ * A country's effective government effectiveness (derived from the sim plus the stored offset);
+ * null when it has no GovernmentStructure.
+ */
 async function loadGovernmentEffectiveness(
   countryId: string,
-  prisma: Pick<typeof db, "governmentStructure"> = db
+  prisma: typeof db = db
 ): Promise<number | null> {
-  const structure = await prisma.governmentStructure.findUnique({
-    where: { countryId },
-    select: { governmentEffectiveness: true },
-  });
-  return structure?.governmentEffectiveness ?? null;
+  const state = await loadSoftScores(prisma, countryId);
+  return state?.country.governmentStructure ? state.effective.governmentEffectiveness : null;
 }
 
 /** Data outside the Country row that some vitality scores need. */
@@ -270,7 +273,7 @@ export function calculateVitalityScores(
 /** Load the extras `calculateVitalityScores` needs for one country. */
 export async function loadVitalityExtras(
   countryId: string,
-  prisma: DiplomacyDb & Pick<typeof db, "governmentStructure"> = db
+  prisma: typeof db = db
 ): Promise<VitalityExtras & { diplomaticInputs: DiplomaticStandingInputs }> {
   const [diplomatic, governmentEffectiveness] = await Promise.all([
     computeDiplomaticStanding(countryId, prisma),
@@ -428,6 +431,14 @@ export async function generateRankings(countryId: string): Promise<Ranking[]> {
       console.error("[MyCountry Rankings] Diplomatic standing unavailable:", error);
     }
 
+    // Infrastructure as every reader shows it: derived from the sim plus the stored offset.
+    const budgetYear = currentBudgetYear((await clockForCountry(db, country)).now());
+    const soft = await loadSoftScoresMany(
+      db,
+      allCountries.map((c) => c.id),
+      budgetYear
+    );
+
     const rows: CensusRow[] = allCountries.map((c) => {
       const diplo = diplomatic.get(c.id);
       return {
@@ -443,7 +454,7 @@ export async function generateRankings(countryId: string): Promise<Ranking[]> {
           "Public Approval": c.publicApproval,
           Stability: c.stabilityMetrics?.stabilityScore ?? null,
           "Diplomatic Standing": diplo ? scoreDiplomaticStanding(diplo) : null,
-          Infrastructure: c.infrastructureRating,
+          Infrastructure: soft.get(c.id)?.effective.infrastructureRating ?? c.infrastructureRating,
           "Debt to GDP": c.totalDebtGDPRatio,
           "Income Equality": c.incomeInequalityGini,
         },

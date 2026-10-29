@@ -296,7 +296,7 @@ async function reassignSeats(
  * A comfortable win steadies the government; a razor-thin one shakes it (political stability is
  * 0-100: +5, +2, -5 or -10 points). Democracy index +2.
  */
-async function updatePoliticalMetrics(
+export async function updatePoliticalMetrics(
   db: PrismaClient,
   countryId: string,
   marginOfVictory: number

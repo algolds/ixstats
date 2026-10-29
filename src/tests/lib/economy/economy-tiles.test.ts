@@ -149,4 +149,34 @@ describe("realised growth off MyCountry", () => {
     } as Parameters<typeof mapCountryToEconomyData>[0]);
     expect(mapped?.core.realGDPGrowthRate).toBe(0.012);
   });
+
+  it("the mapper shows a blank inflation, unemployment or debt as the flagged estimate, a recorded one as recorded", () => {
+    const mapped = mapCountryToEconomyData({
+      currentPopulation: 1e6,
+      currentGdpPerCapita: 30_000,
+      inflationRate: 2,
+      totalDebtGDPRatio: 44,
+      effectiveFigures: {
+        inflationRate: { value: 3.4, estimated: true },
+        unemploymentRate: { value: 6.2, estimated: true },
+        totalDebtGDPRatio: { value: 44, estimated: false },
+      },
+    } as Parameters<typeof mapCountryToEconomyData>[0]);
+    expect(mapped?.core.inflationRate).toBe(3.4);
+    expect(mapped?.labor.unemploymentRate).toBe(6.2);
+    expect(mapped?.fiscal.totalDebtGDPRatio).toBe(44);
+    expect(mapped?.estimated).toEqual({
+      inflationRate: true,
+      unemploymentRate: true,
+      totalDebtGDPRatio: false,
+    });
+    // Without the server's figures (another read), nothing is marked and the record stands.
+    const plain = mapCountryToEconomyData({ currentPopulation: 1e6, inflationRate: 2.5 });
+    expect(plain?.core.inflationRate).toBe(2.5);
+    expect(plain?.estimated).toEqual({
+      inflationRate: false,
+      unemploymentRate: false,
+      totalDebtGDPRatio: false,
+    });
+  });
 });

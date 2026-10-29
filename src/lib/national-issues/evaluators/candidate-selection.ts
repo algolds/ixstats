@@ -9,6 +9,7 @@ import { INTENT_CATEGORY_TO_TEMPLATE } from "~/lib/intent/resistance";
 import { getNationalIssuesConfig } from "../config";
 import type { CountrySnapshot, EvaluationResult } from "../types";
 import { evaluateTriggerCondition, type TriggerCondition } from "./condition-evaluator";
+import type { RankTable } from "./realm-rank";
 import { STAFFING_SHORTAGE_SLUG, type TemplateCandidate } from "./issue-generator";
 
 type CandidateTemplate = TemplateCandidate["template"];
@@ -148,14 +149,16 @@ function passesIssueLimits(
 
 /**
  * Evaluate each template against the snapshot and return the triggered candidates,
- * sorted by probability (higher = more likely to be selected).
+ * sorted by probability (higher = more likely to be selected). `ranks` is the nation's realm rank table, which
+ * `rank` conditions read with the template's severity as the band.
  */
 export function scoreTemplateCandidates(
   templates: CandidateTemplate[],
   recentIssues: RecentIssue[],
   personality: NPCPersonality | null,
   snapshot: CountrySnapshot,
-  result: EvaluationResult
+  result: EvaluationResult,
+  ranks?: RankTable
 ): TemplateCandidate[] {
   const candidates: TemplateCandidate[] = [];
 
@@ -170,7 +173,9 @@ export function scoreTemplateCandidates(
       continue;
     }
 
-    if (!evaluateTriggerCondition(triggerCondition, snapshot)) continue;
+    if (!evaluateTriggerCondition(triggerCondition, snapshot, { ranks, severity: template.baseSeverity })) {
+      continue;
+    }
 
     result.templatesPassed++;
     candidates.push({
@@ -181,4 +186,9 @@ export function scoreTemplateCandidates(
 
   candidates.sort((a, b) => b.probability - a.probability);
   return candidates;
+}
+
+/** Whether a template's trigger has a `rank` condition (and so needs the realm's rank table). */
+export function usesRank(template: Pick<CandidateTemplate, "triggerConditions">): boolean {
+  return template.triggerConditions.includes('"rank"');
 }

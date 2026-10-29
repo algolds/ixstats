@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import {
   Group as Users,
   Suitcase as Briefcase,
@@ -33,7 +34,7 @@ type LaborViewProps = Pick<EconomicData, "countryData"> & {
   labor: NonNullable<EconomicData["economyData"]>["labor"] | undefined;
 };
 
-function LaborOverview({ labor, countryData }: LaborViewProps) {
+function LaborOverview({ labor, countryData, estimated }: LaborViewProps & { estimated: boolean }) {
   const workforce = labor?.totalWorkforce || 0;
   const peopleAt = (ratePercent: number | undefined) =>
     (((ratePercent || 0) * workforce) / 100).toLocaleString(undefined, {
@@ -104,7 +105,11 @@ function LaborOverview({ labor, countryData }: LaborViewProps) {
           variant="labor"
         />
         <MetricModalLayout.StatCard
-          label="Unemployment rate"
+          label={
+            estimated
+              ? `Unemployment rate (${ESTIMATED_FIGURE_NOTE.toLowerCase()})`
+              : "Unemployment rate"
+          }
           value={labor?.unemploymentRate || 0}
           suffix="%"
           decimalPlaces={1}
@@ -208,7 +213,13 @@ export function LaborDetailsModal({
   const labor = economyData?.labor;
 
   const tabs = {
-    overview: <LaborOverview labor={labor} countryData={countryData} />,
+    overview: (
+      <LaborOverview
+        labor={labor}
+        countryData={countryData}
+        estimated={economyData?.estimated?.unemploymentRate ?? false}
+      />
+    ),
     breakdown: <LaborBreakdown labor={labor} countryData={countryData} />,
   };
   return (

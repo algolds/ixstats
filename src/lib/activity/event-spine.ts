@@ -3,8 +3,11 @@ import { generateDiplomaticNews } from "~/lib/diplomacy/news-generator";
 import type { NewsEventType } from "~/lib/diplomacy/news-generator";
 import { ActivityHooks } from "./hooks";
 import { ensureInternalStabilityMetrics } from "~/lib/statecraft/stability-store";
+import { ensureGovernmentStructure } from "~/lib/government/ensure-structure";
 import type { PrismaClient } from "@prisma/client";
-import { DEFAULT_INFLATION_RATE, DEFAULT_UNEMPLOYMENT_RATE } from "~/lib/economy/calculations";
+import { isBlankFigure, isEstimatedField } from "~/lib/economy/figure-estimates";
+import { isSoftScoreField, SOFT_SCORE_SEEDED_DEFAULTS } from "~/lib/government/soft-scores";
+import { loadEffectiveEconomicFigures } from "~/server/shared/economic-figures";
 
 const FIELD_BOUNDS: Record<string, [number, number]> = {
   // Country fields
@@ -50,18 +53,25 @@ const FIELD_BOUNDS: Record<string, [number, number]> = {
 };
 
 /**
- * Stats the engine reads with a documented default when none is stored (percent). A consequence on
- * an unset one starts from that default, so a directive's "Inflation -0.6" applies.
+ * The value a consequence moves from: the stored number; for an unset soft score, its seeded default; for an unset
+ * inflation, unemployment or debt figure, the estimate from the economy (what issues and MyCountry read, so
+ * "Inflation -0.6" moves the figure the player saw); else null, and the consequence is skipped.
  */
-const NULL_BASE_DEFAULTS: Record<string, number> = {
-  inflationRate: DEFAULT_INFLATION_RATE,
-  unemploymentRate: DEFAULT_UNEMPLOYMENT_RATE,
-};
-
-/** The value a consequence moves from: the stored number, else the engine default, else null. */
-function baseValueOf(field: string, stored: unknown): number | null {
-  if (typeof stored === "number" && Number.isFinite(stored)) return stored;
-  return NULL_BASE_DEFAULTS[field] ?? null;
+async function baseValueOf(
+  db: PrismaClient,
+  countryId: string,
+  consequence: ConsequenceInput,
+  stored: unknown
+): Promise<number | null> {
+  const field = consequence.targetField;
+  if (typeof stored === "number" && Number.isFinite(stored) && !isBlankFigure(field, stored)) {
+    return stored;
+  }
+  // An unset soft score moves from its seeded default, so the delta becomes its lasting offset.
+  if (isSoftScoreField(field)) return SOFT_SCORE_SEEDED_DEFAULTS[field];
+  if (consequence.targetModel !== "Country" || !isEstimatedField(field)) return null;
+  const figures = await loadEffectiveEconomicFigures(db, countryId);
+  return figures ? figures[field].value : null;
 }
 
 function clampField(field: string, value: number): number {
@@ -187,6 +197,19 @@ export class CountryEventSpine {
       }
     }
 
+    // Nor do most have a government structure; create the bare row (no departments, no budget)
+    // so a governance delta lands as the score's lasting offset instead of being dropped.
+    if (consequences.some((c) => c.targetModel === "GovernmentStructure")) {
+      try {
+        await ensureGovernmentStructure(db, countryId);
+      } catch (err) {
+        console.error(
+          `[Spine] Failed to initialise the government structure for ${countryId}:`,
+          err
+        );
+      }
+    }
+
     for (const consequence of consequences) {
       await this.applyConsequence(
         { db, countryId, sourceType, sourceId, currentIxTime },
@@ -286,9 +309,13 @@ export class CountryEventSpine {
       });
       if (!record) return;
 
-      // An unset (null) stat moves from the engine's default (inflation 2%, unemployment 5%);
-      // one with no default is skipped, never treated as 0 (that used to write 0% unemployment).
-      const previousValue = baseValueOf(consequence.targetField, record[consequence.targetField]);
+      // An unset (null) stat moves from its estimate, or is skipped: never treated as 0 (that used to write 0%).
+      const previousValue = await baseValueOf(
+        db,
+        countryId,
+        consequence,
+        record[consequence.targetField]
+      );
       if (previousValue === null) return;
 
       const operation = OPERATIONS[consequence.operation];
@@ -350,6 +377,8 @@ export class CountryEventSpine {
     const label = FIELD_LABELS[field] || field;
     const direction = delta > 0 ? "increased" : "decreased";
     const absStr = Math.abs(delta).toFixed(1);
+    // A soft score's stored value is an offset over its derived score, not the score players see.
+    if (isSoftScoreField(field)) return `${label} ${direction} by ${absStr}`;
 
     return `${label} ${direction} by ${absStr} (${previousValue.toFixed(1)} → ${newValue.toFixed(1)})`;
   }

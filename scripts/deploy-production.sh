@@ -293,6 +293,7 @@ else
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/b-political-party-drifted-at.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-alliance-founders.sql || exit 1
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-budget-balance-currency.sql || exit 1
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/s-empty-component-effectiveness.sql || exit 1
 
     # Sync production database with schema. Without --accept-data-loss it stops (non-zero) on any data-loss warning
     # rather than prompting; the live build is still untouched at this point.
@@ -374,6 +375,9 @@ run_post_deploy_sql() {
     [ "${SKIP_SCHEMA_SYNC:-}" = "1" ] && return 0
     # Rose-garden runbook 5e: stored notification links to legacy URLs whose redirects the new code dropped.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql || echo "⚠️  Rewriting the legacy notification links failed: run prisma/migrations/20261028120000_rewrite_legacy_notification_links/migration.sql by hand"
+    # Issue content tuning: the templates' realm-relative `rank` triggers and the routine templates. The old build's
+    # cron cannot read `rank`, so this waits for the new server.
+    bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/t-issue-template-triggers.sql || echo "⚠️  Updating the issue templates failed: run scripts/migrations/2026-10-stress/t-issue-template-triggers.sql by hand"
 }
 
 # The PIDs listening on a TCP port.

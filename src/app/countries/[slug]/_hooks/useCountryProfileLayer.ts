@@ -15,6 +15,7 @@
  */
 
 import { useMemo } from "react";
+import { figureOrEstimate } from "~/lib/economy/country-relations";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { clockTimeAt } from "~/lib/realms/nation-time";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
@@ -299,6 +300,13 @@ function buildIdentity(
 
 function buildVitals(c: Loose) {
   const zero = { allowZero: true };
+  // Recorded, else the estimate from the economy (an exact 0 reads as blank), flagged for the readings.
+  const unemployment = figureOrEstimate(
+    c,
+    "unemploymentRate",
+    realNumber(c.unemploymentRate, zero)
+  );
+  const inflation = figureOrEstimate(c, "inflationRate", realNumber(c.inflationRate, zero));
   return {
     population: realNumber(c.currentPopulation),
     populationGrowth: realNumber(c.populationGrowthRate, zero),
@@ -309,8 +317,10 @@ function buildVitals(c: Loose) {
     populationTier: str(c.populationTier),
     landArea: realNumber(c.landArea),
     density: realNumber(c.populationDensity),
-    unemployment: realNumber(c.unemploymentRate, zero),
-    inflation: realNumber(c.inflationRate, zero),
+    unemployment: unemployment.value,
+    unemploymentEstimated: unemployment.estimated,
+    inflation: inflation.value,
+    inflationEstimated: inflation.estimated,
     lifeExpectancy: realNumber(c.lifeExpectancy),
     literacy: realNumber(c.literacyRate),
     urbanShare: realNumber(c.urbanPopulationPercent),

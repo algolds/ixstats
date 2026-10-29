@@ -413,6 +413,14 @@ export const EconomyDataSchema = z.object({
   income: IncomeWealthDataSchema,
   spending: GovernmentSpendingDataSchema,
   demographics: DemographicsDataSchema,
+  /** Which of inflation, unemployment and debt show the estimate from the economy (never recorded). */
+  estimated: z
+    .object({
+      inflationRate: z.boolean(),
+      unemploymentRate: z.boolean(),
+      totalDebtGDPRatio: z.boolean(),
+    })
+    .optional(),
 });
 
 // TYPES (inferred - NO MANUAL TYPES)

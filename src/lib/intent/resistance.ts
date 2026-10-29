@@ -15,6 +15,7 @@
 import { clockForCountry } from "~/server/shared/realm-time";
 import { NationalIssuesEngine } from "~/lib/national-issues";
 import { getNationalIssuesConfig } from "~/lib/national-issues";
+import { ROUTINE_SLUG_PREFIX } from "~/lib/national-issues/evaluators/pacing";
 import type { Category } from "~/lib/intent/assemble";
 import type { PrismaClient } from "@prisma/client";
 
@@ -80,6 +81,8 @@ export async function spawnResistanceForIntent({
     where: {
       isActive: true,
       OR: orConditions,
+      // Routine templates are the paced cron's fallback, never resistance
+      NOT: { slug: { startsWith: ROUTINE_SLUG_PREFIX } },
     },
     orderBy: { baseUrgency: "desc" },
   });

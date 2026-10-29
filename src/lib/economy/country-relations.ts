@@ -1,3 +1,5 @@
+import type { EstimatedField } from "~/lib/economy/figure-estimates";
+
 /**
  * Typed access to the economy relation rows that `countries.getByIdWithEconomicData` includes
  * (the query behind MyCountry's `useCountryData`). That query builds its `include` dynamically,
@@ -65,6 +67,9 @@ export interface CountryEconomyFigures {
   gdpGrowth: number | null;
   /** Undefined on the record when never recorded (the engine's stand-in is not shown). */
   unemploymentRate: number | null;
+  /** The projected rate; when never recorded, `figureOrEstimate` shows the estimate instead. */
+  inflationRate: number | null;
+  totalDebtGDPRatio: number | null;
   incomeInequalityGini: number | null;
   /** 0-100. */
   socialMobilityIndex: number | null;
@@ -79,10 +84,34 @@ export function economyFiguresOf(country: unknown): CountryEconomyFigures {
     currentTotalGdp: finiteOrNull(c?.currentTotalGdp),
     gdpGrowth: finiteOrNull(stats?.gdpGrowth),
     unemploymentRate: finiteOrNull(c?.unemploymentRate),
+    inflationRate: finiteOrNull(c?.inflationRate),
+    totalDebtGDPRatio: finiteOrNull(c?.totalDebtGDPRatio),
     incomeInequalityGini: finiteOrNull(c?.incomeInequalityGini),
     socialMobilityIndex: finiteOrNull(c?.socialMobilityIndex),
     governmentRevenueTotal: finiteOrNull(c?.governmentRevenueTotal),
   };
+}
+
+/** How the shared economy surfaces (factbook, hero) mark a figure that is the estimate. */
+export const ESTIMATED_FIGURE_NOTE = "Estimated from the economy";
+
+/**
+ * An inflation, unemployment or debt figure for display: the record's figure, or, when the nation never recorded
+ * one, the server's estimate from the economy (`effectiveFigures`), flagged so the UI can say so.
+ */
+export function figureOrEstimate(
+  country: unknown,
+  field: EstimatedField,
+  recorded: number | null
+): { value: number | null; estimated: boolean } {
+  const effective = row<Record<string, unknown>>(
+    row<Record<string, unknown>>(country)?.effectiveFigures
+  );
+  const figure = row<{ value?: unknown; estimated?: unknown }>(effective?.[field]);
+  const estimate = finiteOrNull(figure?.value);
+  return figure?.estimated === true && estimate !== null
+    ? { value: estimate, estimated: true }
+    : { value: recorded, estimated: false };
 }
 
 /** A finite number, or null. Use for nullable DB columns so 0 stays a real value. */

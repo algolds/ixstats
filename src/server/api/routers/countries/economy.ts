@@ -23,6 +23,7 @@ import {
   resolveCountryRefId,
 } from "./utils";
 import { withoutStandIns } from "~/server/shared/country-helpers";
+import { loadEffectiveEconomicFigures } from "~/server/shared/economic-figures";
 import { hasCountryWriteAccess } from "~/server/shared/country-authorization";
 import { redactEconomicBudget } from "~/lib/country/public-record";
 import { clerkPublicProfile } from "~/server/shared/clerk-public-profile";
@@ -306,6 +307,8 @@ export const economyProcedures = {
 
       // The sovereign's Clerk picture and role: the identity pills' avatar and outline, wherever they show.
       const clerkProfile = await clerkPublicProfile(rawUser?.clerkUserId);
+      // Inflation, unemployment and debt as recorded, else estimated from the economy (what issues read).
+      const effectiveFigures = await loadEffectiveEconomicFigures(ctx.db, country.id);
 
       const { newStats } = result;
       const response = {
@@ -316,6 +319,7 @@ export const economyProcedures = {
         sovereignUser,
         ...undefinedIfNull(country, STORED_FIELDS),
         ...projectedColumns(newStats, country),
+        effectiveFigures,
         calculatedStats: {
           // The engine's rate (tier cap, diminishing returns), not the static input.
           gdpGrowth: newStats.effectiveGdpGrowth ?? 0,

@@ -1,4 +1,7 @@
 import type { CountrySnapshot } from "../engine";
+import { evaluateRankCondition, type RankCondition, type RankContext } from "./realm-rank";
+
+export type { RankCondition, RankContext };
 
 export type ComparisonOp = ">" | ">=" | "<" | "<=" | "==" | "!=" | "in" | "between";
 
@@ -13,6 +16,7 @@ export type TriggerCondition =
       value2?: number;
     }
   | { random: number }
+  | { rank: RankCondition }
   | { count: { field: string; op: ComparisonOp; value: number } }
   | { any: { field: string; condition: TriggerCondition } };
 
@@ -77,24 +81,30 @@ function evaluateValue(
 }
 
 /**
- * Evaluates an AST trigger condition against a country snapshot.
+ * Evaluates an AST trigger condition against a country snapshot. A `rank` condition needs `context` (the realm's rank
+ * table and the template's severity, ./realm-rank.ts); without it a rank condition is false.
  * Cyclomatic complexity < 10.
  */
 export function evaluateTriggerCondition(
   condition: TriggerCondition,
-  snapshot: CountrySnapshot
+  snapshot: CountrySnapshot,
+  context?: RankContext
 ): boolean {
   if ("and" in condition) {
-    return condition.and.every((c) => evaluateTriggerCondition(c, snapshot));
+    return condition.and.every((c) => evaluateTriggerCondition(c, snapshot, context));
   }
   if ("or" in condition) {
-    return condition.or.some((c) => evaluateTriggerCondition(c, snapshot));
+    return condition.or.some((c) => evaluateTriggerCondition(c, snapshot, context));
   }
   if ("not" in condition) {
-    return !evaluateTriggerCondition(condition.not, snapshot);
+    return !evaluateTriggerCondition(condition.not, snapshot, context);
   }
   if ("random" in condition) {
     return Math.random() < condition.random;
+  }
+  if ("rank" in condition) {
+    const { field } = condition.rank;
+    return evaluateRankCondition(condition.rank, snapshot.id, getSnapshotField(snapshot, field), context);
   }
   if ("count" in condition) {
     const fieldValue = getSnapshotField(snapshot, condition.count.field);

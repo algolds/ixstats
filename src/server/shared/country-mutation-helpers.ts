@@ -10,6 +10,7 @@ import {
   NEW_COMPONENT_EFFECTIVENESS,
 } from "~/lib/government/effectiveness";
 import { countryBudgetYear } from "~/lib/government/budget-allocations";
+import { SOFT_SCORE_SEEDED_DEFAULTS } from "~/lib/government/soft-scores";
 import { TRPCError } from "@trpc/server";
 import { countDefinedComponents } from "~/lib/government/atomic-utils";
 import { MAX_DEFINED_COMPONENTS } from "~/lib/mycountry/editor-fields";
@@ -535,9 +536,16 @@ export async function syncGovernmentComponents(
   );
   await tx.componentSynergy.createMany({ data: synergies });
 
+  // With no components, effectiveness is the soft-score model's derived value: store the seeded
+  // default (no offset), not the empty set's 0, which would read as a -50 offset.
   await tx.governmentStructure.update({
     where: { countryId },
-    data: { governmentEffectiveness: governmentEffectiveness(componentRecords) },
+    data: {
+      governmentEffectiveness:
+        componentRecords.length > 0
+          ? governmentEffectiveness(componentRecords)
+          : SOFT_SCORE_SEEDED_DEFAULTS.governmentEffectiveness,
+    },
   });
 }
 
