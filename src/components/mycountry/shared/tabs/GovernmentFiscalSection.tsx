@@ -6,6 +6,7 @@ import { CollapsibleSection } from "./CollapsibleSection";
 import { SectorBreakdownCard } from "~/components/mycountry/shared/primitives";
 import { formatCompactCurrency, formatPercent } from "~/lib/utils";
 import { StatGrid } from "./tabParts";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import type { MappedEconomyData } from "~/components/mycountry/shared/primitives/CountryDataProvider";
 
 interface GovernmentFiscalSectionProps {
@@ -23,6 +24,7 @@ export function GovernmentFiscalSection({
 }: GovernmentFiscalSectionProps): React.JSX.Element {
   const fiscal = economyData?.fiscal;
   const debtRatio = fiscal?.totalDebtGDPRatio ?? 0;
+  const estimated = economyData?.estimated;
   const taxEfficiency = fiscal?.taxEfficiency ?? null;
 
   return (
@@ -47,12 +49,16 @@ export function GovernmentFiscalSection({
               "N/A",
               currency
             ),
-            detail: "Outstanding national debt",
+            detail: estimated?.totalDebtGDPRatio
+              ? ESTIMATED_FIGURE_NOTE
+              : "Outstanding national debt",
           },
           {
             label: "Debt to GDP ratio",
             value: formatPercent(debtRatio),
-            detail: "Relative to economic size",
+            detail: estimated?.totalDebtGDPRatio
+              ? ESTIMATED_FIGURE_NOTE
+              : "Relative to economic size",
           },
         ]}
       />
@@ -76,7 +82,9 @@ export function GovernmentFiscalSection({
             : []),
           {
             id: "inflation",
-            name: "Annual inflation rate",
+            name: estimated?.inflationRate
+              ? `Annual inflation rate, ${ESTIMATED_FIGURE_NOTE.toLowerCase()}`
+              : "Annual inflation rate",
             value: 0,
             percentage: economyData?.core?.inflationRate ?? 0,
             color: "blue",

@@ -92,6 +92,9 @@ export function economyFiguresOf(country: unknown): CountryEconomyFigures {
   };
 }
 
+/** How the shared economy surfaces (factbook, hero) mark a figure that is the estimate. */
+export const ESTIMATED_FIGURE_NOTE = "Estimated from the economy";
+
 /**
  * An inflation, unemployment or debt figure for display: the record's figure, or, when the nation never recorded
  * one, the server's estimate from the economy (`effectiveFigures`), flagged so the UI can say so.

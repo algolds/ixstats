@@ -1,6 +1,7 @@
 "use client";
 
 import { editorHref } from "~/lib/mycountry/routes";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import {
@@ -138,6 +139,7 @@ function DebtMetric({
 }: MetricProps) {
   const debtRatio = economyData?.fiscal?.totalDebtGDPRatio ?? 0;
   const isRatio = metricView.debt === "ratio";
+  const ratioNote = debtRatio < 60 ? "Healthy ratio (<60%)" : "High debt ratio (>60%)";
 
   return (
     <ToggleMetric
@@ -154,11 +156,11 @@ function DebtMetric({
             )
       }
       detail={
-        isRatio
-          ? debtRatio < 60
-            ? "Healthy ratio (<60%)"
-            : "High debt ratio (>60%)"
-          : "Outstanding public debt"
+        economyData?.estimated?.totalDebtGDPRatio
+          ? ESTIMATED_FIGURE_NOTE
+          : isRatio
+            ? ratioNote
+            : "Outstanding public debt"
       }
       onToggle={() => toggleView(setMetricViewAction, "debt", "ratio", "total")}
       onValueClick={() => openMetricModalAction("debt", country.id)}

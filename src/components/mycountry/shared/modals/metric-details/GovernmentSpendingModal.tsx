@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import {
   Building,
   Dollar as DollarSign,
@@ -79,7 +80,11 @@ function SpendingOverview({
             <MetricModalLayout.Tile
               tone="text-destructive"
               value={`${debtRatio.toFixed(1)}%`}
-              label="Debt to GDP"
+              label={
+                economyData?.estimated?.totalDebtGDPRatio
+                  ? `Debt to GDP (${ESTIMATED_FIGURE_NOTE.toLowerCase()})`
+                  : "Debt to GDP"
+              }
             />
           </MetricModalLayout.TileGrid>
 

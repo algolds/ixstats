@@ -4,6 +4,7 @@
 // ✅ Always returns EconomyDataSchema.parse() validated data.
 
 import { createEmptyEconomyData } from "./factory";
+import { figureOrEstimate } from "./country-relations";
 import {
   safeParseEconomyData,
   type EconomyData,
@@ -57,6 +58,8 @@ interface CountryWithEconomicRelations {
   economicProfile?: Record<string, unknown> | null;
   laborMarket?: Record<string, unknown> | null;
   demographics?: Record<string, unknown> | null;
+  /** `getByIdWithEconomicData`'s inflation, unemployment and debt: recorded, else estimated. */
+  effectiveFigures?: unknown;
 }
 
 // Safe JSON parsing helper
@@ -380,6 +383,28 @@ function applyDemographicsPatches(
 
 type EconomyBase = ReturnType<typeof createEmptyEconomyData>;
 
+/**
+ * Inflation, unemployment and debt as the nation recorded them, else the server's estimate from the economy,
+ * flagged in `estimated` so the factbook can say so (owner decision 2026-10-28). Missing both: 0, as before.
+ */
+function applyEffectiveFigures(base: EconomyBase, country: CountryWithEconomicRelations) {
+  const inflation = figureOrEstimate(country, "inflationRate", country.inflationRate ?? null);
+  const unemployment = figureOrEstimate(
+    country,
+    "unemploymentRate",
+    country.unemploymentRate ?? null
+  );
+  const debt = figureOrEstimate(country, "totalDebtGDPRatio", country.totalDebtGDPRatio ?? null);
+  base.core.inflationRate = inflation.value ?? 0;
+  base.labor.unemploymentRate = unemployment.value ?? 0;
+  base.fiscal.totalDebtGDPRatio = debt.value ?? 0;
+  base.estimated = {
+    inflationRate: inflation.estimated,
+    unemploymentRate: unemployment.estimated,
+    totalDebtGDPRatio: debt.estimated,
+  };
+}
+
 function applyCoreFields(
   base: EconomyBase,
   country: CountryWithEconomicRelations,
@@ -393,13 +418,11 @@ function applyCoreFields(
   // The engine's realised rate (one unit, decimal), not the mixed-unit stored realGDPGrowthRate.
   base.core.realGDPGrowthRate =
     country.calculatedStats?.gdpGrowth ?? country.adjustedGdpGrowth ?? 0;
-  base.core.inflationRate = country.inflationRate ?? 0;
   base.core.currencyExchangeRate = country.currencyExchangeRate ?? 1;
   if (country.giniCoefficient != null) base.core.giniCoefficient = country.giniCoefficient;
 }
 
 function applyLaborFields(base: EconomyBase, country: CountryWithEconomicRelations) {
-  base.labor.unemploymentRate = country.unemploymentRate ?? 0;
   base.labor.employmentRate =
     country.employmentRate ??
     (country.unemploymentRate != null ? 100 - country.unemploymentRate : 0);
@@ -420,7 +443,6 @@ function applyFiscalFields(
   base.fiscal.governmentRevenueTotal = country.governmentRevenueTotal ?? 0;
   base.fiscal.governmentBudgetGDPPercent = country.governmentBudgetGDPPercent ?? 0;
   base.fiscal.budgetDeficitSurplus = country.budgetDeficitSurplus ?? 0;
-  base.fiscal.totalDebtGDPRatio = country.totalDebtGDPRatio ?? 0;
   base.fiscal.internalDebtGDPPercent = country.internalDebtGDPPercent ?? 0;
   base.fiscal.externalDebtGDPPercent = country.externalDebtGDPPercent ?? 0;
   base.fiscal.interestRates = country.interestRates ?? 0;
@@ -476,6 +498,7 @@ export function mapCountryToEconomyData(
   const totalGdp = country.nominalGDP ?? population * gdpPerCapita;
 
   // 2. Apply direct field patches
+  applyEffectiveFigures(base, country);
   applyCoreFields(base, country, population, gdpPerCapita, totalGdp);
   applyLaborFields(base, country);
   applyFiscalFields(base, country, population, totalGdp);
