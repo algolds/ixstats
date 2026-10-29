@@ -86,6 +86,7 @@ The atomic government components (64) and economic components (27), including th
 ### 8. National Issue Templates (`/admin/national-issues`)
 - **Router**: `src/server/api/routers/national-issues/`
 - **Capabilities**: Authoring templates with JSON condition trees, variable placeholders (`{{neighborName}}`, `{{ministerName}}`), and typed consequence definitions.
+- **Triggers**: field comparisons, `and`/`or`/`not`, and `{ "rank": { "field", "side"?, "share"? } }`: the nation is among the worst (or `"best"`) share of its realm on that field. The share comes from the template's severity (low and medium 25%, high 10%, critical 3%, and a critical condition must also pass the field's absolute floor); the fields, directions and floors are in `src/lib/national-issues/evaluators/realm-rank.ts`. Saving refuses a trigger the engine cannot read. The cron paces generation itself (2 to 3 a week per owned nation, `evaluators/pacing.ts`), so templates need no `random` roll.
 
 ### 9. Crisis Events (no admin UI)
 - **Router**: `src/server/api/routers/crisis-events.ts`

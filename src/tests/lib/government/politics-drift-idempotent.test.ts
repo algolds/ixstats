@@ -8,6 +8,7 @@
 import { ComponentType } from "@prisma/client";
 import { applyGovernmentComponentEffects } from "~/lib/government/component-effects";
 import { evaluateTriggerCondition } from "~/lib/national-issues/evaluators/condition-evaluator";
+import { buildRankTable } from "~/lib/national-issues/evaluators/realm-rank";
 import { NATIONAL_ISSUE_TEMPLATES } from "../../../../prisma/seeds/national-issue-templates";
 
 interface Row {
@@ -140,21 +141,24 @@ describe("politics-drift component effects", () => {
     });
     await run(db);
 
-    jest.spyOn(Math, "random").mockReturnValue(0);
-    const gated = NATIONAL_ISSUE_TEMPLATES.filter((t) =>
-      t.triggerConditions.includes("politicalStability")
-    );
-    expect(gated.map((t) => t.slug).sort()).toEqual([
-      "crisis_mediation",
-      "foreign_investment_boom",
-    ]);
-    const snapshot = {
-      politicalStability: structure.politicalStability,
-      actualGdpGrowth: 4,
-      activeEmbassyCount: 5,
-    } as never;
-    for (const template of gated) {
-      expect(evaluateTriggerCondition(JSON.parse(template.triggerConditions), snapshot)).toBe(true);
-    }
+    // Templates rank politicalStability against the realm; their absolute part is the crisis floor, on the 0-100
+    // scale. The realm's least stable nation at a fresh structure's ~50 is no crisis; on a 0-1 scale it would be.
+    const territorial = NATIONAL_ISSUE_TEMPLATES.find((t) => t.slug === "territorial_dispute")!;
+    expect(territorial.triggerConditions).toContain("politicalStability");
+    const stability = structure.politicalStability!;
+    expect(stability).toBeGreaterThan(30);
+    const realm = (own: number) =>
+      buildRankTable([
+        { id: "c1", values: { politicalStability: own } },
+        ...Array.from({ length: 11 }, (_, i) => ({ id: `n${i}`, values: { politicalStability: 60 + i } })),
+      ]);
+    const fires = (own: number) =>
+      evaluateTriggerCondition(
+        JSON.parse(territorial.triggerConditions),
+        { id: "c1", politicalStability: own, activeAllianceCount: 0 } as never,
+        { ranks: realm(own), severity: territorial.baseSeverity }
+      );
+    expect(fires(stability)).toBe(false);
+    expect(fires(stability / 100)).toBe(true);
   });
 });
