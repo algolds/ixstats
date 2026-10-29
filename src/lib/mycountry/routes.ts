@@ -61,6 +61,7 @@ export const EDITOR_ANCHORS = [
   "institutions",
   "size",
   "population",
+  "figures",
   "elsewhere",
   "consoles",
 ] as const;
