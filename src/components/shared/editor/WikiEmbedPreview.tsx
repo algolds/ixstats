@@ -69,7 +69,7 @@ export function WikiEmbedPreview({
               aria-label={`Use ${name} on the card`}
               onClick={() => onSelectImage(stored === selectedImageUrl ? "" : stored)}
               className={cn(
-                "focus-visible:ring-wiki shrink-0 rounded border transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:ring-2 focus-visible:outline-none",
+                "focus-visible:ring-wiki shrink-0 rounded border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:ring-2 focus-visible:outline-none",
                 selectedImageUrl === stored
                   ? "border-wiki ring-wiki/50 ring-2"
                   : "border-transparent opacity-60 hover:opacity-100"

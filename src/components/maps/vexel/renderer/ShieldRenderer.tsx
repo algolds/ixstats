@@ -78,7 +78,7 @@ export default function ShieldRenderer({
                   e.stopPropagation();
                   onElementClick?.(`shield.ordinaries[${ord.index}]`);
                 }}
-                className="cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 hover:brightness-105 active:brightness-95"
+                className="cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 hover:brightness-105 active:brightness-95"
               />
             ))}
           </g>

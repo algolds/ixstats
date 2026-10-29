@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { cn } from "~/lib/utils/cn";
+import { InsideSurface } from "~/components/ui/card";
 
 /** Floating glass: `chrome` (sidebar, tab bar, toolbars, map controls, Halo) or `overlay` (sheets, popovers, menus). Content cards are `Card`, never this. */
 type FacetLayer = "chrome" | "overlay";
@@ -19,13 +20,15 @@ const LAYER: Record<FacetLayer, string> = {
 };
 
 export const FacetMaterial = React.forwardRef<HTMLDivElement, FacetMaterialProps>(
-  ({ layer = "chrome", as: Component = "div", className, ...props }, ref) => (
+  ({ layer = "chrome", as: Component = "div", className, children, ...props }, ref) => (
     <Component
       ref={ref}
       data-slot="facet-material"
       className={cn("text-label rounded-card relative", LAYER[layer], className)}
       {...props}
-    />
+    >
+      {layer === "chrome" ? <InsideSurface>{children}</InsideSurface> : children}
+    </Component>
   )
 );
 

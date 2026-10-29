@@ -204,7 +204,7 @@ export function TimeControlCard({
                 onClick={() => onTimeMultiplierChange(preset.value)}
                 aria-pressed={isSelected}
                 className={cn(
-                  "text-caption duration-fast flex h-9 items-center justify-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                  "text-caption duration-fast flex h-9 items-center justify-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                   isSelected ? "bg-tint-fill border-tint/30 text-tint" : preset.color
                 )}
               >
@@ -225,7 +225,7 @@ export function TimeControlCard({
         </div>
 
         {showAdvanced && (
-          <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-4 pt-1">
+          <div className="space-y-4 pt-1">
             <Separator className="border-separator my-1" />
 
             <div className="space-y-2">

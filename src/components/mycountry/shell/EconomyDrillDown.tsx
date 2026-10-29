@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
@@ -22,10 +23,11 @@ import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import {
   economicRelationsOf,
   economyFiguresOf,
+  figureOrEstimate,
   finiteOrNull,
 } from "~/lib/economy/country-relations";
 import { incomeSharesOf } from "~/lib/economy/income-classes";
-import { nationalRevenue, REVENUE_BASIS_NOTE } from "./fiscal/nationalRevenue";
+import { nationalRevenue, REVENUE_BASIS_NOTE } from "~/lib/economy/national-revenue";
 import { Card } from "~/components/ui/card";
 import { SheetSection } from "./SheetSection";
 import { economyTabFromParam, type EconomyTab } from "~/lib/mycountry/routes";
@@ -102,6 +104,9 @@ function StatTile({
   );
 }
 
+/** The note on a figure the nation never recorded, shown as its estimate (owner decision 2026-10-28). */
+const ESTIMATE_NOTE = "Estimated from your economy";
+
 /** Missing data renders as "—", never a stand-in figure. */
 function pct(value: number | null, digits = 1): string {
   return value == null ? "—" : `${value.toFixed(digits)}%`;
@@ -126,9 +131,9 @@ const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = 
   { id: "trade", label: "Trade", icon: Globe2 },
 ];
 
-/** Whole dollars as billions, e.g. "$1.25B"; "—" when missing or zero. */
+/** Whole dollars in compact notation, e.g. "$1.3B", "$44.5T"; "—" when missing or zero. */
 const billions = (amount: number | null | undefined, suffix = "") =>
-  amount ? `$${(amount / 1e9).toFixed(2)}B${suffix}` : "—";
+  amount ? `${formatCompactCurrency(amount)}${suffix}` : "—";
 
 const outOf100 = (score: number | null | undefined) => (score != null ? `${score}/100` : "—");
 
@@ -150,6 +155,9 @@ function MacroTab({
     incomeDistribution: income,
   } = economicRelationsOf(country);
   const figures = economyFiguresOf(country);
+  const unemployment = figureOrEstimate(country, "unemploymentRate", figures.unemploymentRate);
+  const inflation = figureOrEstimate(country, "inflationRate", figures.inflationRate);
+  const debt = figureOrEstimate(country, "totalDebtGDPRatio", figures.totalDebtGDPRatio);
   const sectors = parseSectorBreakdown(profile?.sectorBreakdown);
   const complexity = finiteOrNull(profile?.economicComplexity);
   const growth = figures.gdpGrowth;
@@ -237,8 +245,8 @@ function MacroTab({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatTile
             label="Unemployment"
-            value={pct(figures.unemploymentRate)}
-            note="Nominal rate"
+            value={pct(unemployment.value)}
+            note={unemployment.estimated ? ESTIMATE_NOTE : "Nominal rate"}
           />
           <StatTile
             label="Youth unemployment"
@@ -254,6 +262,21 @@ function MacroTab({
             label="Informal labor"
             value={pct(finiteOrNull(labor?.informalEmploymentRate))}
             note="Unregulated employment"
+          />
+        </div>
+      </SheetSection>
+
+      <SheetSection title="Prices and public debt" icon={Coins}>
+        <div className="grid grid-cols-2 gap-3">
+          <StatTile
+            label="Inflation"
+            value={pct(inflation.value)}
+            note={inflation.estimated ? ESTIMATE_NOTE : "Annual consumer prices"}
+          />
+          <StatTile
+            label="Debt to GDP"
+            value={pct(debt.value)}
+            note={debt.estimated ? ESTIMATE_NOTE : "Public debt"}
           />
         </div>
       </SheetSection>

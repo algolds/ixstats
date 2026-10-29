@@ -3,12 +3,12 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { OpenBook as BookOpen } from "iconoir-react";
-import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
-import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { POST_IMAGE_CLASSES } from "~/components/shared/editor/postImageClasses";
 import { PostInlineLinkPreview, getInlinePreviewLink } from "./PostInlineLinkPreview";
+import { PostHtml } from "./PostHtml";
 import { parseSportsBulletin, type SportsBulletinData } from "~/lib/sports/feed-bulletins";
 
 interface PostBodyProps {
@@ -76,7 +76,7 @@ export function PostBody({
             POST_IMAGE_CLASSES
           )}
         >
-          <WikiHtmlContent html={formatThinkpagesContentForDisplay(cleanContent)} />
+          <PostHtml content={cleanContent} />
         </div>
       )}
 

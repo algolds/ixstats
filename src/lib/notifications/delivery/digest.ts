@@ -46,14 +46,14 @@ export function digestEmail(
   });
   return {
     to,
-    subject: `Your IxStats summary: ${total} new notification${total === 1 ? "" : "s"}`,
+    subject: `Your IxStates summary: ${total} new notification${total === 1 ? "" : "s"}`,
     text: [
       ...lines.map(({ item, link }) =>
         [`- ${item.title}`, item.message ? `  ${item.message}` : null, link ? `  ${link}` : null]
           .filter(Boolean)
           .join("\n")
       ),
-      more ? `And ${more} more in IxStats.` : null,
+      more ? `And ${more} more in IxStates.` : null,
     ]
       .filter(Boolean)
       .join("\n"),
@@ -68,7 +68,7 @@ export function digestEmail(
           }</strong>${item.message ? `<br>${escapeHtml(item.message)}` : ""}</li>`
       ),
       "</ul>",
-      more ? `<p>And ${more} more in IxStats.</p>` : "",
+      more ? `<p>And ${more} more in IxStates.</p>` : "",
     ].join(""),
   };
 }

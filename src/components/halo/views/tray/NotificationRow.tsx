@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { NavArrowRight as ChevronRight, Xmark as X } from "iconoir-react";
 import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable/SwipeableRow";
 import { cn } from "~/lib/utils";
+import { tweenFast } from "~/lib/design/motion";
 import type { NotificationItem } from "./types";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
@@ -93,7 +94,7 @@ export function NotificationRow({
       <SwipeableRow.Content>
         <div
           className={cn(
-            "rounded-row relative flex w-full flex-col overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+            "rounded-row duration-fast relative flex w-full flex-col overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
             !isRead
               ? "border-yellow/30 bg-yellow/6 hover:border-yellow/50"
               : "border-separator bg-fill-4 hover:border-separator-opaque hover:bg-fill-3 opacity-90 hover:opacity-100"
@@ -102,7 +103,7 @@ export function NotificationRow({
           {/* Left Accent Border Strip */}
           <div
             className={cn(
-              "rounded-l-row absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "rounded-l-row duration-fast absolute top-0 bottom-0 left-0 w-[3px] transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
               colors.text.replace("text-", "bg-"),
               isRead ? "opacity-30" : "opacity-100"
             )}
@@ -124,9 +125,7 @@ export function NotificationRow({
                 <span className="text-label text-caption block truncate font-semibold">
                   {n.title}
                 </span>
-                {!isRead && (
-                  <span className="bg-yellow h-1.5 w-1.5 shrink-0 animate-pulse rounded-full" />
-                )}
+                {!isRead && <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" />}
               </div>
               {!isExpanded && (n.description || n.message) && (
                 <span className="text-label-secondary text-caption mt-0.5 block truncate leading-relaxed">
@@ -139,7 +138,7 @@ export function NotificationRow({
               <span className="text-label-secondary text-caption tabular-nums">
                 {relTime(n.timestamp || n.createdAt || Date.now())}
               </span>
-              <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={{ duration: 0.15 }}>
+              <motion.div animate={{ rotate: isExpanded ? 90 : 0 }} transition={tweenFast}>
                 <ChevronRight className="text-label-tertiary h-3.5 w-3.5" />
               </motion.div>
             </div>

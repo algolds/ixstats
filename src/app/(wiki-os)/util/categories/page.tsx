@@ -143,7 +143,7 @@ export default function CategoriesIndexPage() {
                   }
                 }}
                 placeholder="Search all categories, worldbuilding topics, or sovereign nations..."
-                className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-tint focus:ring-tint/20 w-full border py-3 pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none"
+                className="border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body focus:border-tint focus:ring-tint/20 w-full border py-3 pr-10 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus:ring-2 focus:outline-none"
               />
               {searchQuery && (
                 <Button

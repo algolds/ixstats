@@ -282,7 +282,7 @@ function ProvenanceCapsule({
   );
 
   return (
-    <div className="bg-surface rounded-card border-separator border p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300">
+    <div className="bg-surface rounded-card border-separator border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300">
       <div className="border-separator mb-2 flex items-center justify-between gap-2 border-b pb-2">
         {hasLoreward && (
           <span className="border-yellow/30 bg-yellow/15 text-caption text-yellow inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold">
@@ -432,7 +432,7 @@ export function ArticleCompanionHUD({
               <Link
                 key={name}
                 href={`/util/categories/${encodeURIComponent(name.replace(/ /g, "_"))}`}
-                className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
+                className="text-label-secondary hover:text-label rounded-control border-separator bg-fill-4 text-caption hover:bg-fill-4 max-w-[180px] truncate border px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
               >
                 {name}
               </Link>

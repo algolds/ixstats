@@ -43,10 +43,12 @@ jest.mock("~/components/wiki-os/editor/components/WikiVisualToolbar", () => ({
     isDirty: boolean;
     handleSaveDraft: () => void;
     onSwitchToSource: () => void;
+    onCancel: () => void;
   }) => (
     <div data-testid="toolbar" data-dirty={String(props.isDirty)}>
       <button onClick={props.handleSaveDraft}>save-draft</button>
       <button onClick={props.onSwitchToSource}>to-source</button>
+      <button onClick={props.onCancel}>cancel</button>
     </div>
   ),
 }));
@@ -153,6 +155,35 @@ describe("WikiVisualEditor drafts and what a save writes (review fixes 7-8)", ()
     const messages = mockNotifyWarning.mock.calls.map((call) => call[1] as string);
     expect(messages.some((m) => /#REDIRECT/.test(m))).toBe(true);
     expect(messages.some((m) => /not closed/.test(m))).toBe(true);
+  });
+
+  describe("Cancel (the header asks first when there are unsaved changes)", () => {
+    const draftOfAlice = () =>
+      saveDraft("user_alice", {
+        title: "Vesperia",
+        source: "ixwiki",
+        mode: "visual",
+        wikitext: "Kept",
+      });
+
+    it("discarding unsaved changes discards their draft too, so the next open does not bring them back", () => {
+      draftOfAlice();
+      const onCancel = jest.fn();
+      setup({ onCancel, startDirty: true, restoreLocalDraft: false });
+      fireEvent.click(screen.getByText("cancel"));
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(getDraft("user_alice", "Vesperia")).toBeNull();
+    });
+
+    it("cancelling with nothing unsaved leaves a saved draft alone", () => {
+      draftOfAlice();
+      mockNodes = [paragraph("Start")];
+      const onCancel = jest.fn();
+      setup({ onCancel, restoreLocalDraft: false });
+      fireEvent.click(screen.getByText("cancel"));
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(getDraft("user_alice", "Vesperia")?.wikitext).toBe("Kept");
+    });
   });
 
   describe("dirty state (F2: the mount report is not an edit)", () => {

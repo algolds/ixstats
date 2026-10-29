@@ -488,6 +488,17 @@ export const CRON_JOBS: readonly CronJobDefinition[] = [
     exportName: "runLogRetention",
     load: async () => (await import("~/lib/system/log-retention")).runLogRetention,
   },
+  {
+    // Erases accounts whose deletion request is past its 14-day grace (Privacy 5.2).
+    name: "account-erasure",
+    defaultSchedule: "17 5 * * *",
+    lockName: "account-erasure",
+    timeoutMs: 30 * MINUTE,
+    modulePath: "~/server/orchestration/account-erasure-cron",
+    exportName: "runAccountErasure",
+    load: async () =>
+      (await import("~/server/orchestration/account-erasure-cron")).runAccountErasure,
+  },
 ];
 
 /** `"*"` enables every job; unset or empty enables none. Names are comma-separated. */

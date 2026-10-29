@@ -128,7 +128,7 @@ class DiscordWebhookService {
       ],
       timestamp: new Date().toISOString(),
       footer: {
-        text: "IxStats Production Alert",
+        text: "IxStates Production Alert",
       },
     });
   }
@@ -139,7 +139,7 @@ class DiscordWebhookService {
   async sendDeployment(version: string, environment: string): Promise<boolean> {
     return this.sendEmbed({
       title: "🚀 Deployment Complete",
-      description: `IxStats has been deployed to ${environment}`,
+      description: `IxStates has been deployed to ${environment}`,
       color: 0x00ff00, // Green
       fields: [
         {

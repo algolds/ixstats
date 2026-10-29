@@ -4,6 +4,7 @@
  * Provides endpoints for WikiOS article rendering, editing, history, search,
  * template registry, watchlist, advanced search, and category tree.
  */ import { z } from "zod/v4";
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
@@ -116,6 +117,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * happens here server-side. Client renders with zero regex work.
    */
   getArticleHtml: wikiReadProcedure
+    .use(iiwikiFeatureMiddleware("reader"))
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -216,6 +218,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * Get article author and latest editor.
    */
   getArticleAuthors: publicProcedure
+    .use(iiwikiFeatureMiddleware("reader"))
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -234,6 +237,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * (WikiUnavailableError), never an empty page.
    */
   getWikitext: publicProcedure
+    .use(iiwikiFeatureMiddleware("reader"))
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -311,6 +315,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * intro counts against the caller's `SISTER_CALLER_LIMITS.intro` (TOO_MANY_REQUESTS past it).
    */
   getIntro: publicProcedure
+    .use(iiwikiFeatureMiddleware("embeds"))
     .input(
       z.object({
         title: z.string().min(1).max(500),
@@ -361,6 +366,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * (WikiUnavailableError), never "no images".
    */
   getPageImages: publicProcedure
+    .use(iiwikiFeatureMiddleware("embeds"))
     .input(
       z.object({
         title: z.string().min(1).max(512),
@@ -396,6 +402,7 @@ export const wikiosPageContentRouter = createTRPCRouter({
    * SERVICE_UNAVAILABLE (WikiUnavailableError).
    */
   getInfobox: publicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         title: z.string().min(1).max(500),

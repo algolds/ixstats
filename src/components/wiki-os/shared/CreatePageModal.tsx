@@ -27,13 +27,42 @@ interface CreatePageModalProps {
   onClose: () => void;
 }
 
-export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
+/** The address can name the new page (`?title=`/`?wiki_title=`) and its type (`?type=`/`?wiki_type=`). */
+function addressParams(): URLSearchParams {
+  return new URLSearchParams(typeof window === "undefined" ? "" : window.location.search);
+}
+
+function addressTitle(): string {
+  const params = addressParams();
+  return params.get("wiki_title") || params.get("title") || "";
+}
+
+function addressPageType(): PageType {
+  const params = addressParams();
+  const typeParam = params.get("wiki_type") || params.get("type");
+  return typeParam && isPageType(typeParam) ? typeParam : "blank";
+}
+
+function storedEditor(): "visual" | "source" | null {
+  if (typeof window === "undefined") return null;
+  const stored = localStorage.getItem("wikios:preferredEditor");
+  return stored === "visual" || stored === "source" ? stored : null;
+}
+
+/** Mounted only while open, so every opening starts from the address and the remembered editor. */
+export function CreatePageModal(props: CreatePageModalProps) {
+  return props.open ? <CreatePageSheet {...props} /> : null;
+}
+
+function CreatePageSheet({ open, onClose }: CreatePageModalProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [title, setTitle] = useState("");
-  const [editorMode, setEditorMode] = useState<"visual" | "source">("visual");
-  const [rememberChoice, setRememberChoice] = useState(false);
-  const [pageType, setPageType] = useState<PageType>("blank");
+  const [title, setTitle] = useState(addressTitle);
+  const [editorMode, setEditorMode] = useState<"visual" | "source">(
+    () => storedEditor() ?? "visual"
+  );
+  const [rememberChoice, setRememberChoice] = useState(() => storedEditor() !== null);
+  const [pageType, setPageType] = useState<PageType>(addressPageType);
   const [existsWarning, setExistsWarning] = useState(false);
 
   // Form Fields
@@ -88,36 +117,8 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
   );
 
   useEffect(() => {
-    if (open) {
-      // oxlint-disable-next-line
-      setStep(1);
-
-      // Try to read title and page type from URL search parameters
-      let initialTitle = "";
-      let initialType: PageType = "blank";
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        initialTitle = params.get("wiki_title") || params.get("title") || "";
-        const typeParam = params.get("wiki_type") || params.get("type");
-        if (typeParam && isPageType(typeParam)) {
-          initialType = typeParam;
-        }
-      }
-
-      setTitle(initialTitle);
-      const stored = localStorage.getItem("wikios:preferredEditor");
-      if (stored === "visual" || stored === "source") {
-        setEditorMode(stored);
-        setRememberChoice(true);
-      } else {
-        setEditorMode("visual");
-        setRememberChoice(false);
-      }
-      setPageType(initialType);
-      setExistsWarning(false);
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [open]);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
 
   const handleEditorModeChange = (mode: "visual" | "source") => {
     setEditorMode(mode);
@@ -134,8 +135,6 @@ export function CreatePageModal({ open, onClose }: CreatePageModalProps) {
       localStorage.removeItem("wikios:preferredEditor");
     }
   };
-
-  if (!open) return null;
 
   const handleNext = async () => {
     if (!title.trim()) return;

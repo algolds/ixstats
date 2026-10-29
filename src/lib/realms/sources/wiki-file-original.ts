@@ -78,7 +78,10 @@ const SHARP_FORMAT_MIME: Record<string, string> = {
 
 /** Whether `url` is https on the wiki's own host or its upload CDN. */
 export function isWikiFileUrl(source: RealmWikiSource, url: URL): boolean {
-  return url.protocol === "https:" && sisterWikiFileHosts(SISTER_WIKI_HOSTS[source]).includes(url.hostname);
+  return (
+    url.protocol === "https:" &&
+    sisterWikiFileHosts(SISTER_WIKI_HOSTS[source]).includes(url.hostname)
+  );
 }
 
 async function readCapped(res: Response, maxBytes: number): Promise<Buffer> {
@@ -92,7 +95,10 @@ async function readCapped(res: Response, maxBytes: number): Promise<Buffer> {
     total += value.byteLength;
     if (total > maxBytes) {
       await reader.cancel().catch(() => undefined);
-      throw new WikiFileFetchError("TOO_LARGE", `The file is larger than ${Math.round(maxBytes / 1048576)} MB`);
+      throw new WikiFileFetchError(
+        "TOO_LARGE",
+        `The file is larger than ${Math.round(maxBytes / 1048576)} MB`
+      );
     }
     chunks.push(value);
   }
@@ -137,10 +143,16 @@ export async function downloadWikiFileOriginal(
   const maxPixels = deps.maxPixels ?? MAX_ORIGINAL_PIXELS;
   const url = new URL(info.url);
   if (!isWikiFileUrl(source, url)) {
-    throw new WikiFileFetchError("HOST_NOT_ALLOWED", `${info.fileTitle} is not served by ${SISTER_WIKI_HOSTS[source].name}`);
+    throw new WikiFileFetchError(
+      "HOST_NOT_ALLOWED",
+      `${info.fileTitle} is not served by ${SISTER_WIKI_HOSTS[source].name}`
+    );
   }
   if (info.size > maxBytes) {
-    throw new WikiFileFetchError("TOO_LARGE", `The file is larger than ${Math.round(maxBytes / 1048576)} MB`);
+    throw new WikiFileFetchError(
+      "TOO_LARGE",
+      `The file is larger than ${Math.round(maxBytes / 1048576)} MB`
+    );
   }
   const download = deps.download ?? fetchFromAllowedHost;
   let res: Response | null;
@@ -149,7 +161,8 @@ export async function downloadWikiFileOriginal(
       url.toString(),
       { "User-Agent": DEFAULT_USER_AGENT, "Api-User-Agent": DEFAULT_USER_AGENT },
       ORIGINAL_TIMEOUT_MS,
-      (hop) => isWikiFileUrl(source, hop)
+      (hop) => isWikiFileUrl(source, hop),
+      "realms"
     );
   } catch (error) {
     throw new WikiFileFetchError(
@@ -157,19 +170,32 @@ export async function downloadWikiFileOriginal(
       `The file could not be downloaded: ${error instanceof Error ? error.message : String(error)}`
     );
   }
-  if (!res) throw new WikiFileFetchError("HOST_NOT_ALLOWED", "The download redirected to a host that is not allowed");
+  if (!res)
+    throw new WikiFileFetchError(
+      "HOST_NOT_ALLOWED",
+      "The download redirected to a host that is not allowed"
+    );
   if (!res.ok) {
     await res.body?.cancel().catch(() => undefined);
-    throw new WikiFileFetchError("UNREACHABLE", `The wiki answered HTTP ${res.status} for the file`);
+    throw new WikiFileFetchError(
+      "UNREACHABLE",
+      `The wiki answered HTTP ${res.status} for the file`
+    );
   }
   const type = res.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() ?? "";
   if (!type.startsWith("image/")) {
     await res.body?.cancel().catch(() => undefined);
-    throw new WikiFileFetchError("NOT_AN_IMAGE", `The wiki answered with ${type || "an unknown type"}, not an image`);
+    throw new WikiFileFetchError(
+      "NOT_AN_IMAGE",
+      `The wiki answered with ${type || "an unknown type"}, not an image`
+    );
   }
   if (Number(res.headers.get("content-length")) > maxBytes) {
     await res.body?.cancel().catch(() => undefined);
-    throw new WikiFileFetchError("TOO_LARGE", `The file is larger than ${Math.round(maxBytes / 1048576)} MB`);
+    throw new WikiFileFetchError(
+      "TOO_LARGE",
+      `The file is larger than ${Math.round(maxBytes / 1048576)} MB`
+    );
   }
   const buffer = await readCapped(res, maxBytes);
   const sha1 = createHash("sha1").update(buffer).digest("hex");
@@ -205,6 +231,10 @@ export async function fetchWikiFileOriginal(
 ): Promise<WikiFileOriginal> {
   const title = asFileTitle(fileTitle);
   const info = (await fetchWikiFileInfo(source, deps.query, [title])).get(title);
-  if (!info) throw new WikiFileFetchError("NOT_FOUND", `${title} was not found on ${SISTER_WIKI_HOSTS[source].name}`);
+  if (!info)
+    throw new WikiFileFetchError(
+      "NOT_FOUND",
+      `${title} was not found on ${SISTER_WIKI_HOSTS[source].name}`
+    );
   return downloadWikiFileOriginal(source, info, deps);
 }

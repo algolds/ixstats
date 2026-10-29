@@ -410,6 +410,7 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           select: {
             id: true,
             content: true,
+            contentWarning: true,
             postType: true,
             pinned: true,
             createdAt: true,

@@ -25,10 +25,10 @@ const departmentInput = countryInput.extend({ departmentId: z.string().min(1) })
 export const governmentBudgetRouter = createTRPCRouter({
   /** Default departments and allocations for a nation with no government departments yet. */
   createStructure: rateLimitedMutationProcedure
-    .input(countryInput.extend({ revenue: z.number().finite().positive().optional() }))
+    .input(countryInput)
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
-      return createGovernmentStructure(ctx.db, input.countryId, input.revenue);
+      return createGovernmentStructure(ctx.db, input.countryId);
     }),
 
   /** Set a department's share of the budget in effect; its amount follows the share. */

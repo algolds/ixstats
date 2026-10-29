@@ -3,6 +3,7 @@
  * author pickers (a sister wiki's pages; IxWiki's are read from Postgres, lore-card-ixwiki.ts).
  */
 
+import { IIWIKI_DISABLED_MESSAGE, iiwikiSourceAllowed } from "~/lib/wiki-os/iiwiki-switch";
 import type { CardAuthorInfo } from "~/types/cards-display";
 import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
 import type { MediaWikiPageItem } from "~/lib/wiki-os/types";
@@ -24,6 +25,11 @@ export function mwQuery(
   params: Record<string, string>,
   timeoutMs?: number
 ) {
+  if (!iiwikiSourceAllowed(wikiSource, "cards")) {
+    // The same shape a failing wiki gives: callers already read a non-OK answer as "the wiki is unavailable".
+    const body = { error: { code: "disabled", info: IIWIKI_DISABLED_MESSAGE } };
+    return Promise.resolve(Response.json(body, { status: 503 }));
+  }
   const url = new URL(defaultApiUrl(wikiSource));
   for (const [key, value] of Object.entries({ action: "query", format: "json", ...params })) {
     url.searchParams.set(key, value);

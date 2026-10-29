@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import {
   Settings,
@@ -46,6 +46,10 @@ interface TeamSettingsModalProps {
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+/** Images picked from disk this session, previewed from the file until saved. */
+type UploadedFiles = Record<"logo" | "cover", File | null>;
+const NO_UPLOADS: UploadedFiles = { logo: null, cover: null };
 const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 
 export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSettingsModalProps) {
@@ -60,22 +64,26 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
   const [wikiSlug, setWikiSlug] = useState(team.wikiSlug ?? "");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingType, setUploadingType] = useState<"logo" | "cover">("logo");
-  const [uploadedLogoFile, setUploadedLogoFile] = useState<File | null>(null);
-  const [uploadedCoverFile, setUploadedCoverFile] = useState<File | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>(NO_UPLOADS);
   const [mediaSearchFor, setMediaSearchFor] = useState<"logo" | "cover" | null>(null);
 
-  useEffect(() => {
-    if (open) {
-      // oxlint-disable-next-line
-      setName(team.name);
-      setLogoUrl(team.logo ?? "");
-      setCoverUrl(team.coverImage ?? "");
-      setColor(team.color);
-      setWikiSlug(team.wikiSlug ?? "");
-      setUploadedLogoFile(null);
-      setUploadedCoverFile(null);
+  // Opening the dialog, or a new team while it is open, resets the form to the team, during render.
+  const seed = open ? team : null;
+  const [seededFrom, setSeededFrom] = useState(seed);
+  if (seed !== seededFrom) {
+    setSeededFrom(seed);
+    if (seed) {
+      setName(seed.name);
+      setLogoUrl(seed.logo ?? "");
+      setCoverUrl(seed.coverImage ?? "");
+      setColor(seed.color);
+      setWikiSlug(seed.wikiSlug ?? "");
+      setUploadedFiles(NO_UPLOADS);
     }
-  }, [open, team]);
+  }
+
+  const setUploadedFile = (kind: keyof UploadedFiles, file: File | null) =>
+    setUploadedFiles((files) => ({ ...files, [kind]: file }));
 
   const updateTeam = api.sports.updateTeam.useMutation({
     onSuccess: () => {
@@ -116,10 +124,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
       const result = (await response.json()) as { url: string };
       if (uploadingType === "cover") {
         setCoverUrl(result.url);
-        setUploadedCoverFile(file);
+        setUploadedFile("cover", file);
       } else {
         setLogoUrl(result.url);
-        setUploadedLogoFile(file);
+        setUploadedFile("logo", file);
       }
     } catch (err) {
       notify.error("Upload Failed", err instanceof Error ? err.message : "Could not upload image.");
@@ -131,12 +139,12 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
   const handleRemoveLogo = () => {
     setLogoUrl("");
-    setUploadedLogoFile(null);
+    setUploadedFile("logo", null);
   };
 
   const handleRemoveCover = () => {
     setCoverUrl("");
-    setUploadedCoverFile(null);
+    setUploadedFile("cover", null);
   };
 
   const handleSave = () => {
@@ -154,9 +162,11 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
     });
   };
 
-  const logoPreviewSrc = uploadedLogoFile ? URL.createObjectURL(uploadedLogoFile) : logoUrl || null;
-  const coverPreviewSrc = uploadedCoverFile
-    ? URL.createObjectURL(uploadedCoverFile)
+  const logoPreviewSrc = uploadedFiles.logo
+    ? URL.createObjectURL(uploadedFiles.logo)
+    : logoUrl || null;
+  const coverPreviewSrc = uploadedFiles.cover
+    ? URL.createObjectURL(uploadedFiles.cover)
     : coverUrl || null;
 
   return (
@@ -364,10 +374,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
             onImageSelect={(url) => {
               if (mediaSearchFor === "logo") {
                 setLogoUrl(url);
-                setUploadedLogoFile(null);
+                setUploadedFile("logo", null);
               } else {
                 setCoverUrl(url);
-                setUploadedCoverFile(null);
+                setUploadedFile("cover", null);
               }
               setMediaSearchFor(null);
             }}

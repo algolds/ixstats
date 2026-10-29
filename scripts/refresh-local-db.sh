@@ -95,7 +95,14 @@ bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d3-combat.sql
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/d1-drop-legacy-security.sql
 bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realm-time/r3-catalog-duplicates.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/a-null-placeholder-zero-economics.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/b-political-party-drifted-at.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-alliance-founders.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/c-budget-balance-currency.sql
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/s-empty-component-effectiveness.sql
 bun run db:push:force
+# After the push, as the deploy runs it once the new server answers
+bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-stress/t-issue-template-triggers.sql
 
 # Verify and auto-heal WikiOS articles and categories in PostgreSQL
 echo "📚 Verifying WikiOS database persistence..."

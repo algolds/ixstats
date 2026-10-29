@@ -69,6 +69,8 @@ model GovernmentStructure {
   /// JSON: the shift government components last applied to each political metric (politics-drift
   /// carries event deltas by removing it before applying the new one).
   componentMetricsSnapshot String?
+  /// Executive bandwidth added by hiring (the staffing-shortage issue's "Expand the civil service" answer)
+  civilServiceExpansion   Int                    @default(0)
   createdAt               DateTime               @default(now())
   updatedAt               DateTime               @updatedAt
   budgetAllocations       BudgetAllocation[]
@@ -517,6 +519,8 @@ model PoliticalParty {
   platform       String?             // JSON: { economy: "liberal", social: "progressive", foreign: "internationalist" }
   baseSupport    Float               @default(25) // 0-100 starting support percentage
   currentSupport Float               @default(25) // 0-100 current polling
+  /// The nation's clock time (ms) of the party's last politics drift: drift moves support by the realm time since.
+  driftedAtClockMs Float?
   isActive       Boolean             @default(true)
   foundedDate    DateTime            @default(now())
   createdAt      DateTime            @default(now())
@@ -820,6 +824,8 @@ model StorytellerEffect {
   value           Float
   description     String?
   duration        Int?
+  /// Phase-in length in IxTime years when it is not whole (a counter row that stops a ramp early); overrides duration
+  phaseYears      Float?
   isActive        Boolean     @default(true)
   createdBy       String?
   worldEventId    String?

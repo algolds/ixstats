@@ -39,7 +39,7 @@ src/
 1. **`ClerkProvider`**: Authentication context. Required — the root layout throws at render if the Clerk keys are not configured.
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
 3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens)).
-4. **`AbilityProvider` → `IxTimeProvider` → `ExecutiveNotificationProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, executive notifications, wiki context, and lazily loaded gameplay providers.
+4. **`AbilityProvider` → `IxTimeProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, wiki context, and lazily loaded gameplay providers.
 5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
 6. **`<AppShell>`** (`src/components/shell/AppShell.tsx`): the page frame. It renders `FacetShell` (the `AppSidebar` source list from 1024px up, the `TabBar` below that, and the Halo island, `ShellHalo`) and `<main>`, and paints the canvas in the current app's tint (`data-app`). The navigation source is `src/lib/navigation/app-sections.ts`.
 

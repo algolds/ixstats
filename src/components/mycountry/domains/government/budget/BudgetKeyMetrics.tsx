@@ -4,7 +4,7 @@ import React from "react";
 import type { BudgetSummary, RevenueSummary } from "~/types/government";
 import { formatNumber } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
-import { REVENUE_BASIS_NOTE } from "~/components/mycountry/shell/fiscal/nationalRevenue";
+import { REVENUE_BASIS_NOTE } from "~/lib/economy/national-revenue";
 
 interface BudgetKeyMetricsProps {
   budgetSummary: BudgetSummary;

@@ -5,6 +5,7 @@
  * category search, subcategories, and category auto-completion.
  */
 
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure, createRateLimitMiddleware } from "~/server/api/trpc";
 import {
@@ -31,9 +32,9 @@ import { fetchMediaWikiJson } from "~/lib/wiki-os/upstream-fetch";
 import { wikiSourceSchema } from "./_shared";
 
 /** Category lists and counts are read-mostly and, for a sister wiki, cost an outbound call: one shared bucket. */
-const sisterWikiProcedure = publicProcedure.use(
-  createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" })
-);
+const sisterWikiProcedure = publicProcedure
+  .use(iiwikiFeatureMiddleware("search"))
+  .use(createRateLimitMiddleware({ max: 120, windowMs: 60_000, namespace: "sisterwiki" }));
 
 /** A sister wiki's answers are reused for 5 minutes. */
 const SISTER_CACHE_TTL_MS = 300_000;

@@ -58,7 +58,7 @@ it("stat progression raises an alert for a threshold the GDP it just stored brea
 
   const raised = await alerts();
   expect(raised).toHaveLength(1);
-  expect(raised[0]).toMatchObject({ title: "totalGDP breached critical threshold" });
+  expect(raised[0]).toMatchObject({ title: "Total GDP breached its critical threshold" });
   expect(raised[0]!.currentValue).toBeGreaterThan(3e11);
 });
 
@@ -78,7 +78,7 @@ it("an event-spine consequence raises an alert for the stat it moved", async () 
   const raised = await alerts();
   expect(raised).toHaveLength(1);
   expect(raised[0]).toMatchObject({
-    title: "publicApproval breached critical threshold",
+    title: "Public approval breached its critical threshold",
     currentValue: 30,
   });
 });

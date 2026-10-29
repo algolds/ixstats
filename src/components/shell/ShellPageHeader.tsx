@@ -55,7 +55,7 @@ export function ShellPageHeader({
       data-slot="shell-page-header"
       data-shell-page-header={phoneOnly ? "phone" : "all"}
       className={cn(
-        "mx-auto w-full max-w-7xl px-2 pt-2 sm:px-4",
+        "mx-auto w-full max-w-7xl px-2 pt-(--shell-page-top) sm:px-4",
         phoneOnly && "lg:hidden",
         className
       )}

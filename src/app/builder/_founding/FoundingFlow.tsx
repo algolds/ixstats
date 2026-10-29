@@ -122,6 +122,9 @@ export function FoundingFlowView() {
   const [foundError, setFoundError] = useState<FoundingError | null>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const shownStep = useRef<FoundingStepId | null>(null);
+  // Set once the nation is founded: the flow is leaving for the welcome page, so nothing may steer
+  // the address back to a step (the refetched realm list can make a finished draft read incomplete).
+  const founded = useRef(false);
 
   // Realms: the step is shown only when more than one realm has room for another nation.
   const realmData = realmsQuery.data;
@@ -159,6 +162,7 @@ export function FoundingFlowView() {
   // The address always names the step shown (a deep link to a step whose prerequisites are
   // missing lands on the first incomplete step instead).
   useEffect(() => {
+    if (founded.current) return;
     if (step && urlStep !== step) router.replace(stepHref(step), { scroll: false });
   }, [step, urlStep, router]);
 
@@ -281,9 +285,10 @@ export function FoundingFlowView() {
     if (!draft) return;
     try {
       await createCountry(createInput(draft, realmIdToSend));
+      founded.current = true;
       await discard();
-      void utils.invalidate();
       router.push(MYCOUNTRY_WELCOME_PATH);
+      void utils.invalidate();
     } catch (error) {
       setConfirmOpen(false);
       setFoundError(describeFoundingError(error, chooseRealm));

@@ -7,7 +7,6 @@ import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
 import { useUser } from "~/context/auth-context";
 import {
   Bell,
@@ -69,14 +68,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const recordEngagement = useNotificationStore((s) => s.recordEngagement);
   const dismissEnhanced = useNotificationStore((s) => s.dismissNotification);
 
-  const {
-    notifications: executiveNotifications,
-    unreadCount: executiveUnreadCount,
-    isExecutiveMode,
-    markAsRead: markExecutiveAsRead,
-    markAllAsRead: markAllExecutiveAsRead,
-  } = useExecutiveNotifications();
-
   const utils = api.useUtils();
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
     { limit: 8, unreadOnly: false },
@@ -121,8 +112,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const totalAlertsUnreadCount =
-    unreadNotifications + (isExecutiveMode ? executiveUnreadCount : 0) + enhancedUnreadCount;
+  const totalAlertsUnreadCount = unreadNotifications + enhancedUnreadCount;
   const totalUnreadCount = totalAlertsUnreadCount + messageUnreadCount;
 
   // Default active tab to whichever has unread, defaulting to alerts
@@ -137,14 +127,11 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         ...n,
         source: "standard",
       }));
-    const executiveList: NotificationItem[] = (isExecutiveMode ? executiveNotifications || [] : [])
-      .filter((n) => n?.id && !locallyDismissedIds.has(n.id))
-      .map((n) => ({ ...n, source: "executive" }));
     const enhancedList: NotificationItem[] = (enhancedNotifications || [])
       .filter((n) => n?.id && n?.status !== "dismissed" && !locallyDismissedIds.has(n.id))
       .map((n) => ({ ...n, source: "enhanced" }));
 
-    const alerts: NotificationItem[] = [...enhancedList, ...executiveList, ...standardList]
+    const alerts: NotificationItem[] = [...enhancedList, ...standardList]
       .filter((n) => n?.id && n?.title)
       .reduce((acc: NotificationItem[], n: NotificationItem) => {
         const key = `${n.source}-${n.id}`;
@@ -179,13 +166,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     }
 
     return { groups: grps };
-  }, [
-    notificationsData?.notifications,
-    locallyDismissedIds,
-    isExecutiveMode,
-    executiveNotifications,
-    enhancedNotifications,
-  ]);
+  }, [notificationsData?.notifications, locallyDismissedIds, enhancedNotifications]);
 
   const conversationsList: MessageTrayConversation[] = useMemo(() => {
     return (messagesData?.conversations || []).filter(
@@ -199,8 +180,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     if (n.source === "enhanced") {
       markEnhancedAsRead(n.id);
       recordEngagement(n.id, "read");
-    } else if (n.source === "executive") {
-      markExecutiveAsRead(n.id);
     } else if (user?.id) {
       markAsReadMutation.mutate({ notificationId: n.id, userId: user.id });
     }
@@ -216,8 +195,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     if (n.source === "enhanced") {
       dismissEnhanced(n.id);
       recordEngagement(n.id, "dismiss");
-    } else if (n.source === "executive") {
-      markExecutiveAsRead(n.id);
     } else if (user?.id) {
       dismissMutation.mutate({ notificationId: n.id, userId: user.id });
     }
@@ -233,7 +210,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
   const handleMarkAllRead = () => {
     if (user?.id && unreadNotifications > 0) markAllAsReadMutation.mutate({ userId: user.id });
-    if (isExecutiveMode && executiveUnreadCount > 0) markAllExecutiveAsRead();
     if (enhancedUnreadCount > 0) markAllEnhancedAsRead();
     if (messageUnreadCount > 0) markAllMessagesMutation.mutate();
     notify.success("All notifications and messages marked as read");
@@ -271,7 +247,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         <div className="text-label text-headline flex items-center gap-2">
           <BellRing className="text-yellow h-4 w-4" />
           <PreText className="text-inherit" whiteSpace="nowrap">
-            {isExecutiveMode ? "Intelligence" : "Notifications"}
+            Notifications
           </PreText>
           {totalUnreadCount > 0 && (
             <PreText
@@ -339,10 +315,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
       {/* Main Content Area */}
       <div
-        className={cn(
-          "space-y-2 overflow-y-auto pr-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
-          isUltra ? "max-h-[540px]" : "max-h-80"
-        )}
+        className={cn("space-y-2 overflow-y-auto pr-0.5", isUltra ? "max-h-[540px]" : "max-h-80")}
         style={{ scrollbarWidth: "thin" }}
       >
         {activeTab === "messages" ? (
@@ -398,7 +371,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
-                        <PreText className="text-label-secondary text-eyebrow" whiteSpace="nowrap">
+                        <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
                           {group.label}
                         </PreText>
                       </div>
@@ -414,7 +387,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: "auto", opacity: 1 }}
                           exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
+                          transition={tweenFast}
                           className="space-y-1 overflow-hidden"
                         >
                           <SwipeableGroup>
@@ -454,7 +427,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               <div className="py-10 text-center">
                 <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
                 <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
-                  {isExecutiveMode ? "No alerts" : "No notifications"}
+                  No notifications
                 </PreText>
               </div>
             )}

@@ -56,11 +56,11 @@ const setupIntroSteps = [
     title: "Welcome to IxStates",
     short_description: "An economic simulation for worldbuilders",
     full_description:
-      "IxStats simulates your country's economy, government, diplomacy and intelligence, with other players running the rest of the world.",
+      "IxStates simulates your country's economy, government, diplomacy and intelligence, with other players running the rest of the world.",
     media: {
       type: "image" as const,
       src: "/images/ixstats-overview.png",
-      alt: "IxStats Platform Overview",
+      alt: "IxStates platform overview",
     },
   },
   {
@@ -89,7 +89,7 @@ const setupIntroSteps = [
     title: "IxnayID",
     short_description: "One sign-in for every IxStates service",
     full_description:
-      "IxnayID links your country across the wiki, the maps and IxStats. Check that your connections are verified in your account settings.",
+      "IxnayID links your country across the wiki, the maps and IxStates. Check that your connections are verified in your account settings.",
     media: {
       type: "image" as const,
       src: "/images/ixnayid-connections.png",
@@ -292,7 +292,7 @@ export default function SetupPage() {
                       </div>
 
                       <h1 className="text-large-title text-label mb-4">
-                        Welcome to IxStats, {user?.firstName || "User"}
+                        Welcome to IxStates, {user?.firstName || "User"}
                       </h1>
 
                       <p className="text-body text-label-secondary mx-auto max-w-2xl">
@@ -664,7 +664,7 @@ export default function SetupPage() {
         <div className="bg-grouped flex min-h-screen flex-col items-center justify-center px-4">
           <Card className="p-12 text-center">
             <IxStatsLogo size="lg" animated={true} className="mx-auto mb-6" />
-            <h1 className="text-large-title text-label mb-2">Welcome to IxStats</h1>
+            <h1 className="text-large-title text-label mb-2">Welcome to IxStates</h1>
             <p className="text-body text-label-secondary mb-8">Sign in to continue</p>
             <SignInButton mode="modal" />
           </Card>

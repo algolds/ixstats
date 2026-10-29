@@ -234,6 +234,7 @@ export type WikiRawConstruct =
   | "nested-table"
   | "table-template"
   | "table-orphan-line"
+  | "preformatted"
   | "malformed";
 
 export interface WikiRawNode extends WikiBlockProvenance {
@@ -283,11 +284,26 @@ export interface MediaBlock extends WikiBlockProvenance {
   children: [{ text: "" }];
 }
 
+/** Where a table cell came from (plan 414, below the row): its source and the markup around its content. */
+export interface TableCellSource {
+  /** The cell exactly as written, from its `|`/`||`/`!`/`!!` to the end of its content and any lines it continues on. */
+  raw: string;
+  /** Offset of `raw` in the row's `raw`. */
+  start: number;
+  /** The text between the previous cell (or the row's head) and this one: `""` after `||`, a line break otherwise. */
+  sepBefore: string;
+  /** `raw` up to the content: the delimiter, the attributes and their `|`, and the blanks before the content. */
+  head: string;
+  /** The blanks after the content. */
+  tail: string;
+}
+
 export interface TableCellNode {
   type: "table-cell" | "th" | "td";
   isHeader?: boolean;
   attributes?: string;
   children: (WikiParagraphBlock | WikiInlineNode)[];
+  source?: TableCellSource;
 }
 
 export interface TableRowNode {
@@ -295,6 +311,8 @@ export interface TableRowNode {
   attributes?: string;
   /** The row's lines exactly as written (from its `|-` line to its last cell line). */
   raw?: string;
+  /** The start of `raw` up to its first cell: the `|-` line (none for a first row written without one). */
+  headRaw?: string;
   children: TableCellNode[];
 }
 

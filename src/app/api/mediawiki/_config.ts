@@ -9,6 +9,7 @@
  * wiki there adds it here.
  */
 import {
+  DEFAULT_USER_AGENT,
   getMediaWikiApiUrl,
   mediaWikiApiUrl,
   mediaWikiOrigin,
@@ -24,7 +25,8 @@ import {
   type SisterWikiId,
 } from "~/lib/wiki-os/wiki-hosts";
 
-export const WIKI_USER_AGENT = "IxStats-Builder";
+/** The one user agent every wiki request sends (`DEFAULT_USER_AGENT`, which the sister wikis allow-list). */
+export const WIKI_USER_AGENT = DEFAULT_USER_AGENT;
 
 export interface WikiConfig {
   /** Log prefix. */

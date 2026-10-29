@@ -61,7 +61,7 @@ export function VexelEditorProvider({ children }: { children: ReactNode }) {
     const draft = sessionStorage.getItem("vexel-draft");
     if (!draft) return;
     try {
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- consumes a one-shot sessionStorage handoff, after hydration
       setComposition(JSON.parse(draft) as HeraldryComposition);
       setIsDirty(true);
       sessionStorage.removeItem("vexel-draft");

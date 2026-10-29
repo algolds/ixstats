@@ -27,6 +27,8 @@ function setup(over: Partial<React.ComponentProps<typeof ComposerActionBar>> = {
     pollDraft: null,
     setPollDraft: jest.fn(),
     setShowPollModal: jest.fn(),
+    showContentWarning: false,
+    setShowContentWarning: jest.fn(),
     postToDiscord: true,
     setPostToDiscord: jest.fn(),
     handleSubmit: jest.fn(),
@@ -44,16 +46,19 @@ function setup(over: Partial<React.ComponentProps<typeof ComposerActionBar>> = {
 }
 
 describe("ComposerActionBar", () => {
-  it.each(["Add live data chart", "Add media or images", "Insert GIF", "Add poll"])(
-    "keeps editor focus on mousedown of %s",
-    (label) => {
-      setup();
-      const button = screen.getByRole("button", { name: label });
-      const down = createEvent.mouseDown(button);
-      fireEvent(button, down);
-      expect(down.defaultPrevented).toBe(true);
-    }
-  );
+  it.each([
+    "Add live data chart",
+    "Add media or images",
+    "Insert GIF",
+    "Add poll",
+    "Content warning",
+  ])("keeps editor focus on mousedown of %s", (label) => {
+    setup();
+    const button = screen.getByRole("button", { name: label });
+    const down = createEvent.mouseDown(button);
+    fireEvent(button, down);
+    expect(down.defaultPrevented).toBe(true);
+  });
 
   it("wires the chart, image and poll buttons", () => {
     const props = setup();
@@ -64,6 +69,14 @@ describe("ComposerActionBar", () => {
     expect(props.setShowMediaModal).toHaveBeenCalledWith(true);
     expect(props.setPollDraft).toHaveBeenCalled();
     expect(props.setShowPollModal).toHaveBeenCalledWith(true);
+  });
+
+  it("toggles the content warning field", () => {
+    const props = setup();
+    const toggle = screen.getByRole("button", { name: "Content warning" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+    expect(props.setShowContentWarning).toHaveBeenCalledWith(true);
   });
 
   it("lets a poll-only post be shared", () => {

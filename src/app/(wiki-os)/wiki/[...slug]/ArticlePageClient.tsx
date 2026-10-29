@@ -6,7 +6,7 @@
 
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useCallback, type ReactNode } from "react";
 import { api } from "~/trpc/react";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { ArticleRenderer } from "~/components/wiki-os/reader/ArticleRenderer";
@@ -15,6 +15,7 @@ import { ArticleBusy } from "~/components/wiki-os/reader/ArticleBusy";
 import { RedirectNotice } from "~/components/wiki-os/reader/RedirectNotice";
 import { WikiEditBridge } from "~/components/wiki-os/editor/WikiEditBridge";
 import { WikiEditGate } from "~/components/wiki-os/editor/WikiEditGate";
+import { useArticleEditMode } from "~/components/wiki-os/editor/hooks/useArticleEditMode";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import {
   articleHtmlInput,
@@ -24,7 +25,6 @@ import {
   wikiosConfig,
   type WikiSource,
 } from "~/lib/wiki-os/config";
-import type { ArticleMode } from "~/lib/wiki-os/types";
 import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { isLeanResolvable, parseLeanMarker } from "~/lib/wiki-os/lean-article";
 import { readPrefillParam } from "~/lib/wiki-os/editor/prefill";
@@ -115,16 +115,11 @@ export default function ArticlePageClient({
   const prefillWikitext = readPrefillParam(searchParams.get("prefill")) ?? undefined;
   // IxWiki's Main Page is the WikiOS home; another wiki's (`[[althistory:Main Page]]`) is that wiki's article.
   const isMainPage = isIxWiki && title === "Main Page";
-  const [mode, setMode] = useState<ArticleMode>(
-    isIxWiki && initialEdit ? initialEdit.mode : "reading"
+  // `?action=edit` opens the editor as the page loads and whenever the address turns to it (back/forward).
+  const [mode, setMode] = useArticleEditMode(
+    isEditAction,
+    isIxWiki && initialEdit ? initialEdit.mode : isEditAction ? "source" : "reading"
   );
-
-  // Sync mode with URL
-  useEffect(() => {
-    if (isEditAction && mode === "reading") {
-      setMode("source");
-    }
-  }, [isEditAction, mode]);
 
   // Sync margin param with WikiContext
   useEffect(() => {

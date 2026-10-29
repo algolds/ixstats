@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { readSavedRates } from "~/components/mycountry/shell/fiscal/taxChannels";
+import { readSavedRates } from "~/lib/economy/tax-channels";
 import { economicRelationsOf } from "~/lib/economy/country-relations";
 import { complianceSections } from "~/lib/mycountry/compliance";
 

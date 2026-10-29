@@ -1,19 +1,18 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { cn } from "~/lib/utils";
 import { HaloContainer } from "../HaloPrimitives";
-import { Button } from "~/components/ui/button";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, Settings } from "iconoir-react";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
+import { Search, Bell, Settings, ProfileCircle } from "iconoir-react";
+import { HaloIconButton } from "./compact/HaloIconButton";
+import { NarratorProgress } from "./compact/NarratorProgress";
 import { useUser } from "~/context/auth-context";
 import { useContextHour } from "~/hooks/useContextHour";
 import { greetingForHour } from "~/lib/time/greeting";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { useExecutiveNotifications } from "~/context/ExecutiveNotificationContext";
+import { useHydrated } from "~/hooks/useHydrated";
 import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
@@ -21,6 +20,7 @@ import { PreText } from "~/components/ui/pretext";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { assetUrl } from "~/lib/base-path";
+import { wikiAccent } from "~/components/halo/plugins/wiki/accent";
 
 function CompactViewComponent({
   mode,
@@ -38,8 +38,7 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { activeSectionId, tocEntries, narratorState, narratorActions, themeColors } =
-    useWikiContext();
+  const { activeSectionId, tocEntries, narratorState, themeColors } = useWikiContext();
 
   const isNarratorActive = !!(
     narratorState &&
@@ -51,18 +50,16 @@ function CompactViewComponent({
     ? ((narratorState.activeBlockIndex + 1) / narratorState.totalBlocks) * 100
     : 0;
 
-  const narratorAccent = themeColors?.primary || activePlugin?.accentColor || "var(--color-blue)";
+  const narratorAccent = wikiAccent(themeColors);
 
   const hour = useContextHour();
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
-  const [mounted, setMounted] = useState(false);
-  const [isFlashing, setIsFlashing] = useState(false);
-  const previousNotificationCountRef = useRef(0);
+  const mounted = useHydrated();
 
-  const [currentTime, setCurrentTime] = useState({ greeting: "Good morning" });
+  const greeting = hour === null ? "Good morning" : greetingForHour(hour);
 
   // Notification peek
 
@@ -88,7 +85,6 @@ function CompactViewComponent({
 
   const enhancedStats = useNotificationStore((s) => s.stats);
   const notifications = useNotificationStore((s) => s.notifications);
-  const { unreadCount: executiveUnreadCount, isExecutiveMode } = useExecutiveNotifications();
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
     { limit: 5, unreadOnly: false },
@@ -106,386 +102,238 @@ function CompactViewComponent({
     (n) => n.status !== "read" && n.status !== "dismissed"
   ).length;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const notificationUnreadCount =
-    unreadNotifications +
-    (isExecutiveMode ? executiveUnreadCount : 0) +
-    enhancedUnreadCount +
-    liveNotificationCount;
+  const notificationUnreadCount = unreadNotifications + enhancedUnreadCount + liveNotificationCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
-
-  // Time
-
-  useEffect(() => {
-    if (hour === null) return;
-    const greeting = greetingForHour(hour);
-    setCurrentTime((prev) => (prev.greeting !== greeting ? { greeting } : prev));
-  }, [hour]);
-
-  useEffect(() => {
-    setMounted(true);
-    previousNotificationCountRef.current = totalUnreadCount;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Flash on new notifications
-  useEffect(() => {
-    if (!mounted) return;
-    if (totalUnreadCount > previousNotificationCountRef.current) {
-      setIsFlashing(true);
-      const t = setTimeout(() => setIsFlashing(false), 1000);
-      previousNotificationCountRef.current = totalUnreadCount;
-      return () => clearTimeout(t);
-    }
-    previousNotificationCountRef.current = totalUnreadCount;
-    return;
-  }, [totalUnreadCount, mounted]);
 
   if (!mounted) return null;
 
   return (
-    <TooltipProvider>
-      <div
-        onMouseEnter={() => {
-          if (isSticky || activePlugin?.id === "forum") {
-            setIsCollapsed(false);
-            setIsUserInteracting(true);
-          }
-        }}
-        onMouseLeave={() => {
-          if (isSticky || activePlugin?.id === "forum") {
-            setIsUserInteracting(false);
-          }
-        }}
-      >
-        <div className="h-full w-full">
-          <HaloContainer
-            className={`flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
-              isSticky ? "px-3 py-2" : "px-4 py-2"
-            } ${isFlashing ? "animate-flash-notification" : ""}`}
-          >
-            {/* Sticky: peek text or wiki breadcrumb */}
-            {isSticky && peekText && (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key="sticky-peek"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={springSnappy}
-                  className="flex items-center gap-2 px-2 py-0.5"
-                >
-                  <Bell className="text-yellow h-3 w-3" />
-                  <span className="text-label text-caption max-w-[160px] truncate whitespace-nowrap">
-                    <PreText whiteSpace="nowrap">{peekText}</PreText>
-                  </span>
-                </motion.div>
-              </AnimatePresence>
-            )}
+    <div
+      onMouseEnter={() => {
+        if (isSticky || activePlugin?.id === "forum") {
+          setIsCollapsed(false);
+          setIsUserInteracting(true);
+        }
+      }}
+      onMouseLeave={() => {
+        if (isSticky || activePlugin?.id === "forum") {
+          setIsUserInteracting(false);
+        }
+      }}
+    >
+      <div className="h-full w-full">
+        <HaloContainer
+          className={`duration-fast flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
+            isSticky ? "px-3 py-2" : "px-4 py-2"
+          }`}
+        >
+          {/* Sticky: peek text or wiki breadcrumb */}
+          {isSticky && peekText && (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key="sticky-peek"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={springSnappy}
+                className="flex items-center gap-2 px-2 py-0.5"
+              >
+                <Bell className="text-yellow h-3 w-3" />
+                <span className="text-label text-caption max-w-[160px] truncate whitespace-nowrap">
+                  <PreText whiteSpace="nowrap">{peekText}</PreText>
+                </span>
+              </motion.div>
+            </AnimatePresence>
+          )}
 
-            {isSticky &&
-              !peekText &&
-              activePlugin &&
-              pluginCenter &&
-              (pluginViewKey ? (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => {
+          {isSticky &&
+            !peekText &&
+            activePlugin &&
+            pluginCenter &&
+            (pluginViewKey ? (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (mode === `plugin:${pluginViewKey}`) {
+                    onSwitchMode("compact");
+                  } else {
+                    onSwitchMode(`plugin:${pluginViewKey}`);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
                     if (mode === `plugin:${pluginViewKey}`) {
                       onSwitchMode("compact");
                     } else {
                       onSwitchMode(`plugin:${pluginViewKey}`);
                     }
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      if (mode === `plugin:${pluginViewKey}`) {
-                        onSwitchMode("compact");
-                      } else {
-                        onSwitchMode(`plugin:${pluginViewKey}`);
-                      }
-                    }
-                  }}
-                  className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
-                    activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-                  }`}
-                  title={`Open ${activePlugin.id} mode`}
-                >
-                  {pluginCenter}
-                </div>
-              ) : (
-                <div
-                  className={`flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ${
-                    activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-                  }`}
-                >
-                  {pluginCenter}
-                </div>
-              ))}
+                  }
+                }}
+                className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
+                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+                }`}
+                title={`Open ${activePlugin.id} mode`}
+              >
+                {pluginCenter}
+              </div>
+            ) : (
+              <div
+                className={`duration-fast flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
+                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+                }`}
+              >
+                {pluginCenter}
+              </div>
+            ))}
 
-            {/* Non-sticky: peek or time/context */}
-            {!isSticky && (
-              <AnimatePresence mode="wait">
-                {peekText ? (
-                  <motion.div
-                    key="peek"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={springSnappy}
-                    className="flex items-center gap-2 px-2 py-1"
-                  >
-                    <Bell className="text-yellow h-3 w-3" />
-                    <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
-                      <PreText whiteSpace="nowrap">{peekText}</PreText>
-                    </span>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="time-and-greeting"
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 6 }}
-                    transition={springSnappy}
-                    className="flex items-center gap-1"
-                  >
-                    {/* Context switcher / Plugin center */}
-                    {activePlugin && pluginCenter ? (
-                      pluginViewKey ? (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
+          {/* Non-sticky: peek or time/context */}
+          {!isSticky && (
+            <AnimatePresence mode="wait">
+              {peekText ? (
+                <motion.div
+                  key="peek"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={springSnappy}
+                  className="flex items-center gap-2 px-2 py-1"
+                >
+                  <Bell className="text-yellow h-3 w-3" />
+                  <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
+                    <PreText whiteSpace="nowrap">{peekText}</PreText>
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="time-and-greeting"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={springSnappy}
+                  className="flex items-center gap-1"
+                >
+                  {/* Context switcher / Plugin center */}
+                  {activePlugin && pluginCenter ? (
+                    pluginViewKey ? (
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          if (mode === `plugin:${pluginViewKey}`) {
+                            onSwitchMode("compact");
+                          } else {
+                            onSwitchMode(`plugin:${pluginViewKey}`);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
                             if (mode === `plugin:${pluginViewKey}`) {
                               onSwitchMode("compact");
                             } else {
                               onSwitchMode(`plugin:${pluginViewKey}`);
                             }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              if (mode === `plugin:${pluginViewKey}`) {
-                                onSwitchMode("compact");
-                              } else {
-                                onSwitchMode(`plugin:${pluginViewKey}`);
-                              }
-                            }
-                          }}
-                          className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
-                          title={`Open ${activePlugin.id} mode`}
-                        >
-                          {pluginCenter}
-                        </div>
-                      ) : (
-                        <div className="flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:max-w-[200px]">
-                          {pluginCenter}
-                        </div>
-                      )
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => onSwitchMode("mycountry")}
-                        className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
-                      >
-                        {user?.imageUrl ? (
-                          <img
-                            src={assetUrl(user.imageUrl) ?? undefined}
-                            alt=""
-                            className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
-                          />
-                        ) : (
-                          <span
-                            aria-hidden="true"
-                            className="text-label-secondary text-footnote h-3 w-3"
-                          >
-                            👤
-                          </span>
-                        )}
-                        <span className="sr-only sm:hidden">Open MyCountry</span>
-                        <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
-                          {`${currentTime.greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
-                        </PreText>
-                      </button>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            )}
-
-            {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
-            <div className="relative flex shrink-0 flex-col items-center justify-center">
-              <div className="flex items-center gap-0.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        soundEffects.scan();
-                        onSwitchMode("search");
-                      }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
-                        isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                      }`}
-                    >
-                      <Search
-                        className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Search</TooltipContent>
-                </Tooltip>
-
-                {isLoaded && isSignedIn && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          soundEffects.bloom();
-                          onSwitchMode("notifications");
+                          }
                         }}
-                        className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
-                          isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                        }`}
+                        className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
+                        title={`Open ${activePlugin.id} mode`}
                       >
-                        <Bell
-                          className={cn(
-                            "transition-transform hover:scale-110",
-                            totalUnreadCount > 0
-                              ? "text-yellow"
-                              : "text-label-secondary hover:text-label",
-                            isSticky ? "h-3 w-3" : "h-3.5 w-3.5"
-                          )}
-                        />
-                        <AnimatePresence>
-                          {totalUnreadCount > 0 && (
-                            <motion.div
-                              key={`total-${totalUnreadCount}`}
-                              initial={{ scale: 0.8, opacity: 0 }}
-                              animate={{ scale: 1, opacity: 1 }}
-                              exit={{ scale: 0.8, opacity: 0 }}
-                              transition={springSnappy}
-                              className={`bg-yellow text-caption text-on-yellow shadow-floating absolute flex items-center justify-center rounded-full border-0 font-semibold ${
-                                isSticky
-                                  ? "-top-0.5 -right-0.5 h-2.5 w-2.5 p-0"
-                                  : "-top-1 -right-1 h-3 w-3 p-0"
-                              }`}
-                            >
-                              {totalUnreadCount > 9 ? "9+" : totalUnreadCount}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {totalUnreadCount > 0
-                        ? `Notifications (${totalUnreadCount} unread)`
-                        : "Notifications"}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        soundEffects.bloom();
-                        onSwitchMode("settings");
-                      }}
-                      className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
-                        isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                      }`}
+                        {pluginCenter}
+                      </div>
+                    ) : (
+                      <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
+                        {pluginCenter}
+                      </div>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onSwitchMode("mycountry")}
+                      className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
                     >
-                      <Settings
-                        className={`transition-transform hover:scale-110 hover:rotate-45 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                      />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">Settings</TooltipContent>
-                </Tooltip>
+                      {user?.imageUrl ? (
+                        <img
+                          src={assetUrl(user.imageUrl) ?? undefined}
+                          alt=""
+                          className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
+                        />
+                      ) : (
+                        <ProfileCircle aria-hidden className="text-label-secondary size-4" />
+                      )}
+                      <span className="sr-only sm:hidden">Open MyCountry</span>
+                      <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
+                        {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
+                      </PreText>
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
 
-                {/* Plugin-injected action buttons */}
-                {pluginActions?.map((action) => {
-                  const ActionIcon = action.icon;
-                  return (
-                    <Tooltip key={action.id}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={action.onClick}
-                          className={`text-label-secondary hover:text-label hover:bg-fill-4 rounded-control relative flex items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,transform] focus-visible:-outline-offset-2 ${
-                            isSticky ? "h-6 w-6 p-0" : "h-7 w-7 p-0"
-                          }`}
-                        >
-                          <ActionIcon
-                            className={`transition-transform hover:scale-110 ${isSticky ? "h-3 w-3" : "h-3.5 w-3.5"}`}
-                          />
-                          {action.badge != null && action.badge > 0 && (
-                            <span
-                              className={`bg-yellow text-caption text-on-yellow absolute flex items-center justify-center rounded-full font-semibold ${
-                                isSticky
-                                  ? "-top-0.5 -right-0.5 h-2.5 w-2.5"
-                                  : "-top-1 -right-1 h-3 w-3"
-                              }`}
-                            >
-                              {action.badge > 9 ? "9+" : action.badge}
-                            </span>
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">{action.label}</TooltipContent>
-                    </Tooltip>
-                  );
-                })}
+          {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
+          <div className="relative flex shrink-0 flex-col items-center justify-center">
+            <div className="flex items-center gap-0.5">
+              <HaloIconButton
+                label="Search"
+                icon={Search}
+                onClick={() => {
+                  soundEffects.scan();
+                  onSwitchMode("search");
+                }}
+              />
 
-                {/* Plugin badge dot */}
-                {pluginBadge && (
-                  <div
-                    className={`h-1.5 w-1.5 rounded-full ${pluginBadge.pulse ? "animate-pulse" : ""}`}
-                    style={{ backgroundColor: pluginBadge.color }}
-                  />
-                )}
-              </div>
-
-              {/* Sleek Hairline Narrator Progress Track Underneath the Icons Group */}
-              {isNarratorActive && narratorActions && (
-                <div
-                  className="group/narrator-progress bg-fill-2 relative mt-0.5 flex h-[2.5px] w-full cursor-pointer items-center overflow-hidden rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] hover:h-[3.5px]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const clickX = e.clientX - rect.left;
-                    const pct = Math.max(0, Math.min(1, clickX / rect.width));
-                    const targetBlock = Math.min(
-                      narratorState.totalBlocks - 1,
-                      Math.max(0, Math.round(pct * (narratorState.totalBlocks - 1)))
-                    );
-                    narratorActions.jumpToBlock(targetBlock);
+              {isLoaded && isSignedIn && (
+                <HaloIconButton
+                  label="Notifications"
+                  icon={Bell}
+                  badge={totalUnreadCount}
+                  iconClassName={totalUnreadCount > 0 ? "text-yellow" : undefined}
+                  onClick={() => {
+                    soundEffects.bloom();
+                    onSwitchMode("notifications");
                   }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  title={`Narrator Progress: ${Math.round(narratorProgressPercent)}% · Click to scrub`}
-                >
-                  <div
-                    className="h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150"
-                    style={{
-                      width: `${narratorProgressPercent}%`,
-                      backgroundColor: narratorAccent,
-                    }}
-                  />
-                </div>
+                />
+              )}
+
+              <HaloIconButton
+                label="Settings"
+                icon={Settings}
+                onClick={() => {
+                  soundEffects.bloom();
+                  onSwitchMode("settings");
+                }}
+              />
+
+              {/* Plugin-injected action buttons */}
+              {pluginActions?.map((action) => (
+                <HaloIconButton
+                  key={action.id}
+                  label={action.label}
+                  icon={action.icon}
+                  badge={action.badge}
+                  onClick={action.onClick}
+                />
+              ))}
+
+              {/* Plugin badge dot */}
+              {pluginBadge && (
+                <div
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: pluginBadge.color }}
+                />
               )}
             </div>
-          </HaloContainer>
-        </div>
+
+            {isNarratorActive && (
+              <NarratorProgress value={narratorProgressPercent} color={narratorAccent} />
+            )}
+          </div>
+        </HaloContainer>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
 

@@ -172,6 +172,28 @@ describe("founding flow", () => {
     expect(mockClear).toHaveBeenCalled();
     expect(mockPush).toHaveBeenCalledWith("/mycountry/welcome");
   });
+  it("after founding, leaves for the welcome page even when the realm list changes under it", async () => {
+    // Two realms open: founding in Ixnay fills it, so the refetched list no longer offers it and the
+    // draft's realm step reads incomplete. The flow must not pull the player back to that step.
+    const ixnay = mockRealms.realms[0]!;
+    const eurth = { ...ixnay, id: "eurth", slug: "eurth", name: "Eurth" };
+    mockRealms.realms = [ixnay, eurth];
+    serve({ ...named("review"), realmId: "ixnay" }, "step=review");
+    const { rerender } = render(<FoundingFlowView />);
+    fireEvent.click(screen.getByRole("button", { name: "Found nation" }));
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByRole("alertdialog")).getByRole("button", { name: "Found nation" })
+      );
+    });
+    mockRealms.realms = [{ ...ixnay, held: 1, canCreate: false }, eurth];
+    rerender(<FoundingFlowView />);
+    mockRealms.realms = [ixnay];
+
+    expect(mockPush).toHaveBeenLastCalledWith("/mycountry/welcome");
+    const pushedAt = Math.max(...mockPush.mock.invocationCallOrder);
+    expect(mockReplace.mock.invocationCallOrder.filter((order) => order > pushedAt)).toEqual([]);
+  });
   it("no keyboard shortcut founds", () => {
     serve(named("review"), "step=review");
     render(<FoundingFlowView />);

@@ -457,7 +457,7 @@ function DropdownPanel({ children, label }: { children: React.ReactNode; label: 
       id="map-controls-panel"
       role="region"
       aria-label={label}
-      className="animate-in fade-in slide-in-from-top-1 rounded-row mt-2 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain p-2 duration-150"
+      className="rounded-row mt-2 max-h-[min(70dvh,32rem)] w-56 overflow-y-auto overscroll-contain p-2"
     >
       {children}
     </FacetMaterial>

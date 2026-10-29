@@ -192,7 +192,7 @@ export function RealmRegionHeader({
                   founder.name
                 )
               ) : (
-                "Administered by IxStats staff"
+                "Administered by IxStates staff"
               )
             }
           />

@@ -40,7 +40,7 @@ export const BASE_DEFINITIONS: AchievementDefinition[] = [
   },
   {
     id: "gen-welcome",
-    title: "Welcome to IxStats",
+    title: "Welcome to IxStates",
     description: "Create your account",
     category: "General",
     rarity: "Common",

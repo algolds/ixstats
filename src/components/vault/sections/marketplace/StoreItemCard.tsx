@@ -175,7 +175,7 @@ export function StoreItemCard({
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "text-footnote h-7 w-full border font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+                "text-footnote h-7 w-full border font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
                 isPreviewing
                   ? "border-tint/50 bg-tint-fill text-tint"
                   : "border-separator hover:bg-fill-3 text-label-secondary hover:text-label"

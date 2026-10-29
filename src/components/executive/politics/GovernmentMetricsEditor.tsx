@@ -96,7 +96,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
           <div className="text-label-secondary text-body flex items-center justify-center py-6">
             Loading metrics
           </div>
-        ) : !govStructure ? (
+        ) : !govStructure?.departments.length ? (
           <p className="text-label-secondary text-body py-4 text-center">
             No government structure yet.
           </p>
@@ -115,7 +115,7 @@ export function GovernmentMetricsEditor({ countryId }: GovernmentMetricsEditorPr
                   {!metric.isYears && (
                     <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
                       <div
-                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] ${barColor(value, !!metric.invertedScale)}`}
+                        className={`h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${barColor(value, !!metric.invertedScale)}`}
                         style={{ width: `${value}%` }}
                       />
                     </div>

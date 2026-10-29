@@ -41,6 +41,11 @@ export function SurfaceReset({ children }: { children: React.ReactNode }) {
   return <InsideCard.Provider value={false}>{children}</InsideCard.Provider>;
 }
 
+/** Chrome is glass too: Cards inside it render as wells. */
+export function InsideSurface({ children }: { children: React.ReactNode }) {
+  return <InsideCard.Provider value>{children}</InsideCard.Provider>;
+}
+
 interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "content"> {
   /** `pane` (glass content card) at top level, `well` (solid inset) inside another Card. */
   variant?: CardVariant;

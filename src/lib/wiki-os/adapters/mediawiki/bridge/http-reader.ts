@@ -12,10 +12,12 @@ import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import {
   MAX_SISTER_RESPONSE_BYTES,
   readCappedText,
+  sisterIdForUrl,
   upstreamGuard,
   WikiUnavailableError,
   wikiNameForUrl,
 } from "~/lib/wiki-os/upstream-guard";
+import { iiwikiAllows } from "~/lib/wiki-os/iiwiki-switch";
 import {
   type PageImage,
   type SisterWikiSource,
@@ -403,6 +405,8 @@ export async function fetchMediaWikiImageBatch(
 ): Promise<Map<string, string>> {
   const result = new Map<string, string>();
   if (!fileTitles.length) return result;
+  // The flag resolver's fallback; a switched-off IIWiki resolves nothing, like an unreachable one.
+  if (sisterIdForUrl(endpoint) === "iiwiki" && !iiwikiAllows("media")) return result;
 
   const chunkSize = 25;
   for (let i = 0; i < fileTitles.length; i += chunkSize) {

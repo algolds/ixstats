@@ -108,13 +108,15 @@ export function CoordinateSnappingControls({
   const [lng, setLng] = useState(coords ? coords[0].toString() : "");
   const [lat, setLat] = useState(coords ? coords[1].toString() : "");
 
-  React.useEffect(() => {
+  // New coords from the parent replace the inputs, during render.
+  const [shownCoords, setShownCoords] = useState(coords);
+  if (coords !== shownCoords) {
+    setShownCoords(coords);
     if (coords) {
-      // oxlint-disable-next-line
       setLng(coords[0].toString());
       setLat(coords[1].toString());
     }
-  }, [coords]);
+  }
 
   const handleApply = () => {
     const lngN = parseFloat(lng);

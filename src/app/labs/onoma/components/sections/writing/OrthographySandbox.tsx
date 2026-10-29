@@ -328,7 +328,7 @@ export function OrthographySandbox({
         ) : (
           <div
             className={cn(
-              "flex flex-wrap items-center transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+              "flex flex-wrap items-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
               direction === "rtl" && "flex-row-reverse",
               direction === "ttb" && "max-h-[320px] flex-col items-start overflow-y-auto"
             )}

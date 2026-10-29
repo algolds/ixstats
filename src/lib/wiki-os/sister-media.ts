@@ -14,7 +14,7 @@
  *
  * Client-safe: pure, no environment read but the base path.
  */
-import { withBasePath } from "~/lib/base-path";
+import { stripBasePath, withBasePath } from "~/lib/base-path";
 import { SISTER_WIKI_HOSTS, type SisterReaderId } from "~/lib/wiki-os/wiki-hosts";
 
 /** What paths and URLs are resolved against, to read them the way a browser does. */
@@ -101,4 +101,18 @@ export function sisterMediaPath(url: string, wiki: SisterReaderId): string | nul
 export function isSisterMediaPath(url: string, wiki: SisterReaderId): boolean {
   const base = proxyBase(wiki);
   return url.startsWith(`${base}/`) && underProxy(base, url.slice(base.length)) !== null;
+}
+
+/** An image URL as an <img> loads it: an IIWiki file through IIWiki's media proxy, anything else unchanged. */
+export function iiwikiImageSrc(url: string): string {
+  return sisterMediaPath(url, "iiwiki") ?? url;
+}
+
+/**
+ * How an IIWiki file URL is stored (a country's flag or arms): its media-proxy path without the base path, which every
+ * renderer adds at display time (`assetUrl`, `withBasePath`). Null when `url` is not an IIWiki file.
+ */
+export function iiwikiStoredImagePath(url: string): string | null {
+  const path = sisterMediaPath(url, "iiwiki");
+  return path === null ? null : stripBasePath(path);
 }

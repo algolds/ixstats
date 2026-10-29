@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
-import { motion, AnimatePresence, type PanInfo } from "motion/react";
+import { motion, type PanInfo } from "motion/react";
 import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { useDynamicIslandState } from "./hooks";
@@ -14,8 +14,9 @@ import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { HaloTourTooltip } from "./HaloTourTooltip";
-import { springSnappy } from "~/lib/design/motion";
+import { springSnappy, tweenFast } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
+import { useHydrated } from "~/hooks/useHydrated";
 
 interface CommandPaletteProps {
   className?: string;
@@ -35,9 +36,8 @@ function CommandPaletteContent({
   isTourActive?: boolean;
 }) {
   const { size: haloSize, setSize } = useHaloSize();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [diPulseClass, setDiPulseClass] = useState("");
   const [navTrayOpen, setNavTrayOpen] = useState(false);
   const [pillBounce, setPillBounce] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
@@ -87,7 +87,6 @@ function CommandPaletteContent({
   } = diState;
 
   const diPathname = usePathname();
-  const prevNavRef = useRef(diPathname);
 
   // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
@@ -110,10 +109,9 @@ function CommandPaletteContent({
       } else if (expandedMode === "notifications") {
         newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
       } else if (expandedMode === "settings") {
-        newSize =
-          haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
+        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
       } else if (expandedMode === "mycountry") {
-        newSize = SIZE_PRESETS.MEDIUM; // 371px wide — profile/country dropdown
+        newSize = SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
       } else if (expandedMode.startsWith("plugin:")) {
         newSize = SIZE_PRESETS.ULTRA; // 630px wide
       } else {
@@ -130,9 +128,9 @@ function CommandPaletteContent({
         }
       } else if (isForumActive) {
         if (isCollapsed) {
-          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32 — compact forum text mode
+          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32, compact forum text mode
         } else {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40 — hover state/expanded full text
+          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40, hover state and expanded full text
         }
       } else {
         if (activeIsSticky && isCollapsed) {
@@ -158,16 +156,6 @@ function CommandPaletteContent({
     hasActiveSection,
   ]);
 
-  useEffect(() => {
-    if (isWikiActive && diPathname !== prevNavRef.current) {
-      prevNavRef.current = diPathname;
-      setDiPulseClass("animate-di-nav-pulse");
-      const timer = setTimeout(() => setDiPulseClass(""), 400);
-      return () => clearTimeout(timer);
-    }
-    return;
-  }, [diPathname, isWikiActive]);
-
   // Close nav tray when navigating
   useEffect(() => {
     setNavTrayOpen(false);
@@ -191,7 +179,6 @@ function CommandPaletteContent({
   const initialize = useNotificationStore((state) => state.initialize);
 
   useEffect(() => {
-    setMounted(true);
     initialize().catch(console.error);
   }, [initialize]);
 
@@ -220,8 +207,6 @@ function CommandPaletteContent({
     };
   }, [activeIsSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
 
-  // Ring + bump animation on any new toast
-  const [ringActive, setRingActive] = useState(false);
   const toastQueue = useToastQueueStore((s) => s.queue);
   const prevToastIdRef = useRef<string | null>(null);
 
@@ -230,9 +215,6 @@ function CommandPaletteContent({
     if (!latest || latest.id === prevToastIdRef.current) return;
     prevToastIdRef.current = latest.id;
 
-    // Trigger ring + bump
-    setRingActive(true);
-
     // Briefly uncollapse sticky DI so the user sees the notification peek
     if (activeIsSticky && isCollapsed) {
       setIsCollapsed(false);
@@ -240,15 +222,6 @@ function CommandPaletteContent({
       // Let the auto-collapse timer re-engage after 3s
       setTimeout(() => setIsUserInteracting(false), 3000);
     }
-
-    // Also pulse for critical
-    if (latest.priority === "critical") {
-      setDiPulseClass("animate-di-critical");
-      setTimeout(() => setDiPulseClass(""), 1200);
-    }
-
-    const timer = setTimeout(() => setRingActive(false), 600);
-    return () => clearTimeout(timer);
   }, [toastQueue, activeIsSticky, isCollapsed, setIsUserInteracting]);
 
   if (!mounted) return null;
@@ -256,28 +229,13 @@ function CommandPaletteContent({
   return (
     <>
       <div className="relative">
-        {/* Expanding ring on new notification */}
-        <AnimatePresence>
-          {ringActive && (
-            <motion.div
-              key="ring"
-              className="border-tint/60 pointer-events-none absolute inset-0 rounded-full border-2"
-              initial={{ scale: 1, opacity: 0.8 }}
-              animate={{ scale: 1.35, opacity: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          )}
-        </AnimatePresence>
-
         {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
             a static tint ring instead of a looping pulse. It has no movement, so it is the same
             under Reduce Motion. */}
         <motion.div
           data-tour-highlight={isTourActive ? "true" : undefined}
-          className={cn("rounded-full", diPulseClass, isTourActive && "ring-tint/50 ring-2")}
+          className={cn("rounded-full", isTourActive && "ring-tint/50 ring-2")}
           animate={{
-            scale: ringActive ? 1.04 : 1,
             y: pillBounce ? -4 : 0,
           }}
           transition={springSnappy}
@@ -337,7 +295,7 @@ function CommandPaletteContent({
               className="pointer-events-none absolute right-1/4 -bottom-0.5 left-1/4 h-[2px] rounded-full"
               initial={{ opacity: 0, scaleX: 0 }}
               animate={{ opacity: 0.8, scaleX: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
+              transition={tweenFast}
               style={{ backgroundColor: pluginAccentColor }}
             />
           )}
@@ -379,19 +337,9 @@ function CommandPaletteWrapper({
   scrollY?: number;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const isInitialized = useHydrated();
   const diState = useDynamicIslandState();
   const { isExpanded, switchMode } = diState;
-
-  // Initialize once on mount
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setIsInitialized(true);
-
-    return () => {
-      setIsInitialized(false);
-    };
-  }, []);
 
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {

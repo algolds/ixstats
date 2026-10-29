@@ -264,10 +264,10 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               gdp: v.gdp === "perCapita" ? "total" : "perCapita",
                             }));
                           }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
+                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint facet-press p-2 text-center focus-visible:outline-2"
                         >
                           <PreText
-                            className="text-label-secondary text-stat-label"
+                            className="text-label-secondary text-caption"
                             whiteSpace="nowrap"
                           >
                             {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
@@ -300,10 +300,10 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                               population: v.population === "total" ? "density" : "total",
                             }));
                           }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint duration-fast ease-out-facet p-2 text-center transition-[background-color,scale] focus-visible:outline-2 active:scale-[0.98]"
+                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint facet-press p-2 text-center focus-visible:outline-2"
                         >
                           <PreText
-                            className="text-label-secondary text-stat-label"
+                            className="text-label-secondary text-caption"
                             whiteSpace="nowrap"
                           >
                             {metricView.population === "total" ? "Population" : "Density"}

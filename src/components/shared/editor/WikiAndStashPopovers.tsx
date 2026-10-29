@@ -97,7 +97,7 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
               isWikiOpen
                 ? "bg-wiki/15 text-wiki ring-wiki/30 ring-1 dark:text-blue-400"
                 : "text-muted-foreground hover:bg-muted hover:text-wiki dark:hover:text-blue-400"
@@ -121,7 +121,7 @@ export function WikiAndStashPopovers({
                   type="button"
                   onClick={() => setWikiInsertMode("link")}
                   className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                     wikiInsertMode === "link"
                       ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
@@ -133,7 +133,7 @@ export function WikiAndStashPopovers({
                   type="button"
                   onClick={() => setWikiInsertMode("embed")}
                   className={cn(
-                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    "rounded px-2 py-0.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                     wikiInsertMode === "embed"
                       ? "text-wiki dark:bg-wiki bg-white shadow-xs dark:text-white"
                       : "text-neutral-500 hover:text-neutral-800 dark:text-slate-400"
@@ -153,7 +153,7 @@ export function WikiAndStashPopovers({
                   aria-pressed={wikiSource === source}
                   onClick={() => setWikiSource(source)}
                   className={cn(
-                    "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+                    "flex-1 rounded-lg border py-1 text-center text-xs font-medium transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
                     wikiSource === source
                       ? "border-wiki/50 bg-wiki/10 text-wiki"
                       : "border-border text-muted-foreground hover:bg-muted"
@@ -244,7 +244,7 @@ export function WikiAndStashPopovers({
             size="sm"
             disabled={disabled}
             className={cn(
-              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150",
+              "h-7 w-7 rounded-xl p-0 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
               isStashesOpen
                 ? "bg-amber-500/15 text-amber-500 ring-1 ring-amber-500/30"
                 : "text-muted-foreground hover:bg-muted hover:text-amber-500"

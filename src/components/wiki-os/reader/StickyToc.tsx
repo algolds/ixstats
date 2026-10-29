@@ -85,14 +85,16 @@ export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
   };
 
   // Reset search and original HTML when entries (page) change
-  useEffect(() => {
-    originalHtml.current = null;
-    // oxlint-disable-next-line
+  const [prevEntries, setPrevEntries] = useState(entries);
+  if (entries !== prevEntries) {
+    setPrevEntries(entries);
     setSearchQuery("");
     setShowSearch(false);
     setMatchCount(0);
     setCurrentMatchIndex(-1);
-    // oxlint-disable-next-line
+  }
+  useEffect(() => {
+    originalHtml.current = null;
   }, [entries]);
 
   // Find in page search highlighting effect
@@ -109,7 +111,7 @@ export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
     }
 
     if (!searchQuery.trim()) {
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- the count comes from the highlighted DOM, reset with it
       setMatchCount(0);
       setCurrentMatchIndex(-1);
       return;
@@ -150,7 +152,7 @@ export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
 
   return (
     <nav
-      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 ease-out select-none"
+      className="wikios-sticky-toc transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ease-out select-none"
       aria-label="Table of contents"
     >
       <div className="wikios-sticky-toc-header">

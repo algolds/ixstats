@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PollWidget } from "~/components/shared/polls/poll-widget";
@@ -77,18 +77,18 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
     }
   );
 
-  React.useEffect(() => {
-    if (updatedData) {
-      // oxlint-disable-next-line
-      setPollState({
-        votes: (updatedData.votes || {}) as Record<string, number>,
-        totalVotes: updatedData.totalVotes || 0,
-        hasVoted: updatedData.hasVoted || false,
-        userVotedOptionIds: updatedData.userVotedOptionIds || [],
-      });
-      setSelectedOptionIds(updatedData.userVotedOptionIds || []);
-    }
-  }, [updatedData]);
+  // Each fresh server result replaces the optimistic state (adjusted during render, not in an effect)
+  const [syncedData, setSyncedData] = useState<typeof updatedData>(undefined);
+  if (updatedData && updatedData !== syncedData) {
+    setSyncedData(updatedData);
+    setPollState({
+      votes: (updatedData.votes || {}) as Record<string, number>,
+      totalVotes: updatedData.totalVotes || 0,
+      hasVoted: updatedData.hasVoted || false,
+      userVotedOptionIds: updatedData.userVotedOptionIds || [],
+    });
+    setSelectedOptionIds(updatedData.userVotedOptionIds || []);
+  }
 
   const isExpired = poll.endDate ? new Date() > new Date(poll.endDate) : false;
   const isDisabled = !poll.isActive || isExpired || voteMutation.isPending || isPending;
@@ -195,9 +195,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               ))}
             </PollWidget.Options>
 
-            {isSignedIn && !pollState.hasVoted && (
-              <PollWidget.Submit className="animate-in fade-in zoom-in-95 mt-4 duration-200" />
-            )}
+            {isSignedIn && !pollState.hasVoted && <PollWidget.Submit className="mt-4" />}
 
             {!isSignedIn && (
               <p className="text-muted-foreground/60 mt-3 text-center text-xs">
@@ -236,7 +234,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
               key={opt.id}
               value={opt.id}
               className={cn(
-                "flex items-center justify-between gap-4 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 sm:p-4",
+                "flex items-center justify-between gap-4 rounded-xl border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 sm:p-4",
                 hasVotedOpt
                   ? "border-poll/40 bg-poll/5 shadow-xs"
                   : "border-border/60 bg-card/40 hover:bg-muted/30"
@@ -257,7 +255,7 @@ export function FeedPollWidget({ poll }: FeedPollWidgetProps) {
                 onClick={() => handleFeatureToggleVote(opt.id)}
                 disabled={isDisabled || !isSignedIn}
                 className={cn(
-                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200",
+                  "flex h-12 min-w-[3.5rem] flex-col items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
                   hasVotedOpt
                     ? "border-poll bg-poll hover:bg-poll/90 text-white shadow-xs"
                     : "border-border/80 bg-background hover:bg-muted text-muted-foreground hover:text-foreground"

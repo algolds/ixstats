@@ -9,6 +9,7 @@
 
 import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
+import { ProfileCircle } from "iconoir-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
@@ -21,6 +22,7 @@ import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { assetUrl } from "~/lib/base-path";
+import { accentMix, wikiAccent } from "./accent";
 
 // The plugin's metadata (id, priority, breadcrumb, accent) is synchronous; its expanded views are not needed
 // until the Halo opens, so each is its own chunk fetched then (plan 415, F19): the narrator player and the
@@ -34,20 +36,6 @@ const WikiNarratorView = dynamic(
   () => import("./views/WikiNarratorView").then((m) => m.WikiNarratorView),
   { ssr: false }
 );
-
-function getRgbaColor(colorStr: string, opacity: number): string {
-  if (colorStr.startsWith("#")) {
-    const cleanHex = colorStr.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-  }
-  if (colorStr.startsWith("hsl")) {
-    return colorStr.replace("hsl(", "hsla(").replace(")", `, ${opacity})`);
-  }
-  return `rgba(59, 130, 246, ${opacity})`;
-}
 
 function WikiBreadcrumb() {
   const { user } = useUser();
@@ -85,8 +73,6 @@ function WikiBreadcrumb() {
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
-  const accentColor = themeColors?.primary || "#3b82f6";
-
   // Narrator Active in Breadcrumb: Clean, tactile, zero clutter
   if (isNarratorActive && narratorActions) {
     return (
@@ -103,25 +89,18 @@ function WikiBreadcrumb() {
             }
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-white transition-[scale] duration-150 hover:scale-105"
-          style={{
-            backgroundColor: accentColor,
-            boxShadow: `0 1px 6px ${getRgbaColor(accentColor, 0.35)}`,
-          }}
+          className="bg-tint text-on-tint flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full"
           title={narratorState.isPlaying ? "Pause narration" : "Resume narration"}
         >
           <PlayPauseMorph
             isPlaying={!!narratorState.isPlaying}
             size={10}
-            className="fill-current text-white"
+            className="fill-current"
           />
         </button>
 
-        {/* Title in theme color */}
-        <span
-          className="text-caption truncate font-semibold transition-colors"
-          style={{ color: accentColor }}
-        >
+        {/* The article colour has no contrast guarantee on chrome, so the title stays label ink. */}
+        <span className="text-label text-caption truncate font-semibold">
           {hasSpecificTitle ? articleTitle : "Wiki narrator"}
         </span>
 
@@ -139,10 +118,7 @@ function WikiBreadcrumb() {
     <div className="flex max-w-[160px] min-w-0 items-center gap-2 sm:max-w-[200px]">
       {/* Title or Personalized Greeting */}
       {hasSpecificTitle ? (
-        <span
-          className="text-caption max-w-[90px] truncate font-semibold transition-colors sm:max-w-[120px]"
-          style={themeColors?.primary ? { color: themeColors.primary } : undefined}
-        >
+        <span className="text-label text-caption max-w-[90px] truncate font-semibold sm:max-w-[120px]">
           {articleTitle}
         </span>
       ) : (
@@ -154,7 +130,7 @@ function WikiBreadcrumb() {
               className="ring-separator h-4 w-4 shrink-0 rounded-full object-cover ring-1"
             />
           ) : (
-            <span className="text-label-secondary text-footnote h-3.5 w-3.5 shrink-0">👤</span>
+            <ProfileCircle aria-hidden className="text-label-secondary size-4 shrink-0" />
           )}
           <PreText
             className="text-label text-caption max-w-[100px] truncate sm:max-w-[130px]"
@@ -172,7 +148,7 @@ function WikiBreadcrumb() {
           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
             <PopoverTrigger asChild>
               <span
-                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors duration-150"
+                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors"
                 onClick={(e) => {
                   e.stopPropagation();
                   setPopoverOpen((prev) => !prev);
@@ -198,21 +174,16 @@ function WikiBreadcrumb() {
                           setPopoverOpen(false);
                         }}
                         className={cn(
-                          "text-caption rounded-control-sm flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors duration-150 select-none",
-                          isActive && !themeColors
-                            ? "bg-fill-3 text-label"
-                            : isActive
-                              ? ""
-                              : "text-label-secondary hover:text-label hover:bg-fill-3",
+                          "text-caption rounded-control-sm duration-fast flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors select-none",
+                          isActive
+                            ? "text-label"
+                            : "text-label-secondary hover:text-label hover:bg-fill-3",
                           entry.level === 3 ? "pl-5" : ""
                         )}
                         style={
-                          isActive && themeColors
-                            ? {
-                                color: themeColors.primary,
-                                backgroundColor: getRgbaColor(themeColors.primary, 0.08),
-                              }
-                            : {}
+                          isActive
+                            ? { backgroundColor: accentMix(wikiAccent(themeColors), 12) }
+                            : undefined
                         }
                         type="button"
                       >
@@ -243,6 +214,8 @@ export function WikiHalo() {
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
   );
 
+  const accent = wikiAccent(themeColors);
+
   const plugin = useMemo(
     () => ({
       id: "wiki",
@@ -259,10 +232,10 @@ export function WikiHalo() {
             wiki: WikiView,
             ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }) as Record<string, React.ComponentType<DIViewProps>>,
-      accentColor: themeColors?.primary || "#3b82f6",
+      accentColor: accent,
       stickyLabel: isPlaying ? "Narrating" : "Wiki",
     }),
-    [articleTitle, hasNarratorAccess, isPlaying, isNarrating, themeColors?.primary]
+    [articleTitle, hasNarratorAccess, isPlaying, isNarrating, accent]
   );
 
   useDIPlugin(plugin);

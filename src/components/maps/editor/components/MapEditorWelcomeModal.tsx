@@ -116,13 +116,18 @@ export function MapEditorWelcomeModal({
   const [show, setShow] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
 
-  useEffect(() => {
+  // Forcing it open (the help icon) shows it from the first page, during render.
+  const [wasForced, setWasForced] = useState(false);
+  if (forceShow !== wasForced) {
+    setWasForced(forceShow);
     if (forceShow) {
-      // oxlint-disable-next-line
       setShow(true);
       setCurrentPage(0);
-      return;
     }
+  }
+
+  useEffect(() => {
+    if (forceShow) return;
 
     try {
       const seen = localStorage.getItem(STORAGE_KEY);

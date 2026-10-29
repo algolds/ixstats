@@ -22,6 +22,8 @@ export function createMockPrisma(overrides: Record<string, any> = {}): MockPrism
     $transaction: jest.fn((cb: (tx: any) => any) =>
       typeof cb === "function" ? cb(proxy) : Promise.all(cb)
     ),
+    // Advisory locks (pg_advisory_xact_lock) taken inside transactions
+    $executeRaw: jest.fn().mockResolvedValue(0),
     ...overrides,
   };
 

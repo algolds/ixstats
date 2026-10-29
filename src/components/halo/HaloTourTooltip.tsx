@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { TOUR_STEPS } from "./HaloTourContext";
-import { FacetMaterial } from "~/components/ui/facet";
 import { Button } from "~/components/ui/button";
 import {
   NavArrowRight as ChevronRight,
@@ -12,33 +11,36 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { overlayScrimClassName } from "~/components/ui/dialog";
-import { springSmooth, tweenExit, tweenFast } from "~/lib/design/motion";
+import { PopoverDescription, PopoverTitle, VirtualAnchorPopover } from "~/components/ui/popover";
+import { tweenFast } from "~/lib/design/motion";
+import { useHydrated } from "~/hooks/useHydrated";
+
+/** Initial completed status from localStorage; false on the server. */
+function readTourCompleted(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem("ixstats:halo-tour-completed") === "true";
+  } catch {
+    return false; // storage unavailable (private mode): tour treated as not completed
+  }
+}
 
 export function HaloTourTooltip() {
+  // Nothing renders before hydration (`mounted`), so reading storage here cannot mismatch.
   const [tourState, setTourState] = useState<{
     isActive: boolean;
     currentStep: number;
     completed: boolean;
-  }>({
+  }>(() => ({
     isActive: false,
     currentStep: 1,
-    completed: false,
-  });
+    completed: readTourCompleted(),
+  }));
 
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-
-    // Check initial completed status from localStorage
-    try {
-      const hasCompleted = localStorage.getItem("ixstats:halo-tour-completed") === "true";
-      setTourState((prev) => ({ ...prev, completed: hasCompleted }));
-    } catch {
-      // storage unavailable (private mode) — tour treated as not completed
-    }
-
     const handleStepChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
       if (customEvent.detail) {
@@ -68,9 +70,14 @@ export function HaloTourTooltip() {
 
   const { isActive, currentStep } = tourState;
 
+  // Halo can remount between steps, so the anchor is looked up again whenever the step changes.
+  useEffect(() => {
+    // oxlint-disable-next-line
+    setAnchor(isActive ? document.getElementById("command-palette") : null);
+  }, [isActive, currentStep]);
+
   if (!mounted || !isActive) return null;
 
-  const isExpandedStep = currentStep === 2 || currentStep === 4 || currentStep === 5;
   const step = TOUR_STEPS[currentStep - 1];
   if (!step) return null;
 
@@ -87,116 +94,103 @@ export function HaloTourTooltip() {
   };
 
   return (
-    <AnimatePresence>
-      {isActive && (
-        <>
-          {/* Page backdrop blur focus overlay */}
-          <motion.div
-            key="tour-backdrop-blur"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={tweenFast}
-            // The shared dialog scrim, kept inside Halo's own stacking context (below the tooltip).
-            className={cn(overlayScrimClassName, "pointer-events-none z-10")}
-          />
+    <>
+      <AnimatePresence>
+        <motion.div
+          key="tour-backdrop-blur"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={tweenFast}
+          // The shared dialog scrim, kept inside Halo's own stacking context (below the walkthrough).
+          className={cn(overlayScrimClassName, "z-raised pointer-events-none")}
+        />
+      </AnimatePresence>
 
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 30, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.96, transition: tweenExit }}
-            transition={springSmooth}
-            className={cn(
-              "pointer-events-auto fixed z-40",
-              isExpandedStep
-                ? "top-[320px] left-1/2 w-[340px] -translate-x-1/2 lg:top-[220px] lg:left-[calc(50%+250px)] lg:w-[320px] lg:translate-x-0 lg:translate-y-0"
-                : "top-1/2 left-1/2 w-[350px] -translate-x-1/2 -translate-y-1/2"
-            )}
-          >
-            <FacetMaterial
-              layer="chrome"
-              role="dialog"
-              aria-label="Halo walkthrough"
-              className="text-label rounded-card ring-tint/25 p-6 ring-1"
+      <VirtualAnchorPopover
+        anchor={anchor}
+        open={isActive}
+        onOpenChange={(open) => {
+          if (!open) skipTour();
+        }}
+        // The user works in Halo during the tour, so a press outside must not end it.
+        onInteractOutside={(e) => e.preventDefault()}
+        // Always below: expanded Halo fills a phone's width, so a side placement flips off-screen and traps the user.
+        side="bottom"
+        align="center"
+        sideOffset={12}
+        collisionPadding={16}
+        autoFocus
+        aria-label="Halo walkthrough"
+        className="w-80"
+      >
+        <div className="flex flex-col gap-3">
+          {/* Header & Close */}
+          <div className="flex items-center justify-between">
+            <p className="text-footnote text-label-secondary">Step {currentStep} of 5</p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={skipTour}
+              className="text-label-secondary hover:text-label rounded-full"
+              aria-label="Close tour"
             >
-              <div className="relative z-10 flex flex-col gap-3">
-                {/* Header & Close */}
-                <div className="flex items-center justify-between">
-                  <span className="text-label-secondary text-eyebrow">
-                    Halo walkthrough, step <span className="tabular-nums">{currentStep}</span> of 5
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={skipTour}
-                    className="text-label-secondary hover:text-label rounded-full"
-                    aria-label="Close tour"
-                  >
-                    <X aria-hidden />
-                  </Button>
-                </div>
+              <X aria-hidden />
+            </Button>
+          </div>
 
-                {/* Title & Description */}
-                <div className="flex flex-col gap-1">
-                  <h4 className="text-headline text-label">{step.title}</h4>
-                  <p className="text-callout text-label-secondary">{step.description}</p>
-                </div>
+          {/* Title & Description */}
+          <div className="flex flex-col gap-1">
+            <PopoverTitle>{step.title}</PopoverTitle>
+            <PopoverDescription>{step.description}</PopoverDescription>
+          </div>
 
-                {/* Progress Dots */}
-                <div className="flex items-center gap-2 py-1">
-                  {TOUR_STEPS.map((s) => (
-                    <div
-                      key={s.id}
-                      aria-hidden="true"
-                      className={`h-1.5 rounded-full transition-[width,background-color] duration-150 ${
-                        s.id === currentStep
-                          ? "bg-tint w-4"
-                          : s.id < currentStep
-                            ? "bg-tint/40 w-1.5"
-                            : "bg-fill-3 w-1.5"
-                      }`}
-                    />
-                  ))}
-                </div>
+          {/* Progress Dots */}
+          <div className="flex items-center gap-2 py-1">
+            {TOUR_STEPS.map((s) => (
+              <div
+                key={s.id}
+                aria-hidden="true"
+                className={`duration-fast h-1.5 rounded-full transition-[width,background-color] ${
+                  s.id === currentStep
+                    ? "bg-tint w-4"
+                    : s.id < currentStep
+                      ? "bg-tint/40 w-1.5"
+                      : "bg-fill-3 w-1.5"
+                }`}
+              />
+            ))}
+          </div>
 
-                {/* Action buttons */}
-                <div className="border-separator mt-1 flex items-center justify-between border-t pt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={skipTour}
-                    className="text-label-secondary"
-                  >
-                    Skip
-                  </Button>
+          {/* Action buttons */}
+          <div className="border-separator mt-1 flex items-center justify-between border-t pt-3">
+            <Button variant="ghost" size="sm" onClick={skipTour} className="text-label-secondary">
+              Skip
+            </Button>
 
-                  <div className="flex gap-2">
-                    {currentStep > 1 && (
-                      <Button variant="outline" size="sm" onClick={prevStep}>
-                        <ChevronLeft />
-                        Back
-                      </Button>
-                    )}
+            <div className="flex gap-2">
+              {currentStep > 1 && (
+                <Button variant="outline" size="sm" onClick={prevStep}>
+                  <ChevronLeft />
+                  Back
+                </Button>
+              )}
 
-                    <Button size="sm" onClick={nextStep}>
-                      {currentStep === 5 ? (
-                        "Finish"
-                      ) : (
-                        <>
-                          Next
-                          <ChevronRight />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </FacetMaterial>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+              <Button size="sm" onClick={nextStep}>
+                {currentStep === 5 ? (
+                  "Finish"
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </VirtualAnchorPopover>
+    </>
   );
 }

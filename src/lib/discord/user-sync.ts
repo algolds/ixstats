@@ -82,7 +82,7 @@ export async function linkDiscordAccount(
     if (existingLink) {
       return {
         success: false,
-        error: "This Discord account is already linked to another IxStats user",
+        error: "This Discord account is already linked to another IxStates user",
       };
     }
   }

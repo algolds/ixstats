@@ -2,7 +2,7 @@
 // Settings popover for Stash collections.
 // Features opaque elevated surface, zero-bleed depth shadow, crisp typography, and fluid spring physics.
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   EditPencil as Pencil,
   Trash as Trash2,
@@ -57,10 +57,11 @@ export function StashSettingsMenu({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Sync renameValue with stash prop
-  useEffect(() => {
-    // oxlint-disable-next-line
+  const [prevStashName, setPrevStashName] = useState(stash.name);
+  if (stash.name !== prevStashName) {
+    setPrevStashName(stash.name);
     setRenameValue(stash.name);
-  }, [stash.name]);
+  }
 
   const handleClose = () => {
     setIsOpen(false);

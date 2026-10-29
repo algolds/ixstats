@@ -130,7 +130,7 @@ export function AdvancedConlangSettings({ gen, category }: AdvancedConlangSettin
     category === "organization" || category === "country" || category === "province";
 
   return (
-    <div className="animate-in fade-in mt-4 space-y-4 duration-200">
+    <div className="mt-4 space-y-4">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="space-y-0.5 pr-2">
           <label className="text-label-secondary text-subhead">Include live world data</label>

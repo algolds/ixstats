@@ -7,6 +7,10 @@ interface VitalStat {
   value: string;
 }
 
+/** A reading's label, saying so when the figure is the estimate from the economy. */
+const labelled = (label: string, estimated: boolean) =>
+  estimated ? `${label} (estimated)` : label;
+
 /** Growth, jobs and prices for the Economy tab. */
 export function economyVitals(v: ProfileVitals): VitalStat[] {
   const stats: VitalStat[] = [];
@@ -15,13 +19,13 @@ export function economyVitals(v: ProfileVitals): VitalStat[] {
   if (v.unemployment != null)
     stats.push({
       key: "unemployment",
-      label: "Unemployment",
+      label: labelled("Unemployment", v.unemploymentEstimated),
       value: formatPercent(v.unemployment),
     });
   if (v.inflation != null)
     stats.push({
       key: "inflation",
-      label: "Inflation",
+      label: labelled("Inflation", v.inflationEstimated),
       value: formatRate(v.inflation, { signed: false }),
     });
   return stats;

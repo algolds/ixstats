@@ -1,6 +1,6 @@
 ---
 title: Halo & the Sidebar
-description: The sidebar and tab bar that take you around IxStats, and Halo, the floating bar for search, notifications and quick settings.
+description: The sidebar and tab bar that take you around IxStates, and Halo, the floating bar for search, notifications and quick settings.
 badge: Start Here
 prevHref: /help/getting-started/navigation
 prevLabel: Finding Your Way Around
@@ -8,7 +8,7 @@ nextHref: /help/getting-started/settings
 nextLabel: Your Settings
 ---
 
-## How IxStats is laid out
+## How IxStates is laid out
 
 Every page (except the full-screen maps) has two pieces of navigation:
 
@@ -17,7 +17,7 @@ Every page (except the full-screen maps) has two pieces of navigation:
 
 ## The sidebar
 
-The sidebar on the left lists the areas ("apps") of IxStats. Selecting one opens it and shows its sections underneath:
+The sidebar on the left lists the areas ("apps") of IxStates. Selecting one opens it and shows its sections underneath:
 
 | App | What's in it |
 | --- | --- |
@@ -64,12 +64,12 @@ Search finds countries, pages and features, wiki articles and commands. Press `T
 
 ### Notifications and messages
 
-The bell shows your unread count, and the browser tab shows it too, as "(3) IxStats". The tray has two tabs:
+The bell shows your unread count, and the browser tab shows it too, as "(3) IxStates". The tray has two tabs:
 
 - **Notifications**: the latest eight, grouped into Recent, Earlier today, This week and Earlier. Selecting one marks it read and opens what it's about; you can also dismiss it.
 - **Messages**: your eight newest conversations. Select one to open it in [Messages](/messages).
 
-**Read all** marks every notification and message read. Notifications appear only inside IxStats; there are no emails or push alerts.
+**Read all** marks every notification and message read. Notifications appear only inside IxStates; there are no emails or push alerts.
 
 ### Quick settings
 

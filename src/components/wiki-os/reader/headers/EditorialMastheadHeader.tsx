@@ -33,7 +33,7 @@ function PersonLink({
   return (
     <Link
       href={`/wiki/User:${encodeURIComponent(name.replace(/ /g, "_"))}`}
-      className="text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+      className="text-label border-separator text-caption hover:border-tint/40 hover:bg-tint/10 hover:text-tint inline-flex items-center gap-2 rounded-full border bg-black/5 px-3 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
     >
       {avatar ? (
         <span className="relative flex size-4 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10">
@@ -79,7 +79,7 @@ function AwardsBadge({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,transform]",
+            "group text-caption duration-fast relative flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 transition-[background-color,border-color,scale,translate]",
             badgeConfig.classes,
             showCelebration && primaryAward.category === "LOREWARD" && "loreward-badge-celebrate"
           )}

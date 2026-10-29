@@ -130,7 +130,7 @@ export function WorldTimeline() {
               </div>
 
               <div
-                className={`rounded-row border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform] ${
+                className={`rounded-row border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
                   isActive
                     ? `${colors.border} ${colors.bg}`
                     : "border-separator bg-fill-4 opacity-60"

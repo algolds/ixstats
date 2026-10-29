@@ -37,6 +37,11 @@ const IGNORED_NODE_KEYS = new Set([
   "wikiTableHead",
   "wikiTableHeadFp",
   "wikiTableTail",
+  "wikiRowHead",
+  "wikiRowHeadFp",
+  "wikiCellHead",
+  "wikiCellTail",
+  "wikiCellHeadFp",
   "id",
 ]);
 

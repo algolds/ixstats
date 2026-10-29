@@ -1,5 +1,7 @@
 // The block parser as the integration branch has it (515ca3c72), before the regex-DoS sweep (plan F15), verbatim apart from its
 // import paths: regex-dos-wikitext.test.ts holds the memoized blockquote walk against it. Not used by any code.
+// One later change of behaviour (2026-10-28: indented lines are one raw "preformatted" block) is applied here too, so
+// that the comparison still tests the walk alone.
 
 /**
  * src/lib/wiki-os/wikitext/parser.ts — Universal Tolerant MediaWiki Parser.
@@ -16,6 +18,7 @@
  */
 
 import { isTemplateOnlyLine, logicalLineEnd } from "~/lib/wiki-os/wikitext/block-lines";
+import { isIndentedLine } from "~/lib/wiki-os/wikitext/line-patterns";
 import { parseInlineLinksAndFormatting } from "~/lib/wiki-os/wikitext/link-parser";
 import { parseWikiList } from "~/lib/wiki-os/wikitext/list-parser";
 import { matchBraces, type MatchIndex } from "~/lib/wiki-os/wikitext/match-index";
@@ -86,7 +89,7 @@ export function parse(input: string, options?: { title?: string; slug?: string }
       continue;
     }
 
-    const start = pos + (firstLine.length - firstLine.trimStart().length);
+    const start = isIndentedLine(firstLine) ? pos : pos + (firstLine.length - firstLine.trimStart().length);
     const { node, lineEnd, resumeAt } = scanBlock(ctx, start, firstLineEnd, nodes.length === 0);
     const end = contentEnd(input, start, resumeAt ?? lineEnd);
     node.src = { start, end };
@@ -121,6 +124,7 @@ function scanBlock(
 ): Scanned {
   const line = ctx.input.slice(start, firstLineEnd).trimEnd();
   return (
+    scanIndented(ctx, start, firstLineEnd) ??
     scanRedirect(ctx, line, start, firstLineEnd, isFirst) ??
     scanCommentOrMagicWord(ctx, line, start, firstLineEnd) ??
     scanOpaqueTag(ctx, start, firstLineEnd) ??
@@ -155,6 +159,19 @@ function rawBlock(
 
 function warn(ctx: ScanContext, code: string, message: string, start: number, end: number): void {
   ctx.diagnostics.push({ severity: "warning", message, start, end, code });
+}
+
+/** Consecutive indented lines, one raw block (applied here as in parser.ts, 2026-10-28). */
+function scanIndented(ctx: ScanContext, start: number, firstLineEnd: number): Scanned | null {
+  const { input } = ctx;
+  if (!isIndentedLine(input.slice(start, firstLineEnd))) return null;
+  let lineEnd = firstLineEnd;
+  while (lineEnd < input.length) {
+    const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
+    if (!isIndentedLine(input.slice(lineEnd + 1, nextEnd))) break;
+    lineEnd = nextEnd;
+  }
+  return rawBlock(ctx, start, lineEnd, "preformatted");
 }
 
 /** `#REDIRECT [[Target]]` at the very start of a page: not a numbered list. */
@@ -367,7 +384,7 @@ function scanList(
     const nextEnd = logicalLineEnd(input, lineEnd + 1, ctx.braces, ctx.scanner);
     const next = input.slice(lineEnd + 1, nextEnd);
     const nextChar = next.trim()[0];
-    if (!nextChar || !LIST_LINE.test(nextChar)) break;
+    if (!nextChar || !LIST_LINE.test(nextChar) || isIndentedLine(next)) break;
     if ((firstChar === "*" && nextChar === "#") || (firstChar === "#" && nextChar === "*")) break;
     lines.push(next);
     lineEnd = nextEnd;
@@ -408,6 +425,7 @@ function startsNewBlock(ctx: ScanContext, start: number, lineEnd: number): boole
   const text = line.trim();
   return (
     text === "" ||
+    isIndentedLine(line) ||
     HEADING.test(text) ||
     DIVIDER.test(text) ||
     LIST_LINE.test(text) ||

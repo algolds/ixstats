@@ -36,7 +36,7 @@ async function saveRejectedWith(error: Error): Promise<boolean> {
   const { result } = renderHook(() => useWikiEditorState({ title: "Vesperia", onSave }));
   let saved = true;
   await act(async () => {
-    saved = await result.current.executeSave(() => "My text");
+    saved = await result.current.executeSave(() => "My text", "source");
   });
   return saved;
 }

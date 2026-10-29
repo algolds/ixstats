@@ -1,6 +1,5 @@
 "use client";
 
-import { BackgroundImageTexture } from "~/components/ui/bg-image-texture";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 /**
@@ -16,11 +15,6 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
   return (
     <div data-app="mycountry" className="relative min-h-screen">
       <PortalTintSync />
-      <BackgroundImageTexture
-        variant="groovepaper"
-        opacity={0.05}
-        className="pointer-events-none absolute inset-0 z-0"
-      />
       {children}
     </div>
   );

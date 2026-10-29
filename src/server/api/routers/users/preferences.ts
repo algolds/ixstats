@@ -2,6 +2,7 @@
 // Users preferences, privacy, blocking, and safety router
 
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -15,6 +16,7 @@ import { hiddenLinkedNames } from "~/server/shared/privacy-permissions";
 import { accountOfWikiName } from "~/lib/identity/wiki-names";
 import { recordHeartbeat } from "~/server/shared/presence";
 import { clearOwnHistory } from "~/server/shared/clear-history";
+import { buildAccountExport } from "~/server/orchestration/account-export";
 
 /**
  * The nation a player typed: its name within the viewer's realm first, else a (globally unique) slug.
@@ -129,6 +131,13 @@ const clearHistoryRateLimit = createRateLimitMiddleware({
   max: 3,
   windowMs: 60 * 60_000,
   namespace: "clear_history",
+});
+
+/** The export reads every post and message the user wrote, so it is not something to poll. */
+const accountExportRateLimit = createRateLimitMiddleware({
+  max: 10,
+  windowMs: 60 * 60_000,
+  namespace: "account_export",
 });
 
 /** Deletes the caller's own connection record; anything else reads as not found. */
@@ -488,101 +497,17 @@ export const usersPreferencesRouter = createTRPCRouter({
 
   // ─── Data Export (Account & Country Data) ─────────────────────────────
 
-  exportUserData: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.user.findUnique({
-      where: { clerkUserId: ctx.auth.userId },
-    });
-
-    const country = user?.countryId
-      ? await ctx.db.country.findUnique({
-          where: { id: user.countryId },
-        })
-      : null;
-
-    const vault = user?.id
-      ? await ctx.db.myVault.findUnique({
-          where: { userId: user.id },
-        })
-      : null;
-
-    const cardCount = user?.id
-      ? await ctx.db.cardOwnership.count({
-          where: { ownerId: user.id },
-        })
-      : 0;
-
-    const preferences = await ctx.db.userPreferences.findUnique({
-      where: { userId: ctx.auth.userId },
-    });
-
-    const thinkpagesAccount = await ctx.db.thinkpagesAccount.findFirst({
-      where: { clerkUserId: ctx.auth.userId },
-      include: {
-        posts: {
-          take: 50,
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
-
-    // Every old wiki name the user asked for or holds, whatever became of the claim
-    const wikiNames = user?.id
-      ? await ctx.db.wikiNameClaim.findMany({
-          where: { userId: user.id },
-          select: { source: true, name: true, status: true, visible: true, createdAt: true },
-          orderBy: { createdAt: "asc" },
-        })
-      : [];
-
-    return {
-      exportedAt: new Date().toISOString(),
-      user: {
-        clerkUserId: user?.clerkUserId,
-        membershipTier: user?.membershipTier,
-        createdAt: user?.createdAt,
-        discordUsername: user?.discordUsername,
-        forumUsername: user?.forumUsername,
-        wikiNames,
-      },
-      country: country
-        ? {
-            id: country.id,
-            name: country.name,
-            slug: country.slug,
-            economicTier: country.economicTier,
-            populationTier: country.populationTier,
-            currentPopulation: country.currentPopulation,
-            currentGdpPerCapita: country.currentGdpPerCapita,
-            governmentType: country.governmentType,
-            leader: country.leader,
-            hideDiplomaticOps: country.hideDiplomaticOps,
-            hideStratcommIntel: country.hideStratcommIntel,
-          }
-        : null,
-      vault: vault
-        ? {
-            credits: vault.credits,
-            vaultLevel: vault.vaultLevel,
-            vaultXp: vault.vaultXp,
-            equippedCosmetics: vault.equippedCosmetics,
-          }
-        : null,
-      cardsCount: cardCount,
-      preferences: preferences ?? null,
-      thinkpages: thinkpagesAccount
-        ? {
-            username: thinkpagesAccount.username,
-            displayName: thinkpagesAccount.displayName,
-            postsCount: thinkpagesAccount.posts.length,
-            recentPosts: thinkpagesAccount.posts.map((p) => ({
-              id: p.id,
-              content: p.content,
-              createdAt: p.createdAt,
-              visibility: p.visibility,
-            })),
-          }
-        : null,
-    };
+  /**
+   * Everything Privacy 5.1 "Export" promises, as one JSON object (account-export.ts). Only the account holder: it
+   * carries their email and private messages, so play-as cannot download it.
+   */
+  exportUserData: protectedProcedure.use(accountExportRateLimit).query(({ ctx }) => {
+    if (ctx.impersonatorId)
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Only the account holder can export their data.",
+      });
+    return buildAccountExport(ctx.db, ctx.auth.userId);
   }),
 
   // ─── Wiki Author Resolution ──────────────────────────────────────────

@@ -7,7 +7,12 @@ import { Button } from "~/components/ui/button";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
 
-export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProps) {
+/** Mounted only while open, so every opening starts from a fresh form. */
+export function InfoboxCountryModal(props: BaseModalProps) {
+  return props.isOpen ? <InfoboxCountryModalContent {...props} /> : null;
+}
+
+function InfoboxCountryModalContent({ isOpen, onClose, onInsert }: BaseModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     nativeName: "",
@@ -23,28 +28,11 @@ export function InfoboxCountryModal({ isOpen, onClose, onInsert }: BaseModalProp
   const firstInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
-      setFormData({
-        name: "",
-        nativeName: "",
-        capital: "",
-        motto: "",
-        currency: "",
-        currencySymbol: "",
-        government: "",
-        leader: "",
-        flagImage: "",
-        mapImage: "",
-      });
-      // Focus first input on open
-      setTimeout(() => {
-        firstInputRef.current?.focus();
-      }, 50);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
+    // Focus first input on open
+    setTimeout(() => {
+      firstInputRef.current?.focus();
+    }, 50);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

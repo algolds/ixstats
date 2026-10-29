@@ -37,7 +37,7 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
       onTouchStart={(e) => e.stopPropagation()}
       role="status"
       aria-live="polite"
-      className="animate-in fade-in slide-in-from-bottom-2 rounded-row pointer-events-auto max-w-[16rem] px-3 py-2 duration-200"
+      className="rounded-row pointer-events-auto max-w-[16rem] px-3 py-2"
     >
       <div className="flex items-center justify-between gap-3">
         <Eyebrow>{legend.title}</Eyebrow>
@@ -49,7 +49,7 @@ export function AnalyticsLegend({ overlayVisibility, overlayData }: AnalyticsLeg
           <div
             className="h-2.5 w-full rounded-full"
             style={{
-              background: `linear-gradient(to right, ${legend.stops.map((s) => s.color).join(", ")})`,
+              background: `linear-gradient(to right, ${legend.stops.map((s) => s.color).join(",")})`,
             }}
           />
           <div className="mt-0.5 flex justify-between">

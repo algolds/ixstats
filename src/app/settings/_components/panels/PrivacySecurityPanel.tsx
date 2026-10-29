@@ -34,6 +34,8 @@ import {
 } from "~/components/ui/select";
 import type { PrivacyConfig } from "~/server/api/routers/users/preferences";
 import { ClearHistoryRow } from "./ClearHistoryRow";
+import { DeleteAccountRow } from "./DeleteAccountRow";
+import { exportFileName } from "~/lib/account/deletion-copy";
 import {
   ACTIVITY_ROWS,
   DISCOVERY_ROWS,
@@ -354,7 +356,7 @@ function SecurityAndDataGroup() {
       );
       const link = document.createElement("a");
       link.href = url;
-      link.download = `account-data-export-${new Date().toISOString().slice(0, 10)}.json`;
+      link.download = exportFileName(new Date());
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -362,9 +364,11 @@ function SecurityAndDataGroup() {
 
       soundEffects.bloom();
       notify.success("Data archive downloaded");
-    } catch (err: any) {
+    } catch (err) {
       soundEffects.error();
-      notify.error(err.message || "Failed to generate data archive");
+      notify.error(
+        err instanceof Error && err.message ? err.message : "Failed to generate data archive"
+      );
     } finally {
       setIsExporting(false);
     }
@@ -373,11 +377,11 @@ function SecurityAndDataGroup() {
   return (
     <SettingsGroup
       title="Security and data"
-      description="Export or clear your data and manage sessions and credentials."
+      description="Export, clear or delete your data and manage sessions and credentials."
     >
       <SettingsRow
         label="Export your data"
-        description="Download a JSON export of your country data, card collection and account records"
+        description="Download a JSON file of your account, linked accounts, nations, posts, messages, Onoma work and cards"
         icon={Download}
         glyphClass={GLYPH}
       >
@@ -421,6 +425,8 @@ function SecurityAndDataGroup() {
           <ExternalLink className="h-3 w-3 opacity-60" />
         </Button>
       </SettingsRow>
+
+      <DeleteAccountRow glyphClass={GLYPH} />
     </SettingsGroup>
   );
 }

@@ -5,6 +5,12 @@ import { clockForCountry } from "~/server/shared/realm-time";
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { DiplomaticChoiceTracker } from "~/lib/diplomacy/choice-tracker";
 
+/** An artifact link: http(s) or a path on this site, never javascript:/data: (it is rendered as a link and image). */
+const artifactUrl = z
+  .string()
+  .max(2048)
+  .regex(/^(https?:\/\/|\/(?!\/))/i, "Use an http(s) link or an uploaded file.");
+
 export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
   /**
    * Vote on a cultural exchange proposal
@@ -99,8 +105,8 @@ export const diplomaticCulturalLifecycleParticipationRouter = createTRPCRouter({
         type: z.enum(["photo", "video", "document", "artwork", "recipe", "music"]),
         title: z.string(),
         description: z.string().optional(),
-        thumbnailUrl: z.string().optional(),
-        fileUrl: z.string(),
+        thumbnailUrl: artifactUrl.optional(),
+        fileUrl: artifactUrl,
         contributor: z.string(),
       })
     )

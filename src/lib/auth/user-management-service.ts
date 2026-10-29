@@ -17,6 +17,34 @@ interface UserWithRole extends User {
   role: Role | null;
 }
 
+/**
+ * What Clerk says about a Clerk id seen for the first time. `exists: false` only on Clerk's 404: a session token stays
+ * valid for up to a minute after its user is deleted (account erasure), and such a request must not recreate the
+ * account as a blank row. Any other Clerk failure (or no keys) still lets the row be created, as before.
+ */
+async function clerkSignupFacts(
+  clerkUserId: string
+): Promise<{ exists: boolean; reservedNationName?: string }> {
+  const hasClerkKeys = Boolean(
+    process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+  );
+  if (!hasClerkKeys) return { exists: true };
+  try {
+    const client = await clerkClient();
+    const clerkUser = await client.users.getUser(clerkUserId);
+    const reserved = clerkUser?.publicMetadata?.reservedNationName;
+    if (!reserved) return { exists: true };
+    console.log(
+      `[UserManagementService] Clerk reserved nation name detected: ${String(reserved)} for user ${clerkUserId}`
+    );
+    return { exists: true, reservedNationName: String(reserved) };
+  } catch (clerkError) {
+    if ((clerkError as Error & { status?: number }).status === 404) return { exists: false };
+    console.error("[UserManagementService] Failed to fetch user metadata from Clerk:", clerkError);
+    return { exists: true };
+  }
+}
+
 export class UserManagementService {
   constructor(private db: PrismaClient) {}
 
@@ -60,29 +88,13 @@ export class UserManagementService {
       // User doesn't exist - create with proper role assignment
       console.log(`[UserManagementService] Creating new user: ${clerkUserId}`);
 
-      // Fetch metadata from Clerk if keys are available
-      let reservedNationName: string | undefined = undefined;
-      const hasClerkKeys = Boolean(
-        process.env.CLERK_SECRET_KEY && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-      );
-
-      if (hasClerkKeys) {
-        try {
-          const client = await clerkClient();
-          const clerkUser = await client.users.getUser(clerkUserId);
-          if (clerkUser?.publicMetadata?.reservedNationName) {
-            reservedNationName = String(clerkUser.publicMetadata.reservedNationName);
-            console.log(
-              `[UserManagementService] Clerk reserved nation name detected: ${reservedNationName} for user ${clerkUserId}`
-            );
-          }
-        } catch (clerkError) {
-          console.error(
-            "[UserManagementService] Failed to fetch user metadata from Clerk:",
-            clerkError
-          );
-        }
+      // Fetch metadata from Clerk if keys are available; a Clerk user that no longer exists gets no row
+      const signup = await clerkSignupFacts(clerkUserId);
+      if (!signup.exists) {
+        console.warn(`[UserManagementService] No Clerk user ${clerkUserId}: not creating a row`);
+        return null;
       }
+      const reservedNationName = signup.reservedNationName;
 
       // Use transaction to prevent race conditions during creation
       let created = false;

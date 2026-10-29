@@ -37,46 +37,54 @@ function assertJoinable(
   if (refusal) throw new TRPCError({ code: "BAD_REQUEST", message: refusal });
 }
 
+/** A date the exchange runs on: anything Date can parse (an unparseable one reached Prisma as Invalid Date). */
+const dateInput = z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Not a valid date.");
+
 export const diplomaticCulturalExchangesCoreMutationsRouter = createTRPCRouter({
   createCulturalExchange: rateLimitedMutationProcedure
     .input(
-      z.object({
-        title: z.string(),
-        type: z.enum([
-          "festival",
-          "exhibition",
-          "education",
-          "cuisine",
-          "arts",
-          "sports",
-          "technology",
-          "diplomacy",
-          "music",
-          "film",
-          "environmental",
-          "science",
-          "trade",
-          "humanitarian",
-          "agriculture",
-          "heritage",
-          "youth",
-        ]),
-        description: z.string(),
-        narrative: z.string().optional(),
-        objectives: z.array(z.string()).optional(),
-        isPublic: z.boolean().optional().default(true),
-        maxParticipants: z.number().optional(),
-        hostCountryId: z.string(),
-        hostCountryName: z.string(),
-        hostCountryFlag: z.string().optional(),
-        participantCountryId: z.string().optional(),
-        /** Several specific nations to take part (with or alongside `participantCountryId`). */
-        participantCountryIds: z.array(z.string()).max(50).optional(),
-        startDate: z.string(),
-        endDate: z.string(),
-        autoCreateMissions: z.boolean().optional().default(true),
-        embassyMissionId: z.string().optional(), // Link to existing embassy mission
-      })
+      z
+        .object({
+          title: z.string().trim().min(1).max(100),
+          type: z.enum([
+            "festival",
+            "exhibition",
+            "education",
+            "cuisine",
+            "arts",
+            "sports",
+            "technology",
+            "diplomacy",
+            "music",
+            "film",
+            "environmental",
+            "science",
+            "trade",
+            "humanitarian",
+            "agriculture",
+            "heritage",
+            "youth",
+          ]),
+          description: z.string(),
+          narrative: z.string().optional(),
+          objectives: z.array(z.string()).optional(),
+          isPublic: z.boolean().optional().default(true),
+          maxParticipants: z.number().optional(),
+          hostCountryId: z.string(),
+          hostCountryName: z.string(),
+          hostCountryFlag: z.string().optional(),
+          participantCountryId: z.string().optional(),
+          /** Several specific nations to take part (with or alongside `participantCountryId`). */
+          participantCountryIds: z.array(z.string()).max(50).optional(),
+          startDate: dateInput,
+          endDate: dateInput,
+          autoCreateMissions: z.boolean().optional().default(true),
+          embassyMissionId: z.string().optional(), // Link to existing embassy mission
+        })
+        .refine((v) => Date.parse(v.endDate) >= Date.parse(v.startDate), {
+          message: "The exchange cannot end before it starts.",
+          path: ["endDate"],
+        })
     )
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.hostCountryId);

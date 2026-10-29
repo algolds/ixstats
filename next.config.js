@@ -22,6 +22,8 @@ const config = {
 
   trailingSlash: false,
   reactStrictMode: true,
+  // Auto-memoizes components and hooks; existing useMemo/useCallback stay until files are touched.
+  reactCompiler: true,
 
   // Performance optimizations
   // Prevent webpack from bundling heavy server-only packages (loaded via require at runtime)
@@ -140,10 +142,7 @@ const config = {
         protocol: "https",
         hostname: "ixwiki.com",
       },
-      {
-        protocol: "https",
-        hostname: "iiwiki.com",
-      },
+      // No iiwiki.com: IIWiki files load through /api/mediawiki/iiwiki, behind the IIWiki switch (iiwiki-switch.ts).
       {
         protocol: "https",
         hostname: "cdn.discordapp.com",

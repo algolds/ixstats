@@ -53,7 +53,7 @@ const MICRO_TYPE_ALLOWED = new Set([
 
 // Plan 346 gate, lowered after the 2026-09-30 Facet conversion (was 173). Keep only skeletons
 // (prefer <Skeleton>) and genuine live/unread indicators.
-const ANIMATE_PULSE_CEILING = 84;
+const ANIMATE_PULSE_CEILING = 15;
 
 /** Surfaces converted to Facet primitives (2026-09-30); their stricter gates live below. */
 const FACET_CONVERTED = [
@@ -62,6 +62,7 @@ const FACET_CONVERTED = [
   "app/help/",
   // Facet 3 navigation shell (spec §7.4, Phase 3).
   "components/shell/",
+  "components/audio/",
   "lib/navigation/",
   // Country profile: the Command profile, its deep-dive chrome and shared pieces.
   "app/countries/[slug]/",
@@ -177,10 +178,6 @@ const RAW_BACKDROP_ALLOWED = new Set([
   // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
   `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
 ]);
-const INLINE_BACKDROP_FILES = [
-  // The progressive blur primitive is a material itself (stepped backdrop blur).
-  "components/ui/magicui/progressive-blur.tsx",
-].map((dir) => dir.split("/").join(path.sep));
 
 /**
  * Textures in converted feature code are the sanctioned ones
@@ -313,10 +310,7 @@ describe("Facet anti-slop guards", () => {
         (hit) => !hit.endsWith(": backdrop-blur-none")
       );
       expect(raw).toEqual([]);
-      const inline = convertedHits(INLINE_BACKDROP).filter(
-        (hit) => !INLINE_BACKDROP_FILES.some((file) => hit.startsWith(file))
-      );
-      expect(inline).toEqual([]);
+      expect(convertedHits(INLINE_BACKDROP)).toEqual([]);
     });
 
     it("keep the navigation shell on the z-* tokens (no arbitrary z-[…] at all)", () => {
@@ -676,5 +670,63 @@ describe("accent utilities as Tailwind compiles them", () => {
     expect(
       rulesOf.some((r) => r.selector.includes('[data-motion="reduced"]') && drop.test(r.body))
     ).toBe(true);
+  });
+});
+
+/** tw-animate utilities: the package is not installed and nothing defines them, so they animate nothing. */
+export const TW_ANIMATE =
+  /(?<![\w-])(?:data-\[[^\]]+\]:)*(?:animate-in|animate-out|fade-(?:in|out)(?:-\d+)?|zoom-(?:in|out)(?:-\d+)?|slide-(?:in-from|out-to)-(?:top|bottom|left|right)(?:-\d+)?|spin-(?:in|out)(?:-\d+)?)(?![\w-])/g;
+
+describe("Facet kit guards", () => {
+  it("has no empty className attributes", () => {
+    expect(hits(/className=""/g)).toEqual([]);
+  });
+
+  it("uses no tw-animate classes (not installed)", () => {
+    expect(hits(TW_ANIMATE)).toEqual([]);
+  });
+
+  // Tailwind v4 scale-*/translate-* write the `scale`/`translate` properties, which a
+  // `transform` entry never animates.
+  it("arbitrary transition lists name scale/translate, not transform", () => {
+    expect(hits(/transition-\[[^\]]*\btransform\b[^\]]*\]/g)).toEqual([]);
+  });
+
+  // Controls change colour on press; facet-press (scale) is for pressable cards and tiles.
+  it("controls do not scale on press", () => {
+    const controls = [
+      "button",
+      "switch",
+      "segmented-control",
+      "toggle",
+      "toggle-group",
+      "action-pill",
+      "facet-list",
+      "tabs",
+      "select",
+      "dropdown-menu",
+    ].map((name) => path.join("components", "ui", `${name}.tsx`));
+    const offenders = sources
+      .filter(({ file, content }) => controls.includes(file) && /\bfacet-press/.test(content))
+      .map(({ file }) => file);
+    expect(offenders).toEqual([]);
+  });
+
+  // Decorative or duplicate kit pieces replaced by Facet primitives; they must not come back.
+  it.each([
+    "components/ui/backlight",
+    "components/ui/tooltip-card",
+    "components/ui/magicui/interactive-grid-pattern",
+    "components/ui/magicui/progressive-blur",
+    "components/ui/magicui/animated-theme-toggler",
+    "components/ui/text-reveal",
+    "components/ui/bg-image-texture",
+    "components/ui/status-indicator",
+    "components/shared/charts",
+  ])("%s stays removed", (mod) => {
+    expect(
+      fs.existsSync(path.join(srcDir, `${mod}.tsx`)) || fs.existsSync(path.join(srcDir, mod))
+    ).toBe(false);
+    expect(hits(new RegExp(`~/${mod}["/]`, "g"))).toEqual([]);
   });
 });

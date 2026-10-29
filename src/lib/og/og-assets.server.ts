@@ -1,3 +1,5 @@
+import { iiwikiAllows } from "~/lib/wiki-os/iiwiki-switch";
+import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 import "server-only";
 
 /**
@@ -188,6 +190,7 @@ export async function fetchOgImage(
 ): Promise<string | null> {
   const url = absoluteAssetUrl(raw, origin);
   if (!url || !isAllowedImageUrl(new URL(url), origin)) return null;
+  if (isIiwikiUrl(url) && !iiwikiAllows("media")) return null;
   try {
     const response = await fetch(url, {
       signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS),

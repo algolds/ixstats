@@ -107,6 +107,7 @@ const KEYWORDS: Record<Category, string[]> = {
     "industr",
     "job",
     "employ",
+    "unemploy",
     "wage",
     "labor",
     "labour",
@@ -227,12 +228,18 @@ const DEPARTMENT_FOCUS: { category: Category; keywords: string[]; dept: string }
 function budgetTargetOf(cat: Category, goal: string): { dept: string; line: string } {
   const g = goal.toLowerCase();
   const focus = DEPARTMENT_FOCUS.find(
-    (f) => f.category === cat && f.keywords.some((k) => g.includes(k))
+    (f) => f.category === cat && f.keywords.some((k) => mentions(g, k))
   );
   return focus
     ? { dept: focus.dept, line: focus.dept }
     : { dept: CATEGORY_TO_DEPT[cat], line: RECIPES[cat].budgetLine };
 }
+
+/**
+ * Whether the goal mentions a keyword as a word or the start of one ("defen" matches "defense", but "port" does not
+ * match "support" and "arms" does not match "farms").
+ */
+const mentions = (goal: string, keyword: string) => new RegExp(`\\b${keyword}`).test(goal);
 
 /** Nudge base acceptance by the aligned broker's disposition. Pure + testable. */
 export function weightAcceptance(
@@ -246,6 +253,9 @@ export function weightAcceptance(
   else if (opts.brokerUnlocked === false && opts.brokerSatisfied === false) i = Math.max(0, i - 1);
   return order[i]!;
 }
+
+/** A goal that is foreign policy: directives are domestic only (the router answers it as a bad request). */
+export class ForeignGoalError extends Error {}
 
 export function classifyGoal(goal: string): { category: Category } {
   const g = goal.toLowerCase();
@@ -270,7 +280,7 @@ export function classifyGoal(goal: string): { category: Category } {
     EXPLICIT_BILATERAL_KEYWORDS.some((k) => g.includes(k)) ||
     g.match(/\b(?:war with|treaty with|alliance with|sanctions on|embargo on)\b/i)
   ) {
-    throw new Error(
+    throw new ForeignGoalError(
       "Cabinet Directives are restricted to domestic policy. For foreign affairs, embassies, or treaties, please use the Diplomacy tab."
     );
   }
@@ -279,7 +289,7 @@ export function classifyGoal(goal: string): { category: Category } {
   let bestHits = 0;
   for (const cat of Object.keys(KEYWORDS) as Category[]) {
     const hits = KEYWORDS[cat].reduce(
-      (sum, k) => (g.includes(k) ? sum + (WEAK_KEYWORDS.has(k) ? 0.5 : 1) : sum),
+      (sum, k) => (mentions(g, k) ? sum + (WEAK_KEYWORDS.has(k) ? 0.5 : 1) : sum),
       0
     );
     if (hits > bestHits) {

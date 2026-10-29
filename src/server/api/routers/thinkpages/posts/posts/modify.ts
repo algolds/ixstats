@@ -11,6 +11,7 @@ import {
 } from "../../post-utils";
 import { ownHashtags, storedPseudoTags } from "~/server/shared/realm-board";
 import { deleteThinkpagesPost } from "~/server/shared/thinkpages-post-delete";
+import { contentWarningInput } from "~/lib/thinkpages/content-warning";
 
 export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
   // Update post content (edit post)
@@ -33,6 +34,8 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
             }
           )
           .transform(stripDiscordMarker),
+        // Left out, the stored warning stays; empty or null clears it.
+        contentWarning: contentWarningInput,
         hashtags: z.array(z.string()).optional(),
       })
     )
@@ -56,6 +59,7 @@ export const thinkpagesPostsPostsModifyRouter = createTRPCRouter({
           hashtags: input.hashtags
             ? JSON.stringify([...storedPseudoTags(post.hashtags), ...ownHashtags(input.hashtags)])
             : post.hashtags,
+          ...(input.contentWarning !== undefined && { contentWarning: input.contentWarning }),
           updatedAt: new Date(),
         },
         include: { ...postAuthorsInclude, mediaAttachments: true },

@@ -11,6 +11,7 @@ import {
 } from "~/server/shared/map-invalidation";
 
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
+import { isRealmImageUrl } from "~/lib/realms/realm-region";
 import { evaluateCountryThresholds } from "~/server/shared/intelligence-alert-thresholds";
 import {
   MAX_COUNTRY_NAME_LENGTH,
@@ -45,7 +46,12 @@ const ownerUpdateInput = z
   .object({
     id: z.string(),
     name: z.string().trim().min(1).max(MAX_COUNTRY_NAME_LENGTH).optional(),
-    flag: z.string().max(2048).optional(),
+    // The editor's rule: an https:// image address, an upload or a repository image (empty clears it).
+    flag: z
+      .string()
+      .max(2048)
+      .refine(isRealmImageUrl, { message: "Use an https:// image address." })
+      .optional(),
   })
   .strict();
 

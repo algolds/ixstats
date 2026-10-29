@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { withBasePath } from "~/lib/base-path";
@@ -14,7 +14,14 @@ import {
 import { EconomyBlock, ForeignBlock, StateBlock } from "./Blocks";
 import { FactbookSheets } from "./FactbookSheets";
 
-type OpenSheet = { sheet: CountrySheet; segment: EconomySegment };
+/** The open sheet, and whether this visit pushed it (so closing it can step back). */
+type OpenSheet = { sheet: CountrySheet; segment: EconomySegment; pushed: boolean } | null;
+
+/** The sheet a query string names, as not pushed by this visit. */
+function sheetAt(search: string): OpenSheet {
+  const sheet = parseSheet(new URLSearchParams(search));
+  return sheet && { ...sheet, pushed: false };
+}
 
 /**
  * FactbookTab — the country at a glance: Economy & people, State and Foreign affairs as three
@@ -24,61 +31,46 @@ type OpenSheet = { sheet: CountrySheet; segment: EconomySegment };
 export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
   const params = useSearchParams();
   const query = params?.toString() ?? "";
-  const [open, setOpen] = useState<OpenSheet | null>(() => parseSheet(params));
-  // True while the open sheet was pushed in this visit, so closing it can step back.
-  const pushed = useRef(false);
+  const [open, setOpen] = useState<OpenSheet>(() => sheetAt(query));
 
   // The address wins: a <Link> or a restored Back can change the query under the mounted tab.
-  useEffect(() => {
-    const fromAddress = parseSheet(new URLSearchParams(query));
-    // oxlint-disable-next-line
-    setOpen((current) => {
-      if (current?.sheet === fromAddress?.sheet && current?.segment === fromAddress?.segment)
-        return current;
-      pushed.current = false;
-      return fromAddress;
-    });
-  }, [query]);
+  const [syncedQuery, setSyncedQuery] = useState(query);
+  if (query !== syncedQuery) {
+    setSyncedQuery(query);
+    const fromAddress = sheetAt(query);
+    if (open?.sheet !== fromAddress?.sheet || open?.segment !== fromAddress?.segment) {
+      setOpen(fromAddress);
+    }
+  }
 
   useEffect(() => {
-    const onPopState = () => {
-      pushed.current = false;
-      setOpen(parseSheet(new URLSearchParams(window.location.search)));
-    };
+    const onPopState = () => setOpen(sheetAt(window.location.search));
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
-  const show = useCallback(
-    (sheet: CountrySheet) => {
-      setOpen({ sheet, segment: "economy" });
-      pushed.current = true;
-      window.history.pushState(null, "", withBasePath(countrySheetHref(layer.slug, sheet)));
-    },
-    [layer.slug]
-  );
+  const show = (sheet: CountrySheet) => {
+    setOpen({ sheet, segment: "economy", pushed: true });
+    window.history.pushState(null, "", withBasePath(countrySheetHref(layer.slug, sheet)));
+  };
 
-  const close = useCallback(() => {
+  const close = () => {
     setOpen(null);
-    if (pushed.current) {
-      pushed.current = false;
+    if (open?.pushed) {
       window.history.back();
     } else {
       window.history.replaceState(null, "", withBasePath(countryTabHref("factbook", layer.slug)));
     }
-  }, [layer.slug]);
+  };
 
-  const setSegment = useCallback(
-    (segment: EconomySegment) => {
-      setOpen({ sheet: "economy", segment });
-      window.history.replaceState(
-        null,
-        "",
-        withBasePath(countrySheetHref(layer.slug, "economy", segment))
-      );
-    },
-    [layer.slug]
-  );
+  const setSegment = (segment: EconomySegment) => {
+    setOpen((current) => ({ sheet: "economy", segment, pushed: current?.pushed ?? false }));
+    window.history.replaceState(
+      null,
+      "",
+      withBasePath(countrySheetHref(layer.slug, "economy", segment))
+    );
+  };
 
   return (
     <>

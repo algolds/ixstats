@@ -138,7 +138,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
 
           <div className="bg-fill-2 h-1.5 w-full overflow-hidden rounded-full">
             <div
-              className={`h-full rounded-full ${healthTheme.bar} transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300`}
+              className={`h-full rounded-full ${healthTheme.bar} transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300`}
               style={{ width: `${healthReport.score}%` }}
             />
           </div>
@@ -191,7 +191,7 @@ export function LexiconExplorer({ words }: LexiconExplorerProps) {
             </div>
             <div className="bg-fill-2 h-1.5 w-full overflow-hidden rounded-full">
               <div
-                className={`bg-tint h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300`}
+                className={`bg-tint h-full rounded-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300`}
                 style={{ width: `${diversityInfo.pct}%` }}
               />
             </div>

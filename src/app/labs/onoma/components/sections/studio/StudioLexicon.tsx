@@ -126,7 +126,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
   };
 
   return (
-    <div className="animate-in fade-in grid items-start gap-6 duration-300 lg:grid-cols-12">
+    <div className="grid items-start gap-6 lg:grid-cols-12">
       {/* Left Column: Terms List (4/12) */}
       <div className="space-y-4 lg:col-span-4">
         <Card variant="well" padding="none" className="space-y-4 p-4">
@@ -164,7 +164,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     key={name}
                     onClick={() => setSelectedTerm(name)}
                     className={cn(
-                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none",
+                      "group rounded-row flex w-full cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 select-none",
                       isSelected
                         ? "text-label border-tint/30 bg-tint/10"
                         : "bg-background hover:bg-fill-4 border-separator text-label"
@@ -215,11 +215,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       {/* Right Column: Selected Term Details (8/12) */}
       <div className="lg:col-span-8">
         {selectedTerm ? (
-          <Card
-            variant="well"
-            padding="none"
-            className="animate-in fade-in space-y-6 p-5 duration-300"
-          >
+          <Card variant="well" padding="none" className="space-y-6 p-5">
             <div className="border-separator flex items-start justify-between border-b pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">

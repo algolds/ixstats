@@ -1,6 +1,7 @@
 "use client";
 
 import { MYCOUNTRY_ECONOMY_PATH } from "~/lib/mycountry/routes";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import React from "react";
 import { CollapsibleSection } from "./CollapsibleSection";
 import {
@@ -62,6 +63,9 @@ function UnemploymentBadge({ rate }: { rate: number }) {
 
 type Labor = NonNullable<NonNullable<DataTabProps["economyData"]>["labor"]>;
 type SectionProps = { labor: Labor; section: ReturnType<typeof useAccordion> };
+/** "Estimated from the economy" when the unemployment shown is the estimate, else the usual detail. */
+const unemploymentDetail = (estimated: boolean, usual: string) =>
+  estimated ? ESTIMATED_FIGURE_NOTE : usual;
 
 function LaborMetrics({
   country,
@@ -70,10 +74,11 @@ function LaborMetrics({
   metricView,
   setMetricViewAction,
   openMetricModalAction,
+  unemploymentEstimated,
 }: Pick<
   DataTabProps,
   "country" | "metricView" | "setMetricViewAction" | "openMetricModalAction"
-> & { labor: Labor; currency: string }) {
+> & { labor: Labor; currency: string; unemploymentEstimated: boolean }) {
   const participation = formatPercent(labor?.laborForceParticipationRate ?? 0);
   const unemploymentRate = labor?.unemploymentRate ?? 0;
   const openMetric = (metric: MetricType) => () => openMetricModalAction(metric, country.id);
@@ -96,7 +101,11 @@ function LaborMetrics({
         valueKey={metricView.employment}
         value={formatPercent((isEmployed ? labor?.employmentRate : unemploymentRate) ?? 0)}
         aside={<UnemploymentBadge rate={unemploymentRate} />}
-        detail={isEmployed ? "Active employment share" : "Seeking employment"}
+        detail={
+          isEmployed
+            ? "Active employment share"
+            : unemploymentDetail(unemploymentEstimated, "Seeking employment")
+        }
         onToggle={() => toggleView(setMetricViewAction, "employment", "employed", "unemployed")}
         onValueClick={openMetric(isEmployed ? "employment" : "unemployment")}
       />
@@ -115,7 +124,11 @@ function LaborMetrics({
   );
 }
 
-function WorkforceSection({ labor, section }: SectionProps) {
+function WorkforceSection({
+  labor,
+  section,
+  unemploymentEstimated,
+}: SectionProps & { unemploymentEstimated: boolean }) {
   const totalWorkforce = labor?.totalWorkforce ?? 0;
   return (
     <CollapsibleSection icon={Users} title="Workforce overview" {...section("workforce")}>
@@ -140,7 +153,7 @@ function WorkforceSection({ labor, section }: SectionProps) {
           {
             label: "Unemployment",
             value: formatPercent(labor?.unemploymentRate ?? 0),
-            detail: "Actively seeking",
+            detail: unemploymentDetail(unemploymentEstimated, "Actively seeking"),
           },
         ]}
       />
@@ -289,6 +302,7 @@ export function LaborTab({
   const currency = country?.nationalIdentity?.currency || "USD";
   const labor = economyData?.labor;
   if (!labor) return null;
+  const unemploymentEstimated = economyData?.estimated?.unemploymentRate ?? false;
 
   return (
     <TabShell
@@ -309,10 +323,15 @@ export function LaborTab({
           metricView={metricView}
           setMetricViewAction={setMetricViewAction}
           openMetricModalAction={openMetricModalAction}
+          unemploymentEstimated={unemploymentEstimated}
         />
       }
     >
-      <WorkforceSection labor={labor} section={section} />
+      <WorkforceSection
+        labor={labor}
+        section={section}
+        unemploymentEstimated={unemploymentEstimated}
+      />
       <CompensationSection labor={labor} section={section} currency={currency} />
       <HumanCapitalSection
         labor={labor}

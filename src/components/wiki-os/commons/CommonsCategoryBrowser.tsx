@@ -1,7 +1,7 @@
 "use client";
 
 import { useDebounce } from "~/hooks/useDebounce";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   NavArrowRight as ChevronRight,
   NavArrowDown as ChevronDown,
@@ -265,6 +265,32 @@ const mapLocalCategories = (categoriesList: Array<{ name: string; fileCount: num
   return activeGroups;
 };
 
+type Expansion = { expanded: Record<string, boolean>; groups: Record<string, boolean> };
+
+/** A new wiki source or newly loaded groups: folders closed, the first group open. */
+const resetExpansion = (
+  groups: CategoryGroup[],
+  openGroups: Record<string, boolean>
+): Expansion => ({
+  expanded: {},
+  groups: groups.length > 0 ? { [groups[0]!.label]: true } : openGroups,
+});
+
+/** The browsed category's folder and the group holding it are opened. */
+const expandForBrowsing = (
+  state: Expansion,
+  browsingCategory: string | null,
+  groups: CategoryGroup[]
+): Expansion => {
+  const parentGroup =
+    browsingCategory && groups.find((g) => g.categories.includes(browsingCategory));
+  if (!browsingCategory || !parentGroup) return state;
+  return {
+    expanded: { ...state.expanded, [browsingCategory]: true },
+    groups: { ...state.groups, [parentGroup.label]: true },
+  };
+};
+
 interface CommonsCategoryBrowserProps {
   activeCategories: string[];
   browsingCategory: string | null;
@@ -300,41 +326,27 @@ export function CommonsCategoryBrowser({
     return mapLocalCategories(localDynamicCats || []);
   }, [isCommons, localDynamicCats]);
 
-  const allCats = useMemo(() => {
-    return groups.flatMap((g) => g.categories);
-  }, [groups]);
-
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedQuery = useDebounce(searchQuery, 300);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState(
+    () => expandForBrowsing(resetExpansion(groups, {}), browsingCategory, groups).expanded
+  );
+  const [expandedGroups, setExpandedGroups] = useState(
+    () => expandForBrowsing(resetExpansion(groups, {}), browsingCategory, groups).groups
+  );
 
-  // Reset expansion states when wiki source changes or groups load
-  useEffect(() => {
-    if (groups && groups.length > 0) {
-      // oxlint-disable-next-line
-      setExpandedGroups({ [groups[0]!.label]: true });
-    }
-    setExpanded({});
-    // oxlint-disable-next-line
-  }, [wiki, groups]);
-
-  // Auto-expand parent category and group if browsingCategory is selected
-  useEffect(() => {
-    if (!browsingCategory) return;
-
-    // Auto-expand the main category folder
-    if (allCats.includes(browsingCategory)) {
-      // oxlint-disable-next-line
-      setExpanded((prev) => ({ ...prev, [browsingCategory]: true }));
-    }
-
-    // Auto-expand the parent group that contains the browsingCategory
-    const parentGroup = groups.find((g) => g.categories.includes(browsingCategory));
-    if (parentGroup) {
-      setExpandedGroups((prev) => ({ ...prev, [parentGroup.label]: true }));
-    }
-  }, [browsingCategory, groups, allCats]);
+  // Reset expansion when the wiki source changes or groups load, then open the browsed category
+  const [seen, setSeen] = useState({ wiki, groups, browsingCategory });
+  if (seen.wiki !== wiki || seen.groups !== groups || seen.browsingCategory !== browsingCategory) {
+    const sourceChanged = seen.wiki !== wiki || seen.groups !== groups;
+    const base = sourceChanged
+      ? resetExpansion(groups, expandedGroups)
+      : { expanded, groups: expandedGroups };
+    const next = expandForBrowsing(base, browsingCategory, groups);
+    setSeen({ wiki, groups, browsingCategory });
+    setExpanded(next.expanded);
+    setExpandedGroups(next.groups);
+  }
 
   const isSearching = debouncedQuery.length >= 2;
 

@@ -6,17 +6,30 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "~/lib/utils/cn";
 import { SurfaceReset } from "~/components/ui/card";
 
+/** True under a TooltipProvider, so a Tooltip joins it and neighbours share the skip delay. */
+const HasTooltipProvider = React.createContext(false);
+
 function TooltipProvider({
-  delayDuration = 0,
+  delayDuration = 500,
+  skipDelayDuration = 300,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Provider>) {
   return (
-    <TooltipPrimitive.Provider
-      data-slot="tooltip-provider"
-      delayDuration={delayDuration}
-      {...props}
-    />
+    <HasTooltipProvider.Provider value>
+      <TooltipPrimitive.Provider
+        data-slot="tooltip-provider"
+        delayDuration={delayDuration}
+        skipDelayDuration={skipDelayDuration}
+        {...props}
+      />
+    </HasTooltipProvider.Provider>
   );
+}
+
+/** Radix needs a provider; standalone renders (tests, detached portals) get their own. */
+function EnsureTooltipProvider({ children }: { children: React.ReactNode }) {
+  const hasProvider = React.useContext(HasTooltipProvider);
+  return hasProvider ? children : <TooltipProvider>{children}</TooltipProvider>;
 }
 
 interface TooltipProps extends React.ComponentProps<typeof TooltipPrimitive.Root> {
@@ -57,7 +70,7 @@ function Tooltip({
   // If content is passed as a prop, render full compound structure automatically
   if (content !== undefined) {
     return (
-      <TooltipProvider>
+      <EnsureTooltipProvider>
         <TooltipPrimitive.Root data-slot="tooltip" {...props}>
           <TooltipPrimitive.Trigger asChild data-slot="tooltip-trigger">
             {typeof children === "string" ? (
@@ -70,30 +83,28 @@ function Tooltip({
             <div className="flex items-center gap-2">
               <span>{content}</span>
               {shortcut && (
-                <kbd className="pointer-events-none inline-flex h-4 items-center gap-0.5 rounded-control-sm bg-fill-3 px-1 text-caption text-label-secondary select-none">
+                <kbd className="rounded-control-sm bg-fill-3 text-caption text-label-secondary pointer-events-none inline-flex h-4 items-center gap-0.5 px-1 select-none">
                   {shortcut}
                 </kbd>
               )}
             </div>
           </TooltipContent>
         </TooltipPrimitive.Root>
-      </TooltipProvider>
+      </EnsureTooltipProvider>
     );
   }
 
   return (
-    <TooltipProvider>
+    <EnsureTooltipProvider>
       <TooltipPrimitive.Root data-slot="tooltip" {...props}>
         {children}
       </TooltipPrimitive.Root>
-    </TooltipProvider>
+    </EnsureTooltipProvider>
   );
 }
 
 function TooltipTrigger({ ...props }: React.ComponentProps<typeof TooltipPrimitive.Trigger>) {
-  return (
-    <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
-  );
+  return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
 }
 
 function TooltipContent({
@@ -112,6 +123,8 @@ function TooltipContent({
           "facet-overlay text-label",
           // Radix tooltips open with data-state="delayed-open" / "instant-open".
           "animate-facet-in data-[state=closed]:animate-facet-out",
+          // A neighbour opened inside the skip delay appears at once, with no pop.
+          "data-[state=instant-open]:animate-none",
           className
         )}
         {...props}

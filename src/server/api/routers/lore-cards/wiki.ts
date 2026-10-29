@@ -1,3 +1,4 @@
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { z } from "zod";
 import { createTRPCRouter, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { wikiLoreCardGenerator } from "~/lib/wiki-os/adapters/ixstates/lore-card-generator";
@@ -9,6 +10,7 @@ export const loreCardsWikiRouter = createTRPCRouter({
    * history from its wiki, so it is rate limited: an anonymous caller cannot make the server hammer a sister wiki.
    */
   getCardAuthorInfo: rateLimitedPublicProcedure
+    .use(iiwikiFeatureMiddleware("cards"))
     .input(
       z.object({
         articleTitle: z.string().min(1),

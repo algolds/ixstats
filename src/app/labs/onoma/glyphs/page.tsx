@@ -469,7 +469,7 @@ export default function OnomaGlyphsDevPage() {
             return (
               <div
                 key={glyph.name}
-                className="group border-separator bg-fill-4 hover:border-separator hover:bg-fill-3 rounded-card shadow-card relative flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200"
+                className="group border-separator bg-fill-4 hover:border-separator hover:bg-fill-3 rounded-card shadow-card relative flex flex-col justify-between border p-5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span

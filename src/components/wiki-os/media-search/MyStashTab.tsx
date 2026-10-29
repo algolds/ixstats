@@ -16,6 +16,7 @@ import { publicArticleUrl } from "~/lib/wiki-os/config";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import type { CommonsImage } from "./types";
 import { Button } from "~/components/ui/button";
+import { iiwikiImageSrc } from "~/lib/wiki-os/sister-media";
 
 interface MyStashTabProps {
   selectedImageObj: CommonsImage | null;
@@ -132,8 +133,8 @@ export function MyStashTab({
     if (!match) continue;
     addImage({
       title: match.title,
-      thumbUrl: match.thumbUrl || match.url,
-      url: match.url,
+      thumbUrl: iiwikiImageSrc(match.thumbUrl || match.url),
+      url: iiwikiImageSrc(match.url),
       descriptionUrl: publicArticleUrl(match.title, "iiwiki"),
       width: match.width || 0,
       height: match.height || 0,
@@ -257,7 +258,7 @@ export function MyStashTab({
                       setStashViewMode("images");
                       setStashSearchQuery("");
                     }}
-                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-150 select-none active:scale-[0.98]"
+                    className="group border-separator rounded-row bg-surface hover:bg-fill-3 hover:border-separator flex cursor-pointer items-center justify-between border p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150 select-none active:scale-[0.98]"
                   >
                     <span className="flex min-w-0 items-center gap-2">
                       <Folder className="h-5 w-5 shrink-0" style={{ color: stash.color }} />
@@ -301,7 +302,7 @@ export function MyStashTab({
                       onClick={() => onSelectImage(img)}
                       onDoubleClick={onDoubleClickConfirm}
                       className={cn(
-                        "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.98]",
+                        "group rounded-control bg-surface relative flex cursor-pointer flex-col overflow-hidden border text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 select-none active:scale-[0.98]",
                         isSelected
                           ? "border-tint ring-tint/30 shadow-card ring-2"
                           : "border-separator hover:border-separator"

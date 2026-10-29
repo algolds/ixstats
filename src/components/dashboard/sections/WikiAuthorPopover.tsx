@@ -99,7 +99,7 @@ export function WikiAuthorPopover({ username }: { username: string }) {
               ))}
               {!author?.country && !isLoading && (
                 <span className="text-label-secondary text-footnote px-2 py-0.5">
-                  No linked IxStats country
+                  No linked IxStates country
                 </span>
               )}
             </div>

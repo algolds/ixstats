@@ -21,6 +21,7 @@ import type { EditorAnchor } from "~/lib/mycountry/routes";
 import { EditorProvider, type EditorState } from "./editor-context";
 import { governmentFormOf, identityValuesOf, withSection } from "./editor-state";
 import { ElsewhereSection } from "./ElsewhereSection";
+import { FiguresSection } from "./FiguresSection";
 import { GovernmentFormSection } from "./GovernmentFormSection";
 import { IdentitySection } from "./IdentitySection";
 import { InstitutionsSection } from "./InstitutionsSection";
@@ -147,6 +148,7 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
               key={k("institutions", state.governmentComponents)}
               components={state.governmentComponents}
               storedEffectiveness={state.governmentStructure?.governmentEffectiveness ?? null}
+              effectiveness={state.effectiveness}
             />
           ),
         },
@@ -169,6 +171,25 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
                 baselinePopulation: state.baselinePopulation,
                 baselineGdpPerCapita: state.baselineGdpPerCapita,
               }}
+            />
+          ),
+        },
+        {
+          id: "figures",
+          label: "Economic figures",
+          node: (
+            <FiguresSection
+              key={k("figures", [
+                state.inflationRate,
+                state.unemploymentRate,
+                state.totalDebtGDPRatio,
+              ])}
+              stored={{
+                inflationRate: state.inflationRate,
+                unemploymentRate: state.unemploymentRate,
+                totalDebtGDPRatio: state.totalDebtGDPRatio,
+              }}
+              estimates={state.figureEstimates}
             />
           ),
         },

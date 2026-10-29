@@ -40,13 +40,13 @@ export const helpSections: HelpSection[] = [
   {
     id: "getting-started",
     title: "Start Here",
-    description: "New to IxStats? Start with these.",
+    description: "New to IxStates? Start with these.",
     icon: "sparkles",
     articles: [
       {
         id: "welcome",
-        title: "Welcome to IxStats",
-        description: "What IxStats is, what you do here, and where to go first.",
+        title: "Welcome to IxStates",
+        description: "What IxStates is, what you do here, and where to go first.",
         path: "/help/getting-started/welcome",
         tags: ["basics", "intro", "nationstates"],
       },

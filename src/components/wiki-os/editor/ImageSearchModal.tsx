@@ -1,7 +1,7 @@
 "use client";
 // Modal for searching, uploading, and inserting images into the wiki editor.
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
 import {
   attributionLine,
@@ -42,7 +42,12 @@ const MAX_SIZE_MB = MAX_UPLOAD_BYTES / 1_000_000;
 /** Select items cannot carry an empty value; "Full size" is the empty wikitext size. */
 const FULL_SIZE = "full";
 
-export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
+/** Mounted only while open, so every opening starts from a fresh form. */
+export function ImageSearchModal(props: ImageSearchModalProps) {
+  return props.isOpen ? <ImageSearchModalContent {...props} /> : null;
+}
+
+function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
   const [tab, setTab] = useState<ModalTab>("search");
   const [selected, setSelected] = useState<ImageResult | null>(null);
   const [caption, setCaption] = useState("");
@@ -60,25 +65,6 @@ export function ImageSearchModal({ isOpen, onClose, onInsert }: ImageSearchModal
   /** MediaWiki's warnings for this upload, as sentences: the uploader may go on anyway. */
   const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Reset state when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      // oxlint-disable-next-line
-      setSelected(null);
-      setCaption("");
-      setSize("thumb");
-      setAlign("right");
-      setTab("search");
-      setUploadFile(null);
-      setUploadFilename("");
-      setUploadDescription("");
-      setUploadLicense("");
-      setUploadPreview(null);
-      setUploadError(null);
-      setUploadWarnings([]);
-    }
-  }, [isOpen]);
 
   const handleInsert = useCallback(() => {
     if (!selected) return;

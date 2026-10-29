@@ -12,7 +12,7 @@ nextLabel: Blurbs
 
 The forum is the community's discussion space, built into ThinkPages at [/thinkpages](/thinkpages). Signed in, it is **ThinkPages** under Home in the sidebar; signed out, open it at [/thinkpages](/thinkpages) or from any link to a thread. Anyone can read the public categories. To start a thread or reply you need to be signed in, and some places have extra rules, described below.
 
-The older forum on a separate site (forum.ixwiki.com) no longer takes posts, and IxStats' old `/forum` pages are gone (see [Old links](#old-links)); this article is about the forum at /thinkpages.
+The older forum on a separate site (forum.ixwiki.com) no longer takes posts, and IxStates' old `/forum` pages are gone (see [Old links](#old-links)); this article is about the forum at /thinkpages.
 
 The forum home lists the sitewide categories first (Rules, Announcements, Reports, Find a Realm, General and Side Games), then a section for one realm with a switcher to pick another. Each realm section has its own categories: Hub for out-of-character talk, and Character Threads and Current Events for in-character writing.
 
@@ -82,15 +82,15 @@ Once the old forum has been copied here:
 
 - **Imported threads** say "Imported from the old forum." under the title, and are tagged **Imported** in thread lists.
 - **Where they live:** threads from boards that matched a category here sit in that category and take replies like any other thread. Threads from every other old board sit in a category under **From the old forum** on the forum home. Those categories are read-only for members, so you can read them but not reply or start threads there. The team can still post in them. If a post there is attributed to your account, you can still edit it, as you can any of your own posts in an open thread; once a thread is locked or archived, edits are closed.
-- **Names:** a post written by someone whose old forum account was linked to an IxStats account when the posts were copied shows that member's IxStats name. Any other post keeps the name from the old forum, as plain text, with no profile behind it.
+- **Names:** a post written by someone whose old forum account was linked to an IxStates account when the posts were copied shows that member's IxStates name. Any other post keeps the name from the old forum, as plain text, with no profile behind it.
 
 ### Getting your posts attributed
 
-Linking an old forum account to your IxStats account is managed by staff. Ask in a thread in Reports: give your old forum username, and staff will link the account in the admin users panel, which attributes your imported posts straight away. [Settings](/settings) → **IxnayID & passport** → **Linked accounts** shows your old forum account once it is linked ("Imported as" your old name), but you cannot change it there. See [IxnayID & Your Passport](/help/getting-started/ixnayid#old-forum-posts).
+Linking an old forum account to your IxStates account is managed by staff. Ask in a thread in Reports: give your old forum username, and staff will link the account in the admin users panel, which attributes your imported posts straight away. [Settings](/settings) → **IxnayID & passport** → **Linked accounts** shows your old forum account once it is linked ("Imported as" your old name), but you cannot change it there. See [IxnayID & Your Passport](/help/getting-started/ixnayid#old-forum-posts).
 
 ### Old links
 
-IxStats' old forum pages (`/forum/...`) are gone, so links to them open nothing; a copied thread sits in the category described under **Where they live** above. Links to the old forum's own site (forum.ixwiki.com) open its read-only pages until that site is switched off; after that, its front page opens the forum here and its other pages are gone. Inside copied posts, links to either old forum open the copied thread, post, category or member profile instead; a link to something that was not copied, or that only some members can see, shows as plain text.
+IxStates' old forum pages (`/forum/...`) are gone, so links to them open nothing; a copied thread sits in the category described under **Where they live** above. Links to the old forum's own site (forum.ixwiki.com) open its read-only pages until that site is switched off; after that, its front page opens the forum here and its other pages are gone. Inside copied posts, links to either old forum open the copied thread, post, category or member profile instead; a link to something that was not copied, or that only some members can see, shows as plain text.
 
 ## Good to know
 

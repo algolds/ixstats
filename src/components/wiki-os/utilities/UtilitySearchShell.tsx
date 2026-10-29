@@ -99,7 +99,7 @@ export function UtilitySearchShell({
             <div className="flex items-center gap-2">
               <Link
                 href="/util"
-                className={`group text-caption inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,transform] ${a.pill}`}
+                className={`group text-caption inline-flex cursor-pointer items-center gap-2 rounded-full border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${a.pill}`}
               >
                 <FolderTree className="h-3.5 w-3.5" />
                 <span>Special:Utilities</span>
@@ -137,7 +137,7 @@ export function UtilitySearchShell({
                   value={search.input}
                   onChange={(e) => search.setInput(e.target.value)}
                   placeholder={placeholder}
-                  className={`border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body w-full border py-3 pr-24 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,transform] focus:ring-2 focus:outline-none ${a.input}`}
+                  className={`border-separator placeholder:text-label-tertiary text-label rounded-card bg-surface text-body w-full border py-3 pr-24 pl-10 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus:ring-2 focus:outline-none ${a.input}`}
                 />
                 <Button size="sm" type="submit" className={`absolute right-2 ${a.button}`}>
                   {submitLabel}

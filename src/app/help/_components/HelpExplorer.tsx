@@ -185,7 +185,7 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
                         </div>
                         <ChevronRight
                           aria-hidden="true"
-                          className="text-muted-foreground group-hover:text-foreground h-5 w-5 shrink-0 transition-[color,transform] duration-150 group-hover:translate-x-0.5"
+                          className="text-muted-foreground group-hover:text-foreground h-5 w-5 shrink-0 transition-[color,scale,translate] duration-150 group-hover:translate-x-0.5"
                         />
                       </Card>
                     </Link>

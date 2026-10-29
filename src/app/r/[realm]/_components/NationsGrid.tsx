@@ -7,7 +7,6 @@ import {
   CountryFocusCard,
   type CountryCardData,
 } from "~/components/mycountry/dossier/CountryFocusCard";
-import { ProgressiveBlur } from "~/components/ui/magicui/progressive-blur";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -54,18 +53,16 @@ function useLoadMore(total: number) {
 
 function GridSkeleton() {
   return (
-    <ProgressiveBlur>
-      <div className={GRID}>
-        {Array.from({ length: 8 }).map((_, i) => (
-          <Card key={i} className="rounded-card flex h-60 flex-col justify-end p-5 md:h-96">
-            <div className="space-y-3">
-              <Skeleton className="h-6 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </div>
-          </Card>
-        ))}
-      </div>
-    </ProgressiveBlur>
+    <div className={GRID}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Card key={i} className="rounded-card flex h-60 flex-col justify-end p-5 md:h-96">
+          <div className="space-y-3">
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 }
 

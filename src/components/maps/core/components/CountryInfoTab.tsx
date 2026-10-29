@@ -8,6 +8,7 @@ import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button } from "~/components/ui/button";
 import { WikiAnchor, WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
 import { Eyebrow } from "~/components/ui/eyebrow";
+import { iiwikiImageSrc } from "~/lib/wiki-os/sister-media";
 
 interface CountryInfoTabProps {
   wikiRichIntro: any;
@@ -107,11 +108,11 @@ export function CountryInfoTab({
             {wikiImages.slice(0, 12).map((img, i) => (
               <button
                 key={`${img.title}-${i}`}
-                onClick={() => setLightboxSrc(img.url)}
+                onClick={() => setLightboxSrc(iiwikiImageSrc(img.url))}
                 className="border-separator rounded-control-sm shrink-0 overflow-hidden border transition-transform hover:scale-105"
               >
                 <img
-                  src={img.thumbUrl}
+                  src={iiwikiImageSrc(img.thumbUrl)}
                   alt={img.title.replace(/^File:/, "").replace(/_/g, " ")}
                   className="h-16 w-auto object-cover"
                   loading="lazy"

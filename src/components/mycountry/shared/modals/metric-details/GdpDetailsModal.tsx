@@ -327,7 +327,6 @@ function GdpTrends({
     <MetricModalLayout variant="economy">
       <MetricModalLayout.MainArea>
         <MetricModalLayout.Panel
-          className=""
           contentClassName=""
           title="GDP historical trends"
           subtitle={`GDP development over time with ${data.length} data points`}
@@ -401,7 +400,6 @@ function GdpComparison({
     <MetricModalLayout variant="economy">
       <MetricModalLayout.MainArea>
         <MetricModalLayout.Panel
-          className=""
           contentClassName=""
           icon={Info}
           title="Economic tier analysis"

@@ -59,6 +59,7 @@ async function readWiki(wiki: WikiConfig, params: URLSearchParams): Promise<obje
   const response = await upstreamGuard.fetch(`${wiki.apiUrl()}?${params.toString()}`, {
     timeoutMs: UPSTREAM_TIMEOUT_MS,
     lane: "proxy",
+    feature: "proxy",
   });
   if (!response.ok) {
     await response.body?.cancel().catch(() => undefined);

@@ -180,7 +180,7 @@ export function WikiOSHeader({
     const picture = backdropRef.current?.querySelector("img");
     if (picture?.complete && picture.naturalWidth === 0 && hero && failedSrc !== hero.src) {
       // reads the DOM's state (an external system) after hydration, which no render can know
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- img.complete is only known after mount
       if (hero.src !== hero.original) setFailedSrc(hero.src);
     }
   }, [hero, failedSrc]);
@@ -192,7 +192,7 @@ export function WikiOSHeader({
   // Fires gold particle explosion on page mount for award winning articles
   useEffect(() => {
     if (awardsData?.hasLoreward) {
-      // oxlint-disable-next-line
+      // oxlint-disable-next-line react/set-state-in-effect -- starts a timed burst, cleared by the timer below
       setShowCelebration(true);
       const timer = setTimeout(() => setShowCelebration(false), 1800);
       return () => clearTimeout(timer);
@@ -291,7 +291,7 @@ export function WikiOSHeader({
                 width={hero?.width ?? undefined}
                 height={hero?.height ?? undefined}
                 alt=""
-                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300 sm:p-5 md:p-6"
+                className="h-full max-h-[85%] w-full max-w-[92%] object-contain object-center p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 sm:p-5 md:p-6"
                 {...heroMedia}
                 loading="eager"
                 fetchPriority="high"
@@ -305,7 +305,7 @@ export function WikiOSHeader({
               width={hero?.width ?? undefined}
               height={hero?.height ?? undefined}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300"
+              className="absolute inset-0 h-full w-full object-cover object-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300"
               loading="eager"
               fetchPriority="high"
               referrerPolicy="no-referrer"

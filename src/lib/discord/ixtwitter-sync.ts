@@ -661,7 +661,7 @@ function formatCodeBlockTable(results: any[]): string {
 
 /** Built per embed, not at import: the app URL is read when a link is made (app-url.ts). */
 const feedFooter = () => ({
-  text: "Shared from IxStats",
+  text: "Shared from IxStates",
   icon_url: appUrl("/thinkpages-logo.svg"),
 });
 

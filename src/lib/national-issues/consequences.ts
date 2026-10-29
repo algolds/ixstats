@@ -23,6 +23,7 @@ import {
 import type { PrismaClient } from "@prisma/client";
 import { CountryEventSpine } from "~/lib/activity";
 import { isProjectionConsequence, issueConsequenceToEffect } from "./projection-effects";
+import { pauseComponentsForStaff, SCALE_BACK_TARGET } from "./staffing";
 
 // FIELD BOUNDS
 // MODEL FIELD MAPPING
@@ -45,6 +46,9 @@ interface ResolveResult {
   recommendedDirective?: string;
   error?: string;
 }
+
+/** Statuses an issue can still be answered in (dismissed, expired and resolved issues are closed). */
+const OPEN_STATUSES = ["pending", "viewed"];
 
 // CONSEQUENCE APPLICATOR
 
@@ -78,7 +82,7 @@ export class NationalIssuesConsequences {
         return result;
       }
 
-      if (issue.status === "responded" || issue.status === "auto_resolved") {
+      if (!OPEN_STATUSES.includes(issue.status)) {
         result.error = "Issue already resolved";
         return result;
       }
@@ -100,6 +104,17 @@ export class NationalIssuesConsequences {
       }
 
       result.recommendedDirective = chosenOption.recommendedDirective;
+
+      // Claim the issue before anything applies: of concurrent responses (or a response racing a delegation)
+      // exactly one moves it out of the open statuses, and only that one applies consequences.
+      const claimed = await db.nationalIssue.updateMany({
+        where: { id: issueId, status: { in: OPEN_STATUSES } },
+        data: { status: isAutoResolve ? "auto_resolved" : "responded" },
+      });
+      if (claimed.count !== 1) {
+        result.error = "Issue already resolved";
+        return result;
+      }
 
       const currentIxTime = (await clockForCountry(db, issue.countryId)).now();
 
@@ -311,6 +326,9 @@ export class NationalIssuesConsequences {
     issueTitle: string,
     currentIxTime: number
   ): Promise<AppliedConsequence | null> {
+    if (consequence.targetModel === SCALE_BACK_TARGET) {
+      return this.applyScaleBack(consequence, countryId, db, issueId, currentIxTime);
+    }
     if (isProjectionConsequence(consequence)) {
       return this.applyProjectionConsequence(
         consequence,
@@ -360,6 +378,43 @@ export class NationalIssuesConsequences {
     });
 
     return applied;
+  }
+
+  /** "Scale back programs" (staffing shortage): pause the newest government components until the staff is freed. */
+  private static async applyScaleBack(
+    consequence: ConsequenceDefinition,
+    countryId: string,
+    db: PrismaClient,
+    issueId: string,
+    currentIxTime: number
+  ): Promise<AppliedConsequence> {
+    const { paused, freed } = await pauseComponentsForStaff(db, countryId, consequence.value);
+    const description = paused.length
+      ? `Paused ${paused.length} government program${paused.length === 1 ? "" : "s"}, freeing ${freed} executive bandwidth`
+      : "No government program left to pause";
+    await db.nationalIssueConsequence.create({
+      data: {
+        issueId,
+        targetModel: consequence.targetModel,
+        targetField: consequence.targetField,
+        previousValue: null,
+        newValue: JSON.stringify(paused),
+        deltaValue: -freed,
+        description,
+        effectType: "immediate",
+        effectDuration: null,
+        appliedIxTime: currentIxTime,
+      },
+    });
+    return {
+      targetModel: consequence.targetModel,
+      targetField: consequence.targetField,
+      previousValue: 0,
+      newValue: -freed,
+      delta: -freed,
+      description,
+      effectType: "immediate",
+    };
   }
 
   /**
@@ -429,19 +484,15 @@ export class NationalIssuesConsequences {
     const lines: string[] = [];
 
     if (isAutoResolve) {
-      lines.push(
-        "⚠ This issue was auto-resolved due to inaction. The default outcome was applied."
-      );
+      lines.push("The deadline passed without a decision, so the default outcome applied.");
       lines.push("");
     }
 
     if (failedGamble) {
-      lines.push("❌ THE RISKY CHOICE BACKFIRED!");
-      lines.push("Your gamble went wrong, causing instability and public backlash.");
+      lines.push("The gamble backfired, causing instability and public backlash.");
       lines.push("");
     } else if (option.isRisky && !isAutoResolve) {
-      lines.push("✅ THE RISKY CHOICE PAID OFF!");
-      lines.push("Your gamble succeeded, establishing order and avoiding backlash.");
+      lines.push("The gamble paid off, establishing order and avoiding backlash.");
       lines.push("");
     }
 

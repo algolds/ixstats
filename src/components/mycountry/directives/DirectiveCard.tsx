@@ -160,7 +160,7 @@ function AbandonDialog({
           <AlertDialogTitle>Abandon this directive?</AlertDialogTitle>
           <AlertDialogDescription>
             &ldquo;{goal}&rdquo; will stop executing and release the bandwidth it holds. Effects
-            already applied stay in place.
+            already applied stay in place, and a GDP effect still phasing in stops where it is.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

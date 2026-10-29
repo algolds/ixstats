@@ -112,16 +112,16 @@ it("creates a government from the budget tab once, and an owner edit sets shares
     code: "CONFLICT",
   });
 
-  // Setting a share sets its amount, and ticks the budget step
+  // Setting a share sets its amount, and ticks the budget step (a cut: the form's shares fill 100%)
   const first = created[0]!;
   await owner.setAllocation({
     countryId: "bareland",
     departmentId: first.departmentId,
-    allocatedPercent: 15,
+    allocatedPercent: 5,
   });
   expect(await db.budgetAllocation.findUniqueOrThrow({ where: { id: first.id } })).toMatchObject({
-    allocatedPercent: 15,
-    allocatedAmount: totalBudget * 0.15,
+    allocatedPercent: 5,
+    allocatedAmount: totalBudget * 0.05,
   });
   expect(await steps(lena)).toMatchObject({ budget: true, cabinet: false });
 
@@ -164,7 +164,7 @@ it("creates a government from the budget tab once, and an owner edit sets shares
     omar.removeDepartment({ countryId: "rivalland", departmentId: first.departmentId })
   ).rejects.toMatchObject({ code: "NOT_FOUND" });
   expect(await db.budgetAllocation.findUniqueOrThrow({ where: { id: first.id } })).toMatchObject({
-    allocatedPercent: 15,
+    allocatedPercent: 5,
   });
 });
 
@@ -196,14 +196,16 @@ it("moves a directive's allocation amount with its share", async () => {
   }
 });
 
-it("starts a new government's budget at the nation's revenue", async () => {
+it("starts a new government's budget at the nation's own revenue, not a revenue the client sends", async () => {
   await addNation(db as never, { id: "bareland", baselineDate: new Date(NOW - YEAR) });
   await db.governmentStructure.delete({ where: { countryId: "bareland" } });
+  // No tax rate saved: the founding revenue is the nation's one revenue figure (nationalRevenue)
+  await db.country.update({ where: { id: "bareland" }, data: { governmentRevenueTotal: 6e9 } });
   const lena = await addOwner(db as never, "lena", "bareland");
   await government(asOwner(db as never, lena)).createStructure({
     countryId: "bareland",
-    revenue: 6e9,
-  });
+    revenue: 1,
+  } as never);
   expect((await structureOf("bareland")).totalBudget).toBe(6e9);
   const created = await allocations("bareland", 2043);
   expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(6e9, 0);
@@ -250,4 +252,73 @@ it("moves the yearly budget and the budget in effect with GDP, and starts the ne
   for (const a of await allocations("testland", 2044)) {
     expect(a.allocatedAmount).toBeCloseTo((budget * a.allocatedPercent) / 100, 0);
   }
+});
+
+it("budgets departments an older builder left without a budget", async () => {
+  await addNation(db as never, { id: "kiravia", baselineDate: new Date(NOW - YEAR) });
+  const structure = await db.governmentStructure.update({
+    where: { countryId: "kiravia" },
+    data: { totalBudget: 0 },
+  });
+  await db.budgetAllocation.deleteMany({ where: { governmentStructureId: structure.id } });
+  await db.governmentDepartment.deleteMany({ where: { governmentStructureId: structure.id } });
+  for (const [name, category] of [
+    ["Defence Executive", "Defense"],
+    ["Territorial Executive", "executive"],
+  ]) {
+    await db.governmentDepartment.create({
+      data: { governmentStructureId: structure.id, name: name!, category: category! },
+    });
+  }
+  const lena = await addOwner(db as never, "lena", "kiravia");
+
+  await government(asOwner(db as never, lena)).createStructure({ countryId: "kiravia" });
+
+  const totalBudget = (await structureOf("kiravia")).totalBudget;
+  expect(totalBudget).toBeGreaterThan(0);
+  const created = await allocations("kiravia", 2043);
+  expect(created).toHaveLength(2);
+  expect(created.reduce((sum, a) => sum + a.allocatedPercent, 0)).toBeCloseTo(100, 1);
+  expect(created.reduce((sum, a) => sum + a.allocatedAmount, 0)).toBeCloseTo(totalBudget, -2);
+});
+
+it("refuses a share that would allocate more than 100%, saying what is left, but lets an over-allocated budget come down", async () => {
+  await addNation(db as never, { id: "bareland", baselineDate: new Date(NOW - YEAR) });
+  await db.governmentStructure.delete({ where: { countryId: "bareland" } });
+  const lena = await addOwner(db as never, "lena", "bareland");
+  const owner = government(asOwner(db as never, lena));
+  await owner.createStructure({ countryId: "bareland" });
+  const [first, second] = await allocations("bareland", 2043);
+
+  // The form's shares fill 100%: raising one is refused with what is left
+  await expect(
+    owner.setAllocation({
+      countryId: "bareland",
+      departmentId: first!.departmentId,
+      allocatedPercent: first!.allocatedPercent + 5,
+    })
+  ).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringMatching(/left/) });
+
+  // Free some room, then use exactly it
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: second!.departmentId,
+    allocatedPercent: second!.allocatedPercent - 5,
+  });
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: first!.departmentId,
+    allocatedPercent: first!.allocatedPercent + 5,
+  });
+
+  // A budget already over 100% (allowed before the ruling) can still be cut
+  await db.budgetAllocation.update({ where: { id: second!.id }, data: { allocatedPercent: 90 } });
+  await owner.setAllocation({
+    countryId: "bareland",
+    departmentId: second!.departmentId,
+    allocatedPercent: 80,
+  });
+  expect(
+    (await db.budgetAllocation.findUniqueOrThrow({ where: { id: second!.id } })).allocatedPercent
+  ).toBe(80);
 });

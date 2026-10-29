@@ -274,7 +274,7 @@ export function PatternDepthControl({
 
       {/* Dynamic Contextual Micro-Description if enabled */}
       {showDescription && !showHelp && (
-        <p className="text-label-secondary animate-in fade-in text-caption px-0.5 leading-relaxed font-normal duration-200">
+        <p className="text-label-secondary text-caption px-0.5 leading-relaxed font-normal">
           <strong className={cn("font-semibold", currentLevel.textClassName)}>
             {currentLevel.editorialTier}:
           </strong>{" "}

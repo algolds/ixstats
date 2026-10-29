@@ -14,6 +14,7 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { createPortal } from "react-dom";
 import { OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useHydrated } from "~/hooks/useHydrated";
 
 interface WikiPreviewTooltipProps {
   wikiTitle: string;
@@ -33,19 +34,13 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
 
   // Only fetch when visible (enabled flag)
   const { data: intro, isLoading } = api.wikios.getIntro.useQuery(
     { title: wikiTitle, wiki: "ixwiki" },
     { enabled: visible, staleTime: 5 * 60_000 }
   );
-
-  useEffect(() => {
-    // oxlint-disable-next-line
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
 
   const showTooltip = useCallback(() => {
     hoverTimerRef.current = setTimeout(() => {

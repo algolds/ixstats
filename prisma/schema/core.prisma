@@ -246,6 +246,8 @@ model User {
   wikiUsername        String?   @ignore
   lastWikiSync        DateTime? @ignore
   lastSeenAt          DateTime?
+  /// Set when the user asks to delete their account; the account-erasure cron erases it 14 days later. Null = not pending.
+  deletionRequestedAt DateTime?
   ownedCountries      Country[]                @relation("CountryOwner")
   wikiAccountLinks    WikiAccountLink[]
   wikiNameClaims      WikiNameClaim[]          @relation("WikiNameClaims")

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { FadeIn } from "~/components/ui/text-reveal";
 import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -100,17 +99,17 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
       <div className="bg-surface text-label relative min-h-[320px] w-full p-4 sm:p-5">
         <div className="relative z-10 space-y-4">
           {/* Header */}
-          <FadeIn direction="up" delay={0.1}>
+          <div>
             <div className="flex flex-wrap items-center gap-2">
               <Eyebrow>Country actions</Eyebrow>
               {country.continent && <Badge variant="default">{country.continent}</Badge>}
               {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
-          </FadeIn>
+          </div>
 
           {/* Own Country Action */}
           {isOwnCountry && (
-            <FadeIn direction="up" delay={0.15}>
+            <div>
               <Button
                 type="button"
                 onClick={handleGoToMyCountry}
@@ -121,7 +120,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                 <Crown className="h-4 w-4" />
                 Go to MyCountry dashboard
               </Button>
-            </FadeIn>
+            </div>
           )}
 
           {/* Other Country Actions */}

@@ -1,4 +1,5 @@
 /** Realms router — realm admin, realm lookup and nation claims. Logic lives in ~/server/modules/realms. */
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -155,6 +156,7 @@ export const realmsRouter = createTRPCRouter({
    * `via`: the handle of the player whose invite link they came by.
    */
   claimCountry: lightMutationProcedure
+    .use(iiwikiFeatureMiddleware("realms"))
     .input(
       z.object({
         countryId: z.string().min(1),
@@ -175,6 +177,7 @@ export const realmsRouter = createTRPCRouter({
 
   /** Claim a nation page of the realm's lore index; approval creates the realm's country (ruling E-f). */
   claimNationPage: lightMutationProcedure
+    .use(iiwikiFeatureMiddleware("realms"))
     .input(
       z.object({
         realmSlug: z.string().min(1).max(100),
@@ -225,6 +228,7 @@ export const realmsRouter = createTRPCRouter({
     .query(({ ctx, input }) => claims(ctx.db).listClaims(ctx.user, input.status)),
 
   reviewClaim: rateLimitedMutationProcedure
+    .use(iiwikiFeatureMiddleware("realms"))
     .input(
       z.object({
         claimId: z.string().min(1),

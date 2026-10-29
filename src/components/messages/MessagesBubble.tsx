@@ -363,7 +363,7 @@ function MessageBody({
   return (
     <div
       className={cn(
-        "text-callout relative overflow-hidden px-4 py-2 break-words transition-[color,background-color,border-color,box-shadow,opacity,transform]",
+        "text-callout relative overflow-hidden px-4 py-2 break-words transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
         isOwn
           ? "rounded-card rounded-br-control-sm bg-tint text-on-tint selection:bg-on-tint selection:text-tint"
           : "border-separator bg-surface-secondary text-label rounded-card rounded-bl-control-sm border",

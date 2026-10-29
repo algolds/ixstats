@@ -63,7 +63,7 @@ const CommonsCard = memo(function CommonsCard({
       className={cn(
         "wikios-commons-card group relative text-left select-none",
         "focus-visible:ring-tint focus-visible:ring-2 focus-visible:outline-none",
-        "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]",
+        "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 active:scale-[0.98]",
         isSelected && "wikios-commons-card--selected"
       )}
       style={{ contentVisibility: "auto", containIntrinsicSize: "auto 200px" }}
@@ -89,7 +89,7 @@ const CommonsCard = memo(function CommonsCard({
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
             className={cn(
-              "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-300",
+              "h-full w-full object-cover transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
               imageLoaded || placeholder ? "opacity-100" : "opacity-0"
             )}
           />
@@ -189,7 +189,7 @@ function LoadMore({ onLoadMore }: { onLoadMore?: () => void }) {
         variant="outline"
         size="sm"
         onClick={onLoadMore}
-        className="border-separator text-footnote hover:bg-fill-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+        className="border-separator text-footnote hover:bg-fill-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
       >
         Load more images
       </Button>

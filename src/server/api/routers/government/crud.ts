@@ -8,6 +8,7 @@ import {
 } from "~/server/shared/country-authorization";
 import { countryBudgetYear, rollBudgetForward } from "~/lib/government/budget-allocations";
 import { redactGovernmentBudget } from "~/lib/country/public-record";
+import { withEffectiveGovernance } from "~/lib/government/soft-scores-store";
 
 export const governmentCrudRouter = createTRPCRouter({
   /**
@@ -69,8 +70,10 @@ export const governmentCrudRouter = createTRPCRouter({
         return null;
       }
 
-      if (await hasCountryWriteAccess(ctx, countryId)) return governmentStructure;
-      return redactGovernmentBudget(governmentStructure);
+      // Governance scores as every reader shows them: derived from the sim plus the stored offset.
+      const structure = await withEffectiveGovernance(ctx.db, countryId, governmentStructure);
+      if (await hasCountryWriteAccess(ctx, countryId)) return structure;
+      return redactGovernmentBudget(structure);
     }),
 
   // Full government structure without limits (admin/export, the budget dashboard); the budget

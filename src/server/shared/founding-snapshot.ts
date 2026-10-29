@@ -39,8 +39,9 @@ import {
 } from "~/lib/builder/founding-bands";
 import {
   calculateStabilityMetrics,
-  stabilityInputsFromStored,
+  stabilityFormulaArgs,
 } from "~/lib/statecraft/stability-formulas";
+import { effectiveSoftScores, stabilityBudget } from "~/lib/government/soft-scores";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
 import { IxTime } from "~/lib/ixtime";
 import { getEconomicTierFromGdpPerCapita, getPopulationTierFromPopulation } from "~/lib/tier-utils";
@@ -917,6 +918,11 @@ export function inferFormId(componentTypes: readonly string[]): string {
  * `NEW_COMPONENT_EFFECTIVENESS`), so the preview shows the number the save writes.
  */
 export function foundingGovernmentEffectiveness(components: GovernmentComponentInput[]): number {
+  return governmentEffectiveness(foundingComponentRecords(components));
+}
+
+/** The component rows `syncGovernmentComponents` creates for a new nation's components. */
+function foundingComponentRecords(components: GovernmentComponentInput[]): ScoredComponent[] {
   const records: ScoredComponent[] = [];
   for (const comp of components) {
     if (records.some((r) => r.componentType === comp.componentType)) continue;
@@ -925,7 +931,7 @@ export function foundingGovernmentEffectiveness(components: GovernmentComponentI
       effectivenessScore: comp.effectivenessScore ?? NEW_COMPONENT_EFFECTIVENESS,
     });
   }
-  return governmentEffectiveness(records);
+  return records;
 }
 
 /** The component set a government form starts with; empty for an unknown form id. */
@@ -1155,52 +1161,86 @@ export interface FoundedCountryFigures {
   taxRevenueGDPPercent: number;
 }
 
+/** The government a new nation founds with, as the stability formula reads it. */
+export interface FoundingGovernment {
+  governmentType: string | null;
+  components: ScoredComponent[];
+  /** Percent of the budget per department category. */
+  budgetShares: Record<string, number> | null;
+}
+
+/** Budget shares (percent per category) of a form's starting departments. */
+export function foundingBudgetShares(formId: string): Record<string, number> {
+  const shares: Record<string, number> = {};
+  for (const dept of departmentsForForm(formId)) {
+    shares[dept.category] = (shares[dept.category] ?? 0) + dept.spendingShare * 100;
+  }
+  return shares;
+}
+
 /**
  * Stability of a just-founded nation: `calculateStabilityMetrics` with the inputs
  * `computeFormulaStability` (lib/statecraft/stability-store) assembles for a country, read from
- * the founded columns. A new nation has no economic profile, demographics diversity, political
- * metrics or recent policies yet, so those take the same fallbacks and schema defaults the
- * store would read (corruption 30, diversity 50, political stability 50, polarization 50,
- * democracy index 50, election cycle 4).
+ * the founded columns. Governance is the soft-score model's for the founded government (no
+ * stored offsets yet); a new nation has no demographics diversity or recent policies, so those
+ * take the store's fallbacks (diversity 50, election cycle 4).
  */
-export function foundingStability(country: FoundedCountryFigures): number {
+/**
+ * A just-founded nation's governance scores: the soft-score model's for the founded government with
+ * no stored offsets yet. Effectiveness is the component computation the save writes, or the derived
+ * value when there are no components.
+ */
+export function foundingGovernance(
+  country: FoundedCountryFigures,
+  government: FoundingGovernment = { governmentType: null, components: [], budgetShares: null }
+) {
+  return effectiveSoftScores(
+    {
+      gdpPerCapita: country.currentGdpPerCapita,
+      growthPercent: country.adjustedGdpGrowth * 100,
+      unemploymentRate: country.unemploymentRate,
+      inflationRate: country.inflationRate,
+      giniPoints:
+        country.incomeInequalityGini > 1
+          ? country.incomeInequalityGini
+          : country.incomeInequalityGini * 100,
+      publicApproval: null,
+      ...government,
+    },
+    {}
+  );
+}
+
+export function foundingStability(
+  country: FoundedCountryFigures,
+  government: FoundingGovernment = { governmentType: null, components: [], budgetShares: null }
+): number {
   const population = country.currentPopulation;
-  const units = stabilityInputsFromStored({
-    gdpGrowthDecimal: country.adjustedGdpGrowth,
-    gini: country.incomeInequalityGini,
-    politicalStability: 50,
-  });
+  const governance = foundingGovernance(country, government);
   return calculateStabilityMetrics(
-    {
-      gdpGrowth: units.gdpGrowth,
+    ...stabilityFormulaArgs({
+      gdpGrowthDecimal: country.adjustedGdpGrowth,
+      gini: country.incomeInequalityGini,
       unemploymentRate: country.unemploymentRate ?? 5.0,
-      giniIndex: units.giniIndex,
       inflationRate: country.inflationRate ?? 2.0,
-      gdpPerCapita: country.currentGdpPerCapita ?? 35000,
-      povertyRate: country.povertyRate ?? 12,
-    },
-    {
-      policingBudget: population * 200,
-      educationBudget: population * 1500,
-      socialServicesBudget: population * 800,
-      totalBudget: population * 5000,
-      corruptionIndex: 30,
-    },
-    {
+      gdpPerCapita: country.currentGdpPerCapita,
+      povertyRate: country.povertyRate,
       population,
-      ethnicDiversity: 50,
-      religiousDiversity: 50,
-      urbanizationRate: country.urbanPopulationPercent ?? 75,
-      youthUnemployment: (country.unemploymentRate ?? 5) * 2,
-      populationDensity: country.populationDensity ?? 100,
-    },
-    {
-      politicalStability: units.politicalStability,
-      politicalPolarization: 50,
-      electionCycle: 4,
-      democracyIndex: 50,
-      protestFrequency: 8,
-    },
+      urbanPopulationPercent: country.urbanPopulationPercent,
+      populationDensity: country.populationDensity ?? null,
+      ethnicDiversity: null,
+      religiousDiversity: null,
+      governance,
+      electionCycle: null,
+      publicApproval: null,
+      budget: stabilityBudget({
+        population,
+        gdpPerCapita: country.currentGdpPerCapita,
+        totalBudget: country.totalGovernmentSpending,
+        taxRevenueGDPPercent: country.taxRevenueGDPPercent,
+        budgetShares: government.budgetShares,
+      }),
+    }),
     []
   ).stabilityScore;
 }
@@ -1375,6 +1415,11 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
     populationDensity: landArea ? base.population / landArea : undefined,
     maxGdpGrowthRate: FOUNDING_MAX_GDP_GROWTH,
   };
+  const foundingGovernment: FoundingGovernment = {
+    governmentType: governmentTypeForForm(governmentFormId) ?? null,
+    components: foundingComponentRecords(governmentComponents),
+    budgetShares: foundingBudgetShares(governmentFormId),
+  };
   const writtenBudget = Number(structureFields(governmentStructure).totalBudget) || 0;
   const spending = writtenBudget > 0 ? writtenBudget : numbers.totalGovernmentSpending;
   const balance = round2(((numbers.governmentRevenueTotal - spending) / base.nominalGDP) * 100);
@@ -1399,8 +1444,14 @@ export function computeFoundingSnapshot(input: FoundingSnapshotInput): FoundingS
       population: base.population,
       budgetBalancePercentOfGdp: balance,
       budgetBalanceLabel: budgetBalanceLabel(balance),
-      stability: foundingStability(figures),
-      governmentEffectiveness: round2(foundingGovernmentEffectiveness(governmentComponents)),
+      stability: foundingStability(figures, foundingGovernment),
+      // What the save stores (the component computation), or with no components the derived value
+      // MyCountry then shows (the save stores the seeded default, no offset)
+      governmentEffectiveness: round2(
+        foundingGovernment.components.length > 0
+          ? foundingGovernmentEffectiveness(governmentComponents)
+          : foundingGovernance(figures, foundingGovernment).governmentEffectiveness
+      ),
       expectedGrowth: foundingExpectedGrowth(
         figures,
         governmentComponents.filter((c) => c.isActive !== false).map((c) => c.componentType),

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { ESTIMATED_FIGURE_NOTE } from "~/lib/economy/country-relations";
 import {
   Bank as Landmark,
   Dollar as DollarSign,
@@ -39,7 +40,7 @@ type DebtViewProps = Pick<EconomicData, "countryData"> & {
   fiscal: NonNullable<EconomicData["economyData"]>["fiscal"] | undefined;
 };
 
-function DebtOverview({ fiscal, countryData }: DebtViewProps) {
+function DebtOverview({ fiscal, countryData, estimated }: DebtViewProps & { estimated: boolean }) {
   const debtToGdp = fiscal?.totalDebtGDPRatio || 0;
   const interest = fiscal?.debtServiceCosts || 0;
   const gdp = countryData?.currentTotalGdp || 0;
@@ -98,7 +99,7 @@ function DebtOverview({ fiscal, countryData }: DebtViewProps) {
           variant="economy"
         />
         <MetricModalLayout.StatCard
-          label="Debt-to-GDP"
+          label={estimated ? `Debt-to-GDP (${ESTIMATED_FIGURE_NOTE.toLowerCase()})` : "Debt-to-GDP"}
           value={debtToGdp}
           suffix="%"
           decimalPlaces={1}
@@ -193,7 +194,13 @@ export function DebtAnalysisModal({
   const fiscal = economyData?.fiscal;
 
   const tabs = {
-    overview: <DebtOverview fiscal={fiscal} countryData={countryData} />,
+    overview: (
+      <DebtOverview
+        fiscal={fiscal}
+        countryData={countryData}
+        estimated={economyData?.estimated?.totalDebtGDPRatio ?? false}
+      />
+    ),
     details: <DebtDetails fiscal={fiscal} />,
   };
 

@@ -4,12 +4,13 @@
  * useProvinceImporter - State machine hook for the province import wizard.
  *
  * Manages the 6-step wizard flow: upload → names → align → snap → validate → commit.
- * Integrates with tRPC mutations and the alignment/topology pure functions.
+ * State lives in one reducer (`importer-state.ts`); this hook runs the tRPC calls and the
+ * alignment/topology pure functions and dispatches their results.
  */
 
-import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useReducer, useCallback, useMemo, useEffect } from "react";
 import { useNotify } from "~/hooks/useNotify";
-import { api } from "~/trpc/react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import type {
   ProvinceFeature,
   ImportStep,
@@ -17,7 +18,6 @@ import type {
   ReferencePoint,
   AffineMatrix,
   ManualTransform,
-  TopologyReport,
 } from "~/lib/maps/province-importer/types";
 import {
   computeAffineFromReferencePoints,
@@ -27,7 +27,6 @@ import {
   snapProvincesToBorderMultiRing,
 } from "~/lib/maps/province-importer/alignment";
 import { applyCityAffine } from "~/lib/city-importer/align-cities";
-import type { SvgLayerInfo, SvgCityPoint } from "~/lib/city-importer/svg-points";
 import {
   validateTopology,
   autoFillGaps,
@@ -35,69 +34,92 @@ import {
   clipProvincesToBorder,
   simplifyProvinces,
 } from "~/lib/maps/province-importer/topology";
-import type { ConformanceResult } from "~/lib/maps/province-importer/topology";
 import {
   conformProvincesToBorder,
   hasValidLngLat,
   snapCitiesToBorder,
+  type AlignedCity,
 } from "~/lib/maps/province-importer/commit-prep";
+import {
+  IMPORT_STEPS,
+  createSession,
+  importerReducer,
+  initialImporterState,
+  type ImportScope,
+  type ImporterSettings,
+  type ParsedUpload,
+} from "~/lib/maps/province-importer/importer-state";
 import type { Polygon, MultiPolygon } from "geojson";
 
-const STEPS: ImportStep[] = ["upload", "names", "align", "snap", "validate", "commit"];
+const IDENTITY_MATRIX: AffineMatrix = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
 
-const DEFAULT_MANUAL_TRANSFORM: ManualTransform = {
-  translate: [0, 0],
-  rotate: 0,
-  scale: 1,
-};
+/** Read-only stand-in for "nothing parsed yet", so the returned fields keep their old defaults. */
+const EMPTY_SESSION = createSession({
+  uploadId: null,
+  rawSvgContent: "",
+  provinces: [],
+  countryBorder: null,
+  parseLog: [],
+  detectedLayers: [],
+  cityData: null,
+});
+
+type ParseOutput = RouterOutputs["geoAdmin"]["parseProvinceUpload"];
+
+function toParsedUpload(
+  result: ParseOutput,
+  rawSvgContent: string,
+  uploadId: string | null
+): ParsedUpload {
+  return {
+    uploadId,
+    rawSvgContent,
+    provinces: result.provinces as unknown as ProvinceFeature[],
+    countryBorder: (result.countryBorder as unknown as Polygon | MultiPolygon | null) ?? null,
+    parseLog: result.log,
+    detectedLayers: result.layersFound,
+    cityData: result.cityData ?? null,
+  };
+}
+
+function isIdentity(mt: ManualTransform): boolean {
+  return mt.translate[0] === 0 && mt.translate[1] === 0 && mt.rotate === 0 && mt.scale === 1;
+}
+
+/** Mean of a set of points; null when there are none. */
+function meanCentre(points: [number, number][]): [number, number] | null {
+  if (points.length === 0) return null;
+  const cx = points.reduce((sum, [x]) => sum + x, 0) / points.length;
+  const cy = points.reduce((sum, [, y]) => sum + y, 0) / points.length;
+  return [cx, cy];
+}
+
+function cityName(c: AlignedCity, index: number): string {
+  return c.name.trim() || `Unnamed City ${index + 1}`;
+}
 
 export function useProvinceImporter(countryId: string) {
   const notify = useNotify();
-  // Session State
-  const [step, setStep] = useState<ImportStep>("upload");
-  const [uploadId, setUploadId] = useState<string | null>(null);
-  const [rawProvinces, setRawProvinces] = useState<ProvinceFeature[]>([]);
-  const [alignedProvinces, setAlignedProvinces] = useState<ProvinceFeature[]>([]);
-  const [alignmentMode, setAlignmentMode] = useState<AlignmentMode>("auto-align");
-  const [referencePoints, setReferencePoints] = useState<ReferencePoint[]>([]);
-  const [transform, setTransform] = useState<AffineMatrix | null>(null);
-  const [manualTransform, setManualTransform] = useState<ManualTransform>(DEFAULT_MANUAL_TRANSFORM);
-  const [snapTolerance, setSnapTolerance] = useState(0.02);
-  const [simplifyTolerance, setSimplifyTolerance] = useState(0.005);
-  const [validationReport, setValidationReport] = useState<TopologyReport | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [countryBorder, setCountryBorder] = useState<Polygon | MultiPolygon | null>(null);
-  const [replaceExisting, setReplaceExisting] = useState(false);
-  const [conformanceResult, setConformanceResult] = useState<ConformanceResult | null>(null);
-  const [showConformanceModal, setShowConformanceModal] = useState(false);
-  const [parseLog, setParseLog] = useState<string[]>([]);
-  const [detectedLayers, setDetectedLayers] = useState<string[]>([]);
-
-  // City Importer integrated state
-  const [importScope, setImportScope] = useState<"both" | "provinces" | "cities">("both");
-  const [hasCities, setHasCities] = useState(false);
-  const [importCities, setImportCities] = useState(true);
-  const [cityLayers, setCityLayers] = useState<SvgLayerInfo[]>([]);
-  const [rawCityPoints, setRawCityPoints] = useState<SvgCityPoint[]>([]);
-  const [citiesLayerId, setCitiesLayerId] = useState("");
-  const [capitalLayerId, setCapitalLayerId] = useState("");
-  const [cityNameLayerId, setCityNameLayerId] = useState("");
-  const [rawSvgContent, setRawSvgContent] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (importScope === "provinces") {
-      setImportCities(false);
-    } else if (importScope === "cities") {
-      setImportCities(true);
-    } else if (importScope === "both") {
-      setImportCities(hasCities);
-    }
-  }, [importScope, hasCities]);
+  const [state, dispatch] = useReducer(importerReducer, initialImporterState);
+  const { wizard, status, settings } = state;
+  const { step } = wizard;
+  const session = wizard.session;
+  const s = session ?? EMPTY_SESSION;
+  const validationReport = "validationReport" in wizard ? wizard.validationReport : null;
+  const {
+    importScope,
+    importCities,
+    alignmentMode,
+    manualTransform,
+    snapTolerance,
+    simplifyTolerance,
+    replaceExisting,
+  } = settings;
 
   // tRPC Mutations
   const utils = api.useUtils();
   const parseMutation = api.geoAdmin.parseProvinceUpload.useMutation();
+  const parseCitySvgMutation = api.geoAdmin.parseCitySvg.useMutation();
   const commitCityMutation = api.geoAdmin.commitCityImport.useMutation({
     onSuccess: (data) => {
       void utils.geoCore.getCountryFeatures.invalidate();
@@ -149,91 +171,85 @@ export function useProvinceImporter(countryId: string) {
     { enabled: countryId !== "__none__" && (step === "upload" || step === "commit") }
   );
 
+  // Current Provinces (for display and as the source of every later pipeline stage)
+  const currentProvinces = useMemo(
+    () => (s.alignedProvinces.length > 0 ? s.alignedProvinces : s.rawProvinces),
+    [s.alignedProvinces, s.rawProvinces]
+  );
+
+  const includedCount = useMemo(
+    () => currentProvinces.filter((p) => p.included).length,
+    [currentProvinces]
+  );
+
   // Auto-align after parsing
   // When raw provinces and country border are both available, automatically
   // apply bbox+ICP alignment so provinces appear near the country on the map
   // instead of staying in SVG pixel space.
-  const hasAutoAligned = useRef(false);
   useEffect(() => {
-    if (hasAutoAligned.current) return;
-    if (rawProvinces.length === 0 || !countryBorder) return;
+    if (s.autoAligned || s.rawProvinces.length === 0 || !s.countryBorder) return;
 
     try {
-      const result = autoAlignToCountryBorder(rawProvinces, countryBorder);
-      setTransform(result.matrix);
-      setAlignedProvinces(applyAffineToProvinces(rawProvinces, result.matrix));
-      hasAutoAligned.current = true;
+      const result = autoAlignToCountryBorder(s.rawProvinces, s.countryBorder);
+      const provinces = applyAffineToProvinces(s.rawProvinces, result.matrix);
+      dispatch({ type: "aligned", transform: result.matrix, provinces, auto: true });
     } catch {
       // Silently fail — user can still align manually
     }
-  }, [rawProvinces, countryBorder]);
+  }, [s.autoAligned, s.rawProvinces, s.countryBorder]);
 
   // Real-time manual transform preview
   // When the user changes manual sliders, immediately update the preview
   // instead of requiring an "Apply Transform" button click.
   useEffect(() => {
-    if (alignmentMode !== "manual") return;
-    // Skip if transform is identity (initial state)
-    const mt = manualTransform;
-    if (mt.translate[0] === 0 && mt.translate[1] === 0 && mt.rotate === 0 && mt.scale === 1) return;
+    if (alignmentMode !== "manual" || isIdentity(manualTransform)) return;
 
     // Use aligned provinces as base if available (preserves auto-alignment), otherwise raw
-    const base = hasAutoAligned.current
-      ? applyAffineToProvinces(rawProvinces, transform ?? { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 })
-      : rawProvinces;
-    const included = base.filter((p) => p.included);
-    if (included.length === 0) return;
+    const base = s.autoAligned
+      ? applyAffineToProvinces(s.rawProvinces, s.transform ?? IDENTITY_MATRIX)
+      : s.rawProvinces;
+    const centre = meanCentre(base.filter((p) => p.included).map((p) => p.centroid));
+    if (!centre) return;
 
-    const cx = included.reduce((s, p) => s + p.centroid[0], 0) / included.length;
-    const cy = included.reduce((s, p) => s + p.centroid[1], 0) / included.length;
-
-    const manualMatrix = manualTransformToMatrix(mt, [cx, cy]);
-    setAlignedProvinces(applyAffineToProvinces(base, manualMatrix));
-  }, [manualTransform, alignmentMode, rawProvinces, transform]);
+    const manualMatrix = manualTransformToMatrix(manualTransform, centre);
+    dispatch({ type: "provincesReplaced", provinces: applyAffineToProvinces(base, manualMatrix) });
+  }, [manualTransform, alignmentMode, s.rawProvinces, s.transform, s.autoAligned]);
 
   // Step Navigation
-  const stepIndex = useMemo(() => STEPS.indexOf(step), [step]);
-  const canGoNext = useMemo(() => stepIndex < STEPS.length - 1, [stepIndex]);
-  const canGoBack = useMemo(() => stepIndex > 0, [stepIndex]);
+  const stepIndex = IMPORT_STEPS.indexOf(step);
+  const canGoNext = stepIndex < IMPORT_STEPS.length - 1;
+  const canGoBack = stepIndex > 0;
 
   const goToStep = useCallback((target: ImportStep) => {
-    setError(null);
-    setStep(target);
+    dispatch({ type: "stepChanged", step: target });
   }, []);
 
   const goNext = useCallback(() => {
-    if (!canGoNext) return;
-    setError(null);
-
     // Enforce border conformance when leaving snap step
-    if (step === "snap" && countryBorder) {
-      const source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-      const result = clipProvincesToBorder(source, countryBorder);
-      setAlignedProvinces(result.provinces);
-      if (result.clippedIndices.length > 0) {
-        setConformanceResult(result);
-        setShowConformanceModal(true);
-      }
-    }
-
-    setStep(STEPS[stepIndex + 1]!);
-  }, [canGoNext, stepIndex, step, countryBorder, alignedProvinces, rawProvinces]);
+    const clipped =
+      step === "snap" && s.countryBorder
+        ? clipProvincesToBorder(currentProvinces, s.countryBorder)
+        : null;
+    dispatch({ type: "advanced", clipped });
+  }, [step, s.countryBorder, currentProvinces]);
 
   const goBack = useCallback(() => {
-    if (canGoBack) {
-      setError(null);
-      setStep(STEPS[stepIndex - 1]!);
-    }
-  }, [canGoBack, stepIndex]);
+    dispatch({ type: "retreated" });
+  }, []);
 
   // Upload Step
-  const handleUpload = useCallback(
-    async (file: File) => {
-      setIsProcessing(true);
-      setError(null);
+  const runParse = useCallback(async (load: () => Promise<ParsedUpload>, fallback: string) => {
+    dispatch({ type: "processingStarted" });
+    try {
+      dispatch({ type: "parsed", upload: await load() });
+    } catch (err) {
+      dispatch({ type: "failed", message: err instanceof Error ? err.message : fallback });
+    }
+  }, []);
 
-      try {
-        // Upload file
+  const handleUpload = useCallback(
+    (file: File) =>
+      runParse(async () => {
         const formData = new FormData();
         formData.append("file", file);
         formData.append("countryId", countryId);
@@ -249,423 +265,314 @@ export function useProvinceImporter(countryId: string) {
         }
 
         const uploadData = await uploadResponse.json();
-        setUploadId(uploadData.id);
-
         const text = await file.text();
-        setRawSvgContent(text);
 
         // Parse the uploaded SVG
-        const result = await parseMutation.mutateAsync({
-          countryId,
-          uploadId: uploadData.id,
-        });
-
-        setRawProvinces(result.provinces as unknown as ProvinceFeature[]);
-        if (result.countryBorder) {
-          setCountryBorder(result.countryBorder as unknown as Polygon | MultiPolygon);
-        }
-        if (result.log) setParseLog(result.log as string[]);
-        if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
-
-        if (result.cityData) {
-          setHasCities(result.cityData.points.length > 0);
-          setRawCityPoints(result.cityData.points);
-          setCityLayers(result.cityData.layers);
-          setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
-          setCityNameLayerId(result.cityData.detectedCityNameLayerId || "");
-          setImportCities(result.cityData.points.length > 0);
-        } else {
-          setHasCities(false);
-          setRawCityPoints([]);
-          setCityLayers([]);
-          setCitiesLayerId("");
-          setCityNameLayerId("");
-          setImportCities(false);
-        }
-
-        goToStep("names");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Upload failed");
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [countryId, parseMutation, goToStep]
+        const result = await parseMutation.mutateAsync({ countryId, uploadId: uploadData.id });
+        return toParsedUpload(result, text, uploadData.id);
+      }, "Upload failed"),
+    [countryId, parseMutation, runParse]
   );
 
   const handleDirectSvg = useCallback(
-    async (svgContent: string) => {
-      setIsProcessing(true);
-      setError(null);
-      setRawSvgContent(svgContent);
-
-      try {
-        const result = await parseMutation.mutateAsync({
-          countryId,
-          svgContent,
-        });
-
-        setRawProvinces(result.provinces as unknown as ProvinceFeature[]);
-        if (result.countryBorder) {
-          setCountryBorder(result.countryBorder as unknown as Polygon | MultiPolygon);
-        }
-        if (result.log) setParseLog(result.log as string[]);
-        if (result.layersFound) setDetectedLayers(result.layersFound as string[]);
-
-        if (result.cityData) {
-          setHasCities(result.cityData.points.length > 0);
-          setRawCityPoints(result.cityData.points);
-          setCityLayers(result.cityData.layers);
-          setCitiesLayerId(result.cityData.detectedCitiesLayerId || "");
-          setCityNameLayerId(result.cityData.detectedCityNameLayerId || "");
-          setImportCities(result.cityData.points.length > 0);
-        } else {
-          setHasCities(false);
-          setRawCityPoints([]);
-          setCityLayers([]);
-          setCitiesLayerId("");
-          setCityNameLayerId("");
-          setImportCities(false);
-        }
-
-        goToStep("names");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Parse failed");
-      } finally {
-        setIsProcessing(false);
-      }
-    },
-    [countryId, parseMutation, goToStep]
+    (svgContent: string) =>
+      runParse(async () => {
+        const result = await parseMutation.mutateAsync({ countryId, svgContent });
+        return toParsedUpload(result, svgContent, null);
+      }, "Parse failed"),
+    [countryId, parseMutation, runParse]
   );
+
+  const setImportScope = useCallback((scope: ImportScope) => {
+    dispatch({ type: "scopeChanged", scope });
+  }, []);
+
+  const changeSettings = useCallback((patch: Partial<Omit<ImporterSettings, "importScope">>) => {
+    dispatch({ type: "settingsChanged", patch });
+  }, []);
 
   // Names Step
   const updateProvinceName = useCallback((sourceId: string, name: string) => {
-    setRawProvinces((prev) => prev.map((p) => (p.sourceId === sourceId ? { ...p, name } : p)));
-    // Also update alignedProvinces if they exist
-    setAlignedProvinces((prev) => {
-      if (prev.length === 0) return prev;
-      return prev.map((p) => (p.sourceId === sourceId ? { ...p, name } : p));
-    });
+    dispatch({ type: "provinceRenamed", sourceId, name });
   }, []);
 
   const toggleProvinceIncluded = useCallback((sourceId: string) => {
-    setRawProvinces((prev) =>
-      prev.map((p) => (p.sourceId === sourceId ? { ...p, included: !p.included } : p))
-    );
-    // Also update alignedProvinces if they exist
-    setAlignedProvinces((prev) => {
-      if (prev.length === 0) return prev;
-      return prev.map((p) => (p.sourceId === sourceId ? { ...p, included: !p.included } : p));
-    });
+    dispatch({ type: "provinceIncludedToggled", sourceId });
   }, []);
 
   // Alignment Step
+  const setAlignmentMode = useCallback(
+    (mode: AlignmentMode) => changeSettings({ alignmentMode: mode }),
+    [changeSettings]
+  );
+
+  const setManualTransform = useCallback(
+    (mt: ManualTransform) => changeSettings({ manualTransform: mt }),
+    [changeSettings]
+  );
+
   const addReferencePoint = useCallback((point: ReferencePoint) => {
-    setReferencePoints((prev) => [...prev, point]);
+    dispatch({ type: "referencePointAdded", point });
   }, []);
 
   const removeReferencePoint = useCallback((index: number) => {
-    setReferencePoints((prev) => prev.filter((_, i) => i !== index));
+    dispatch({ type: "referencePointRemoved", index });
   }, []);
 
   const applyReferencePointAlignment = useCallback(() => {
-    if (referencePoints.length < 2) {
-      setError("At least 2 reference points required");
+    if (s.referencePoints.length < 2) {
+      dispatch({ type: "failed", message: "At least 2 reference points required" });
       return;
     }
 
-    const result = computeAffineFromReferencePoints(referencePoints);
-    setTransform(result.matrix);
-    setAlignedProvinces(applyAffineToProvinces(rawProvinces, result.matrix));
-    setError(null);
-  }, [referencePoints, rawProvinces]);
+    const result = computeAffineFromReferencePoints(s.referencePoints);
+    const provinces = applyAffineToProvinces(s.rawProvinces, result.matrix);
+    dispatch({ type: "aligned", transform: result.matrix, provinces });
+  }, [s.referencePoints, s.rawProvinces]);
 
   const applyAutoAlignment = useCallback(() => {
-    if (!countryBorder) {
-      setError("Country border not available");
+    if (!s.countryBorder) {
+      dispatch({ type: "failed", message: "Country border not available" });
       return;
     }
 
-    setIsProcessing(true);
     try {
-      const result = autoAlignToCountryBorder(rawProvinces, countryBorder);
-      setTransform(result.matrix);
-      setAlignedProvinces(applyAffineToProvinces(rawProvinces, result.matrix));
-      setError(null);
+      const result = autoAlignToCountryBorder(s.rawProvinces, s.countryBorder);
+      const provinces = applyAffineToProvinces(s.rawProvinces, result.matrix);
+      dispatch({ type: "aligned", transform: result.matrix, provinces });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Auto-alignment failed");
-    } finally {
-      setIsProcessing(false);
+      dispatch({
+        type: "failed",
+        message: err instanceof Error ? err.message : "Auto-alignment failed",
+      });
     }
-  }, [rawProvinces, countryBorder]);
+  }, [s.rawProvinces, s.countryBorder]);
 
   const applyManualAlignment = useCallback(() => {
-    const provinces = rawProvinces.filter((p) => p.included);
-    if (provinces.length === 0) {
-      if (rawCityPoints.length === 0) return;
-      const cx = rawCityPoints.reduce((s, p) => s + p.svgX, 0) / rawCityPoints.length;
-      const cy = rawCityPoints.reduce((s, p) => s + p.svgY, 0) / rawCityPoints.length;
-      const matrix = manualTransformToMatrix(manualTransform, [cx, cy]);
-      setTransform(matrix);
-      return;
-    }
+    const included = s.rawProvinces.filter((p) => p.included);
+    // Centre on the included provinces, or on the city points when none is included
+    const centre =
+      included.length > 0
+        ? meanCentre(included.map((p) => p.centroid))
+        : meanCentre(s.rawCityPoints.map((c): [number, number] => [c.svgX, c.svgY]));
+    if (!centre) return;
 
-    // Compute center from included provinces
-    const cx = provinces.reduce((s, p) => s + p.centroid[0], 0) / provinces.length;
-    const cy = provinces.reduce((s, p) => s + p.centroid[1], 0) / provinces.length;
-
-    const matrix = manualTransformToMatrix(manualTransform, [cx, cy]);
-    setTransform(matrix);
-    setAlignedProvinces(applyAffineToProvinces(rawProvinces, matrix));
-  }, [rawProvinces, rawCityPoints, manualTransform]);
+    const matrix = manualTransformToMatrix(manualTransform, centre);
+    // With no included provinces the centre came from the cities; only the transform changes.
+    const provinces =
+      included.length > 0 ? applyAffineToProvinces(s.rawProvinces, matrix) : undefined;
+    dispatch({ type: "aligned", transform: matrix, provinces });
+  }, [s.rawProvinces, s.rawCityPoints, manualTransform]);
 
   // Aligned Cities Derived State & setLayer
   const { alignedCities, snappedCitiesCount } = useMemo(() => {
-    if (!importCities || rawCityPoints.length === 0 || !countryBorder) {
+    if (!importCities || s.rawCityPoints.length === 0 || !s.countryBorder) {
       return { alignedCities: [], snappedCitiesCount: 0 };
     }
-    const activeTransform = transform ?? { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
-    const aligned = applyCityAffine(rawCityPoints, activeTransform);
-    return snapCitiesToBorder(
-      aligned,
-      countryBorder,
-      alignedProvinces.length > 0 ? alignedProvinces : rawProvinces
-    );
-  }, [importCities, rawCityPoints, transform, countryBorder, alignedProvinces, rawProvinces]);
-
-  const parseCitySvgMutation = api.geoAdmin.parseCitySvg.useMutation();
+    const aligned = applyCityAffine(s.rawCityPoints, s.transform ?? IDENTITY_MATRIX);
+    return snapCitiesToBorder(aligned, s.countryBorder, currentProvinces);
+  }, [importCities, s.rawCityPoints, s.transform, s.countryBorder, currentProvinces]);
 
   const setLayer = useCallback(
     async (newCitiesLayerId: string, newCapitalLayerId?: string, newCityNameLayerId?: string) => {
-      setCitiesLayerId(newCitiesLayerId);
-      if (newCapitalLayerId !== undefined) {
-        setCapitalLayerId(newCapitalLayerId);
-      }
-      if (newCityNameLayerId !== undefined) {
-        setCityNameLayerId(newCityNameLayerId);
-      }
-
-      setIsProcessing(true);
-      setError(null);
+      if (!session) return;
+      dispatch({
+        type: "cityLayersSelected",
+        citiesLayerId: newCitiesLayerId,
+        capitalLayerId: newCapitalLayerId,
+        cityNameLayerId: newCityNameLayerId,
+      });
+      dispatch({ type: "processingStarted" });
       try {
-        if (!rawSvgContent) return;
-
         const result = await parseCitySvgMutation.mutateAsync({
           countryId,
-          svgContent: rawSvgContent,
+          svgContent: session.rawSvgContent,
           citiesLayerId: newCitiesLayerId,
-          capitalLayerId: newCapitalLayerId !== undefined ? newCapitalLayerId : capitalLayerId,
-          cityNameLayerId: newCityNameLayerId !== undefined ? newCityNameLayerId : cityNameLayerId,
+          capitalLayerId: newCapitalLayerId ?? session.capitalLayerId,
+          cityNameLayerId: newCityNameLayerId ?? session.cityNameLayerId,
         });
-
-        setRawCityPoints(result.points);
+        dispatch({ type: "cityPointsLoaded", points: result.points });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to update layers");
-      } finally {
-        setIsProcessing(false);
+        dispatch({
+          type: "failed",
+          message: e instanceof Error ? e.message : "Failed to update layers",
+        });
       }
     },
-    [countryId, rawSvgContent, parseCitySvgMutation, capitalLayerId, cityNameLayerId]
+    [countryId, session, parseCitySvgMutation]
   );
 
   // Snap Step
+  const setSnapTolerance = useCallback(
+    (value: number) => changeSettings({ snapTolerance: value }),
+    [changeSettings]
+  );
+
+  const setSimplifyTolerance = useCallback(
+    (value: number) => changeSettings({ simplifyTolerance: value }),
+    [changeSettings]
+  );
+
   const applySnapping = useCallback(() => {
-    if (!countryBorder) {
-      setError("Country border not available for snapping");
+    if (!s.countryBorder) {
+      dispatch({ type: "failed", message: "Country border not available for snapping" });
       return;
     }
 
-    const source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-
     // 1. Clip to border
-    const { provinces: clipped } = clipProvincesToBorder(source, countryBorder);
+    const { provinces: clipped } = clipProvincesToBorder(currentProvinces, s.countryBorder);
 
     // 2. Snap vertices to country border with multi-ring support
-    const snapped = snapProvincesToBorderMultiRing(clipped, countryBorder, snapTolerance);
+    const snapped = snapProvincesToBorderMultiRing(clipped, s.countryBorder, snapTolerance);
 
     // 3. Simplify — topology-preserving batch simplification via TopoJSON
     //    TopoJSON handles shared borders automatically, no neighbor snapping needed.
     const simplified = simplifyProvinces(snapped, simplifyTolerance, { targetVertices: 100 });
 
-    setAlignedProvinces(simplified);
-  }, [alignedProvinces, rawProvinces, countryBorder, snapTolerance, simplifyTolerance]);
+    dispatch({ type: "provincesReplaced", provinces: simplified });
+  }, [currentProvinces, s.countryBorder, snapTolerance, simplifyTolerance]);
 
   // Validation Step
   const runValidation = useCallback(() => {
-    if (!countryBorder) {
-      setError("Country border not available for validation");
+    if (!s.countryBorder) {
+      dispatch({ type: "failed", message: "Country border not available for validation" });
       return;
     }
 
-    const source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-    const report = validateTopology(source, countryBorder);
-    setValidationReport(report);
-  }, [alignedProvinces, rawProvinces, countryBorder]);
+    dispatch({ type: "validated", report: validateTopology(currentProvinces, s.countryBorder) });
+  }, [currentProvinces, s.countryBorder]);
 
   const autoFixGaps = useCallback(() => {
-    if (!countryBorder || !validationReport) return;
+    if (!s.countryBorder || !validationReport) return;
 
-    const source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-    const fixed = autoFillGaps(source, validationReport.gaps, countryBorder);
-    setAlignedProvinces(fixed);
-
+    const fixed = autoFillGaps(currentProvinces, validationReport.gaps, s.countryBorder);
     // Re-validate
-    const newReport = validateTopology(fixed, countryBorder);
-    setValidationReport(newReport);
-  }, [alignedProvinces, rawProvinces, countryBorder, validationReport]);
+    const report = validateTopology(fixed, s.countryBorder);
+    dispatch({ type: "validated", report, provinces: fixed });
+  }, [currentProvinces, s.countryBorder, validationReport]);
 
   const autoFixOverlaps = useCallback(() => {
-    if (!validationReport || !countryBorder) return;
+    if (!validationReport || !s.countryBorder) return;
 
-    const source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-    const fixed = resolveOverlaps(source, validationReport.overlaps);
-    setAlignedProvinces(fixed);
-
+    const fixed = resolveOverlaps(currentProvinces, validationReport.overlaps);
     // Re-validate
-    const newReport = validateTopology(fixed, countryBorder);
-    setValidationReport(newReport);
-  }, [alignedProvinces, rawProvinces, countryBorder, validationReport]);
+    const report = validateTopology(fixed, s.countryBorder);
+    dispatch({ type: "validated", report, provinces: fixed });
+  }, [currentProvinces, s.countryBorder, validationReport]);
 
   // Commit Step
-  const commitImport = useCallback(async () => {
-    setIsProcessing(true);
-    setError(null);
+  const setReplaceExisting = useCallback(
+    (value: boolean) => changeSettings({ replaceExisting: value }),
+    [changeSettings]
+  );
 
-    try {
-      if (importScope === "cities") {
-        if (!importCities || alignedCities.length === 0) {
-          setError("No cities aligned/available to import");
-          return null;
-        }
-
-        const citiesToCommit = alignedCities.filter(hasValidLngLat).map((c, index) => ({
-          name: c.name.trim() || `Unnamed City ${index + 1}`,
+  const commitCities = useCallback(
+    () =>
+      commitCityMutation.mutateAsync({
+        countryId,
+        cities: alignedCities.filter(hasValidLngLat).map((c, index) => ({
+          name: cityName(c, index),
           lat: c.lat,
           lng: c.lng,
           cityType: "city",
           isNationalCapital: c.isCapital,
-        }));
+        })),
+      }),
+    [commitCityMutation, countryId, alignedCities]
+  );
 
-        const result = await commitCityMutation.mutateAsync({
-          countryId,
-          cities: citiesToCommit,
-        });
+  // provinces-only or both
+  const commitProvinces = useCallback(() => {
+    // Final conformance: sanitize shapes + simplify + clip to border
+    const source = s.countryBorder
+      ? conformProvincesToBorder(currentProvinces, s.countryBorder, simplifyTolerance)
+      : currentProvinces;
 
-        return result;
-      }
+    const citiesToCommit =
+      importCities && importScope === "both"
+        ? alignedCities.filter(hasValidLngLat).map((c, index) => ({
+            name: cityName(c, index),
+            coordinates: [c.lng, c.lat],
+            isCapital: c.isCapital,
+          }))
+        : undefined;
 
-      // provinces-only or both
-      let source = alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-
-      // Final conformance: sanitize shapes + simplify + clip to border
-      if (countryBorder) {
-        source = conformProvincesToBorder(source, countryBorder, simplifyTolerance);
-      }
-
-      const included = source.filter((p) => p.included);
-
-      const citiesToCommit =
-        importCities && importScope === "both"
-          ? alignedCities.filter(hasValidLngLat).map((c, index) => ({
-              name: c.name.trim() || `Unnamed City ${index + 1}`,
-              coordinates: [c.lng, c.lat],
-              isCapital: c.isCapital,
-            }))
-          : undefined;
-
-      const result = await commitMutation.mutateAsync({
-        countryId,
-        provinces: included.map((p) => ({
+    return commitMutation.mutateAsync({
+      countryId,
+      provinces: source
+        .filter((p) => p.included)
+        .map((p) => ({
           name: p.name,
           type: "province",
           geometry: p.geometry as unknown as Record<string, unknown>,
           level: 1,
           color: p.color,
         })),
-        cities: citiesToCommit,
-        replaceExisting,
-      });
-
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Commit failed");
-      return null;
-    } finally {
-      setIsProcessing(false);
-    }
+      cities: citiesToCommit,
+      replaceExisting,
+    });
   }, [
-    importScope,
-    alignedProvinces,
-    rawProvinces,
-    countryId,
-    replaceExisting,
-    commitMutation,
-    commitCityMutation,
-    countryBorder,
+    s.countryBorder,
+    currentProvinces,
     simplifyTolerance,
     importCities,
+    importScope,
     alignedCities,
+    commitMutation,
+    countryId,
+    replaceExisting,
   ]);
+
+  const commitImport = useCallback(async () => {
+    const citiesOnly = importScope === "cities";
+    if (citiesOnly && (!importCities || alignedCities.length === 0)) {
+      dispatch({ type: "failed", message: "No cities aligned/available to import" });
+      return null;
+    }
+
+    dispatch({ type: "processingStarted" });
+    try {
+      const result = citiesOnly ? await commitCities() : await commitProvinces();
+      dispatch({ type: "processingFinished" });
+      return result;
+    } catch (err) {
+      dispatch({ type: "failed", message: err instanceof Error ? err.message : "Commit failed" });
+      return null;
+    }
+  }, [importScope, importCities, alignedCities, commitCities, commitProvinces]);
+
+  // Conformance
+  const setShowConformanceModal = useCallback((open: boolean) => {
+    dispatch({ type: "conformanceModalSet", open });
+  }, []);
+
+  const setImportCities = useCallback(
+    (value: boolean) => changeSettings({ importCities: value }),
+    [changeSettings]
+  );
 
   // Reset
   const reset = useCallback(() => {
-    setImportScope("both");
-    setStep("upload");
-    setUploadId(null);
-    setRawProvinces([]);
-    setAlignedProvinces([]);
-    setAlignmentMode("auto-align");
-    setReferencePoints([]);
-    setTransform(null);
-    setManualTransform(DEFAULT_MANUAL_TRANSFORM);
-    setSnapTolerance(0.02);
-    setSimplifyTolerance(0.005);
-    setValidationReport(null);
-    setIsProcessing(false);
-    setError(null);
-    setCountryBorder(null);
-    setReplaceExisting(false);
-    setConformanceResult(null);
-    setShowConformanceModal(false);
-    setParseLog([]);
-    setDetectedLayers([]);
-    hasAutoAligned.current = false;
-    setHasCities(false);
-    setImportCities(true);
-    setRawCityPoints([]);
-    setCityLayers([]);
-    setCitiesLayerId("");
-    setCapitalLayerId("");
-    setCityNameLayerId("");
-    setRawSvgContent(null);
+    dispatch({ type: "reset" });
   }, []);
-
-  // Current Provinces (for display)
-  const currentProvinces = useMemo(() => {
-    return alignedProvinces.length > 0 ? alignedProvinces : rawProvinces;
-  }, [alignedProvinces, rawProvinces]);
-
-  const includedCount = useMemo(() => {
-    return currentProvinces.filter((p) => p.included).length;
-  }, [currentProvinces]);
 
   return {
     step,
     stepIndex,
-    uploadId,
-    rawProvinces,
-    alignedProvinces,
+    uploadId: s.uploadId,
+    rawProvinces: s.rawProvinces,
+    alignedProvinces: s.alignedProvinces,
     currentProvinces,
     includedCount,
     alignmentMode,
-    referencePoints,
-    transform,
+    referencePoints: s.referencePoints,
+    transform: s.transform,
     manualTransform,
     snapTolerance,
     validationReport,
-    isProcessing,
-    error,
-    countryBorder,
+    isProcessing: status.kind === "processing",
+    error: status.kind === "error" ? status.message : null,
+    countryBorder: s.countryBorder,
     replaceExisting,
     existingSubdivisions: previewQuery.data?.existingSubdivisions ?? [],
     importScope,
@@ -711,23 +618,23 @@ export function useProvinceImporter(countryId: string) {
     commitImport,
 
     // Parse info
-    parseLog,
-    detectedLayers,
+    parseLog: s.parseLog,
+    detectedLayers: s.detectedLayers,
 
     // Conformance
-    conformanceResult,
-    showConformanceModal,
+    conformanceResult: s.conformance?.result ?? null,
+    showConformanceModal: s.conformance?.modalOpen ?? false,
     setShowConformanceModal,
 
     // City Importer integrated state
-    hasCities,
+    hasCities: s.hasCities,
     importCities,
     setImportCities,
-    cityLayers,
-    rawCityPoints,
-    citiesLayerId,
-    capitalLayerId,
-    cityNameLayerId,
+    cityLayers: s.cityLayers,
+    rawCityPoints: s.rawCityPoints,
+    citiesLayerId: s.citiesLayerId,
+    capitalLayerId: s.capitalLayerId,
+    cityNameLayerId: s.cityNameLayerId,
     alignedCities,
     snappedCitiesCount,
     setLayer,

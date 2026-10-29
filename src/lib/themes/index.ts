@@ -1,8 +1,7 @@
 /**
- * src/lib/themes/index.ts — Master barrel export for Themes, Color Palettes & Holographic design tokens.
+ * src/lib/themes/index.ts — Master barrel export for themes and holographic card-art tokens.
  */
 
 export * from "./themes";
 export * from "./theme-utils";
-export * from "./chart-colors";
 export * from "./holographic-effects";

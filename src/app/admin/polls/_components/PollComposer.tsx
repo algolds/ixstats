@@ -182,7 +182,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
             >
               {/* Step 1 Content */}
               {step === 1 && (
-                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="question" className="text-label text-caption">
                       Poll Question / Topic *
@@ -215,7 +215,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
               {/* Step 2 Content */}
               {step === 2 && (
-                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
+                <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label className="text-label text-caption">Poll type</Label>
@@ -249,7 +249,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
                   </div>
 
                   {targetScope === "country" && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-fast space-y-2">
+                    <div className="space-y-2">
                       <Label className="text-label text-caption">Target Country *</Label>
                       <Select value={countryId} onValueChange={setCountryId}>
                         <SelectTrigger>
@@ -300,7 +300,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
               {/* Step 3 Content */}
               {step === 3 && (
-                <div className="animate-in fade-in slide-in-from-right-3 duration-fast space-y-4">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-label text-caption">List Poll Options *</Label>
                     <Button
@@ -316,10 +316,7 @@ export function PollComposer({ onSuccess }: PollComposerProps) {
 
                   <div className="max-h-[260px] space-y-2 overflow-y-auto pr-1">
                     {options.map((option, idx) => (
-                      <div
-                        key={idx}
-                        className="animate-in fade-in duration-fast flex items-center gap-2"
-                      >
+                      <div key={idx} className="flex items-center gap-2">
                         <span className="text-label-secondary text-caption w-6 text-center">
                           {idx + 1}.
                         </span>

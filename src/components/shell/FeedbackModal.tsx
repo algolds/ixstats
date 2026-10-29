@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
@@ -34,19 +34,18 @@ export function FeedbackModal({ onClose }: FeedbackModalProps) {
   const notify = useNotify();
   const [feedbackType, setFeedbackType] = useState<string>("suggestion");
   const [message, setMessage] = useState<string>("");
-  const [url, setUrl] = useState<string>("");
-  const [userAgent, setUserAgent] = useState<string>("");
-  const [logs, setLogs] = useState<CapturedLog[]>([]);
+  // The page as it was when the dialog opened. The dialog only mounts on a click, so this reads the
+  // browser on its first render without a hydration pass to match.
+  const [{ url, userAgent, logs }] = useState<{
+    url: string;
+    userAgent: string;
+    logs: CapturedLog[];
+  }>(() =>
+    typeof window === "undefined"
+      ? { url: "", userAgent: "", logs: [] }
+      : { url: window.location.href, userAgent: navigator.userAgent, logs: getConsoleLogs() }
+  );
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      // oxlint-disable-next-line
-      setUrl(window.location.href);
-      setUserAgent(navigator.userAgent);
-      setLogs(getConsoleLogs());
-    }
-  }, []);
 
   const submitMutation = api.userLogging.submitFeedback.useMutation({
     onSuccess: () => {

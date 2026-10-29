@@ -167,7 +167,7 @@ export function VisualInfoboxPreviewCard({
               colSpan={2}
               className="infobox-above font-brand border-separator bg-tint/10 text-label text-title-3 border-b px-4 py-3 text-center"
             >
-              <div className="">{title}</div>
+              <div>{title}</div>
               {subheader && (
                 <div className="infobox-subheader text-label-secondary text-footnote mt-0.5 font-normal italic">
                   {subheader}

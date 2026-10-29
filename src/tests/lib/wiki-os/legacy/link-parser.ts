@@ -1,5 +1,7 @@
 // The inline parser as the integration branch had it before the regex-DoS sweep (plan F15, 224bd6dcd), verbatim
 // apart from its import paths: regex-dos-wikitext.test.ts holds the scanning rewrite against it. Not used by any code.
+// Two later changes of behaviour (2026-10-28: quote marks read line by line as MediaWiki's doQuotes reads them, and a
+// blank link label shown as written) are applied here too, so that the comparison still tests the scanning alone.
 
 /**
  * src/lib/wiki-os/wikitext/link-parser.ts — MediaWiki Link & Media Tokenizer.
@@ -10,6 +12,7 @@ import { parseFileLinkInner } from "~/lib/wiki-os/wikitext/file-params";
 import { splitBalancedPipes, parseParameterList } from "~/lib/wiki-os/wikitext/parameter-parser";
 import { UNINDEXED, matchBraces, matchBrackets, type MatchIndex } from "~/lib/wiki-os/wikitext/match-index";
 import { findTagClose, matchOpenTag, ProtectedScanner, skipProtectedAt } from "~/lib/wiki-os/wikitext/protected-regions";
+import { balanceQuoteLine, type QuoteToken } from "~/lib/wiki-os/wikitext/quote-balance";
 import { classifyTemplate } from "~/lib/wiki-os/wikitext/resolver";
 import type { WikiInlineNode, WikiTextNode } from "~/lib/wiki-os/wikitext/types";
 
@@ -294,7 +297,7 @@ function tryWikiLink(ctx: InlineContext, i: number): InlineSpan | null {
       target,
       label: label !== target ? label : undefined,
       raw: text.slice(i, closeIdx + 2),
-      children: labelNodes(label),
+      children: labelNodes(label !== "" ? label : pipeIdx === -1 || inner.slice(pipeIdx + 1) === "" ? target : inner.slice(pipeIdx + 1)),
     },
     closeIdx + 2
   );
@@ -472,52 +475,57 @@ function pushMarkedText(out: WikiInlineNode[], text: string, bold: boolean, ital
   out.push({ text, ...(bold ? { bold: true } : {}), ...(italic ? { italic: true } : {}) });
 }
 
-/**
- * MediaWiki quote marks over a whole inline sequence: two quotes toggle italic, three bold, five both
- * (four are an apostrophe and bold; more than five leave the extra apostrophes as text). The state
- * runs across links, chips and references and is reset at every line break.
- */
-function applyQuoteMarks(parts: InlinePart[]): WikiInlineNode[] {
-  const out: WikiInlineNode[] = [];
-  let bold = false;
-  let italic = false;
+/** A node or a literal text (comment, nowiki, …): nothing inside it is a quote run. */
+type LineToken = QuoteToken<InlinePart>;
 
+/** What doQuotes has in front of a quote run for an opaque part: a comment is gone, anything else is a placeholder. */
+const seenByQuotes = (part: InlinePart): string =>
+  part.kind === "text" && part.text.startsWith("<!--") ? "" : "--";
+
+/** The parts as lines of tokens: each text split at its quote runs and its line breaks. */
+function quoteLines(parts: readonly InlinePart[]): LineToken[][] {
+  const lines: LineToken[][] = [[]];
   for (const part of parts) {
-    if (part.kind === "node") {
-      out.push(withMarks(part.node, bold, italic));
-      continue;
-    }
-    if (part.literal) {
-      pushMarkedText(out, part.text, bold, italic);
+    const line = (): LineToken[] => lines[lines.length - 1]!;
+    if (part.kind === "node" || part.literal) {
+      line().push({ kind: "item", item: part });
       continue;
     }
     const runs = /'{2,}|\n/g;
     let last = 0;
     let match: RegExpExecArray | null;
     while ((match = runs.exec(part.text)) !== null) {
-      pushMarkedText(out, part.text.slice(last, match.index), bold, italic);
-      if (match[0] === "\n") {
-        // The marks end before the line break; the break itself belongs to the next slice.
-        bold = false;
-        italic = false;
-        last = match.index;
-        continue;
-      }
-      const quotes = match[0].length;
-      if (quotes === 2) {
-        italic = !italic;
-      } else if (quotes === 3) {
-        bold = !bold;
-      } else {
-        pushMarkedText(out, "'".repeat(quotes === 4 ? 1 : quotes - 5), bold, italic);
-        bold = !bold;
-        italic = quotes === 4 ? italic : !italic;
-      }
-      last = match.index + quotes;
+      if (match.index > last)
+        line().push({ kind: "text", text: part.text.slice(last, match.index) });
+      if (match[0] === "\n") lines.push([]);
+      else line().push({ kind: "quotes", length: match[0].length });
+      last = match.index + match[0].length;
     }
-    pushMarkedText(out, part.text.slice(last), bold, italic);
+    if (last < part.text.length) line().push({ kind: "text", text: part.text.slice(last) });
   }
+  return lines;
+}
 
+/**
+ * MediaWiki quote marks over a whole inline sequence, line by line as doQuotes reads them (see quote-balance.ts): two
+ * quotes toggle italic, three bold, five both. The state runs across links, chips and references and is reset at every
+ * line break; the break itself is plain text.
+ */
+function applyQuoteMarks(parts: InlinePart[]): WikiInlineNode[] {
+  const out: WikiInlineNode[] = [];
+  for (const [index, line] of quoteLines(parts).entries()) {
+    if (index > 0) pushMarkedText(out, "\n", false, false);
+    let bold = false;
+    let italic = false;
+    for (const token of balanceQuoteLine(line, seenByQuotes)) {
+      if (token.kind === "text") pushMarkedText(out, token.text, bold, italic);
+      else if (token.kind === "quotes") {
+        bold = token.length === 2 ? bold : !bold;
+        italic = token.length === 3 ? italic : !italic;
+      } else if (token.item.kind === "node") out.push(withMarks(token.item.node, bold, italic));
+      else pushMarkedText(out, token.item.text, bold, italic);
+    }
+  }
   return out.length > 0 ? out : [{ text: "" }];
 }
 

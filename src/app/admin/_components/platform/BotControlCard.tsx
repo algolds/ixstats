@@ -369,7 +369,7 @@ export function BotControlCard({
 
       <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
         {activeSubTab === "processes" && (
-          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
+          <div className="space-y-4 pt-1">
             {/* PM2 Processes Grid */}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {!processes && (
@@ -382,7 +382,7 @@ export function BotControlCard({
                 return (
                   <div
                     key={proc.name}
-                    className="border-separator bg-surface hover:border-separator rounded-control flex flex-col justify-between space-y-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,transform]"
+                    className="border-separator bg-surface hover:border-separator rounded-control flex flex-col justify-between space-y-3 border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   >
                     <div>
                       <div className="flex items-center justify-between">
@@ -604,7 +604,7 @@ export function BotControlCard({
         )}
 
         {activeSubTab === "commands" && (
-          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
+          <div className="space-y-4 pt-1">
             {isCommandsLoading ? (
               <div className="text-label-secondary text-footnote flex items-center justify-center py-12">
                 <Loader2 className="text-tint mr-2 h-4 w-4 animate-spin" />
@@ -736,7 +736,7 @@ export function BotControlCard({
                       </Button>
 
                       {simulationResult && (
-                        <div className="border-separator animate-in fade-in duration-fast space-y-4 border-t pt-4">
+                        <div className="border-separator space-y-4 border-t pt-4">
                           <div className="flex items-center justify-between">
                             <span className="text-label-secondary text-eyebrow">
                               Output console preview
@@ -904,7 +904,7 @@ export function BotControlCard({
         )}
 
         {activeSubTab === "roles" && (
-          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
+          <div className="space-y-4 pt-1">
             {isRolesLoading ? (
               <div className="text-label-secondary text-footnote flex items-center justify-center py-12">
                 <Loader2 className="text-tint mr-2 h-4 w-4 animate-spin" />
@@ -978,7 +978,7 @@ export function BotControlCard({
         )}
 
         {activeSubTab === "logs" && (
-          <div className="animate-in fade-in duration-fast space-y-4 pt-1">
+          <div className="space-y-4 pt-1">
             <div className="bg-fill-4 border-separator rounded-control text-footnote flex flex-wrap items-center justify-between gap-3 border p-3">
               <div className="flex flex-wrap items-center gap-3">
                 <div className="space-y-1">

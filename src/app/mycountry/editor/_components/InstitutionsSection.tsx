@@ -17,6 +17,7 @@ import {
   componentInteractions,
   governmentEffectiveness,
   projectComponentRecords,
+  projectEffectiveness,
   type ScoredComponent,
 } from "~/lib/government/effectiveness";
 import { MAX_DEFINED_COMPONENTS } from "~/lib/mycountry/editor-fields";
@@ -52,9 +53,12 @@ const sameSet = (a: readonly string[], b: readonly string[]) =>
 export function InstitutionsSection({
   components,
   storedEffectiveness,
+  effectiveness,
 }: {
   components: ScoredComponent[];
   storedEffectiveness: number | null;
+  /** The effective score, and the economy's score when no institutions are kept. */
+  effectiveness: { current: number; withoutInstitutions: number } | null;
 }) {
   const { countryId } = useEditor();
   const savedTypes = [...new Set(components.map((c) => c.componentType))];
@@ -68,9 +72,12 @@ export function InstitutionsSection({
   const atCap = definedCount >= MAX_DEFINED_COMPONENTS;
   const overCap = definedCount > MAX_DEFINED_COMPONENTS;
 
-  const current = Math.round(storedEffectiveness ?? governmentEffectiveness(components));
-  const projected = Math.round(
-    governmentEffectiveness(projectComponentRecords(components, selected))
+  const current = Math.round(
+    effectiveness?.current ?? storedEffectiveness ?? governmentEffectiveness(components)
+  );
+  const projected = projectEffectiveness(
+    projectComponentRecords(components, selected),
+    effectiveness?.withoutInstitutions ?? current
   );
 
   const interactions = componentInteractions(selected);

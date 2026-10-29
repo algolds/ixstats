@@ -61,7 +61,7 @@ export function AlphabetIndexBar({
                 "bg-surface",
                 "",
                 "hover:border-tint/40 hover:bg-surface hover:shadow-card",
-                "transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 active:scale-[0.98]"
+                "transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 active:scale-[0.98]"
               )}
             >
               <div className="flex items-start gap-2">

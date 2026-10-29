@@ -117,10 +117,7 @@ function RecordRow({
       </Button>
 
       {isExpanded && (
-        <div
-          id={panelId}
-          className="animate-in fade-in slide-in-from-top-1 space-y-3 px-3 pb-4 pl-13 duration-150"
-        >
+        <div id={panelId} className="space-y-3 px-3 pb-4 pl-13">
           <div className="text-footnote flex flex-wrap items-center gap-2">
             {diagnostic.badge && (
               <Badge variant="outline" className={diagnostic.badge.cls}>

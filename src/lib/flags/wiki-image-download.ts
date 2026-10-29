@@ -8,6 +8,8 @@
  * image of at most 5 MB. An SVG is rasterized to PNG, so the file served from `public/flags/` holds nothing
  * scriptable; raster images keep their bytes.
  */
+import { iiwikiAllows } from "~/lib/wiki-os/iiwiki-switch";
+import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { z } from "zod";
@@ -124,13 +126,17 @@ export interface DownloadDeps {
   maxBytes?: number;
 }
 
-const directFetch: ImageFetch = (url) => fetchFromAllowedHost(url, UA_HEADERS, TIMEOUT_MS);
+const directFetch: ImageFetch = (url) =>
+  fetchFromAllowedHost(url, UA_HEADERS, TIMEOUT_MS, undefined, "realms");
 
-const relayFetch: ImageFetch = (url) =>
-  fetch(`https://wsrv.nl/?url=${encodeURIComponent(url)}`, {
+// The relay fetches IIWiki for us, so it answers to the same switch as a direct fetch: off gives no response.
+const relayFetch: ImageFetch = async (url) => {
+  if (isIiwikiUrl(url) && !iiwikiAllows("realms")) return null;
+  return fetch(`https://wsrv.nl/?url=${encodeURIComponent(url)}`, {
     headers: UA_HEADERS,
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
+};
 
 type Attempt = { buffer: Buffer } | { error: string };
 

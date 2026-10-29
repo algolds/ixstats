@@ -7,6 +7,7 @@ import { useTheme } from "~/context/theme-context";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useNotify } from "~/hooks/useNotify";
+import { useDebounce } from "~/hooks/useDebounce";
 import { soundEffects } from "~/lib/sound/cuelume";
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
@@ -34,7 +35,7 @@ export function useDynamicIslandState() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 150);
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
   const [isUserInteracting, setIsUserInteracting] = useState(false);
 
@@ -59,15 +60,8 @@ export function useDynamicIslandState() {
   const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastTabTimestampRef = useRef<number>(0);
   const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const prevActivePluginIdRef = useRef<string | undefined>(undefined);
-
-  // Debounce search input
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 150);
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  // Undefined at first, so a plugin active on mount counts as a change
+  const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
 
   // Mode switching with auto-expand management
   const switchMode = useCallback(
@@ -415,24 +409,19 @@ export function useDynamicIslandState() {
     signOut,
   ]);
 
-  // Plugin view sync
-  useEffect(() => {
-    const pluginIdChanged = activePlugin?.id !== prevActivePluginIdRef.current;
-    prevActivePluginIdRef.current = activePlugin?.id;
-
-    if (pluginIdChanged && activePlugin?.expandedViews) {
-      const firstViewKey = Object.keys(activePlugin.expandedViews)[0];
-      if (firstViewKey) {
-        // oxlint-disable-next-line
-        setExpandedMode(`plugin:${firstViewKey}`);
-      }
-    } else if (!activePlugin) {
-      if (typeof mode === "string" && mode.startsWith("plugin:")) {
-        setMode("compact");
-        setIsExpanded(false);
-      }
-    }
-  }, [activePlugin, setIsExpanded, setMode, mode]);
+  // Plugin view sync: a newly active plugin's first view becomes the expanded view, and a plugin
+  // view left open after its plugin goes away falls back to compact
+  if (activePlugin?.id !== prevActivePluginId) {
+    setPrevActivePluginId(activePlugin?.id);
+    const firstViewKey = activePlugin?.expandedViews
+      ? Object.keys(activePlugin.expandedViews)[0]
+      : undefined;
+    if (firstViewKey) setExpandedMode(`plugin:${firstViewKey}`);
+  }
+  if (!activePlugin && mode.startsWith("plugin:")) {
+    setMode("compact");
+    setIsExpanded(false);
+  }
 
   // Global Keyboard Shortcuts (Cmd+K, Tab, Esc)
   useEffect(() => {

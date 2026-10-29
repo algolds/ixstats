@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "~/context/auth-context";
 import {
@@ -17,6 +17,7 @@ import { useMyCountryCompliance } from "~/hooks/useMyCountryCompliance";
 import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/MyCountryComplianceModal";
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
+import { useHydrated } from "~/hooks/useHydrated";
 import { complianceReviewHref } from "~/lib/mycountry/routes";
 import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { CommandSurface } from "./CommandSurface";
@@ -44,10 +45,8 @@ function MyCountryRouterInner() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Initialize section from pathname (supports deep links)
-  const [activeSection, setActiveSection] = useState<MyCountrySection>(() =>
-    getSectionFromPathname(pathname)
-  );
+  // The address is the state: Next.js folds native pushState and Back/Forward into usePathname.
+  const activeSection = getSectionFromPathname(pathname);
 
   // Push national issue alerts to Dynamic Island toast queue
   useNationalIssuesToast(country?.id);
@@ -59,45 +58,44 @@ function MyCountryRouterInner() {
     loading: complianceLoading,
     countryId,
   } = useMyCountryCompliance();
-  const [showComplianceModal, setShowComplianceModal] = useState(false);
+  const hydrated = useHydrated();
+  const [dismissed, setDismissed] = useState(false);
+  // Read once: the snooze is 12 hours, so the mount time is "now" for this visit.
+  const [mountedAt] = useState(Date.now);
+  const complianceStorageKey = countryId ? `ixstats:compliancePrompt:${countryId}` : null;
 
-  const complianceStorageKey = useMemo(() => {
-    if (!countryId) return null;
-    return `ixstats:compliancePrompt:${countryId}`;
-  }, [countryId]);
+  const snoozeUntil =
+    hydrated && complianceStorageKey
+      ? Number(window.localStorage.getItem(complianceStorageKey) ?? 0)
+      : 0;
+  const showComplianceModal =
+    hydrated &&
+    complianceStorageKey !== null &&
+    !dismissed &&
+    !complianceLoading &&
+    complianceSections.length > 0 &&
+    !isCompliant &&
+    snoozeUntil < mountedAt;
 
+  // A compliant country drops any old snooze, so a later gap prompts straight away.
   useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !countryId ||
-      complianceLoading ||
-      complianceSections.length === 0
-    )
-      return;
-    if (isCompliant) {
-      // oxlint-disable-next-line
-      setShowComplianceModal(false);
-      if (complianceStorageKey) window.localStorage.removeItem(complianceStorageKey);
-      return;
+    if (isCompliant && !complianceLoading && complianceStorageKey) {
+      window.localStorage.removeItem(complianceStorageKey);
     }
-    if (!complianceStorageKey) return;
-    const snoozeUntilRaw = window.localStorage.getItem(complianceStorageKey);
-    const snoozeUntil = snoozeUntilRaw ? Number(snoozeUntilRaw) : 0;
-    if (!snoozeUntil || snoozeUntil < Date.now()) setShowComplianceModal(true);
-  }, [countryId, complianceLoading, complianceSections, isCompliant, complianceStorageKey]);
+  }, [isCompliant, complianceLoading, complianceStorageKey]);
 
   const handleRemindLater = () => {
-    if (typeof window !== "undefined" && complianceStorageKey) {
+    if (complianceStorageKey) {
       window.localStorage.setItem(complianceStorageKey, String(Date.now() + 1000 * 60 * 60 * 12));
     }
-    setShowComplianceModal(false);
+    setDismissed(true);
   };
 
   const handleReview = () => {
-    if (typeof window !== "undefined" && complianceStorageKey) {
+    if (complianceStorageKey) {
       window.localStorage.removeItem(complianceStorageKey);
     }
-    setShowComplianceModal(false);
+    setDismissed(true);
     router.push(complianceReviewHref(complianceSections.find((section) => !section.isComplete)));
   };
 
@@ -112,45 +110,18 @@ function MyCountryRouterInner() {
         return;
       }
 
-      setActiveSection(section);
-
       // Sync URL without triggering Next.js route navigation
       const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
       window.history.pushState(null, "", withBasePath(href));
-
-      // Update document title
-      const countryName = country?.name ?? "MyCountry";
-      document.title =
-        section === "overview"
-          ? `${countryName} - MyCountry`
-          : `${countryName} - ${SECTION_TITLES[section]} - IxStates`;
-
-      // Scroll to top on section change
-      window.scrollTo({ top: 0, behavior: "instant" });
     },
-    [activeSection, country?.name, router]
+    [activeSection, router]
   );
 
-  // Handle browser back/forward navigation
+  // Scroll to top on every section change, Back/Forward included
   useEffect(() => {
-    const onPopState = () => {
-      const newSection = getSectionFromPathname(window.location.pathname);
-      setActiveSection(newSection);
-      window.scrollTo({ top: 0, behavior: "instant" });
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [activeSection]);
 
-  useEffect(() => {
-    const routeSection = getSectionFromPathname(pathname);
-    if (routeSection !== activeSection) {
-      // oxlint-disable-next-line
-      setActiveSection(routeSection);
-    }
-  }, [pathname, activeSection]);
-
-  // Set initial page title
   useEffect(() => {
     if (!country?.name) return;
     document.title =
