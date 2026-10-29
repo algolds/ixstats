@@ -39,6 +39,7 @@
     "build:fast": "node scripts/setup/copy-maplibre-worker.mjs && SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build && bun run postbuild",
     "build:ixworld": "./scripts/deploy-ixworld.sh",
     "check": "bun run typecheck && echo '✓ Type checking complete. Run bun run build for full validation.'",
+    "check:compiler": "bun scripts/verification/react-compiler-ratchet.ts",
     "check:entrypoints": "bun scripts/verification/check-entrypoints.ts",
     "check:script-imports": "bun scripts/verification/check-script-imports.ts",
     "clean": "rm -rf .next dist build",
@@ -244,6 +245,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@babel/core": "7.29.7",
     "@clerk/testing": "^2.2.42",
     "@clerk/types": "^4.101.26",
     "@csstools/css-tokenizer": "3.0.4",
