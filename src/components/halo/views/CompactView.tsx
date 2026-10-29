@@ -59,7 +59,7 @@ function CompactViewComponent({
 
   const mounted = useHydrated();
 
-  const [currentTime, setCurrentTime] = useState({ greeting: "Good morning" });
+  const greeting = hour === null ? "Good morning" : greetingForHour(hour);
 
   // Notification peek
 
@@ -104,14 +104,6 @@ function CompactViewComponent({
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const notificationUnreadCount = unreadNotifications + enhancedUnreadCount + liveNotificationCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
-
-  // Time
-
-  useEffect(() => {
-    if (hour === null) return;
-    const greeting = greetingForHour(hour);
-    setCurrentTime((prev) => (prev.greeting !== greeting ? { greeting } : prev));
-  }, [hour]);
 
   if (!mounted) return null;
 
@@ -272,7 +264,7 @@ function CompactViewComponent({
                       )}
                       <span className="sr-only sm:hidden">Open MyCountry</span>
                       <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
-                        {`${currentTime.greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
+                        {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
                       </PreText>
                     </button>
                   )}

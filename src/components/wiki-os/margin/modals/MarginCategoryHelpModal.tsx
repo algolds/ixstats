@@ -3,7 +3,7 @@
 import { Compass } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
-import { LORE_DIMENSIONS } from "../tabs/MarginThreadsTab";
+import { LORE_DIMENSIONS } from "../shared/lore-dimensions";
 
 interface MarginCategoryHelpModalProps {
   isOpen: boolean;
