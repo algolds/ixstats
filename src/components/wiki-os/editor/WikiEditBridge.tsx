@@ -6,6 +6,8 @@ import { api } from "~/trpc/react";
 import { SaveCancelled, useHandleGate } from "~/hooks/useHandleGate";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
+import { Signal } from "~/components/ui/signal";
+import { isTemplateTitle } from "~/lib/wiki-os/namespace-policy";
 import {
   saveDraft,
   getDraft,
@@ -517,6 +519,13 @@ export function WikiEditBridge({
             </Button>
           </div>
         </div>
+      )}
+
+      {mode === "visual" && isTemplateTitle(title) && (
+        <Signal tone="warning" title="Templates are safer in the source editor">
+          The visual editor keeps this template's code as written, but parser functions and line
+          breaks can change what pages using it show. Switch to source to edit the code itself.
+        </Signal>
       )}
 
       {mode === "visual" ? (
