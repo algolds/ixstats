@@ -10,6 +10,7 @@ import {
   isRoutineSlug,
   issueDue,
   issueGapMs,
+  MAX_ISSUE_GAP_IX_DAYS,
   MEAN_ISSUE_GAP_IX_DAYS,
   MIN_ISSUE_GAP_IX_DAYS,
   pickWeighted,
@@ -50,6 +51,8 @@ describe("the gap between a nation's issues", () => {
   it("is never below the minimum and averages the configured mean", () => {
     const gaps = Array.from({ length: 4000 }, (_, i) => issueGapMs(`nation-${i % 40}`, T0 + i * 977 * 1000));
     expect(Math.min(...gaps)).toBeGreaterThanOrEqual(MIN_ISSUE_GAP_IX_DAYS * DAY);
+    // the tail is cut: a nation with anything to do never waits more than about a week
+    expect(Math.max(...gaps)).toBeLessThanOrEqual(MAX_ISSUE_GAP_IX_DAYS * DAY + 1);
     const meanDays = gaps.reduce((a, b) => a + b, 0) / gaps.length / DAY;
     expect(meanDays).toBeGreaterThan(MEAN_ISSUE_GAP_IX_DAYS * 0.93);
     expect(meanDays).toBeLessThan(MEAN_ISSUE_GAP_IX_DAYS * 1.07);
@@ -167,6 +170,13 @@ describe("soft domain balance", () => {
   it("never weighs down a crisis", () => {
     const [crisis] = balanceDomains([cand("x", "economic", 0.9, "critical")], recent, templates);
     expect(crisis!.probability).toBe(0.9);
+  });
+
+  it("splits a domain's weight among its candidates, so a crowded domain is not more likely for its numbers", () => {
+    const [a, b, c] = balanceDomains([cand("a1", "economic"), cand("a2", "economic"), cand("p", "political")], [], []);
+    expect(a!.probability).toBe(0.25);
+    expect(b!.probability).toBe(0.25);
+    expect(c!.probability).toBe(0.5);
   });
 
   it("changes nothing for a nation with no history", () => {

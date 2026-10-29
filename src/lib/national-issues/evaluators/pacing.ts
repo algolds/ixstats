@@ -5,11 +5,11 @@
  *
  * Paced, a nation gets its next issue once a gap has passed since its last one (any source: templates, the staffing
  * shortage, policy and intent spawns). The gap is drawn from an exponential distribution (mean MEAN_ISSUE_GAP_IX_DAYS,
- * never below MIN_ISSUE_GAP_IX_DAYS) seeded by the nation and its last issue's time, so it needs no stored state and
- * barely depends on how often the cron runs (a gap only rounds up to the next run), and a cron that was down resumes
- * with one issue, not a burst. When the gap is up, one triggered template is picked, weighted by its
- * probability (urgency, intent boost, NPC personality). When nothing triggers, the nation stays due until something
- * does.
+ * never below MIN_ISSUE_GAP_IX_DAYS, the tail cut at MAX_ISSUE_GAP_IX_DAYS) seeded by the nation and its last issue's
+ * time, so it needs no stored state and barely depends on how often the cron runs (a gap only rounds up to the next
+ * run), and a cron that was down resumes with one issue, not a burst. When the gap is up, one triggered template is
+ * picked, weighted by its probability (urgency, intent boost, NPC personality) and the domain balance below. When
+ * nothing triggers, a routine template is offered instead.
  *
  * The week here is the caps' week: 7 IxDays (3.5 real days at IxTime's 2x).
  */
@@ -18,9 +18,13 @@ import { bandForSeverity } from "./realm-rank";
 const IX_DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Mean IxDays between a nation's issues: tuned by plans/mycountry-stress tuning-T cadence simulation. */
-export const MEAN_ISSUE_GAP_IX_DAYS = 2.2;
+export const MEAN_ISSUE_GAP_IX_DAYS = 2.7;
 /** No two paced issues closer than this. */
 export const MIN_ISSUE_GAP_IX_DAYS = 0.5;
+/** The exponential part is cut at 3x its mean (5% of draws): a gap never runs past ~7 IxDays, so no nation goes quiet. */
+const GAP_TAIL_CAP = 3;
+export const MAX_ISSUE_GAP_IX_DAYS =
+  MIN_ISSUE_GAP_IX_DAYS + (MEAN_ISSUE_GAP_IX_DAYS - MIN_ISSUE_GAP_IX_DAYS) * GAP_TAIL_CAP;
 
 /** A deterministic number in (0, 1) from a string (FNV-1a, then a murmur finaliser). */
 export function hashUnit(key: string): number {
@@ -40,8 +44,9 @@ export function hashUnit(key: string): number {
 /** IxTime ms between a nation's issue at `lastIxTime` and its next paced one. */
 export function issueGapMs(countryId: string, lastIxTime: number): number {
   const u = hashUnit(`${countryId}:${lastIxTime}`);
-  const days = MIN_ISSUE_GAP_IX_DAYS + (MEAN_ISSUE_GAP_IX_DAYS - MIN_ISSUE_GAP_IX_DAYS) * -Math.log(u);
-  return days * IX_DAY_MS;
+  const spread = Math.min(-Math.log(u), GAP_TAIL_CAP);
+  const days = MIN_ISSUE_GAP_IX_DAYS + (MEAN_ISSUE_GAP_IX_DAYS - MIN_ISSUE_GAP_IX_DAYS) * spread;
+  return Math.ceil(days * IX_DAY_MS); // whole ms, so "due at last + gap" holds exactly
 }
 
 /** Whether the nation is due its next paced issue at `now` (always, before its first issue). */
@@ -113,7 +118,8 @@ type Balanced = { probability: number; template: { domain: string; baseSeverity:
 /**
  * Soft domain balance for the paced pick: a candidate whose domain the nation saw recently has its weight divided by
  * 1 + strength x (exposure), exposure summing DOMAIN_DECAY^i over its last DOMAIN_MEMORY issues in that domain (i = 0
- * for the latest). Never zero, and a crisis (critical) keeps its full weight.
+ * for the latest), and by the number of candidates sharing its domain, so a domain with eight triggered templates is
+ * not eight times as likely as one with a single template. Never zero, and a crisis (critical) keeps its full weight.
  */
 export function balanceDomains<T extends Balanced>(
   candidates: readonly T[],
@@ -129,9 +135,13 @@ export function balanceDomains<T extends Balanced>(
       const domain = domainOf.get(issue.templateId);
       if (domain) exposure.set(domain, (exposure.get(domain) ?? 0) + DOMAIN_DECAY ** i);
     });
+  const perDomain = new Map<string, number>();
+  for (const c of candidates) perDomain.set(c.template.domain, (perDomain.get(c.template.domain) ?? 0) + 1);
   return candidates.map((c) => {
+    if (bandForSeverity(c.template.baseSeverity) === "crisis") return c;
     const seen = exposure.get(c.template.domain) ?? 0;
-    if (seen === 0 || bandForSeverity(c.template.baseSeverity) === "crisis") return c;
-    return { ...c, probability: c.probability / (1 + DOMAIN_BALANCE_STRENGTH * seen) };
+    const crowd = perDomain.get(c.template.domain)!;
+    if (seen === 0 && crowd === 1) return c;
+    return { ...c, probability: c.probability / ((1 + DOMAIN_BALANCE_STRENGTH * seen) * crowd) };
   });
 }
