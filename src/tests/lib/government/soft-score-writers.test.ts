@@ -95,9 +95,18 @@ describe("writers keep moving the effective soft scores", () => {
       structure: { corruptionIndex: 50 },
     };
     const before = effective(rows, "corruptionIndex");
-    await spine(fakeDb(rows), "issue", "GovernmentStructure", "corruptionIndex", "subtract", 5);
+    const applied = await spine(
+      fakeDb(rows),
+      "issue",
+      "GovernmentStructure",
+      "corruptionIndex",
+      "subtract",
+      5
+    );
     expect(rows.structure?.corruptionIndex).toBe(45);
     expect(effective(rows, "corruptionIndex")).toBeCloseTo(before - 5, 5);
+    // The player reads the change, not the stored offset's absolute values
+    expect(applied[0]?.description).toBe("Corruption Index decreased by 5.0");
   });
 
   it("an issue consequence on the infrastructure rating moves it by its delta", async () => {

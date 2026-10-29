@@ -363,6 +363,8 @@ export class CountryEventSpine {
     const label = FIELD_LABELS[field] || field;
     const direction = delta > 0 ? "increased" : "decreased";
     const absStr = Math.abs(delta).toFixed(1);
+    // A soft score's stored value is an offset over its derived score, not the score players see.
+    if (isSoftScoreField(field)) return `${label} ${direction} by ${absStr}`;
 
     return `${label} ${direction} by ${absStr} (${previousValue.toFixed(1)} → ${newValue.toFixed(1)})`;
   }
