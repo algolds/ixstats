@@ -79,6 +79,14 @@ tmux new -s deploy            # the deploy runs for many minutes, and without ix
 ```
 
 - [ ] **Disk:** `df -h /` — keep at least a few GB free. A full disk puts Postgres into recovery mode.
+- [ ] **Memory for the build:** since React Compiler went on (#125), `next build` needs more than the server's RAM
+      plus the standing swap leaves free (MariaDB, an open IDE's TypeScript server and the PM2 apps already hold
+      several GB of swap). `earlyoom` then kills `next-build` mid-compile: the deploy prints `exited with code 137` and
+      `Build failed`, puts the old build back, and `journalctl -u earlyoom` names the kill (there is no kernel OOM
+      line). Before A4, add temporary swap:
+      `fallocate -l 12G /swapfile-build && chmod 600 /swapfile-build && mkswap /swapfile-build && swapon -p -4 /swapfile-build`.
+      After the deploy: `swapoff /swapfile-build && rm /swapfile-build`. On 2026-10-29 the compile took 6 minutes with
+      it.
 - [ ] **Services up:** `docker ps --filter name=ixstats-postgres` shows the container Up;
       `docker exec ixstats-redis-cache redis-cli ping` returns `PONG`; `pm2 status` lists `ixstats-web`,
       `ixstats-cron`, `ixstats-ws` and `ixstats-ixtwitter` online (`ixworld` stays stopped: there is no separate IxWorld
@@ -155,7 +163,9 @@ touch the running servers: `next start` serves from `.next`.
 **A change to `deploy-production.sh` takes effect on the next deploy, not this one.** Step 1 fetches `master` and
 `git reset --hard`s the checkout, the script included, while bash keeps reading the copy it started with. A release
 that changes the deploy script runs the old script's steps; when the new steps matter (a new SQL file, say), run the
-deploy a second time, or run the new lines by hand.
+deploy a second time, or run the new lines by hand. A retry after a failed first attempt already runs the new copy, so
+check the log (each `prisma db execute` prints `Script executed successfully`) and the data before running any line by
+hand.
 
 What it does, in order (and what to watch for). Steps marked **[schema]** are skipped with `SKIP_SCHEMA_SYNC=1` (see
 below).
