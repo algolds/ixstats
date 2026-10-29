@@ -6,6 +6,7 @@ import "react";
 import { render, screen } from "@testing-library/react";
 import { GovernmentFiscalSection } from "~/components/mycountry/shared/tabs/GovernmentFiscalSection";
 import { mapCountryToEconomyData } from "~/lib/economy/data-mapper";
+import { economyVitals } from "~/components/country-profile/vitals";
 
 function economy(estimated: boolean) {
   return mapCountryToEconomyData({
@@ -45,4 +46,19 @@ it("leaves recorded figures unmarked", () => {
   );
   expect(screen.queryByText("Estimated from the economy")).toBeNull();
   expect(screen.getByText("Relative to economic size")).toBeInTheDocument();
+});
+
+it("names an estimated unemployment or inflation in the Economy & people readings", () => {
+  const vitals = {
+    gdpGrowth: 0.01,
+    unemployment: 5.8,
+    unemploymentEstimated: true,
+    inflation: 2.5,
+    inflationEstimated: false,
+  };
+  expect(economyVitals(vitals as never).map((r) => `${r.label}: ${r.value}`)).toEqual([
+    "Real growth: +1.0%",
+    "Unemployment (estimated): 5.8%",
+    "Inflation: 2.5%",
+  ]);
 });
