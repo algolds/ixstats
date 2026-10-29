@@ -42,6 +42,8 @@ import {
 } from "~/server/shared/country-rename";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { loadEconomicFigureEstimates } from "~/server/shared/economic-figures";
+import { deriveSoftScores } from "~/lib/government/soft-scores";
+import { loadSoftScores } from "~/lib/government/soft-scores-store";
 
 const countryInput = z.object({ countryId: z.string().min(1) });
 
@@ -189,8 +191,17 @@ export const editorProcedures = {
     });
     if (!country) throw notFound();
     // Each figure's estimate from the economy: the hint (and what an empty field returns to).
-    const figureEstimates = await loadEconomicFigureEstimates(ctx.db, input.countryId);
-    return { ...country, figureEstimates };
+    const [figureEstimates, softScores] = await Promise.all([
+      loadEconomicFigureEstimates(ctx.db, input.countryId),
+      loadSoftScores(ctx.db, input.countryId),
+    ]);
+    // Government effectiveness as MyCountry shows it, and what it falls back to with no institutions.
+    const effectiveness = softScores && {
+      current: softScores.effective.governmentEffectiveness,
+      withoutInstitutions: deriveSoftScores({ ...softScores.inputs, components: [] })
+        .governmentEffectiveness,
+    };
+    return { ...country, figureEstimates, effectiveness };
   }),
 
   /** Whether the nation can take a name: unique in its realm, not a lore nation, has a slug. */

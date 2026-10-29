@@ -148,6 +148,7 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
               key={k("institutions", state.governmentComponents)}
               components={state.governmentComponents}
               storedEffectiveness={state.governmentStructure?.governmentEffectiveness ?? null}
+              effectiveness={state.effectiveness}
             />
           ),
         },

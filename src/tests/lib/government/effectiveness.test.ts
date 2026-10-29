@@ -17,6 +17,7 @@ import {
   governmentEffectiveness,
   NEW_COMPONENT_EFFECTIVENESS,
   projectComponentRecords,
+  projectEffectiveness,
 } from "~/lib/government/effectiveness";
 import {
   GOVERNMENT_FORMS,
@@ -288,5 +289,16 @@ describe("component effects", () => {
     expect(new Set(data.map((effect) => effect.ixTimeTimestamp.getTime()))).toEqual(
       new Set([fixed])
     );
+  });
+});
+
+describe("projectEffectiveness", () => {
+  it("follows the economy's score when no institutions are kept, not the components formula's 0", () => {
+    expect(projectEffectiveness([], 58.4)).toBe(58);
+  });
+
+  it("uses the components formula when institutions are kept", () => {
+    const records = [{ componentType: ComponentType.RULE_OF_LAW, effectivenessScore: 80 }];
+    expect(projectEffectiveness(records, 58)).toBe(Math.round(governmentEffectiveness(records)));
   });
 });
