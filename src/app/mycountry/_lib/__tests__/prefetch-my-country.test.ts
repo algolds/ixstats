@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
 import { signedInApi } from "~/trpc/server";
 import { prefetchMyCountry } from "../prefetch-my-country";
@@ -12,12 +13,14 @@ jest.mock("~/trpc/server", () => ({
   },
 }));
 jest.mock("~/lib/auth/signed-in-country.server");
+jest.mock("next/headers", () => ({ cookies: jest.fn() }));
 
 const mockedCountryId = jest.mocked(getSignedInCountryId);
 
 describe("prefetchMyCountry", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.mocked(cookies).mockResolvedValue({ get: () => undefined } as never);
   });
 
   it("prefetches the profile, the country and its rings for a signed-in player", async () => {
@@ -40,6 +43,19 @@ describe("prefetchMyCountry", () => {
     await prefetchMyCountry();
 
     expect(signedInApi.users.getProfile.prefetch).toHaveBeenCalledTimes(1);
+    expect(signedInApi.countries.getByIdWithEconomicData.prefetch).not.toHaveBeenCalled();
+    expect(signedInApi.countries.getActivityRingsData.prefetch).not.toHaveBeenCalled();
+  });
+
+  it("prefetches nothing while play-as is active", async () => {
+    mockedCountryId.mockResolvedValue("c1");
+    jest.mocked(cookies).mockResolvedValue({
+      get: (name: string) => (name === "ixstats_play_as" ? { name, value: "1" } : undefined),
+    } as never);
+
+    await prefetchMyCountry();
+
+    expect(signedInApi.users.getProfile.prefetch).not.toHaveBeenCalled();
     expect(signedInApi.countries.getByIdWithEconomicData.prefetch).not.toHaveBeenCalled();
     expect(signedInApi.countries.getActivityRingsData.prefetch).not.toHaveBeenCalled();
   });

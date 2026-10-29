@@ -7,6 +7,7 @@ import { SettingsView } from "./SettingsView";
 import { MyCountryView } from "../plugins/mycountry";
 import type { ExpandedViewProps, DIPlugin } from "../types";
 import { Button } from "~/components/ui/button";
+import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
 
 const subscribeNever = () => () => {};
 /** The admin "play as" target, re-read on every render (each mode switch re-renders this). */
@@ -35,6 +36,7 @@ function ExpandedViewComponent({
 
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
+    setPlayAsCookie(false);
     window.location.href = "/admin/users";
   };
 
