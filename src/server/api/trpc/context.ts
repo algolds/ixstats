@@ -190,7 +190,12 @@ async function loadContextUser(userId: string): Promise<ContextUser | null> {
   return user;
 }
 
-export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequest }) => {
+export const createTRPCContext = async (opts: {
+  headers: Headers;
+  req?: NextRequest;
+  /** The session a server component read itself with Clerk's `auth()`; it has no request object to give. */
+  sessionAuth?: ClerkAuth;
+}) => {
   const state: AuthState = { auth: null };
   let user: ContextUser | null = null;
 
@@ -201,6 +206,8 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
     // Try to get auth from request first (for app router)
     if (opts.req) {
       state.auth = (opts.req as NextRequest & { auth?: ClerkAuth }).auth ?? getAuth(opts.req);
+    } else if (opts.sessionAuth) {
+      state.auth = opts.sessionAuth;
     }
     // Otherwise from the authorization header (for API routes)
     if (!state.auth?.userId) state.auth = (await authFromBearerToken(opts.headers)) ?? state.auth;

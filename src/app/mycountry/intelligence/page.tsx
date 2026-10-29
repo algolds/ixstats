@@ -1,9 +1,7 @@
-"use client";
-
-import { MyCountryRouter } from "~/components/mycountry";
+import { MyCountryPage } from "../_components/MyCountryPage";
 
 export const dynamic = "force-dynamic";
 
 export default function IntelligencePage() {
-  return <MyCountryRouter />;
+  return <MyCountryPage />;
 }

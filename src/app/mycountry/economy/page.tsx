@@ -1,5 +1,5 @@
-import { MyCountryRouter } from "~/components/mycountry";
+import { MyCountryPage } from "../_components/MyCountryPage";
 
 export default function MyCountryEconomyPage() {
-  return <MyCountryRouter />;
+  return <MyCountryPage />;
 }
