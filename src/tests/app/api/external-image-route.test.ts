@@ -87,6 +87,22 @@ describe("POST /api/download/external-image", () => {
     expect(writeFile).not.toHaveBeenCalled();
   });
 
+  it("refuses a redirect to a trusted host on an explicit port", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, {
+        status: 302,
+        headers: { location: "https://ixwiki.com:8081/api.php" },
+      })
+    );
+
+    const res = await POST(postRequest(TRUSTED_URL));
+
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("Explicit ports are not allowed");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it("stops reading a body larger than 5MB and cancels the stream", async () => {
     const chunk = new Uint8Array(1024 * 1024);
     let reads = 0;

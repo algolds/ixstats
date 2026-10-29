@@ -73,11 +73,15 @@ async function fetchFromTrustedHosts(url: string): Promise<TrustedFetchResult> {
     if (response.status < 300 || response.status >= 400 || !location) {
       return { ok: true, response };
     }
-    const nextUrl = new URL(location, currentUrl).toString();
-    if (!isTrustedDomain(nextUrl)) {
+    const nextUrl = new URL(location, currentUrl);
+    if (!isTrustedDomain(nextUrl.toString())) {
       return { ok: false, error: "Redirect to untrusted host" };
     }
-    currentUrl = nextUrl;
+    // The same rule as the first URL: a trusted name on another port may be a different service.
+    if (nextUrl.port !== "") {
+      return { ok: false, error: "Explicit ports are not allowed" };
+    }
+    currentUrl = nextUrl.toString();
   }
   return { ok: false, error: "Too many redirects" };
 }
