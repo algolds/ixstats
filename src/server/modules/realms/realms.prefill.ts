@@ -6,6 +6,7 @@
  * page's facts instead of placeholders. Best effort: an unreachable page or a page without an infobox gives the
  * plain baseline.
  */
+import { iiwikiStoredImagePath } from "~/lib/wiki-os/sister-media";
 import { withBasePath } from "~/lib/base-path";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 import type { BaselineCountryInitial } from "~/lib/countries/baseline-country";
@@ -71,7 +72,8 @@ const MEDIA_PROXY_PREFIX = "/api/mediawiki/";
  */
 function imageUrl(value: string | undefined): string | undefined {
   if (!value) return undefined;
-  if (/^https:\/\//i.test(value)) return value;
+  // An IIWiki file is stored as its media-proxy path, so readers load it through the IIWiki gate, never from iiwiki.com.
+  if (/^https:\/\//i.test(value)) return iiwikiStoredImagePath(value) ?? value;
   const proxied = value.startsWith(withBasePath(MEDIA_PROXY_PREFIX)) && !value.includes("..");
   return proxied ? value : undefined;
 }
