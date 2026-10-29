@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Activity, useState } from "react";
+import React, { Activity, ViewTransition, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
@@ -114,26 +114,30 @@ export function CommandSurface({
           onOpenDrill={openDrill}
         />
       ) : null}
-      {[...visited].map((s) => (
-        <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
-          {s === "overview" ? (
-            <ExecutiveHome
-              countryId={countryId}
-              onDeclare={declare}
-              onNavigate={onNavigate}
-              onOpenIntent={openIntent}
-              onOpenDrill={openDrill}
-            />
-          ) : (
-            <DomainSurface
-              countryId={countryId}
-              section={s}
-              onDeclare={declare}
-              onNavigate={onNavigate}
-            />
-          )}
-        </Activity>
-      ))}
+      {/* Section switches are transitions, so the browser cross-fades the swap. The class hooks
+          the fade in facet/interaction.css, which also turns it off under Reduce Motion. */}
+      <ViewTransition default="mycountry-section">
+        {[...visited].map((s) => (
+          <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
+            {s === "overview" ? (
+              <ExecutiveHome
+                countryId={countryId}
+                onDeclare={declare}
+                onNavigate={onNavigate}
+                onOpenIntent={openIntent}
+                onOpenDrill={openDrill}
+              />
+            ) : (
+              <DomainSurface
+                countryId={countryId}
+                section={s}
+                onDeclare={declare}
+                onNavigate={onNavigate}
+              />
+            )}
+          </Activity>
+        ))}
+      </ViewTransition>
 
       {/* Drill Sheets */}
       <DrillSheets
