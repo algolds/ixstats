@@ -11,6 +11,7 @@ const mockMyPersonasInvalidate = jest.fn();
 const mockNotifyError = jest.fn();
 const mockReorder = jest.fn();
 let mutationOptions: { onSuccess?: () => void } = {};
+let reorderPending = false;
 let reorderOptions: { onSuccess?: () => Promise<void>; onError?: (e: Error) => void } = {};
 
 jest.mock("~/trpc/react", () => ({
@@ -30,7 +31,7 @@ jest.mock("~/trpc/react", () => ({
       reorderMyAccounts: {
         useMutation: (options: typeof reorderOptions) => {
           reorderOptions = options;
-          return { mutate: mockReorder };
+          return { mutate: mockReorder, isPending: reorderPending };
         },
       },
     },
@@ -130,5 +131,15 @@ describe("EnhancedAccountManager", () => {
     await act(async () => reorderOptions.onSuccess?.());
     expect(mockInvalidate).toHaveBeenCalled();
     expect(mockMyPersonasInvalidate).toHaveBeenCalled();
+  });
+
+  it("disables Move up and Move down while a save is in flight", async () => {
+    reorderPending = true;
+    try {
+      renderManager(["a", "b", "c"].map((id) => account(id)));
+      expect(await menuItem("b", "Move up")).toHaveAttribute("aria-disabled", "true");
+    } finally {
+      reorderPending = false;
+    }
   });
 });

@@ -365,11 +365,18 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           message: "You can only reorder your own accounts",
         });
       }
-      await ctx.db.$transaction(
-        ids.map((id, sortOrder) =>
-          ctx.db.thinkpagesAccount.update({ where: { id }, data: { sortOrder } })
-        )
-      );
+      const clerkUserId = ctx.auth.userId;
+      // Accounts left out of ids (the dashboard list hides inactive ones) drop out of the order, so
+      // an old sortOrder can't tie with the new one; null sorts after the ordered accounts.
+      await ctx.db.$transaction([
+        ...ids.map((id, sortOrder) =>
+          ctx.db.thinkpagesAccount.updateMany({ where: { id, clerkUserId }, data: { sortOrder } })
+        ),
+        ctx.db.thinkpagesAccount.updateMany({
+          where: { clerkUserId, id: { notIn: ids } },
+          data: { sortOrder: null },
+        }),
+      ]);
       return { success: true as const };
     }),
 

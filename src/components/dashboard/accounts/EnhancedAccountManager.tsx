@@ -77,6 +77,8 @@ interface AccountCardProps {
   isSelected: boolean;
   isFirst: boolean;
   isLast: boolean;
+  /** A save is in flight: no new move or drag until it lands. */
+  isSaving: boolean;
   onSelect: () => void;
   onSettings: () => void;
   onToggleActive: () => void;
@@ -89,6 +91,7 @@ function AccountCard({
   isSelected,
   isFirst,
   isLast,
+  isSaving,
   onSelect,
   onSettings,
   onToggleActive,
@@ -122,7 +125,9 @@ function AccountCard({
         <div
           aria-hidden="true"
           className="text-label-secondary mr-1 -ml-1 flex size-7 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
-          onPointerDown={(e) => dragControls.start(e)}
+          onPointerDown={(e) => {
+            if (!isSaving) dragControls.start(e);
+          }}
         >
           <DragHandGesture className="size-4" />
         </div>
@@ -160,11 +165,11 @@ function AccountCard({
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem disabled={isFirst} onClick={() => onMove(-1)}>
+            <DropdownMenuItem disabled={isFirst || isSaving} onClick={() => onMove(-1)}>
               <ArrowUp />
               Move up
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={isLast} onClick={() => onMove(1)}>
+            <DropdownMenuItem disabled={isLast || isSaving} onClick={() => onMove(1)}>
               <ArrowDown />
               Move down
             </DropdownMenuItem>
@@ -316,6 +321,7 @@ export function EnhancedAccountManager({
         <Reorder.Group
           as="div"
           axis="y"
+          layoutScroll
           values={visibleIds}
           onReorder={(ids: string[]) => setOrder(mergeVisibleOrder(allIds, ids))}
           className={cn("space-y-2", inModal && "max-h-80 overflow-y-auto pr-1")}
@@ -327,6 +333,7 @@ export function EnhancedAccountManager({
               isSelected={selectedAccount?.id === account.id}
               isFirst={index === 0}
               isLast={index === filteredAccounts.length - 1}
+              isSaving={reorderMutation.isPending}
               onSelect={() => onAccountSelect(account)}
               onSettings={() => onAccountSettings(account)}
               onToggleActive={() =>

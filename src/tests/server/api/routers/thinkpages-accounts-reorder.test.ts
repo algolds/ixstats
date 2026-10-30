@@ -15,7 +15,7 @@ const createCaller = createCallerFactory(thinkpagesAccountsRouter);
 function callerWithDb(ownedCount: number) {
   const db = createMockPrisma();
   db.thinkpagesAccount.count.mockResolvedValue(ownedCount);
-  db.thinkpagesAccount.update.mockImplementation(((args: unknown) =>
+  db.thinkpagesAccount.updateMany.mockImplementation(((args: unknown) =>
     Promise.resolve(args)) as never);
   db.thinkpagesAccount.findMany.mockResolvedValue([]);
   const ctx = createMockRouterContext({
@@ -36,10 +36,13 @@ describe("reorderMyAccounts", () => {
       where: { id: { in: ["b", "a", "c"] }, clerkUserId: ME },
     });
     expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(db.thinkpagesAccount.update.mock.calls.map(([args]) => args)).toEqual([
-      { where: { id: "b" }, data: { sortOrder: 0 } },
-      { where: { id: "a" }, data: { sortOrder: 1 } },
-      { where: { id: "c" }, data: { sortOrder: 2 } },
+    // Scoped to the caller, so an account deleted since the count is skipped; accounts left out of
+    // ids (inactive ones the dashboard list hides) lose their old order and sort last.
+    expect(db.thinkpagesAccount.updateMany.mock.calls.map(([args]) => args)).toEqual([
+      { where: { id: "b", clerkUserId: ME }, data: { sortOrder: 0 } },
+      { where: { id: "a", clerkUserId: ME }, data: { sortOrder: 1 } },
+      { where: { id: "c", clerkUserId: ME }, data: { sortOrder: 2 } },
+      { where: { clerkUserId: ME, id: { notIn: ["b", "a", "c"] } }, data: { sortOrder: null } },
     ]);
   });
 
@@ -49,7 +52,7 @@ describe("reorderMyAccounts", () => {
       code: "FORBIDDEN",
     });
     expect(db.$transaction).not.toHaveBeenCalled();
-    expect(db.thinkpagesAccount.update).not.toHaveBeenCalled();
+    expect(db.thinkpagesAccount.updateMany).not.toHaveBeenCalled();
   });
 
   it("refuses duplicate ids", async () => {
