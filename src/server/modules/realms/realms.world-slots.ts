@@ -11,6 +11,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { realmPowers, type RealmActor } from "./realms.access";
 import { realmMapAccess } from "./realms.map-access";
 import { RealmRegionError } from "./realms.region";
+import { invalidateRealmMapFace } from "./realms.map-face-cache";
 
 type ReadDb = Pick<PrismaClient, "realm" | "country" | "realmClaim">;
 type WriteDb = ReadDb & Pick<PrismaClient, "$transaction">;
@@ -164,6 +165,7 @@ export async function setSlotClaimable(
     }
     throw new RealmRegionError("NOT_FOUND", "That nation is not in this realm");
   }
+  invalidateRealmMapFace(realmId);
   return { claimable };
 }
 

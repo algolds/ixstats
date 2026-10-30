@@ -22,3 +22,8 @@ export function claimableNation(country: {
   if (typeof country.id !== "string" || typeof country.name !== "string") return null;
   return { countryId: country.id, countryName: country.name.replace(/_/g, " ") };
 }
+
+/** The hint beside a claim for a player who holds a nation already: a claim adds to their nations and never moves
+ * the one they act as (assignNation, ruling F-1). */
+export const CLAIM_ADDS_TO_HOLDINGS =
+  "Adds to the nations you hold. Your active nation stays the same.";

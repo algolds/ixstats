@@ -3,6 +3,11 @@ import {
   getRealmMapFace,
   getRealmMapGeo,
 } from "~/server/modules/realms/realms.map-face";
+import { invalidateRealmMapFace } from "~/server/modules/realms/realms.map-face-cache";
+
+/** `Realm.mapVersion`, which the caches key on. */
+let mapVersion = 1;
+const realm = { findUnique: jest.fn(async () => ({ mapVersion })) };
 
 const row = (status: string, d: string, box = [-10, -5, 10, 5]) => ({
   status,
@@ -17,7 +22,7 @@ const dbWith = (
   land: object[] = [{ d: null, xmin: null, ymin: null, xmax: null, ymax: null }]
 ) => {
   const $queryRawUnsafe = jest.fn().mockResolvedValueOnce(political).mockResolvedValueOnce(land);
-  return { $queryRawUnsafe };
+  return { $queryRawUnsafe, realm };
 };
 
 it("widens a tall extent to the band aspect", () => {
@@ -57,6 +62,43 @@ it("serves a cached face for an hour", async () => {
   await getRealmMapFace(db as never, "realm-c", 3_600_001);
   expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(4);
 });
+describe("claim status and map changes", () => {
+  const twice = () =>
+    jest
+      .fn()
+      .mockResolvedValueOnce([row("open", "M 0 0 z")])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([row("claimed", "M 0 0 z")])
+      .mockResolvedValueOnce([]);
+
+  it("rebuilds at once after a claim status change", async () => {
+    const db = { $queryRawUnsafe: twice(), realm };
+    expect((await getRealmMapFace(db as never, "realm-claim", 0))?.open).toBe("M 0 0 z");
+    invalidateRealmMapFace("realm-claim", 1);
+    expect((await getRealmMapFace(db as never, "realm-claim", 2))?.claimed).toBe("M 0 0 z");
+  });
+
+  it("keeps a build made just after an invalidation only until the settle window closes", async () => {
+    const db = { $queryRawUnsafe: twice(), realm };
+    invalidateRealmMapFace("realm-settle", 0);
+    await getRealmMapFace(db as never, "realm-settle", 1);
+    await getRealmMapFace(db as never, "realm-settle", 9_999);
+    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(2);
+    await getRealmMapFace(db as never, "realm-settle", 10_001);
+    expect(db.$queryRawUnsafe).toHaveBeenCalledTimes(4);
+  });
+
+  it("rebuilds when the realm's map version moves", async () => {
+    const clock = jest.spyOn(Date, "now").mockReturnValue(0);
+    const db = { $queryRawUnsafe: twice(), realm };
+    await getRealmMapFace(db as never, "realm-version", 0);
+    mapVersion = 2;
+    clock.mockReturnValue(60_000); // past the 5 s version memo
+    expect((await getRealmMapFace(db as never, "realm-version", 1))?.claimed).toBe("M 0 0 z");
+    mapVersion = 1;
+    clock.mockRestore();
+  });
+});
 it("passes the realm id as a bound parameter, never in the SQL text", async () => {
   const db = dbWith([row("open", "M 0 0 z")]);
   await getRealmMapFace(db as never, "realm'; drop", 0);
@@ -95,7 +137,7 @@ describe("failure handling", () => {
 
   it("a rejected build is not retried within the short TTL", async () => {
     const $queryRawUnsafe = jest.fn().mockRejectedValue(new Error("boom"));
-    const db = { $queryRawUnsafe };
+    const db = { $queryRawUnsafe, realm };
     expect(await getRealmMapFace(db as never, "realm-fail", 0)).toBeNull();
     expect(await getRealmMapFace(db as never, "realm-fail", 299_999)).toBeNull();
     expect($queryRawUnsafe).toHaveBeenCalledTimes(1);
@@ -103,7 +145,7 @@ describe("failure handling", () => {
   });
   it("a rejected build is retried after the short TTL", async () => {
     const $queryRawUnsafe = jest.fn().mockRejectedValueOnce(new Error("boom"));
-    const db = { $queryRawUnsafe };
+    const db = { $queryRawUnsafe, realm };
     await getRealmMapFace(db as never, "realm-retry", 0);
     $queryRawUnsafe.mockResolvedValueOnce([row("open", "M 0 0 z")]).mockResolvedValueOnce([]);
     const face = await getRealmMapFace(db as never, "realm-retry", 300_001);
@@ -126,7 +168,7 @@ describe("failure handling", () => {
       .fn()
       .mockResolvedValueOnce([row("open", "M 0 0 z")])
       .mockRejectedValueOnce(new Error("GEOS"));
-    const face = await getRealmMapFace({ $queryRawUnsafe } as never, "realm-land-fail", 0);
+    const face = await getRealmMapFace({ $queryRawUnsafe, realm } as never, "realm-land-fail", 0);
     expect(face).toMatchObject({ open: "M 0 0 z", land: "" });
     expect(errorSpy).toHaveBeenCalledTimes(1);
   });
@@ -158,6 +200,7 @@ describe("getRealmMapGeo", () => {
   });
   const geoDb = (nations: object[], land: Promise<object[]>) => ({
     $queryRawUnsafe: jest.fn().mockResolvedValueOnce(nations).mockReturnValueOnce(land),
+    realm,
   });
 
   it("returns each nation as a keyed feature with its status, and the nations' bounds", async () => {

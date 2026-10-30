@@ -15,6 +15,10 @@ jest.mock("~/server/shared/map-invalidation", () => ({
   invalidateRealmMap: jest.fn().mockResolvedValue(1),
 }));
 
+jest.mock("~/server/modules/realms/realms.map-face-cache", () => ({
+  ...jest.requireActual("~/server/modules/realms/realms.map-face-cache"),
+  invalidateRealmMapFace: jest.fn(),
+}));
 jest.mock("~/lib/auth", () => ({ isSystemOwner: (id: string) => id === "sys_owner" }));
 jest.mock("~/server/modules/realms", () => {
   const actual = jest.requireActual("~/server/modules/realms");
@@ -42,6 +46,7 @@ import { usersCountryLinkingRouter } from "~/server/api/routers/users/country-li
 import { globalCache } from "~/lib/cache";
 import { assignClaimedNation } from "~/server/modules/realms/realms.ownership";
 import { assignNation, NationOwnershipError, releaseNation } from "~/server/modules/realms";
+import { invalidateRealmMapFace } from "~/server/modules/realms/realms.map-face-cache";
 
 type Db = ReturnType<typeof createMockPrisma>;
 
@@ -323,11 +328,13 @@ describe("nation ownership writers", () => {
       expect(d.country.update).toHaveBeenCalledWith({
         where: { id: "c2" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(d.country.findMany).not.toHaveBeenCalled();
       expect(d.country.update).not.toHaveBeenCalledWith({
         where: { id: "c1" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(d.user.updateMany).not.toHaveBeenCalledWith({
         where: { countryId: "c1" },
@@ -357,6 +364,7 @@ describe("nation ownership writers", () => {
       expect(d.country.update).not.toHaveBeenCalledWith({
         where: { id: "c1" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(d.country.updateMany).not.toHaveBeenCalled();
     });
@@ -375,6 +383,7 @@ describe("nation ownership writers", () => {
       expect(d.country.update).not.toHaveBeenCalledWith({
         where: { id: "e1" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(d.user.updateMany).not.toHaveBeenCalledWith({
         where: { countryId: "e1" },
@@ -492,6 +501,8 @@ describe("the ownership module", () => {
         data: { countryId: "c1" },
       });
       expect(t.user.update).not.toHaveBeenCalled();
+      // The realm's map face shows the nation as claimed now, not after its hour-long cache runs out.
+      expect(invalidateRealmMapFace).toHaveBeenCalledWith("default");
     });
 
     it("loses a concurrent race: the guarded ownership write matches nothing → ALREADY_OWNED, no pointer move", async () => {
@@ -518,10 +529,13 @@ describe("the ownership module", () => {
   describe("releaseNation / pointActiveNation", () => {
     it("clears owner and every active pointer at the country", async () => {
       const t = tx(unowned);
+      t.country.update.mockResolvedValue({ realmId: "r9" });
       await releaseNation(t, "c1");
+      expect(invalidateRealmMapFace).toHaveBeenCalledWith("r9");
       expect(t.country.update).toHaveBeenCalledWith({
         where: { id: "c1" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(t.user.updateMany).toHaveBeenCalledWith({
         where: { countryId: "c1" },

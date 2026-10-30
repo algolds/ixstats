@@ -17,6 +17,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { SharedElement } from "~/components/ui/view-transition";
+import { CLAIM_ADDS_TO_HOLDINGS } from "~/lib/realms/claimable-nation";
 import { cn } from "~/lib/utils";
 import { RealmAdvertCard, type AdvertOverview } from "./RealmAdvertCard";
 
@@ -54,6 +55,9 @@ function JoinAction({ realm }: { realm: DirectoryRealm }) {
         <span className="text-label-secondary text-footnote">
           You hold {myNationCount} of {maxNationsPerUser}
         </span>
+      )}
+      {myNationCount > 0 && myNationCount < maxNationsPerUser && (
+        <p className="text-label-secondary text-footnote w-full">{CLAIM_ADDS_TO_HOLDINGS}</p>
       )}
     </div>
   );

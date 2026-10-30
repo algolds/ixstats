@@ -9,6 +9,7 @@ import { useInviteVia } from "./use-invite-via";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { ClaimConsent, consentInput, NO_CONSENT } from "./ClaimConsent";
+import { CLAIM_ADDS_TO_HOLDINGS } from "~/lib/realms/claimable-nation";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -96,6 +97,17 @@ export function ClaimNationButton({
               once. Otherwise the realm&apos;s moderators review your claim.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {(overview?.viewer.ownedNations.length ?? 0) > 0 && (
+            <p className="text-label-secondary text-footnote">
+              {CLAIM_ADDS_TO_HOLDINGS}{" "}
+              <Link
+                href="/help/world/realms#playing-more-than-one-nation"
+                className="text-tint underline-offset-4 hover:underline"
+              >
+                How it works
+              </Link>
+            </p>
+          )}
           <ClaimConsent nationName={countryName} value={consent} onChange={setConsent} />
           {rules && (
             <div className="bg-fill-4 rounded-row flex flex-col gap-2 p-3">

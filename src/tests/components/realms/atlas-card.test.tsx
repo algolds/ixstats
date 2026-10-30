@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { RealmCard } from "~/components/realms/RealmCard";
 import type { DirectoryRealm } from "~/app/realms/_components/realm-directory";
+import { CLAIM_ADDS_TO_HOLDINGS } from "~/lib/realms/claimable-nation";
 
 jest.mock("~/components/ui/view-transition", () => ({
   SharedElement: ({ children }: { name: string; children: ReactNode }) => <>{children}</>,
@@ -81,6 +82,7 @@ describe("atlas RealmCard", () => {
       "href",
       "/r/ixnay/nations"
     );
+    expect(screen.queryByText(CLAIM_ADDS_TO_HOLDINGS)).not.toBeInTheDocument();
   });
 
   it("a holder below the cap sees Claim another", () => {
@@ -90,6 +92,8 @@ describe("atlas RealmCard", () => {
       "/r/ixnay/nations"
     );
     expect(screen.getByText("You hold 1 of 3")).toBeInTheDocument();
+    // A claim adds a nation; it never replaces the one the player acts as.
+    expect(screen.getByText(CLAIM_ADDS_TO_HOLDINGS)).toBeInTheDocument();
   });
 
   it("at the cap there is no Join, only the holding", () => {
@@ -99,6 +103,7 @@ describe("atlas RealmCard", () => {
     expect(
       screen.queryByRole("link", { name: "Claim another nation in Ixnay" })
     ).not.toBeInTheDocument();
+    expect(screen.queryByText(CLAIM_ADDS_TO_HOLDINGS)).not.toBeInTheDocument();
   });
 
   it("tags and meta lines", () => {

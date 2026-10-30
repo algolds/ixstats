@@ -47,7 +47,7 @@ export interface SceneFieldPiece {
 }
 
 export interface SceneOrdinary {
-  /** Index into composition.shield.ordinaries (unknown ordinary types are skipped). */
+  /** Index into composition.shield.ordinaries. Drawn with the even-odd fill rule. */
   index: number;
   d: string;
   fill: string;
@@ -120,10 +120,11 @@ export function buildShieldScene(
       composition.shield.field.division,
       composition.shield.field.tinctures
     ),
-    ordinaries: (composition.shield.ordinaries ?? []).flatMap((ord, index) => {
-      const d = renderOrdinaryPath(ord.type);
-      return d ? [{ index, d, fill: getTinctureColor(ord.tincture) }] : [];
-    }),
+    ordinaries: (composition.shield.ordinaries ?? []).map((ord, index) => ({
+      index,
+      d: renderOrdinaryPath(ord.type, composition.shield.shape),
+      fill: getTinctureColor(ord.tincture),
+    })),
     charges: charges.flatMap((layoutCharge, idx): SceneCharge[] => {
       const refIndex = chargeOwner[idx] ?? 0;
       const chargeRef = chargeRefs[refIndex];
@@ -192,7 +193,7 @@ export function serializeShieldSvg(
     )
     .join("");
   const ordinaries = scene.ordinaries
-    .map((ord) => `<path d="${attr(ord.d)}" fill="${attr(ord.fill)}"/>`)
+    .map((ord) => `<path d="${attr(ord.d)}" fill="${attr(ord.fill)}" fill-rule="evenodd"/>`)
     .join("");
   const charges = scene.charges
     .map((charge) =>

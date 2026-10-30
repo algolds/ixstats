@@ -1,10 +1,18 @@
 "use client";
 
 import React from "react";
-import { Trophy, Play, Settings, SystemRestart as Loader2 } from "iconoir-react";
+import Link from "next/link";
+import {
+  Trophy,
+  Play,
+  Settings,
+  SystemRestart as Loader2,
+  OpenBook as BookOpen,
+} from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { withBasePath } from "~/lib/base-path";
+import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
 
@@ -14,6 +22,7 @@ interface LeagueMastheadProps {
     name: string;
     sportPreset?: string | null;
     logo?: string | null;
+    wikiSlug?: string | null;
     teamCount?: number;
     archetype?: string;
   };
@@ -106,6 +115,15 @@ export function LeagueMasthead({
               >
                 {sportTheme.name}
               </Badge>
+              {league.wikiSlug && (
+                <Link
+                  href={titleToWikiOSRoute(league.wikiSlug)}
+                  className="text-footnote text-label-secondary hover:text-label inline-flex items-center gap-1 transition-colors"
+                >
+                  <BookOpen className="h-3.5 w-3.5" />
+                  <span>Wiki article</span>
+                </Link>
+              )}
             </div>
 
             <div className="text-eyebrow text-label-secondary flex flex-wrap items-center gap-2">

@@ -1,6 +1,6 @@
 # Vexel — Heraldry Studio
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-29
 **Status:** Labs. The editor, generator, registry, export and attach to country work. Saving a design renders it
 to PNG on the server, and that image is what attach writes as the country's coat of arms.
 **Routes:** `/labs/vexel` (new design) · `/labs/vexel/[id]` (edit) · `/labs/vexel/generate` (gallery) ·
@@ -11,7 +11,8 @@ to PNG on the server, and that image is what attach writes as the country's coat
 
 Vexel designs coats of arms as structured data. A design (a "heraldic achievement") is a JSON composition: field,
 divisions, ordinaries, charges and tinctures. Vexel draws it as SVG and writes its blazon (the formal text
-description) from the same data.
+description) from the same data. All 17 divisions and 16 ordinaries are drawn; the bordure and tressure follow the
+shield's own outline. `src/tests/lib/heraldry/heraldry-corpus.test.ts` fails if one renders empty.
 
 ---
 
@@ -130,6 +131,10 @@ None.
 - `saveAchievement` still stores the client's serialized SVG in `svgData` as sent. Nothing reads it.
 - Only the shield is drawn. Helm, crest, mantling, supporters, motto and compartment exist in the types, but the
   renderer ignores them (see the PRD status table).
+- Line styles (engrailed, wavy and the rest) are stored and blazoned but drawn straight. Every division piece added
+  for the patterned divisions goes through `polygon()` in `svg-utils.ts`, whose straight `L` segment is where a
+  line-style edge would go; the older two- and four-piece divisions still use rects and literal paths, and would move
+  to `polygon()` first.
 - Saving is manual; there is no autosave.
 - The registry has no moderation tools.
 

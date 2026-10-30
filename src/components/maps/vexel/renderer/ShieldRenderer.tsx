@@ -74,6 +74,7 @@ export default function ShieldRenderer({
                 key={ord.index}
                 d={ord.d}
                 fill={ord.fill}
+                fillRule="evenodd"
                 onClick={(e) => {
                   e.stopPropagation();
                   onElementClick?.(`shield.ordinaries[${ord.index}]`);

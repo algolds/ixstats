@@ -1,6 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Feature, MultiPolygon, Polygon } from "geojson";
 import { sourceGeometry } from "~/server/modules/maps/tile-render";
+import { getRealmMapVersion } from "~/server/shared/map-invalidation";
+import { cachedBuild, realmMapCache } from "./realms.map-face-cache";
 
 /** A realm's political map as SVG path strings, drawn on a card as its face.
  * Every path field is `""` when the realm has nothing of that kind. */
@@ -94,20 +96,12 @@ const GEO_LAND_TOLERANCE = 0.15;
 const GEO_CLIP_BOX = "ST_MakeEnvelope(-180, -75, 180, 75, 4326)";
 const BAND_ASPECT = 2.4;
 const BAND_PADDING = 0.04;
-const CACHE_TTL_MS = 3_600_000;
-/** How long a failed build is remembered as "no face", so a broken realm is not re-queried on every
- * card render. Short, so a fixed realm comes back soon. */
-const FAILURE_TTL_MS = 300_000;
+/** What a map read needs: its SQL, and `Realm.mapVersion` (memoised 5 s) so a map edit is a new cache entry. */
+type MapFaceDb = Pick<PrismaClient, "$queryRawUnsafe"> & Parameters<typeof getRealmMapVersion>[0];
 
-interface CacheEntry<T> {
-  expires: number;
-  value: Promise<T | null>;
-}
-
-// ponytail: per-process caches; move to Redis if IxStats runs more than one instance
 /** Each holds the in-flight promise, so concurrent callers await one build. */
-const faceCache = new Map<string, CacheEntry<RealmMapFace>>();
-const geoCache = new Map<string, CacheEntry<RealmMapGeo>>();
+const faceCache = realmMapCache<RealmMapFace>();
+const geoCache = realmMapCache<RealmMapGeo>();
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
@@ -230,36 +224,18 @@ async function buildFace(
   };
 }
 
-/** `build` through `store`: a live entry is returned as is (in flight or settled); a failed build is
- * logged and remembered as null for `FAILURE_TTL_MS`. */
-function cachedBuild<T>(
-  store: Map<string, CacheEntry<T>>,
-  key: string,
-  build: () => Promise<T | null>,
-  label: string,
-  now: number
-): Promise<T | null> {
-  const hit = store.get(key);
-  if (hit && hit.expires > now) return hit.value;
-  const value = build().catch((error: Error) => {
-    console.error(`[realms] ${label} failed for realm ${key}:`, error);
-    store.set(key, { expires: now + FAILURE_TTL_MS, value: Promise.resolve(null) });
-    return null;
-  });
-  store.set(key, { expires: now + CACHE_TTL_MS, value });
-  return value;
-}
-
 /** A realm's political map as SVG paths grouped by whether a nation can be claimed, held or neither,
  * with the realm's land under them. Null when the realm has no political layer, or when building it
- * failed (remembered for five minutes). Cached per process for an hour; concurrent callers share one
- * build; `now` is injectable for tests. */
-export function getRealmMapFace(
-  db: Pick<PrismaClient, "$queryRawUnsafe">,
+ * failed (remembered for five minutes). Cached per process for an hour, per map version, until
+ * `invalidateRealmMapFace` (realms.map-face-cache.ts); concurrent callers share one build; `now` is
+ * injectable for tests. */
+export async function getRealmMapFace(
+  db: MapFaceDb,
   realmId: string,
   now = Date.now()
 ): Promise<RealmMapFace | null> {
-  return cachedBuild(faceCache, realmId, () => buildFace(db, realmId), "map face", now);
+  const version = await getRealmMapVersion(db, realmId);
+  return cachedBuild(faceCache, realmId, version, () => buildFace(db, realmId), "map face", now);
 }
 
 async function buildGeo(
@@ -308,10 +284,11 @@ async function buildGeo(
 /** A realm's political map as lon/lat GeoJSON for the live hero map: each nation with its claim status,
  * the realm's land, and the nations' bounds. Same caching, failure memory and land fallback as
  * `getRealmMapFace`. */
-export function getRealmMapGeo(
-  db: Pick<PrismaClient, "$queryRawUnsafe">,
+export async function getRealmMapGeo(
+  db: MapFaceDb,
   realmId: string,
   now = Date.now()
 ): Promise<RealmMapGeo | null> {
-  return cachedBuild(geoCache, realmId, () => buildGeo(db, realmId), "hero map", now);
+  const version = await getRealmMapVersion(db, realmId);
+  return cachedBuild(geoCache, realmId, version, () => buildGeo(db, realmId), "hero map", now);
 }
