@@ -31,13 +31,13 @@ describe("heroNationHref", () => {
     expect(
       heroNationHref({ id: "c2", slug: "caphiria", name: "Caphiria", status: "claimed" }, "ixnay")
     ).toBe("/countries/caphiria");
-    expect(heroNationHref({ id: "c3", slug: null, name: "Npc", status: "other" }, "ixnay")).toBe(
+    expect(heroNationHref({ id: "c3", slug: null, name: "Npc", status: "npc" }, "ixnay")).toBe(
       "/countries/c3"
     );
   });
 
   it("leads nowhere for a region with no country", () => {
-    expect(heroNationHref({ id: null, slug: null, name: "Wilds", status: "other" }, "ixnay")).toBe(
+    expect(heroNationHref({ id: null, slug: null, name: "Wilds", status: "none" }, "ixnay")).toBe(
       null
     );
   });
@@ -46,5 +46,6 @@ describe("heroNationHref", () => {
 it("words each status for the hover card", () => {
   expect(heroNationStatus("claimed")).toBe("Claimed by a player");
   expect(heroNationStatus("open")).toBe("Open to claim");
-  expect(heroNationStatus("other")).toBe("Not open to players");
+  expect(heroNationStatus("npc")).toBe("Not playable");
+  expect(heroNationStatus("none")).toBe("Not open to players");
 });

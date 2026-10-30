@@ -6,7 +6,12 @@
 /** MapLibre draws the Web Mercator world 512px wide at zoom 0. */
 const TILE_SIZE = 512;
 
-type NationStatus = "open" | "claimed" | "other";
+/** What a nation is on a realm's map: open to claim, held by a player, NPC scenery nobody can claim, or a region with no country. */
+export type NationStatus = "open" | "claimed" | "npc" | "none";
+
+/** The NPC nation fill: the land colour pulled toward the label, so scenery reads apart from bare land in
+ * any tint or theme. One source for the SVG face and the live map (which resolves it through a probe). */
+export const NPC_FILL = "color-mix(in srgb, var(--color-fill-3) 78%, var(--color-label))";
 
 /** The nation fields the hero map's hover card and click use. */
 export interface HeroNationLink {
@@ -57,5 +62,6 @@ export function heroNationHref(nation: HeroNationLink, realmSlug: string): strin
 export function heroNationStatus(status: NationStatus): string {
   if (status === "claimed") return "Claimed by a player";
   if (status === "open") return "Open to claim";
+  if (status === "npc") return "Not playable";
   return "Not open to players";
 }

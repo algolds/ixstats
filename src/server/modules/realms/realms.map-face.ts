@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Feature, MultiPolygon, Polygon } from "geojson";
+import type { NationStatus } from "~/lib/realms/hero-map";
 import { sourceGeometry } from "~/server/modules/maps/tile-render";
 import { getRealmMapVersion } from "~/server/shared/map-invalidation";
 import { cachedBuild, realmMapCache } from "./realms.map-face-cache";
@@ -14,11 +15,13 @@ export interface RealmMapFace {
   open: string;
   /** Nations a player holds. */
   claimed: string;
-  /** Nations that can't be claimed (NPC or locked), and regions with no country. */
-  other: string;
+  /** Nations nobody holds and nobody can claim (NPC scenery). */
+  npc: string;
+  /** Regions with no country. */
+  none: string;
 }
 
-export type NationStatus = "open" | "claimed" | "other";
+export type { NationStatus };
 
 /** What the live hero map shows for a nation: who it is, and whether it can be claimed. */
 export interface HeroNation {
@@ -128,9 +131,21 @@ const layerGeometry = (layerType: string, also = "TRUE") => `
 const NOT_POLAR_CAP = `NOT (ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180
   AND (ST_YMax(geom_postgis) < -50 OR ST_YMin(geom_postgis) > 50))`;
 
-/** A region with no country, or a country nobody can claim, is "other"; then unowned is "open". */
-const STATUS_SQL = `CASE WHEN c.id IS NULL OR (c."ownerUserId" IS NULL AND NOT c.claimable) THEN 'other'
+/** A region with no country is "none"; an unowned country nobody can claim is "npc"; then unowned is "open". */
+export const STATUS_SQL = `CASE WHEN c.id IS NULL THEN 'none'
+  WHEN c."ownerUserId" IS NULL AND NOT c.claimable THEN 'npc'
   WHEN c."ownerUserId" IS NULL THEN 'open' ELSE 'claimed' END`;
+
+/** `STATUS_SQL` in code: the one rule for what a nation is on the realm map. */
+export function nationStatus(nation: {
+  hasCountry: boolean;
+  ownerUserId: string | null;
+  claimable: boolean;
+}): NationStatus {
+  if (!nation.hasCountry) return "none";
+  if (nation.ownerUserId !== null) return "claimed";
+  return nation.claimable ? "open" : "npc";
+}
 
 const POLITICAL_SQL = `
 WITH nations AS (
@@ -220,7 +235,8 @@ async function buildFace(
     land,
     open: pathOf("open"),
     claimed: pathOf("claimed"),
-    other: pathOf("other"),
+    npc: pathOf("npc"),
+    none: pathOf("none"),
   };
 }
 

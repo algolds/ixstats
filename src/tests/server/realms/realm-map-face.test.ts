@@ -42,11 +42,18 @@ it("groups nations by status and flips the extent into SVG y", async () => {
   expect(face).toMatchObject({
     open: "M 0 0 l 1 1 z",
     claimed: "M 2 2 l 1 1 z",
-    other: "",
+    npc: "",
+    none: "",
     land: "",
   });
+  expect(face).not.toHaveProperty("other");
   // union extent x -10..20, y -5..10, so SVG minY = -10
   expect(face?.viewBox.split(" ").map(Number)[1]).toBeLessThan(-10);
+});
+it("keeps npc nations and nations with no country as separate paths", async () => {
+  const db = dbWith([row("npc", "M 0 0 z"), row("none", "M 5 5 z")]);
+  const face = await getRealmMapFace(db as never, "realm-npc", 0);
+  expect(face).toMatchObject({ npc: "M 0 0 z", none: "M 5 5 z", open: "", claimed: "" });
 });
 it("returns null without political rows and skips the land query", async () => {
   const db = dbWith([]);
@@ -205,14 +212,14 @@ describe("getRealmMapGeo", () => {
 
   it("returns each nation as a keyed feature with its status, and the nations' bounds", async () => {
     const db = geoDb(
-      [nation("claimed", "c1", [-20, -10, 5, 30]), nation("other", null, [0, 0, 40, 12])],
+      [nation("claimed", "c1", [-20, -10, 5, 30]), nation("none", null, [0, 0, 40, 12])],
       Promise.resolve([{ geometry: square }])
     );
     const geo = await getRealmMapGeo(db as never, "geo-a", 0);
     expect(geo?.bounds).toEqual([-20, -10, 40, 30]);
     expect(geo?.nations.map((f) => f.properties)).toEqual([
       { key: 0, id: "c1", name: "Nation c1", slug: "c1", flag: null, status: "claimed" },
-      { key: 1, id: null, name: "Wilds", slug: null, flag: null, status: "other" },
+      { key: 1, id: null, name: "Wilds", slug: null, flag: null, status: "none" },
     ]);
     expect(geo?.nations[0]?.geometry.type).toBe("Polygon");
     expect(geo?.land?.type).toBe("Polygon");
