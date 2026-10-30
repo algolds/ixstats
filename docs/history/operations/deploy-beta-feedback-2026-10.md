@@ -30,7 +30,10 @@ and the build. The file is one transaction and a no-op once applied, so a re-run
 - creates `realm_founders` (founding members credited in the realm header; a credit only, never read for permissions);
 - adds `wiki_links.targetTitle`, the canonical title a link names. Links stored before it keep it null.
 
-Nothing else is manual: no environment variable, no cron job, no data script.
+No data script runs. One cron change goes with this release (owner ruling, 2026-10-30): add `exchange-market` and
+`exchange-contract-expiry` to `CRON_ENABLED_JOBS` in the PM2 `ixstats-cron` app's environment, then
+`pm2 restart ixstats-cron --update-env`. The market tick moves the sector indices every 6 hours; the expiry job
+refunds the escrow of contracts left unawarded 3 days after bidding closes ([exchange.md](../../systems/exchange.md)).
 
 ## 3. The window
 
