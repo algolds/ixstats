@@ -49,7 +49,6 @@ export function LeagueTeamsTab({ leagueId, teams, onOpenRoster }: LeagueTeamsTab
 
   const updateTeams = api.sports.updateTeams.useMutation({
     onSuccess: () => {
-      dispatch({ type: "saved" });
       notify.success("Teams saved", "Every change was saved.");
       void utils.sports.getLeague.invalidate({ id: leagueId });
     },
@@ -167,7 +166,13 @@ export function LeagueTeamsTab({ leagueId, teams, onOpenRoster }: LeagueTeamsTab
             type="button"
             size="sm"
             disabled={patches.length === 0 || hasBlankName || updateTeams.isPending}
-            onClick={() => updateTeams.mutate({ leagueId, teams: patches })}
+            onClick={() => {
+              const sent = table.rows;
+              updateTeams.mutate(
+                { leagueId, teams: patches },
+                { onSuccess: () => dispatch({ type: "saved", sent }) }
+              );
+            }}
           >
             {updateTeams.isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Save teams

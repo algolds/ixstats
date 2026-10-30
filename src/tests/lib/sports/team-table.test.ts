@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * The Teams tab's draft table: only rows whose fields differ from the saved ones become patches, a reset drops every
- * edit, and a save makes the draft the new baseline.
+ * edit, and a save makes the rows it sent the new baseline (edits typed while it was in flight stay unsaved).
  */
 import {
   changedRows,
@@ -81,9 +81,20 @@ describe("teamTableReducer", () => {
   it("makes the draft the baseline once saved", () => {
     let state = createTeamTable(teams);
     state = teamTableReducer(state, { type: "edit", id: "b", field: "name", value: "Bravo FC" });
-    state = teamTableReducer(state, { type: "saved" });
+    state = teamTableReducer(state, { type: "saved", sent: state.rows });
 
     expect(changedRows(state)).toEqual([]);
     expect(teamTableReducer(state, { type: "reset" }).rows[1]?.name).toBe("Bravo FC");
+  });
+
+  it("keeps an edit typed while a save was in flight unsaved", () => {
+    let state = createTeamTable(teams);
+    state = teamTableReducer(state, { type: "edit", id: "a", field: "name", value: "Alpha FC" });
+    const sent = state.rows;
+    state = teamTableReducer(state, { type: "edit", id: "b", field: "name", value: "Bravo FC" });
+    state = teamTableReducer(state, { type: "saved", sent });
+
+    expect(changedRows(state)).toEqual([{ id: "b", name: "Bravo FC" }]);
+    expect(state.rows[1]?.name).toBe("Bravo FC");
   });
 });

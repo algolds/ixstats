@@ -44,7 +44,8 @@ export interface TeamTableState {
 export type TeamTableAction =
   | { type: "edit"; id: string; field: TeamField; value: string }
   | { type: "reset" }
-  | { type: "saved" };
+  /** A save succeeded: `sent` is the rows as they were when it started, so edits typed since stay unsaved. */
+  | { type: "saved"; sent: TeamRow[] };
 
 const toRow = (team: TeamTableSource): TeamRow => ({
   id: team.id,
@@ -72,7 +73,7 @@ export function teamTableReducer(state: TeamTableState, action: TeamTableAction)
     case "reset":
       return { ...state, rows: state.saved };
     case "saved":
-      return { ...state, saved: state.rows };
+      return { ...state, saved: action.sent };
   }
 }
 
