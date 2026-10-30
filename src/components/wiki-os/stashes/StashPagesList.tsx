@@ -65,10 +65,13 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
       {items.map((item) => {
         const annotations = item.annotations || [];
         const cleanTitle = item.pageTitle.replace(/_/g, " ");
+        // Lead images are IxWiki's, keyed by title: a sister-wiki page of the same title is not that page.
         const thumbUrl =
-          thumbnailsMap[item.pageTitle] ||
-          thumbnailsMap[cleanTitle] ||
-          thumbnailsMap[item.pageSlug];
+          (item.source ?? "ixwiki") === "ixwiki"
+            ? thumbnailsMap[item.pageTitle] ||
+              thumbnailsMap[cleanTitle] ||
+              thumbnailsMap[item.pageSlug]
+            : undefined;
 
         return (
           <div

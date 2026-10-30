@@ -117,9 +117,10 @@ export default function StashesPage() {
     [items]
   );
 
-  const articleTitles = useMemo(() => allArticles.map((a) => a.pageTitle), [allArticles]);
-
-  // Fetch article lead thumbnails
+  // Fetch article lead thumbnails: IxWiki's, so only for IxWiki items
+  const articleTitles = allArticles
+    .filter((a) => (a.source ?? "ixwiki") === "ixwiki")
+    .map((a) => a.pageTitle);
   const { data: thumbnailsMap } = api.wikios.getArticleThumbnails.useQuery(
     { titles: articleTitles },
     { enabled: articleTitles.length > 0, staleTime: 5 * 60 * 1000 }
