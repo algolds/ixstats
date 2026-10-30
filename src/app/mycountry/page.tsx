@@ -1,5 +1,5 @@
-import { MyCountryPage as MyCountrySections } from "./_components/MyCountryPage";
+import { MyCountryRouter } from "~/components/mycountry";
 
 export default function MyCountryPage() {
-  return <MyCountrySections />;
+  return <MyCountryRouter />;
 }

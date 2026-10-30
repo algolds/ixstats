@@ -1,5 +1,6 @@
 import "server-only";
 
+import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { PLAY_AS_COOKIE } from "~/app/admin/users/play-as-cookie";
 import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
@@ -14,14 +15,19 @@ import { signedInApi } from "~/trpc/server";
  * country differs (demo mode, the dev country view) misses the cache and fetches on the client, as
  * before. While staff play as another user it prefetches nothing: the server request carries no
  * play-as header, so it would answer with the staff member's own profile and country under the keys
- * the client fills for the other user. `prefetch` never throws, so a failed read leaves the client to ask.
+ * the client fills for the other user. A signed-out visitor prefetches nothing: a guest's profile
+ * would be cached under the signed-in key. Each read gets one attempt (`retry: false`), as the production query
+ * client's retries would otherwise hold the page's first byte for seconds when a read fails. `prefetch` never
+ * throws, so a failed read leaves the client to ask.
  */
 export async function prefetchMyCountry(): Promise<void> {
   if ((await cookies()).get(PLAY_AS_COOKIE)) return;
+  if (!(await auth()).userId) return;
   const id = await getSignedInCountryId();
+  const once = { retry: false };
   await Promise.all([
-    signedInApi.users.getProfile.prefetch(),
-    id ? signedInApi.countries.getByIdWithEconomicData.prefetch({ id }) : undefined,
-    id ? signedInApi.countries.getActivityRingsData.prefetch({ countryId: id }) : undefined,
+    signedInApi.users.getProfile.prefetch(undefined, once),
+    id ? signedInApi.countries.getByIdWithEconomicData.prefetch({ id }, once) : undefined,
+    id ? signedInApi.countries.getActivityRingsData.prefetch({ countryId: id }, once) : undefined,
   ]);
 }
