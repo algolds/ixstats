@@ -55,6 +55,19 @@ it("keeps npc nations and nations with no country as separate paths", async () =
   const face = await getRealmMapFace(db as never, "realm-npc", 0);
   expect(face).toMatchObject({ npc: "M 0 0 z", none: "M 5 5 z", open: "", claimed: "" });
 });
+it("decides each nation's status in SQL: none without a country, npc when unowned and unclaimable, then open or claimed", async () => {
+  const face = dbWith([row("open", "M 0 0 z")]);
+  await getRealmMapFace(face as never, "realm-status", 0);
+  const geo = { $queryRawUnsafe: jest.fn().mockResolvedValue([]), realm };
+  await getRealmMapGeo(geo as never, "realm-status-geo");
+
+  for (const sql of [face.$queryRawUnsafe.mock.calls[0][0], geo.$queryRawUnsafe.mock.calls[0][0]]) {
+    expect(sql.replace(/\s+/g, " ")).toContain(
+      `CASE WHEN c.id IS NULL THEN 'none' WHEN c."ownerUserId" IS NULL AND NOT c.claimable THEN 'npc' WHEN c."ownerUserId" IS NULL THEN 'open' ELSE 'claimed' END AS status`
+    );
+    expect(sql).not.toContain("'other'");
+  }
+});
 it("returns null without political rows and skips the land query", async () => {
   const db = dbWith([]);
   expect(await getRealmMapFace(db as never, "realm-b", 0)).toBeNull();
