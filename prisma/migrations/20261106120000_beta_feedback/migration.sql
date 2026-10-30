@@ -21,4 +21,10 @@ DROP INDEX IF EXISTS "lore_stash_items_stashId_contentType_pageTitle_key";
 CREATE UNIQUE INDEX IF NOT EXISTS "lore_stash_items_stashId_contentType_source_pageTitle_key"
   ON "lore_stash_items" ("stashId", "contentType", "source", "pageTitle");
 
+-- Drag to reorder accounts: the owner's order among their ThinkPages accounts. Null until they reorder; null sorts last.
+ALTER TABLE "ThinkpagesAccount" ADD COLUMN IF NOT EXISTS "sortOrder" INTEGER;
+
+CREATE INDEX IF NOT EXISTS "ThinkpagesAccount_clerkUserId_sortOrder_idx"
+  ON "ThinkpagesAccount" ("clerkUserId", "sortOrder");
+
 COMMIT;

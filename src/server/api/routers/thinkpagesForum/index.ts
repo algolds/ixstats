@@ -348,7 +348,7 @@ const forumRouter = createTRPCRouter({
           isActive: true,
           accountType: { not: PERSONAL_ACCOUNT_TYPE },
         },
-        orderBy: { displayName: "asc" },
+        orderBy: [{ sortOrder: { sort: "asc", nulls: "last" } }, { displayName: "asc" }],
         select: { id: true, displayName: true, username: true },
       }),
       ctx.db.forumPost.findFirst({

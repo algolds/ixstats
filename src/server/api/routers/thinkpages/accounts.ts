@@ -337,10 +337,40 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
           clerkUserId: auth.userId,
           ...(input?.includeInactive ? {} : { isActive: true }),
         },
-        orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
+        orderBy: [
+          { sortOrder: { sort: "asc", nulls: "last" } },
+          { verified: "desc" },
+          { followerCount: "desc" },
+          { createdAt: "asc" },
+        ],
       });
 
       return accounts;
+    }),
+
+  // Saves the owner's drag order: ids[0] is first. The ids must all be the caller's accounts.
+  reorderMyAccounts: rateLimitedMutationProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const { ids } = input;
+      if (new Set(ids).size !== ids.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Each account can be listed once" });
+      }
+      const owned = await ctx.db.thinkpagesAccount.count({
+        where: { id: { in: ids }, clerkUserId: ctx.auth.userId },
+      });
+      if (owned !== ids.length) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reorder your own accounts",
+        });
+      }
+      await ctx.db.$transaction(
+        ids.map((id, sortOrder) =>
+          ctx.db.thinkpagesAccount.update({ where: { id }, data: { sortOrder } })
+        )
+      );
+      return { success: true as const };
     }),
 
   // The caller's personal persona ("post as yourself"), or null if they have not made one yet

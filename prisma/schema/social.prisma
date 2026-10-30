@@ -20,6 +20,8 @@ model ThinkpagesAccount {
   politicalLean    String           @default("center")
   personality      String           @default("casual")
   isActive         Boolean          @default(true)
+  /// The owner's drag order among their accounts (0 first); null until they reorder, and those sort last.
+  sortOrder        Int?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   mentions         PostMention[]
@@ -28,6 +30,7 @@ model ThinkpagesAccount {
   posts            ThinkpagesPost[]
 
   @@index([clerkUserId])
+  @@index([clerkUserId, sortOrder])
   @@index([countryId])
   @@index([accountType])
   @@index([username])

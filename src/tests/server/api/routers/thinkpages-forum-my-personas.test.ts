@@ -69,7 +69,7 @@ describe("thinkpagesForum.myPersonas", () => {
     await myPersonas(fake);
     expect(fake.thinkpagesAccount.findMany).toHaveBeenCalledWith({
       where: { clerkUserId: "clerk_1", isActive: true, accountType: { not: "personal" } },
-      orderBy: { displayName: "asc" },
+      orderBy: [{ sortOrder: { sort: "asc", nulls: "last" } }, { displayName: "asc" }],
       select: { id: true, displayName: true, username: true },
     });
   });
