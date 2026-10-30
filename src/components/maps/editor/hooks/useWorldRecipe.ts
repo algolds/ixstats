@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { LandMaskLayers } from "~/lib/worldgen/land-mask";
 import {
   clampControls,
@@ -98,19 +98,22 @@ export function useWorldRecipe({
   const [stored, setControls] = useState<WorldControls>(start.controls);
   // What was asked for, as the published presets make it: a preset that has since been archived or unpublished is
   // Earth-like, and controls nobody has moved yet are the published Earth-like preset's values, not the factory ones
-  const settle = useCallback(
-    (raw: WorldControls, known: readonly WorldPresetOption[] | null) => {
-      if (!known) return raw;
-      if (!start.restored && raw === start.controls)
-        return controlsForPreset(FALLBACK_PRESET_SLUG, known);
-      return withKnownPresets(raw, known);
-    },
-    [start]
-  );
-  const controls = useMemo(() => settle(stored, presets), [settle, stored, presets]);
+  const settle = (raw: WorldControls, known: readonly WorldPresetOption[] | null) => {
+    if (!known) return raw;
+    if (!start.restored && raw === start.controls)
+      return controlsForPreset(FALLBACK_PRESET_SLUG, known);
+    return withKnownPresets(raw, known);
+  };
+  const controls = settle(stored, presets);
   const [seed, setSeed] = useState(start.seed);
-  // A ref, not state: every run also moves the generator's view (or the controls), which renders this
-  const lastRun = useRef<LastRun | null>(null);
+  // What the latest run asked for. The render reads the state (`stale`), set in the same batch as the generator's view
+  // or the controls. Effects read the ref, which a run earlier in the same commit has already set.
+  const [lastRun, setLastRun] = useState<LastRun | null>(null);
+  const lastRunRef = useRef<LastRun | null>(null);
+  const recordRun = (made: LastRun | null) => {
+    lastRunRef.current = made;
+    setLastRun(made);
+  };
   // The draft was taken away (discarded, or its world applied): the saved recipe is not brought back on mount
   const discarded = useRef(false);
   const latest = useLatest({
@@ -127,52 +130,46 @@ export function useWorldRecipe({
   const waitingForPresets = useRef(false);
   const { generate, reset } = generator;
 
-  const run = useCallback(
-    (next: WorldControls, nextSeed: number) => {
-      const {
-        realmMapLayers: layers,
-        realmMapVersion: mapVersion,
-        realmMapReady: ready,
-        scope: key,
-        presets: known,
-        fallback: standIn,
-      } = latest.current;
-      // A world waits for the presets (its recipe is theirs): a request made meanwhile is made once they are in. Fitted
-      // to the realm's map it waits for the map too: the saved recipe runs once it has loaded
-      if (!known) {
-        waitingForPresets.current = true;
-        return;
-      }
-      if (next.source === "realm-map" && !ready) return;
-      discarded.current = false;
-      generate(
-        paramsFromControls(next, known),
-        nextSeed,
-        next.source === "realm-map"
-          ? {
-              landMaskLayers: layers,
-              // The worker keeps the mask it made of this map, so a slider change does not send it or redo it
-              ...(mapVersion === undefined ? {} : { maskKey: `${key}:${mapVersion}` }),
-              keepBorders: true,
-            }
-          : undefined
-      );
-      // The built-ins standing in for presets that could not be read are not the founder's choice: leave the recipe
-      if (!standIn) saveWorldRecipe(key, { seed: nextSeed, controls: next });
-      lastRun.current = { controls: next, seed: nextSeed, mapVersion };
-    },
-    [generate, latest]
-  );
+  const run = (next: WorldControls, nextSeed: number) => {
+    const {
+      realmMapLayers: layers,
+      realmMapVersion: mapVersion,
+      realmMapReady: ready,
+      scope: key,
+      presets: known,
+      fallback: standIn,
+    } = latest.current;
+    // A world waits for the presets (its recipe is theirs): a request made meanwhile is made once they are in. Fitted
+    // to the realm's map it waits for the map too: the saved recipe runs once it has loaded
+    if (!known) {
+      waitingForPresets.current = true;
+      return;
+    }
+    if (next.source === "realm-map" && !ready) return;
+    discarded.current = false;
+    generate(
+      paramsFromControls(next, known),
+      nextSeed,
+      next.source === "realm-map"
+        ? {
+            landMaskLayers: layers,
+            // The worker keeps the mask it made of this map, so a slider change does not send it or redo it
+            ...(mapVersion === undefined ? {} : { maskKey: `${key}:${mapVersion}` }),
+            keepBorders: true,
+          }
+        : undefined
+    );
+    // The built-ins standing in for presets that could not be read are not the founder's choice: leave the recipe
+    if (!standIn) saveWorldRecipe(key, { seed: nextSeed, controls: next });
+    recordRun({ controls: next, seed: nextSeed, mapVersion });
+  };
 
   /** Make the world the controls and seed now ask for */
-  const generateNow = useCallback(
-    () => run(latest.current.controls, latest.current.seed),
-    [run, latest]
-  );
+  const generateNow = () => run(latest.current.controls, latest.current.seed);
   // A world applied while the tab was away discards the draft before this runs: it is not brought back then
-  const restore = useCallback(() => {
+  const restore = () => {
     if (!discarded.current) generateNow();
-  }, [generateNow]);
+  };
   useRunOnce(
     start.restored && presets !== null && (start.controls.source !== "realm-map" || realmMapReady),
     restore
@@ -181,69 +178,57 @@ export function useWorldRecipe({
     if (!presets || !waitingForPresets.current) return;
     waitingForPresets.current = false;
     const asked = latest.current;
-    const made = lastRun.current;
+    const made = lastRunRef.current;
     // The restore of a saved recipe may just have made this very world
     if (!made || made.controls !== asked.controls || made.seed !== asked.seed) generateNow();
   }, [presets, generateNow, latest]);
 
   // The realm's map changed under a world fitted to it (an edit, or a version that has just loaded): fit it again
   const fitsMap = controls.source === "realm-map";
-  const ran = lastRun.current;
-  const mapMoved = !!ran && ran.mapVersion !== realmMapVersion;
   useEffect(() => {
+    const made = lastRunRef.current;
+    const mapMoved = !!made && made.mapVersion !== realmMapVersion;
     if (fitsMap && realmMapReady && mapMoved) generateNow();
-  }, [fitsMap, realmMapReady, mapMoved, generateNow]);
+  }, [fitsMap, realmMapReady, realmMapVersion, generateNow]);
 
   /** Change controls and make a new world */
-  const apply = useCallback(
-    (patch: Partial<WorldControls>) => {
-      const next = clampControls({ ...latest.current.controls, ...patch });
-      setControls(next);
-      run(next, latest.current.seed);
-    },
-    [run, latest]
-  );
+  const apply = (patch: Partial<WorldControls>) => {
+    const next = clampControls({ ...latest.current.controls, ...patch });
+    setControls(next);
+    run(next, latest.current.seed);
+  };
   /** Change controls without generating: a slider mid-drag */
-  const setLive = useCallback(
-    (patch: Partial<WorldControls>) => {
-      setControls((current) => ({ ...settle(current, latest.current.presets), ...patch }));
-    },
-    [settle, latest]
-  );
+  const setLive = (patch: Partial<WorldControls>) => {
+    setControls((current) => ({ ...settle(current, latest.current.presets), ...patch }));
+  };
 
-  const pickPreset = useCallback(
-    (slug: string) => {
-      const { presets: known, controls: current } = latest.current;
-      if (known)
-        apply({ ...controlsForPreset(slug, known), developmentLevel: current.developmentLevel });
-    },
-    [apply, latest]
-  );
-  const pickSource = useCallback((source: WorldSource) => apply({ source }), [apply]);
+  const pickPreset = (slug: string) => {
+    const { presets: known, controls: current } = latest.current;
+    if (known)
+      apply({ ...controlsForPreset(slug, known), developmentLevel: current.developmentLevel });
+  };
+  const pickSource = (source: WorldSource) => apply({ source });
 
-  const commitSeed = useCallback(
-    (next: number) => {
-      setSeed(next);
-      run(latest.current.controls, next);
-    },
-    [run, latest]
-  );
-  const reroll = useCallback(() => commitSeed(newWorldSeed()), [commitSeed]);
+  const commitSeed = (next: number) => {
+    setSeed(next);
+    run(latest.current.controls, next);
+  };
+  const reroll = () => commitSeed(newWorldSeed());
 
   /** Take the draft off the map and forget the recipe; the controls stay for the next one */
-  const discard = useCallback(() => {
+  const discard = () => {
     reset();
     discarded.current = true;
     clearWorldRecipe(latest.current.scope);
     // Nothing left to keep fitted to the map
-    lastRun.current = null;
-  }, [reset, latest]);
+    recordRun(null);
+  };
 
   const stale =
-    ran === null ||
-    ran.controls !== controls ||
-    ran.seed !== seed ||
-    (fitsMap && (!realmMapReady || ran.mapVersion !== realmMapVersion));
+    lastRun === null ||
+    lastRun.controls !== controls ||
+    lastRun.seed !== seed ||
+    (fitsMap && (!realmMapReady || lastRun.mapVersion !== realmMapVersion));
 
   return {
     controls,

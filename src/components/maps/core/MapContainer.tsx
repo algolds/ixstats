@@ -2,13 +2,13 @@
 
 import {
   useRef,
-  useCallback,
   useState,
   useEffect,
+  useEffectEvent,
   useDeferredValue,
-  useMemo,
   type RefObject,
 } from "react";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useIsAdmin } from "~/hooks/usePermissions";
@@ -109,11 +109,12 @@ interface MapEditorsProps {
   mapLayers: MapLayerData[];
   realm: string | undefined;
   historicalYear: number | null;
-  mapRef: RefObject<IxWorldMapRef | null>;
+  /** The world map's MapLibre instance, once it is ready */
+  mapInstance: MapLibreMap | null;
 }
 
-function MapEditors({ state, mapLayers, realm, historicalYear, mapRef }: MapEditorsProps) {
-  const shared = { mapLayers, historicalYear, mapInstance: mapRef.current?.getMap() ?? null };
+function MapEditors({ state, mapLayers, realm, historicalYear, mapInstance }: MapEditorsProps) {
+  const shared = { mapLayers, historicalYear, mapInstance };
   return (
     <>
       {/* The country editor only ever edits the viewer's own (active) nation, so it works in that
@@ -191,7 +192,7 @@ function MapToolbars({
 }: MapToolbarsProps) {
   const isMobile = useIsMobile();
   const editAllowed = !hideEditButtons && !state.isEditing && !state.isWorldEditing;
-  const toggleMeasure = useCallback(() => measureToolRef.current?.toggle(), [measureToolRef]);
+  const toggleMeasure = () => measureToolRef.current?.toggle();
   return (
     <>
       {showControls && tourIdle && (
@@ -333,10 +334,9 @@ export function MapContainer({
 
   useMapLiveSync(realm);
 
-  useEffect(() => {
-    return () => onMapReady?.(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // On unmount the caller hears that the map is gone
+  const reportMapGone = useEffectEvent(() => onMapReady?.(null));
+  useEffect(() => () => reportMapGone(), []);
 
   const pin = useMapPinInfo(realm);
 
@@ -353,24 +353,21 @@ export function MapContainer({
   const raster = useRealmRasterSelection(realmDisplay);
   const { layers: rasterLayers, selection: rasterSelection, setBase, toggleOverlay } = raster;
   const rasterRealmId = realmDisplay?.realmId;
-  const rasterControls = useMemo<RasterControls | undefined>(
-    () =>
-      rasterRealmId && rasterLayers.length > 0
-        ? {
-            realmId: rasterRealmId,
-            layers: rasterLayers,
-            selection: rasterSelection,
-            onBaseChange: setBase,
-            onToggleOverlay: toggleOverlay,
-          }
-        : undefined,
-    [rasterRealmId, rasterLayers, rasterSelection, setBase, toggleOverlay]
-  );
+  const rasterControls: RasterControls | undefined =
+    rasterRealmId && rasterLayers.length > 0
+      ? {
+          realmId: rasterRealmId,
+          layers: rasterLayers,
+          selection: rasterSelection,
+          onBaseChange: setBase,
+          onToggleOverlay: toggleOverlay,
+        }
+      : undefined;
 
   // Loaded layers, read lazily by click handlers (pin tool, neighbour lookup). The layers are
   // fetched after useMapState runs, so they are handed over through a ref-backed getter.
   const mapLayersRef = useRef<MapLayerData[]>([]);
-  const getMapLayers = useCallback(() => mapLayersRef.current, []);
+  const getMapLayers = () => mapLayersRef.current;
 
   const state = useMapState({
     userCountryId,
@@ -450,36 +447,38 @@ export function MapContainer({
   // Parent control state for the welcome & help modal
   const [isWelcomeOpen, setIsWelcomeOpen] = useState<boolean | undefined>(undefined);
 
-  // Stable callbacks for the memoised IxWorldMap. Inline arrows here re-rendered the map
-  // component (and re-ran all four of its layer hooks) on every container render.
+  // The world map's instance, for the editors and the scale: state, so a render reads it (set when the map is ready)
+  const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
+
+  // Stable callbacks for the memoised IxWorldMap (the compiler keeps them): a new function each
+  // render re-rendered the map component (and re-ran all four of its layer hooks).
   const onMapReadyRef = useRef(onMapReady);
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
   }, [onMapReady]);
-  const handleMapReady = useCallback(() => {
+  const handleMapReady = () => {
+    const map = mapRef.current?.getMap() ?? null;
     setMapEngineReady(true);
-    onMapReadyRef.current?.(mapRef.current?.getMap() ?? null);
-  }, [setMapEngineReady]);
+    setMapInstance(map);
+    onMapReadyRef.current?.(map);
+  };
 
   // Only the zoom band matters to data loading, so ignore zoom changes inside a band
   // instead of re-rendering the whole container after every zoom gesture.
   const { setCurrentZoom } = state;
-  const handleZoomChange = useCallback(
-    (zoom: number) =>
-      setCurrentZoom((prev) =>
-        prev !== undefined && getZoomBand(prev) === getZoomBand(zoom) ? prev : zoom
-      ),
-    [setCurrentZoom]
-  );
+  const handleZoomChange = (zoom: number) =>
+    setCurrentZoom((prev) =>
+      prev !== undefined && getZoomBand(prev) === getZoomBand(zoom) ? prev : zoom
+    );
 
-  const handleOpenWelcome = useCallback(() => setIsWelcomeOpen(true), []);
-  const noopProjectionChange = useCallback(() => {}, []);
+  const handleOpenWelcome = () => setIsWelcomeOpen(true);
+  const noopProjectionChange = () => {};
   const effectiveProjection = forceFlatProjection ? "mercator" : state.projectionMode;
   const handleProjectionChange = forceFlatProjection ? noopProjectionChange : setProjectionMode;
 
   const { handleOpenMyEditor } = state;
   const notify = useNotify();
-  const handleOpenMyEditorWithUser = useCallback(() => {
+  const handleOpenMyEditorWithUser = () => {
     if (userCountryId) {
       handleOpenMyEditor();
     } else {
@@ -488,7 +487,7 @@ export function MapContainer({
         "Create or claim one from MyCountry first."
       );
     }
-  }, [userCountryId, handleOpenMyEditor, notify]);
+  };
 
   if (error) {
     return <MapLoadError className={className} message={error.message} onRetry={retryMapLayers} />;
@@ -570,7 +569,7 @@ export function MapContainer({
       >
         {showControls && (
           <RealmMapScale
-            map={state.mapEngineReady ? (mapRef.current?.getMap() ?? null) : null}
+            map={state.mapEngineReady ? mapInstance : null}
             radiusKm={realmDisplay?.radiusKm ?? EARTH_RADIUS_KM}
           />
         )}
@@ -619,7 +618,7 @@ export function MapContainer({
         mapLayers={mapLayers}
         realm={realm}
         historicalYear={historicalYear}
-        mapRef={mapRef}
+        mapInstance={mapInstance}
       />
     </div>
   );

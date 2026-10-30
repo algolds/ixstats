@@ -4,7 +4,7 @@
 **Status:** Read-side only. The switch that shows a demo country to system owners exists, but nothing in the repo can
 turn it on or create a demo country.
 **Routes:** no page of its own. Affects `/mycountry/**`.
-**Code:** `src/server/api/routers/demo-mode.ts`, `src/context/DemoModeContext.tsx`, `src/app/mycountry/layout.tsx`,
+**Code:** `src/server/api/routers/demo-mode.ts`, `src/context/DemoModeContext.tsx`, `src/app/mycountry/_components/MyCountryLayoutClient.tsx`,
 `src/components/mycountry/shared/primitives/CountryDataProvider.tsx`
 
 Demo mode lets a system owner view MyCountry as a seeded demo country instead of their own. The state is two
@@ -19,7 +19,7 @@ Demo mode lets a system owner view MyCountry as a seeded demo country instead of
 | `SystemConfig` `demo_mode_active` | `"true"` turns demo mode on |
 | `SystemConfig` `demo_country_id` | The demo country's id |
 | `demoMode.getDemoState` | Returns `{ isActive, demoCountryId }` |
-| `DemoModeProvider` (mounted by `src/app/mycountry/layout.tsx`) | Queries `getDemoState` when signed in (30-second stale time) and exposes `useDemoMode()` |
+| `DemoModeProvider` (mounted by `src/app/mycountry/_components/MyCountryLayoutClient.tsx`) | Queries `getDemoState` when signed in (30-second stale time) and exposes `useDemoMode()` |
 | `CountryDataProvider` | When demo mode is active, loads `demoCountryId` instead of the dev "view as" country or the user's own country. An explicit `countryId` prop still wins |
 | `DemoModeBanner` | A sticky status bar on MyCountry: "Demo mode. You're viewing seeded demo data; changes aren't saved." |
 

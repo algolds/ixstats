@@ -12,7 +12,7 @@
  *   load one request per layer.
  */
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { LAYER_CONFIGS, MAP_LAYER_TYPES, type MapLayerType } from "~/lib/maps/map-config";
@@ -22,7 +22,7 @@ import type {
   CapitalsGeoJson,
 } from "~/components/maps/core/IxWorldMap";
 import type { FeatureCollection } from "geojson";
-import { useMapLayerData, type MapLayerBucket } from "~/hooks/useMapLayerData";
+import { useDecodedMapLayers, type MapLayerBucket } from "~/hooks/useMapLayerData";
 import { useRealmMapVersion } from "~/hooks/useRealmMapVersion";
 import { unpackLayers } from "~/lib/maps/geojson-pack";
 import { dropStaleOverlayQueries } from "~/lib/maps/stale-map-queries";
@@ -62,12 +62,39 @@ export function getZoomBand(zoom: number): number {
  * stay drawn through an edit instead of blinking off. Never another realm's.
  */
 function useKeptForRealm<T>(data: T | undefined, realmId: string | undefined): T | undefined {
-  const kept = useRef<{ realmId?: string; data?: T }>({});
-  const shown = data ?? (kept.current.realmId === realmId ? kept.current.data : undefined);
-  useEffect(() => {
-    kept.current = { realmId, data: shown };
-  }, [realmId, shown]);
+  const [kept, setKept] = useState<{ realmId?: string; data?: T }>({});
+  const shown = data ?? (kept.realmId === realmId ? kept.data : undefined);
+  if (kept.realmId !== realmId || kept.data !== shown) setKept({ realmId, data: shown });
   return shown;
+}
+
+/** Both phases in one record, with the tiled layers listed (for visibility) and no data: they draw from vector tiles. */
+function mergeWorldMap(
+  criticalLayers: Record<string, FeatureCollection> | undefined,
+  extraLayers: Record<string, FeatureCollection> | undefined
+): Record<string, unknown> | null {
+  if (!criticalLayers && !extraLayers) return null;
+  const merged: Record<string, unknown> = { ...criticalLayers, ...extraLayers };
+  for (const type of TILED_LAYERS) merged[type] = EMPTY_COLLECTION;
+  return merged;
+}
+
+/** The known layers of the merged record, with their visibility, in draw order. */
+function toMapLayers(
+  mergedWorldMap: Record<string, unknown>,
+  visibleLayers: Set<MapLayerType>
+): MapLayerData[] {
+  return Object.entries(mergedWorldMap)
+    .filter(
+      ([type]) =>
+        MAP_LAYER_TYPES.includes(type as MapLayerType) && LAYER_CONFIGS[type as MapLayerType]
+    )
+    .map(([type, data]) => ({
+      type: type as MapLayerType,
+      data: data as FeatureCollection,
+      visible: visibleLayers.has(type as MapLayerType),
+    }))
+    .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
 }
 
 /** @param realm realm slug the map shows (`?realm=`); undefined = the viewer's realm */
@@ -98,10 +125,10 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   }, [visibleLayers, requestedExtraLayers]);
 
   // Phase 1: the first-paint layers, from the versioned layer route
-  const critical = useMapLayerData({ layers: CRITICAL_LAYERS, realm, bucket });
+  const critical = useDecodedMapLayers({ layers: CRITICAL_LAYERS, realm, bucket });
   // Extra GeoJSON layers switched on this session, one request per layer so turning on a second
   // one fetches only that layer. Tiled layers (altitudes, rivers, lakes) never come here.
-  const extra = useMapLayerData({ layers: requestedExtraLayers, realm, bucket: 1 });
+  const extra = useDecodedMapLayers({ layers: requestedExtraLayers, realm, bucket: 1 });
 
   // POIs, capitals, cities and subdivisions, which the layers do not carry, are asked at the realm's map version
   // (the one the layers' URLs name): a moved version is a new query, so they refresh with the layers even when no
@@ -136,61 +163,32 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
   );
   const detail = useKeptForRealm(detailAtVersion, realmId);
 
-  // Both arrive packed
-  const criticalLayers = useMemo(
-    () => (critical.packed ? unpackLayers(critical.packed) : undefined),
-    [critical.packed]
-  );
-  const extraLayers = useMemo(
-    () => (extra.packed ? unpackLayers(extra.packed) : undefined),
-    [extra.packed]
-  );
-
-  // Merge both phases into a single world map record
-  const mergedWorldMap = useMemo(() => {
-    if (!criticalLayers && !extraLayers) return null;
-    const merged: Record<string, unknown> = { ...criticalLayers, ...extraLayers };
-
-    // Tiled layers draw from vector tiles: listed (for visibility) with no data
-    for (const type of TILED_LAYERS) merged[type] = EMPTY_COLLECTION;
-
-    return merged;
-  }, [criticalLayers, extraLayers]);
+  // Both arrive packed and are decoded once per answer (useDecodedMapLayers), so a visibility toggle never decodes
+  // again; merge both phases into a single world map record
+  const mergedWorldMap = mergeWorldMap(critical.layers, extra.layers);
 
   const isLoading = critical.isPending && !mergedWorldMap;
 
-  const mapLayers: MapLayerData[] = useMemo(() => {
-    if (!mergedWorldMap) return [];
-    return Object.entries(mergedWorldMap)
-      .filter(
-        ([type]) =>
-          MAP_LAYER_TYPES.includes(type as MapLayerType) && LAYER_CONFIGS[type as MapLayerType]
-      )
-      .map(([type, data]) => ({
-        type: type as MapLayerType,
-        data: data as FeatureCollection,
-        visible: visibleLayers.has(type as MapLayerType),
-      }))
-      .sort((a, b) => (LAYER_CONFIGS[a.type]?.zIndex ?? 0) - (LAYER_CONFIGS[b.type]?.zIndex ?? 0));
-  }, [mergedWorldMap, visibleLayers]);
+  const mapLayers: MapLayerData[] = mergedWorldMap
+    ? toMapLayers(mergedWorldMap, visibleLayers)
+    : [];
 
   // Overlay features: POIs with the markers, cities and subdivisions once the detail arrives
-  const overlayFeatures: MapOverlayFeatures | undefined = useMemo(() => {
-    if (!markers?.features) return undefined;
-    return {
-      pois: markers.features.pois,
-      cities: detail?.cities ?? EMPTY_COLLECTION,
-      subdivisions: detail ? unpackLayers({ s: detail.subdivisions }).s! : EMPTY_COLLECTION,
-    } as unknown as MapOverlayFeatures;
-  }, [markers?.features, detail]);
+  const markerFeatures = markers?.features;
+  const overlayFeatures: MapOverlayFeatures | undefined = markerFeatures
+    ? ({
+        pois: markerFeatures.pois,
+        cities: detail?.cities ?? EMPTY_COLLECTION,
+        subdivisions: detail ? unpackLayers({ s: detail.subdivisions }).s! : EMPTY_COLLECTION,
+      } as unknown as MapOverlayFeatures)
+    : undefined;
 
   // Extract capitals
-  const capitalsGeoJson: CapitalsGeoJson | undefined = useMemo(() => {
-    if (!markers?.capitals) return undefined;
-    return markers.capitals as unknown as CapitalsGeoJson;
-  }, [markers?.capitals]);
+  const capitalsGeoJson: CapitalsGeoJson | undefined = markers?.capitals
+    ? (markers.capitals as unknown as CapitalsGeoJson)
+    : undefined;
 
-  const toggleLayer = useCallback((layer: MapLayerType) => {
+  const toggleLayer = (layer: MapLayerType) => {
     if (LOCKED_LAYERS.includes(layer)) return;
     setVisibleLayers((prev) => {
       const next = new Set(prev);
@@ -201,7 +199,7 @@ export function useMapDataBatched(initialLayers?: MapLayerType[], zoom?: number,
       }
       return next;
     });
-  }, []);
+  };
 
   return {
     mapLayers,

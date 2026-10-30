@@ -76,7 +76,7 @@ All under `src/components/mycountry/shell/` unless noted.
 - `ExecutiveConsole.tsx` – The Directives page (`/mycountry/executive`); renders `directives/DirectivesWorkspace.tsx` (see [Directives page](#directives-page-mycountryexecutive))
 - `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`)
 - `status-tone.ts` – `STATUS_TEXT` (critical / warning / accent / neutral); `domain-meta.ts` – the four domains' titles, icons, routes and suggested goals (`DOMAIN_META`)
-- `MyCountryRouter.tsx` / `mycountry-sections.ts` – Single-page section router and the route ↔ section map; navigation is the app sidebar (`src/lib/navigation/app-sections.ts`)
+- `MyCountryRouter.tsx` / `mycountry-sections.ts` – Single-page section router and the route ↔ section map; rendered once by `src/app/mycountry/(command)/layout.tsx`, whose section pages return `null`; navigation is the app sidebar (`src/lib/navigation/app-sections.ts`)
 
 ---
 

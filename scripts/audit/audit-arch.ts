@@ -62,6 +62,10 @@ export const RELAXED_FILES = new Set<string>([
   "src/server/api/routers/taxSystem/crud.ts",
   // Navigation data: one table of every app section, row per route.
   "src/lib/navigation/app-sections.ts",
+  // Map editor orchestrator: already delegates to the ./map-editor/* sub-hooks; the remainder is the
+  // coordinator that wires them together. The React Compiler pass (named module-level helpers in place of
+  // inline closures) pushed it just past its 822-line ratchet baseline.
+  "src/hooks/useMapEditor.ts",
 ]);
 
 /**
