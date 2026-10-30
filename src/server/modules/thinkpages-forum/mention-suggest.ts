@@ -10,7 +10,7 @@ import {
   MENTION_SUGGEST_MIN,
 } from "~/lib/thinkpages-forum/mentions";
 import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
-import { personalAvatars } from "./personal-avatars";
+import { personalProfiles } from "./personal-profiles";
 
 export interface MentionSuggestion {
   kind: "user" | "persona";
@@ -60,7 +60,7 @@ export async function mentionSuggestions(
       select: { username: true, displayName: true, profileImageUrl: true },
     }),
   ]);
-  const avatars = await personalAvatars(
+  const profiles = await personalProfiles(
     db,
     users.map((user) => user.clerkUserId)
   );
@@ -72,7 +72,7 @@ export async function mentionSuggestions(
       kind: "user",
       name: user.handle,
       label: user.handle,
-      avatarUrl: avatars.get(user.clerkUserId) ?? null,
+      avatarUrl: profiles.get(user.clerkUserId)?.avatarUrl ?? null,
     });
   }
   for (const persona of personas) {

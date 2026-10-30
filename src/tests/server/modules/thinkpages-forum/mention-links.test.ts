@@ -169,7 +169,7 @@ describe("mention suggestions", () => {
   ) {
     return {
       user: { findMany: jest.fn(async (_args: object) => users) },
-      // personalAvatars and the persona search share this table
+      // personalProfiles and the persona search share this table
       thinkpagesAccount: {
         findMany: jest.fn(async (args: PersonaArgs) =>
           args.where.clerkUserId ? avatars : personas

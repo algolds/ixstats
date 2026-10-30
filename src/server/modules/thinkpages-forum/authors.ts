@@ -4,7 +4,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { personaTypeOf, type PersonaType } from "~/lib/thinkpages-forum/persona-type";
 import type { PreviewAuthor } from "~/lib/thinkpages-forum/preview";
-import { personalAvatars } from "./personal-avatars";
+import { personalProfiles } from "./personal-profiles";
 
 export type AuthorsDb = Pick<PrismaClient, "user" | "thinkpagesAccount">;
 
@@ -12,6 +12,10 @@ export interface ForumUserAuthor {
   name: string;
   handle: string | null;
   avatarUrl: string | null;
+  /**
+   * The country flag to draw beside the avatar. Null when the avatar already is the flag (no persona picture), so
+   * the flag is never drawn twice.
+   */
   flagUrl: string | null;
 }
 export interface ForumPersonaAuthor {
@@ -23,8 +27,9 @@ export interface ForumPersonaAuthor {
 }
 
 /**
- * Display data for a page of authors in one query per kind. A user is shown by Passport handle, else country name,
- * else "Member": never an old wiki name (a name claim, shown on the passport), never the forum name (it can be a
+ * Display data for a page of authors in one query per kind. A user is shown by their personal persona's name, else
+ * Passport handle, else country name, else "Member"; their avatar is the persona picture, else the country flag.
+ * Never an old wiki name (a name claim, shown on the passport), never the forum name (it can be a
  * legacy account name) and never a Clerk id. The name is the same for every viewer, the member included.
  * Null ids (imported content whose XenForo author has no IxStats account, phase 4) are skipped.
  */
@@ -63,22 +68,27 @@ export async function authorsOf(
         })
       : [],
   ]);
-  const avatars = await personalAvatars(
+  const profiles = await personalProfiles(
     db,
     rows.map((u) => u.clerkUserId)
   );
   return {
     users: new Map<string, ForumUserAuthor>(
       // Public names only: never the Discord name, which a linked account would otherwise publish.
-      rows.map((u) => [
-        u.id,
-        {
-          name: u.handle ?? u.country?.name ?? "Member",
-          handle: u.handle,
-          avatarUrl: avatars.get(u.clerkUserId) ?? null,
-          flagUrl: u.country?.flag ?? null,
-        },
-      ])
+      rows.map((u) => {
+        const profile = profiles.get(u.clerkUserId);
+        const flag = u.country?.flag ?? null;
+        const picture = profile?.avatarUrl ?? null;
+        return [
+          u.id,
+          {
+            name: profile?.displayName ?? u.handle ?? u.country?.name ?? "Member",
+            handle: u.handle,
+            avatarUrl: picture ?? flag,
+            flagUrl: picture === null ? null : flag,
+          },
+        ];
+      })
     ),
     personas: new Map<string, ForumPersonaAuthor>(
       personas.map((p) => [

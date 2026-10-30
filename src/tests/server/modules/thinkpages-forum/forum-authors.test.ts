@@ -435,3 +435,65 @@ describe("authorsOf persona types", () => {
     });
   });
 });
+
+describe("authorsOf members", () => {
+  interface AccountArgs {
+    where: { clerkUserId?: object };
+  }
+  function memberDb(
+    users: Array<{
+      id: string;
+      handle: string | null;
+      clerkUserId: string;
+      country: { name: string; flag: string | null } | null;
+    }>,
+    personal: Array<{ clerkUserId: string; displayName: string; profileImageUrl: string | null }>
+  ) {
+    return {
+      user: { findMany: jest.fn(async () => users) },
+      thinkpagesAccount: {
+        findMany: jest.fn(async (args: AccountArgs) => (args.where.clerkUserId ? personal : [])),
+      },
+    };
+  }
+  const varro = {
+    id: "u1",
+    handle: "user123",
+    clerkUserId: "clerk_1",
+    country: { name: "Caphiria", flag: "f.png" },
+  };
+
+  it("shows the personal persona's name, with the flag as the avatar and not drawn twice", async () => {
+    const db = memberDb(
+      [varro],
+      [{ clerkUserId: "clerk_1", displayName: "Augustus Varro", profileImageUrl: null }]
+    );
+    const { users } = await authorsOf(db as never, ["u1"], []);
+    expect(users.get("u1")).toEqual({
+      name: "Augustus Varro",
+      handle: "user123",
+      avatarUrl: "f.png",
+      flagUrl: null,
+    });
+  });
+
+  it("keeps the country flag beside a persona picture", async () => {
+    const db = memberDb(
+      [varro],
+      [{ clerkUserId: "clerk_1", displayName: "Augustus Varro", profileImageUrl: "p.png" }]
+    );
+    const { users } = await authorsOf(db as never, ["u1"], []);
+    expect(users.get("u1")).toMatchObject({ avatarUrl: "p.png", flagUrl: "f.png" });
+  });
+
+  it("falls back to the handle with no avatar when there is no persona and no country", async () => {
+    const db = memberDb([{ ...varro, country: null }], []);
+    const { users } = await authorsOf(db as never, ["u1"], []);
+    expect(users.get("u1")).toEqual({
+      name: "user123",
+      handle: "user123",
+      avatarUrl: null,
+      flagUrl: null,
+    });
+  });
+});
