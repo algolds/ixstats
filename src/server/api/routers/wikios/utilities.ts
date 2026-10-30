@@ -92,6 +92,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         pgLinks,
         siteStats,
         orphans,
+        wanted,
         deadEnds,
         brokenRedirects,
         inboundSync,
@@ -118,6 +119,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
           activeUsers: 0,
         })),
         PageManagementService.getOrphanPages(10, realm),
+        PageManagementService.getWantedPages(10, realm),
         PageManagementService.getDeadEndPages(10, realm),
         PageManagementService.getBrokenRedirects(10, realm),
         getInboundSyncStatus().catch(() => ({
@@ -143,6 +145,7 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
         totalLinks: pgLinks || 0,
         totalPages,
         orphanCount: orphans.length,
+        wantedCount: wanted.length,
         deadEndCount: deadEnds.length,
         brokenRedirectCount: brokenRedirects.length,
         inboundSyncStatus: inboundSync.status,
@@ -277,6 +280,13 @@ export const wikiosUtilitiesRouter = createTRPCRouter({
    */
   getOrphanArticles: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
     return PageManagementService.getOrphanPages(input.limit, input.realm);
+  }),
+
+  /**
+   * Diagnostic: Wanted Pages (red-link targets with no article, most linked first)
+   */
+  getWantedPages: publicProcedure.input(DiagnosticListInput).query(async ({ input }) => {
+    return PageManagementService.getWantedPages(input.limit, input.realm);
   }),
 
   /**

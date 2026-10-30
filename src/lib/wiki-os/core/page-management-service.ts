@@ -546,6 +546,7 @@ export class PageManagementService {
   // The maintenance reports (page-reports.ts)
   static getMediaUsage = PageReports.getMediaUsage;
   static getOrphanPages = PageReports.getOrphanPages;
+  static getWantedPages = PageReports.getWantedPages;
   static getDeadEndPages = PageReports.getDeadEndPages;
   static getBrokenRedirects = PageReports.getBrokenRedirects;
 }

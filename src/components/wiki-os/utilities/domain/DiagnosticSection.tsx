@@ -1,6 +1,6 @@
 "use client";
 
-import { Activity, WarningTriangle, LinkSlash, EyeClosed, Page } from "iconoir-react";
+import { Activity, WarningTriangle, LinkSlash, EyeClosed, EditPencil, Page } from "iconoir-react";
 import { api } from "~/trpc/react";
 import {
   InspectorEmpty,
@@ -20,6 +20,7 @@ interface DiagnosticItem {
   wordCount?: number;
   readingTime?: number;
   targetSlug?: string;
+  linkCount?: number;
 }
 
 interface DiagnosticView {
@@ -29,6 +30,8 @@ interface DiagnosticView {
   keyPrefix: string;
   /** Broken redirects have no page to link to. */
   plainTitle?: boolean;
+  /** Wanted pages link to a page that does not exist yet. */
+  missingPage?: boolean;
   value: (item: DiagnosticItem) => string;
   valueClass: string;
 }
@@ -45,6 +48,14 @@ const VIEWS: Record<string, DiagnosticView> = {
     loadingText: "Scanning orphan articles...",
     emptyText: "No orphan pages found.",
     keyPrefix: "orphan",
+  },
+  wanted: {
+    loadingText: "Finding wanted pages...",
+    emptyText: "No wanted pages.",
+    keyPrefix: "wanted",
+    missingPage: true,
+    valueClass: "text-label-secondary",
+    value: (i) => `${i.linkCount} links`,
   },
   deadEnds: {
     ...BYTE_COUNT,
@@ -82,6 +93,14 @@ const TOOLS: Omit<InspectorTool, "badge">[] = [
     legacyAlias: "Special:LonelyPages",
     icon: EyeClosed,
     color: "border-yellow/20 bg-yellow/10 text-yellow",
+  },
+  {
+    id: "wanted",
+    title: "Wanted pages",
+    description: "Pages other articles link to that don't exist yet.",
+    legacyAlias: "Special:WantedPages",
+    icon: EditPencil,
+    color: "border-red/20 bg-red/10 text-red",
   },
   {
     id: "deadEnds",
@@ -122,6 +141,7 @@ export const DIAGNOSTIC_TOOL_COUNT = TOOLS.length;
 export function DiagnosticSection({ searchFilter }: { searchFilter: string }) {
   const results: Record<string, { data?: DiagnosticItem[]; isLoading: boolean }> = {
     orphans: api.wikios.getOrphanArticles.useQuery({ limit: 50 }),
+    wanted: api.wikios.getWantedPages.useQuery({ limit: 50 }),
     deadEnds: api.wikios.getDeadEndArticles.useQuery({ limit: 50 }),
     brokenRedirects: api.wikios.getBrokenRedirects.useQuery({ limit: 50 }),
     short: api.wikios.getShortestArticles.useQuery({ limit: 25 }),
@@ -143,7 +163,11 @@ export function DiagnosticSection({ searchFilter }: { searchFilter: string }) {
             {view.plainTitle ? (
               <span className="text-label font-medium">{item.title}</span>
             ) : (
-              <InspectorPageLink slug={item.slug} title={item.title} />
+              <InspectorPageLink
+                slug={item.slug ?? item.targetSlug}
+                title={item.title}
+                missing={view.missingPage}
+              />
             )}
             <span className={`text-footnote tabular-nums ${view.valueClass}`}>
               {view.value(item)}
@@ -161,7 +185,7 @@ export function DiagnosticSection({ searchFilter }: { searchFilter: string }) {
       headingIcon={<Activity className="text-green h-4 w-4" />}
       ariaLabel="Diagnostics"
       tools={tools}
-      gridClass="sm:grid-cols-2 lg:grid-cols-5"
+      gridClass="sm:grid-cols-2 lg:grid-cols-3"
       panelLabel="Live Inspector"
       panelCaption="Showing top results from PostgreSQL index"
       closeLabel="Close inspector"

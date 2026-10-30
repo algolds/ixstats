@@ -85,6 +85,45 @@ export const PageReports = {
     }
   },
   /**
+   * Maintenance Diagnostic: Wanted Pages. Red-link targets (internal links no article resolves) from the
+   * realm's published articles, most linked first. A slug that has an article is left out even while its
+   * links are still red: a link only turns blue once its target renders.
+   */
+  async getWantedPages(
+    limit = 50,
+    realm = "ixwiki"
+  ): Promise<Array<{ targetSlug: string; title: string; linkCount: number }>> {
+    try {
+      const groups = await db.wikiLink.groupBy({
+        by: ["targetSlug"],
+        where: {
+          targetArticleId: null,
+          isExternal: false,
+          sourceArticle: { source: realm, status: "PUBLISHED" },
+        },
+        _count: { targetSlug: true },
+        orderBy: { _count: { targetSlug: "desc" } },
+        take: limit * 2,
+      });
+      const existing = await db.wikiArticle.findMany({
+        where: { source: realm, slug: { in: groups.map((g) => g.targetSlug) } },
+        select: { slug: true },
+      });
+      const taken = new Set(existing.map((a) => a.slug));
+
+      return groups
+        .filter((g) => !taken.has(g.targetSlug))
+        .slice(0, limit)
+        .map((g) => ({
+          targetSlug: g.targetSlug,
+          title: g.targetSlug.replace(/_/g, " "),
+          linkCount: g._count.targetSlug,
+        }));
+    } catch {
+      return [];
+    }
+  },
+  /**
    * Maintenance Diagnostic: Dead-End Pages (0 Outgoing Links)
    */
   async getDeadEndPages(

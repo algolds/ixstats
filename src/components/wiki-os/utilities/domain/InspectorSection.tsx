@@ -194,13 +194,22 @@ export function InspectorRow({ children }: { children: ReactNode }) {
   );
 }
 
-export function InspectorPageLink({ slug, title }: { slug?: string; title: string }) {
+/** `missing` styles the link as a red link: the page does not exist yet, and following it opens create. */
+export function InspectorPageLink({
+  slug,
+  title,
+  missing,
+}: {
+  slug?: string;
+  title: string;
+  missing?: boolean;
+}) {
   return (
     <Link
       href={`/wiki/${encodeURIComponent(slug || title)}`}
       data-cuelume-press="page"
       data-cuelume-hover="tick"
-      className="text-label hover:text-tint font-medium hover:underline"
+      className={`${missing ? "text-red" : "text-label hover:text-tint"} font-medium hover:underline`}
     >
       {title}
     </Link>
