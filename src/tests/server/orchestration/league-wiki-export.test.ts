@@ -109,7 +109,7 @@ describe("publishLeagueStandings", () => {
     expect(text.startsWith("Intro.\n\n[[Category:Leagues]]\n\n== Standings ==\n")).toBe(true);
     expect(text).toContain(STANDINGS_START);
     expect(text).toContain(STANDINGS_END);
-    expect(text).toContain("| 1 || [[:FC_Varro|Varro FC]] ||");
+    expect(text).toContain("| 1 || [[:FC Varro|Varro FC]] ||");
     expect(text).toContain("| 2 || Lest ||");
   });
 

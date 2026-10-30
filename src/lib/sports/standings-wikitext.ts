@@ -52,16 +52,21 @@ function plainText(name: string): string {
     .replace(/\|/g, "{{!}}");
 }
 
+/** Characters no link target may hold, checked again on the canonical title as defence in depth. */
+const UNSAFE_TARGET = /[[\]{}|<>]/;
+
 /**
- * The team's name, linked to its page when its slug is a valid main-namespace title. The leading colon keeps any
- * target a plain link (never a category, an embedded file or an interlanguage link); a team owner sets the slug, and
- * the league manager's account saves it.
+ * The team's name, linked to its page when its slug is a valid main-namespace title. The target is the canonical
+ * title alone: the slug's `#` fragment is dropped, since `canonicalizeTitle` does not validate it. The leading colon
+ * keeps any target a plain link (never a category, an embedded file or an interlanguage link); a team owner sets the
+ * slug, and the league manager's account saves it.
  */
 function teamCell(row: StandingRow): string {
   const name = plainText(row.teamName);
   const slug = row.wikiSlug?.trim();
   const canon = slug ? canonicalizeTitle(slug) : null;
-  return canon?.namespaceId === 0 ? `[[:${slug}|${name}]]` : name;
+  if (canon?.namespaceId !== 0 || UNSAFE_TARGET.test(canon.title)) return name;
+  return `[[:${canon.title}|${name}]]`;
 }
 
 function signed(n: number): string {
