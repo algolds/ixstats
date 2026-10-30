@@ -2,11 +2,11 @@
 
 **Last updated:** September 2026
 
-The MyCountry route (`/mycountry`) is the executive command suite for nation owners. Every page under it renders the same `<MyCountryRouter />` (`src/components/mycountry/shell/MyCountryRouter.tsx`), which switches between sections client-side via `useState` + `history.pushState()` — no Next.js route transitions — and renders every section through the single `CommandSurface`. Auth and country data are provided once by the router's provider chain: `MobileOptimized > AuthenticationGuard > CountryDataProvider`.
+The MyCountry route (`/mycountry`) is the executive command suite for nation owners. The one `<MyCountryRouter />` (`src/components/mycountry/shell/MyCountryRouter.tsx`) is rendered by the `(command)` route-group layout (`(command)/layout.tsx`); the section pages beside it render nothing. The router switches between sections client-side via `useState` + `history.pushState()` — no Next.js route transitions — and renders every section through the single `CommandSurface`. Auth and country data are provided once by the router's provider chain: `MobileOptimized > AuthenticationGuard > CountryDataProvider`.
 
 ## Routes / Sections
 
-All `page.tsx` files below (except `/mycountry/editor` and `/mycountry/welcome`) render `<MyCountryRouter />`; the active section is resolved from the pathname by `getSectionFromPathname()` in `mycountry-sections.ts`.
+The `page.tsx` files below (except `/mycountry/editor`, `/mycountry/map-editor` and `/mycountry/welcome`) live in `(command)/` and return `null`; the layout's router renders every section. the active section is resolved from the pathname by `getSectionFromPathname()` in `mycountry-sections.ts`.
 
 | Route                     | Section    | Loading          | Notes                                                                                                                                                                                                                                                                                                    |
 | ------------------------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -26,10 +26,10 @@ Premium/feature gating uses `useAbility().can("access", "MyCountryFeature", …)
 ## Key Features
 
 - **Overview layout**: the page header (the country's flag as its cover banner, country name and identity, Profile and Editor, the one **Declare Directive** button with weekly slot status), the crisis signal, the First steps card (`FirstStepsCard`: a new nation's checklist, ticked from real data by `mycountry.getFirstSteps`, hidden per nation by `mycountry.dismissFirstSteps`), the priority hero, the agenda inbox (open issues, active directives and upcoming elections), the domain peeks (`DomainPeeksCard`), recent activity, and National standing, World Census and Territory in the rail. There is no watermark. Gold is reserved for **Declare Directive** and meaningful status (`shell/status-tone.ts`); see `docs/systems/mycountry.md`.
-- **Single-page navigation** — instant section switches, URL kept in sync via `pushState`, back/forward handled by a `popstate` listener; document title updated per section.
+- **Single-page navigation** — instant section switches, URL kept in sync via `pushState`, back/forward handled by a `popstate` listener; document title updated per section. The router lives in the `(command)` layout, which persists across sibling routes, so a sidebar click (a `next/link` between section routes) keeps visited sections mounted (`<Activity>`) and cross-fades instead of remounting. `src/tests/architecture/mycountry-command-layout.test.ts` pins that no section page renders the router (a second mount) and that exactly the seven section routes sit under `(command)`.
 - **Compliance gate** — `useMyCountryCompliance` surfaces `MyCountryComplianceModal` on the overview when the country is incomplete; "Review" deep-links to `/mycountry/editor`. Snooze state persisted in `localStorage`.
 - **Per-section error isolation** — each section is wrapped in `DashboardErrorBoundary` with a retry/refresh fallback keyed on `activeSection`.
-- **Demo / dev modes** — `layout.tsx` adds `DemoModeProvider`, `DevCountryViewProvider`, a demo banner, the dev "viewing as" toolbar, and the `MyCountryHalo` plugin.
+- **Demo / dev modes** — `_components/MyCountryLayoutClient.tsx` (rendered by `layout.tsx`) adds `DemoModeProvider`, `DevCountryViewProvider`, a demo banner, the dev "viewing as" toolbar, and the `MyCountryHalo` plugin.
 
 ## Architecture (v6)
 
