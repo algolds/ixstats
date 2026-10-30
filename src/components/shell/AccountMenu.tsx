@@ -15,8 +15,11 @@ import Link from "next/link";
 import {
   Bookmark,
   Fingerprint,
+  HalfMoon,
+  Laptop,
   LogOut,
   Settings,
+  SunLight,
   User,
   UserCircle,
   WarningCircle,
@@ -36,6 +39,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { CollapsedTooltip, rowBase } from "./AppSidebar";
 import { assetUrl } from "~/lib/base-path";
+import { useTheme, type Theme } from "~/context/theme-context";
 
 interface AccountMenuProps {
   layout: "sidebar" | "sheet";
@@ -47,6 +51,24 @@ const itemClass = cn(
   "text-body text-label hover:bg-fill-4 rounded-control flex min-h-9 w-full items-center gap-3 px-2.5 pointer-coarse:min-h-11",
   focusRing
 );
+
+const THEME_ROW: Record<Theme, { label: string; Icon: typeof SunLight }> = {
+  light: { label: "Light", Icon: SunLight },
+  dark: { label: "Dark", Icon: HalfMoon },
+  system: { label: "System", Icon: Laptop },
+};
+
+/** Cycles the sitewide theme preference (light, dark, system); the wiki follows it. */
+function ThemeRow() {
+  const { theme, toggleTheme } = useTheme();
+  const { label, Icon } = THEME_ROW[theme];
+  return (
+    <button type="button" onClick={toggleTheme} className={cn(itemClass, "cursor-pointer")}>
+      <Icon aria-hidden className="size-4 shrink-0" />
+      {`Theme: ${label}`}
+    </button>
+  );
+}
 
 function useAccount() {
   const { user } = useUser();
@@ -171,6 +193,9 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
             </Link>
           </li>
         )}
+        <li>
+          <ThemeRow />
+        </li>
         <li>
           <Link href="/settings?tab=account" onClick={done} className={itemClass}>
             <Fingerprint aria-hidden className="size-4 shrink-0" />
