@@ -3,7 +3,12 @@
  */
 
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  publicProcedure,
+  rateLimitedMutationProcedure,
+} from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import {
   getPreset,
@@ -13,6 +18,9 @@ import {
   type SportPresetKey,
 } from "~/lib/sports";
 import { lockWallet } from "~/lib/vault/exchange-service";
+import { extractLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import { isSystemOwner } from "~/lib/auth";
 import {
   assertCanManageLeague,
@@ -157,6 +165,18 @@ export const leaguesCrudRouter = createTRPCRouter({
         nationAffiliation: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()),
         isCanonical: z.boolean().optional().default(false),
+        /** The league's IxWiki article. */
+        wikiSlug: z.string().max(500).nullable().optional(),
+        /** Clubs imported from the wiki: one per `teamCount`, named and linked as given. */
+        teams: z
+          .array(
+            z.object({
+              name: z.string().min(1).max(200),
+              wikiSlug: z.string().max(500).nullable(),
+            })
+          )
+          .max(MAX_LEAGUE_TEAMS)
+          .optional(),
         requestId: sportsRequestId,
       })
     )
@@ -167,6 +187,12 @@ export const leaguesCrudRouter = createTRPCRouter({
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: `Unknown sport preset: ${input.sportPreset}`,
+          });
+        }
+        if (input.teams && input.teams.length !== input.teamCount) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "The imported teams must match the number of teams",
           });
         }
 
@@ -205,6 +231,7 @@ export const leaguesCrudRouter = createTRPCRouter({
               teamCount: input.teamCount,
               nationAffiliation: input.nationAffiliation,
               isCanonical: canonical,
+              wikiSlug: toWikiSlug(input.wikiSlug),
               settings: input.settings as any,
               createdByUserId: ctx.user.id,
               status: "active",
@@ -213,13 +240,16 @@ export const leaguesCrudRouter = createTRPCRouter({
 
           const teams = [];
           for (let i = 0; i < input.teamCount; i++) {
+            const imported = input.teams?.[i];
+            const teamName = imported?.name ?? `${input.name} Team ${i + 1}`;
             const team = await tx.sportTeam.create({
               data: {
                 leagueId: league.id,
-                name: `${input.name} Team ${i + 1}`,
-                shortName: `${input.name.slice(0, 3).toUpperCase()}${i + 1}`,
+                name: teamName,
+                shortName: `${teamName.slice(0, 3).toUpperCase()}${i + 1}`,
                 color: `hsl(${(i * 360) / input.teamCount}, 70%, 50%)`,
                 nationId: input.nationAffiliation ?? null,
+                wikiSlug: toWikiSlug(imported?.wikiSlug),
               },
             });
 
@@ -285,6 +315,15 @@ export const leaguesCrudRouter = createTRPCRouter({
           message: "Failed to create league",
         });
       }
+    }),
+
+  /** The teams a league's IxWiki article names, for the creator's import step. A missing page names none. */
+  previewWikiTeams: protectedProcedure
+    .input(z.object({ wikiSlug: z.string().trim().min(1).max(500) }))
+    .query(async ({ ctx, input }) => {
+      await assertTitleVisible(ctx, input.wikiSlug, "ixwiki");
+      const page = await getArticleWikitextShadow(input.wikiSlug, "ixwiki");
+      return extractLeagueTeams(page?.wikitext ?? "").slice(0, MAX_LEAGUE_TEAMS);
     }),
 
   updateLeague: rateLimitedMutationProcedure

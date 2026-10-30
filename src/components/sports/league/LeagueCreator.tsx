@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useReducer } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -33,12 +33,15 @@ import { useLeagueCoverImage } from "~/hooks/useLeagueCoverImage";
 import { springSmooth } from "~/lib/design/motion";
 import type { ArchetypeType } from "~/lib/sports";
 import { DEFAULT_MATCH_INTERVAL_DAYS } from "~/lib/sports/scheduler";
+import { toWikiSlug } from "~/lib/sports/league-wiki";
+import { INITIAL_LEAGUE_WIKI, leagueWikiReducer } from "~/lib/sports/league-wiki-state";
 import {
   archetypeLabels,
   cardVariants,
   intervalLabel,
   stepVariants,
 } from "./league-creator-config";
+import { LeagueWikiImport } from "./LeagueWikiImport";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -81,6 +84,8 @@ export function LeagueCreator({
   const [weightClassesRaw, setWeightClassesRaw] = useState("");
   const [raceCount, setRaceCount] = useState(20);
   const [matchIntervalDays, setMatchIntervalDays] = useState(DEFAULT_MATCH_INTERVAL_DAYS);
+  // The league's wiki article and the teams imported from it
+  const [wiki, dispatchWiki] = useReducer(leagueWikiReducer, INITIAL_LEAGUE_WIKI);
 
   // Cover image: a Commons suggestion for the sport, shuffle, remove, or a picked file
   const {
@@ -118,6 +123,7 @@ export function LeagueCreator({
       const preset = presets?.find((p) => p.key === key);
       if (preset) {
         setTeamCount(preset.defaultTeamCount);
+        dispatchWiki({ type: "teamCountEdited", teamCount: preset.defaultTeamCount });
       }
     },
     [presets]
@@ -136,6 +142,7 @@ export function LeagueCreator({
     setDivisions(2);
     setWeightClassesRaw("");
     setRaceCount(20);
+    dispatchWiki({ type: "reset" });
     resetCover();
     setMediaSearchOpen(false);
   }, [resetCover]);
@@ -182,6 +189,8 @@ export function LeagueCreator({
         nationAffiliation: null,
         settings,
         isCanonical,
+        wikiSlug: toWikiSlug(wiki.wikiSlug),
+        teams: wiki.teams?.length === teamCount ? wiki.teams : undefined,
       });
 
       setCreatedLeagueId(result.id);
@@ -207,6 +216,7 @@ export function LeagueCreator({
     notify,
     onCreated,
     coverImage,
+    wiki,
   ]);
 
   const handleOpenChange = useCallback(
@@ -362,12 +372,28 @@ export function LeagueCreator({
                 selectedPreset?.maxTeamCount ?? 64
               );
               setTeamCount(clamped);
+              dispatchWiki({ type: "teamCountEdited", teamCount: clamped });
             } else if (e.target.value === "") {
               setTeamCount(0);
+              dispatchWiki({ type: "teamCountEdited", teamCount: 0 });
             }
           }}
         />
       </div>
+
+      {/* Wiki article and team import */}
+      <LeagueWikiImport
+        wikiSlug={wiki.wikiSlug}
+        onWikiSlugChange={(wikiSlug) => dispatchWiki({ type: "slugEdited", wikiSlug })}
+        importedCount={wiki.teams?.length ?? null}
+        minTeams={selectedPreset?.minTeamCount ?? 2}
+        maxTeams={selectedPreset?.maxTeamCount ?? 64}
+        onImport={(teams) => {
+          dispatchWiki({ type: "teamsImported", teams });
+          setTeamCount(teams.length);
+        }}
+        onClear={() => dispatchWiki({ type: "teamsCleared" })}
+      />
 
       {/* Match cadence (table-based archetypes) */}
       {!isCircuit && !isBoxing && (
@@ -596,8 +622,19 @@ export function LeagueCreator({
               </div>
               <div>
                 <span className="text-label-secondary text-footnote">Teams</span>
-                <p className="text-label font-medium">{teamCount}</p>
+                <p className="text-label font-medium">
+                  {teamCount}
+                  {wiki.teams?.length === teamCount && " (from the wiki)"}
+                </p>
               </div>
+              {toWikiSlug(wiki.wikiSlug) && (
+                <div>
+                  <span className="text-label-secondary text-footnote">Wiki article</span>
+                  <p className="text-label font-medium break-words">
+                    {toWikiSlug(wiki.wikiSlug)?.replace(/_/g, " ")}
+                  </p>
+                </div>
+              )}
 
               {isDivisionConference && (
                 <div>
