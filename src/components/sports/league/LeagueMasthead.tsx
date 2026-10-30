@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { PublishStandingsButton } from "~/components/sports/league/PublishStandingsButton";
 import { withBasePath } from "~/lib/base-path";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
@@ -123,6 +124,9 @@ export function LeagueMasthead({
                   <BookOpen className="h-3.5 w-3.5" />
                   <span>Wiki article</span>
                 </Link>
+              )}
+              {league.wikiSlug && canManageLeague && (
+                <PublishStandingsButton leagueId={league.id} />
               )}
             </div>
 

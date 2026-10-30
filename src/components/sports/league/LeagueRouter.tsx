@@ -46,6 +46,7 @@ import {
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { SportsCommandPalette } from "~/components/sports/core/SportsCommandPalette";
 import { type StandingsRow } from "~/components/sports/StandingsTable";
+import { displayedSeason } from "~/lib/sports/displayed-season";
 import { type MatchEvent } from "~/components/sports/LatestResults";
 
 interface LeagueRouterProps {
@@ -129,8 +130,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   usePageTitle({ title: league?.name ? `${league.name} - MyLeague` : "MyLeague" });
 
   const activeSeason = league?.seasons?.find((s) => s.status === "in_progress");
-  const latestSeason =
-    activeSeason ?? league?.seasons?.find((s) => s.status === "completed") ?? league?.seasons?.[0];
+  const latestSeason = displayedSeason(league?.seasons);
   const lastCompletedSeason = league?.seasons?.find((s) => s.status === "completed");
 
   const seasonId = activeSeason?.id ?? latestSeason?.id;

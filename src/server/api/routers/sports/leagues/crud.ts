@@ -34,6 +34,7 @@ import {
 } from "~/server/api/routers/sports/_shared";
 import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
 import { refundOpenPredictionsTx, refundTransferBidTx } from "~/server/api/routers/sports/escrow";
+import { publishLeagueStandings } from "~/server/orchestration/league-wiki-export";
 
 /** A 64-club charter writes about 200 rows in its transaction. */
 const CHARTER_TRANSACTION = { timeout: 30_000, maxWait: 10_000 };
@@ -324,6 +325,22 @@ export const leaguesCrudRouter = createTRPCRouter({
       await assertTitleVisible(ctx, input.wikiSlug, "ixwiki");
       const page = await getArticleWikitextShadow(input.wikiSlug, "ixwiki");
       return extractLeagueTeams(page?.wikitext ?? "").slice(0, MAX_LEAGUE_TEAMS);
+    }),
+
+  /**
+   * "Publish to wiki": the league's standings written into its IxWiki article as the signed-in manager, through their
+   * own wiki edit rights. An edit that landed meanwhile is `{ success: false, conflict: true }`, never overwritten.
+   */
+  publishStandingsToWiki: rateLimitedMutationProcedure
+    .input(z.object({ leagueId: z.string().min(1).max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      const league = await ctx.db.sportLeague.findUnique({
+        where: { id: input.leagueId },
+        select: { createdByUserId: true },
+      });
+      if (!league) throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
+      assertCanManageLeague(ctx, league);
+      return publishLeagueStandings(ctx, input.leagueId);
     }),
 
   updateLeague: rateLimitedMutationProcedure
