@@ -117,6 +117,8 @@ const TOOLS: Omit<InspectorTool, "badge">[] = [
   },
 ];
 
+export const DIAGNOSTIC_TOOL_COUNT = TOOLS.length;
+
 export function DiagnosticSection({ searchFilter }: { searchFilter: string }) {
   const results: Record<string, { data?: DiagnosticItem[]; isLoading: boolean }> = {
     orphans: api.wikios.getOrphanArticles.useQuery({ limit: 50 }),

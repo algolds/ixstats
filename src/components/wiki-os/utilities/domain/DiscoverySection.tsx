@@ -35,12 +35,12 @@ const TOOLS: UtilityTool[] = [
   },
   {
     id: "random",
-    title: "Random lore sprout",
-    description: "Explore the encyclopedia serendipitously with uniform random article hops.",
+    title: "Random page",
+    description: "Jump to a random article.",
     legacyAlias: "Special:Random",
     icon: Shuffle,
     href: "/util/random",
-    badge: "Serendipity",
+    badge: "Browse",
     color: "border-indigo/20 bg-indigo/10 text-indigo",
   },
   {
@@ -56,11 +56,11 @@ const TOOLS: UtilityTool[] = [
   {
     id: "media-commons",
     title: "Media assets Commons",
-    description: "Inspect 7,555+ edge-cached images, flags, diagrams, and asset citations.",
+    description: "Inspect images, flags, diagrams, and asset citations.",
     legacyAlias: "Special:ListFiles",
     icon: MediaImage,
     href: "/util/repository",
-    badge: "7,555 Assets",
+    badge: "Media",
     color: "border-blue/20 bg-blue/10 text-blue",
   },
   {
@@ -86,6 +86,8 @@ const TOOLS: UtilityTool[] = [
     color: "border-yellow/20 bg-yellow/10 text-yellow",
   },
 ];
+
+export const DISCOVERY_TOOL_COUNT = TOOLS.length;
 
 export function DiscoverySection({ searchFilter }: { searchFilter: string }) {
   return (

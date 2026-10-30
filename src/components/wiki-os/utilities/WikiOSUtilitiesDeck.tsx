@@ -3,12 +3,15 @@
 import React, { useState, useDeferredValue, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Book, Compass, EditPencil, Activity, Shield, X } from "iconoir-react";
-import { DiscoverySection } from "./domain/DiscoverySection";
-import { EditorialSection } from "./domain/EditorialSection";
-import { DiagnosticSection } from "./domain/DiagnosticSection";
-import { GovernanceSection } from "./domain/GovernanceSection";
+import { DiscoverySection, DISCOVERY_TOOL_COUNT } from "./domain/DiscoverySection";
+import { EditorialSection, EDITORIAL_TOOL_COUNT } from "./domain/EditorialSection";
+import { DiagnosticSection, DIAGNOSTIC_TOOL_COUNT } from "./domain/DiagnosticSection";
+import { GovernanceSection, GOVERNANCE_TOOL_COUNT } from "./domain/GovernanceSection";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+
+const ALL_TOOL_COUNT =
+  DISCOVERY_TOOL_COUNT + EDITORIAL_TOOL_COUNT + DIAGNOSTIC_TOOL_COUNT + GOVERNANCE_TOOL_COUNT;
 
 type UtilityDomain = "all" | "discovery" | "editorial" | "diagnostics" | "governance";
 
@@ -61,11 +64,11 @@ export function WikiOSUtilitiesDeck({
   }, []);
 
   const domains = [
-    { id: "all", label: "All utilities", count: 21, icon: Book },
-    { id: "discovery", label: "Discovery", count: 8, icon: Compass },
-    { id: "editorial", label: "Editorial", count: 5, icon: EditPencil },
-    { id: "diagnostics", label: "Diagnostics", count: 5, icon: Activity },
-    { id: "governance", label: "Governance", count: 3, icon: Shield },
+    { id: "all", label: "All utilities", count: ALL_TOOL_COUNT, icon: Book },
+    { id: "discovery", label: "Discovery", count: DISCOVERY_TOOL_COUNT, icon: Compass },
+    { id: "editorial", label: "Editorial", count: EDITORIAL_TOOL_COUNT, icon: EditPencil },
+    { id: "diagnostics", label: "Diagnostics", count: DIAGNOSTIC_TOOL_COUNT, icon: Activity },
+    { id: "governance", label: "Governance", count: GOVERNANCE_TOOL_COUNT, icon: Shield },
   ];
 
   return (

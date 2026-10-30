@@ -13,7 +13,7 @@ const mockTransaction = jest.fn();
 
 const tx = {
   wikiArticle: { findMany: jest.fn(), update: jest.fn() },
-  wikiLink: { deleteMany: jest.fn(), createMany: jest.fn() },
+  wikiLink: { deleteMany: jest.fn(), createMany: jest.fn(), updateMany: jest.fn() },
   wikiTemplateLink: { deleteMany: jest.fn(), createMany: jest.fn() },
   wikiImageLink: { deleteMany: jest.fn(), createMany: jest.fn() },
   wikiCategory: { upsert: jest.fn() },
@@ -48,12 +48,17 @@ const metadata = (over: Record<string, unknown> = {}) => ({
 let ids = 0;
 function stubArticle(
   wikitext = "[[Eurth]] text",
-  extra: { contentHtml?: string | null; revisions?: Array<{ byteSize: number; textDeleted: boolean }> } = {}
+  extra: {
+    contentHtml?: string | null;
+    revisions?: Array<{ byteSize: number; textDeleted: boolean }>;
+    status?: string;
+  } = {}
 ) {
   const id = `art-${++ids}`;
   mockFindUnique.mockResolvedValue({
     title: "Aurelia",
     source: "ixwiki",
+    status: "PUBLISHED",
     wikitext,
     contentHtml: null,
     revisions: [],
@@ -72,6 +77,7 @@ beforeEach(() => {
     table.deleteMany.mockResolvedValue({ count: 0 });
     table.createMany.mockResolvedValue({ count: 0 });
   }
+  tx.wikiLink.updateMany.mockResolvedValue({ count: 0 });
 });
 
 describe("a page its last edit blanked", () => {
@@ -162,6 +168,22 @@ describe("renderArticle stores what MediaWiki reported", () => {
     expect(tx.wikiTemplateLink.deleteMany).not.toHaveBeenCalled();
     expect(tx.wikiImageLink.deleteMany).not.toHaveBeenCalled();
     expect(tx.wikiCategoryMember.deleteMany).toHaveBeenCalledTimes(1);
+  });
+  it("points the red links to a published page at it, links from the same wiki only; a deleted page's stay red", async () => {
+    const id = stubArticle();
+    mockRender.mockResolvedValue({ html: HTML, metadata: metadata() });
+
+    await renderArticle(id);
+
+    expect(tx.wikiLink.updateMany).toHaveBeenCalledWith({
+      where: { targetSlug: "aurelia", targetArticleId: null, sourceArticle: { source: "ixwiki" } },
+      data: { targetArticleId: id },
+    });
+
+    tx.wikiLink.updateMany.mockClear();
+    await renderArticle(stubArticle("[[Eurth]] text", { status: "ARCHIVED" }));
+
+    expect(tx.wikiLink.updateMany).not.toHaveBeenCalled();
   });
   it("does not store the metadata of a render a save overtook", async () => {
     const id = stubArticle();

@@ -89,6 +89,29 @@ export class LinkGraphService {
   }
 
   /**
+   * Point the red links to `article`'s title at it: the links stored before the page existed (or while
+   * it was deleted) keep `targetArticleId` null until their source renders again. Matches the slug
+   * `replaceLinks` stored, among links from the same wiki. The caller makes sure the page is published.
+   * Resolves to the number of links repointed.
+   */
+  static async repointRedLinks(
+    tx: Prisma.TransactionClient,
+    article: { id: string; title: string; source: string }
+  ): Promise<number> {
+    const canon = canonicalizeTitle(article.title, { source: article.source });
+    if (!canon) return 0;
+    const { count } = await tx.wikiLink.updateMany({
+      where: {
+        targetSlug: canon.slug,
+        targetArticleId: null,
+        sourceArticle: { source: article.source },
+      },
+      data: { targetArticleId: article.id },
+    });
+    return count;
+  }
+
+  /**
    * Replace what the article transcludes with the templates the render reported (Lua modules
    * invoked with #invoke are among them). Resolves to the number of distinct pages.
    */

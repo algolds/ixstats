@@ -57,7 +57,10 @@ import {
 } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-reader";
 import { getArticleWikitext, getPageImages } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { ixwikiGetSiteStats } from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-site";
+import {
+  ixwikiGetRandomPage,
+  ixwikiGetSiteStats,
+} from "~/lib/wiki-os/adapters/mediawiki/bridge/pg-site";
 import { NativeSearchService } from "~/lib/wiki-os/core/native-search-service";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
 import { LinkGraphService } from "~/lib/wiki-os/core/link-graph-service";
@@ -808,6 +811,20 @@ describe("the main page's reads", () => {
         activeUsers: null,
       });
     });
+  });
+});
+
+describe("ixwikiGetRandomPage", () => {
+  const articles = db as unknown as { wikiArticle: { count: jest.Mock; findFirst: jest.Mock } };
+
+  it("picks among published articles that are not redirects", async () => {
+    articles.wikiArticle.count.mockResolvedValue(3);
+    articles.wikiArticle.findFirst.mockResolvedValue({ title: "Aurelia" });
+
+    await expect(ixwikiGetRandomPage()).resolves.toBe("Aurelia");
+    const where = { source: "ixwiki", namespace: 0, status: "PUBLISHED", redirectTargetSlug: null };
+    expect(articles.wikiArticle.count.mock.calls[0]![0]).toEqual({ where });
+    expect(articles.wikiArticle.findFirst.mock.calls[0]![0]).toMatchObject({ where });
   });
 });
 

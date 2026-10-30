@@ -9,6 +9,7 @@ import type { Prisma } from "@prisma/client";
 import { db } from "~/server/db";
 import { repointArticleHead } from "./article-head";
 import { toArticleSlug } from "./domain-types";
+import { LinkGraphService } from "./link-graph-service";
 import { lockTitleForCreation } from "./page-lock";
 import { canonicalizeTitle, NAMESPACE_CANONICAL_NAMES, type CanonicalTitle } from "./title";
 import { enqueueDeleteJob, enqueueMoveJob, scheduleMirrorKick } from "../services/mirror-outbox";
@@ -275,6 +276,14 @@ export class PageManagementService {
       where: { targetArticleId: original.id },
       data: { targetArticleId: movedArticle.id },
     });
+    // ...and the red links to the new title (a deleted page stays out of the link graph)
+    if (original.status !== "ARCHIVED") {
+      await LinkGraphService.repointRedLinks(tx, {
+        id: movedArticle.id,
+        title: newCanonicalTitle,
+        source: realm,
+      });
+    }
 
     // 7. Log the move action
     const log = await tx.wikiLog.create({
@@ -412,6 +421,11 @@ export class PageManagementService {
         data: { status: "ARCHIVED", lastEditorId: actor.userId, updatedAt: new Date() },
         select: { id: true },
       });
+      // links to a deleted page are red links (a restore points them back)
+      await tx.wikiLink.updateMany({
+        where: { targetArticleId: article.id },
+        data: { targetArticleId: null },
+      });
       const log = await tx.wikiLog.create({
         data: {
           logType: "delete",
@@ -483,6 +497,12 @@ export class PageManagementService {
       });
       // the page renders from its newest live revision, never the text of one overwritten while it was deleted
       await repointArticleHead(tx, article.id);
+      // the links to it that went red while it was deleted are blue again
+      await LinkGraphService.repointRedLinks(tx, {
+        id: article.id,
+        title: article.title,
+        source: realm,
+      });
       const log = await tx.wikiLog.create({
         data: {
           logType: "delete",

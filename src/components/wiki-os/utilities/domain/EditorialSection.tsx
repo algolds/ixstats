@@ -60,6 +60,8 @@ const TOOLS: UtilityTool[] = [
   },
 ];
 
+export const EDITORIAL_TOOL_COUNT = TOOLS.length;
+
 export function EditorialSection({ searchFilter }: { searchFilter: string }) {
   return (
     <UtilityToolGroup

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { cn } from "~/lib/utils";
 import {
@@ -16,6 +16,7 @@ import { useUser } from "~/context/auth-context";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
 import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
+import { StarterCategoryChips } from "~/components/wiki-os/commons/StarterCategoryChips";
 import {
   matchesImageFilters,
   type CommonsImage,
@@ -32,7 +33,7 @@ interface WikiRepositoryTabProps {
   onSelectImage: (img: CommonsImage | null) => void;
   onDoubleClickConfirm: () => void;
   isCategoryExpanded: boolean;
-  setIsCategoryExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  onToggleFilters: () => void;
 }
 
 type WikiSourceTab = "commons" | "wiki" | "stash";
@@ -57,7 +58,7 @@ export function WikiRepositoryTab({
   onSelectImage,
   onDoubleClickConfirm,
   isCategoryExpanded,
-  setIsCategoryExpanded,
+  onToggleFilters,
 }: WikiRepositoryTabProps) {
   const { user } = useUser();
   const signedIn = !!user;
@@ -174,7 +175,8 @@ export function WikiRepositoryTab({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setIsCategoryExpanded((prev) => !prev)}
+                aria-pressed={isCategoryExpanded}
+                onClick={onToggleFilters}
                 className={cn(
                   "text-caption rounded-control flex h-8 cursor-pointer items-center gap-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
                   isCategoryExpanded
@@ -255,6 +257,11 @@ export function WikiRepositoryTab({
                   </Button>
                 )}
               </div>
+            )}
+
+            {/* Starter categories on a cold start */}
+            {wikiSource === "commons" && results.mode === "idle" && (
+              <StarterCategoryChips onBrowseCategory={handleBrowseCategory} className="mt-1" />
             )}
 
             {/* Active Category Chips */}

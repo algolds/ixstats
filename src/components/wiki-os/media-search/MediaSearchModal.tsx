@@ -5,6 +5,7 @@ import { SystemRestart as Loader2, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useNotify } from "~/hooks/useNotify";
 import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
@@ -37,7 +38,10 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
   const [selectedImageObj, setSelectedImageObj] = useState<CommonsImage | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  // The filters and the category browser start open on desktop widths; the Filters button overrides that.
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const [filtersOverride, setFiltersOverride] = useState<boolean | null>(null);
+  const isCategoryExpanded = filtersOverride ?? isDesktop;
   // The in-flight "use this image" request; set while one runs, aborted when the picker closes.
   const confirmRef = useRef<AbortController | null>(null);
 
@@ -106,7 +110,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
       <DialogContent
         className={cn(
           "flex h-[88vh] max-h-[92vh] flex-col overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
-          isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
+          activeTab === "wiki-repository" && isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
         )}
         data-dialog-nested="true"
         onEscapeKeyDown={(e) => {
@@ -127,10 +131,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
 
         <Tabs
           value={activeTab}
-          onValueChange={(val) => {
-            setActiveTab(val as MainTab);
-            if (val !== "wiki-repository") setIsCategoryExpanded(false);
-          }}
+          onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
           <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
@@ -158,7 +159,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
               onSelectImage={handleWikiSelectImage}
               onDoubleClickConfirm={handleSelectConfirm}
               isCategoryExpanded={isCategoryExpanded}
-              setIsCategoryExpanded={setIsCategoryExpanded}
+              onToggleFilters={() => setFiltersOverride(!isCategoryExpanded)}
             />
           </TabsContent>
 

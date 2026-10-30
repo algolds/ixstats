@@ -148,11 +148,11 @@ export async function ixwikiGetSiteStats(): Promise<SiteStats> {
 export async function ixwikiGetRandomPage(): Promise<string> {
   try {
     const count = await (db as any).wikiArticle.count({
-      where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" },
+      where: { source: "ixwiki", namespace: 0, status: "PUBLISHED", redirectTargetSlug: null },
     });
     const skip = Math.floor(Math.random() * Math.max(1, count));
     const randomArt: any = await (db as any).wikiArticle.findFirst({
-      where: { source: "ixwiki", namespace: 0, status: "PUBLISHED" },
+      where: { source: "ixwiki", namespace: 0, status: "PUBLISHED", redirectTargetSlug: null },
       skip,
       select: { title: true },
     });
