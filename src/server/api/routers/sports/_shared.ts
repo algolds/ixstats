@@ -3,6 +3,9 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
 
+/** Most clubs a league holds: the largest league a charter founds. */
+export const MAX_LEAGUE_TEAMS = 64;
+
 /** Team fields shown on fixture and standings rows. */
 export const TEAM_BADGE = {
   select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true },

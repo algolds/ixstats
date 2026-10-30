@@ -51,9 +51,6 @@ interface LeagueAdvancedTabProps {
   setPlayoffFormat: (v: string) => void;
   seed: string;
   setSeed: (v: string) => void;
-  onEditTeam?: (teamId: string) => void;
-  onOpenRoster?: (teamId: string) => void;
-  onOpenChange: (open: boolean) => void;
 }
 
 export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
@@ -67,15 +64,11 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
   setPlayoffFormat,
   seed,
   setSeed,
-  onEditTeam,
-  onOpenRoster,
-  onOpenChange,
 }: LeagueAdvancedTabProps) {
   const notify = useNotify();
   const utils = api.useUtils();
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null);
 
-  const [forceEditTeamId, setForceEditTeamId] = useState("");
   const [overrideMatchId, setOverrideMatchId] = useState("");
   const [overrideHomeScore, setOverrideHomeScore] = useState(0);
   const [overrideAwayScore, setOverrideAwayScore] = useState(0);
@@ -122,61 +115,9 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
 
   return (
     <div className="thin-scrollbar max-h-[350px] space-y-5 overflow-y-auto pr-2">
-      {/* 1. Roster Editor */}
-      <div className="space-y-2">
-        <Label className="text-subhead text-label-secondary">Force-Edit Team</Label>
-        <div className="flex gap-2">
-          <Select value={forceEditTeamId} onValueChange={setForceEditTeamId}>
-            <SelectTrigger className="text-footnote h-9 flex-1">
-              <SelectValue placeholder="Select team to edit..." />
-            </SelectTrigger>
-            <SelectContent>
-              {league.teams?.map((team) => (
-                <SelectItem key={team.id} value={team.id}>
-                  {team.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!forceEditTeamId}
-            onClick={() => {
-              if (forceEditTeamId && onEditTeam) {
-                onEditTeam(forceEditTeamId);
-                onOpenChange(false);
-              }
-            }}
-            className="text-footnote"
-          >
-            Rename / Brand
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!forceEditTeamId}
-            onClick={() => {
-              if (forceEditTeamId && onOpenRoster) {
-                onOpenRoster(forceEditTeamId);
-                onOpenChange(false);
-              }
-            }}
-            className="text-footnote"
-          >
-            Roster
-          </Button>
-        </div>
-        <p className="text-label-secondary text-footnote">
-          As league creator you can rename, recolor, and rebrand any team here.
-        </p>
-      </div>
-
-      {/* 2. Active Season Actions */}
+      {/* Active Season Actions */}
       {activeSeason && (
-        <div className="border-separator space-y-3 border-t pt-4">
+        <div className="space-y-3">
           <Label className="text-subhead text-label-secondary">
             Season Operations (Season {activeSeason.seasonNumber})
           </Label>
@@ -223,7 +164,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
         </div>
       )}
 
-      {/* 3. Custom Simulation Rules */}
+      {/* 2. Custom Simulation Rules */}
       <div className="border-separator space-y-3 border-t pt-4">
         <Label className="text-subhead text-label-secondary">Custom engine rules</Label>
         <div className="grid grid-cols-2 gap-3">
@@ -288,7 +229,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
         </div>
       </div>
 
-      {/* 4. Manual Result Override */}
+      {/* 3. Manual Result Override */}
       {activeSeason && activeMatches.length > 0 && (
         <div className="border-separator space-y-3 border-t pt-4">
           <Label className="text-subhead text-label-secondary">Manual result override</Label>
@@ -369,7 +310,7 @@ export const LeagueAdvancedTab = React.memo(function LeagueAdvancedTab({
         </div>
       )}
 
-      {/* 5. Transfer / Swap Teams */}
+      {/* 4. Transfer / Swap Teams */}
       <div className="border-separator space-y-3 border-t pt-4">
         <Label className="text-subhead text-label-secondary">Transfer team to league</Label>
         <div className="space-y-2">

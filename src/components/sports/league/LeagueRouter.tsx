@@ -39,8 +39,10 @@ import { MatchdayTape, type MatchdayTapeItem } from "~/components/sports/league/
 
 // Modals & Panels
 import { MatchDetailModal } from "~/components/sports/league/MatchDetailModal";
-import { LeagueSettingsModal } from "~/components/sports/league/LeagueSettingsModal";
-import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
+import {
+  LeagueSettingsModal,
+  type LeagueSettingsTab,
+} from "~/components/sports/league/LeagueSettingsModal";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { SportsCommandPalette } from "~/components/sports/core/SportsCommandPalette";
 import { type StandingsRow } from "~/components/sports/StandingsTable";
@@ -89,9 +91,9 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     "overview"
   );
 
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // The tab the settings modal is open on; null while it is closed.
+  const [settingsTab, setSettingsTab] = useState<LeagueSettingsTab | null>(null);
   const [controlsOpen, setControlsOpen] = useState(false);
-  const [editTeamId, setEditTeamId] = useState<string | null>(null);
   const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
   const [celebratingChampion, setCelebratingChampion] = useState<{
     championName: string;
@@ -359,7 +361,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         totalMatchDays={38}
         progressPct={progressPct}
         canManageLeague={canManageLeague}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenSettings={() => setSettingsTab("branding")}
         onSimulateMatchDay={
           canManageLeague && activeSeason && nextMatchDay
             ? () => simulateMatchDay.mutate({ seasonId: activeSeason.id, matchDay: nextMatchDay })
@@ -391,7 +393,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
           activeSeason={activeSeason}
           latestSeason={latestSeason}
           hasMatchesPlayed={completedCount > 0}
-          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenSettings={() => setSettingsTab("teams")}
           isSimulatingMatchDay={simulateMatchDay.isPending}
           onSimulateFullSeason={
             activeSeason
@@ -566,26 +568,11 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       {/* League Settings Modal */}
       <LeagueSettingsModal
         league={league}
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
+        open={settingsTab !== null}
+        initialTab={settingsTab ?? "branding"}
+        onOpenChange={(open) => !open && setSettingsTab(null)}
         onOpenRoster={(tId) => focusOrganization(tId)}
-        onEditTeam={(tId) => setEditTeamId(tId)}
       />
-
-      {/* Team Edit Modal */}
-      {editTeamId &&
-        (() => {
-          const t = league.teams?.find((tm) => tm.id === editTeamId);
-          if (!t) return null;
-          return (
-            <TeamSettingsModal
-              team={t}
-              open={!!editTeamId}
-              onOpenChange={(o) => !o && setEditTeamId(null)}
-              onSaved={() => void utils.sports.getLeague.invalidate({ id: league.id })}
-            />
-          );
-        })()}
 
       {/* Full-Screen Championship Takeover Reveal */}
       {celebratingChampion && (

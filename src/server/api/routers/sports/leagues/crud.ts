@@ -19,12 +19,13 @@ import {
   assertOwnsLeague,
   viewerCanManageLeague,
 } from "~/server/api/routers/sports/league-access";
-import { assertSportsEconomyOpen, sportsRequestId } from "~/server/api/routers/sports/_shared";
+import {
+  assertSportsEconomyOpen,
+  MAX_LEAGUE_TEAMS,
+  sportsRequestId,
+} from "~/server/api/routers/sports/_shared";
 import { chargeSportsFeeTx } from "~/server/api/routers/sports/fees";
 import { refundOpenPredictionsTx, refundTransferBidTx } from "~/server/api/routers/sports/escrow";
-
-/** Most clubs a league holds: the largest league a charter founds. */
-const MAX_LEAGUE_TEAMS = 64;
 
 /** A 64-club charter writes about 200 rows in its transaction. */
 const CHARTER_TRANSACTION = { timeout: 30_000, maxWait: 10_000 };
