@@ -1,7 +1,7 @@
 "use client";
 // Modal for searching, uploading, and inserting images into the wiki editor.
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
 import { ImageInsertForm, imageWikitext } from "~/components/wiki-os/editor/ImageInsertForm";
 import { useFiltersOpen } from "~/components/wiki-os/media-search/useFiltersOpen";
@@ -59,7 +59,7 @@ function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModal
     onClose();
   };
 
-  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -82,39 +82,36 @@ function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModal
     const reader = new FileReader();
     reader.onload = () => setUploadPreview(reader.result as string);
     reader.readAsDataURL(file);
-  }, []);
+  };
 
   /** Upload the file; a warning stops it until the uploader says to go on (`ignoreWarnings`). */
-  const handleUpload = useCallback(
-    async (ignoreWarnings: boolean) => {
-      if (!uploadFile || !uploadFilename.trim()) return;
-      setUploading(true);
-      setUploadError(null);
-      setUploadWarnings([]);
-      try {
-        const result = await postUpload(uploadFile, {
-          filename: uploadFilename,
-          description: uploadDescription,
-          license: uploadLicense,
-          ignoreWarnings,
-        });
-        if (result.result === "Warning") {
-          setUploadWarnings(describeWarnings(result.warnings));
-          return;
-        }
-        // Auto-insert the uploaded file
-        const parts = [`File:${result.filename}`, "thumb", "right"];
-        if (uploadDescription.trim()) parts.push(uploadDescription.trim());
-        onInsert(`[[${parts.join("|")}]]`);
-        onClose();
-      } catch (err) {
-        setUploadError(err instanceof Error ? err.message : "The upload failed.");
-      } finally {
-        setUploading(false);
+  const handleUpload = async (ignoreWarnings: boolean) => {
+    if (!uploadFile || !uploadFilename.trim()) return;
+    setUploading(true);
+    setUploadError(null);
+    setUploadWarnings([]);
+    try {
+      const result = await postUpload(uploadFile, {
+        filename: uploadFilename,
+        description: uploadDescription,
+        license: uploadLicense,
+        ignoreWarnings,
+      });
+      if (result.result === "Warning") {
+        setUploadWarnings(describeWarnings(result.warnings));
+        return;
       }
-    },
-    [uploadFile, uploadFilename, uploadDescription, uploadLicense, onInsert, onClose]
-  );
+      // Auto-insert the uploaded file
+      const parts = [`File:${result.filename}`, "thumb", "right"];
+      if (uploadDescription.trim()) parts.push(uploadDescription.trim());
+      onInsert(`[[${parts.join("|")}]]`);
+      onClose();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : "The upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

@@ -22,18 +22,22 @@ const flag: CommonsImage = {
   license: "",
 };
 
+const mockUseRepositoryImages = jest.fn();
 jest.mock("~/components/wiki-os/media-search/useRepositoryImages", () => ({
-  useRepositoryImages: () => ({
-    images: [flag],
-    mode: "search",
-    isLoading: false,
-    isLoadingMore: false,
-    hasMore: false,
-    loadMore: jest.fn(),
-    totalHits: 1,
-    error: null,
-    retry: jest.fn(),
-  }),
+  useRepositoryImages: (input: { source: string }) => {
+    mockUseRepositoryImages(input);
+    return {
+      images: [flag],
+      mode: "search",
+      isLoading: false,
+      isLoadingMore: false,
+      hasMore: false,
+      loadMore: jest.fn(),
+      totalHits: 1,
+      error: null,
+      retry: jest.fn(),
+    };
+  },
 }));
 jest.mock("~/components/wiki-os/commons/CommonsCategoryBrowser", () => ({
   CommonsCategoryBrowser: () => <nav aria-label="Category browser" />,
@@ -66,12 +70,24 @@ describe("the editor's image picker", () => {
     render(<ImageSearchModal isOpen onClose={jest.fn()} onInsert={jest.fn()} />);
 
     expect(Array.from(sourceTabs(), (tab) => tab.textContent).sort()).toEqual(["Commons", "Wiki"]);
-    expect(screen.queryByRole("radio", { name: "IIWiki" })).toBeNull();
-    expect(screen.queryByRole("radio", { name: "Forum" })).toBeNull();
-    expect(screen.queryByRole("radio", { name: "My uploads" })).toBeNull();
     expect(
       screen.getByText("Only wiki and Commons files can be placed in an article.")
     ).toBeTruthy();
+  });
+
+  it("keeps the Wiki tab on the wiki's own files: no IIWiki, Forum or My uploads", () => {
+    mockUseRepositoryImages.mockClear();
+    render(<ImageSearchModal isOpen onClose={jest.fn()} onInsert={jest.fn()} />);
+
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Wiki" }));
+
+    expect(screen.queryByRole("radiogroup", { name: "Wiki source selection" })).toBeNull();
+    for (const name of ["IIWiki", "Forum", "My uploads"]) {
+      expect(screen.queryByRole("radio", { name })).toBeNull();
+    }
+    expect(mockUseRepositoryImages).toHaveBeenLastCalledWith(
+      expect.objectContaining({ source: "ixwiki" })
+    );
   });
 
   it("opens with the filters and the category browser on a desktop width", () => {
