@@ -68,6 +68,12 @@ const config = {
     // Reduce compilation time & memory footprint
     esmExternals: true,
     serverSourceMaps: false,
+    // Dev only until measured on a build (owner ruling 2026-10-29).
+    ...(process.env.NODE_ENV === "development" && {
+      turbopackRustReactCompiler: true,
+      turbopackGc: true,
+      turbopackLazyDynamicImports: true,
+    }),
   },
 
 

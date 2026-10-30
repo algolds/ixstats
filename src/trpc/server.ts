@@ -1,6 +1,7 @@
 import "server-only";
 
 import { type QueryState } from "@tanstack/react-query";
+import { auth } from "@clerk/nextjs/server";
 import { createHydrationHelpers } from "@trpc/react-query/rsc";
 import { headers } from "next/headers";
 import { cache } from "react";
@@ -22,11 +23,30 @@ const createContext = cache(async () => {
   });
 });
 
+/**
+ * The same context for a page that reads what a player's own session decides (their profile, their
+ * country). A server component has no request object, so the session comes from Clerk's `auth()`;
+ * without it `api` runs as a guest and would prefetch the guest's answer.
+ */
+const createSignedInContext = cache(async () => {
+  const heads = new Headers(await headers());
+  heads.set("x-trpc-source", "rsc");
+
+  return createTRPCContext({ headers: heads, sessionAuth: await auth() });
+});
+
 const getQueryClient = cache(createQueryClient);
 const caller = createCaller(createContext);
+const signedInCaller = createCaller(createSignedInContext);
 
 export const { trpc: api, HydrateClient } = createHydrationHelpers<AppRouter>(
   caller,
+  getQueryClient
+);
+
+/** `api`, acting as the signed-in player. It fills the same query cache, so `HydrateClient` carries its data too. */
+export const { trpc: signedInApi } = createHydrationHelpers<AppRouter>(
+  signedInCaller,
   getQueryClient
 );
 

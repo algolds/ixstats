@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import type { Map as MapLibreMap, MapGeoJSONFeature, MapLayerMouseEvent } from "maplibre-gl";
 import type { Polygon, MultiPolygon, Position } from "geojson";
 import type { EditorFeature } from "~/hooks/useMapEditor";
@@ -82,7 +82,7 @@ export interface VertexEditLatest {
 interface UseVertexEditPointerProps {
   map: MapLibreMap | null;
   isLoaded: boolean;
-  st: VertexEditState;
+  stRef: { readonly current: VertexEditState };
   latest: { readonly current: VertexEditLatest };
   updateVertexEditVis: (fastOnly?: boolean) => void;
   scheduleThrottledUpdate: () => void;
@@ -135,26 +135,25 @@ function cascadeNeighbors(
 export function useVertexEditPointer({
   map,
   isLoaded,
-  st,
+  stRef,
   latest,
   updateVertexEditVis,
   scheduleThrottledUpdate,
   queueCascadeVisual,
 }: UseVertexEditPointerProps) {
-  const removeVertexAt = useCallback(
-    (vertex: VertexRef) => {
-      if (!st.edit) return;
-      const result = removeVertex(st.edit.currentGeometry, vertex);
-      if (!result) return;
-      st.edit.currentGeometry = result;
-      st.hovered = null;
-      updateVertexEditVis();
-    },
-    [st, updateVertexEditVis]
-  );
+  const removeVertexAt = (vertex: VertexRef) => {
+    const st = stRef.current;
+    if (!st.edit) return;
+    const result = removeVertex(st.edit.currentGeometry, vertex);
+    if (!result) return;
+    st.edit.currentGeometry = result;
+    st.hovered = null;
+    updateVertexEditVis();
+  };
 
   useEffect(() => {
     if (!map || !isLoaded) return;
+    const st = stRef.current;
 
     const canvas = map.getCanvas();
     const listeners = createListeners(map);
@@ -381,7 +380,7 @@ export function useVertexEditPointer({
   }, [
     map,
     isLoaded,
-    st,
+    stRef,
     latest,
     updateVertexEditVis,
     scheduleThrottledUpdate,
@@ -389,16 +388,17 @@ export function useVertexEditPointer({
     removeVertexAt,
   ]);
 
-  useVertexDeleteKey(map, st, removeVertexAt);
+  useVertexDeleteKey(map, stRef, removeVertexAt);
 }
 
 /** Delete / Backspace removes the hovered vertex (or the one under the last mouse position). */
 function useVertexDeleteKey(
   map: MapLibreMap | null,
-  st: VertexEditState,
+  stRef: { readonly current: VertexEditState },
   removeVertexAt: (vertex: VertexRef) => void
 ) {
   useEffect(() => {
+    const st = stRef.current;
     const handler = (e: KeyboardEvent) => {
       if (!st.edit || isFormField(e.target)) return;
       if (e.key !== "Delete" && e.key !== "Backspace") return;
@@ -412,5 +412,5 @@ function useVertexDeleteKey(
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [map, st, removeVertexAt]);
+  }, [map, stRef, removeVertexAt]);
 }

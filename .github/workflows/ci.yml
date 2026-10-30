@@ -47,6 +47,11 @@ jobs:
         if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
         run: bun run audit:arch
 
+      # Functions the React Compiler silently skips, per file; the count only falls (react-compiler-ratchet.baseline.json).
+      - name: React Compiler skips
+        if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}
+        run: bun run check:compiler
+
       # 0 errors and 24 warnings on 2026-10-05; the limit only ratchets down.
       - name: Lint (strict)
         if: ${{ !cancelled() && steps.prisma.outcome == 'success' }}

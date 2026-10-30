@@ -4,12 +4,13 @@ import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { httpBatchStreamLink, loggerLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
 import { type inferRouterInputs, type inferRouterOutputs } from "@trpc/server";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clientTransformer } from "./client-transformer";
 
 import { type AppRouter } from "~/server/api/root";
 import { createQueryClient } from "./query-client";
 import { useAuth } from "~/context/auth-context";
+import { syncPlayAsCookie } from "~/app/admin/users/play-as-cookie";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {
@@ -98,6 +99,9 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
       ],
     })
   );
+
+  // Mounted on every page: keeps the server-visible play-as cookie in line with localStorage once per load.
+  useEffect(syncPlayAsCookie, []);
 
   return (
     <QueryClientProvider client={queryClient}>

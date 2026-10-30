@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { Activity, ViewTransition, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useTheme } from "~/context/theme-context";
@@ -20,7 +20,7 @@ interface CommandSurfaceProps {
   onNavigate?: (section: string) => void;
 }
 
-function CommandSurfaceComponent({
+export function CommandSurface({
   section = "overview",
   onNavigate,
 }: CommandSurfaceProps): React.JSX.Element {
@@ -46,41 +46,45 @@ function CommandSurfaceComponent({
 
   // Same history pattern as MyCountryRouter: write the URL without a Next route transition.
   // useSearchParams follows pushState/replaceState, so the surface re-renders from the URL.
-  const setMode = useCallback(
-    (next: CommandNavMode, options?: { replace?: boolean }) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (next === "executive") params.set("mode", "executive");
-      else params.delete("mode");
-      const query = params.toString();
-      const href = withBasePath(query ? `${pathname}?${query}` : pathname);
-      if (options?.replace) window.history.replaceState(null, "", href);
-      else window.history.pushState(null, "", href);
-    },
-    [pathname, searchParams]
-  );
+  const setMode = (next: CommandNavMode, options?: { replace?: boolean }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "executive") params.set("mode", "executive");
+    else params.delete("mode");
+    const query = params.toString();
+    const href = withBasePath(query ? `${pathname}?${query}` : pathname);
+    if (options?.replace) window.history.replaceState(null, "", href);
+    else window.history.pushState(null, "", href);
+  };
 
-  const declare = useCallback(
-    (prefilled?: string) => {
-      if (prefilled) setGoal(prefilled);
-      if (section !== "executive" && section !== "overview") {
-        // Domain surfaces hand over to the Directives section, which is the console.
-        onNavigate?.("executive");
-      } else if (section === "overview" && mode !== "executive") {
-        // Already on ?mode=executive: another push would add a duplicate history entry.
-        setMode("executive");
-      }
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [mode, onNavigate, section, setMode]
-  );
+  const declare = (prefilled?: string) => {
+    if (prefilled) setGoal(prefilled);
+    if (section !== "executive" && section !== "overview") {
+      // Domain surfaces hand over to the Directives section, which is the console.
+      onNavigate?.("executive");
+    } else if (section === "overview" && mode !== "executive") {
+      // Already on ?mode=executive: another push would add a duplicate history entry.
+      setMode("executive");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  const openIntent = useCallback((intentId: string) => {
+  const openIntent = (intentId: string) => {
     setDrill({ kind: "intent", intentId });
-  }, []);
+  };
 
-  const openDrill = useCallback((d: DrillSheetKind) => {
+  const openDrill = (d: DrillSheetKind) => {
     setDrill(d);
-  }, []);
+  };
+
+  // Sections the player has opened stay mounted inside a hidden Activity, so returning to one is
+  // instant and keeps its state. Activity tears effects down while hidden, so a section that is
+  // out of view fires no toasts, timers or title writes. Anything that is not a domain section
+  // renders the home surface, so it shares the "overview" slot. The executive console replaces
+  // every kept section while it shows, and a section is only mounted once it has been shown.
+  // ponytail: at most 5 sections stay mounted; evict least recent if memory shows up in profiles
+  const shown = mode === "executive" ? null : DOMAIN_SECTIONS.has(section) ? section : "overview";
+  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(shown ? [shown] : []));
+  if (shown && !visited.has(shown)) setVisited(new Set(visited).add(shown));
 
   // Facet hierarchy: the command bar is the shell (depth 1), each section below is a card
   // (depth 2), and rows inside a card are opaque depth-3 surfaces so blur never stacks.
@@ -109,22 +113,35 @@ function CommandSurfaceComponent({
           }}
           onOpenDrill={openDrill}
         />
-      ) : DOMAIN_SECTIONS.has(section) ? (
-        <DomainSurface
-          countryId={countryId}
-          section={section}
-          onDeclare={declare}
-          onNavigate={onNavigate}
-        />
-      ) : (
-        <ExecutiveHome
-          countryId={countryId}
-          onDeclare={declare}
-          onNavigate={onNavigate}
-          onOpenIntent={openIntent}
-          onOpenDrill={openDrill}
-        />
-      )}
+      ) : null}
+      {/* Section switches are transitions, so the browser cross-fades the swap. The class hooks
+          the fade in facet/interaction.css, which also turns it off under Reduce Motion. One
+          wrapper is the transition's single host, and keeps the hidden sections (display: none)
+          out of the column's space-y rhythm, which would count them as siblings. */}
+      <ViewTransition default="mycountry-section">
+        <div>
+          {[...visited].map((s) => (
+            <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
+              {s === "overview" ? (
+                <ExecutiveHome
+                  countryId={countryId}
+                  onDeclare={declare}
+                  onNavigate={onNavigate}
+                  onOpenIntent={openIntent}
+                  onOpenDrill={openDrill}
+                />
+              ) : (
+                <DomainSurface
+                  countryId={countryId}
+                  section={s}
+                  onDeclare={declare}
+                  onNavigate={onNavigate}
+                />
+              )}
+            </Activity>
+          ))}
+        </div>
+      </ViewTransition>
 
       {/* Drill Sheets */}
       <DrillSheets
@@ -136,5 +153,3 @@ function CommandSurfaceComponent({
     </div>
   );
 }
-
-export const CommandSurface = React.memo(CommandSurfaceComponent);

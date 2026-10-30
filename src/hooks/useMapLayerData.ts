@@ -9,7 +9,7 @@
  * the realm's older versions once the version moves, so a long editing session does not pile up old maps.
  */
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import type { FeatureCollection } from "geojson";
 import { withBasePath } from "~/lib/base-path";
@@ -99,6 +99,11 @@ interface UseMapLayerDataOptions {
 
 type Packed = Record<string, PackedFeatureCollection>;
 
+/** The layers on show: the latest answers over the previous ones (the same realm's), which fill in until they arrive. */
+function mergeShown(previous: Packed | undefined, latest: Packed | undefined): Packed | undefined {
+  return previous && latest ? { ...previous, ...latest } : (latest ?? previous);
+}
+
 /**
  * The layers in the packed wire format, keyed by layer type, as they arrive. When the map version moves, each
  * layer keeps showing the data it had until its new URL answers, so the map never blanks.
@@ -141,17 +146,14 @@ export function useMapLayerData({
 
   // A new version is a new query with no data of its own (React Query matches queries to observers by key), so the
   // previous version's layers stay on show until the new ones arrive. Only the same realm's: another realm's layers
-  // never stand in for this one's, whether it is still loading or has failed.
-  const shown = useRef<{ realmId?: string; packed?: Packed }>({});
-  const packed = useMemo<Packed | undefined>(() => {
-    const previous = shown.current.realmId === realmId ? shown.current.packed : undefined;
-    return previous && combined.packed
-      ? { ...previous, ...combined.packed }
-      : (combined.packed ?? previous);
-  }, [combined.packed, realmId]);
-  useEffect(() => {
-    shown.current = { realmId, packed };
-  }, [realmId, packed]);
+  // never stand in for this one's, whether it is still loading or has failed. `from` is the combined result the shown
+  // layers were last merged from: a new one (or another realm) merges again, during this render.
+  const [shown, setShown] = useState<{ realmId?: string; from?: Packed; packed?: Packed }>({});
+  let packed = shown.packed;
+  if (shown.realmId !== realmId || shown.from !== combined.packed) {
+    packed = mergeShown(shown.realmId === realmId ? shown.packed : undefined, combined.packed);
+    setShown({ realmId, from: combined.packed, packed });
+  }
 
   return {
     packed,
@@ -165,10 +167,9 @@ export function useMapLayerData({
 /** `useMapLayerData` with the layers decoded to GeoJSON (each packed layer once). */
 export function useDecodedMapLayers(options: UseMapLayerDataOptions) {
   const result = useMapLayerData(options);
-  const layers = useMemo<Record<string, FeatureCollection> | undefined>(
-    () => (result.packed ? unpackLayers(result.packed) : undefined),
-    [result.packed]
-  );
+  const layers: Record<string, FeatureCollection> | undefined = result.packed
+    ? unpackLayers(result.packed)
+    : undefined;
   return { ...result, layers };
 }
 
@@ -176,8 +177,8 @@ export function useDecodedMapLayers(options: UseMapLayerDataOptions) {
 export function useRetryMapLayers() {
   const queryClient = useQueryClient();
   const utils = api.useUtils();
-  return useCallback(() => {
+  return () => {
     void utils.realms.map.version.invalidate();
     void queryClient.invalidateQueries({ queryKey: [MAP_LAYER_QUERY_KEY] });
-  }, [utils, queryClient]);
+  };
 }

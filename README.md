@@ -211,7 +211,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 | Package / Layer | Version | Notes |
 | :--- | :---: | :--- |
 | **Next.js** | 16.4.3 | App Router architecture, Turbopack |
-| **React** | 19.2.8 | React 19 concurrent features |
+| **React** | 19.3.1 | React 19 concurrent features |
 | **TypeScript** | 7.0.2 | Native Go Engine concurrency |
 | **Prisma** | 6.19.3 | Multi-file schema partitioning |
 | **tRPC** | 11.18.0 | Domain-split modular routers |

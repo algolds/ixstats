@@ -87,6 +87,35 @@
     }
   }
 
+  /* ─── MyCountry section cross-fade ──────────────────────────────────────
+     CommandSurface wraps its sections in <ViewTransition default="mycountry-section">. The root
+     snapshot does not animate (globals.css), so only that wrapper fades: the old section out and
+     the new one in, on the page-level fade token. The group keeps no size morph, so a taller
+     section does not stretch the old one. The OS setting and html[data-motion="reduced"] both
+     switch it off. */
+
+  ::view-transition-old(.mycountry-section),
+  ::view-transition-new(.mycountry-section) {
+    animation-duration: var(--duration-fast);
+    animation-timing-function: var(--ease-out-facet);
+  }
+
+  ::view-transition-group(.mycountry-section) {
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(.mycountry-section),
+    ::view-transition-new(.mycountry-section) {
+      animation: none;
+    }
+  }
+
+  :root[data-motion="reduced"]::view-transition-old(.mycountry-section),
+  :root[data-motion="reduced"]::view-transition-new(.mycountry-section) {
+    animation: none;
+  }
+
   /* ─── Textures toggle (Settings → data-enable-textures) ───────────────── */
 
   html[data-enable-textures="false"] .texture-overlay {

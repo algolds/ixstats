@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
+import { setPlayAsCookie } from "./play-as-cookie";
 
 const STORAGE_KEY = "ixstats.play_as_user";
 const CHANGE_EVENT = "ixstats-play-as-change";
@@ -26,6 +27,7 @@ export function usePlayAs() {
   const handleStartPlayAs = (clerkUserId: string, nationName?: string | null) => {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEY, clerkUserId);
+    setPlayAsCookie(true);
     window.dispatchEvent(new Event(CHANGE_EVENT));
     setActivePlayAs(clerkUserId);
     notify.success(
@@ -37,6 +39,7 @@ export function usePlayAs() {
   const handleStopPlayAs = () => {
     if (typeof window === "undefined") return;
     localStorage.removeItem(STORAGE_KEY);
+    setPlayAsCookie(false);
     window.dispatchEvent(new Event(CHANGE_EVENT));
     setActivePlayAs(null);
     notify.info("Impersonation Stopped", "Restored administrative identity.");
