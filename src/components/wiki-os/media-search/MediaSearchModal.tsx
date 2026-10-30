@@ -5,13 +5,13 @@ import { SystemRestart as Loader2, Download } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useNotify } from "~/hooks/useNotify";
 import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
 import { createUrl } from "~/lib/utils/url-utils";
 
 import type { CommonsImage } from "./types";
+import { useFiltersOpen } from "./useFiltersOpen";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
 
@@ -39,10 +39,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
   const [selectedImageObj, setSelectedImageObj] = useState<CommonsImage | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  // The filters and the category browser start open on desktop widths; the Filters button overrides that.
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const [filtersOverride, setFiltersOverride] = useState<boolean | null>(null);
-  const isCategoryExpanded = filtersOverride ?? isDesktop;
+  const { isCategoryExpanded, onToggleFilters } = useFiltersOpen();
   // The in-flight "use this image" request; set while one runs, aborted when the picker closes.
   const confirmRef = useRef<AbortController | null>(null);
 
@@ -160,7 +157,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
               onSelectImage={handleWikiSelectImage}
               onDoubleClickConfirm={handleSelectConfirm}
               isCategoryExpanded={isCategoryExpanded}
-              onToggleFilters={() => setFiltersOverride(!isCategoryExpanded)}
+              onToggleFilters={onToggleFilters}
             />
           </TabsContent>
 

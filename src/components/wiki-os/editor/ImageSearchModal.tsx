@@ -3,11 +3,10 @@
 
 import { useState, useCallback, useRef } from "react";
 import { Xmark as X, MediaImage as ImageIcon, Upload } from "iconoir-react";
-import {
-  attributionLine,
-  ImageSearchGrid,
-  type ImageResult,
-} from "~/components/wiki-os/editor/ImageSearchGrid";
+import { ImageInsertForm, imageWikitext } from "~/components/wiki-os/editor/ImageInsertForm";
+import { useFiltersOpen } from "~/components/wiki-os/media-search/useFiltersOpen";
+import type { CommonsImage } from "~/components/wiki-os/media-search/types";
+import { WikiRepositoryTab } from "~/components/wiki-os/media-search/WikiRepositoryTab";
 import { MAX_UPLOAD_BYTES } from "~/lib/wiki-os/config";
 import {
   describeWarnings,
@@ -20,13 +19,6 @@ import { Button } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
 import { Textarea } from "~/components/ui/textarea";
 
 interface ImageSearchModalProps {
@@ -39,8 +31,6 @@ type ModalTab = "search" | "upload";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/svg+xml", "image/webp"];
 const MAX_SIZE_MB = MAX_UPLOAD_BYTES / 1_000_000;
-/** Select items cannot carry an empty value; "Full size" is the empty wikitext size. */
-const FULL_SIZE = "full";
 
 /** Mounted only while open, so every opening starts from a fresh form. */
 export function ImageSearchModal(props: ImageSearchModalProps) {
@@ -49,10 +39,8 @@ export function ImageSearchModal(props: ImageSearchModalProps) {
 
 function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModalProps) {
   const [tab, setTab] = useState<ModalTab>("search");
-  const [selected, setSelected] = useState<ImageResult | null>(null);
-  const [caption, setCaption] = useState("");
-  const [size, setSize] = useState("thumb");
-  const [align, setAlign] = useState("right");
+  const [selected, setSelected] = useState<CommonsImage | null>(null);
+  const { isCategoryExpanded, onToggleFilters } = useFiltersOpen();
 
   // Upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -66,19 +54,10 @@ function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModal
   const [uploadWarnings, setUploadWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleInsert = useCallback(() => {
-    if (!selected) return;
-    const name = selected.title.replace(/^File:/, "");
-    const parts = [`File:${name}`];
-    if (size) parts.push(size);
-    if (align && align !== "none") parts.push(align);
-    if (caption.trim()) parts.push(caption.trim());
-    const wikitext = `[[${parts.join("|")}]]`;
+  const handleInsert = (wikitext: string) => {
     onInsert(wikitext);
-    setSelected(null);
-    setCaption("");
     onClose();
-  }, [selected, caption, size, align, onInsert, onClose]);
+  };
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -142,7 +121,19 @@ function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModal
       <DialogContent
         showCloseButton={false}
         aria-describedby={undefined}
-        className="flex max-h-[85vh] max-w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]"
+        className={cn(
+          "flex flex-col gap-0 overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
+          tab === "upload"
+            ? "max-h-[85vh] max-w-[95vw] sm:max-w-[720px]"
+            : cn("h-[88vh] max-h-[92vh]", isCategoryExpanded ? "max-w-7xl" : "max-w-5xl")
+        )}
+        onEscapeKeyDown={(e) => {
+          // Escape first closes the detail panel, then the dialog.
+          if (tab === "search" && selected) {
+            e.preventDefault();
+            setSelected(null);
+          }
+        }}
       >
         <div className="border-separator flex items-center gap-3 border-b px-4 py-3">
           <DialogTitle className="text-headline flex items-center gap-2">
@@ -173,104 +164,21 @@ function ImageSearchModalContent({ isOpen, onClose, onInsert }: ImageSearchModal
           </Button>
         </div>
 
-        <div className="wikios-img-modal-body">
-          {/* Search tab */}
+        <div
+          className={tab === "upload" ? "wikios-img-modal-body" : "flex min-h-0 flex-1 flex-col"}
+        >
+          {/* Search tab: the site-wide repository picker, limited to what an article can hold */}
           {tab === "search" && (
             <>
-              <ImageSearchGrid onSelect={setSelected} selectedImage={selected} compact />
-
-              {selected && (
-                <div className="wikios-img-insert-form">
-                  <div className="wikios-img-insert-preview">
-                    <img
-                      src={selected.thumbUrl ?? selected.url}
-                      alt={selected.title}
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="wikios-img-insert-caption">
-                      <span className="wikios-img-insert-name">
-                        {selected.title.replace(/^File:/, "")}
-                      </span>
-                      {selected.source === "commons" && (
-                        <span className="wikios-img-insert-credit">
-                          {["Wikimedia Commons", attributionLine(selected)]
-                            .filter(Boolean)
-                            .join(" · ")}
-                          {selected.descriptionUrl && (
-                            <>
-                              {" · "}
-                              <a
-                                href={selected.descriptionUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Attribution
-                              </a>
-                            </>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="wikios-img-insert-fields">
-                    <label className="wikios-img-insert-label">
-                      Caption
-                      <Input
-                        type="text"
-                        value={caption}
-                        onChange={(e) => setCaption(e.target.value)}
-                        placeholder="Image caption..."
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleInsert();
-                        }}
-                      />
-                    </label>
-
-                    <div className="wikios-img-insert-row">
-                      <div className="wikios-img-insert-label">
-                        <span id="wikios-img-insert-size">Size</span>
-                        <Select
-                          value={size || FULL_SIZE}
-                          onValueChange={(v) => setSize(v === FULL_SIZE ? "" : v)}
-                        >
-                          <SelectTrigger
-                            aria-labelledby="wikios-img-insert-size"
-                            className="w-full"
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="thumb">Thumbnail</SelectItem>
-                            <SelectItem value="frame">Frame</SelectItem>
-                            <SelectItem value="frameless">Frameless</SelectItem>
-                            <SelectItem value={FULL_SIZE}>Full size</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="wikios-img-insert-label">
-                        <span id="wikios-img-insert-align">Align</span>
-                        <Select value={align} onValueChange={setAlign}>
-                          <SelectTrigger
-                            aria-labelledby="wikios-img-insert-align"
-                            className="w-full"
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="right">Right</SelectItem>
-                            <SelectItem value="left">Left</SelectItem>
-                            <SelectItem value="center">Center</SelectItem>
-                            <SelectItem value="none">None</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <Button onClick={handleInsert}>Insert image</Button>
-                  </div>
-                </div>
-              )}
+              <WikiRepositoryTab
+                mode="wikitext"
+                selectedImageObj={selected}
+                onSelectImage={setSelected}
+                onDoubleClickConfirm={() => selected && handleInsert(imageWikitext(selected.title))}
+                isCategoryExpanded={isCategoryExpanded}
+                onToggleFilters={onToggleFilters}
+              />
+              {selected && <ImageInsertForm image={selected} onInsert={handleInsert} />}
             </>
           )}
 

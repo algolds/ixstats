@@ -17,6 +17,12 @@ export interface CommonsImage {
   blurhash?: string | null;
 }
 
+/** "CC BY-SA 4.0 · Jane Doe": the credit line of a file, or null when it has neither a licence nor an author. */
+export function attributionLine(image: Pick<CommonsImage, "artist" | "license">): string | null {
+  const parts = [image.license, image.artist].filter((part): part is string => !!part?.trim());
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
 /** A minimal image for a url that is not on a loaded page (a shared `file=` link): only the url is known. */
 export function imageFromUrl(url: string): CommonsImage {
   const lastSegment = (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean).pop() ?? "";

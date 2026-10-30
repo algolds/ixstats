@@ -34,6 +34,11 @@ interface WikiRepositoryTabProps {
   onDoubleClickConfirm: () => void;
   isCategoryExpanded: boolean;
   onToggleFilters: () => void;
+  /**
+   * "picker" offers every source. "wikitext" is for placing a file in an article: only Commons and the
+   * wiki's own files, since nothing else can be written as `[[File:...]]`.
+   */
+  mode?: "picker" | "wikitext";
 }
 
 type WikiSourceTab = "commons" | "wiki" | "stash";
@@ -53,13 +58,17 @@ const EMPTY_TEXTS: Partial<Record<WikiSubSource, string>> = {
   mine: "You have not uploaded any images yet.",
 };
 
+const WIKITEXT_ONLY_NOTE = "Only wiki and Commons files can be placed in an article.";
+
 export function WikiRepositoryTab({
   selectedImageObj,
   onSelectImage,
   onDoubleClickConfirm,
   isCategoryExpanded,
   onToggleFilters,
+  mode = "picker",
 }: WikiRepositoryTabProps) {
+  const wikitext = mode === "wikitext";
   const { user } = useUser();
   const signedIn = !!user;
   const [wikiSource, setWikiSource] = useState<WikiSourceTab>("commons");
@@ -148,12 +157,20 @@ export function WikiRepositoryTab({
               options={[
                 { value: "commons", label: "Commons", icon: <Globe aria-hidden="true" /> },
                 { value: "wiki", label: "Wiki", icon: <Database aria-hidden="true" /> },
-                { value: "stash", label: "My stash", icon: <Bookmark aria-hidden="true" /> },
+                ...(wikitext
+                  ? []
+                  : [
+                      {
+                        value: "stash" as const,
+                        label: "My stash",
+                        icon: <Bookmark aria-hidden="true" />,
+                      },
+                    ]),
               ]}
             />
 
             {/* Scope toggle: the wiki, IIWiki, the old forum, and (signed in) your own uploads */}
-            {wikiSource === "wiki" && (
+            {wikiSource === "wiki" && !wikitext && (
               <SegmentedControl
                 aria-label="Wiki source selection"
                 size="sm"
@@ -190,6 +207,8 @@ export function WikiRepositoryTab({
             </div>
           )}
         </div>
+
+        {wikitext && <p className="text-footnote text-label-secondary">{WIKITEXT_ONLY_NOTE}</p>}
 
         {wikiSource !== "stash" && (
           <>

@@ -76,4 +76,19 @@ describe("the image picker opens browsable", () => {
     fireEvent.click(screen.getByRole("button", { name: "Filters" }));
     expect(browser()).not.toBeNull();
   });
+
+  it("offers every source, the stash included, outside the editor", () => {
+    screenWidth(true);
+    openPicker();
+
+    const tabs = screen.getByRole("tablist", { name: "Repository image sources" });
+    expect(Array.from(tabs.querySelectorAll('[role="tab"]'), (tab) => tab.textContent)).toEqual([
+      "Commons",
+      "Wiki",
+      "My stash",
+    ]);
+    expect(
+      screen.queryByText("Only wiki and Commons files can be placed in an article.")
+    ).toBeNull();
+  });
 });
