@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 
-import { env } from "~/env";
 // Direct leaf imports avoid loading the system barrel during database initialization
 import { queryMonitor } from "~/lib/system/query-monitor";
 import { isDevMode } from "~/lib/system/dev-memory-config";
@@ -228,4 +227,5 @@ export { db as prisma };
 // Export read-only mode flag for use in other parts of the application
 export const isDatabaseReadOnly = isReadOnlyMode;
 
-if (env.NODE_ENV !== "production") globalForPrisma.prisma = db as unknown as PrismaClient;
+// Every environment: the proxy entry and the app are separate module graphs in one process, and both reuse this client.
+globalForPrisma.prisma = db as unknown as PrismaClient;

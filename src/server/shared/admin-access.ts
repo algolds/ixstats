@@ -2,6 +2,7 @@
  * Whether a Clerk user may open /admin, for the proxy, which has no tRPC context: the system owner, or a user whose
  * database role passes the admin rule (`isAdminRole`, the rule adminProcedure applies). The answer is remembered per
  * Clerk id for 60 s, so admin page loads do not each read the database; a role change takes up to that long to show.
+ * A database error denies: the proxy redirects home with `error=access_denied`, it does not answer 503.
  */
 import { isSystemOwner } from "~/lib/auth/system-owner-constants";
 import { isAdminRole } from "~/lib/auth/admin-rule";
