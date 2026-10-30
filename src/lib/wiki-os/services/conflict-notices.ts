@@ -21,7 +21,7 @@ import { appUrl } from "~/lib/app-url";
 import { ArticleRepository } from "../core/article-repository";
 import { toRevisionRef } from "../core/domain-types";
 import { DeletedPageError, EditConflictError } from "../core/edit-conflict-error";
-import { canonicalizeTitle } from "../core/title";
+import { canonicalizeTitle, type CanonicalTitle } from "../core/title";
 import { trailSummary, type NoticeChannel, type NoticeRecipient } from "./conflict-rule";
 import {
   markNotified,
@@ -90,16 +90,22 @@ interface NoticeContext {
   pageLink: string;
 }
 
+/** The page in the talk note: a link to its canonical title, or plain text when MediaWiki would refuse the title. */
+function pageLinkOf(canon: CanonicalTitle | null, rawTitle: string): string {
+  if (!canon) return `<nowiki>${rawTitle.replace(/</g, "&lt;")}</nowiki>`;
+  const colon = COLON_NAMESPACES.has(canon.namespaceId) ? ":" : "";
+  return `[[${colon}${canon.title}]]`;
+}
+
 function contextOf(row: ConflictRow, firstAttemptAt: Date): NoticeContext {
   const entry = toConflictEntry(row);
   const canon = canonicalizeTitle(entry.title, { source: entry.source });
-  const colon = canon && COLON_NAMESPACES.has(canon.namespaceId) ? ":" : "";
   return {
     entry,
     firstAttemptAt,
     wiki: wikiName(entry.winner.side),
     urlPath: canon?.urlPath ?? entry.title.replace(/ /g, "_"),
-    pageLink: `[[${colon}${entry.title}]]`,
+    pageLink: pageLinkOf(canon, entry.title),
   };
 }
 

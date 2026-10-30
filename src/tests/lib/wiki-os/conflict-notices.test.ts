@@ -340,6 +340,37 @@ describeEachWikiosMode("settleConflicts", () => {
     );
   });
 
+  it.each([
+    ["links the canonical title of a stored title", "category:empires", "[[:Category:Empires]]"],
+    [
+      "names a title MediaWiki would refuse as plain text, never as wikitext",
+      "Empires]] {{Delete}} <b>",
+      "<nowiki>Empires]] {{Delete}} &lt;b></nowiki>",
+    ],
+  ])("%s in the note's heading", async (_name, title, shown) => {
+    tables.wikiConflict.insert({
+      key: `ixwiki:odd:${title}`,
+      title,
+      winnerSide: "wikios",
+      winnerAction: "edit",
+      winnerRef: "wk-odd",
+      winnerAt: new Date("2026-10-24T12:00:05Z"),
+      overwritten: [
+        {
+          side: "classic",
+          action: "edit",
+          ref: "41",
+          at: "2026-10-24T12:00:00.000Z",
+          author: { userId: null, classicName: "Foo", ip: null, label: null },
+        },
+      ],
+    });
+
+    await settleConflicts();
+
+    expect(headOf("User talk:Foo").wikitext).toContain(`== Your edit to ${shown} was replaced ==`);
+  });
+
   it("an IP editor gets the talk note only; a wikios> label editor the in-app notice only", async () => {
     seedCaphiria();
     const ip = site.editAs("10.0.0.7", "Caphiria", "Caphiria is a duchy.");
