@@ -68,7 +68,7 @@ Chambers with a non-elected selection method (appointed, sortition, …) are sti
 - `src/components/executive/politics/CabinetPanel.tsx` – Ministerial appointments and department allocations
 
 ### Pages
-- `src/app/mycountry/politics/page.tsx` – Politics sub-page within MyCountry
+- `src/app/mycountry/(command)/politics/page.tsx` – the `/mycountry/politics` route (the page returns `null`; the `(command)` layout's router renders the section)
 - `src/content/help/mycountry/politics.md` – Player help guide (served at `/help/mycountry/politics`)
 
 ---

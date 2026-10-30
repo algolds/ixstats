@@ -401,7 +401,7 @@ updating. That's the whole reason this stack is pleasant.
 ### Next.js ties it together
 
 **React** alone only does the browser UI. **Next.js** is the framework wrapping everything: it serves
-pages, handles URLs/routing (a file at `src/app/mycountry/page.tsx` *becomes* the `/mycountry` URL),
+pages, handles URLs/routing (a file at `src/app/vault/page.tsx` *becomes* the `/vault` URL),
 and runs both the frontend and backend halves. When you run `bun run dev`, Next.js is the thing that
 compiles your TypeScript, serves the site at localhost:3000, and hot-reloads on save.
 

@@ -112,7 +112,7 @@ export function MyCountryRouter() {
 ### Active Hub Routers & Shells:
 | Hub | Location | Sub-Sections |
 | :--- | :--- | :--- |
-| **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) | Overview, Executive, Economy, Diplomacy, Intelligence, Defense, Politics, Map Editor |
+| **`MyCountryRouter`** | [`src/components/mycountry/shell/MyCountryRouter.tsx`](../../src/components/mycountry/shell/MyCountryRouter.tsx) (rendered once by the `src/app/mycountry/(command)/layout.tsx` route-group layout; its section pages return `null`) | Overview, Executive, Economy, Diplomacy, Intelligence, Defense, Politics, Map Editor |
 | **Vault routes** | [`src/app/vault/layout.tsx`](../../src/app/vault/layout.tsx) (guard + page container; navigation is the sidebar's source list) | Dashboard, Cards, Marketplace, Import, Achievements, Leaderboards |
 | **`ThinktankWorkspace`** | [`src/components/thinktanks/ThinktankWorkspace.tsx`](../../src/components/thinktanks/ThinktankWorkspace.tsx) | Feed, Roster |
 | **`MessagesRouter`** | [`src/components/messages/MessagesRouter.tsx`](../../src/components/messages/MessagesRouter.tsx) | Conversations (single folder, conversation list + thread view) |
