@@ -9,6 +9,7 @@ import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useNotify } from "~/hooks/useNotify";
 import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
+import { createUrl } from "~/lib/utils/url-utils";
 
 import type { CommonsImage } from "./types";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
@@ -180,6 +181,14 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
         {/* Modal Bottom Action Controls */}
         {activeTab !== "upload" && (
           <div className="border-separator bg-surface flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
+            <a
+              href={createUrl("/util/repository")}
+              target="_blank"
+              rel="noopener"
+              className="text-footnote text-tint mr-auto underline underline-offset-2"
+            >
+              Open the full repository
+            </a>
             {isDownloading && (
               <div className="text-footnote text-tint flex items-center gap-2">
                 <Download className="size-3.5" aria-hidden="true" />
