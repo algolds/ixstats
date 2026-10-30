@@ -103,6 +103,10 @@ describe("Onoma on real names", () => {
       dropped: [],
     });
     expect(ipaToKokoroPhonemes("bʊʔər")).toMatchObject({ phonemes: "bʊəɹ", dropped: ["ʔ"] });
+    // misaki puts stress on the vowel; a mark before a consonant makes Kokoro voice a vowel there.
+    // A syllable "." would read as a full stop.
+    expect(ipaToKokoroPhonemes("/ˈdɛlə.pəs/").phonemes).toBe("dˈɛləpəs");
+    expect(ipaToKokoroPhonemes("kəˈɾinə ˌstɹavə").phonemes).toBe("kəɾˈinə stɹˌavə");
     expect(anglicizeForSpeech("/onoma/")).toBe("/oʊnəmə/");
   });
 
