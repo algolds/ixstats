@@ -198,10 +198,12 @@ export function EnhancedAccountManager({
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
   const { data: maxAccounts = MAX_ACCOUNTS } = api.thinkpages.getAccountLimit.useQuery();
+  const utils = api.useUtils();
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation({
     onSuccess: () => {
       notify.success("Account visibility updated");
+      void utils.thinkpages.getMyAccounts.invalidate();
     },
   });
 
@@ -254,7 +256,8 @@ export function EnhancedAccountManager({
         })}
       </div>
 
-      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+      {/* Capped only in the modal; on the page the list grows with the page. */}
+      <div className={cn("space-y-2", inModal && "max-h-80 overflow-y-auto pr-1")}>
         <AnimatePresence>
           {filteredAccounts.length === 0 ? (
             <EmptyState

@@ -1,6 +1,9 @@
 import React, { Suspense } from "react";
 import { type Metadata } from "next";
 import { ThinktankWorkspace } from "~/components/thinktanks/ThinktankWorkspace";
+import { orNullLogged } from "~/lib/site-metadata";
+import { db } from "~/server/db";
+import { loadThinktankGroupTitle, THINKTANKS_TITLE } from "~/server/modules/thinktanks/metadata";
 
 interface ThinktankGroupPageProps {
   params: Promise<{ groupId: string }>;
@@ -9,7 +12,9 @@ interface ThinktankGroupPageProps {
 export async function generateMetadata({ params }: ThinktankGroupPageProps): Promise<Metadata> {
   const { groupId } = await params;
   return {
-    title: `ThinkTank ${groupId} | IxStates`,
+    title:
+      (await orNullLogged(loadThinktankGroupTitle(db, groupId), `thinktank ${groupId}`)) ??
+      THINKTANKS_TITLE,
     description:
       "Collaborative research, working papers, group thinks, and ThinkShare discussions.",
   };

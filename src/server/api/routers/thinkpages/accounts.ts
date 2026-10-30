@@ -325,20 +325,23 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
   // How many feed accounts one user may create (Admin → ThinkPages)
   getAccountLimit: publicProcedure.query(({ ctx }) => maxThinkpagesAccountsPerUser(ctx.db)),
 
-  // Get current user's ThinkPages accounts
-  getMyAccounts: protectedProcedure.query(async ({ ctx }) => {
-    const { db, auth } = ctx;
+  // Get current user's ThinkPages accounts: active only, for posting. The account manager passes
+  // includeInactive so a deactivated persona stays listed and can be activated again.
+  getMyAccounts: protectedProcedure
+    .input(z.object({ includeInactive: z.boolean().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const { db, auth } = ctx;
 
-    const accounts = await db.thinkpagesAccount.findMany({
-      where: {
-        clerkUserId: auth.userId,
-        isActive: true,
-      },
-      orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
-    });
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          clerkUserId: auth.userId,
+          ...(input?.includeInactive ? {} : { isActive: true }),
+        },
+        orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
+      });
 
-    return accounts;
-  }),
+      return accounts;
+    }),
 
   // The caller's personal persona ("post as yourself"), or null if they have not made one yet
   getMyPersonalAccount: protectedProcedure.query(async ({ ctx }) => {
