@@ -1,4 +1,4 @@
-import { extractLeagueTeams } from "~/lib/sports/league-wiki";
+import { extractLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
 
 describe("extractLeagueTeams", () => {
   it("reads a bulleted list under a Teams section, naming the team by its label", () => {
@@ -98,5 +98,47 @@ describe("extractLeagueTeams", () => {
   it("returns an empty list when nothing matches", () => {
     expect(extractLeagueTeams("Just a [[Page]] about nothing.")).toEqual([]);
     expect(extractLeagueTeams("")).toEqual([]);
+  });
+});
+
+describe("toWikiSlug", () => {
+  it("joins words with underscores and refuses empty, file and category titles", () => {
+    expect(toWikiSlug("  FC  Varro ")).toBe("FC_Varro");
+    expect(toWikiSlug("   ")).toBeNull();
+    expect(toWikiSlug(null)).toBeNull();
+    expect(toWikiSlug("Category:Teams")).toBeNull();
+    expect(toWikiSlug(":File:Crest.png")).toBeNull();
+    expect(toWikiSlug("image:Old.png")).toBeNull();
+    expect(toWikiSlug("Media:Clip.ogg")).toBeNull();
+  });
+});
+
+describe("extractLeagueTeams on hostile articles", () => {
+  const SIZE = 250_000;
+  const repeated = (unit: string) => unit.repeat(Math.ceil(SIZE / unit.length));
+  // Generous: the quadratic patterns took seconds at this size, a linear pass takes a few milliseconds.
+  const BOUND_MS = 500;
+
+  it.each([
+    ["unclosed links on one bullet", `== Teams ==\n* ${repeated("[[a ")}`],
+    ["unclosed links with labels", `== Teams ==\n* ${repeated("[[a|b ")}`],
+    ["unclosed refs", `== Teams ==\n* [[Real]]${repeated("<ref>")}`],
+    ["unclosed ref tags", `== Teams ==\n* [[Real]]${repeated("<ref ")}`],
+    ["unclosed comments", `== Teams ==\n* [[Real]]${repeated("<!--")}`],
+    ["many nested teams headings", `=== Teams ===\n${repeated("==== Teams ====\n")}`],
+    ["many infobox parameters", `{{Infobox league\n${repeated("| teams = [[a \n")}`],
+    ["a table row that never ends", `== Teams ==\n{|\n${repeated("| [[a ")}`],
+  ])("reads %s quickly", (_name, wikitext) => {
+    const started = performance.now();
+    const teams = extractLeagueTeams(wikitext);
+    expect(performance.now() - started).toBeLessThan(BOUND_MS);
+    expect(Array.isArray(teams)).toBe(true);
+  });
+
+  it("still reads teams before an unclosed ref", () => {
+    expect(extractLeagueTeams("== Teams ==\n* [[Real FC]]\n* [[Other]]<ref>never closed")).toEqual([
+      { name: "Real FC", wikiSlug: "Real_FC" },
+      { name: "Other", wikiSlug: "Other" },
+    ]);
   });
 });

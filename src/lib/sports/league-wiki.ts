@@ -19,21 +19,73 @@ const INFOBOX_PARAM = new RegExp(
   "gim"
 );
 const HEADING_LEVEL = /^(=+)[^=\n]/;
-const WIKILINK = /\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|([^\]]*))?\]\]/g;
+// No part of a link may hold `[`: a scan from one `[[` then stops at the next, so a run of unclosed openers is linear.
+const WIKILINK = /\[\[([^\]|#[]+)(?:#[^\]|[]*)?(?:\|([^\][]*))?\]\]/g;
+/** Files and categories are not teams, and no slug may name them. */
 const NON_TEAM_NAMESPACE = /^:?(?:file|image|media|category):/i;
 const MAX_NAME_LENGTH = 200;
+/** Articles are user-authored: only this much is read, and only this much of each line, so parsing stays quick. */
+const MAX_WIKITEXT_LENGTH = 200_000;
+const MAX_LINE_LENGTH = 2_000;
+const MAX_SECTIONS = 20;
 
-function stripNoise(wikitext: string): string {
-  return wikitext
-    .replace(/<!--[\s\S]*?-->/g, "")
-    .replace(/<ref\b[^>]*\/>/gi, "")
-    .replace(/<ref\b[^>]*>[\s\S]*?<\/ref>/gi, "");
+/** `text` without its `<!-- -->` comments; an unclosed one runs to the end, as in MediaWiki. One pass over the text. */
+function stripComments(text: string): string {
+  const kept: string[] = [];
+  let pos = 0;
+  for (;;) {
+    const open = text.indexOf("<!--", pos);
+    if (open === -1) {
+      kept.push(text.slice(pos));
+      return kept.join("");
+    }
+    kept.push(text.slice(pos, open));
+    const close = text.indexOf("-->", open + 4);
+    if (close === -1) return kept.join("");
+    pos = close + 3;
+  }
 }
 
-/** A page title as a stored slug: trimmed, spaces as underscores; null when empty. */
+/** Lower-cases ASCII only, so every index in the result is an index in `text`. */
+const asciiLower = (text: string) => text.replace(/[A-Z]/g, (c) => c.toLowerCase());
+
+/**
+ * `text` without its `<ref>` elements, one pass over the text. Where no `>` or `</ref>` follows, none follows later
+ * either, so the rest is kept as it is instead of being searched again.
+ */
+function stripRefs(text: string): string {
+  const lower = asciiLower(text);
+  const kept: string[] = [];
+  let pos = 0;
+  for (let open = lower.indexOf("<ref", pos); open !== -1; open = lower.indexOf("<ref", pos)) {
+    const next = lower[open + 4] ?? "";
+    const end = /^[\s>/]?$/.test(next) ? lower.indexOf(">", open + 4) : open;
+    if (end === -1) break;
+    const close = end === open || lower[end - 1] === "/" ? end : lower.indexOf("</ref>", end + 1);
+    if (close === -1) break;
+    if (end === open) {
+      kept.push(text.slice(pos, open + 4)); // `<references>` and the like are not refs
+      pos = open + 4;
+    } else {
+      kept.push(text.slice(pos, open));
+      pos = close === end ? end + 1 : close + "</ref>".length;
+    }
+  }
+  kept.push(text.slice(pos));
+  return kept.join("");
+}
+
+function stripNoise(wikitext: string): string {
+  return stripRefs(stripComments(wikitext.slice(0, MAX_WIKITEXT_LENGTH)))
+    .split("\n")
+    .map((line) => line.slice(0, MAX_LINE_LENGTH))
+    .join("\n");
+}
+
+/** A page title as a stored slug: trimmed, spaces as underscores; null when empty or a file or category page. */
 export function toWikiSlug(title: string | null | undefined): string | null {
   const slug = title?.trim().replace(/\s+/g, "_");
-  return slug ? slug : null;
+  return slug && !NON_TEAM_NAMESPACE.test(slug) ? slug : null;
 }
 
 function toTeam(target: string, label: string | undefined): WikiLeagueTeam | null {
@@ -94,6 +146,7 @@ function teamsSections(wikitext: string): string[][] {
   const sections: string[][] = [];
   for (let i = 0; i < lines.length; i++) {
     if (!SECTION_HEADING.test(lines[i] ?? "")) continue;
+    if (sections.length === MAX_SECTIONS) break;
     const level = HEADING_LEVEL.exec(lines[i] ?? "")?.[1]?.length ?? 2;
     const body: string[] = [];
     for (let j = i + 1; j < lines.length; j++) {

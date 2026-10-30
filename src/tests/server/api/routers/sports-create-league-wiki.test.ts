@@ -24,7 +24,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { leaguesCrudRouter } from "~/server/api/routers/sports/leagues/crud";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { addPerson, asPerson, type Person } from "~/tests/helpers/sports-world";
+import { addPerson, asPerson, sovereignsOf, type Person } from "~/tests/helpers/sports-world";
 
 const leagues = createCallerFactory(leaguesCrudRouter);
 
@@ -64,16 +64,34 @@ describe("createLeague with imported teams", () => {
     expect(await db.sportCoach.count()).toBe(2);
   });
 
-  it("refuses teams whose count differs from teamCount and creates nothing", async () => {
+  it("refuses teams whose count differs from teamCount and creates and charges nothing", async () => {
     await expect(
       leagues(as()).createLeague({
         ...base,
         teamCount: 3,
         teams: [{ name: "Varro", wikiSlug: null }],
+        requestId: "press-0001",
       })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
 
     expect(await db.sportLeague.count()).toBe(0);
+    expect(await db.exchangeTransaction.count()).toBe(0);
+    expect((await sovereignsOf(db as never, [dev.id]))[dev.id]).toBe(5000);
+  });
+
+  it("stores no file or category page as a league or club article", async () => {
+    const result = await leagues(as()).createLeague({
+      ...base,
+      teamCount: 2,
+      wikiSlug: "Category:Varro League",
+      teams: [
+        { name: "Varro", wikiSlug: "File:Crest.png" },
+        { name: "Lest", wikiSlug: "Lest FC" },
+      ],
+    });
+
+    expect(result.wikiSlug).toBeNull();
+    expect(result.teams.map((t) => t.wikiSlug)).toEqual([null, "Lest_FC"]);
   });
 
   it("still makes placeholder clubs when no teams are given", async () => {

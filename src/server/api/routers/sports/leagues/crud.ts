@@ -5,8 +5,8 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
   publicProcedure,
+  readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
@@ -318,7 +318,7 @@ export const leaguesCrudRouter = createTRPCRouter({
     }),
 
   /** The teams a league's IxWiki article names, for the creator's import step. A missing page names none. */
-  previewWikiTeams: protectedProcedure
+  previewWikiTeams: readOnlyProcedure
     .input(z.object({ wikiSlug: z.string().trim().min(1).max(500) }))
     .query(async ({ ctx, input }) => {
       await assertTitleVisible(ctx, input.wikiSlug, "ixwiki");
