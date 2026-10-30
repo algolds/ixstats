@@ -62,6 +62,18 @@ export const STAFF_FOUNDER_ID = "system";
 
 export const MAX_OFFICERS = 12;
 
+/** The most founding members a realm lists in its header. */
+export const MAX_FOUNDERS = 12;
+
+/** A founder's or officer's page: their passport when they have a handle, else their nation here (null: neither). */
+export function personHref(person: {
+  handle: string | null;
+  nation: { slug: string | null } | null;
+}): string | null {
+  if (person.handle) return `/@${encodeURIComponent(person.handle)}`;
+  return person.nation?.slug ? `/countries/${person.nation.slug}` : null;
+}
+
 /** What a realm's happenings are made of, each with the label its filter shows. */
 export const HAPPENING_KINDS = ["nation", "claim", "embassy", "officer", "activity"] as const;
 

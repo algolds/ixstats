@@ -11,9 +11,11 @@ import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 import { realmHref } from "~/lib/thinkpages-forum/links";
 import { formatRealmSpeed } from "~/lib/realms/realm-clock";
+import { personHref } from "~/lib/realms/realm-region";
 import { useRealmDate } from "~/hooks/useRealmDate";
 import { useRealmClock } from "~/hooks/useRealmClock";
 import { RealmHeroMap } from "~/components/realms/RealmHeroMap";
+import { FounderNames } from "./RealmFounders";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -60,10 +62,22 @@ function StatItem({
   );
 }
 
-/** The founder's passport when they have a handle, else their nation here. `<Link>` adds the base path. */
-function founderHref(founder: NonNullable<Overview["founder"]>) {
-  if (founder.handle) return `/@${encodeURIComponent(founder.handle)}`;
-  return founder.nation?.slug ? `/countries/${founder.nation.slug}` : null;
+/**
+ * The founder stat: the staff-set title, else the founding members, else the realm's creator, else staff. Linked to
+ * their passport or nation here (`personHref`; `<Link>` adds the base path).
+ */
+function founderValue({ founderTitle, founders, founder }: Overview) {
+  if (founderTitle) return founderTitle;
+  if (founders.length > 0) return <FounderNames founders={founders} />;
+  if (!founder) return "Administered by IxStates staff";
+  const href = personHref(founder);
+  return href ? (
+    <Link href={href} className="hover:underline">
+      {founder.name}
+    </Link>
+  ) : (
+    founder.name
+  );
 }
 
 /** Share, plus "Copy invite link" (carrying the viewer's passport handle) for those who hold a nation here. */
@@ -104,9 +118,8 @@ export function RealmRegionHeader({
   openToClaim: number;
 }) {
   const pathname = usePathname();
-  const { realm, stats, founder, founderTitle, viewer, speed } = overview;
+  const { realm, stats, founderTitle, founders, viewer, speed } = overview;
   const date = useRealmDate(useRealmClock(realm.id, overview.clock), overview.date);
-  const founderLink = founder ? founderHref(founder) : null;
   const tabs = realmTabs(
     realm.slug,
     viewer.canManage,
@@ -179,22 +192,8 @@ export function RealmRegionHeader({
           {/* UTC: a founding year is stored as 1 January UTC, which is still the year before west of UTC. */}
           <StatItem label="Founded" value={new Date(realm.foundedAt).getUTCFullYear()} />
           <StatItem
-            label="Founder"
-            value={
-              founderTitle ? (
-                founderTitle
-              ) : founder ? (
-                founderLink ? (
-                  <Link href={founderLink} className="hover:underline">
-                    {founder.name}
-                  </Link>
-                ) : (
-                  founder.name
-                )
-              ) : (
-                "Administered by IxStates staff"
-              )
-            }
+            label={founders.length > 0 && !founderTitle ? "Founders" : "Founder"}
+            value={founderValue(overview)}
           />
           <StatItem
             label="In-world date"

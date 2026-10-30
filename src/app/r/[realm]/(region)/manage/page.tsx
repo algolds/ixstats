@@ -60,7 +60,11 @@ export default function RealmManagePage({ params }: { params: Promise<{ realm: s
           id: "appearance",
           label: "Appearance",
           node: manage.appearance && (
-            <AppearanceSection slug={slug} appearance={manage.appearance} />
+            <AppearanceSection
+              slug={slug}
+              realmId={manage.realm.id}
+              appearance={manage.appearance}
+            />
           ),
         },
         {

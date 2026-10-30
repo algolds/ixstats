@@ -15,6 +15,7 @@ import {
   type RealmTag,
 } from "~/lib/realms/realm-region";
 import { ManageSection } from "./ManageSection";
+import { FoundersField } from "./FoundersField";
 import { RealmImageField } from "./RealmImageField";
 
 /**
@@ -23,9 +24,11 @@ import { RealmImageField } from "./RealmImageField";
  */
 export function AppearanceSection({
   slug,
+  realmId,
   appearance,
 }: {
   slug: string;
+  realmId: string;
   appearance: {
     bannerUrl: string | null;
     thumbnail: string | null;
@@ -36,6 +39,7 @@ export function AppearanceSection({
     foundedYear: number | null;
     createdYear: number;
     canSetFounding: boolean;
+    founders: readonly { userId: string; name: string }[];
   };
 }) {
   const notify = useNotify();
@@ -104,6 +108,9 @@ export function AppearanceSection({
               can change it.
             </p>
           </div>
+        )}
+        {appearance.canSetFounding && (
+          <FoundersField realmId={realmId} initial={appearance.founders} />
         )}
         {appearance.canSetFounding && (
           <div className="flex flex-col gap-2">

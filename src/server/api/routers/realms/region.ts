@@ -14,6 +14,7 @@ import {
 import {
   HAPPENING_KINDS,
   isRealmImageUrl,
+  MAX_FOUNDERS,
   MAX_REALM_TAGS,
   REALM_POWERS,
   REALM_TAGS,
@@ -60,6 +61,7 @@ import {
 } from "~/server/modules/realms/realms.region-actions";
 import { assertBoardGrantable, ForumError } from "~/server/modules/thinkpages-forum";
 import { deleteRealm } from "~/server/modules/realms/realms.admin";
+import { setFounders } from "~/server/modules/realms/realms.founders";
 import {
   adminTransferRealmOwner,
   handOverRealm,
@@ -148,6 +150,21 @@ export const realmRegionRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) =>
       updateRealmAppearance(ctx.db, ctx.user, input).catch(regionError)
+    ),
+
+  /**
+   * Site admins: the realm's founding members (Clerk ids, in header order), replacing the list. A credit only: it
+   * gives no power over the realm.
+   */
+  setFounders: adminProcedure
+    .input(
+      z.object({
+        realmId: z.string().min(1),
+        userIds: z.array(z.string().min(1).max(200)).max(MAX_FOUNDERS),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      setFounders(ctx.db, input.realmId, input.userIds, ctx.user).catch(regionError)
     ),
 
   /**

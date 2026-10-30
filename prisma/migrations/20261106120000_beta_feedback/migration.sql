@@ -27,4 +27,29 @@ ALTER TABLE "ThinkpagesAccount" ADD COLUMN IF NOT EXISTS "sortOrder" INTEGER;
 CREATE INDEX IF NOT EXISTS "ThinkpagesAccount_clerkUserId_sortOrder_idx"
   ON "ThinkpagesAccount" ("clerkUserId", "sortOrder");
 
+-- Founding members: users credited in the realm header, set by site staff. A credit only: nothing reads this table for
+-- permissions. A realm's founders go with the realm.
+CREATE TABLE IF NOT EXISTS "realm_founders" (
+    "id" TEXT NOT NULL,
+    "realmId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "order" INTEGER NOT NULL,
+    "addedBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "realm_founders_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "realm_founders_realmId_userId_key" ON "realm_founders" ("realmId", "userId");
+
+CREATE INDEX IF NOT EXISTS "realm_founders_userId_idx" ON "realm_founders" ("userId");
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'realm_founders_realmId_fkey') THEN
+    ALTER TABLE "realm_founders" ADD CONSTRAINT "realm_founders_realmId_fkey"
+      FOREIGN KEY ("realmId") REFERENCES "realms"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+END $$;
+
 COMMIT;
