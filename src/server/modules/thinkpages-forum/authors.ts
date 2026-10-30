@@ -29,8 +29,9 @@ export interface ForumPersonaAuthor {
 /**
  * Display data for a page of authors in one query per kind. A user is shown by their personal persona's name, else
  * Passport handle, else country name, else "Member"; their avatar is the persona picture, else the country flag.
- * Never an old wiki name (a name claim, shown on the passport), never the forum name (it can be a
- * legacy account name) and never a Clerk id. The name is the same for every viewer, the member included.
+ * The personal persona's own name wins, including one seeded from the forum name; the forum name itself (it can be
+ * a legacy account name) is never read. Never an old wiki name (a name claim, shown on the passport) and never a
+ * Clerk id. The name is the same for every viewer, the member included.
  * Null ids (imported content whose XenForo author has no IxStats account, phase 4) are skipped.
  */
 export async function authorsOf(
