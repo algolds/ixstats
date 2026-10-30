@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 import { SearchView } from "./SearchView";
@@ -19,7 +19,7 @@ const readPlayAs = () => {
   }
 };
 
-function ExpandedViewComponent({
+export function ExpandedView({
   mode,
   onClose,
   onSwitchMode,
@@ -115,5 +115,3 @@ function ExpandedViewComponent({
     </div>
   );
 }
-
-export const ExpandedView = React.memo(ExpandedViewComponent);
