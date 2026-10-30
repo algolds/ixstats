@@ -29,7 +29,7 @@ import {
 } from "iconoir-react";
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
-import { useIsAdmin } from "~/hooks/usePermissions";
+import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundEffects } from "~/lib/sound/cuelume";
@@ -48,7 +48,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const { mediaThemeMode, setMediaThemeMode } = useWikiMediaTheme();
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
-  const isAdmin = useIsAdmin();
+  const isAdmin = useCanOpenAdmin();
 
   // Dynamic Island Popover Width Sizing via Apple HIG physics
   const { setSize } = useHaloSize();

@@ -303,7 +303,7 @@ function getClerkMiddleware() {
         const standaloneRedirect = handleStandaloneRouting(req);
         if (standaloneRedirect) return standaloneRedirect;
 
-        const { userId, sessionClaims } = await auth();
+        const { userId } = await auth();
 
         // Allow public routes to pass through without auth
         if (isPublicRoute(req)) {
@@ -330,19 +330,19 @@ function getClerkMiddleware() {
             return NextResponse.redirect(new URL(signInUrl));
           }
 
-          // Check for admin role on /admin routes
+          // /admin needs the one admin rule (isAdminRole on the DB role), the rule adminProcedure applies.
+          // Dynamic imports keep the DB client out of every other request.
           if (req.nextUrl.pathname.startsWith("/admin")) {
             // Use centralized system owner constants
             const { isSystemOwner } = await import("~/lib/auth");
             const isSystemOwnerUser = isSystemOwner(userId);
 
             if (!isSystemOwnerUser) {
-              const publicMetadata = sessionClaims?.publicMetadata as { role?: string } | undefined;
-              const userRole = publicMetadata?.role;
+              const { isAdminClerkUser } = await import("~/server/shared/admin-access");
 
-              if (userRole !== "admin") {
+              if (!(await isAdminClerkUser(userId))) {
                 console.log(
-                  `[Middleware] Access denied to /admin for user ${userId} with role ${userRole || "none"}`
+                  `[Middleware] Access denied to /admin for user ${userId}: no admin role in the database`
                 );
                 // Redirect to home page with access denied message
                 const homeUrl = new URL(`${BASE_PATH}/`, req.nextUrl.origin);

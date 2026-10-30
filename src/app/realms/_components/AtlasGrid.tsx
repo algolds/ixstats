@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { useIsAdmin } from "~/hooks/usePermissions";
+import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { REALM_TAGS } from "~/lib/realms/realm-region";
 import { ADVERT_CATEGORY_KEY } from "~/lib/thinkpages-forum/adverts";
 import { categoryHref } from "~/lib/thinkpages-forum/links";
@@ -135,7 +135,7 @@ export function AtlasGrid({
   isLoading: boolean;
   query: string;
 }): ReactNode {
-  const isAdmin = useIsAdmin();
+  const isAdmin = useCanOpenAdmin();
   const [tags, setTags] = useState<string[]>([]);
   const [sort, setSort] = useState<SortId>("open");
   const all = realms ?? [];

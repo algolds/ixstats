@@ -8,11 +8,10 @@
  * full-screen map editors) get no sidebar or tab bar.
  */
 
-import { useMemo } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useUser } from "~/context/auth-context";
-import { useHasPermission, useHasRoleLevel } from "~/hooks/usePermissions";
+import { useCanOpenAdmin, useHasPermission, useIsAdmin } from "~/hooks/usePermissions";
 import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { getNationUrl } from "~/lib/utils/slug-utils";
@@ -43,7 +42,8 @@ export function FacetShell() {
   // layout reads headers(), so every route is dynamic and useSearchParams never blocks prerendering.
   const searchParams = useSearchParams();
   const { user } = useUser();
-  const isAdmin = useHasRoleLevel(10);
+  const isAdmin = useIsAdmin();
+  const canOpenAdmin = useCanOpenAdmin();
   // A `labs.access` grant (or a dev build) shows Labs despite `showLabsTab`.
   const hasLabsAccess = useHasPermission("labs.access") || process.env.NODE_ENV === "development";
   // Defense row: MyCountry Premium or the beta-tester role (the Defense page and the server agree).
@@ -68,29 +68,18 @@ export function FacetShell() {
   const { forumModerator } = useForumNavFlags(signedIn);
   // Shares AccountMenu's queries; MyCountry's profile and editor buttons appear once it answers.
   const { country } = useUserCountry();
-  const apps = useMemo(
-    () =>
-      getVisibleApps(
-        hydrated
-          ? {
-              signedIn,
-              isAdmin,
-              hasLabsAccess,
-              hasMycountryPremium,
-              forumModerator,
-              navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
-            }
-          : { signedIn: false, isAdmin: false }
-      ),
-    [
-      hydrated,
-      signedIn,
-      isAdmin,
-      hasLabsAccess,
-      hasMycountryPremium,
-      forumModerator,
-      navigationSettings,
-    ]
+  const apps = getVisibleApps(
+    hydrated
+      ? {
+          signedIn,
+          isAdmin,
+          canOpenAdmin,
+          hasLabsAccess,
+          hasMycountryPremium,
+          forumModerator,
+          navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
+        }
+      : { signedIn: false, isAdmin: false }
   );
 
   return (

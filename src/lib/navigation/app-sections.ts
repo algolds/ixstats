@@ -780,7 +780,10 @@ export function groupSections(
 
 interface AppVisibilityContext {
   signedIn: boolean;
+  /** Role level 10 or less (admin and above): the Labs bypass of `showLabsTab`, matching the Labs server gate. */
   isAdmin: boolean;
+  /** Passes the one admin rule (`isAdminRole`, or the system owner): sees the ways into /admin. */
+  canOpenAdmin?: boolean;
   /** Holds the `labs.access` permission (sees Labs even when `showLabsTab` is off). */
   hasLabsAccess?: boolean;
   /** MyCountry Premium (the premium ability) or a beta tester: sees `requires: "mycountry-premium"` sections. */
@@ -794,6 +797,7 @@ interface AppVisibilityContext {
 export function getVisibleApps({
   signedIn,
   isAdmin,
+  canOpenAdmin = false,
   hasLabsAccess = false,
   hasMycountryPremium = false,
   forumModerator = false,
@@ -803,11 +807,11 @@ export function getVisibleApps({
     "mycountry-premium": hasMycountryPremium,
     "forum-moderator": forumModerator,
     "signed-in": signedIn,
-    admin: isAdmin,
+    admin: canOpenAdmin,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;
-    if (app.adminOnly && !isAdmin) return false;
+    if (app.adminOnly && !canOpenAdmin) return false;
     if (app.navSetting && navigationSettings && navigationSettings[app.navSetting] === false) {
       const bypass = app.navSettingBypass;
       const exempt = (bypass?.admin && isAdmin) || (bypass?.labsAccess && hasLabsAccess);

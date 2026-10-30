@@ -13,7 +13,7 @@ import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
-import { useIsAdmin } from "~/hooks/usePermissions";
+import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { commandsFor, CORE_FEATURES } from "./halo-registry";
 
 /**
@@ -31,7 +31,7 @@ export function useDynamicIslandState() {
   const pathname = usePathname();
   const activePlugin = useActiveDIPlugin();
   const isWikiActive = activePlugin?.id === "wiki";
-  const isAdmin = useIsAdmin();
+  const isAdmin = useCanOpenAdmin();
 
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
