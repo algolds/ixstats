@@ -81,7 +81,7 @@ export function CommandSurface({
   // out of view fires no toasts, timers or title writes. Anything that is not a domain section
   // renders the home surface, so it shares the "overview" slot. The executive console replaces
   // every kept section while it shows, and a section is only mounted once it has been shown.
-  // ponytail: at most 7 sections stay mounted; evict least recent if memory shows up in profiles
+  // ponytail: at most 5 sections stay mounted; evict least recent if memory shows up in profiles
   const shown = mode === "executive" ? null : DOMAIN_SECTIONS.has(section) ? section : "overview";
   const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(shown ? [shown] : []));
   if (shown && !visited.has(shown)) setVisited(new Set(visited).add(shown));
@@ -115,28 +115,32 @@ export function CommandSurface({
         />
       ) : null}
       {/* Section switches are transitions, so the browser cross-fades the swap. The class hooks
-          the fade in facet/interaction.css, which also turns it off under Reduce Motion. */}
+          the fade in facet/interaction.css, which also turns it off under Reduce Motion. One
+          wrapper is the transition's single host, and keeps the hidden sections (display: none)
+          out of the column's space-y rhythm, which would count them as siblings. */}
       <ViewTransition default="mycountry-section">
-        {[...visited].map((s) => (
-          <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
-            {s === "overview" ? (
-              <ExecutiveHome
-                countryId={countryId}
-                onDeclare={declare}
-                onNavigate={onNavigate}
-                onOpenIntent={openIntent}
-                onOpenDrill={openDrill}
-              />
-            ) : (
-              <DomainSurface
-                countryId={countryId}
-                section={s}
-                onDeclare={declare}
-                onNavigate={onNavigate}
-              />
-            )}
-          </Activity>
-        ))}
+        <div>
+          {[...visited].map((s) => (
+            <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
+              {s === "overview" ? (
+                <ExecutiveHome
+                  countryId={countryId}
+                  onDeclare={declare}
+                  onNavigate={onNavigate}
+                  onOpenIntent={openIntent}
+                  onOpenDrill={openDrill}
+                />
+              ) : (
+                <DomainSurface
+                  countryId={countryId}
+                  section={s}
+                  onDeclare={declare}
+                  onNavigate={onNavigate}
+                />
+              )}
+            </Activity>
+          ))}
+        </div>
       </ViewTransition>
 
       {/* Drill Sheets */}
