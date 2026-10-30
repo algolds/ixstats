@@ -11,7 +11,6 @@
   "src/lib/diplomacy/npc-personality.ts": 927,
   "src/components/wiki-os/margin/tabs/MarginThreadsTab.tsx": 885,
   "src/app/labs/onoma/components/sections/writing/GlyphForgeCanvas.tsx": 861,
-  "src/hooks/useMapEditor.ts": 822,
   "src/server/api/routers/thinkpages/thinktanks/groups.ts": 816,
   "src/app/admin/_components/platform/LorewardsBotSection.tsx": 814,
   "src/lib/onoma/language-families.ts": 813,
