@@ -37,7 +37,12 @@ import {
   type StashedQuoteItem,
 } from "~/components/wiki-os/stashes";
 import type { CommonsImage } from "~/components/wiki-os/media-search/types";
-import { isStashedArticle, isStashedForumThread } from "~/lib/wiki-os/stash-content-type";
+import {
+  isStashedArticle,
+  isStashedForumThread,
+  stashItemHref,
+} from "~/lib/wiki-os/stash-content-type";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 export default function StashesPage() {
   usePageTitle({ title: "Stash" });
@@ -107,8 +112,7 @@ export default function StashesPage() {
 
   // Group items by category
   const allArticles = useMemo(
-    () =>
-      items.filter(isStashedArticle),
+    () => items.filter(isStashedArticle),
     // oxlint-disable-next-line
     [items]
   );
@@ -170,6 +174,7 @@ export default function StashesPage() {
             itemId: article.id,
             pageTitle: article.pageTitle,
             pageSlug: article.pageSlug,
+            source: article.source,
             selectedText: ann.selectedText,
             comment: ann.comment,
             color: ann.color,
@@ -217,10 +222,11 @@ export default function StashesPage() {
     );
   }, [allThreads, query]);
 
-  const handleUnstash = (pageTitle: string, contentType?: string) => {
+  const handleUnstash = (pageTitle: string, contentType?: string, source?: WikiSource) => {
     unstashMutation.mutate({
       pageTitle,
       contentType,
+      source,
       stashId: activeStash?.id,
     });
   };
@@ -234,12 +240,14 @@ export default function StashesPage() {
       `Exported from WikiOS Stash on ${new Date().toLocaleDateString()}`,
       ``,
       `## Articles (${allArticles.length})`,
-      ...allArticles.map((a) => `- [${a.pageTitle.replace(/_/g, " ")}](/wiki/${a.pageSlug})`),
+      ...allArticles.map(
+        (a) => `- [${a.pageTitle.replace(/_/g, " ")}](${stashItemHref(a.pageSlug, a.source)})`
+      ),
       ``,
       `## Saved Quotes & Highlights (${allQuotes.length})`,
       ...allQuotes.map(
         (q) =>
-          `> "${q.selectedText}"\n> — *From [${q.pageTitle.replace(/_/g, " ")}](/wiki/${q.pageSlug})*${q.comment ? `\n> Note: ${q.comment}` : ""}\n`
+          `> "${q.selectedText}"\n> — *From [${q.pageTitle.replace(/_/g, " ")}](${stashItemHref(q.pageSlug, q.source)})*${q.comment ? `\n> Note: ${q.comment}` : ""}\n`
       ),
       ``,
       `## Media (${allImages.length})`,
@@ -273,6 +281,7 @@ export default function StashesPage() {
       articles: allArticles.map((a) => ({
         title: a.pageTitle,
         slug: a.pageSlug,
+        source: a.source,
         savedAt: a.savedAt,
         note: a.note,
         annotations: a.annotations,

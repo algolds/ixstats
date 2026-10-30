@@ -76,7 +76,12 @@ type FakeItem = {
   stash: { id: string; name: string };
 };
 type KeyWhere = {
-  stashId_contentType_pageTitle?: { stashId: string; contentType: string; pageTitle: string };
+  stashId_contentType_source_pageTitle?: {
+    stashId: string;
+    contentType: string;
+    source: string;
+    pageTitle: string;
+  };
 };
 type ListWhere = { stashId?: string | { in: string[] }; pageTitle?: string; contentType?: string };
 
@@ -102,8 +107,8 @@ const fakeStashItem = {
       create: Partial<FakeItem> & { stashId: string; pageTitle: string; contentType?: string };
       update: Partial<FakeItem>;
     }) => {
-      const key = args.where.stashId_contentType_pageTitle;
-      if (!key) throw new Error("upsert must use the stashId_contentType_pageTitle key");
+      const key = args.where.stashId_contentType_source_pageTitle;
+      if (!key) throw new Error("upsert must use the stashId_contentType_source_pageTitle key");
       const existing = store.find(
         (i) =>
           i.stashId === key.stashId &&

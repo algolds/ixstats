@@ -81,6 +81,12 @@ export const IXNAYID_CLAIMS_SQL = "prisma/migrations/20261103120000_ixnayid_clai
 export const IXNAYID_DROP_LEGACY_SQL =
   "prisma/migrations/20261103120001_ixnayid_drop_legacy/migration.sql";
 
+/**
+ * Beta feedback features: the stash item's wiki column and key, then the batch's other additions; idempotent. On a fresh
+ * database it runs after `db push`, where every statement is a no-op.
+ */
+export const BETA_FEEDBACK_SQL = "prisma/migrations/20261106120000_beta_feedback/migration.sql";
+
 /** The SQL `db push` cannot apply, in the order it runs (the triggers first: the Atlas SQL backfills through them). */
 export const DB_SETUP_SQL_FILES = [MAP_GEOMETRY_TRIGGERS_SQL, ATLAS_R0_SQL, ATLAS_RA_SQL];
 
@@ -231,6 +237,15 @@ async function main(): Promise<void> {
     "prisma/schema",
     "--file",
     IXNAYID_DROP_LEGACY_SQL,
+  ]);
+  run("bunx", [
+    "prisma",
+    "db",
+    "execute",
+    "--schema",
+    "prisma/schema",
+    "--file",
+    BETA_FEEDBACK_SQL,
   ]);
   run("bun", ["scripts/setup/seed-db.ts", "--force"]);
 

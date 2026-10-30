@@ -422,16 +422,17 @@ describe("stashes", () => {
             update,
           }: {
             where: {
-              stashId_contentType_pageTitle: {
+              stashId_contentType_source_pageTitle: {
                 stashId: string;
                 contentType: string;
+                source: string;
                 pageTitle: string;
               };
             };
             create: Omit<Item, "id" | "savedAt">;
             update: object;
           }) => {
-            const key = where.stashId_contentType_pageTitle;
+            const key = where.stashId_contentType_source_pageTitle;
             const existing = itemRows.find(
               (i) =>
                 i.stashId === key.stashId &&

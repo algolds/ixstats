@@ -579,6 +579,7 @@ model StashItem {
   articleId   String?
   article     WikiArticle?      @relation("ArticleStashItems", fields: [articleId], references: [id], onDelete: SetNull)
   contentType String            @default("wiki") // StashContentType ("wiki" | "image" | "forum_thread") or a caller's own ("name")
+  source      String            @default("ixwiki") // the wiki the page is on: "ixwiki", or a sister wiki WikiOS reads ("iiwiki", "althistory")
   contentId   Int?                               // XenForo thread id of a bridge-era item: the forum import reads it and writes null (as stashThread does); its rollback writes it back
   note        String?
   order       Int               @default(0)
@@ -587,7 +588,7 @@ model StashItem {
   stash       Stash             @relation(fields: [stashId], references: [id], onDelete: Cascade)
   annotations StashAnnotation[]
 
-  @@unique([stashId, contentType, pageTitle])
+  @@unique([stashId, contentType, source, pageTitle])
   @@index([stashId])
   @@index([pageTitle])
   @@index([articleId])

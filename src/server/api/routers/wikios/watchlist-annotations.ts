@@ -53,9 +53,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         const contentType = stashContentTypeForTitle(input.pageTitle);
         const item = await db.stashItem.upsert({
           where: {
-            stashId_contentType_pageTitle: {
+            stashId_contentType_source_pageTitle: {
               stashId: defaultStash.id,
               contentType,
+              source: "ixwiki",
               pageTitle: input.pageTitle,
             },
           },
@@ -161,9 +162,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       }
       await ctx.db.stashItem.upsert({
         where: {
-          stashId_contentType_pageTitle: {
+          stashId_contentType_source_pageTitle: {
             stashId: watchlistStash.id,
             contentType: "wiki",
+            source: "ixwiki",
             pageTitle: input.pageTitle,
           },
         },

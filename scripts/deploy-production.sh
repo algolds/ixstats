@@ -271,6 +271,9 @@ else
     # WikiOS data safety (A5): the inbound sync's dead letters (a step failing five cycles is quarantined and the mark moves
     # past it). Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql || exit 1
+    # Beta feedback (docs/superpowers/plans/2026-10-29-beta-feedback-features.md): the stash item's wiki column and the key that
+    # allows one page per wiki, then the batch's other additions. Additive and idempotent.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261106120000_beta_feedback/migration.sql || exit 1
 
     # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
     # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push

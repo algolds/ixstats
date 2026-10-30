@@ -1,4 +1,6 @@
 // Shared types, preset colors, and discriminated models for the Stash system.
+import type { WikiSource } from "~/lib/wiki-os/config";
+
 export const PRESET_COLORS = [
   "#3b82f6", // Blue
   "#8b5cf6", // Purple
@@ -41,6 +43,8 @@ export interface StashedPageItem {
   note?: string | null;
   annotations?: StashedAnnotationItem[];
   contentType?: string;
+  /** The wiki the page is on; IxWiki when omitted. */
+  source?: WikiSource;
 }
 
 export interface StashedQuoteItem {
@@ -48,6 +52,7 @@ export interface StashedQuoteItem {
   itemId: string;
   pageTitle: string;
   pageSlug: string;
+  source?: WikiSource;
   selectedText: string;
   comment?: string | null;
   color: string;

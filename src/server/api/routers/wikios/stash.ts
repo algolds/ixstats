@@ -14,6 +14,8 @@ import {
 } from "~/server/api/trpc";
 import { requireWikiUserId, requireWikiUserIds } from "~/lib/wiki-os/auth";
 import { stashContentTypeForTitle } from "~/lib/wiki-os/stash-content-type";
+import { parseWikiSource } from "~/lib/wiki-os/config";
+import { wikiSourceSchema } from "./_shared";
 
 import { db } from "~/server/db";
 import { withReadableThreads } from "~/server/modules/thinkpages-forum";
@@ -106,6 +108,8 @@ export const wikiosStashRouter = createTRPCRouter({
         pageTitle: z.string().min(1).max(500),
         stashId: z.string().max(64).optional(),
         contentType: z.string().max(32).optional(),
+        /** The wiki the page is on; IxWiki when omitted. */
+        source: wikiSourceSchema,
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -129,9 +133,10 @@ export const wikiosStashRouter = createTRPCRouter({
 
       await db.stashItem.upsert({
         where: {
-          stashId_contentType_pageTitle: {
+          stashId_contentType_source_pageTitle: {
             stashId,
             contentType: resolvedType,
+            source: input.source,
             pageTitle: input.pageTitle,
           },
         },
@@ -140,6 +145,7 @@ export const wikiosStashRouter = createTRPCRouter({
           pageTitle: input.pageTitle,
           pageSlug,
           contentType: resolvedType,
+          source: input.source,
         },
         update: {},
       });
@@ -149,7 +155,7 @@ export const wikiosStashRouter = createTRPCRouter({
   /**
    * Remove a page from a stash (or all stashes if no stashId). Only the item of one content type is
    * removed — the one named by `contentType`, else the one the title's prefix implies — so unstashing
-   * the article "Rome" leaves an Onoma name "Rome" alone.
+   * the article "Rome" leaves an Onoma name "Rome" alone. Only the page of the wiki named by `source` goes.
    */
   unstashPage: rateLimitedMutationProcedure
     .input(
@@ -157,6 +163,8 @@ export const wikiosStashRouter = createTRPCRouter({
         pageTitle: z.string().min(1).max(500),
         stashId: z.string().max(64).optional(),
         contentType: z.string().max(32).optional(),
+        /** The wiki the page is on; IxWiki when omitted. */
+        source: wikiSourceSchema,
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -168,6 +176,7 @@ export const wikiosStashRouter = createTRPCRouter({
             stashId: input.stashId,
             pageTitle: input.pageTitle,
             contentType,
+            source: input.source,
             stash: { userId: { in: userIds } },
           },
         });
@@ -178,7 +187,12 @@ export const wikiosStashRouter = createTRPCRouter({
         ).map((s) => s.id);
         if (stashIds.length > 0) {
           await db.stashItem.deleteMany({
-            where: { stashId: { in: stashIds }, pageTitle: input.pageTitle, contentType },
+            where: {
+              stashId: { in: stashIds },
+              pageTitle: input.pageTitle,
+              contentType,
+              source: input.source,
+            },
           });
         }
       }
@@ -191,6 +205,7 @@ export const wikiosStashRouter = createTRPCRouter({
       z.object({
         pageTitle: z.string().min(1).max(500),
         contentType: z.string().max(32).optional(),
+        source: wikiSourceSchema,
       })
     )
     .query(async ({ input, ctx }) => {
@@ -198,6 +213,7 @@ export const wikiosStashRouter = createTRPCRouter({
         where: {
           pageTitle: input.pageTitle,
           contentType: input.contentType || stashContentTypeForTitle(input.pageTitle),
+          source: input.source,
           stash: { userId: { in: requireWikiUserIds(ctx) } },
         },
         include: { stash: { select: { id: true, color: true, name: true } } },
@@ -241,6 +257,7 @@ export const wikiosStashRouter = createTRPCRouter({
           pageSlug: i.pageSlug,
           note: i.note,
           contentType: i.contentType || stashContentTypeForTitle(i.pageTitle),
+          source: parseWikiSource(i.source),
           annotations: i.annotations.map((a) => ({
             id: a.id,
             selectedText: a.selectedText,
