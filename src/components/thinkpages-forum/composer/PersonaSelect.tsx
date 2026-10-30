@@ -29,7 +29,8 @@ const NO_PERSONAS: MyPersonas = { personas: [], lastUsedPersonaId: null };
 /** The member's active personas, fetched only where in-character posting is allowed. */
 export function useMyPersonas(enabled: boolean): MyPersonas {
   const { data } = api.thinkpagesForum.myPersonas.useQuery(undefined, { enabled });
-  return data ?? NO_PERSONAS;
+  // A disabled query still returns what an earlier mount cached: a board without in-character posts must not see it.
+  return enabled && data ? data : NO_PERSONAS;
 }
 
 /**

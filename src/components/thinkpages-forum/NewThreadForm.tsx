@@ -44,6 +44,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
         wikitext,
         personaId,
       });
+      void utils.thinkpagesForum.myPersonas.invalidate();
       void utils.thinkpagesForum.category.invalidate({ key: categoryKey });
       void utils.thinkpagesForum.categories.invalidate();
       void utils.thinkpagesForum.realmSection.invalidate();
