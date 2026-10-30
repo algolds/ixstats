@@ -17,7 +17,7 @@ import { getMapGlyphsUrl, assetUrl } from "~/lib/base-path";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
-import { coverView, heroNationHref, heroNationStatus } from "~/lib/realms/hero-map";
+import { NPC_FILL, coverView, heroNationHref, heroNationStatus } from "~/lib/realms/hero-map";
 import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
 
@@ -28,6 +28,7 @@ type HeroNation = HeroGeo["nations"][number]["properties"];
 interface MapColours {
   water: string;
   land: string;
+  npc: string;
   tint: string;
   border: string;
   label: string;
@@ -64,6 +65,7 @@ function readColours(el: HTMLElement): MapColours {
   const colours = {
     water: rgba(getComputedStyle(el).backgroundColor),
     land: rgba("var(--color-fill-3)"),
+    npc: rgba(NPC_FILL),
     tint: rgba("var(--tint)"),
     border: rgba("var(--color-surface)"),
     label: rgba("var(--color-label)"),
@@ -96,6 +98,17 @@ function hatchImage(colours: MapColours): ImageData | null {
 
 const isHovered: ExpressionSpecification = ["boolean", ["feature-state", "hover"], false];
 
+/** Claimed nations in the tint, NPC nations muted, regions with no country as bare land. */
+const nationFill = (colours: MapColours): ExpressionSpecification => [
+  "match",
+  ["get", "status"],
+  "claimed",
+  colours.tint,
+  "npc",
+  colours.npc,
+  colours.land,
+];
+
 function heroStyle(geo: HeroGeo, colours: MapColours, labelZoom: number): StyleSpecification {
   return {
     version: 8,
@@ -120,7 +133,7 @@ function heroStyle(geo: HeroGeo, colours: MapColours, labelZoom: number): StyleS
         source: "nations",
         filter: ["!=", ["get", "status"], "open"],
         paint: {
-          "fill-color": ["match", ["get", "status"], "claimed", colours.tint, colours.land],
+          "fill-color": nationFill(colours),
         },
       },
       {
@@ -175,13 +188,7 @@ function addOpenLayer(map: MapLibreMap, colours: MapColours) {
 function repaint(map: MapLibreMap, colours: MapColours) {
   map.setPaintProperty("water", "background-color", colours.water);
   map.setPaintProperty("land", "fill-color", colours.land);
-  map.setPaintProperty("nations", "fill-color", [
-    "match",
-    ["get", "status"],
-    "claimed",
-    colours.tint,
-    colours.land,
-  ]);
+  map.setPaintProperty("nations", "fill-color", nationFill(colours));
   map.setPaintProperty("borders", "line-color", ["case", isHovered, colours.label, colours.border]);
   map.setPaintProperty("labels", "text-color", colours.label);
   map.setPaintProperty("labels", "text-halo-color", colours.border);

@@ -33,13 +33,19 @@ export function ReplyComposer({
   onSubmit,
   ...composer
 }: ReplyComposerProps) {
-  const personas = useMyPersonas(icAllowed);
+  const { personas, lastUsedPersonaId } = useMyPersonas(icAllowed);
   const [draft, setDraft] = useState("");
 
   if (!phone) {
     return (
       <section id={REPLY_ID} aria-label="Reply" className="scroll-mt-24 space-y-2">
-        <CanvasComposer mode="reply" personas={personas} onSubmit={onSubmit} {...composer} />
+        <CanvasComposer
+          mode="reply"
+          personas={personas}
+          lastUsedPersonaId={lastUsedPersonaId}
+          onSubmit={onSubmit}
+          {...composer}
+        />
       </section>
     );
   }
@@ -65,6 +71,7 @@ export function ReplyComposer({
             mode="reply"
             fill
             personas={personas}
+            lastUsedPersonaId={lastUsedPersonaId}
             initialWikitext={draft}
             onWikitextChange={setDraft}
             onSubmit={async (wikitext, meta) => {

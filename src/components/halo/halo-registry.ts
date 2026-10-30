@@ -53,6 +53,8 @@ interface CommandEntry {
   category: CommandCategory;
   keywords?: string[];
   actionId?: SystemActionId;
+  /** Listed only for admins (the same check as the Halo settings Admin button). */
+  adminOnly?: boolean;
 }
 
 interface FeatureEntry {
@@ -443,8 +445,14 @@ export const CORE_COMMANDS: CommandEntry[] = [
     category: "System",
     description: "Administration, feature flags and CMS tools",
     keywords: ["admin", "cms", "management", "config", "owner", "staff"],
+    adminOnly: true,
   },
 ];
+
+/** The commands this viewer may see: admin-only ones are left out for everyone else. */
+export function commandsFor(isAdmin: boolean): CommandEntry[] {
+  return CORE_COMMANDS.filter((command) => isAdmin || !command.adminOnly);
+}
 
 /**
  * Feature shortcuts and quick interactive actions.

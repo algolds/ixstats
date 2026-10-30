@@ -2,10 +2,12 @@
  * The only writer of Country.ownerUserId and User.countryId (spec invariant I3).
  * ownerUserId = who owns the nation; User.countryId = the nation the user is acting as.
  * ownedSince = when the current owner took it (real time; the Stewardship achievements read it).
+ * Each owner change drops the realm's cached map face and hero map, which colour nations by claim status.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { isSystemOwner } from "~/lib/auth";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
+import { invalidateRealmMapFace } from "./realms.map-face-cache";
 
 type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
 
@@ -62,6 +64,7 @@ async function assign(
       data: { ownerUserId: input.userId, ownedSince: new Date() },
     });
     if (count === 0) throw alreadyOwned();
+    invalidateRealmMapFace(country.realmId);
   }
   await tx.user.updateMany({
     where: { id: input.userId, countryId: null },
@@ -85,10 +88,12 @@ export const assignClaimedNation = (
 
 /** Take the nation away from its owner (and reset its stewardship clock); anyone acting as it stops doing so. */
 export async function releaseNation(tx: OwnershipTx, countryId: string): Promise<void> {
-  await tx.country.update({
+  const { realmId } = await tx.country.update({
     where: { id: countryId },
     data: { ownerUserId: null, ownedSince: null },
+    select: { realmId: true },
   });
+  invalidateRealmMapFace(realmId);
   await tx.user.updateMany({ where: { countryId }, data: { countryId: null } });
 }
 

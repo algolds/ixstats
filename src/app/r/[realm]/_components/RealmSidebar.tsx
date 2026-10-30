@@ -20,6 +20,7 @@ import {
 import { cn, formatPercent, formatYears } from "~/lib/utils";
 import { formatCompact, timeAgo } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
+import { FounderNames } from "./RealmFounders";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 type Happening = RouterOutputs["realms"]["region"]["happenings"]["items"][number];
@@ -99,17 +100,26 @@ export function CommunityPanel({ overview }: { overview: Overview }) {
 }
 
 export function OfficersPanel({ overview }: { overview: Overview }) {
-  const { founder, founderTitle, officers } = overview;
+  const { founder, founderTitle, founders, officers } = overview;
   // A staff-run realm without officers: the header already says so.
-  if (!founder && !founderTitle && officers.length === 0) return null;
+  if (!founder && !founderTitle && founders.length === 0 && officers.length === 0) return null;
+  const listed = founders.length > 0 && !founderTitle;
   return (
     <Panel title="Officers">
       <ul className="flex flex-col gap-2">
         <li className="flex items-baseline justify-between gap-2">
-          <span className="text-label-secondary text-footnote">Founder</span>
+          <span className="text-label-secondary text-footnote">
+            {listed ? "Founders" : "Founder"}
+          </span>
           <span className="text-label text-body truncate">
             {founderTitle ??
-              (founder ? <StaffName person={founder} /> : "Administered by IxStates staff")}
+              (listed ? (
+                <FounderNames founders={founders} />
+              ) : founder ? (
+                <StaffName person={founder} />
+              ) : (
+                "Administered by IxStates staff"
+              ))}
           </span>
         </li>
         {officers.map((officer) => (

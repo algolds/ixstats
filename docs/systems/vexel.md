@@ -1,6 +1,6 @@
 # Vexel — Heraldry Studio
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-10-29
 **Status:** Labs. The editor, generator, registry, export and attach to country work. Saving a design renders it
 to PNG on the server, and that image is what attach writes as the country's coat of arms.
 **Routes:** `/labs/vexel` (new design) · `/labs/vexel/[id]` (edit) · `/labs/vexel/generate` (gallery) ·
@@ -11,7 +11,14 @@ to PNG on the server, and that image is what attach writes as the country's coat
 
 Vexel designs coats of arms as structured data. A design (a "heraldic achievement") is a JSON composition: field,
 divisions, ordinaries, charges and tinctures. Vexel draws it as SVG and writes its blazon (the formal text
-description) from the same data.
+description) from the same data. All 17 divisions and 16 ordinaries are drawn; the bordure and tressure follow the
+shield's own outline. `src/tests/lib/heraldry/heraldry-corpus.test.ts` fails if one renders empty.
+
+The field's and each ordinary's line style (engrailed, wavy, embattled and the rest) is drawn on its lines of partition
+and on the ordinary's edges that face the field; the shield's own edge stays straight. Each style is a motif repeated
+along the edge (period 50 units, dancetty 100), stretched so a whole number fits. A partition line is the same curve
+for the pieces on both sides, so no seam shows; on an ordinary, engrailed arcs bite into it and invected arcs bulge
+out. Tests: `src/tests/lib/heraldry/line-styles.test.ts`.
 
 ---
 
@@ -44,6 +51,7 @@ command palette also lists it (`halo-registry.ts`). The same rule is enforced on
 | `src/lib/heraldry/layout.ts`, `types.ts`, `constants.ts` | Layout and shared types |
 | `src/lib/heraldry/shield-scene.ts` | `buildShieldScene` (the drawn shield as data) and `serializeShieldSvg` (standalone SVG). Shared by the editor and the server render |
 | `src/lib/heraldry/svg-utils.ts`, `charge-paths.ts` | Shield outlines, division and ordinary paths, template charge paths |
+| `src/lib/heraldry/line-styles.ts` | `styledEdge` (an ordinary's edge, motif facing into the piece) and `partitionEdge` (a line shared by two pieces) |
 | `src/server/api/routers/heraldry/render.ts` | Server render: stored composition to 256 px and 1024 px PNGs (sharp) in the uploads directory |
 | `src/components/maps/vexel/VexelEditor.tsx` | Editor shell with `VexelEditorProvider` |
 | `src/components/maps/vexel/panels/` | Layers, Properties, Preview, Blazon, Validation, Charge library, Commons browser |
@@ -130,6 +138,9 @@ None.
 - `saveAchievement` still stores the client's serialized SVG in `svgData` as sent. Nothing reads it.
 - Only the shield is drawn. Helm, crest, mantling, supporters, motto and compartment exist in the types, but the
   renderer ignores them (see the PRD status table).
+- The bordure's and tressure's inner edges follow the shield's curved outline and are drawn straight whatever their
+  line style. Every other ordinary, the orle included, draws its line style.
+- The blazon names an ordinary's line style but not the field's ("Per fess wavy" is drawn, blazoned "Per fess").
 - Saving is manual; there is no autosave.
 - The registry has no moderation tools.
 

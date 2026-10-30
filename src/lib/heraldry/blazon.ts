@@ -1,4 +1,6 @@
+import { DIVISION_SECTIONS_COUNT } from "./constants";
 import type {
+  Division,
   HeraldryComposition,
   FieldConfig,
   OrdinaryConfig,
@@ -35,42 +37,68 @@ function pluralize(name: string, count: number): string {
   return name + "s";
 }
 
+/** "Or", "Or and Azure", "Or, Azure and Gules". */
+function listTinctures(tinctures: string[]): string {
+  const names = tinctures.map(capitalize);
+  return names.length > 1
+    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+    : (names[0] ?? "");
+}
+
+/** The first two tinctures when the pieces alternate them (A, B, A, B, ...), otherwise all of them. */
+function alternating(tinctures: string[]): string[] {
+  const pair = tinctures.slice(0, 2);
+  return tinctures.every((t, i) => t === pair[i % 2]) ? pair : tinctures;
+}
+
+/** "Barry of six Or and Azure": the piece count comes from the division's section count. */
+const ofCount =
+  (name: string, division: Division) =>
+  (tinctures: string[]): string =>
+    `${name} of ${numberToWord(DIVISION_SECTIONS_COUNT[division])} ${listTinctures(alternating(tinctures))}`;
+
+const named =
+  (name: string) =>
+  (tinctures: string[]): string =>
+    `${name} ${listTinctures(alternating(tinctures))}`;
+
+function blazonQuarterly(tinctures: string[]): string {
+  if (tinctures.length < 4) return named("Quarterly")(tinctures);
+  if (tinctures[0] === tinctures[3] && tinctures[1] === tinctures[2]) {
+    return `Quarterly, first and fourth ${capitalize(tinctures[0]!)}, second and third ${capitalize(tinctures[1]!)}`;
+  }
+  return `Quarterly, first ${capitalize(tinctures[0]!)}, second ${capitalize(tinctures[1]!)}, third ${capitalize(tinctures[2]!)}, fourth ${capitalize(tinctures[3]!)}`;
+}
+
+const FIELD_BLAZON: Record<Division, (tinctures: string[]) => string> = {
+  plain: (tinctures) => capitalize(tinctures[0] ?? ""),
+  "per-pale": named("Per pale"),
+  "per-fess": named("Per fess"),
+  "per-bend": named("Per bend"),
+  "per-bend-sinister": named("Per bend sinister"),
+  quarterly: blazonQuarterly,
+  gyronny: ofCount("Gyronny", "gyronny"),
+  "per-saltire": named("Per saltire"),
+  "per-chevron": named("Per chevron"),
+  "tierced-in-pale": (tinctures) => `Tierced per pale ${listTinctures(tinctures)}`,
+  "tierced-in-fess": (tinctures) => `Tierced per fess ${listTinctures(tinctures)}`,
+  barry: ofCount("Barry", "barry"),
+  paly: ofCount("Paly", "paly"),
+  bendy: ofCount("Bendy", "bendy"),
+  checky: named("Checky"),
+  lozengy: named("Lozengy"),
+  chevronny: ofCount("Chevronny", "chevronny"),
+};
+
 function blazonField(field: FieldConfig): string {
-  const division = field.division;
-  const tinctures = field.tinctures;
-
-  if (division === "plain" || tinctures.length === 0) {
-    return capitalize(tinctures[0] ?? "");
-  }
-
-  if (division === "per-pale" && tinctures.length >= 2) {
-    return `Per pale ${capitalize(tinctures[0]!)} and ${capitalize(tinctures[1]!)}`;
-  }
-  if (division === "per-fess" && tinctures.length >= 2) {
-    return `Per fess ${capitalize(tinctures[0]!)} and ${capitalize(tinctures[1]!)}`;
-  }
-  if (division === "per-bend" && tinctures.length >= 2) {
-    return `Per bend ${capitalize(tinctures[0]!)} and ${capitalize(tinctures[1]!)}`;
-  }
-  if (division === "per-bend-sinister" && tinctures.length >= 2) {
-    return `Per bend sinister ${capitalize(tinctures[0]!)} and ${capitalize(tinctures[1]!)}`;
-  }
-
-  if (division === "quarterly" && tinctures.length >= 4) {
-    if (tinctures[0] === tinctures[3] && tinctures[1] === tinctures[2]) {
-      return `Quarterly, first and fourth ${capitalize(tinctures[0]!)}, second and third ${capitalize(tinctures[1]!)}`;
-    }
-    return `Quarterly, first ${capitalize(tinctures[0]!)}, second ${capitalize(tinctures[1]!)}, third ${capitalize(tinctures[2]!)}, fourth ${capitalize(tinctures[3]!)}`;
-  }
-
-  // Fallback
-  const divName = division.replace(/-/g, " ");
-  return `${capitalize(divName)} ${tinctures.map(capitalize).join(" and ")}`;
+  const tinctures = field.tinctures.slice(0, DIVISION_SECTIONS_COUNT[field.division]);
+  return tinctures.length === 0 ? "" : FIELD_BLAZON[field.division](tinctures);
 }
 
 function blazonOrdinary(ord: OrdinaryConfig): string {
   const lineStyleText = ord.lineStyle !== "straight" ? ` ${ord.lineStyle}` : "";
-  return `a ${ord.type}${lineStyleText} ${capitalize(ord.tincture)}`;
+  const name = ord.type === "lozenge-ordinary" ? "lozenge" : ord.type.replace(/-/g, " ");
+  return `a ${name}${lineStyleText} ${capitalize(ord.tincture)}`;
 }
 
 function blazonCharge(charge: ChargeRef): string {

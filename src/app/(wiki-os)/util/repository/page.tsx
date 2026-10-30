@@ -9,6 +9,7 @@ import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { CommonsCategoryBrowser } from "~/components/wiki-os/commons/CommonsCategoryBrowser";
 import { CommonsResultsGrid } from "~/components/wiki-os/commons/CommonsResultsGrid";
 import { CommonsDetailPanel } from "~/components/wiki-os/commons/CommonsDetailPanel";
+import { StarterCategoryChips } from "~/components/wiki-os/commons/StarterCategoryChips";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { useDebounce } from "~/hooks/useDebounce";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
@@ -95,15 +96,6 @@ const SEARCH_PLACEHOLDERS: Record<UrlSource, string> = {
   forum: "Search images from the old forum...",
   mine: "Search your uploads...",
 };
-
-const STARTER_CATEGORIES = [
-  { label: "Historical Maps", category: "Historical maps" },
-  { label: "Coats of Arms", category: "Coats of arms by country" },
-  { label: "Royal Residences", category: "Royal residences by country" },
-  { label: "Castles", category: "Castles by country" },
-  { label: "Military Flags", category: "Military flags" },
-  { label: "Portrait Paintings", category: "Portrait paintings" },
-];
 
 export default function RepositoryPage() {
   return (
@@ -359,7 +351,7 @@ function RepositoryPageBody() {
           <Button asChild size="sm" className="h-8 shrink-0 gap-1.5 px-3 text-xs">
             <Link href="/util/upload">
               <Upload className="h-3.5 w-3.5" aria-hidden="true" />
-              Upload
+              Upload to the wiki
             </Link>
           </Button>
         </div>
@@ -417,20 +409,10 @@ function RepositoryPageBody() {
 
         {/* Starter Category Exploration Chips when cold start */}
         {tab === "commons" && results.mode === "idle" && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 px-1 py-1">
-            <span className="text-footnote text-label-secondary mr-1">Try:</span>
-            {STARTER_CATEGORIES.map((cat) => (
-              <Button
-                variant="outline"
-                size="sm"
-                key={cat.category}
-                onClick={() => handleBrowseCategory(cat.category)}
-                className="text-label-secondary hover:text-tint rounded-full"
-              >
-                {cat.label}
-              </Button>
-            ))}
-          </div>
+          <StarterCategoryChips
+            onBrowseCategory={handleBrowseCategory}
+            className="mb-3 px-1 py-1"
+          />
         )}
 
         {/* Active category chips */}

@@ -11,13 +11,15 @@ import {
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { sanitizeUserContent } from "~/lib/utils";
+import { stashItemHref } from "~/lib/wiki-os/stash-content-type";
+import type { WikiSource } from "~/lib/wiki-os/config";
 
 import type { StashedPageItem } from "./types";
 import { Button } from "~/components/ui/button";
 
 interface StashPagesListProps {
   items: StashedPageItem[];
-  onUnstash: (pageTitle: string, contentType?: string) => void;
+  onUnstash: (pageTitle: string, contentType?: string, source?: WikiSource) => void;
   thumbnailsMap?: Record<string, string>;
 }
 
@@ -63,10 +65,13 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
       {items.map((item) => {
         const annotations = item.annotations || [];
         const cleanTitle = item.pageTitle.replace(/_/g, " ");
+        // Lead images are IxWiki's, keyed by title: a sister-wiki page of the same title is not that page.
         const thumbUrl =
-          thumbnailsMap[item.pageTitle] ||
-          thumbnailsMap[cleanTitle] ||
-          thumbnailsMap[item.pageSlug];
+          (item.source ?? "ixwiki") === "ixwiki"
+            ? thumbnailsMap[item.pageTitle] ||
+              thumbnailsMap[cleanTitle] ||
+              thumbnailsMap[item.pageSlug]
+            : undefined;
 
         return (
           <div
@@ -76,7 +81,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
             {/* Header Lockup & Title Link */}
             <div className="flex items-start justify-between gap-3">
               <Link
-                href={`/wiki/${item.pageSlug}`}
+                href={stashItemHref(item.pageSlug, item.source)}
                 className="group/title flex min-w-0 flex-1 items-center gap-3"
               >
                 {/* Article Image / WikiOS Logomark Thumbnail Box */}
@@ -114,7 +119,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
               {/* Action Buttons */}
               <div className="flex shrink-0 items-center gap-1">
                 <Link
-                  href={`/wiki/${item.pageSlug}`}
+                  href={stashItemHref(item.pageSlug, item.source)}
                   className="rounded-row border-separator bg-fill-4 text-caption text-label-secondary hover:bg-fill-4 hover:text-label flex items-center gap-1 border px-3 py-1 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   title="Read article"
                 >
@@ -128,7 +133,7 @@ export function StashPagesList({ items, onUnstash, thumbnailsMap = {} }: StashPa
                   aria-label="Remove from collection"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onUnstash(item.pageTitle, item.contentType);
+                    onUnstash(item.pageTitle, item.contentType, item.source);
                   }}
                   title="Remove from collection"
                   className="bg-fill-4 text-label-secondary hover:border-red/30 hover:bg-red/10 hover:text-red"

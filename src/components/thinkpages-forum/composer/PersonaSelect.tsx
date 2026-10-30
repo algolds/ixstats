@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -17,12 +17,31 @@ export interface PersonaOption {
 }
 
 const SELF = "self";
-const NO_PERSONAS: PersonaOption[] = [];
+
+export interface MyPersonas {
+  personas: PersonaOption[];
+  /** The persona the member's newest post was written as; null when it was as themself (or the persona is gone). */
+  lastUsedPersonaId: string | null;
+}
+
+const NO_PERSONAS: MyPersonas = { personas: [], lastUsedPersonaId: null };
 
 /** The member's active personas, fetched only where in-character posting is allowed. */
-export function useMyPersonas(enabled: boolean): PersonaOption[] {
+export function useMyPersonas(enabled: boolean): MyPersonas {
   const { data } = api.thinkpagesForum.myPersonas.useQuery(undefined, { enabled });
-  return data ?? NO_PERSONAS;
+  // A disabled query still returns what an earlier mount cached: a board without in-character posts must not see it.
+  return enabled && data ? data : NO_PERSONAS;
+}
+
+/**
+ * Who a composer posts as. Until the member picks, it is whoever they posted as last (which arrives with the personas
+ * query, after the first render); a pick, even "yourself", is kept from then on.
+ */
+export function usePersonaChoice(
+  lastUsedPersonaId: string | null
+): [string | null, (personaId: string | null) => void] {
+  const [chosen, setChosen] = useState<string | null | undefined>(undefined);
+  return [chosen === undefined ? lastUsedPersonaId : chosen, setChosen];
 }
 
 interface PersonaSelectProps {

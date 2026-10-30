@@ -325,20 +325,60 @@ export const thinkpagesAccountsRouter = createTRPCRouter({
   // How many feed accounts one user may create (Admin → ThinkPages)
   getAccountLimit: publicProcedure.query(({ ctx }) => maxThinkpagesAccountsPerUser(ctx.db)),
 
-  // Get current user's ThinkPages accounts
-  getMyAccounts: protectedProcedure.query(async ({ ctx }) => {
-    const { db, auth } = ctx;
+  // Get current user's ThinkPages accounts: active only, for posting. The account manager passes
+  // includeInactive so a deactivated persona stays listed and can be activated again.
+  getMyAccounts: protectedProcedure
+    .input(z.object({ includeInactive: z.boolean().optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const { db, auth } = ctx;
 
-    const accounts = await db.thinkpagesAccount.findMany({
-      where: {
-        clerkUserId: auth.userId,
-        isActive: true,
-      },
-      orderBy: [{ verified: "desc" }, { followerCount: "desc" }, { createdAt: "asc" }],
-    });
+      const accounts = await db.thinkpagesAccount.findMany({
+        where: {
+          clerkUserId: auth.userId,
+          ...(input?.includeInactive ? {} : { isActive: true }),
+        },
+        orderBy: [
+          { sortOrder: { sort: "asc", nulls: "last" } },
+          { verified: "desc" },
+          { followerCount: "desc" },
+          { createdAt: "asc" },
+        ],
+      });
 
-    return accounts;
-  }),
+      return accounts;
+    }),
+
+  // Saves the owner's drag order: ids[0] is first. The ids must all be the caller's accounts.
+  reorderMyAccounts: rateLimitedMutationProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
+    .mutation(async ({ ctx, input }) => {
+      const { ids } = input;
+      if (new Set(ids).size !== ids.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Each account can be listed once" });
+      }
+      const owned = await ctx.db.thinkpagesAccount.count({
+        where: { id: { in: ids }, clerkUserId: ctx.auth.userId },
+      });
+      if (owned !== ids.length) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only reorder your own accounts",
+        });
+      }
+      const clerkUserId = ctx.auth.userId;
+      // Accounts left out of ids (the dashboard list hides inactive ones) drop out of the order, so
+      // an old sortOrder can't tie with the new one; null sorts after the ordered accounts.
+      await ctx.db.$transaction([
+        ...ids.map((id, sortOrder) =>
+          ctx.db.thinkpagesAccount.updateMany({ where: { id, clerkUserId }, data: { sortOrder } })
+        ),
+        ctx.db.thinkpagesAccount.updateMany({
+          where: { clerkUserId, id: { notIn: ids } },
+          data: { sortOrder: null },
+        }),
+      ]);
+      return { success: true as const };
+    }),
 
   // The caller's personal persona ("post as yourself"), or null if they have not made one yet
   getMyPersonalAccount: protectedProcedure.query(async ({ ctx }) => {

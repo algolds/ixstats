@@ -70,7 +70,12 @@ export async function stashThread(
   const pageTitle = nativeThreadTitle(thread.id);
   await db.stashItem.upsert({
     where: {
-      stashId_contentType_pageTitle: { stashId, contentType: FORUM_THREAD_CONTENT_TYPE, pageTitle },
+      stashId_contentType_source_pageTitle: {
+        stashId,
+        contentType: FORUM_THREAD_CONTENT_TYPE,
+        source: "ixwiki",
+        pageTitle,
+      },
     },
     create: {
       stashId,

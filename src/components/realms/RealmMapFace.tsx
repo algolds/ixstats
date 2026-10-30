@@ -5,6 +5,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { assetUrl } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
+import { NPC_FILL } from "~/lib/realms/hero-map";
 import { RealmCrest } from "~/components/cards/face/RealmCrest";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -22,11 +23,12 @@ function viewBoxWidth(viewBox: string): number {
   return Number(viewBox.split(/\s+/)[2]) || 1000;
 }
 
-/** The face as SVG: land and other realms flat, claimed nations in the tint, open nations hatched. */
+/** The face as SVG: land and regions with no country flat, NPC nations a muted shade, claimed nations in the
+ * tint, open nations hatched. */
 function FaceSvg({ face, className }: { face: Face; className?: string }) {
   const patternId = useId().replace(/[^A-Za-z0-9_-]/g, "");
   const size = viewBoxWidth(face.viewBox) / HATCH_DIVISOR;
-  const flat = (status: "land" | "other", d: string) =>
+  const flat = (status: "land" | "none", d: string) =>
     d ? (
       <path data-status={status} d={d} className="fill-fill-3 stroke-surface" {...BORDER} />
     ) : null;
@@ -51,7 +53,16 @@ function FaceSvg({ face, className }: { face: Face; className?: string }) {
         </pattern>
       </defs>
       {flat("land", face.land)}
-      {flat("other", face.other)}
+      {flat("none", face.none)}
+      {face.npc && (
+        <path
+          data-status="npc"
+          d={face.npc}
+          style={{ fill: NPC_FILL }}
+          className="stroke-surface"
+          {...BORDER}
+        />
+      )}
       {face.open && (
         <path
           data-status="open"

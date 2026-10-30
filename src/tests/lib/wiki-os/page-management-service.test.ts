@@ -260,6 +260,40 @@ describe("PageManagementService.archiveArticle / restoreArticle", () => {
     expect(mockInvalidateTemplates).toHaveBeenCalledWith("Template:Box", "ixwiki");
   });
 });
+describe("red links and a page coming and going", () => {
+  it("turns the links to a deleted page red, and points the red links to a restored page back at it", async () => {
+    await PageManagementService.archiveArticle("old_name", "spam", actor);
+    expect(mockLinkUpdateMany).toHaveBeenCalledWith({
+      where: { targetArticleId: "orig" },
+      data: { targetArticleId: null },
+    });
+
+    mockLinkUpdateMany.mockClear();
+    pages({ old_name: { ...original, status: "ARCHIVED" } });
+    await PageManagementService.restoreArticle("old_name", actor, "ixwiki", "back");
+    expect(mockLinkUpdateMany).toHaveBeenCalledWith({
+      where: {
+        targetArticleId: null,
+        sourceArticle: { source: "ixwiki" },
+        OR: [{ targetTitle: "Old name" }, { targetTitle: null, targetSlug: "old_name" }],
+      },
+      data: { targetArticleId: "orig" },
+    });
+  });
+
+  it("points the red links to a move's new title at the moved page", async () => {
+    await PageManagementService.movePage("old_name", "New name", "tidy", actor);
+
+    expect(mockLinkUpdateMany).toHaveBeenCalledWith({
+      where: {
+        targetArticleId: null,
+        sourceArticle: { source: "ixwiki" },
+        OR: [{ targetTitle: "New name" }, { targetTitle: null, targetSlug: "new_name" }],
+      },
+      data: { targetArticleId: "orig" },
+    });
+  });
+});
 describe("PageManagementService.movePage refuses files (F37)", () => {
   const MESSAGE = "Files cannot be moved in WikiOS yet; move them on classic MediaWiki.";
 

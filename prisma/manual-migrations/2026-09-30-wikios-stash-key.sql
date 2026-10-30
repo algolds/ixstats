@@ -1,3 +1,7 @@
+-- SUPERSEDED by prisma/migrations/20261106120000_beta_feedback/migration.sql. Do not re-run: it would recreate the
+-- (stashId, contentType, pageTitle) key that migration replaced with (stashId, contentType, source, pageTitle), fail
+-- once a stash holds one title from two wikis, and otherwise refuse those saves. Kept as history.
+--
 -- WikiOS plan 416: a stash may hold the same title once per content type.
 --
 -- `lore_stash_items` was unique on (stashId, pageTitle), so an Onoma name "Rome" and the article

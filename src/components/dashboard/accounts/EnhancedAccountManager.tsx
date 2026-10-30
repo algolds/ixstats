@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { Reorder, useDragControls } from "motion/react";
 import { cn } from "~/lib/utils";
 import {
   Crown,
@@ -11,7 +11,9 @@ import {
   Settings,
   Eye,
   EyeClosed as EyeOff,
-  Star,
+  ArrowUp,
+  ArrowDown,
+  DragHandGesture,
   MoreHoriz as MoreHorizontal,
   StatUp as TrendingUp,
   ChatBubble as MessageSquare,
@@ -33,6 +35,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import { mergeVisibleOrder, moveId, orderByIds } from "~/lib/thinkpages/account-order";
 import { PreText } from "~/components/ui/pretext";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import type { ThinkpagesAccountItem } from "./account-types";
@@ -71,35 +74,46 @@ const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slic
 
 interface AccountCardProps {
   account: ThinkpagesAccountItem;
-  index: number;
   isSelected: boolean;
-  isFavorite: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+  /** A save is in flight: no new move or drag until it lands. */
+  isSaving: boolean;
   onSelect: () => void;
   onSettings: () => void;
-  onToggleFavorite: () => void;
   onToggleActive: () => void;
+  onMove: (delta: -1 | 1) => void;
+  onDragEnd: () => void;
 }
 
 function AccountCard({
   account,
-  index,
   isSelected,
-  isFavorite,
+  isFirst,
+  isLast,
+  isSaving,
   onSelect,
   onSettings,
-  onToggleFavorite,
   onToggleActive,
+  onMove,
+  onDragEnd,
 }: AccountCardProps) {
+  const dragControls = useDragControls();
   const { Icon, color } = typeStyle(account.accountType);
   const posts = account.postCount || 0;
   const reach = account.followerCount || 0;
   const influence = Math.round(Math.min(100, Math.max(0, (reach + posts * 2) / 10)));
 
   return (
-    <motion.div
+    <Reorder.Item
+      as="div"
+      value={account.id}
+      dragListener={false}
+      dragControls={dragControls}
+      onDragEnd={onDragEnd}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ ...springGentle, delay: index * 0.05 }}
+      transition={springGentle}
       className={cn(
         "rounded-row border p-3 transition-[background-color,border-color] duration-150",
         isSelected
@@ -108,6 +122,15 @@ function AccountCard({
       )}
     >
       <div className="mb-2 flex items-center justify-between">
+        <div
+          aria-hidden="true"
+          className="text-label-secondary mr-1 -ml-1 flex size-7 shrink-0 cursor-grab touch-none items-center justify-center active:cursor-grabbing"
+          onPointerDown={(e) => {
+            if (!isSaving) dragControls.start(e);
+          }}
+        >
+          <DragHandGesture className="size-4" />
+        </div>
         <div className="flex min-w-0 flex-1 cursor-pointer items-center gap-2" onClick={onSelect}>
           <Avatar className="size-8">
             <AvatarImage src={account.profileImageUrl ?? undefined} />
@@ -128,9 +151,6 @@ function AccountCard({
               {account.bio?.startsWith("Former Nation") && (
                 <span className="text-footnote text-label-secondary">[Former Nation]</span>
               )}
-              {isFavorite && (
-                <Star className="text-yellow size-3.5 fill-current" aria-label="Favorite" />
-              )}
             </div>
             <div className="text-label-secondary text-footnote">@{account.username}</div>
           </div>
@@ -145,9 +165,13 @@ function AccountCard({
             <MoreHorizontal className="size-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onToggleFavorite}>
-              <Star />
-              {isFavorite ? "Remove from favorites" : "Add to favorites"}
+            <DropdownMenuItem disabled={isFirst || isSaving} onClick={() => onMove(-1)}>
+              <ArrowUp />
+              Move up
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={isLast || isSaving} onClick={() => onMove(1)}>
+              <ArrowDown />
+              Move down
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onSettings}>
               <Settings />
@@ -181,7 +205,7 @@ function AccountCard({
           {account.bio}
         </PreText>
       )}
-    </motion.div>
+    </Reorder.Item>
   );
 }
 
@@ -196,22 +220,44 @@ export function EnhancedAccountManager({
 }: EnhancedAccountManagerProps) {
   const notify = useNotify();
   const [filterType, setFilterType] = useState<FilterType>("all");
-  const [favoriteAccounts, setFavoriteAccounts] = useState<string[]>([]);
+  // The owner's order while a save is in flight; null means the server's order.
+  const [order, setOrder] = useState<string[] | null>(null);
   const { data: maxAccounts = MAX_ACCOUNTS } = api.thinkpages.getAccountLimit.useQuery();
+  const utils = api.useUtils();
 
   const updateAccountMutation = api.thinkpages.updateAccount.useMutation({
     onSuccess: () => {
       notify.success("Account visibility updated");
+      void utils.thinkpages.getMyAccounts.invalidate();
     },
   });
 
-  const filteredAccounts =
-    filterType === "all" ? accounts : accounts.filter((a) => a.accountType === filterType);
+  const reorderMutation = api.thinkpages.reorderMyAccounts.useMutation({
+    onSuccess: async () => {
+      await utils.thinkpages.getMyAccounts.invalidate();
+      void utils.thinkpagesForum.myPersonas.invalidate();
+      setOrder(null);
+    },
+    onError: (error) => {
+      setOrder(null);
+      notify.error("Couldn't save the order", error.message);
+    },
+  });
 
-  const toggleFavorite = (accountId: string) => {
-    setFavoriteAccounts((prev) =>
-      prev.includes(accountId) ? prev.filter((id) => id !== accountId) : [...prev, accountId]
-    );
+  const orderedAccounts = orderByIds(accounts, order);
+  const allIds = orderedAccounts.map((a) => a.id);
+  const filteredAccounts =
+    filterType === "all"
+      ? orderedAccounts
+      : orderedAccounts.filter((a) => a.accountType === filterType);
+  const visibleIds = filteredAccounts.map((a) => a.id);
+
+  const saveOrder = (ids: string[]) => reorderMutation.mutate({ ids });
+
+  const moveAccount = (id: string, delta: -1 | 1) => {
+    const next = mergeVisibleOrder(allIds, moveId(visibleIds, id, delta));
+    setOrder(next);
+    saveOrder(next);
   };
 
   const innerContent = (
@@ -254,44 +300,56 @@ export function EnhancedAccountManager({
         })}
       </div>
 
-      <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
-        <AnimatePresence>
-          {filteredAccounts.length === 0 ? (
-            <EmptyState
-              compact
-              icon={<Users />}
-              title="No accounts in this category"
-              action={
-                isOwner ? (
-                  <Button variant="outline" size="sm" onClick={onCreateAccount}>
-                    <Plus aria-hidden="true" />
-                    Create account
-                  </Button>
-                ) : undefined
+      {/* Capped only in the modal; on the page the list grows with the page. */}
+      {filteredAccounts.length === 0 ? (
+        <div className={cn("space-y-2", inModal && "max-h-80 overflow-y-auto pr-1")}>
+          <EmptyState
+            compact
+            icon={<Users />}
+            title="No accounts in this category"
+            action={
+              isOwner ? (
+                <Button variant="outline" size="sm" onClick={onCreateAccount}>
+                  <Plus aria-hidden="true" />
+                  Create account
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
+      ) : (
+        <Reorder.Group
+          as="div"
+          axis="y"
+          layoutScroll
+          values={visibleIds}
+          onReorder={(ids: string[]) => setOrder(mergeVisibleOrder(allIds, ids))}
+          className={cn("space-y-2", inModal && "max-h-80 overflow-y-auto pr-1")}
+        >
+          {filteredAccounts.map((account, index) => (
+            <AccountCard
+              key={account.id}
+              account={account}
+              isSelected={selectedAccount?.id === account.id}
+              isFirst={index === 0}
+              isLast={index === filteredAccounts.length - 1}
+              isSaving={reorderMutation.isPending}
+              onSelect={() => onAccountSelect(account)}
+              onSettings={() => onAccountSettings(account)}
+              onToggleActive={() =>
+                updateAccountMutation.mutate({
+                  accountId: account.id,
+                  isActive: !account.isActive,
+                })
               }
+              onMove={(delta) => moveAccount(account.id, delta)}
+              onDragEnd={() => {
+                if (order) saveOrder(allIds);
+              }}
             />
-          ) : (
-            filteredAccounts.map((account, index) => (
-              <AccountCard
-                key={account.id}
-                account={account}
-                index={index}
-                isSelected={selectedAccount?.id === account.id}
-                isFavorite={favoriteAccounts.includes(account.id)}
-                onSelect={() => onAccountSelect(account)}
-                onSettings={() => onAccountSettings(account)}
-                onToggleFavorite={() => toggleFavorite(account.id)}
-                onToggleActive={() =>
-                  updateAccountMutation.mutate({
-                    accountId: account.id,
-                    isActive: !account.isActive,
-                  })
-                }
-              />
-            ))
-          )}
-        </AnimatePresence>
-      </div>
+          ))}
+        </Reorder.Group>
+      )}
 
       {isOwner && accounts.length < maxAccounts && (
         <Button

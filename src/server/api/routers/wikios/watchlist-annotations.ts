@@ -53,9 +53,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
         const contentType = stashContentTypeForTitle(input.pageTitle);
         const item = await db.stashItem.upsert({
           where: {
-            stashId_contentType_pageTitle: {
+            stashId_contentType_source_pageTitle: {
               stashId: defaultStash.id,
               contentType,
+              source: "ixwiki",
               pageTitle: input.pageTitle,
             },
           },
@@ -108,6 +109,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           item: {
             pageTitle: input.pageTitle,
             contentType: stashContentTypeForTitle(input.pageTitle),
+            source: "ixwiki",
             stash: { userId: { in: requireWikiUserIds(ctx) } },
           },
         },
@@ -161,9 +163,10 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       }
       await ctx.db.stashItem.upsert({
         where: {
-          stashId_contentType_pageTitle: {
+          stashId_contentType_source_pageTitle: {
             stashId: watchlistStash.id,
             contentType: "wiki",
+            source: "ixwiki",
             pageTitle: input.pageTitle,
           },
         },
@@ -204,7 +207,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (watchlistStash) {
         await ctx.db.stashItem.deleteMany({
-          where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
+          where: {
+            stashId: watchlistStash.id,
+            pageTitle: input.pageTitle,
+            contentType: "wiki",
+            source: "ixwiki",
+          },
         });
       }
 
@@ -366,7 +374,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (!watchlistStash) return false;
       const item = await ctx.db.stashItem.findFirst({
-        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
+        where: {
+          stashId: watchlistStash.id,
+          pageTitle: input.pageTitle,
+          contentType: "wiki",
+          source: "ixwiki",
+        },
       });
       return !!item;
     }),

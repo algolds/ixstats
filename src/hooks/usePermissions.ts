@@ -4,6 +4,7 @@ import { api } from "~/trpc/react";
 
 import { isSystemOwner } from "~/lib/auth";
 import { isBetaTesterRole } from "~/lib/auth/premium";
+import { isAdminRole } from "~/lib/auth/admin-rule";
 
 interface UserRole {
   id: string;
@@ -86,6 +87,20 @@ export function useIsAdmin(): boolean {
 // Hook to check if user is staff or higher
 export function useIsStaff(): boolean {
   return useHasRoleLevel(20); // Staff level or higher
+}
+
+/**
+ * Whether to show the way into /admin: the system owner, or a DB role that passes the one admin rule
+ * (`isAdminRole`), which the proxy, the admin layout and adminProcedure apply too.
+ */
+export function useCanOpenAdmin(): boolean {
+  const { user: authUser } = useUser();
+  const { user: permissionUser, isLoading } = usePermissions();
+
+  if (!authUser) return false;
+  if (isSystemOwner(authUser.id)) return true;
+  if (isLoading) return false;
+  return isAdminRole(permissionUser?.role);
 }
 
 // Hook to check if user is moderator or higher

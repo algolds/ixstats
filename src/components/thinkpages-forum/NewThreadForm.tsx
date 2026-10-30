@@ -30,7 +30,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
     realm,
   });
   const { mutateAsync: createThread } = api.thinkpagesForum.createThread.useMutation();
-  const personas = useMyPersonas(data?.category.icAllowed === true);
+  const { personas, lastUsedPersonaId } = useMyPersonas(data?.category.icAllowed === true);
   // A thread whose first post is still being formatted opens on request.
   const [startedId, setStartedId] = useState<string | null>(null);
   const backHref = categoryHref({ key: categoryKey, realm: realm ? { slug: realm } : null });
@@ -44,6 +44,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
         wikitext,
         personaId,
       });
+      void utils.thinkpagesForum.myPersonas.invalidate();
       void utils.thinkpagesForum.category.invalidate({ key: categoryKey });
       void utils.thinkpagesForum.categories.invalidate();
       void utils.thinkpagesForum.realmSection.invalidate();
@@ -108,6 +109,7 @@ export function NewThreadForm({ categoryKey, realm }: NewThreadFormProps) {
       <CanvasComposer
         mode="thread"
         personas={personas}
+        lastUsedPersonaId={lastUsedPersonaId}
         postStyle={data.category.style === "ic" ? "ic" : "ooc"}
         onSubmit={submit}
       />

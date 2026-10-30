@@ -8,12 +8,10 @@
  */
 import { TRPCError } from "@trpc/server";
 import type { PrismaClient } from "@prisma/client";
-import {
-  getRealmBoardAccess,
-  isRealmBoard,
-  REALM_BOARD_PUBLIC_READ,
-  REALM_BOARD_TYPE,
-} from "./realm-board";
+import { canReadGroupType } from "~/server/modules/thinktanks/access";
+import { getRealmBoardAccess, isRealmBoard } from "./realm-board";
+
+export { canReadGroupType };
 
 type AccessDb = Pick<
   PrismaClient,
@@ -76,11 +74,6 @@ export async function getGroupAccess<G extends GroupLike>(
 /** Public groups (and realm boards) are readable by anyone; other groups by their members only. */
 function canReadGroup(access: GroupAccess<GroupLike>): boolean {
   return canReadGroupType(access.group.type) || access.isMember;
-}
-
-/** Whether a group of this type is readable by non-members. */
-export function canReadGroupType(type: string): boolean {
-  return type === "public" || (type === REALM_BOARD_TYPE && REALM_BOARD_PUBLIC_READ);
 }
 
 async function loadActiveGroup(db: AccessDb, groupId: string) {

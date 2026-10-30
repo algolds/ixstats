@@ -5,7 +5,7 @@ import type { DirectoryRealm } from "~/app/realms/_components/realm-directory";
 
 let mockIsAdmin = false;
 
-jest.mock("~/hooks/usePermissions", () => ({ useIsAdmin: () => mockIsAdmin }));
+jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => mockIsAdmin }));
 
 jest.mock("~/components/realms/RealmCard", () => ({
   RealmCard: ({ realm }: { realm: { name: string } }) => <li>{realm.name}</li>,

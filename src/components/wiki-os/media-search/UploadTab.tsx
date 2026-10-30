@@ -6,6 +6,7 @@ import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { useNotify } from "~/hooks/useNotify";
 import { uploadImageFile, UploadImageError } from "~/lib/media/upload-image";
+import { createUrl } from "~/lib/utils/url-utils";
 
 interface UploadTabProps {
   onImageSelect: (imageUrl: string) => void;
@@ -190,6 +191,19 @@ export function UploadTab({ onImageSelect, onClose, isUploading, setIsUploading 
             )}
           </Button>
         </div>
+        <p className="text-label-secondary text-footnote mt-4 text-center">
+          <span>
+            Saved to My uploads. Only you see it in the repository; it shows wherever you use it.
+          </span>{" "}
+          <a
+            href={createUrl("/util/upload")}
+            target="_blank"
+            rel="noopener"
+            className="text-tint underline underline-offset-2"
+          >
+            Upload to the wiki instead
+          </a>
+        </p>
       </div>
 
       {/* Requirements low-contrast subtle footer */}

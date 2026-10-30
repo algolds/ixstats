@@ -16,6 +16,7 @@ import {
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useUserCountry } from "~/hooks/useUserCountry";
+import type { WikiSource } from "~/lib/wiki-os/config";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -43,14 +44,18 @@ export interface WikiPageToolsProps {
   country?: WikiCountry | null;
   /** The article's own tools. Off for another wiki's page, which keeps only the country's actions. */
   articleTools?: boolean;
+  /** The wiki the page is on; IxWiki when omitted. */
+  source?: WikiSource;
+  /** Whether the page can be saved to a stash: any article, of any wiki the reader shows, unlike the article's own tools. */
+  stashable?: boolean;
 }
 
-/** Stash state and toggle for one article. */
-function useStashToggle(title: string, enabled: boolean) {
+/** Stash state and toggle for one article of one wiki. */
+function useStashToggle(title: string, source: WikiSource, enabled: boolean) {
   const notify = useNotify();
   const utils = api.useUtils();
   const stashed = api.wikios.isStashed.useQuery(
-    { pageTitle: title },
+    { pageTitle: title, source },
     { enabled: enabled && !!title, retry: false }
   ).data?.stashed;
 
@@ -58,7 +63,7 @@ function useStashToggle(title: string, enabled: boolean) {
   const outcome = (done: string, failure: string) => ({
     onSuccess: () => {
       notify.success(done);
-      void utils.wikios.isStashed.invalidate({ pageTitle: title });
+      void utils.wikios.isStashed.invalidate({ pageTitle: title, source });
       void utils.wikios.getStashes.invalidate();
       void utils.wikios.getArticleMarginData.invalidate({ articleTitle: title });
     },
@@ -75,9 +80,36 @@ function useStashToggle(title: string, enabled: boolean) {
     stashed: stashed ?? false,
     toggle: () => {
       if (stash.isPending || unstash.isPending) return;
-      (stashed ? unstash : stash).mutate({ pageTitle: title });
+      (stashed ? unstash : stash).mutate({ pageTitle: title, source });
     },
   };
+}
+
+/** The page's Save to Stash button: always in view, for a page of any wiki. Nothing for a signed-out reader. */
+export function StashButton({
+  title,
+  source,
+  isSignedIn,
+}: {
+  title: string;
+  source: WikiSource;
+  isSignedIn: boolean;
+}) {
+  const { stashed, toggle } = useStashToggle(title, source, isSignedIn && !!title);
+  if (!isSignedIn || !title) return null;
+  const label = stashed ? "Remove from Stash" : "Save to Stash";
+  return (
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={label}
+      aria-pressed={stashed}
+      title={label}
+      onClick={toggle}
+    >
+      {stashed ? <BookmarkSolid className="size-4" /> : <Bookmark className="size-4" />}
+    </Button>
+  );
 }
 
 function CountryActionsDialog({
@@ -109,9 +141,14 @@ export function WikiPageTools({
   isSignedIn,
   country,
   articleTools = true,
+  source = "ixwiki",
 }: WikiPageToolsProps) {
   const { isMarginOpen, toggleMargin, setActiveModal } = useWikiContext();
-  const { stashed, toggle: toggleStash } = useStashToggle(title, isSignedIn && articleTools);
+  const { stashed, toggle: toggleStash } = useStashToggle(
+    title,
+    source,
+    isSignedIn && articleTools
+  );
   const [countryOpen, setCountryOpen] = useState(false);
 
   if (!articleTools && !country) return null;

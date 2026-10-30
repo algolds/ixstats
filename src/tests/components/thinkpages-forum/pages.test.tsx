@@ -12,12 +12,14 @@ interface MockApi {
   results: Record<string, QueryResult>;
   inputs: Record<string, object | undefined>;
   mutations: Record<string, jest.Mock>;
+  myPersonasInvalidate: jest.Mock;
 }
 
 jest.mock("~/trpc/react", () => {
   const results: Record<string, QueryResult> = {};
   const inputs: Record<string, object | undefined> = {};
   const mutations: Record<string, jest.Mock> = {};
+  const myPersonasInvalidate = jest.fn();
   const query = (name: string) => ({
     useQuery: (input?: object) => {
       inputs[name] = input;
@@ -31,6 +33,7 @@ jest.mock("~/trpc/react", () => {
     results,
     inputs,
     mutations,
+    myPersonasInvalidate,
     api: {
       wikios: { getMissingPages: { useQuery: () => ({ data: undefined }) } },
       // The persona's hover card loads its profile only when opened.
@@ -45,6 +48,7 @@ jest.mock("~/trpc/react", () => {
           categories: { invalidate: () => Promise.resolve() },
           realmSection: { invalidate: () => Promise.resolve() },
           myStanding: { invalidate: () => Promise.resolve() },
+          myPersonas: { invalidate: myPersonasInvalidate },
           navCounts: { invalidate: () => Promise.resolve() },
           resolvePost: { fetch: () => Promise.resolve({ threadId: "t1", page: 3 }) },
         },
@@ -164,7 +168,7 @@ import { BoardPage } from "~/components/thinkpages-forum/board";
 import { ThreadPage } from "~/components/thinkpages-forum/thread";
 import "~/app/thinkpages/page";
 
-const { results, mutations } = jest.requireMock<MockApi>("~/trpc/react");
+const { results, mutations, myPersonasInvalidate } = jest.requireMock<MockApi>("~/trpc/react");
 
 const authors: ForumAuthors = {
   users: {
@@ -291,6 +295,16 @@ describe("category view", () => {
 });
 
 describe("thread view", () => {
+  it("refreshes the remembered identity once a reply is posted", async () => {
+    set("thread", { data: threadData() });
+    mutations.reply = jest.fn(() => Promise.resolve({ postId: "p9", formatting: "done" }));
+    render(<ThreadPage threadId="t1" page={1} />);
+    expect(myPersonasInvalidate).not.toHaveBeenCalled();
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Reply" })).getByRole("button", { name: "Reply" })
+    );
+    await waitFor(() => expect(myPersonasInvalidate).toHaveBeenCalledTimes(1));
+  });
   it("edits a Canvas post in Canvas from its wikitext and saves wikitext, never html", async () => {
     const data = threadData();
     const loaded = new Date("2026-10-01T10:00:00Z");

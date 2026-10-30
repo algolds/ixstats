@@ -253,6 +253,11 @@ const SORTED_KNOWN: readonly string[] = Object.freeze(
     .sort((a, b) => b.length - a.length)
 );
 
+// IPA marks stress before the syllable onset ("ˈdɛl"); misaki, which Kokoro was trained on,
+// marks it before the vowel ("dˈɛl"). Left before a consonant, Kokoro voices a vowel there.
+const KOKORO_VOWELS = "iɪeɛæɑɒɔoʊuʌəɚɝɐɨʉa";
+const STRESS_ONSET = new RegExp(`([ˈˌ])([^${KOKORO_VOWELS}ˈˌ\\s]+)(?=[${KOKORO_VOWELS}])`, "g");
+
 // Diphthongs / long vowels that are already English-natural — skipped whole so we
 // never crack "oʊ" into a bare "o" and then reduce it.
 const ANGLICIZE_SKIP_VOWELS: readonly string[] = [
@@ -427,6 +432,8 @@ export function ipaToKokoroPhonemes(ipa: string): KokoroPhonemeResult {
 
   const phonemes = relocateStressToVowel(out)
     .join("")
+    .replace(/\./g, "") // syllable breaks: Kokoro reads "." as a full stop
+    .replace(STRESS_ONSET, "$2$1") // misaki stresses the vowel, not the onset
     .replace(/[^\S\n]+/g, " ")
     .trim();
   return { phonemes, dropped };

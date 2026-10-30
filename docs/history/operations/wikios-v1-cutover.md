@@ -91,7 +91,8 @@ not optional for the deploy itself: step 1's `2026-09-30-wikios-api.sql` must ru
 - Until step 1's manual SQL runs (before the deploy), these are missing: integer ids for api.php (`pageId`, `revId`,
   `logId` sequences, triggers and backfills), the generated search vector and its GIN and trigram indexes, the redirect
   backfill and the default protections. Every file is idempotent and safe to apply before the switch;
-  `2026-09-30-wikios-stash-key.sql` can run at any time.
+  `2026-09-30-wikios-stash-key.sql` is superseded by `20261106120000_beta_feedback` (the deploy script runs it): do not
+  re-run it, it would bring back the stash key that migration replaced.
 
 **Unsafe before the launch steps:**
 
@@ -360,12 +361,13 @@ whose legacy protection is still in force; step 1b refuses to run until it has.
 
 The WikiOS plans add hand-written, idempotent SQL under `prisma/manual-migrations/`. Take a dump first, then apply
 the files in filename order, **except `2026-09-30-wikios-lead-image-canonical-path.sql`**: its header says to run it after
-the code is deployed, so it is its own step after the deploy (5b below) and the loop leaves it out:
+the code is deployed, so it is its own step after the deploy (5b below) and the loop leaves it out. The loop also leaves
+out `2026-09-30-wikios-stash-key.sql`, superseded by `20261106120000_beta_feedback` (never re-run it):
 
 ```bash
 ( cd "$IX" && bun run db:backup )                                   # aborts non-zero on failure; dump lands in backups/
-ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort    # review the list; read each file before applying
-for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v lead-image-canonical-path | sort); do
+ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v -e lead-image-canonical-path -e stash-key | sort    # review the list; read each file before applying
+for f in $(ls "$IX"/prisma/manual-migrations/*wikios*.sql | grep -v -e lead-image-canonical-path -e stash-key | sort); do
   echo "== $f"
   docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 < "$f" || break
 done

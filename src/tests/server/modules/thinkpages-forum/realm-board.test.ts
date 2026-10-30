@@ -70,8 +70,9 @@ describe("getBoard", () => {
     expect(byId.p1!.author).toEqual({
       name: "member",
       handle: "member",
-      avatarUrl: null,
-      flagUrl: "https://flags.example/u_member.png",
+      // No personal persona picture, so the flag is the avatar and not drawn beside it too.
+      avatarUrl: "https://flags.example/u_member.png",
+      flagUrl: null,
       persona: false,
       personaType: null,
     });

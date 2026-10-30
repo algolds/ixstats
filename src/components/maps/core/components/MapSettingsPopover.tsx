@@ -19,7 +19,7 @@ import { Switch } from "~/components/ui/switch";
 import type { ProjectionMode } from "~/lib/maps/map-config";
 import type { Theme } from "~/context/theme-context";
 import { useRouter } from "next/navigation";
-import { useIsAdmin } from "~/hooks/usePermissions";
+import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import {
   getSnapEnabled,
   setSnapEnabled,
@@ -53,7 +53,7 @@ export function MapSettingsPopover({
   setTheme,
 }: MapSettingsPopoverProps) {
   const router = useRouter();
-  const isAdmin = useIsAdmin();
+  const isAdmin = useCanOpenAdmin();
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
   const [snapTol, setSnapTolState] = useState(getSnapTolerance);
 

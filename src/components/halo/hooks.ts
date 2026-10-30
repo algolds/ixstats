@@ -13,7 +13,8 @@ import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
-import { CORE_COMMANDS, CORE_FEATURES } from "./halo-registry";
+import { useCanOpenAdmin } from "~/hooks/usePermissions";
+import { commandsFor, CORE_FEATURES } from "./halo-registry";
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -30,6 +31,7 @@ export function useDynamicIslandState() {
   const pathname = usePathname();
   const activePlugin = useActiveDIPlugin();
   const isWikiActive = activePlugin?.id === "wiki";
+  const isAdmin = useCanOpenAdmin();
 
   const [mode, setMode] = useState<ViewMode>("compact");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -125,7 +127,7 @@ export function useDynamicIslandState() {
 
   // Pre-compute lowercase command index with category & keywords
   const commandIndex = useMemo(() => {
-    const ctx = [...CORE_COMMANDS];
+    const ctx = commandsFor(isAdmin);
     if (!isSignedIn || !user) {
       ctx.push(
         {
@@ -186,7 +188,7 @@ export function useDynamicIslandState() {
       _lower:
         `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
     }));
-  }, [isSignedIn, user, pathname]);
+  }, [isSignedIn, user, pathname, isAdmin]);
 
   const featureIndex = useMemo(
     () =>

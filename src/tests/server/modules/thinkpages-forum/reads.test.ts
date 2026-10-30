@@ -247,23 +247,27 @@ describe("getCategoryThreads in a realm", () => {
   });
 });
 describe("authorsOf", () => {
-  it("names users handle, then country name, then Member, never the wiki, discord or forum name or clerk id", async () => {
+  it("names users without a personal persona handle, then country name, then Member, never the wiki, discord or forum name or clerk id", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
-      { id: "u1", handle: "heku", country: { name: "Caphiria" } },
-      { id: "u2", handle: null, country: { name: "Caphiria" } },
-      { id: "u3", handle: null, country: { name: "Aurelia" } },
-      { id: "u4", handle: null, country: null },
+      { id: "u1", clerkUserId: "c1", handle: "heku", country: { name: "Caphiria" } },
+      { id: "u2", clerkUserId: "c2", handle: null, country: { name: "Caphiria" } },
+      { id: "u3", clerkUserId: "c3", handle: null, country: { name: "Aurelia" } },
+      { id: "u4", clerkUserId: "c4", handle: null, country: null },
     ]);
-    db.thinkpagesAccount.findMany.mockResolvedValue([
-      {
-        id: "a1",
-        displayName: "The Voice",
-        username: "voice",
-        profileImageUrl: null,
-        accountType: "citizen",
-      },
-    ]);
+    db.thinkpagesAccount.findMany.mockImplementation(async (args?: object) =>
+      (args as { where: { id?: unknown } }).where.id
+        ? [
+            {
+              id: "a1",
+              displayName: "The Voice",
+              username: "voice",
+              profileImageUrl: null,
+              accountType: "citizen",
+            },
+          ]
+        : []
+    );
     const out = await authorsOf(db as never, ["u1", "u2", "u3", "u4", "u1"], ["a1"]);
     expect(out.users.get("u1")).toEqual({
       name: "heku",
@@ -307,7 +311,7 @@ describe("authorsOf", () => {
     });
   });
 
-  it("gives a member their personal persona's avatar and their country's flag, and a persona its own avatar", async () => {
+  it("gives a member their personal persona's name and avatar beside their country's flag, and a persona its own avatar", async () => {
     const db = readDb();
     db.user.findMany.mockResolvedValue([
       {
@@ -329,11 +333,11 @@ describe("authorsOf", () => {
               accountType: "government",
             },
           ]
-        : [{ clerkUserId: "c1", profileImageUrl: "/p/heku.png" }]
+        : [{ clerkUserId: "c1", displayName: "Heku Prime", profileImageUrl: "/p/heku.png" }]
     );
     const out = await authorsOf(db as never, ["u1", "u2"], ["a1"]);
     expect(out.users.get("u1")).toEqual({
-      name: "heku",
+      name: "Heku Prime",
       handle: "heku",
       avatarUrl: "/p/heku.png",
       flagUrl: "/flags/caph.png",

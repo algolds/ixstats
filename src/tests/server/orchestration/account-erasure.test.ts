@@ -86,6 +86,9 @@ async function seed(): Promise<void> {
       appointedBy: bob.clerkUserId,
     },
   });
+  await db.realmFounder.create({
+    data: { realmId: "other", userId: alice.clerkUserId, order: 0, addedBy: bob.clerkUserId },
+  });
   await db.realmClaim.create({ data: { realmId: "other", userId: "alice", status: "pending" } });
 
   await addPersona(db, "p1", alice, "n1", "Alice Persona");
@@ -389,6 +392,7 @@ describe("eraseAccount", () => {
       "p2",
     ]);
     expect(count(await db.realmOfficer.findMany({}))).toBe(0);
+    expect(count(await db.realmFounder.findMany({}))).toBe(0);
   });
 
   it("erases private and ephemeral rows, never another user's", async () => {

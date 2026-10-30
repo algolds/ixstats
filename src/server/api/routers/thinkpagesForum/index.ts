@@ -339,17 +339,27 @@ const forumRouter = createTRPCRouter({
       resolvePostLocation(ctx.db, await viewerOf(ctx.db, ctx.user), input.postId)
     ),
 
-  myPersonas: protectedProcedure.query(({ ctx }) =>
-    ctx.db.thinkpagesAccount.findMany({
-      where: {
-        clerkUserId: ctx.user.clerkUserId,
-        isActive: true,
-        accountType: { not: PERSONAL_ACCOUNT_TYPE },
-      },
-      orderBy: { displayName: "asc" },
-      select: { id: true, displayName: true, username: true },
-    })
-  ),
+  /** The member's active personas, and the one their newest post was written as (null: themself, or deactivated). */
+  myPersonas: protectedProcedure.query(async ({ ctx }) => {
+    const [personas, newest] = await Promise.all([
+      ctx.db.thinkpagesAccount.findMany({
+        where: {
+          clerkUserId: ctx.user.clerkUserId,
+          isActive: true,
+          accountType: { not: PERSONAL_ACCOUNT_TYPE },
+        },
+        orderBy: [{ sortOrder: { sort: "asc", nulls: "last" } }, { displayName: "asc" }],
+        select: { id: true, displayName: true, username: true },
+      }),
+      ctx.db.forumPost.findFirst({
+        where: { authorUserId: ctx.user.id },
+        orderBy: { createdAt: "desc" },
+        select: { authorPersonaId: true },
+      }),
+    ]);
+    const lastUsedPersonaId = personas.find((p) => p.id === newest?.authorPersonaId)?.id ?? null;
+    return { personas, lastUsedPersonaId };
+  }),
 
   /** The member's own warnings, bans and appeals (M20); never who issued or reviewed them. */
   myStanding: protectedProcedure.query(({ ctx }) => myStanding(ctx.db, memberOf(ctx.user))),

@@ -25,8 +25,7 @@ import {
   copyFormatsFor,
   type CopyFormat,
 } from "~/components/wiki-os/media-search/CopyFormatSelector";
-import type { CommonsImage } from "~/components/wiki-os/media-search/types";
-import { attributionLine } from "~/components/wiki-os/editor/ImageSearchGrid";
+import { attributionLine, type CommonsImage } from "~/components/wiki-os/media-search/types";
 import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 
 interface CommonsDetailPanelProps {

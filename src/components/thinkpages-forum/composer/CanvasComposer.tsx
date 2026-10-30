@@ -16,7 +16,8 @@ import type { WikitextSerializeResult } from "~/components/wiki-os/editor/plate/
 import { cn } from "~/lib/utils/cn";
 import type { PostStyle } from "../thread/types";
 import { insertAtCaret } from "./canvas-ops";
-import { PersonaSelect, type PersonaOption } from "./PersonaSelect";
+import { usePersonaChoice, type PersonaOption } from "./PersonaSelect";
+import { PostingAs } from "./PostingAs";
 import type { QuoteRequest } from "./QuoteInsert";
 import { CanvasPreviewPane } from "./CanvasPreviewPane";
 import { FORMATTING_LATER } from "./canvas-copy";
@@ -58,6 +59,8 @@ export interface CanvasComposerProps {
   ) => Promise<{ formatting: "done" | "pending" }>;
   /** The member's personas for "Posting as"; omit where in-character posting is not allowed. */
   personas?: readonly PersonaOption[];
+  /** The persona the composer starts on (the one the member posted as last); yourself without one. */
+  lastUsedPersonaId?: string | null;
   /** A quote to add to the draft (a new object each time the Quote button is pressed). */
   quoteRequest?: QuoteRequest | null;
   /** Called once the quote is in the draft, so the host can forget it. */
@@ -82,6 +85,7 @@ export function CanvasComposer({
   threadId,
   onSubmit,
   personas = [],
+  lastUsedPersonaId = null,
   quoteRequest = null,
   onQuoteInserted,
   onWikitextChange,
@@ -97,7 +101,7 @@ export function CanvasComposer({
     notices: [],
   });
   const [title, setTitle] = useState("");
-  const [personaId, setPersonaId] = useState<string | null>(null);
+  const [personaId, setPersonaId] = usePersonaChoice(lastUsedPersonaId);
   const { view, preview, changeView } = useCanvasPreview(doc.wikitext, threadId);
 
   const editorRef = useRef<TSlateEditor | null>(null);
@@ -234,8 +238,7 @@ export function CanvasComposer({
 
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
         {personas.length > 0 && mode !== "edit" ? (
-          <PersonaSelect
-            label="Posting as"
+          <PostingAs
             personas={personas}
             value={personaId}
             onChange={setPersonaId}

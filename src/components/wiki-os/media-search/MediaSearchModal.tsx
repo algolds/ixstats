@@ -8,8 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { useNotify } from "~/hooks/useNotify";
 import { processImageSelection, isExternalImageUrl } from "~/lib/media";
 import { cn } from "~/lib/utils";
+import { createUrl } from "~/lib/utils/url-utils";
 
 import type { CommonsImage } from "./types";
+import { useFiltersOpen } from "./useFiltersOpen";
 import { WikiRepositoryTab } from "./WikiRepositoryTab";
 import { UploadTab } from "./UploadTab";
 
@@ -37,7 +39,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
   const [selectedImageObj, setSelectedImageObj] = useState<CommonsImage | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isCategoryExpanded, setIsCategoryExpanded] = useState(false);
+  const { isCategoryExpanded, onToggleFilters } = useFiltersOpen();
   // The in-flight "use this image" request; set while one runs, aborted when the picker closes.
   const confirmRef = useRef<AbortController | null>(null);
 
@@ -106,7 +108,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
       <DialogContent
         className={cn(
           "flex h-[88vh] max-h-[92vh] flex-col overflow-hidden p-0 transition-[max-width] duration-300 ease-in-out",
-          isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
+          activeTab === "wiki-repository" && isCategoryExpanded ? "max-w-7xl" : "max-w-5xl"
         )}
         data-dialog-nested="true"
         onEscapeKeyDown={(e) => {
@@ -127,10 +129,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
 
         <Tabs
           value={activeTab}
-          onValueChange={(val) => {
-            setActiveTab(val as MainTab);
-            if (val !== "wiki-repository") setIsCategoryExpanded(false);
-          }}
+          onValueChange={(val) => setActiveTab(val as MainTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
           <TabsList className="border-separator grid w-full grid-cols-2 rounded-none border-b bg-transparent p-0">
@@ -158,7 +157,7 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
               onSelectImage={handleWikiSelectImage}
               onDoubleClickConfirm={handleSelectConfirm}
               isCategoryExpanded={isCategoryExpanded}
-              setIsCategoryExpanded={setIsCategoryExpanded}
+              onToggleFilters={onToggleFilters}
             />
           </TabsContent>
 
@@ -179,6 +178,14 @@ function MediaSearchModalContent({ isOpen, onClose, onImageSelect }: MediaSearch
         {/* Modal Bottom Action Controls */}
         {activeTab !== "upload" && (
           <div className="border-separator bg-surface flex shrink-0 items-center justify-end gap-3 border-t px-6 py-4">
+            <a
+              href={createUrl("/util/repository")}
+              target="_blank"
+              rel="noopener"
+              className="text-footnote text-tint mr-auto underline underline-offset-2"
+            >
+              Open the full repository
+            </a>
             {isDownloading && (
               <div className="text-footnote text-tint flex items-center gap-2">
                 <Download className="size-3.5" aria-hidden="true" />

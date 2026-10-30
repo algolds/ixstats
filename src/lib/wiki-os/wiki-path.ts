@@ -148,6 +148,8 @@ export const SPECIAL_TOOLS: Readonly<Record<string, string>> = {
   export: "/util/export",
   import: "/util/import",
   blocklist: "/util/blocklist",
+  wantedpages: "/util",
+  lonelypages: "/util",
 };
 
 /** The page-admin screen for `canon` (`?action=delete|protect|unprotect`; unprotecting is a protection of level "none"). */

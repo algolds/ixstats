@@ -11,6 +11,7 @@ import { useWikiAuth } from "~/lib/wiki-os/use-wiki-auth";
 import { WIKIOS_VERSION } from "~/lib/buildVersion";
 import { stripBasePath } from "~/lib/base-path";
 import { getArticleRoute, isNonArticlePath, type ArticleView } from "~/lib/wiki-os/article-route";
+import type { WikiSource } from "~/lib/wiki-os/config";
 import { ixstatesHref } from "~/lib/system/wikios-standalone";
 import { useWikiPrefetch } from "~/hooks/useWikiPrefetch";
 import {
@@ -43,6 +44,7 @@ export function WikiOSLayout({
   title,
   hideTitleHeading = false,
   readOnly,
+  wikiSource = "ixwiki",
   articleView = "read",
   children,
 }: {
@@ -50,6 +52,8 @@ export function WikiOSLayout({
   hideTitleHeading?: boolean;
   /** Another wiki's page shown in WikiOS (ruling E-l): no page tools and no edit shortcut. */
   readOnly?: boolean;
+  /** The wiki the page is on; the page's stash button saves it under this wiki. */
+  wikiSource?: WikiSource;
   /** The view of the page its path does not say (`?action=edit|history` on /wiki/<title>). */
   articleView?: ArticleView;
   children: ReactNode;
@@ -101,7 +105,8 @@ export function WikiOSLayout({
   const cleanPath = stripBasePath(pathname);
   // Another wiki's page is read-only: no tabs, and none of the article's own tools.
   const articleRoute = readOnly ? null : getArticleRoute(cleanPath, articleView);
-  const hasArticleTools = !(readOnly || isMainPage || isNonArticlePath(cleanPath));
+  const onArticlePage = !(isMainPage || isNonArticlePath(cleanPath));
+  const hasArticleTools = !readOnly && onArticlePage;
 
   const tabs = articleRoute && (
     <WikiArticleTabs title={articleRoute.title} active={articleRoute.tab} canEdit={isSignedIn} />
@@ -114,6 +119,8 @@ export function WikiOSLayout({
         isSignedIn,
         country: countryData,
         articleTools: hasArticleTools,
+        source: wikiSource,
+        stashable: onArticlePage,
       }}
     />
   );

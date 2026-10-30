@@ -12,6 +12,8 @@ import { generateRandomComposition } from "~/lib/heraldry/generator";
 import type { HeraldryComposition } from "~/lib/heraldry/types";
 import { validateComposition } from "~/lib/heraldry/validation";
 import { buildShieldScene, serializeShieldSvg } from "~/lib/heraldry/shield-scene";
+import { DIVISIONS, ORDINARIES } from "~/lib/heraldry/constants";
+import { renderDivisionPaths, renderOrdinaryPath } from "~/lib/heraldry/svg-utils";
 import "~/components/maps/vexel/renderer/ShieldRenderer";
 
 type Shield = HeraldryComposition["shield"];
@@ -71,6 +73,36 @@ describe("coats of arms", () => {
       "Azure; three eagles displayed Or",
     ],
     [
+      "barry of six",
+      arms({ division: "barry", tinctures: ["or", "azure", "or", "azure", "or", "azure"] }),
+      "Barry of six Or and Azure",
+    ],
+    [
+      "checky",
+      arms({ division: "checky", tinctures: ["argent", "gules"] }),
+      "Checky Argent and Gules",
+    ],
+    [
+      "tierced per pale",
+      arms({ division: "tierced-in-pale", tinctures: ["or", "azure", "gules"] }),
+      "Tierced per pale Or, Azure and Gules",
+    ],
+    [
+      "gyronny of eight in two tinctures",
+      arms({ division: "gyronny", tinctures: ["or", "sable"] }),
+      "Gyronny of eight Or and Sable",
+    ],
+    [
+      "a bordure and a lozenge",
+      arms({}, {
+        ordinaries: [
+          { type: "bordure", tincture: "or", lineStyle: "straight" },
+          { type: "lozenge-ordinary", tincture: "argent", lineStyle: "straight" },
+        ],
+      } as never),
+      "Azure, a bordure Or, a lozenge Argent",
+    ],
+    [
       "a motto",
       arms({}, {}, { motto: { text: "In Hoc Signo Vinces", position: "below" } } as never),
       'Azure; Motto: "In Hoc Signo Vinces" upon a scroll below',
@@ -112,6 +144,28 @@ describe("coats of arms", () => {
       generateRandomComposition({ cultureGroup: "germanic" })
     );
     expect(germanic.some((c) => c.shield.charges?.[0]?.chargeId === "eagle")).toBe(true);
+  });
+
+  it.each(DIVISIONS.filter((d) => d.value !== "plain").map((d) => d.value))(
+    "draws the %s division in more than one piece, in both of two tinctures",
+    (division) => {
+      const pieces = renderDivisionPaths(division, ["or", "azure"], "straight");
+      expect(pieces.length).toBeGreaterThan(1);
+      expect(new Set(pieces.map((p) => p.color))).toEqual(new Set(["#FFD700", "#0F47AF"]));
+    }
+  );
+
+  it.each(ORDINARIES.map((o) => o.value))("draws the %s ordinary", (type) => {
+    expect(renderOrdinaryPath(type, "heater", "straight")).toMatch(/^M [\d.]+[ ,][\d.]+ /);
+  });
+
+  it("follows the shield's own outline for a bordure, and keeps every ordinary in the scene", () => {
+    expect(renderOrdinaryPath("bordure", "round", "straight")).toContain("A 200 200 0 1 1 500 700");
+    const scene = buildShieldScene(
+      arms({}, { ordinaries: [{ type: "pall", tincture: "or", lineStyle: "straight" }] } as never)
+    );
+    expect(scene.ordinaries).toHaveLength(1);
+    expect(serializeShieldSvg(scene)).toContain('fill-rule="evenodd"');
   });
 
   it("renders a hostile custom charge into a well-formed shield, without its scripts, handlers, images or external references", () => {

@@ -46,9 +46,11 @@ function AccountsSectionInner({ initialCountryId = "", onBack }: AccountsSection
     }
   );
 
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
-    enabled: !!user?.id,
-  });
+  // The manager lists deactivated personas too, so they can be activated again.
+  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(
+    { includeInactive: true },
+    { enabled: !!user?.id }
+  );
 
   const accounts = useMemo(() => accountsData || [], [accountsData]);
 

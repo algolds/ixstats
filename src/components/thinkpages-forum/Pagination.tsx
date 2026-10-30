@@ -51,11 +51,20 @@ function Step({ label, target, disabled, hrefFor }: StepProps) {
 export function Pagination({ page, last, hrefFor, summary }: PaginationProps) {
   if (last <= 1) return null;
   const current = Math.min(Math.max(1, page), last);
-  const previous = <Step label="Previous" target={current - 1} disabled={current === 1} hrefFor={hrefFor} />;
-  const next = <Step label="Next" target={current + 1} disabled={current === last} hrefFor={hrefFor} />;
+  const previous = (
+    <Step label="Previous" target={current - 1} disabled={current === 1} hrefFor={hrefFor} />
+  );
+  const next = (
+    <Step label="Next" target={current + 1} disabled={current === last} hrefFor={hrefFor} />
+  );
   return (
-    <nav aria-label="Pagination" className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      {summary != null && <p className="text-callout text-label-secondary hidden sm:block">{summary}</p>}
+    <nav
+      aria-label="Pagination"
+      className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+    >
+      {summary != null && (
+        <p className="text-callout text-label-secondary hidden sm:block">{summary}</p>
+      )}
       <div className="hidden flex-wrap items-center gap-1 sm:flex">
         {previous}
         {pageWindow(current, last).map((entry, index) =>

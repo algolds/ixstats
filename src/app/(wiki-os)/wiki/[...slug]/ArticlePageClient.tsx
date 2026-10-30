@@ -234,7 +234,11 @@ export default function ArticlePageClient({
   }
 
   return (
-    <WikiOSLayout readOnly={!isIxWiki} articleView={mode === "reading" ? "read" : "edit"}>
+    <WikiOSLayout
+      readOnly={!isIxWiki}
+      wikiSource={wikiSource}
+      articleView={mode === "reading" ? "read" : "edit"}
+    >
       <div ref={articleRef} className="wikios-article-container min-h-[500px]">
         {mode !== "reading" ? (
           <WikiEditGate title={title} onClose={handleExitEdit}>

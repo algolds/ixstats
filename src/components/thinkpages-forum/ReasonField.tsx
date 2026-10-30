@@ -45,7 +45,5 @@ export function ReasonField({
 /** A dialog's inline error, read out when it appears. */
 export function FormError({ message }: { message: string | null }) {
   if (!message) return null;
-  return (
-    <Signal tone="destructive" title={message} />
-  );
+  return <Signal tone="destructive" title={message} />;
 }

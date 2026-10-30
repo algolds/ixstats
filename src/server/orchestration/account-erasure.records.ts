@@ -78,7 +78,7 @@ async function eraseSessionsAndSettings(tx: Tx, ids: ErasureIds): Promise<void> 
   await tx.notification.deleteMany({ where });
 }
 
-/** Connections both ways, follows by the user or their personas, bookmarks, memberships and officer posts. */
+/** Connections both ways, follows by the user or their personas, bookmarks, memberships, officer posts and founding-member credits. */
 async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): Promise<void> {
   const where = { userId: both(ids) };
   await tx.userConnection.deleteMany({ where: { OR: [where, { targetUserId: both(ids) }] } });
@@ -92,6 +92,7 @@ async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): 
   await tx.conversationParticipant.deleteMany({ where });
   await tx.thinktankMember.deleteMany({ where });
   await tx.realmOfficer.deleteMany({ where });
+  await tx.realmFounder.deleteMany({ where });
 }
 
 /**

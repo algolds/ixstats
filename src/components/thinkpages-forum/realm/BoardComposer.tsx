@@ -22,7 +22,7 @@ import { BOARD_MESSAGE_MAX, BOARD_TOO_LONG, slowModeNotice } from "~/lib/thinkpa
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
 import { cn } from "~/lib/utils/cn";
 import { BanNotice, NoticeText } from "../BanNotice";
-import { useMyPersonas, type PersonaOption } from "../composer/PersonaSelect";
+import { useMyPersonas, usePersonaChoice, type PersonaOption } from "../composer/PersonaSelect";
 import { PostingAs } from "../composer/PostingAs";
 import { useMentionSource } from "../composer/useMentionSource";
 import { BottomDock } from "../shell";
@@ -202,8 +202,8 @@ function PostingComposer({
   const [plain, setPlain] = useState("");
   // The editor's text as its last onChange reported it: the prefill is done only once the token shows up here.
   const plainRef = useRef("");
-  const [personaId, setPersonaId] = useState<string | null>(null);
-  const personas = useMyPersonas(true);
+  const { personas, lastUsedPersonaId } = useMyPersonas(true);
+  const [personaId, setPersonaId] = usePersonaChoice(lastUsedPersonaId);
   const mentions = useMentionSource();
   const slow = useSlowMode();
   useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focusEnd() }), []);

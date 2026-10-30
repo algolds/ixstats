@@ -25,7 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 import { LeagueBrandingTab } from "./settings/LeagueBrandingTab";
 import { LeagueCompetitionTab } from "./settings/LeagueCompetitionTab";
+import { LeagueTeamsTab } from "./settings/LeagueTeamsTab";
 import { LeagueAdvancedTab } from "./settings/LeagueAdvancedTab";
+
+export type LeagueSettingsTab = "branding" | "competition" | "teams" | "advanced";
 
 interface LeagueSettingsModalProps {
   league: {
@@ -51,15 +54,19 @@ interface LeagueSettingsModalProps {
     teams?: Array<{
       id: string;
       name: string;
+      shortName?: string | null;
       color: string;
+      nationId?: string | null;
+      wikiSlug?: string | null;
       logo?: string | null;
     }>;
   };
   open: boolean;
+  /** The tab the modal opens on each time it opens. */
+  initialTab?: LeagueSettingsTab;
   onOpenChange: (open: boolean) => void;
   onSaved?: () => void;
   onOpenRoster?: (teamId: string) => void;
-  onEditTeam?: (teamId: string) => void;
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -68,10 +75,10 @@ const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
 export function LeagueSettingsModal({
   league,
   open,
+  initialTab = "branding",
   onOpenChange,
   onSaved,
   onOpenRoster,
-  onEditTeam,
 }: LeagueSettingsModalProps) {
   const notify = useNotify();
   const utils = api.useUtils();
@@ -252,7 +259,7 @@ export function LeagueSettingsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="text-body flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -263,10 +270,11 @@ export function LeagueSettingsModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="branding" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue={initialTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="branding">Branding</TabsTrigger>
             <TabsTrigger value="competition">Competition</TabsTrigger>
+            <TabsTrigger value="teams">Teams</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
 
@@ -308,6 +316,18 @@ export function LeagueSettingsModal({
             />
           </TabsContent>
 
+          {/* Kept mounted so edits in the table survive a visit to another tab. */}
+          <TabsContent value="teams" forceMount className="data-[state=inactive]:hidden">
+            <LeagueTeamsTab
+              leagueId={league.id}
+              teams={league.teams ?? []}
+              onOpenRoster={(teamId) => {
+                onOpenRoster?.(teamId);
+                onOpenChange(false);
+              }}
+            />
+          </TabsContent>
+
           <TabsContent value="advanced">
             <LeagueAdvancedTab
               league={league}
@@ -320,9 +340,6 @@ export function LeagueSettingsModal({
               setPlayoffFormat={setPlayoffFormat}
               seed={seed}
               setSeed={setSeed}
-              onEditTeam={onEditTeam}
-              onOpenRoster={onOpenRoster}
-              onOpenChange={onOpenChange}
             />
           </TabsContent>
         </Tabs>

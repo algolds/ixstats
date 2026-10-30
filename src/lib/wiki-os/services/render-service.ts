@@ -135,10 +135,10 @@ function reportsAnything(metadata: RenderMetadata): boolean {
  * it is.
  */
 async function persistRenderMetadata(
-  articleId: string,
-  source: string,
+  article: { id: string; title: string; source: string; status: string },
   metadata: RenderMetadata
 ): Promise<void> {
+  const { id: articleId, source } = article;
   const props = Object.fromEntries(
     KEPT_PAGE_PROPS.flatMap((name) => {
       const value = metadata.properties[name];
@@ -158,6 +158,8 @@ async function persistRenderMetadata(
       if (metadata.categories) {
         await CategoryService.replaceArticleCategories(tx, articleId, metadata.categories);
       }
+      // A page that came into being (created, imported, restored, moved here) turns the red links to it blue.
+      if (article.status === "PUBLISHED") await LinkGraphService.repointRedLinks(tx, article);
       await tx.wikiArticle.update({
         where: { id: articleId },
         data: {
@@ -186,6 +188,7 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
       select: {
         title: true,
         source: true,
+        status: true,
         wikitext: true,
         contentHtml: true,
         // tells a page an edit blanked from one that only has stored HTML (see `isBlanked`)
@@ -218,11 +221,12 @@ export async function renderArticle(articleId: string): Promise<RenderResult> {
     });
     if (stored.count > 0) {
       if (rendered.metadata && reportsAnything(rendered.metadata)) {
-        await persistRenderMetadata(articleId, article.source, rendered.metadata).catch((error) =>
-          console.warn(
-            `[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`,
-            error
-          )
+        await persistRenderMetadata({ ...article, id: articleId }, rendered.metadata).catch(
+          (error) =>
+            console.warn(
+              `[WikiOS:render] Storing what MediaWiki reported about "${article.title}" failed:`,
+              error
+            )
         );
       }
       return { ok: true };

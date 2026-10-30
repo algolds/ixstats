@@ -12,7 +12,6 @@ import {
 import { STAFF_FOUNDER_ID, type HappeningKind, type RealmPower } from "~/lib/realms/realm-region";
 import { parseRealmLinks } from "~/lib/realms/realm-community";
 import { sanitizeRealmContent, stripHtml } from "~/lib/utils/sanitize-html";
-import { resolveDisplayNames } from "~/server/shared/display-names";
 import { embassyPartners } from "~/server/shared/realm-board";
 import {
   canModerateRealm,
@@ -24,6 +23,7 @@ import {
   type RealmActor,
 } from "./realms.access";
 import { forumPreview } from "./realms.forum-preview";
+import { listFounders, staffNames } from "./realms.people";
 import { realmFounderTitle } from "./realms.settings";
 import { formatRealmDate } from "~/lib/realms/realm-clock";
 import { readerFromSettings, storedRealmClock } from "~/server/shared/realm-time";
@@ -103,54 +103,10 @@ type OverviewDb = Pick<
   | "pollVote"
   | "realmClaim"
   | "realmOfficer"
+  | "realmFounder"
   | "activityFeed"
   | "userConnection"
 >;
-
-/**
- * Officers (and the founder) shown with the name of their nation in this realm, else their display name, plus
- * their passport handle (null until claimed) so realm pages link them to `/@handle`.
- */
-async function staffNames(db: OverviewDb, realmId: string, clerkUserIds: string[]) {
-  if (clerkUserIds.length === 0) return new Map<string, StaffPerson>();
-  const [nations, names, users] = await Promise.all([
-    db.country.findMany({
-      where: { realmId, owner: { clerkUserId: { in: clerkUserIds } } },
-      orderBy: { name: "asc" },
-      select: {
-        name: true,
-        slug: true,
-        id: true,
-        flag: true,
-        owner: { select: { clerkUserId: true } },
-      },
-    }),
-    resolveDisplayNames(db, clerkUserIds),
-    db.user.findMany({
-      where: { clerkUserId: { in: clerkUserIds } },
-      select: { clerkUserId: true, handle: true },
-    }),
-  ]);
-  const handles = new Map(users.map((u) => [u.clerkUserId, u.handle]));
-  const people = new Map<string, StaffPerson>();
-  for (const id of clerkUserIds) {
-    const nation = nations.find((n) => n.owner?.clerkUserId === id) ?? null;
-    people.set(id, {
-      name: nation?.name ?? names.get(id) ?? "Unknown user",
-      handle: handles.get(id) ?? null,
-      nation: nation
-        ? { id: nation.id, name: nation.name, slug: nation.slug, flag: nation.flag }
-        : null,
-    });
-  }
-  return people;
-}
-
-interface StaffPerson {
-  name: string;
-  handle: string | null;
-  nation: { id: string; name: string; slug: string | null; flag: string | null } | null;
-}
 
 /** The realm's open poll (one at a time) with its counts and the viewer's ballot. */
 export async function realmPoll(
@@ -252,6 +208,7 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     ...(founderIsStaff ? [] : [realm.ownerId]),
     ...realm.officers.map((o) => o.userId),
   ]);
+  const founders = await listFounders(db, realm.id);
   const powers = realmPowers(viewer, realm, realm.officers);
   const partnerIds = [...partners.keys()];
   const partnerLooks =
@@ -282,6 +239,8 @@ export async function getRealmOverview(db: OverviewDb, slug: string, viewer: Rea
     founder: founderIsStaff ? null : (people.get(realm.ownerId) ?? null),
     /** Set by site staff; shown instead of the founder. */
     founderTitle: realmFounderTitle(realm.settings),
+    /** Founding members credited by site staff, in order; when any, the header lists them as "Founders". */
+    founders: founders.map(({ name, link }) => ({ name, link })),
     stats: {
       nations: stats._count._all,
       claimedNations: claimed,
@@ -574,6 +533,8 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
     staff.id,
     officers.map((o) => o.userId)
   );
+  // Only site staff set the founding members, so only they need the list to edit.
+  const founders = can("appearance") && isSiteAdmin(actor) ? await listFounders(db, staff.id) : [];
   return {
     realm: { id: staff.id, slug: staff.slug, name: staff.name, status: staff.status },
     powers,
@@ -594,6 +555,7 @@ export async function getRealmManage(db: OverviewDb, slug: string, actor: RealmA
           createdYear: realm.createdAt.getUTCFullYear(),
           // Only site staff set the founder line and the founding year; the founder and officers cannot.
           canSetFounding: isSiteAdmin(actor),
+          founders: founders.map(({ userId, name }) => ({ userId, name })),
         }
       : null,
     factbook: can("appearance")

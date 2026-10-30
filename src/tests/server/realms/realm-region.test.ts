@@ -268,10 +268,12 @@ describe("leaving a realm", () => {
       ownerUserId: `db_${OFFICER}`,
     });
     db.country.count.mockResolvedValue(0);
+    db.country.update.mockResolvedValue({ realmId: "eurth" });
     await callerAs(OFFICER, db).region.abandonNation({ countryId: "c5", confirmName: " aurelia " });
     expect(db.country.update).toHaveBeenCalledWith({
       where: { id: "c5" },
       data: { ownerUserId: null, ownedSince: null },
+      select: { realmId: true },
     });
     expect(db.user.updateMany).toHaveBeenCalledWith({
       where: { countryId: "c5" },
@@ -294,6 +296,7 @@ describe("leaving a realm", () => {
       flag: "/flags/eurth--aurelia.png",
       coatOfArms: null,
     });
+    db.country.update.mockResolvedValue({ realmId: "eurth" });
     await callerAs(OFFICER, db).region.abandonNation({ countryId: "c5", confirmName: "Aurelia" });
     expect(db.nationMaterialHold.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -826,6 +829,7 @@ describe("inactivity runs", () => {
       expect(db.country.update).toHaveBeenCalledWith({
         where: { id: "gone" },
         data: { ownerUserId: null, ownedSince: null },
+        select: { realmId: true },
       });
       expect(deps.notify).toHaveBeenCalledWith(
         expect.objectContaining({

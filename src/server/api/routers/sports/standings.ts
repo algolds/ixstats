@@ -8,6 +8,7 @@
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { getSeasonStandings } from "~/server/modules/sports/standings";
 
 // ─── Router ───────────────────────────────────────────────────────────────────
 
@@ -18,24 +19,7 @@ export const sportsStandingsRouter = createTRPCRouter({
     .input(z.object({ seasonId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const standings = await ctx.db.sportStanding.findMany({
-          where: { seasonId: input.seasonId },
-          include: {
-            team: {
-              select: {
-                id: true,
-                name: true,
-                shortName: true,
-                color: true,
-                logo: true,
-                wikiSlug: true,
-              },
-            },
-          },
-          orderBy: [{ points: "desc" }, { pointsFor: "desc" }, { pointsAgainst: "asc" }],
-        });
-
-        return standings.map((s, i) => ({ ...s, position: i + 1 }));
+        return await getSeasonStandings(ctx.db, input.seasonId);
       } catch (_error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

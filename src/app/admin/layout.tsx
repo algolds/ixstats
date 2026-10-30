@@ -8,6 +8,7 @@ import { SystemStatusStrip } from "./_components/SystemStatusWidget";
 import { AdminNavigationProvider } from "./_components/AdminNavigationContext";
 import { SignInButton, useUser, useAuth } from "~/context/auth-context";
 import { isSystemOwner } from "~/lib/auth";
+import { isAdminRole } from "~/lib/auth/admin-rule";
 import { Button } from "~/components/ui/button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -80,14 +81,8 @@ function AdminLayoutContent({ children }: AdminLayoutProps) {
     );
   }
 
-  const allowedRoles = new Set(["admin", "owner", "staff"]);
-  const isSystemOwnerUser = isSystemOwner(user.id);
-  const hasAdminRole =
-    (typeof user?.publicMetadata?.role === "string" &&
-      allowedRoles.has(user.publicMetadata.role)) ||
-    (typeof permissionUser?.role?.name === "string" && allowedRoles.has(permissionUser.role.name));
-
-  if (!isSystemOwnerUser && !hasAdminRole) {
+  // The one admin rule, on the DB role (the proxy and adminProcedure apply it too); Clerk metadata is not read.
+  if (!isSystemOwner(user.id) && !isAdminRole(permissionUser?.role)) {
     return <AccessDeniedScreen />;
   }
 

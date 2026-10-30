@@ -20,6 +20,10 @@ jest.mock("~/lib/cache", () => ({
 }));
 
 jest.mock("~/lib/auth", () => ({ isSystemOwner: () => false }));
+jest.mock("~/server/modules/realms/realms.map-face-cache", () => ({
+  ...jest.requireActual("~/server/modules/realms/realms.map-face-cache"),
+  invalidateRealmMapFace: jest.fn(),
+}));
 
 import { createCallerFactory } from "~/server/api/trpc";
 import { realmMapRouter } from "~/server/api/routers/realms/map";
@@ -28,6 +32,7 @@ import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { invalidateCache } from "~/lib/cache";
+import { invalidateRealmMapFace } from "~/server/modules/realms/realms.map-face-cache";
 import { clearTrpcMemoryCache } from "~/lib/cache/trpc-cache";
 import { atlasStudioRouter } from "~/server/api/routers/atlas/studio";
 import { admin, fakeDb } from "~/tests/server/maps/map-import-fakes";
@@ -171,6 +176,8 @@ describe("realms.map.setSlotClaimable", () => {
       data: { claimable: false },
     });
     expect(db.country!.update).not.toHaveBeenCalled();
+    // The realm's map face and hero map colour the slot by whether it can be claimed.
+    expect(invalidateRealmMapFace).toHaveBeenCalledWith(EURTH);
   });
   it("refuses to reserve a slot a player holds: it is no scenery", async () => {
     const db = realmDb();

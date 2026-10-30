@@ -8,6 +8,7 @@ import { Copy, Check, ArrowUpRight, ChatBubble as MessageSquare, Clock } from "i
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 
 import { useNotify } from "~/hooks/useNotify";
+import { stashItemHref } from "~/lib/wiki-os/stash-content-type";
 import type { StashedQuoteItem } from "./types";
 import { Button } from "~/components/ui/button";
 
@@ -55,7 +56,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
             {/* Top Row: Parent Article Link + Copy/Jump Actions */}
             <div className="flex items-center justify-between gap-2 pl-2">
               <Link
-                href={`/wiki/${q.pageSlug}`}
+                href={stashItemHref(q.pageSlug, q.source)}
                 className="text-caption text-label hover:text-tint flex max-w-sm items-center gap-2 truncate font-semibold transition-colors"
               >
                 <WikiOSLogomark className="text-tint h-3.5 w-3.5 shrink-0" />
@@ -84,7 +85,7 @@ export function StashQuotesList({ quotes }: StashQuotesListProps) {
                 </Button>
 
                 <Link
-                  href={`/wiki/${q.pageSlug}`}
+                  href={stashItemHref(q.pageSlug, q.source)}
                   className="rounded-row border-separator bg-fill-4 text-label-secondary hover:bg-fill-4 hover:text-label flex h-7 w-7 items-center justify-center border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
                   title="Open article"
                 >

@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (79 Routers, 1088 Endpoints)
+### Live tRPC API Inventory (79 Routers, 1093 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -74,11 +74,11 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.resources`** | 1 | 0 | 0 | **1** | `src/server/api/routers/resources.ts` |
 | **`api.security`** | 15 | 28 | 0 | **43** | `src/server/api/routers/security/index.ts` |
 | **`api.smallArmsEquipment`** | 2 | 0 | 0 | **2** | `src/server/api/routers/smallArmsEquipment/index.ts` |
-| **`api.sports`** | 30 | 33 | 0 | **63** | `src/server/api/routers/sports/index.ts` |
+| **`api.sports`** | 31 | 35 | 0 | **66** | `src/server/api/routers/sports/index.ts` |
 | **`api.system`** | 1 | 0 | 0 | **1** | `src/server/api/routers/system.ts` |
 | **`api.systemValidation`** | 6 | 0 | 0 | **6** | `src/server/api/routers/system-validation.ts` |
 | **`api.taxSystem`** | 1 | 4 | 0 | **5** | `src/server/api/routers/taxSystem/index.ts` |
-| **`api.thinkpages`** | 20 | 28 | 0 | **48** | `src/server/api/routers/thinkpages/index.ts` |
+| **`api.thinkpages`** | 20 | 29 | 0 | **49** | `src/server/api/routers/thinkpages/index.ts` |
 | **`api.thinkpagesForum`** | 21 | 21 | 0 | **42** | `src/server/api/routers/thinkpagesForum/index.ts` |
 | **`api.thinkpagesForumMod`** | 8 | 11 | 0 | **19** | `src/server/api/routers/thinkpagesForum/mod.ts` |
 | **`api.trading`** | 7 | 4 | 0 | **11** | `src/server/api/routers/trading/index.ts` |
@@ -87,8 +87,8 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.users`** | 12 | 14 | 0 | **26** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 74 | 42 | 0 | **118** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **508** | **566** | **0** | **1088** | **79 registered namespaces** |
+| **`api.wikios`** | 75 | 42 | 0 | **119** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **510** | **569** | **0** | **1093** | **79 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.

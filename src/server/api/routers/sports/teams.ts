@@ -10,7 +10,18 @@ import { TRPCError } from "@trpc/server";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { isSystemOwner } from "~/lib/auth";
 import { countStorePurchases } from "~/lib/vault/store-purchases";
-import { assertSportsEconomyOpen } from "~/server/api/routers/sports/_shared";
+import { assertSportsEconomyOpen, MAX_LEAGUE_TEAMS } from "~/server/api/routers/sports/_shared";
+import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
+
+/** One team's changes in a bulk edit: `updateTeam`'s fields plus the short name, without the images. */
+const TeamPatch = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(200).optional(),
+  shortName: z.string().max(20).nullable().optional(),
+  color: z.string().optional(),
+  nationId: z.string().nullable().optional(),
+  wikiSlug: z.string().max(500).nullable().optional(),
+});
 
 export const sportsTeamsRouter = createTRPCRouter({
   getTeam: publicProcedure.input(z.object({ id: z.string() })).query(async ({ ctx, input }) => {
@@ -54,7 +65,7 @@ export const sportsTeamsRouter = createTRPCRouter({
         nationId: z.string().optional(),
         logo: z.string().nullable().optional(),
         coverImage: z.string().nullable().optional(),
-        wikiSlug: z.string().nullable().optional(),
+        wikiSlug: z.string().max(500).nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -85,6 +96,48 @@ export const sportsTeamsRouter = createTRPCRouter({
           message: "Failed to update team",
         });
       }
+    }),
+
+  /** The Teams tab's one Save: every patched team is in the league, or nothing is written. */
+  updateTeams: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        leagueId: z.string(),
+        teams: z.array(TeamPatch).min(1).max(MAX_LEAGUE_TEAMS),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const league = await ctx.db.sportLeague.findUnique({
+        where: { id: input.leagueId },
+        select: { createdByUserId: true },
+      });
+      if (!league) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
+      }
+      // A team owner may edit only their own team, so a bulk edit is the league creator's or an admin's.
+      assertCanManageLeague(ctx, league);
+
+      const ids = input.teams.map((team) => team.id);
+      if (new Set(ids).size !== ids.length) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "A team is listed twice" });
+      }
+
+      return ctx.db.$transaction(async (tx) => {
+        const inLeague = await tx.sportTeam.findMany({
+          where: { id: { in: ids }, leagueId: input.leagueId },
+          select: { id: true },
+        });
+        if (inLeague.length !== ids.length) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Every team must belong to this league",
+          });
+        }
+        for (const { id, ...data } of input.teams) {
+          await tx.sportTeam.update({ where: { id }, data });
+        }
+        return { updated: input.teams.length };
+      });
     }),
 
   claimTeam: rateLimitedMutationProcedure

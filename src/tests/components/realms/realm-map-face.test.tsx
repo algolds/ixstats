@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { RealmMapFace } from "~/components/realms/RealmMapFace";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
+import { NPC_FILL } from "~/lib/realms/hero-map";
 
 const mockUseQuery = jest.fn();
 
@@ -30,7 +31,8 @@ const face = {
   land: "M0 0L10 0L10 10Z",
   open: "M20 20L30 20L30 30Z",
   claimed: "M40 40L50 40L50 50Z",
-  other: "",
+  npc: "M60 60L70 60L70 70Z",
+  none: "",
 };
 
 describe("RealmMapFace", () => {
@@ -51,16 +53,19 @@ describe("RealmMapFace", () => {
     );
   });
 
-  it("draws open, claimed and land paths from the face", () => {
+  it("draws open, claimed, NPC and land paths from the face", () => {
     mockUseQuery.mockReturnValue({ data: face, isLoading: false });
     const { container } = render(<RealmMapFace realm={realm} bannerUrl={null} />);
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("viewBox")).toBe(face.viewBox);
     expect(svg?.getAttribute("aria-hidden")).toBe("true");
-    for (const status of ["open", "claimed", "land"]) {
+    for (const status of ["open", "claimed", "npc", "land"]) {
       expect(container.querySelectorAll(`path[data-status="${status}"]`)).toHaveLength(1);
     }
-    expect(container.querySelector('path[data-status="other"]')).toBeNull();
+    const npc = container.querySelector<SVGPathElement>('path[data-status="npc"]');
+    expect(npc?.getAttribute("d")).toBe(face.npc);
+    expect(npc?.style.fill).toBe(NPC_FILL);
+    expect(container.querySelector('path[data-status="none"]')).toBeNull();
   });
 
   it("falls back to the crest when the face is null", () => {

@@ -1,13 +1,14 @@
 /**
  * Stash content types.
  *
- * A stash holds one item per (content type, title): the Onoma name "Rome" and the article "Rome"
- * live side by side (`StashItem` is unique on `[stashId, contentType, pageTitle]`). Callers that
+ * A stash holds one item per (content type, wiki, title): the Onoma name "Rome" and the article "Rome"
+ * live side by side, as do IxWiki's and IIWiki's "Rome" (`StashItem` is unique on
+ * `[stashId, contentType, source, pageTitle]`). Callers that
  * only know a title (the article page's stash button, Margin annotations) mean the type the title's
  * prefix implies — an ordinary title is a wiki article.
  */
 
-import { isMediaWikiUrl } from "~/lib/wiki-os/config";
+import { isMediaWikiUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 
 export type StashContentType = "wiki" | "image" | "forum_thread";
@@ -75,4 +76,10 @@ export function isStashedArticle(item: {
     item.contentType === "wiki" ||
     (!item.pageTitle.startsWith("commons:") && !isForumThreadTitle(item.pageTitle))
   );
+}
+
+/** Where a stashed page opens: `/wiki/<slug>`, with `?source=` for a page of a sister wiki. */
+export function stashItemHref(pageSlug: string, source?: WikiSource | null): string {
+  const base = `/wiki/${pageSlug}`;
+  return source && source !== "ixwiki" ? `${base}?source=${source}` : base;
 }

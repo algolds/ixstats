@@ -318,9 +318,10 @@ export const onomaNameBankRouter = createTRPCRouter({
         const contentType = input.type === "dictionary" ? "dictionary" : "name";
         item = await db.stashItem.upsert({
           where: {
-            stashId_contentType_pageTitle: {
+            stashId_contentType_source_pageTitle: {
               stashId: targetStashId,
               contentType,
+              source: "ixwiki",
               pageTitle,
             },
           },
@@ -432,9 +433,10 @@ export const onomaNameBankRouter = createTRPCRouter({
 
       const item = await db.stashItem.upsert({
         where: {
-          stashId_contentType_pageTitle: {
+          stashId_contentType_source_pageTitle: {
             stashId: defaultStash.id,
             contentType: "dictionary",
+            source: "ixwiki",
             pageTitle: title,
           },
         },

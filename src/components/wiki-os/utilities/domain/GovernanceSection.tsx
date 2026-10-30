@@ -49,6 +49,8 @@ const TOOLS: Omit<InspectorTool, "badge">[] = [
   },
 ];
 
+export const GOVERNANCE_TOOL_COUNT = TOOLS.length;
+
 export function GovernanceSection({ searchFilter }: { searchFilter: string }) {
   const [restoringSlug, setRestoringSlug] = useState<string | null>(null);
   const utils = api.useUtils();

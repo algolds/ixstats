@@ -9,6 +9,7 @@ import { rateLimiter } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 import { isSystemOwner } from "~/lib/auth";
 import { hasPremiumTier, isBetaTesterRole } from "~/lib/auth/premium";
+import { isAdminRole } from "~/lib/auth/admin-rule";
 import type { Country, PrismaClient } from "@prisma/client";
 import { getRoleName, isPrivilegedCountryWriter } from "~/server/shared/country-authorization";
 import { realmMapAccess } from "~/server/modules/realms/realms.map-access";
@@ -429,12 +430,9 @@ export const adminMiddleware = t.middleware(async ({ ctx, next }) => {
     );
   }
 
-  const adminRoles = ["owner", "admin", "staff"];
-  const roleLevel = user.role?.level ?? 999;
-  const roleName = user.role?.name || "NO_ROLE";
-  const isAdmin = adminRoles.includes(roleName) || roleLevel <= 20;
-
-  if (!isAdmin) {
+  if (!isAdminRole(user.role)) {
+    const roleLevel = user.role.level;
+    const roleName = user.role.name;
     console.warn(
       `[ADMIN_ACCESS_DENIED] User ${ctx.auth.userId} (role: ${roleName}, level: ${roleLevel}) attempted admin access`
     );

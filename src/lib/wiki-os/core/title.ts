@@ -130,7 +130,8 @@ export interface CanonicalizeOptions {
 /**
  * The canonical form of a page title, or null when MediaWiki would refuse it (empty, control
  * characters, no usable page name after the namespace, illegal characters, a percent-escape,
- * relative path segments, "~~~", over 255 bytes).
+ * relative path segments, "~~~", over 255 bytes). Only the title is checked: `fragment` is passed through
+ * unvalidated and must never be interpolated into wikitext.
  */
 export function canonicalizeTitle(
   raw: string,

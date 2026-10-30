@@ -530,6 +530,7 @@ model Realm {
   boardVisitorsAllowed Boolean @default(true) // visitors (members of other realms) may post on the board
   boardSlowModeSeconds Int     @default(0)    // members post at most once per this many seconds; 0 = off
   officers          RealmOfficer[]
+  founders          RealmFounder[]
   embassiesProposed RealmEmbassy[]   @relation("EmbassyFrom")
   embassiesReceived RealmEmbassy[]   @relation("EmbassyTo")
   boardBans         RealmBoardBan[]
@@ -752,6 +753,23 @@ model RealmOfficer {
   @@unique([realmId, userId])
   @@index([userId])
   @@map("realm_officers")
+}
+
+/// A founding member credited in the realm header. Set by site staff; carries no powers (the founder is `Realm.ownerId`,
+/// the officers hold the grants), so nothing in realms.access reads this.
+model RealmFounder {
+  id        String   @id @default(cuid())
+  realmId   String
+  realm     Realm    @relation(fields: [realmId], references: [id], onDelete: Cascade)
+  userId    String   // Clerk userId
+  /// Position in the header, 0 first.
+  order     Int
+  addedBy   String   // Clerk userId of the staff member who added them
+  createdAt DateTime @default(now())
+
+  @@unique([realmId, userId])
+  @@index([userId])
+  @@map("realm_founders")
 }
 
 /// An embassy between two realms: one proposes, the other accepts. Board posts flagged for embassies show
