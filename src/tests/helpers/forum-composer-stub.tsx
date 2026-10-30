@@ -41,7 +41,7 @@ export function composerStub() {
   return {
     ...constants,
     ...quote,
-    useMyPersonas: () => [],
+    useMyPersonas: () => ({ personas: [], lastUsedPersonaId: null }),
     CanvasComposer: ({
       mode,
       initialWikitext,

@@ -99,7 +99,6 @@
   "src/components/sports/league/LeagueSettingsModal.tsx": 18,
   "src/components/sports/league/settings/LeagueAdvancedTab.tsx": 7,
   "src/components/sports/league/TeamSettingsModal.tsx": 10,
-  "src/components/thinkpages-forum/ForumComposer.tsx": 6,
   "src/components/thinkpages/composer/useGlassCanvasComposer.ts": 15,
   "src/components/thinkpages/GifPicker.tsx": 6,
   "src/components/thinkpages/post/useThinkpagesPost.ts": 12,

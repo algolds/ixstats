@@ -8,9 +8,11 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+import { ForumAvatar } from "../ForumAvatar";
 import type { PersonaOption } from "./PersonaSelect";
 
 const SELF = "self";
+const SELF_NAME = "Yourself";
 
 interface PostingAsProps {
   personas: readonly PersonaOption[];
@@ -21,20 +23,27 @@ interface PostingAsProps {
 }
 
 /**
- * Who the next post is from, as the Home composer says it: "Posting as yourself" or "Posting as @username", then a
- * Switch link that opens the choice. Nothing for a member without personas (there is nobody to switch to).
+ * Who the next post is from, said where it cannot be missed: "Posting as", a chip with the chosen identity's avatar
+ * and name ("Yourself" or the persona), then a Switch link that opens the choice. Nothing for a member without
+ * personas (there is nobody to switch to).
  */
 export function PostingAs({ personas, value, onChange, disabled }: PostingAsProps) {
   if (personas.length === 0) return null;
   const persona = personas.find((p) => p.id === value);
   return (
-    <div className="text-footnote flex items-center gap-1.5">
-      <span className="text-label-secondary">Posting as</span>
-      <span className="text-label font-medium">
-        {persona ? `@${persona.username}` : "yourself"}
-      </span>
-      <span aria-hidden className="text-label-tertiary">
-        ·
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-subhead text-label-secondary">Posting as</span>
+      <span
+        data-slot="posting-as-chip"
+        className="border-separator bg-card flex min-w-0 items-center gap-1.5 rounded-full border py-0.5 pr-3 pl-0.5"
+      >
+        <ForumAvatar name={persona?.displayName ?? SELF_NAME} size="xs" />
+        <span className="text-subhead text-label truncate font-medium">
+          {persona?.displayName ?? SELF_NAME}
+        </span>
+        {persona ? (
+          <span className="text-footnote text-label-secondary truncate">{`@${persona.username}`}</span>
+        ) : null}
       </span>
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>

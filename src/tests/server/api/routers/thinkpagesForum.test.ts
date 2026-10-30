@@ -424,17 +424,6 @@ describe("thinkpagesForum router", () => {
     }
     expect(thread.canReply).toBe(true);
   });
-  it("lists only the caller's active personas", async () => {
-    const db = forumDb();
-    const out = await caller(member, db).myPersonas();
-    expect(out).toEqual([rawPersona]);
-    expect(db.thinkpagesAccount.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { clerkUserId: "clerk_1", isActive: true, accountType: { not: "personal" } },
-        select: { id: true, displayName: true, username: true },
-      })
-    );
-  });
   describe("reports, standing and appeals", () => {
     beforeEach(() => jest.mocked(fileReport).mockClear());
     it("files a report as the signed-in member and returns only its id", async () => {

@@ -11,7 +11,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import type { GlassPlateEditorRef } from "~/components/shared/editor";
 import { getBasePath } from "~/lib/base-path";
 import { hasImageSrc } from "~/lib/thinkpages-forum/html-urls";
-import { PersonaSelect, useMyPersonas } from "./composer/PersonaSelect";
+import { PersonaSelect, useMyPersonas, usePersonaChoice } from "./composer/PersonaSelect";
 import { useMentionSource } from "./composer/useMentionSource";
 
 const GlassPlateEditor = dynamic(
@@ -53,10 +53,10 @@ export function ForumComposer({
   // Only gates Save until the editor reports its own plain text.
   const [plain, setPlain] = useState(() => initialHtml.replace(/<[^>]*>/g, ""));
   const [title, setTitle] = useState("");
-  const [personaId, setPersonaId] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const personas = useMyPersonas(icAllowed);
+  const { personas, lastUsedPersonaId } = useMyPersonas(icAllowed);
+  const [personaId, setPersonaId] = usePersonaChoice(lastUsedPersonaId);
   const mentions = useMentionSource();
 
   const focusEditor = useCallback((event: MouseEvent<HTMLDivElement>) => {

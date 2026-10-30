@@ -100,10 +100,21 @@ jest.mock("~/components/action-links", () => ({
   ),
 }));
 jest.mock("~/trpc/react", () => {
-  const state = { personas: [{ id: "ps1", displayName: "Aria", username: "aria" }] };
+  const state: { personas: object[]; lastUsedPersonaId: string | null } = {
+    personas: [{ id: "ps1", displayName: "Aria", username: "aria" }],
+    lastUsedPersonaId: null,
+  };
   return {
     state,
-    api: { thinkpagesForum: { myPersonas: { useQuery: () => ({ data: state.personas }) } } },
+    api: {
+      thinkpagesForum: {
+        myPersonas: {
+          useQuery: () => ({
+            data: { personas: state.personas, lastUsedPersonaId: state.lastUsedPersonaId },
+          }),
+        },
+      },
+    },
   };
 });
 jest.mock("next/navigation", () => ({
@@ -139,7 +150,10 @@ jest.mock("~/components/ui/dropdown-menu", () => {
 });
 
 const trpc = jest.requireMock<{
-  state: { personas: Array<{ id: string; displayName: string; username: string }> };
+  state: {
+    personas: Array<{ id: string; displayName: string; username: string }>;
+    lastUsedPersonaId: string | null;
+  };
 }>("~/trpc/react");
 const PERSONAS = [{ id: "ps1", displayName: "Aria", username: "aria" }];
 
@@ -181,6 +195,7 @@ beforeEach(() => {
   echo.defer = false;
   echo.normalise = (text) => text;
   trpc.state.personas = PERSONAS;
+  trpc.state.lastUsedPersonaId = null;
 });
 
 describe("BoardComposer on a phone", () => {
@@ -221,6 +236,41 @@ describe("BoardComposer", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Nope");
     expect(editorClear).not.toHaveBeenCalled();
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("BoardComposer posting as", () => {
+  it("starts as the persona the member last posted as and shows it in the chip", async () => {
+    trpc.state.lastUsedPersonaId = "ps1";
+    const { onSubmit } = renderComposer();
+    expect(screen.getByText("Posting as")).toBeInTheDocument();
+    expect(screen.getByText("Aria")).toBeInTheDocument();
+    type("hello");
+    await act(async () => {
+      fireEvent.click(post());
+    });
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ personaId: "ps1" }));
+  });
+  it("keeps a deliberate switch to yourself instead of going back to the last persona", async () => {
+    trpc.state.lastUsedPersonaId = "ps1";
+    const { onSubmit } = renderComposer();
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Yourself" }));
+    expect(
+      screen.getByText("Yourself", { selector: "[data-slot=posting-as-chip] *" })
+    ).toBeInTheDocument();
+    type("hello");
+    await act(async () => {
+      fireEvent.click(post());
+    });
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ personaId: null }));
+  });
+  it("starts as yourself without a last used persona", async () => {
+    const { onSubmit } = renderComposer();
+    type("hello");
+    await act(async () => {
+      fireEvent.click(post());
+    });
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ personaId: null }));
   });
 });
 
