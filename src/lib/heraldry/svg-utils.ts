@@ -1,5 +1,6 @@
-import type { ShieldShape, Division, OrdinaryType, Tincture } from "./types";
+import type { ShieldShape, Division, OrdinaryType, Tincture, LineStyle } from "./types";
 import { DIVISION_SECTIONS_COUNT, TINCTURE_HEX } from "./constants";
+import { partitionEdge, pointText, round2, styledEdge, type Point } from "./line-styles";
 
 export function getTinctureColor(tincture: Tincture): string {
   return TINCTURE_HEX[tincture] ?? "#FFFFFF";
@@ -24,7 +25,7 @@ export function renderShieldOutline(shape: ShieldShape): string {
 }
 
 type Rect = { x: number; y: number; width: number; height: number };
-type PieceShape = { path: string } | { rect: Rect };
+type PieceShape = { points: Point[] } | { rect: Rect };
 /** A division section and the tincture indices it takes its colour from (first one present wins). */
 type Piece = [shape: PieceShape, ...colorIndices: number[]];
 
@@ -32,18 +33,31 @@ const rect = (x: number, y: number, width: number, height: number): PieceShape =
   rect: { x, y, width, height },
 });
 
-type Point = readonly [x: number, y: number];
+/**
+ * A closed piece through the given points. Its partition lines are drawn in the field's line style
+ * when it is rendered (see `loopPath`). Overflow past the shield is clipped.
+ */
+const polygon = (points: Point[]): PieceShape => ({ points });
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
+/** True when the edge lies along (or past) one side of the shield box, where the shield clip trims it. */
+const onBoxSide = ([px, py]: Point, [qx, qy]: Point) =>
+  (px <= 250 && qx <= 250) ||
+  (px >= 750 && qx >= 750) ||
+  (py <= 250 && qy <= 250) ||
+  (py >= 750 && qy >= 750);
+
+type Edge = (from: Point, to: Point) => string;
 
 /**
- * A closed piece through the given points. Every partition line of the patterned divisions is drawn
- * here as a straight `L` segment, so a line style (engrailed, wavy, ...) can later replace that
- * segment with a patterned edge between the same two points. Overflow past the shield is clipped.
+ * The closed path through `points`, each edge drawn by `edge` (a line style), except the edges
+ * along the shield box: those are the shield's own edge, not a line of partition, and stay straight.
  */
-function polygon(points: Point[]): PieceShape {
-  const [first, ...rest] = points.map(([x, y]) => `${round2(x)},${round2(y)}`);
-  return { path: `M ${first} ${rest.map((p) => `L ${p}`).join(" ")} Z` };
+function loopPath(points: Point[], edge: Edge): string {
+  const sides = points.map((p, i) => {
+    const q = points[(i + 1) % points.length]!;
+    return onBoxSide(p, q) ? `L ${pointText(q)}` : edge(p, q);
+  });
+  return `M ${pointText(points[0]!)} ${sides.join(" ")} Z`;
 }
 
 /** The rectangle from (x0,y0) to (x1,y1) as a polygon, so its edges can take a line style. */
@@ -137,36 +151,85 @@ const lozenges = (): Piece[] => {
 const DIVISION_PIECES: Record<Division, Piece[]> = {
   plain: [[rect(250, 250, 500, 500), 0]],
   "per-pale": [
-    [rect(250, 250, 250, 500), 0],
-    [rect(500, 250, 250, 500), 1],
+    [box(250, 250, 500, 750), 0],
+    [box(500, 250, 750, 750), 1],
   ],
   "per-fess": [
-    [rect(250, 250, 500, 250), 0],
-    [rect(250, 500, 500, 250), 1],
+    [box(250, 250, 750, 500), 0],
+    [box(250, 500, 750, 750), 1],
   ],
   "per-bend": [
-    [{ path: "M 250,250 L 750,250 L 750,750 Z" }, 0],
-    [{ path: "M 250,250 L 250,750 L 750,750 Z" }, 1],
+    [
+      polygon([
+        [250, 250],
+        [750, 250],
+        [750, 750],
+      ]),
+      0,
+    ],
+    [
+      polygon([
+        [250, 250],
+        [250, 750],
+        [750, 750],
+      ]),
+      1,
+    ],
   ],
   "per-bend-sinister": [
-    [{ path: "M 250,250 L 750,250 L 250,750 Z" }, 0],
-    [{ path: "M 750,250 L 750,750 L 250,750 Z" }, 1],
+    [
+      polygon([
+        [250, 250],
+        [750, 250],
+        [250, 750],
+      ]),
+      0,
+    ],
+    [
+      polygon([
+        [750, 250],
+        [750, 750],
+        [250, 750],
+      ]),
+      1,
+    ],
   ],
   quarterly: [
-    [rect(250, 250, 250, 250), 0],
-    [rect(500, 250, 250, 250), 1],
-    [rect(250, 500, 250, 250), 2, 1],
-    [rect(500, 500, 250, 250), 3, 0],
+    [box(250, 250, 500, 500), 0],
+    [box(500, 250, 750, 500), 1],
+    [box(250, 500, 500, 750), 2, 1],
+    [box(500, 500, 750, 750), 3, 0],
   ],
-  "per-saltire": [
-    [{ path: "M 250,250 L 750,250 L 500,500 Z" }, 0],
-    [{ path: "M 750,250 L 750,750 L 500,500 Z" }, 1],
-    [{ path: "M 750,750 L 250,750 L 500,500 Z" }, 2, 0],
-    [{ path: "M 250,750 L 250,250 L 500,500 Z" }, 3, 1],
-  ],
+  "per-saltire": bands(4, (i) => {
+    const corners: Point[] = [
+      [250, 250],
+      [750, 250],
+      [750, 750],
+      [250, 750],
+    ];
+    return polygon([corners[i]!, corners[(i + 1) % 4]!, [500, 500]]);
+  }),
   "per-chevron": [
-    [{ path: "M 250,250 L 750,250 L 750,600 L 500,450 L 250,600 Z" }, 0],
-    [{ path: "M 250,600 L 500,450 L 750,600 L 750,750 L 250,750 Z" }, 1],
+    [
+      polygon([
+        [250, 250],
+        [750, 250],
+        [750, 600],
+        [500, 450],
+        [250, 600],
+      ]),
+      0,
+    ],
+    [
+      polygon([
+        [250, 600],
+        [500, 450],
+        [750, 600],
+        [750, 750],
+        [250, 750],
+      ]),
+      1,
+    ],
   ],
   gyronny: gyrons(),
   "tierced-in-pale": paleBands(DIVISION_SECTIONS_COUNT["tierced-in-pale"]),
@@ -181,15 +244,17 @@ const DIVISION_PIECES: Record<Division, Piece[]> = {
 
 export function renderDivisionPaths(
   division: Division,
-  tinctures: Tincture[]
+  tinctures: Tincture[],
+  lineStyle: LineStyle
 ): {
   path?: string;
   rect?: Rect;
   color: string;
 }[] {
   const colors = tinctures.map(getTinctureColor);
+  const edge: Edge = ([x1, y1], [x2, y2]) => partitionEdge(x1, y1, x2, y2, lineStyle);
   return DIVISION_PIECES[division].map(([shape, ...colorIndices]) => ({
-    ...shape,
+    ...("rect" in shape ? shape : { path: loopPath(shape.points, edge) }),
     color: colorIndices.map((i) => colors[i]).find((c) => c != null) ?? "#FFFFFF",
   }));
 }
@@ -218,7 +283,12 @@ const OVERFLOW = "M 200,200 L 800,200 L 800,800 L 200,800 Z";
 
 type OrdinaryPath = string | ((outline: string) => string);
 
-/** Ordinary paths, filled with the even-odd rule so nested sub-paths (orle, bordure, tressure) leave holes. */
+/**
+ * Ordinary paths, filled with the even-odd rule so nested sub-paths (orle, bordure, tressure) leave
+ * holes. A straight-edged ordinary is written as `M x,y L x,y ... Z` loops, each wound so the
+ * ordinary lies to the right of travel (clockwise on screen, a hole the other way round), which is
+ * the side a line style's motif faces.
+ */
 const ORDINARY_PATHS: Record<OrdinaryType, OrdinaryPath> = {
   chief: "M 250,250 L 750,250 L 750,375 L 250,375 Z",
   fess: "M 250,437.5 L 750,437.5 L 750,562.5 L 250,562.5 Z",
@@ -248,7 +318,28 @@ const ORDINARY_PATHS: Record<OrdinaryType, OrdinaryPath> = {
   "lozenge-ordinary": "M 500,330 L 610,500 L 500,670 L 390,500 Z",
 };
 
-export function renderOrdinaryPath(type: OrdinaryType, shape: ShieldShape): string {
+/** The point loops of a path written as `M x,y L x,y ... Z` sub-paths. */
+const loopsOf = (path: string): Point[][] =>
+  path
+    .split("M")
+    .filter((sub) => sub.trim())
+    .map((sub) =>
+      [...sub.matchAll(/([\d.]+),([\d.]+)/g)].map((m): Point => [Number(m[1]), Number(m[2])])
+    );
+
+/**
+ * The ordinary's path, its edges facing the field drawn in `lineStyle`. The bordure and tressure
+ * follow the shield's curved outline and keep it unpatterned.
+ */
+export function renderOrdinaryPath(
+  type: OrdinaryType,
+  shape: ShieldShape,
+  lineStyle: LineStyle
+): string {
   const path = ORDINARY_PATHS[type];
-  return typeof path === "string" ? path : path(renderShieldOutline(shape));
+  if (typeof path !== "string") return path(renderShieldOutline(shape));
+  const edge: Edge = ([x1, y1], [x2, y2]) => styledEdge(x1, y1, x2, y2, lineStyle);
+  return loopsOf(path)
+    .map((loop) => loopPath(loop, edge))
+    .join(" ");
 }

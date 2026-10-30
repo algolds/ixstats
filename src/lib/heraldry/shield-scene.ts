@@ -118,11 +118,12 @@ export function buildShieldScene(
     outline: renderShieldOutline(composition.shield.shape),
     field: renderDivisionPaths(
       composition.shield.field.division,
-      composition.shield.field.tinctures
+      composition.shield.field.tinctures,
+      composition.shield.field.lineStyle
     ),
     ordinaries: (composition.shield.ordinaries ?? []).map((ord, index) => ({
       index,
-      d: renderOrdinaryPath(ord.type, composition.shield.shape),
+      d: renderOrdinaryPath(ord.type, composition.shield.shape, ord.lineStyle),
       fill: getTinctureColor(ord.tincture),
     })),
     charges: charges.flatMap((layoutCharge, idx): SceneCharge[] => {

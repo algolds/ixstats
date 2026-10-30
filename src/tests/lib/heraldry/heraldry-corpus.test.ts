@@ -149,18 +149,18 @@ describe("coats of arms", () => {
   it.each(DIVISIONS.filter((d) => d.value !== "plain").map((d) => d.value))(
     "draws the %s division in more than one piece, in both of two tinctures",
     (division) => {
-      const pieces = renderDivisionPaths(division, ["or", "azure"]);
+      const pieces = renderDivisionPaths(division, ["or", "azure"], "straight");
       expect(pieces.length).toBeGreaterThan(1);
       expect(new Set(pieces.map((p) => p.color))).toEqual(new Set(["#FFD700", "#0F47AF"]));
     }
   );
 
   it.each(ORDINARIES.map((o) => o.value))("draws the %s ordinary", (type) => {
-    expect(renderOrdinaryPath(type, "heater")).toMatch(/^M [\d.]+[ ,][\d.]+ /);
+    expect(renderOrdinaryPath(type, "heater", "straight")).toMatch(/^M [\d.]+[ ,][\d.]+ /);
   });
 
   it("follows the shield's own outline for a bordure, and keeps every ordinary in the scene", () => {
-    expect(renderOrdinaryPath("bordure", "round")).toContain("A 200 200 0 1 1 500 700");
+    expect(renderOrdinaryPath("bordure", "round", "straight")).toContain("A 200 200 0 1 1 500 700");
     const scene = buildShieldScene(
       arms({}, { ordinaries: [{ type: "pall", tincture: "or", lineStyle: "straight" }] } as never)
     );
