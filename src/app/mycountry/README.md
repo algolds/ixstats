@@ -6,7 +6,7 @@ The MyCountry route (`/mycountry`) is the executive command suite for nation own
 
 ## Routes / Sections
 
-The `page.tsx` files below (except `/mycountry/editor`, `/mycountry/map-editor` and `/mycountry/welcome`) live in `(command)/` and return `null`; the layout's router renders every section. the active section is resolved from the pathname by `getSectionFromPathname()` in `mycountry-sections.ts`.
+The `page.tsx` files below (except `/mycountry/editor`, `/mycountry/map-editor` and `/mycountry/welcome`) live in `(command)/` and return `null`; the layout's router renders every section. The active section is resolved from the pathname by `getSectionFromPathname()` in `mycountry-sections.ts`.
 
 | Route                     | Section    | Loading          | Notes                                                                                                                                                                                                                                                                                                    |
 | ------------------------- | ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
