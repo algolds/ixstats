@@ -45,7 +45,9 @@ const caller = () =>
     }) as never
   );
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+});
 
 describe("the watchlist and Margin notes read IxWiki stash items only", () => {
   it("getAnnotations", async () => {
