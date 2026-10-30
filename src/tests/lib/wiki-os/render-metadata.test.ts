@@ -176,7 +176,11 @@ describe("renderArticle stores what MediaWiki reported", () => {
     await renderArticle(id);
 
     expect(tx.wikiLink.updateMany).toHaveBeenCalledWith({
-      where: { targetSlug: "aurelia", targetArticleId: null, sourceArticle: { source: "ixwiki" } },
+      where: {
+        targetArticleId: null,
+        sourceArticle: { source: "ixwiki" },
+        OR: [{ targetTitle: "Aurelia" }, { targetTitle: null, targetSlug: "aurelia" }],
+      },
       data: { targetArticleId: id },
     });
 

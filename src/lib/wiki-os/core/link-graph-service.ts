@@ -79,6 +79,7 @@ export class LinkGraphService {
     const rows = [...targets.values()].map((target) => ({
       sourceArticleId: articleId,
       targetSlug: target.slug,
+      targetTitle: target.title,
       targetArticleId: ids.get(target.title) ?? null,
       isExternal: false,
     }));
@@ -90,9 +91,10 @@ export class LinkGraphService {
 
   /**
    * Point the red links to `article`'s title at it: the links stored before the page existed (or while
-   * it was deleted) keep `targetArticleId` null until their source renders again. Matches the slug
-   * `replaceLinks` stored, among links from the same wiki. The caller makes sure the page is published.
-   * Resolves to the number of links repointed.
+   * it was deleted) keep `targetArticleId` null until their source renders again. Matches the exact
+   * canonical title `replaceLinks` stored (the slug is case-folded, and "FOO" is not "Foo"), or the slug
+   * for links stored before the title was kept, among links from the same wiki. The caller makes sure
+   * the page is published. Resolves to the number of links repointed.
    */
   static async repointRedLinks(
     tx: Prisma.TransactionClient,
@@ -102,9 +104,9 @@ export class LinkGraphService {
     if (!canon) return 0;
     const { count } = await tx.wikiLink.updateMany({
       where: {
-        targetSlug: canon.slug,
         targetArticleId: null,
         sourceArticle: { source: article.source },
+        OR: [{ targetTitle: canon.title }, { targetTitle: null, targetSlug: canon.slug }],
       },
       data: { targetArticleId: article.id },
     });

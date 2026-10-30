@@ -272,7 +272,11 @@ describe("red links and a page coming and going", () => {
     pages({ old_name: { ...original, status: "ARCHIVED" } });
     await PageManagementService.restoreArticle("old_name", actor, "ixwiki", "back");
     expect(mockLinkUpdateMany).toHaveBeenCalledWith({
-      where: { targetSlug: "old_name", targetArticleId: null, sourceArticle: { source: "ixwiki" } },
+      where: {
+        targetArticleId: null,
+        sourceArticle: { source: "ixwiki" },
+        OR: [{ targetTitle: "Old name" }, { targetTitle: null, targetSlug: "old_name" }],
+      },
       data: { targetArticleId: "orig" },
     });
   });
@@ -281,7 +285,11 @@ describe("red links and a page coming and going", () => {
     await PageManagementService.movePage("old_name", "New name", "tidy", actor);
 
     expect(mockLinkUpdateMany).toHaveBeenCalledWith({
-      where: { targetSlug: "new_name", targetArticleId: null, sourceArticle: { source: "ixwiki" } },
+      where: {
+        targetArticleId: null,
+        sourceArticle: { source: "ixwiki" },
+        OR: [{ targetTitle: "New name" }, { targetTitle: null, targetSlug: "new_name" }],
+      },
       data: { targetArticleId: "orig" },
     });
   });

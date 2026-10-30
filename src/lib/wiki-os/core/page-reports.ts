@@ -12,6 +12,12 @@ export interface MediaUsageItem {
   snippet?: string;
 }
 
+/** A stored slug read as a title, for links kept before their title was: underscores as spaces, first letter capital. */
+function titleFromSlug(slug: string): string {
+  const spaced = slug.replace(/_/g, " ");
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+}
+
 export const PageReports = {
   /**
    * Reverse Media Asset Usage Lookups
@@ -86,37 +92,49 @@ export const PageReports = {
   },
   /**
    * Maintenance Diagnostic: Wanted Pages. Red-link targets (internal links no article resolves) from the
-   * realm's published articles, most linked first. A slug that has an article is left out even while its
-   * links are still red: a link only turns blue once its target renders.
+   * realm's published articles, most linked first, then by slug. A slug that has an article is left out
+   * even while its links are still red: a link only turns blue once its target renders. Each shows the
+   * canonical title its links name; links stored before the title was kept show their slug as a title.
    */
   async getWantedPages(
     limit = 50,
     realm = "ixwiki"
   ): Promise<Array<{ targetSlug: string; title: string; linkCount: number }>> {
     try {
+      const redLinks = {
+        targetArticleId: null,
+        isExternal: false,
+        sourceArticle: { source: realm, status: "PUBLISHED" as const },
+      };
       const groups = await db.wikiLink.groupBy({
         by: ["targetSlug"],
-        where: {
-          targetArticleId: null,
-          isExternal: false,
-          sourceArticle: { source: realm, status: "PUBLISHED" },
-        },
+        where: redLinks,
         _count: { targetSlug: true },
-        orderBy: { _count: { targetSlug: "desc" } },
+        orderBy: [{ _count: { targetSlug: "desc" } }, { targetSlug: "asc" }],
         take: limit * 2,
       });
-      const existing = await db.wikiArticle.findMany({
-        where: { source: realm, slug: { in: groups.map((g) => g.targetSlug) } },
-        select: { slug: true },
-      });
+      const slugs = groups.map((g) => g.targetSlug);
+      const [existing, named] = await Promise.all([
+        db.wikiArticle.findMany({
+          where: { source: realm, slug: { in: slugs } },
+          select: { slug: true },
+        }),
+        db.wikiLink.findMany({
+          where: { ...redLinks, targetSlug: { in: slugs }, targetTitle: { not: null } },
+          select: { targetSlug: true, targetTitle: true },
+          distinct: ["targetSlug"],
+          orderBy: [{ targetSlug: "asc" }, { targetTitle: "asc" }],
+        }),
+      ]);
       const taken = new Set(existing.map((a) => a.slug));
+      const titles = new Map(named.map((link) => [link.targetSlug, link.targetTitle]));
 
       return groups
         .filter((g) => !taken.has(g.targetSlug))
         .slice(0, limit)
         .map((g) => ({
           targetSlug: g.targetSlug,
-          title: g.targetSlug.replace(/_/g, " "),
+          title: titles.get(g.targetSlug) ?? titleFromSlug(g.targetSlug),
           linkCount: g._count.targetSlug,
         }));
     } catch {

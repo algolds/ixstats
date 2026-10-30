@@ -30,7 +30,7 @@ interface DiagnosticView {
   keyPrefix: string;
   /** Broken redirects have no page to link to. */
   plainTitle?: boolean;
-  /** Wanted pages link to a page that does not exist yet. */
+  /** Wanted pages link to a page that does not exist yet, by its title (their slug is case-folded). */
   missingPage?: boolean;
   value: (item: DiagnosticItem) => string;
   valueClass: string;
@@ -55,7 +55,7 @@ const VIEWS: Record<string, DiagnosticView> = {
     keyPrefix: "wanted",
     missingPage: true,
     valueClass: "text-label-secondary",
-    value: (i) => `${i.linkCount} links`,
+    value: (i) => `${i.linkCount} ${i.linkCount === 1 ? "link" : "links"}`,
   },
   deadEnds: {
     ...BYTE_COUNT,
@@ -164,7 +164,9 @@ export function DiagnosticSection({ searchFilter }: { searchFilter: string }) {
               <span className="text-label font-medium">{item.title}</span>
             ) : (
               <InspectorPageLink
-                slug={item.slug ?? item.targetSlug}
+                slug={
+                  view.missingPage ? item.title.replace(/ /g, "_") : (item.slug ?? item.targetSlug)
+                }
                 title={item.title}
                 missing={view.missingPage}
               />

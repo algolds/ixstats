@@ -1,21 +1,29 @@
 const mockGroupBy = jest.fn();
 const mockFindMany = jest.fn();
+const mockLinkTitles = jest.fn();
 
 jest.mock("~/server/db", () => ({
   db: {
-    wikiLink: { groupBy: (...a: unknown[]) => mockGroupBy(...a) },
+    wikiLink: {
+      groupBy: (...a: unknown[]) => mockGroupBy(...a),
+      findMany: (...a: unknown[]) => mockLinkTitles(...a),
+    },
     wikiArticle: { findMany: (...a: unknown[]) => mockFindMany(...a) },
   },
 }));
 
 import { PageReports } from "~/lib/wiki-os/core/page-reports";
 
-const group = (targetSlug: string, count: number) => ({ targetSlug, _count: { targetSlug: count } });
+const group = (targetSlug: string, count: number) => ({
+  targetSlug,
+  _count: { targetSlug: count },
+});
 
 describe("PageReports.getWantedPages", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockFindMany.mockResolvedValue([]);
+    mockLinkTitles.mockResolvedValue([]);
   });
 
   it("groups the red links of the realm's published articles, most linked first", async () => {
@@ -31,12 +39,35 @@ describe("PageReports.getWantedPages", () => {
         sourceArticle: { source: "ixwiki", status: "PUBLISHED" },
       },
       _count: { targetSlug: true },
-      orderBy: { _count: { targetSlug: "desc" } },
+      orderBy: [{ _count: { targetSlug: "desc" } }, { targetSlug: "asc" }],
       take: 20,
     });
     expect(result).toEqual([
       { targetSlug: "Missing_page", title: "Missing page", linkCount: 5 },
       { targetSlug: "Other_gap", title: "Other gap", linkCount: 2 },
+    ]);
+  });
+
+  it("shows the title the links name, and a slug stored without one as a title", async () => {
+    mockGroupBy.mockResolvedValue([group("treaty_of_oakhaven", 3), group("old_gap", 1)]);
+    mockLinkTitles.mockResolvedValue([
+      { targetSlug: "treaty_of_oakhaven", targetTitle: "Treaty of Oakhaven" },
+    ]);
+
+    const result = await PageReports.getWantedPages(10, "ixwiki");
+
+    expect(mockLinkTitles).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          targetSlug: { in: ["treaty_of_oakhaven", "old_gap"] },
+          targetTitle: { not: null },
+          targetArticleId: null,
+        }),
+      })
+    );
+    expect(result).toEqual([
+      { targetSlug: "treaty_of_oakhaven", title: "Treaty of Oakhaven", linkCount: 3 },
+      { targetSlug: "old_gap", title: "Old gap", linkCount: 1 },
     ]);
   });
 

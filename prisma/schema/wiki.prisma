@@ -419,6 +419,7 @@ model WikiLink {
   sourceArticle   WikiArticle  @relation("SourceArticleLinks", fields: [sourceArticleId], references: [id], onDelete: Cascade)
   
   targetSlug      String       // Normalized target slug e.g. "treaty_of_oakhaven"
+  targetTitle     String?      // Canonical title the link names e.g. "Treaty of Oakhaven"; null on links stored before it was kept
   targetArticleId String?      // NULL = Red Link (Broken citation)
   targetArticle   WikiArticle? @relation("TargetArticleLinks", fields: [targetArticleId], references: [id], onDelete: SetNull)
   

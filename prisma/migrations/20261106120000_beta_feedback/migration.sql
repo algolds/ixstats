@@ -52,4 +52,9 @@ BEGIN
   END IF;
 END $$;
 
+-- Wanted pages: a link keeps the canonical title it names ("Treaty of Oakhaven") beside its lower-case slug, so the
+-- report shows the title as written and a new page turns blue only the links to its exact title. Null on links stored
+-- before this column; those match by slug until their source page renders again.
+ALTER TABLE "wiki_links" ADD COLUMN IF NOT EXISTS "targetTitle" TEXT;
+
 COMMIT;
