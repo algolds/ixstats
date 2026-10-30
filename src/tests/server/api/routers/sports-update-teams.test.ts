@@ -107,6 +107,22 @@ describe("updateTeams", () => {
     expect(db.sportTeam.update).not.toHaveBeenCalled();
   });
 
+  it("refuses a wiki slug over 500 characters, in a batch and on one team", async () => {
+    const db = mockDb(["t1"]);
+    const wikiSlug = "A".repeat(501);
+
+    await expect(
+      callerAs(CREATOR_ID, db).updateTeams({
+        leagueId: "league_1",
+        teams: [{ id: "t1", wikiSlug }],
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(callerAs(CREATOR_ID, db).updateTeam({ id: "t1", wikiSlug })).rejects.toMatchObject(
+      { code: "BAD_REQUEST" }
+    );
+    expect(db.sportTeam.update).not.toHaveBeenCalled();
+  });
+
   it("answers NOT_FOUND for a league that does not exist", async () => {
     const db = mockDb([]);
     db.sportLeague.findUnique.mockResolvedValue(null);

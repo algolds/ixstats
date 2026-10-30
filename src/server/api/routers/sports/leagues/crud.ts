@@ -355,13 +355,13 @@ export const leaguesCrudRouter = createTRPCRouter({
         tier: z.number().int().min(1).optional(),
         promotionCount: z.number().int().min(0).optional(),
         relegationCount: z.number().int().min(0).optional(),
-        wikiSlug: z.string().nullable().optional(),
+        wikiSlug: z.string().max(500).nullable().optional(),
         isCanonical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { id, settings, ...data } = input;
+        const { id, settings, wikiSlug, ...data } = input;
 
         const league = await ctx.db.sportLeague.findUnique({ where: { id } });
         if (!league) {
@@ -380,6 +380,7 @@ export const leaguesCrudRouter = createTRPCRouter({
           data: {
             ...data,
             isCanonical,
+            ...(wikiSlug !== undefined ? { wikiSlug: toWikiSlug(wikiSlug) } : {}),
             ...(settings !== undefined ? { settings: settings as any } : {}),
           },
         });

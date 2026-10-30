@@ -225,6 +225,25 @@ describe("publishLeagueStandings", () => {
     expect(mockAssertCanEdit).not.toHaveBeenCalled();
   });
 
+  it.each(["Template:Varro_League", "User:Alex/Varro League", "Category:Leagues"])(
+    "refuses a league linked to %s, which is not a regular article, and checks and saves nothing",
+    async (wikiSlug) => {
+      await expect(publishLeagueStandings(makeCtx({ wikiSlug }), "lg1")).rejects.toMatchObject({
+        code: "PRECONDITION_FAILED",
+        message: expect.stringContaining("regular article"),
+      });
+      expect(mockAssertCanEdit).not.toHaveBeenCalled();
+      expect(mockSaveOrConflict).not.toHaveBeenCalled();
+    }
+  );
+
+  it("refuses a league whose wiki slug is not a valid title", async () => {
+    await expect(
+      publishLeagueStandings(makeCtx({ wikiSlug: "Varro [League]" }), "lg1")
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+    expect(mockAssertCanEdit).not.toHaveBeenCalled();
+  });
+
   it("refuses a league that does not exist", async () => {
     await expect(publishLeagueStandings(makeCtx(null), "lg1")).rejects.toMatchObject({
       code: "NOT_FOUND",

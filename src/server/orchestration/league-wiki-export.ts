@@ -21,7 +21,8 @@ import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
-import { assertTitleVisible, requireCanonicalTitle } from "~/lib/wiki-os/permissions";
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import { assertCanEditArticle, saveOrConflict } from "~/lib/wiki-os/services/edit-service";
 import { getSeasonStandings, type StandingsDb } from "~/server/modules/sports/standings";
 
@@ -51,6 +52,17 @@ async function loadLeague(db: PublishStandingsContext["db"], leagueId: string) {
     throw precondition("Link a wiki article to this league before publishing its standings.");
   }
   return { ...league, wikiSlug: league.wikiSlug };
+}
+
+/** The canonical title of the league's article. Refuses a slug that is no title or names a page outside the main namespace. */
+function articleTitle(wikiSlug: string): string {
+  const canon = canonicalizeTitle(wikiSlug);
+  if (canon?.namespaceId !== 0) {
+    throw precondition(
+      "The league's wiki article must be a regular article, not a template, user, category or other special page. Nothing was saved."
+    );
+  }
+  return canon.title;
 }
 
 /** The standings the league page shows (its displayed season), as table rows. Refuses a league with none yet. */
@@ -125,7 +137,7 @@ export async function publishLeagueStandings(
   leagueId: string
 ): Promise<PublishStandingsResult> {
   const league = await loadLeague(ctx.db, leagueId);
-  const title = requireCanonicalTitle(league.wikiSlug);
+  const title = articleTitle(league.wikiSlug);
   await assertCanEditArticle(ctx, title);
 
   const { seasonNumber, rows } = await loadStandings(ctx.db, league.seasons);

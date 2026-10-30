@@ -2,6 +2,7 @@
 /**
  * The league creator's wiki step: `createLeague` takes the league's wiki article and the clubs imported from it (their
  * count must match `teamCount`), and `previewWikiTeams` reads the article's IxWiki wikitext and returns its teams.
+ * `updateLeague` stores a changed wiki article in the same slug form `createLeague` does.
  */
 let mockDb: unknown;
 jest.mock("~/server/db", () => ({
@@ -99,6 +100,46 @@ describe("createLeague with imported teams", () => {
 
     expect(result.teams.map((t) => t.name)).toEqual(["Varro League Team 1", "Varro League Team 2"]);
     expect(result.wikiSlug).toBeNull();
+  });
+});
+
+describe("updateLeague's wiki article", () => {
+  async function league() {
+    return leagues(as()).createLeague({ ...base, teamCount: 2, wikiSlug: "Varro_League" });
+  }
+
+  it("stores a new article title as a slug: trimmed, spaces as underscores", async () => {
+    const { id } = await league();
+
+    const updated = await leagues(as()).updateLeague({ id, wikiSlug: "  Varro Premier League " });
+
+    expect(updated.wikiSlug).toBe("Varro_Premier_League");
+  });
+
+  it("stores no file or category page, and clears the article on null", async () => {
+    const { id } = await league();
+
+    expect(
+      (await leagues(as()).updateLeague({ id, wikiSlug: "File:Crest.png" })).wikiSlug
+    ).toBeNull();
+    await leagues(as()).updateLeague({ id, wikiSlug: "Varro_League" });
+    expect((await leagues(as()).updateLeague({ id, wikiSlug: null })).wikiSlug).toBeNull();
+  });
+
+  it("leaves the article alone when the update does not name one", async () => {
+    const { id } = await league();
+
+    expect((await leagues(as()).updateLeague({ id, name: "Varro Cup" })).wikiSlug).toBe(
+      "Varro_League"
+    );
+  });
+
+  it("refuses a slug over 500 characters", async () => {
+    const { id } = await league();
+
+    await expect(
+      leagues(as()).updateLeague({ id, wikiSlug: "A".repeat(501) })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
 

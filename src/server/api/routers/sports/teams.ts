@@ -20,7 +20,7 @@ const TeamPatch = z.object({
   shortName: z.string().max(20).nullable().optional(),
   color: z.string().optional(),
   nationId: z.string().nullable().optional(),
-  wikiSlug: z.string().nullable().optional(),
+  wikiSlug: z.string().max(500).nullable().optional(),
 });
 
 export const sportsTeamsRouter = createTRPCRouter({
@@ -65,7 +65,7 @@ export const sportsTeamsRouter = createTRPCRouter({
         nationId: z.string().optional(),
         logo: z.string().nullable().optional(),
         coverImage: z.string().nullable().optional(),
-        wikiSlug: z.string().nullable().optional(),
+        wikiSlug: z.string().max(500).nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
