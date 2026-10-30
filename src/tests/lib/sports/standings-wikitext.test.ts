@@ -89,9 +89,9 @@ describe("standingsWikitext", () => {
     const lines = dataRows(standingsWikitext({ name: "L" }, rows, "now"));
 
     expect(lines).toEqual([
-      "| 1 || [[FC_Varro|Varro FC]] || 6 || 4 || 1 || 1 || 19 || 11 || +8 || 13",
+      "| 1 || [[:FC_Varro|Varro FC]] || 6 || 4 || 1 || 1 || 19 || 11 || +8 || 13",
       "| 2 || Lest || 6 || 3 || 1 || 2 || 18 || 12 || +6 || 10",
-      "| 3 || [[Marn_City|Marn City]] || 6 || 2 || 1 || 3 || 17 || 13 || +4 || 7",
+      "| 3 || [[:Marn_City|Marn City]] || 6 || 2 || 1 || 3 || 17 || 13 || +4 || 7",
     ]);
   });
 
@@ -111,7 +111,7 @@ describe("standingsWikitext", () => {
     );
 
     expect(lines[0]).toContain("|| A{{!}}B ||");
-    expect(lines[1]).toContain("|| [[C_D|C{{!}}D]] ||");
+    expect(lines[1]).toContain("|| [[:C_D|C{{!}}D]] ||");
   });
 
   it("escapes a | in the league name in the caption", () => {
@@ -126,6 +126,46 @@ describe("standingsWikitext", () => {
     expect(block).not.toContain("[[Evil]]");
     expect(block).not.toContain("{{Tpl}}");
     expect(dataRows(block)).toHaveLength(1);
+  });
+
+  it("never lets a team's slug categorize the article or embed a file", () => {
+    const block = standingsWikitext(
+      { name: "L" },
+      [
+        row(1, "Spam", "Category:Spam"),
+        row(2, "Pic", "File:X.png"),
+        row(3, "Img", ":Image:Y.png"),
+        row(4, "Talky", "Talk:Varro"),
+      ],
+      "now"
+    );
+
+    expect(block).not.toMatch(/\[\[\s*(Category|File|Image|Media):/i);
+    expect(dataRows(block).map((line) => line.split(" || ")[1])).toEqual([
+      "Spam",
+      "Pic",
+      "Img",
+      "Talky",
+    ]);
+  });
+
+  it("links a main-namespace slug with a leading colon, so an interwiki prefix is never an interlanguage link", () => {
+    const lines = dataRows(standingsWikitext({ name: "L" }, [row(1, "Foo", "fr:Foo")], "now"));
+
+    expect(lines[0]).toContain("|| [[:fr:Foo|Foo]] ||");
+  });
+
+  it("keeps magic words and signature tildes in a name from surviving verbatim", () => {
+    const block = standingsWikitext(
+      { name: "__NOTOC__ League" },
+      [row(1, "__NOINDEX__ FC ~~~~"), row(2, "Plain_Name ~")],
+      "now"
+    );
+
+    expect(block).not.toContain("__NOINDEX__");
+    expect(block).not.toContain("__NOTOC__");
+    expect(block).not.toContain("~~~");
+    expect(block).not.toMatch(/__|~/);
   });
 
   it("links no title a wiki page could not have", () => {

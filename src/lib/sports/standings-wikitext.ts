@@ -4,6 +4,8 @@
  * editor wrote around it.
  */
 
+import { canonicalizeTitle } from "~/lib/wiki-os/core/title";
+
 export const STANDINGS_START = "<!-- IxStates standings: start -->";
 export const STANDINGS_END = "<!-- IxStates standings: end -->";
 
@@ -35,26 +37,31 @@ const ENTITIES: Record<string, string> = {
   "]": "&#93;",
   "{": "&#123;",
   "}": "&#125;",
+  "~": "&#126;",
+  _: "&#95;",
 };
 
 /**
- * A name as plain table text: no markup (links, templates, tags or a comment that could fake a marker), one line,
- * and `|` as `{{!}}` so it cannot end the cell.
+ * A name as plain table text: no markup (links, templates, tags or a comment that could fake a marker), no magic
+ * word (`__NOINDEX__`) or signature (`~~~~`), one line, and `|` as `{{!}}` so it cannot end the cell.
  */
 function plainText(name: string): string {
   return name
     .replace(/[\r\n]+/g, " ")
-    .replace(/[<>[\]{}]/g, (ch) => ENTITIES[ch] ?? ch)
+    .replace(/[<>[\]{}~_]/g, (ch) => ENTITIES[ch] ?? ch)
     .replace(/\|/g, "{{!}}");
 }
 
-/** Characters a MediaWiki title cannot hold: a slug with one is not linked. */
-const INVALID_TITLE = /[<>[\]{}|\r\n]/;
-
+/**
+ * The team's name, linked to its page when its slug is a valid main-namespace title. The leading colon keeps any
+ * target a plain link (never a category, an embedded file or an interlanguage link); a team owner sets the slug, and
+ * the league manager's account saves it.
+ */
 function teamCell(row: StandingRow): string {
   const name = plainText(row.teamName);
   const slug = row.wikiSlug?.trim();
-  return slug && !INVALID_TITLE.test(slug) ? `[[${slug}|${name}]]` : name;
+  const canon = slug ? canonicalizeTitle(slug) : null;
+  return canon?.namespaceId === 0 ? `[[:${slug}|${name}]]` : name;
 }
 
 function signed(n: number): string {
