@@ -630,7 +630,8 @@ describe("realms.mapFace", () => {
     land: "M0 0L1 1",
     open: "",
     claimed: "M2 2L3 3",
-    other: "",
+    npc: "",
+    none: "",
   };
 
   beforeEach(() => {
