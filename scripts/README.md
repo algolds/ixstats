@@ -66,6 +66,7 @@ scripts/
 | [`scripts/verification/run-typecheck.ts`](verification/run-typecheck.ts) | Partitioned typecheck runner behind `typecheck:ui` / `:server` / `:trpc` / `:db`. |
 | [`scripts/verification/run-jest-with-quarantine.ts`](verification/run-jest-with-quarantine.ts) | CI Jest runner honouring `test-quarantine.json` (`bun run test:ci`, `test:quarantine:verify`). |
 | [`scripts/verification/check-entrypoints.ts`](verification/check-entrypoints.ts) | Client/server entrypoint boundary check (`bun run check:entrypoints`). |
+| [`scripts/verification/react-compiler-ratchet.ts`](verification/react-compiler-ratchet.ts) | React Compiler skip ratchet (`bun run check:compiler`): counts the functions `babel-plugin-react-compiler` bails out of per file in `src/` (about 1 minute), fails when a file's count grows or falls against `react-compiler-ratchet.baseline.json`; `--update` locks in drops. Comparison in `src/lib/verification/compiler-ratchet.ts`. |
 | [`scripts/audit-flag-urls.ts`](audit-flag-urls.ts) | Audits and validates country flag URLs against MediaWiki endpoints (`bun run audit:flags`). |
 | [`scripts/audit-production-urls.ts`](audit-production-urls.ts) | Validates production route 200 HTTP responses (`bun run audit:urls`). |
 | [`scripts/prod-audit.ts`](prod-audit.ts) | Deep production readiness audit suite. |

@@ -74,14 +74,16 @@ jest.mock("~/lib/maps/decorative-tiles", () => ({
 }));
 /** The layer hooks run for real unless a test stands in for them (the map's and the embed's own hooks). */
 const mockLayers: {
-  data?: LayerHooks["useMapLayerData"];
-  decoded?: (call: LayerCall) => { layers: Record<string, FeatureCollection> | undefined };
+  decoded?: (call: LayerCall) => {
+    layers: Record<string, FeatureCollection> | undefined;
+    error?: Error | null;
+    isPending?: boolean;
+  };
 } = {};
 jest.mock("~/hooks/useMapLayerData", () => {
   const actual = jest.requireActual<LayerHooks>("~/hooks/useMapLayerData");
   return {
     ...actual,
-    useMapLayerData: (call: LayerCall) => (mockLayers.data ?? actual.useMapLayerData)(call),
     useDecodedMapLayers: (call: LayerCall) =>
       (mockLayers.decoded ?? actual.useDecodedMapLayers)(call),
   };
@@ -130,7 +132,6 @@ beforeEach(() => {
   mockMarkersInput = undefined;
   mockDetailInput = undefined;
   mockBundle = undefined;
-  mockLayers.data = undefined;
   mockLayers.decoded = undefined;
   mockDropStaleOverlays.mockClear();
   mockApplyVectorTiles.mockClear();
@@ -236,12 +237,7 @@ describe("the map's layers", () => {
 
 describe("the map's overlays", () => {
   it("name the realm's map version, drop older versions' queries, and show nothing of a realm switched away from", () => {
-    mockLayers.data = () => ({
-      packed: undefined,
-      version: undefined,
-      error: null,
-      isPending: true,
-    });
+    mockLayers.decoded = () => ({ layers: undefined, error: null, isPending: true });
     const cities = { type: "FeatureCollection", features: [{ id: "city" }] };
     mockVersion = undefined;
     const { result, rerender } = renderHook(
