@@ -50,3 +50,33 @@ it("stays anonymous when the server component passes signed-out auth", async () 
   expect(ctx.auth?.userId).toBeNull();
   expect(ctx.user).toBeNull();
 });
+
+it("prefers the auth of the request when a server component passes its own as well", async () => {
+  jest.mocked(db.user.findUnique).mockImplementation((async (args: {
+    where: { clerkUserId: string };
+  }) => ({
+    id: `db_${args.where.clerkUserId}`,
+    clerkUserId: args.where.clerkUserId,
+    lastSeenAt: new Date(),
+    role: { id: "r", name: "user", level: 100 },
+  })) as never);
+
+  const ctx = await createTRPCContext({
+    headers: new Headers(),
+    req: { auth: { userId: "clerk_req" } } as never,
+    sessionAuth: { userId: "clerk_rsc" } as never,
+  });
+
+  expect(ctx.auth?.userId).toBe("clerk_req");
+  expect(ctx.user?.clerkUserId).toBe("clerk_req");
+});
+
+it("stays a guest without a session from the server component or a Bearer header", async () => {
+  jest.mocked(db.user.findUnique).mockClear();
+
+  const ctx = await createTRPCContext({ headers: new Headers() });
+
+  expect(ctx.auth?.userId ?? null).toBeNull();
+  expect(ctx.user).toBeNull();
+  expect(db.user.findUnique).not.toHaveBeenCalled();
+});
