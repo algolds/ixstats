@@ -109,6 +109,7 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
           item: {
             pageTitle: input.pageTitle,
             contentType: stashContentTypeForTitle(input.pageTitle),
+            source: "ixwiki",
             stash: { userId: { in: requireWikiUserIds(ctx) } },
           },
         },
@@ -206,7 +207,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (watchlistStash) {
         await ctx.db.stashItem.deleteMany({
-          where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
+          where: {
+            stashId: watchlistStash.id,
+            pageTitle: input.pageTitle,
+            contentType: "wiki",
+            source: "ixwiki",
+          },
         });
       }
 
@@ -368,7 +374,12 @@ export const wikiosWatchlistAnnotationsRouter = createTRPCRouter({
       });
       if (!watchlistStash) return false;
       const item = await ctx.db.stashItem.findFirst({
-        where: { stashId: watchlistStash.id, pageTitle: input.pageTitle, contentType: "wiki" },
+        where: {
+          stashId: watchlistStash.id,
+          pageTitle: input.pageTitle,
+          contentType: "wiki",
+          source: "ixwiki",
+        },
       });
       return !!item;
     }),
