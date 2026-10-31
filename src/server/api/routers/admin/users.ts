@@ -59,6 +59,14 @@ export const adminUsersRouter = createTRPCRouter({
       clerkUserId: u.clerkUserId,
       membershipTier: u.membershipTier || "basic",
       country: u.country ? { id: u.country.id, name: u.country.name } : null,
+      role: u.role
+        ? {
+            id: u.role.id,
+            name: u.role.name,
+            displayName: u.role.displayName,
+            level: u.role.level,
+          }
+        : null,
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,
     }));

@@ -82,12 +82,14 @@ import { sportsRouter } from "./routers/sports";
 import { myCountryRouter } from "./routers/mycountry";
 import { historicalRouter } from "./routers/historical";
 import { countryGeoRouter } from "./routers/countryGeo";
+import { rolesRouter } from "./routers/roles";
 
 /** Primary tRPC router. Every router in /api/routers must be registered here. */
 export const appRouter = createTRPCRouter({
   countries: countriesRouter,
   admin: adminRouter,
   users: usersRouter,
+  roles: rolesRouter,
   system: systemRouter,
   cache: cacheRouter,
   notifications: notificationsRouter,

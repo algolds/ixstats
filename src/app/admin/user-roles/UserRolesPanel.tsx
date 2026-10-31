@@ -1,6 +1,6 @@
 "use client";
 // src/app/admin/user-roles/UserRolesPanel.tsx
-// Role Definitions & VIP Invitation Management
+// Role Definitions, Permissions Configuration & User Role Assignment
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
@@ -23,7 +23,17 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "~/components/ui/dialog";
-import { Shield, Search, Sparks as Sparkles, Group as Users, Mail } from "iconoir-react";
+import {
+  Shield,
+  Search,
+  Sparks as Sparkles,
+  Group as Users,
+  Mail,
+  EditPencil,
+  Trash,
+  Plus,
+  Key,
+} from "iconoir-react";
 import { Switch } from "~/components/ui/switch";
 import { useNotify } from "~/hooks/useNotify";
 import { useAbility, Can } from "~/components/providers/AbilityProvider";
@@ -31,39 +41,32 @@ import { PageHeader } from "~/components/shell/PageHeader";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
+import { RoleEditorDialog, type EditableRole } from "./RoleEditorDialog";
 
-const SYSTEM_ROLES = [
-  {
-    name: "owner",
-    displayName: "System Owner",
-    level: 0,
-    description:
-      "Unrestricted root platform superadmin privileges across all realms and databases.",
-    permissions: "Full Read/Write, God-Mode, Schema Evolution, Bypass Limits",
-  },
-  {
-    name: "admin",
-    displayName: "Platform Administrator",
-    level: 10,
-    description: "Admin panel access, nation moderation, policy calibration, and user bindings.",
-    permissions: "Admin Access, Nation Calibration, Issue Resolution, Moderator Tools",
-  },
-  {
-    name: "user",
-    displayName: "Standard Player",
-    level: 100,
-    description: "Standard gameplay simulation capabilities within assigned nation realm.",
-    permissions: "Executive Dashboard, Diplomacy, Domestic Policies, Vault Actions",
-  },
-];
+function getLevelBadgeClass(level: number): string {
+  if (level === 0) return "border-red/30 bg-red/10 text-footnote text-red";
+  if (level <= 10) return "border-teal/30 bg-teal/10 text-footnote text-teal";
+  if (level <= 20) return "border-purple/30 bg-purple/10 text-footnote text-purple";
+  if (level <= 30) return "border-amber/30 bg-amber/10 text-footnote text-amber";
+  return "text-footnote";
+}
 
 export function UserRolesPanel() {
   usePageTitle({ title: "Admin - User Roles & Invitations" });
 
   const notify = useNotify();
   const ability = useAbility();
-  const [searchTerm, setSearchTerm] = useState("");
+
+  // Dialog states
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [roleEditorOpen, setRoleEditorOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<EditableRole | null>(null);
+  const [roleToDelete, setRoleToDelete] = useState<EditableRole | null>(null);
+
+  // Search & Filter states
+  const [roleSearchTerm, setRoleSearchTerm] = useState("");
+  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
 
   const [inviteForm, setInviteForm] = useState({
     emailAddress: "",
@@ -71,11 +74,41 @@ export function UserRolesPanel() {
     role: "user" as "admin" | "user" | "owner",
   });
 
+  // Queries
+  const {
+    data: roles,
+    isLoading: rolesLoading,
+    refetch: refetchRoles,
+  } = api.roles.getRoles.useQuery();
+
   const {
     data: usersWithCountries,
     isLoading: usersLoading,
     refetch: refetchUsers,
   } = api.admin.listUsersWithCountries.useQuery();
+
+  // Mutations
+  const assignUserRoleMutation = api.roles.assignUserRole.useMutation({
+    onSuccess: () => {
+      notify.success("Role Assigned", "User role assignment has been updated.");
+      void refetchUsers();
+      void refetchRoles();
+    },
+    onError: (error) => {
+      notify.error("Assignment Failed", error.message || "Failed to assign role.");
+    },
+  });
+
+  const deleteRoleMutation = api.roles.deleteRole.useMutation({
+    onSuccess: () => {
+      notify.success("Role Deleted", "The role has been removed.");
+      setRoleToDelete(null);
+      void refetchRoles();
+    },
+    onError: (error) => {
+      notify.error("Deletion Failed", error.message || "Failed to delete role.");
+    },
+  });
 
   const inviteUserMutation = api.admin.inviteUserToBypassWaitlist.useMutation({
     onSuccess: (result) => {
@@ -110,11 +143,43 @@ export function UserRolesPanel() {
     inviteUserMutation.mutate(inviteForm);
   };
 
-  const filteredUsers = usersWithCountries?.filter((user) => {
-    if (!searchTerm) return true;
-    const q = searchTerm.toLowerCase();
+  const handleOpenCreateRole = () => {
+    setEditingRole(null);
+    setRoleEditorOpen(true);
+  };
+
+  const handleOpenEditRole = (role: EditableRole) => {
+    setEditingRole(role);
+    setRoleEditorOpen(true);
+  };
+
+  const filteredRoles = roles?.filter((r) => {
+    if (!roleSearchTerm) return true;
+    const q = roleSearchTerm.toLowerCase();
     return (
-      user.clerkUserId.toLowerCase().includes(q) || user.country?.name.toLowerCase().includes(q)
+      r.name.toLowerCase().includes(q) ||
+      r.displayName.toLowerCase().includes(q) ||
+      (r.description && r.description.toLowerCase().includes(q))
+    );
+  });
+
+  const filteredUsers = usersWithCountries?.filter((user) => {
+    // Role filter
+    if (userRoleFilter !== "all") {
+      if (userRoleFilter === "unassigned") {
+        if (user.role) return false;
+      } else if (user.role?.id !== userRoleFilter && user.role?.name !== userRoleFilter) {
+        return false;
+      }
+    }
+
+    // Text search filter
+    if (!userSearchTerm) return true;
+    const q = userSearchTerm.toLowerCase();
+    return (
+      user.clerkUserId.toLowerCase().includes(q) ||
+      (user.country?.name && user.country.name.toLowerCase().includes(q)) ||
+      (user.role?.displayName && user.role.displayName.toLowerCase().includes(q))
     );
   });
 
@@ -122,17 +187,24 @@ export function UserRolesPanel() {
     <div className="space-y-6">
       <PageHeader
         title="Roles and permissions"
-        subtitle="Role hierarchy, VIP invitations and membership elevation audit."
+        subtitle="Role hierarchy, permission profiles, user assignments and account elevation."
       />
 
       <Tabs defaultValue="roles" className="w-full">
-        <TabsList className="bg-fill-3 flex w-full max-w-md justify-start gap-1 rounded-full p-1">
+        <TabsList className="bg-fill-3 flex w-full max-w-xl justify-start gap-1 rounded-full p-1">
           <TabsTrigger
             value="roles"
             className="text-caption flex flex-1 items-center justify-center gap-2"
           >
             <Shield className="text-teal h-4 w-4" />
-            System roles
+            Role definitions
+          </TabsTrigger>
+          <TabsTrigger
+            value="assignments"
+            className="text-caption flex flex-1 items-center justify-center gap-2"
+          >
+            <Key className="text-amber h-4 w-4" />
+            User role assignment
           </TabsTrigger>
           <TabsTrigger
             value="memberships"
@@ -143,136 +215,372 @@ export function UserRolesPanel() {
           </TabsTrigger>
         </TabsList>
 
+        {/* TAB 1: ROLE DEFINITIONS & CONFIGURATION */}
         <TabsContent value="roles" className="mt-4 space-y-4 focus-visible:outline-none">
           <Card className="space-y-4 p-5">
             <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="text-label text-caption">Configured system roles</h3>
+                <h3 className="text-label text-caption">Configured system & custom roles</h3>
                 <p className="text-label-secondary text-footnote mt-0.5">
-                  Hierarchy levels and attached permission profiles
+                  Hierarchy levels, user counts, and attached permission profiles
                 </p>
               </div>
-              <Can I="manage" a="Role">
-                <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Mail className="mr-2 h-3.5 w-3.5" />
-                      Invite VIP / Role
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Send waitlist bypass invitation</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-3">
-                      <div className="space-y-2">
-                        <label className="text-label text-caption">Email address</label>
-                        <Input
-                          type="email"
-                          value={inviteForm.emailAddress}
-                          onChange={(e) =>
-                            setInviteForm({ ...inviteForm, emailAddress: e.target.value })
-                          }
-                          placeholder="player@domain.com"
-                          className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                        />
+              <div className="flex flex-wrap items-center gap-2">
+                <Can I="manage" a="Role">
+                  <Button size="sm" onClick={handleOpenCreateRole}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" />
+                    Create Role
+                  </Button>
+                  <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Mail className="mr-1.5 h-3.5 w-3.5" />
+                        Invite VIP / Role
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Send waitlist bypass invitation</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 py-3">
+                        <div className="space-y-2">
+                          <label className="text-label text-caption">Email address</label>
+                          <Input
+                            type="email"
+                            value={inviteForm.emailAddress}
+                            onChange={(e) =>
+                              setInviteForm({ ...inviteForm, emailAddress: e.target.value })
+                            }
+                            placeholder="player@domain.com"
+                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-label text-caption">Reserved nation name</label>
+                          <Input
+                            value={inviteForm.reservedNationName}
+                            onChange={(e) =>
+                              setInviteForm({ ...inviteForm, reservedNationName: e.target.value })
+                            }
+                            placeholder="Kingdom of Solaria"
+                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-label text-caption">Initial role</label>
+                          <Select
+                            value={inviteForm.role}
+                            onValueChange={(val: "admin" | "user" | "owner") =>
+                              setInviteForm({ ...inviteForm, role: val })
+                            }
+                          >
+                            <SelectTrigger size="sm">
+                              <SelectValue placeholder="Choose a role..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="user">Standard Player (User)</SelectItem>
+                              <SelectItem value="admin">Administrator (Admin)</SelectItem>
+                              <SelectItem value="owner">System Owner (Owner)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-label text-caption">Reserved nation name</label>
-                        <Input
-                          value={inviteForm.reservedNationName}
-                          onChange={(e) =>
-                            setInviteForm({ ...inviteForm, reservedNationName: e.target.value })
-                          }
-                          placeholder="Kingdom of Solaria"
-                          className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-label text-caption">Initial role</label>
-                        <Select
-                          value={inviteForm.role}
-                          onValueChange={(val: "admin" | "user" | "owner") =>
-                            setInviteForm({ ...inviteForm, role: val })
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowInviteDialog(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={handleSendInvite}
+                          disabled={
+                            inviteUserMutation.isPending ||
+                            !inviteForm.emailAddress ||
+                            !inviteForm.reservedNationName
                           }
                         >
-                          <SelectTrigger size="sm">
-                            <SelectValue placeholder="Choose a role..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">Standard Player (User)</SelectItem>
-                            <SelectItem value="admin">Administrator (Admin)</SelectItem>
-                            <SelectItem value="owner">System Owner (Owner)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowInviteDialog(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={handleSendInvite}
-                        disabled={
-                          inviteUserMutation.isPending ||
-                          !inviteForm.emailAddress ||
-                          !inviteForm.reservedNationName
-                        }
-                      >
-                        {inviteUserMutation.isPending ? "Sending..." : "Send Invitation"}
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </Can>
+                          {inviteUserMutation.isPending ? "Sending..." : "Send Invitation"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </Can>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              {SYSTEM_ROLES.map((role) => (
-                <div
-                  key={role.name}
-                  className="border-separator bg-fill-3 hover:border-separator rounded-row flex flex-col justify-between gap-2 border p-4 transition-colors sm:flex-row sm:items-center"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-label text-caption">{role.displayName}</span>
-                      <Badge
-                        variant="outline"
-                        className={
-                          role.level === 0
-                            ? "border-red/30 bg-red/10 text-footnote text-red"
-                            : role.level === 10
-                              ? "border-teal/30 bg-teal/10 text-footnote text-teal"
-                              : "text-footnote"
-                        }
-                      >
-                        Level {role.level}
-                      </Badge>
-                    </div>
-                    <p className="text-label-secondary text-footnote mt-0.5">{role.description}</p>
-                    <p className="text-label-secondary text-footnote mt-0.5 tabular-nums">
-                      Permissions: {role.permissions}
-                    </p>
-                  </div>
+            {/* Role search */}
+            <div className="relative max-w-sm">
+              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+              <Input
+                placeholder="Filter roles..."
+                value={roleSearchTerm}
+                onChange={(e) => setRoleSearchTerm(e.target.value)}
+                className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
+              />
+            </div>
+
+            {/* Role cards */}
+            <div className="space-y-3">
+              {rolesLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="rounded-row h-24 w-full" />
+                  ))}
                 </div>
-              ))}
+              ) : !filteredRoles || filteredRoles.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <p className="text-label-secondary text-footnote">No roles match the filter.</p>
+                </Card>
+              ) : (
+                filteredRoles.map((role) => (
+                  <div
+                    key={role.id}
+                    className="border-separator bg-fill-2 hover:border-separator rounded-row flex flex-col justify-between gap-4 border p-4 transition-colors md:flex-row md:items-start"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-label text-caption font-semibold">
+                          {role.displayName}
+                        </span>
+                        <code className="text-label-secondary text-footnote rounded bg-fill-3 px-1.5 py-0.5 font-mono">
+                          {role.name}
+                        </code>
+                        <Badge variant="outline" className={getLevelBadgeClass(role.level)}>
+                          Level {role.level}
+                        </Badge>
+                        {role.isSystem && (
+                          <Badge variant="outline" className="border-teal/30 bg-teal/10 text-footnote text-teal">
+                            System
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-footnote">
+                          {role.userCount} {role.userCount === 1 ? "user" : "users"}
+                        </Badge>
+                      </div>
+
+                      <p className="text-label-secondary text-footnote">
+                        {role.description || "No description configured."}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span className="text-label-tertiary text-footnote mr-1">
+                          Permissions ({role.permissionCount}):
+                        </span>
+                        {role.permissions.length === 0 ? (
+                          <span className="text-label-tertiary text-footnote italic">
+                            No granular permissions attached
+                          </span>
+                        ) : (
+                          <>
+                            {role.permissions.slice(0, 6).map((perm) => (
+                              <Badge
+                                key={perm.id}
+                                variant="outline"
+                                className="text-label-secondary font-mono text-[11px] py-0 px-1.5"
+                              >
+                                {perm.name}
+                              </Badge>
+                            ))}
+                            {role.permissions.length > 6 && (
+                              <Badge variant="outline" className="text-[11px] py-0 px-1.5">
+                                +{role.permissions.length - 6} more
+                              </Badge>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Can I="manage" a="Role">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 gap-1.5"
+                          onClick={() =>
+                            handleOpenEditRole({
+                              id: role.id,
+                              name: role.name,
+                              displayName: role.displayName,
+                              description: role.description,
+                              level: role.level,
+                              isSystem: role.isSystem,
+                              permissions: role.permissions,
+                            })
+                          }
+                        >
+                          <EditPencil className="h-3.5 w-3.5" />
+                          Edit Role
+                        </Button>
+                        {!role.isSystem && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:bg-destructive/10 h-8 gap-1.5"
+                            onClick={() =>
+                              setRoleToDelete({
+                                id: role.id,
+                                name: role.name,
+                                displayName: role.displayName,
+                                description: role.description,
+                                level: role.level,
+                                isSystem: role.isSystem,
+                                permissions: role.permissions,
+                              })
+                            }
+                          >
+                            <Trash className="h-3.5 w-3.5" />
+                            Delete
+                          </Button>
+                        )}
+                      </Can>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </Card>
         </TabsContent>
 
+        {/* TAB 2: USER ROLE ASSIGNMENT */}
+        <TabsContent value="assignments" className="mt-4 space-y-4 focus-visible:outline-none">
+          <Card className="space-y-4 p-5">
+            <div className="border-separator flex flex-col gap-3 border-b pb-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-label text-caption">User role assignments</h3>
+                <p className="text-label-secondary text-footnote mt-0.5">
+                  Assign administrative, moderation, and gameplay roles to players
+                </p>
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative max-w-sm flex-1">
+                <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+                <Input
+                  placeholder="Search user ID, nation, or role..."
+                  value={userSearchTerm}
+                  onChange={(e) => setUserSearchTerm(e.target.value)}
+                  className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-label-secondary text-footnote">Filter by role:</span>
+                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                  <SelectTrigger size="sm" className="w-44">
+                    <SelectValue placeholder="All roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All roles</SelectItem>
+                    <SelectItem value="unassigned">Unassigned (None)</SelectItem>
+                    {roles?.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.displayName} (Level {r.level})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Users list */}
+            <div className="space-y-2">
+              {usersLoading || rolesLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="rounded-row h-16 w-full" />
+                  ))}
+                </div>
+              ) : !filteredUsers || filteredUsers.length === 0 ? (
+                <Card className="p-8 text-center">
+                  <p className="text-label-secondary text-footnote">No accounts match the criteria.</p>
+                </Card>
+              ) : (
+                filteredUsers.map((user) => (
+                  <div
+                    key={user.id}
+                    className="border-separator bg-fill-2 hover:border-separator rounded-row flex flex-col justify-between gap-3 border p-4 transition-colors md:flex-row md:items-center"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-label text-caption font-mono">{user.clerkUserId}</span>
+                        {user.role ? (
+                          <Badge variant="outline" className={getLevelBadgeClass(user.role.level)}>
+                            {user.role.displayName}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-label-tertiary text-footnote">
+                            No Role Assigned
+                          </Badge>
+                        )}
+                        <Badge
+                          variant="outline"
+                          className={
+                            user.membershipTier === "mycountry_premium"
+                              ? "border-purple/30 bg-purple/10 text-footnote text-purple"
+                              : "text-footnote"
+                          }
+                        >
+                          {user.membershipTier === "mycountry_premium"
+                            ? "Premium"
+                            : "Basic"}
+                        </Badge>
+                      </div>
+                      <span className="text-label-secondary text-footnote mt-0.5 block">
+                        {user.country ? `Nation: ${user.country.name}` : "No Claimed Nation"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-label-secondary text-footnote shrink-0">Role:</span>
+                      <Select
+                        value={user.role?.id || "none"}
+                        onValueChange={(newRoleId) =>
+                          assignUserRoleMutation.mutate({
+                            clerkUserId: user.clerkUserId,
+                            roleId: newRoleId === "none" ? null : newRoleId,
+                          })
+                        }
+                        disabled={
+                          assignUserRoleMutation.isPending || !ability.can("manage", "User")
+                        }
+                      >
+                        <SelectTrigger size="sm" className="w-48">
+                          <SelectValue placeholder="Select role..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            <span className="text-label-tertiary">None (Unassigned)</span>
+                          </SelectItem>
+                          {roles?.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.displayName} (L{r.level})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 3: ACCOUNT ELEVATION / MEMBERSHIP TIERS */}
         <TabsContent value="memberships" className="mt-4 space-y-4 focus-visible:outline-none">
           <div className="flex items-center justify-between">
             <div className="relative max-w-sm flex-1">
-              <Search className="text-label-secondary absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2" />
+              <Search className="text-label-secondary absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 placeholder="Search accounts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
                 className="rounded-control-sm md:text-footnote h-(--control-height-sm) pl-8"
               />
             </div>
@@ -290,7 +598,7 @@ export function UserRolesPanel() {
                 <p className="text-label-secondary text-footnote">No accounts found.</p>
               </Card>
             ) : (
-              filteredUsers?.map((user) => (
+              filteredUsers.map((user) => (
                 <Card
                   key={user.id}
                   className="hover:border-separator flex items-center justify-between p-4 transition-colors"
@@ -340,6 +648,49 @@ export function UserRolesPanel() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Role Editor Dialog */}
+      <RoleEditorDialog
+        open={roleEditorOpen}
+        onOpenChange={setRoleEditorOpen}
+        role={editingRole}
+        onSuccess={() => void refetchRoles()}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={Boolean(roleToDelete)} onOpenChange={(open) => !open && setRoleToDelete(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Role</DialogTitle>
+          </DialogHeader>
+          <p className="text-label-secondary text-footnote py-2">
+            Are you sure you want to delete role &ldquo;{roleToDelete?.displayName}&rdquo;? This
+            action cannot be undone. Roles assigned to active users cannot be deleted.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRoleToDelete(null)}
+              disabled={deleteRoleMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (roleToDelete) {
+                  deleteRoleMutation.mutate({ roleId: roleToDelete.id });
+                }
+              }}
+              disabled={deleteRoleMutation.isPending}
+            >
+              {deleteRoleMutation.isPending ? "Deleting..." : "Delete Role"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
