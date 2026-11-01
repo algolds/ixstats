@@ -29,7 +29,8 @@ import {
   type WordEvolutionResult,
 } from "~/lib/onoma/sound-shifts";
 import { speakName } from "~/lib/onoma/browser-speech";
-import { translateToIPA } from "~/lib/onoma/phonology";
+import { resolveIpa } from "~/lib/onoma/ipa-overrides";
+import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -216,11 +217,12 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
   // Audio Playback
   const handlePlay = async (word: string) => {
     try {
-      const ipa = translateToIPA(word, "latin");
+      const culture = classifyCulture(word).culture || "latin";
+      const ipa = resolveIpa(word, culture);
       await speakName({
         name: word,
         ipa,
-        culture: "latin",
+        culture,
         kokoroEnabled: speechConfig?.kokoro?.enabled ?? false,
         defaultVoice: speechConfig?.kokoro?.voice || "af_heart",
       });

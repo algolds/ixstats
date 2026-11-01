@@ -193,17 +193,23 @@ function paramsFromQuery(q: URLSearchParams, d: TtsParams): TtsParams {
   };
 }
 
+function resolveKokoroPhonemes(p: TtsParams): string {
+  if (!p.ipa) return "";
+  let ipa = p.anglicize ? anglicizeForSpeech(p.ipa) : p.ipa;
+  if (p.stripStress) ipa = ipa.replace(/[ˈˌ]/g, "");
+  const { phonemes } = ipaToKokoroPhonemes(ipa);
+  if (!phonemes) return "";
+  return p.phonemePrefix + phonemes + (PROSODY_SUFFIX[p.prosody] ?? "");
+}
+
 /** Phoneme-native kokoro-fastapi synthesis; null when unavailable so the caller falls back. */
 async function synthesizeFastApi(
   p: TtsParams,
   fastApiUrl: string,
   headers: Record<string, string>
 ): Promise<{ buf: Buffer; ct: string } | null> {
-  let ipa = p.anglicize ? anglicizeForSpeech(p.ipa) : p.ipa;
-  if (p.stripStress) ipa = ipa.replace(/[ˈˌ]/g, "");
-  let { phonemes } = ipaToKokoroPhonemes(ipa);
+  const phonemes = resolveKokoroPhonemes(p);
   if (!phonemes) return null;
-  phonemes = p.phonemePrefix + phonemes + (PROSODY_SUFFIX[p.prosody] ?? "");
 
   try {
     const res = await fetch(`${fastApiUrl.replace(/\/$/, "")}/dev/generate_from_phonemes`, {
@@ -428,12 +434,13 @@ async function handleTts(request: NextRequest) {
     if (prepared instanceof NextResponse) return prepared;
     const { p, config, baseUrl, fastApiUrl, useCache } = prepared;
 
+    const resolvedPhonemes = resolveKokoroPhonemes(p);
     const keyFor = (prefix: string, text: string) =>
       prefix +
       crypto
         .createHash("sha1")
         .update(
-          `${config.engine}|${text}|${p.ipa}|${p.voice}|${p.speed}|${p.model}|${p.anglicize}|${p.phonemePrefix}|${p.stripStress}|${p.prosody}`
+          `${config.engine}|${text}|${p.ipa}|${resolvedPhonemes}|${p.voice}|${p.speed}|${p.model}|${p.anglicize}|${p.phonemePrefix}|${p.stripStress}|${p.prosody}`
         )
         .digest("hex");
     const cacheKey = keyFor("onoma:tts:", p.text);

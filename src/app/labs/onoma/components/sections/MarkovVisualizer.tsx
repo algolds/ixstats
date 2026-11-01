@@ -19,6 +19,8 @@ import "@xyflow/react/dist/style.css";
 import { SoundHigh as Volume2, Undo as RotateCcw, HelpCircle } from "iconoir-react";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { speakBrowserNative } from "~/lib/onoma/browser-speech";
+import { resolveIpa } from "~/lib/onoma/ipa-overrides";
+import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 
@@ -287,7 +289,9 @@ function MarkovVisualizerInner({
   // Play pronunciation via speakBrowserNative
   const handleSpeak = () => {
     if (!activePrefix) return;
-    speakBrowserNative(MarkovChain.capitalize(activePrefix), "", "any").catch(() => {});
+    const word = MarkovChain.capitalize(activePrefix);
+    const culture = classifyCulture(word).culture || "any";
+    speakBrowserNative(word, resolveIpa(word, culture), culture).catch(() => {});
   };
 
   return (

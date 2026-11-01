@@ -19,7 +19,8 @@ import { NameResultCard } from "./NameResultCard";
 import { BatchResultsTable } from "../sections/batch/BatchResultsTable";
 import type { BatchNameResult } from "../sections/batch/batch-constants";
 import { exportToCSV, exportToJSON } from "~/lib/onoma/name-generator";
-import { translateToIPA } from "~/lib/onoma/phonology";
+import { resolveIpa, getNameOverride } from "~/lib/onoma/ipa-overrides";
+import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
 import { tokenizeIntoSyllables } from "~/lib/onoma/markov-chain";
 import { speakName } from "~/lib/onoma/browser-speech";
 import { api } from "~/trpc/react";
@@ -113,7 +114,8 @@ export function SynthesisResultsGrid({
   // Transform names array to full BatchNameResult objects
   const tableData: BatchNameResult[] = useMemo(() => {
     return generatedNames.map((name) => {
-      const ipa = translateToIPA(name, culture || "latin");
+      const resolvedCulture = !culture || culture === "any" ? classifyCulture(name).culture : culture;
+      const ipa = resolveIpa(name, resolvedCulture);
       const syllables = tokenizeIntoSyllables(name).length;
       const naturalness = scoreNaturalness?.(name) ?? null;
       return {
@@ -193,12 +195,13 @@ export function SynthesisResultsGrid({
   };
 
   const playName = (name: string, ipa: string) => {
+    const resolvedCulture = !culture || culture === "any" ? classifyCulture(name).culture : culture;
     speakName({
       name,
       ipa,
-      culture: culture ?? null,
+      culture: resolvedCulture ?? null,
       kokoroEnabled: Boolean(speechConfig?.kokoro?.enabled),
-      voice: undefined,
+      voice: getNameOverride(name)?.voice,
       defaultVoice: speechConfig?.kokoro?.voice,
       forceDefaultVoice: false,
     });

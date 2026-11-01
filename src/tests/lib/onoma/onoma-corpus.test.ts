@@ -80,6 +80,28 @@ describe("Onoma on real names", () => {
       phonemes: "ˈimpeɾia",
       dropped: [],
     });
+    expect(
+      ipaToKokoroPhonemes(anglicizeForSpeech(translateToIPA("Delepas", "latin")))
+    ).toMatchObject({
+      phonemes: "dˈɛləpəs",
+      dropped: [],
+    });
+    expect(
+      ipaToKokoroPhonemes(anglicizeForSpeech(translateToIPA("Sakura", "east-asian")))
+    ).toMatchObject({
+      phonemes: "sˈakuɾə",
+      dropped: [],
+    });
+    expect(
+      ipaToKokoroPhonemes(anglicizeForSpeech(translateToIPA("Vlachezar", "slavic")))
+    ).toMatchObject({
+      phonemes: "vlˈakəzəɹ",
+      dropped: [],
+    });
+    expect(ipaToKokoroPhonemes("/vəɹˈOnə/")).toMatchObject({
+      phonemes: "vəɹˈoʊnə",
+      dropped: [],
+    });
     expect(ipaToKokoroPhonemes("bʊʔər")).toMatchObject({ phonemes: "bʊəɹ", dropped: ["ʔ"] });
     expect(anglicizeForSpeech("/onoma/")).toBe("/oʊnəmə/");
   });

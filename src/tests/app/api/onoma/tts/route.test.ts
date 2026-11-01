@@ -118,3 +118,26 @@ describe("a signed-in player who is not staff", () => {
     ).toEqual([]);
   });
 });
+
+it("places stress after the initial consonant cluster when calling kokoro-fastapi /dev/generate_from_phonemes", async () => {
+  (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+    { key: "onoma.kokoro.enabled", value: "true" },
+    { key: "onoma.kokoro.engine", value: "kokoro-fastapi" },
+    { key: "onoma.kokoro.fastApiUrl", value: "http://kokoro-fastapi" },
+    { key: "onoma.kokoro.voice", value: "af_heart" },
+  ]);
+
+  const response = await GET(
+    new NextRequest(
+      "http://localhost/api/onoma/tts?text=Delepas&ipa=%2F%CB%88delepas%2F&culture=latin"
+    )
+  );
+  expect(response.status).toBe(200);
+  expect(fetchMock).toHaveBeenCalledWith(
+    "http://kokoro-fastapi/dev/generate_from_phonemes",
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({ phonemes: "dˈɛləpəs", voice: "af_heart" }),
+    })
+  );
+});

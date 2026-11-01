@@ -67,7 +67,13 @@ function SettingsSection() {
       const pitchRaw = localStorage.getItem("onoma-personal-pitch");
       setPersonalPitch(pitchRaw ? Number(pitchRaw) : 1.0);
       setPersonalAnglicize(localStorage.getItem("onoma-personal-anglicize") !== "false");
-      setPersonalPhonemePrefix(localStorage.getItem("onoma-personal-phoneme-prefix") || "");
+      const savedPrefix = localStorage.getItem("onoma-personal-phoneme-prefix") || "";
+      if (savedPrefix === "ə") {
+        localStorage.removeItem("onoma-personal-phoneme-prefix");
+        setPersonalPhonemePrefix("");
+      } else {
+        setPersonalPhonemePrefix(savedPrefix);
+      }
       setPersonalStripStress(localStorage.getItem("onoma-personal-strip-stress") === "true");
       setPersonalModel(localStorage.getItem("onoma-personal-model") || "");
       setPersonalProsody(localStorage.getItem("onoma-personal-prosody") || "neutral");
@@ -145,8 +151,6 @@ function SettingsSection() {
 
   const handleApplyPreset = (presetName: string) => {
     if (typeof window === "undefined") return;
-    localStorage.setItem("onoma-personal-preset", presetName);
-    setSelectedPreset(presetName);
 
     if (SPECIES_PRESETS[presetName]) {
       const p = SPECIES_PRESETS[presetName];
@@ -161,7 +165,12 @@ function SettingsSection() {
       notify.success(
         `Applied ${presetName.charAt(0).toUpperCase() + presetName.slice(1)} voice preset.`
       );
+    } else if (presetName === "custom") {
+      handleUpdateAdvancedSetting("onoma-personal-phoneme-prefix", "");
     }
+
+    localStorage.setItem("onoma-personal-preset", presetName);
+    setSelectedPreset(presetName);
   };
 
   const handleResetPreferences = () => {

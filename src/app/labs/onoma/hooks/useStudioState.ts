@@ -8,7 +8,8 @@ import { useNameBank } from "~/hooks/useNameBank";
 import { type GenerateOptions, type StudioSubTab, type NameCategory } from "~/lib/onoma/types";
 import { MarkovChain } from "~/lib/onoma/markov-chain";
 import { classifyCulture } from "~/lib/onoma/lexicon/culture-classifier";
-import { translateToIPA } from "~/lib/onoma/phonology";
+import { resolveIpa } from "~/lib/onoma/ipa-overrides";
+import { speakName } from "~/lib/onoma/browser-speech";
 import { transcribeToScript } from "~/lib/onoma/orthography";
 import { getMorphologyDetails } from "~/lib/onoma/morphology";
 
@@ -264,12 +265,12 @@ export function useStudioState({
       return [completedName, ...prev];
     });
 
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(completedName);
-      utterance.rate = 0.88;
-      window.speechSynthesis.speak(utterance);
-    }
+    speakName({
+      name: completedName,
+      ipa: resolveIpa(completedName, classifiedCulture),
+      culture: classifiedCulture || null,
+      kokoroEnabled: false,
+    }).catch(() => {});
   };
 
   // Save the training seeds as a dictionary to Stash
@@ -374,7 +375,7 @@ export function useStudioState({
   // Selected term profile derived hooks
   const selectedTermIpa = useMemo(() => {
     if (!selectedTerm) return "";
-    return translateToIPA(selectedTerm, classifiedCulture);
+    return resolveIpa(selectedTerm, classifiedCulture);
   }, [selectedTerm, classifiedCulture]);
 
   const selectedTermCyrillic = useMemo(() => {

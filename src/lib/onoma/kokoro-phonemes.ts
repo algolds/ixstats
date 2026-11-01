@@ -92,19 +92,158 @@ export const KOKORO_VALID_TOKENS: ReadonlySet<string> = new Set([
 // IPA token -> nearest valid misaki-en equivalent. Empty target = drop (and the
 // token is recorded in `dropped`).
 export const KOKORO_REMAP: ReadonlyMap<string, string> = new Map<string, string>([
+  // Multi-char IPA clusters & long vowels from culture/template tables
+  ["tʃʰ", "tʃ"],
+  ["dʒʱ", "dʒ"],
+  ["ʈʂʰ", "tʃ"],
+  ["ʈʂ", "dʒ"],
+  ["t̪ʰ", "t"],
+  ["ᶮdʒ", "ndʒ"],
+  ["aːɪ", "aɪ"],
+  ["aːʊ", "aʊ"],
+  ["ɔʏ", "ɔɪ"],
+  ["uɪ", "wɪ"],
+  ["aː", "ɑː"],
+  ["eː", "eɪ"],
+  ["oː", "oʊ"],
+  ["ɒː", "ɑː"],
+  ["tɕ", "tʃ"],
+  ["ɡb", "ɡb"],
+  ["kp", "kp"],
+  ["ᵐb", "mb"],
+  ["ⁿd", "nd"],
+  // Single-char IPA -> Misaki-en equivalents
   ["r", "ɹ"], // American approximant
   ["ʁ", "ɹ"], // uvular -> approximant
   ["x", "k"], // voiceless velar fricative absent in en
+  ["χ", "k"], // voiceless uvular fricative -> k
   ["ɣ", "ɡ"], // voiced velar fricative
   ["ɬ", "l"], // lateral fricative
+  ["ɮ", "l"], // voiced lateral fricative -> l
+  ["ʎ", "lj"], // palatal lateral approximant -> lj
+  ["ɲ", "nj"], // palatal nasal -> nj
+  ["ɳ", "n"], // retroflex nasal -> n
+  ["ʈ", "t"], // retroflex plosive -> t
+  ["ɖ", "d"], // voiced retroflex plosive -> d
+  ["ɟ", "dʒ"], // voiced palatal plosive -> dʒ
+  ["ɕ", "ʃ"], // alveolo-palatal fricative -> ʃ
+  ["ʑ", "ʒ"], // voiced alveolo-palatal fricative -> ʒ
+  ["ʂ", "ʃ"], // retroflex fricative -> ʃ
+  ["ʐ", "ʒ"], // voiced retroflex fricative -> ʒ
+  ["ɸ", "f"], // voiceless bilabial fricative -> f
+  ["ʋ", "v"], // labiodental approximant -> v
+  ["ħ", "h"], // voiceless pharyngeal fricative -> h
+  ["ʕ", ""], // voiced pharyngeal fricative -- drop
   ["ʔ", ""], // glottal stop -- drop
   ["y", "iː"], // close front rounded -> unrounded
+  ["ʏ", "ɪ"], // near-close near-front rounded -> ɪ
+  ["ɯ", "u"], // close back unrounded -> u
   ["ø", "ɛ"], // mid front rounded -> eh
   ["œ", "ɛ"], // mid front rounded -> eh
   ["q", "k"], // uvular stop -> k
   ["g", "ɡ"], // ASCII g -> IPA voiced velar stop
   ["c", "k"], // palatal stop / bare c -> k
+  ["-", " "], // hyphenated word boundary -> space
+  // Misaki G2P shorthand tokens returned by /dev/phonemize
+  ["O", "oʊ"],
+  ["I", "aɪ"],
+  ["A", "eɪ"],
+  ["W", "aʊ"],
+  ["Y", "ɔɪ"],
+  ["Q", "əʊ"],
+  ["ʧ", "tʃ"],
+  ["ʤ", "dʒ"],
+  ["T", "ɾ"],
+  ["ᵻ", "ɪ"],
+  ["ɜ", "ɜː"],
+  // Suprasegmental / modifier diacritics that remap to audible glides/nasals
+  ["ʲ", "j"],
+  ["ᵐ", "m"],
+  ["ⁿ", "n"],
+  ["ᶮ", "n"],
 ]);
+
+// Vowel tokens in Kokoro's inventory (syllable nuclei). In Misaki's phoneme
+// format, primary/secondary stress marks (ˈ / ˌ) MUST immediately precede the
+// vowel nucleus (e.g. "mˈɑɹkəs", "sˈakuɾə"), never the onset consonant
+// ("ˈmɑɹkəs", "ˈsakuɾə") — placing ˈ before a consonant causes Kokoro's neural
+// acoustic model to synthesize a phantom vowel ("uh-") before the consonant.
+const KOKORO_VOWEL_TOKENS: ReadonlySet<string> = new Set([
+  "aɪ",
+  "eɪ",
+  "aʊ",
+  "ɔɪ",
+  "oʊ",
+  "əʊ",
+  "iː",
+  "uː",
+  "ɑː",
+  "ɔː",
+  "ɜː",
+  "əː",
+  "i",
+  "ɪ",
+  "e",
+  "ɛ",
+  "æ",
+  "ɑ",
+  "ɒ",
+  "ɔ",
+  "o",
+  "ʊ",
+  "u",
+  "ʌ",
+  "ə",
+  "ɚ",
+  "ɝ",
+  "ɐ",
+  "ɨ",
+  "ʉ",
+  "a",
+]);
+
+/**
+ * Relocates IPA syllable-initial stress markers (`ˈ`, `ˌ`) past any onset
+ * consonants so they sit immediately before the syllable's vowel nucleus,
+ * matching Misaki/Kokoro's phoneme format. Stray stress markers with no
+ * following vowel in the same word/syllable are dropped so Kokoro never voices
+ * a leading vowel before a consonant.
+ */
+function relocateStressToVowel(tokens: readonly string[]): string[] {
+  const result: string[] = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const tok = tokens[i]!;
+    if (tok === "ˈ" || tok === "ˌ") {
+      let j = i + 1;
+      while (
+        j < tokens.length &&
+        !KOKORO_VOWEL_TOKENS.has(tokens[j]!) &&
+        tokens[j] !== " " &&
+        tokens[j] !== "." &&
+        tokens[j] !== "ˈ" &&
+        tokens[j] !== "ˌ"
+      ) {
+        j++;
+      }
+      if (j < tokens.length && KOKORO_VOWEL_TOKENS.has(tokens[j]!)) {
+        for (let k = i + 1; k < j; k++) {
+          result.push(tokens[k]!);
+        }
+        result.push(tok);
+        result.push(tokens[j]!);
+        i = j + 1;
+        continue;
+      }
+      // No vowel nucleus found before boundary or next stress mark — drop stray stress
+      i++;
+      continue;
+    }
+    result.push(tok);
+    i++;
+  }
+  return result;
+}
 
 // Known tokens (valid pass-through ∪ remap sources), longest-first for scanning.
 // A token is either valid (passes through) or remapped -- never both.
@@ -117,15 +256,23 @@ const SORTED_KNOWN: readonly string[] = Object.freeze(
 // Diphthongs / long vowels that are already English-natural — skipped whole so we
 // never crack "oʊ" into a bare "o" and then reduce it.
 const ANGLICIZE_SKIP_VOWELS: readonly string[] = [
+  "aːɪ",
+  "aːʊ",
   "aɪ",
   "eɪ",
   "aʊ",
   "ɔɪ",
+  "ɔʏ",
+  "uɪ",
   "oʊ",
   "əʊ",
   "iː",
   "uː",
   "ɑː",
+  "aː",
+  "eː",
+  "oː",
+  "ɒː",
   "ɔː",
   "ɜː",
   "əː",
@@ -147,12 +294,22 @@ const ANGLICIZE_OTHER_VOWELS = new Set([
   "ə",
   "ɚ",
   "ɝ",
+  "ɜ",
   "ɐ",
   "ɨ",
+  "ᵻ",
   "ʉ",
+  "ɯ",
   "y",
+  "ʏ",
   "ø",
   "œ",
+  "O",
+  "I",
+  "A",
+  "W",
+  "Y",
+  "Q",
 ]);
 
 // Stressed cardinals keep their quality; word-initial ones keep a clear onset instead of a
@@ -185,9 +342,9 @@ export function anglicizeForSpeech(ipa: string): string {
       i++;
       continue;
     }
-    if (ch === " " || ch === "." || ch === "/" || ch === "[" || ch === "]") {
+    if (ch === " " || ch === "." || ch === "-" || ch === "/" || ch === "[" || ch === "]") {
       stressNext = false; // syllable/word boundary resets stress tracking
-      if (ch === " " || ch === ".") {
+      if (ch === " " || ch === "." || ch === "-") {
         isWordInitial = true;
       }
       out += ch;
@@ -216,7 +373,7 @@ export function anglicizeForSpeech(ipa: string): string {
     if (ANGLICIZE_OTHER_VOWELS.has(ch)) {
       stressNext = false; // also a nucleus
       isWordInitial = false;
-    } else if (/[a-zøɛɔœɨŋʃtʃθðɬʁvjɾ]/i.test(ch)) {
+    } else if (/[a-zɡøɛɔœɨŋʃʒθðɬɮʁχħʕɲʎɳʈɖɟɕʑʂʐɸʋvjɾɹʧʤ]/i.test(ch)) {
       isWordInitial = false;
     }
     out += ch;
@@ -231,13 +388,15 @@ export function anglicizeForSpeech(ipa: string): string {
  * 1. Strip delimiters `/[]`; keep stress `ˈ`/`ˌ`, length `ː`, and whitespace.
  * 2. Token-scan longest-first. For each token: pass through if valid, remap if
  *    in the remap table, otherwise drop it and record in `dropped`.
- * 3. Collapse repeated spaces; trim.
+ * 3. Relocate syllable-onset stress markers (`ˈ`/`ˌ`) past onset consonants so
+ *    they sit immediately before the vowel nucleus (Misaki phoneme convention).
+ * 4. Collapse repeated spaces; trim.
  */
 export function ipaToKokoroPhonemes(ipa: string): KokoroPhonemeResult {
   if (!ipa) return { phonemes: "", dropped: [] };
 
-  // 1. Strip delimiters; keep stress / length / whitespace.
-  const cleaned = ipa.replace(/[/[\]]/g, "").trim();
+  // 1. Strip delimiters and silent suprasegmental/orthographic diacritics; keep stress / length / whitespace.
+  const cleaned = ipa.replace(/[/[\]ʰʱˤʼ̥̪'’‘ʻ]/g, "").trim();
   if (!cleaned) return { phonemes: "", dropped: [] };
 
   const dropped: string[] = [];
@@ -266,7 +425,7 @@ export function ipaToKokoroPhonemes(ipa: string): KokoroPhonemeResult {
     }
   }
 
-  const phonemes = out
+  const phonemes = relocateStressToVowel(out)
     .join("")
     .replace(/[^\S\n]+/g, " ")
     .trim();

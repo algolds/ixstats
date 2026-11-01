@@ -138,10 +138,12 @@ function ttsParams({
     : voice || cultureMappedVoice(culture) || userDefaultVoice;
 
   if (chosen) params.set("voice", chosen); // explicit/personal voice -> server skips culture map
+  const rawPrefix = personal("phoneme-prefix");
+  const safePrefix = rawPrefix === "ə" ? "" : rawPrefix;
   const optionalParams: Array<[string, string]> = [
     ["speed", personal("speed")],
     ["model", personal("model")],
-    ["phonemePrefix", personal("phoneme-prefix")],
+    ["phonemePrefix", safePrefix],
   ];
   for (const [key, value] of optionalParams) if (value) params.set(key, value);
   if (personal("anglicize") === "false") params.set("anglicize", "false");

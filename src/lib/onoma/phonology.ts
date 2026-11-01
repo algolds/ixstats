@@ -542,7 +542,7 @@ export function translateToIPA(
  * Inserts the primary stress mark 'ˈ' before the consonant onset of the first syllable.
  */
 function applyStress(word: string): string {
-  if (!word) return "";
+  if (!word || /[ˈˌ]/.test(word)) return word;
 
   // Find the index of the first vowel
   const match = word.match(IPA_VOWELS);

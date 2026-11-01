@@ -110,7 +110,7 @@ export const SPECIES_PRESETS: Record<string, any> = {
     volume: 1.0,
     pitch: 1.2,
     anglicize: true,
-    phonemePrefix: "ə",
+    phonemePrefix: ".",
     stripStress: false,
     prosody: "neutral",
     blendActive: false,
@@ -467,7 +467,6 @@ export function VoicePreferencesPanel({
                       ["__none__", "None (Standard start)"],
                       ["h", "Soft H (h) - breathy aspiration"],
                       [".", "Pause (.) - small initial silence"],
-                      ["ə", "Schwa (ə) - neutral vowel start"],
                     ]}
                     size="sm"
                     className="w-full"
