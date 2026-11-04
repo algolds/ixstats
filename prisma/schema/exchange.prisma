@@ -1,6 +1,11 @@
 // IxStates — Exchange (market & corporate system)
 //
-// Phase 1 (P0) data model. See Exchange_v1_PRD.md §9.
+// Phase 1 (P0) data model, extended by Phase 3 (realm-scoped companies, sectors and contracts,
+// nation treasuries, the two-sided order book and shareholder governance). See Exchange_v1_PRD.md §9
+// and docs/specs/2026-11-01-exchange-phase-3-design.md.
+// Wallets are global per user. Every market object carries realmId (default "default", Ixnay).
+// Columns that point at Realm, Country or User are plain strings with indexes, not foreign keys,
+// so backfills on populated tables cannot fail on a missing parent.
 // Conventions mirror cards.prisma (MyVault / VaultTransaction / CardValueHistory):
 //   - cuid() string ids, createdAt/updatedAt wall-clock audit columns
 //   - String columns for type/status/direction (allowed values documented inline),
@@ -48,40 +53,61 @@ model ExchangeTransaction {
   @@map("exchange_transactions")
 }
 
-/// A player-founded company. Priced by the sim (fairValue); shares issued in Phase 1,
-/// traded in Phase 2. status: ACTIVE | DELISTED | BANKRUPT
+/// A player-founded company, scoped to a realm. Priced by the sim (fairValue) and traded on
+/// the order book. status: ACTIVE | DISTRESSED | BANKRUPT | DELISTED. name is unique within a
+/// realm. hqCountryId is the nation whose tax, interest and treasury rules apply.
 model Company {
-  id                 String                @id @default(cuid())
-  founderId          String
-  name               String                @unique
-  sectorKey          String
-  capital            Float                 @default(0)
-  standing           Float                 @default(0)
-  fairValue          Float                 @default(0)
-  sharesIssued       Int                   @default(0)
-  sharesOutstanding  Int                   @default(0)
-  contractsWonValue  Float                 @default(0)
+  id                    String                @id @default(cuid())
+  realmId               String                @default("default")
+  founderId             String
+  name                  String
+  sectorKey             String
+  subIndustryKey        String                @default("software_media")
+  hqCountryId           String?
+  capital               Float                 @default(0)
+  standing              Float                 @default(0)
+  fairValue             Float                 @default(0)
+  sharesIssued          Int                   @default(0)
+  sharesOutstanding     Int                   @default(0)
+  contractsWonValue     Float                 @default(0)
   /// Founder control: new listings and share purchases are allowed only while true.
-  tradingOpen        Boolean               @default(false)
+  tradingOpen           Boolean               @default(false)
   /// Fair value added by applied EXPAND decisions (see CompanyDecision).
-  decisionValue      Float                 @default(0)
-  status             String                @default("ACTIVE")
-  createdIxTime      Float
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @default(now()) @updatedAt
-  founder            User                  @relation("UserCompaniesFounded", fields: [founderId], references: [id], onDelete: Cascade)
-  valueHistory       CompanyValueHistory[]
-  issuances          ShareIssuance[]
-  shareholdings      Shareholding[]
-  decisions          CompanyDecision[]
-  bids               ContractBid[]
-  issuedContracts    Contract[]            @relation("ContractIssuer")
-  shareListings      ShareListing[]
-  dividends          CompanyDividend[]
+  decisionValue         Float                 @default(0)
+  pricingStrategy       String                @default("balanced")
+  lobbyBuffType         String?
+  lobbyBuffUntilIxTime  Float?
+  creditDrawn           Float                 @default(0)
+  creditRating          String                @default("A")
+  lastTradePrice        Float?
+  lastTradeIxTime       Float?
+  lastTickRevenue       Float                 @default(0)
+  lastTickExpenses      Float                 @default(0)
+  lastTickTax           Float                 @default(0)
+  lastTickNetIncome     Float                 @default(0)
+  distressedSinceIxTime Float?
+  status                String                @default("ACTIVE")
+  createdIxTime         Float
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @default(now()) @updatedAt
+  founder               User                  @relation("UserCompaniesFounded", fields: [founderId], references: [id], onDelete: Cascade)
+  valueHistory          CompanyValueHistory[]
+  issuances             ShareIssuance[]
+  shareholdings         Shareholding[]
+  decisions             CompanyDecision[]
+  bids                  ContractBid[]
+  issuedContracts       Contract[]            @relation("ContractIssuer")
+  shareListings         ShareListing[]
+  shareBuyOrders        ShareBuyOrder[]
+  dividends             CompanyDividend[]
+  proposals             CompanyProposal[]
 
+  @@unique([realmId, name])
   @@index([founderId])
   @@index([sectorKey])
   @@index([status])
+  @@index([realmId, status])
+  @@index([hqCountryId])
   @@map("exchange_companies")
 }
 
@@ -177,15 +203,18 @@ model Shareholding {
 }
 
 /// One of the 4 sim-driven macro-sector indices (Agriculture / Industry / Services /
-/// Government), aggregated from SectoralOutput across all nations. baseTotal is the
-/// epoch reference captured on first compute; dmModifier is a DM event lever.
+/// Government) per realm, aggregated from SectoralOutput across the realm's nations. baseTotal
+/// is the epoch reference captured on first compute; dmModifier is a DM event lever. macroWeight
+/// is the realm's aggregated national sector GDP share.
 model SectorIndex {
   id            String   @id @default(cuid())
-  sectorKey     String   @unique
+  realmId       String   @default("default")
+  sectorKey     String
   label         String
   value         Float    @default(1000)
   baseTotal     Float?
   dmModifier    Float    @default(0)
+  macroWeight   Float    @default(0)
   computedIxTime Float?
   /// The sector fund: ₷ held for SectorPosition holders and the units they own. Each index
   /// update rebalances the four funds by relative index performance; no ₷ is created.
@@ -194,12 +223,14 @@ model SectorIndex {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
+  @@unique([realmId, sectorKey])
   @@map("exchange_sector_indices")
 }
 
 /// Persisted price history per sector index (mirrors CardValueHistory).
 model SectorIndexHistory {
   id            String   @id @default(cuid())
+  realmId       String   @default("default")
   sectorKey     String
   value         Float
   recordedIxTime Float
@@ -207,13 +238,15 @@ model SectorIndexHistory {
 
   @@index([sectorKey])
   @@index([recordedIxTime])
+  @@index([realmId])
   @@map("exchange_sector_index_history")
 }
 
-/// A player's position in a sector index instrument.
+/// A player's position in a realm's sector index instrument.
 model SectorPosition {
   id          String   @id @default(cuid())
   ownerUserId String
+  realmId     String   @default("default")
   sectorKey   String
   units       Float    @default(0)
   avgCost     Float    @default(0)
@@ -221,7 +254,7 @@ model SectorPosition {
   updatedAt   DateTime @default(now()) @updatedAt
   owner       User     @relation("UserSectorPositions", fields: [ownerUserId], references: [id], onDelete: Cascade)
 
-  @@unique([ownerUserId, sectorKey])
+  @@unique([ownerUserId, realmId, sectorKey])
   @@index([ownerUserId])
   @@map("exchange_sector_positions")
 }
@@ -271,6 +304,7 @@ model CompanyDecision {
 /// whose capital funds `escrow` at creation; the winning bid's amount is paid out of escrow.
 model Contract {
   id          String        @id @default(cuid())
+  realmId     String        @default("default")
   type        String
   title       String
   sectorKey   String
@@ -294,9 +328,16 @@ model Contract {
   updatedAt        DateTime @default(now()) @updatedAt
   /// B2G: the nation the tender is issued for (its owner posts and funds it).
   issuerCountryId  String?
-  /// Where escrow came from and returns to: COMPANY (issuer capital) | WALLET (issuer's wallet).
-  /// NULL on MVP rows, which are all COMPANY.
+  /// Where escrow came from and returns to: COMPANY (issuer capital) | WALLET (issuer's wallet) |
+  /// TREASURY (the issuing nation's treasury) | FAUCET (a realm faucet tender). NULL on MVP rows,
+  /// which are all COMPANY.
   fundedBy         String?
+  /// The national Directive or Issue this B2G tender was issued from, when there is one.
+  linkedDirectiveId String?
+  linkedIssueId     String?
+  /// Cross-border tariff charged on the award, and the amount actually paid into the treasury.
+  tariffRate       Float    @default(0)
+  tariffPaid       Float    @default(0)
   issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
   @@index([issuerCompanyId])
@@ -304,6 +345,7 @@ model Contract {
   @@index([status, endIxTime])
   @@index([winnerCompanyId])
   @@index([status])
+  @@index([realmId, status])
   @@index([sectorKey])
   @@index([endIxTime])
   @@map("exchange_contracts")
@@ -325,4 +367,105 @@ model ContractBid {
   @@unique([contractId, companyId])
   @@index([companyId])
   @@map("exchange_contract_bids")
+}
+
+/// A nation's ₷ treasury. Filled by stipends, taxes, tariffs and interest, drained by B2G
+/// tenders and LOBBY spending. Every move also writes a NationTreasuryEntry.
+model NationTreasury {
+  id                     String   @id @default(cuid())
+  countryId              String   @unique
+  realmId                String   @default("default")
+  balance                Float    @default(0)
+  lifetimeStipend        Float    @default(0)
+  lifetimeTaxEarned      Float    @default(0)
+  lifetimeTariffEarned   Float    @default(0)
+  lifetimeInterestEarned Float    @default(0)
+  lifetimeSpent          Float    @default(0)
+  corporateGdpShift      Float    @default(0)
+  lastStipendIxTime      Float?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @default(now()) @updatedAt
+
+  @@index([realmId])
+  @@map("exchange_nation_treasuries")
+}
+
+/// Audit ledger for NationTreasury moves. type: STIPEND | TAX | TARIFF | INTEREST | LOBBY |
+/// B2G_ESCROW | B2G_REFUND | SPEND. amount is signed (positive into the treasury).
+/// idempotencyKey: a retried move with the same key is applied once.
+model NationTreasuryEntry {
+  id             String   @id @default(cuid())
+  countryId      String
+  type           String
+  amount         Float
+  balanceAfter   Float
+  source         String
+  metadata       Json?
+  ixTime         Float
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([countryId, createdAt])
+  @@map("exchange_nation_treasury_entries")
+}
+
+/// A limit bid to buy a company's shares at or below maxPricePerShare. buyerUserId's ₷ is
+/// escrowed up front (escrow). status: OPEN | FILLED | CANCELLED. `shares` is what is left
+/// to buy and `sharesOrdered` is the original order size.
+model ShareBuyOrder {
+  id               String   @id @default(cuid())
+  companyId        String
+  buyerUserId      String
+  shares           Int
+  sharesOrdered    Int
+  maxPricePerShare Float
+  escrow           Float
+  status           String   @default("OPEN")
+  createdIxTime    Float
+  idempotencyKey   String?  @unique
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @default(now()) @updatedAt
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status])
+  @@index([buyerUserId])
+  @@map("exchange_share_buy_orders")
+}
+
+/// A shareholder vote on a company action. type: DISSOLVE | ISSUE_SHARES | ACQUIRE_OFFER.
+/// status: OPEN | PASSED | REJECTED | EXPIRED. Votes are weighted by shares held.
+model CompanyProposal {
+  id                  String        @id @default(cuid())
+  companyId           String
+  proposerUserId      String
+  type                String
+  payload             Json
+  status              String        @default("OPEN")
+  sharesFor           Int           @default(0)
+  sharesAgainst       Int           @default(0)
+  totalEligibleShares Int
+  expiresIxTime       Float
+  resolvedIxTime      Float?
+  idempotencyKey      String?       @unique
+  createdAt           DateTime      @default(now())
+  company             Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  votes               CompanyVote[]
+
+  @@index([companyId, status])
+  @@map("exchange_company_proposals")
+}
+
+/// One voter's weighted ballot on a CompanyProposal.
+model CompanyVote {
+  id          String          @id @default(cuid())
+  proposalId  String
+  voterUserId String
+  support     Boolean
+  shares      Int
+  createdAt   DateTime        @default(now())
+  proposal    CompanyProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterUserId])
+  @@index([voterUserId])
+  @@map("exchange_company_votes")
 }

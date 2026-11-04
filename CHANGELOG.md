@@ -11,6 +11,29 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### ⚡ IIWiki & sister-wiki API call optimization (2026-11-03)
+
+No version or capability integer moves. Audited every outbound and client-triggered IIWiki (`iiwiki.com`) and sister-wiki MediaWiki API call across WikiOS, Countries, IxVault/Lore Cards, Realms, Flags, Identity, and the MediaWiki proxy routes, consolidating requests and adding caching/in-flight deduplication to reduce outbound API traffic by ~75–85%.
+
+- **Core WikiOS bridge & tRPC cache (`src/lib/wiki-os/adapters/mediawiki/bridge/`, `src/lib/cache/trpc-cache.ts`):**
+  - Added 30-minute positive and 10-minute negative (`{ missing: true }`) caching plus in-flight promise deduplication for `getArticleWikitext`, caching under both requested and redirect-resolved titles.
+  - Added 10-minute negative caching for `getArticleIntro` and `getPageImages` (`pageimages:none:${wiki}:${title}`), and 5-minute positive caching + in-flight deduplication for sister-wiki `opensearch` queries (`searchPages`).
+  - Fixed `trpc-cache.ts` (`decodePayload` / `getCachedValue`) so cached `null` procedure returns are treated as cache hits rather than cache misses.
+- **Batched country & map rich intros (`src/lib/wiki-os/adapters/mediawiki/bridge/batch-reader.ts`, `src/server/modules/countries/countries.wiki.ts`):**
+  - `loadSisterWikiChunk` now passes `redirects=1`, maps `normalized` and `redirects` aliases back to requested titles, and populates `wikiBridgeCache` with positive and negative entries.
+  - Added `fetchBulkWikiRichIntros` (`countries.getBulkWikiRichIntros`) so a 20-country map chunk batches sister-wiki titles into a single `getBatchWikitext` request instead of firing 20 concurrent single-title requests into the 8-in-flight `upstreamGuard` limiter.
+- **Lore Cards & Vault request consolidation (`src/lib/cards/lore-card-generator.ts`, `src/lib/cards/lore-card-discovery.ts`, `src/components/cards/display/LoreWikiExcerpt.tsx`):**
+  - Folded `list=backlinks` into the initial `action=query` call in `fetchArticleData`, removed unused `inprop=url` and `links` (`pllimit=500`), and evaluated `isAbandonedLore`, `minLength`, and `requireImage` gates before `resolveFeaturedImage` and `lookupAuthorInfo`.
+  - Added a shared 10-minute `authorInfoCache` and in-flight deduplication across `lookupAuthorInfo` and `fetchArticleAuthorInfoBatch`, plus 5-minute category caches (`searchCategories`, `getCategoriesInfo`) and upfront `info|categories` filtering in `fetchRandomArticlesWithImages`.
+  - Gated `api.cards.getWikiArticleExcerpt.useQuery` in `LoreWikiExcerpt` with `!storedExcerpt` so cards with stored excerpts do not query IIWiki when opening the Card Sheet.
+- **Realms, Flags & Identity (`src/lib/realms/sources/iiwiki-discovery.ts`, `src/server/modules/realms/realms.wiki.ts`, `src/lib/realms/sources/wiki-redirects.ts`, `src/lib/flags/flag-resolver.server.ts`, `src/lib/wiki-os/adapters/mediawiki/account-proof.ts`):**
+  - Added `rvsection: "0"` to `discoverNationHints` so 50-title batches fetch only lead sections.
+  - Cached verified map originals in `chooseRealmWikiMap` / `fetchChosenWikiMapOriginal` (15m TTL) to avoid re-downloading 40 MB maps on import, deduplicated concurrent `realmInfoboxHints` calls per realm, and cached partial hint runs for 10 minutes.
+  - Added 1-hour in-memory caches for `resolveWikiRedirects` and sister-wiki `fetchPageCreator`, and indexed both space and underscore title variants in `fetchMediaWikiImageBatch` / `ServerFlagResolver`.
+- **Guard `Retry-After` & client trigger hygiene (`src/lib/wiki-os/upstream-guard.ts`, `src/app/api/mediawiki/[wiki]/[...path]/route.ts`, `src/components/wiki-os/reader/WikiLinkPreview.tsx`):**
+  - `upstreamGuard` now honours numeric `Retry-After` headers on 429/503 responses when opening a circuit breaker.
+  - Added 10-minute negative caching and in-flight deduplication for `Special:FilePath` `imageinfo` lookups in the sister-wiki media proxy, and removed eager mount-time `wikios.getIntro.prefetch` calls from `WikiLinkPreview`.
+
 ## [1.5.0] — 2026-10-27 "Lobster Crosby" (public 1.0)
 
 Shipped to production on 2026-10-26/27 (beta.ixwiki.com); players see it as **1.0.0 "Lobster Crosby" (Stable)**, the

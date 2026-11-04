@@ -10,6 +10,7 @@ jest.mock("~/lib/exchange/notify", () => ({
 import {
   depositToCompany,
   dissolveCompany,
+  dissolveCompanyTx,
   foundCompany,
   withdrawFromCompany,
 } from "~/lib/exchange/companies";
@@ -22,6 +23,8 @@ import {
   placeBid,
   resolveDispute
 } from "~/lib/exchange/contracts";
+import type { Db } from "~/lib/exchange/guards";
+import { ensureSectorIndices } from "~/lib/exchange/sectors";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
@@ -221,6 +224,172 @@ describe("companies", () => {
     expect(r.returned).toBe(1000);
     expect(sov("alice")).toBe(before + 1000);
     expect(company(aliceCo)).toMatchObject({ status: "DELISTED", capital: 0 });
+  });
+
+  it("keeps a company's name unique within its realm only", async () => {
+    fake.tables.realm = [{ id: "alpha", status: "active" }];
+    await found("alice", "Alice Works");
+    const { company: other } = await foundCompany(fake.client, {
+      userId: "alice",
+      name: "Alice Works",
+      sectorKey: "services",
+      realmId: "alpha",
+      requestId: rid(),
+    });
+    expect(other).toMatchObject({ realmId: "alpha", name: "Alice Works" });
+    await expect(
+      foundCompany(fake.client, {
+        userId: "bob",
+        name: "alice WORKS",
+        sectorKey: "services",
+        realmId: "alpha",
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("refuses a charter in a realm that is not open", async () => {
+    fake.tables.realm = [{ id: "draft-realm", status: "draft" }];
+    for (const realmId of ["draft-realm", "nationstates"]) {
+      await expect(
+        foundCompany(fake.client, {
+          userId: "alice",
+          name: "Closed Co",
+          sectorKey: "industry",
+          realmId,
+          requestId: rid(),
+        })
+      ).rejects.toMatchObject({ code: "CONFLICT" });
+    }
+    expect(fake.tables.company ?? []).toHaveLength(0);
+  });
+
+  it("applies the active-company cap per founder per realm", async () => {
+    setup({ exchange_active_company_cap: "1" });
+    fake.tables.realm = [{ id: "alpha", status: "active" }];
+    await found("alice", "Alice Works");
+    await foundCompany(fake.client, {
+      userId: "alice",
+      name: "Alpha Works",
+      sectorKey: "industry",
+      realmId: "alpha",
+      requestId: rid(),
+    });
+    await expect(found("alice", "Second Works")).rejects.toMatchObject({ code: "LIMIT_REACHED" });
+  });
+
+  it("takes an HQ nation only from the company's own realm", async () => {
+    fake.tables.realm = [{ id: "alpha", status: "active" }];
+    fake.tables.country = [
+      { id: "c_alpha", realmId: "alpha" },
+      { id: "c_home", realmId: "default" },
+    ];
+    await expect(
+      foundCompany(fake.client, {
+        userId: "alice",
+        name: "Hq Co",
+        sectorKey: "industry",
+        hqCountryId: "c_alpha",
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+    const { company: c } = await foundCompany(fake.client, {
+      userId: "alice",
+      name: "Hq Co",
+      sectorKey: "industry",
+      hqCountryId: "c_home",
+      requestId: rid(),
+    });
+    expect(c.hqCountryId).toBe("c_home");
+  });
+
+  it("defaults to the sector's first sub-industry and rejects one from another sector", async () => {
+    const { company: c } = await foundCompany(fake.client, {
+      userId: "alice",
+      name: "Sub Default",
+      sectorKey: "industry",
+      requestId: rid(),
+    });
+    expect(c.subIndustryKey).toBe("energy_mining");
+    await expect(
+      foundCompany(fake.client, {
+        userId: "bob",
+        name: "Sub Wrong",
+        sectorKey: "industry",
+        subIndustryKey: "logistics",
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "INVALID_AMOUNT" });
+  });
+
+  it("prices a company off its own realm's sector index", async () => {
+    fake.tables.realm = [{ id: "alpha", status: "active" }];
+    const { company: alpha } = await foundCompany(fake.client, {
+      userId: "alice",
+      name: "Alpha Works",
+      sectorKey: "industry",
+      realmId: "alpha",
+      requestId: rid(),
+    });
+    const { company: home } = await foundCompany(fake.client, {
+      userId: "bob",
+      name: "Home Works",
+      sectorKey: "industry",
+      requestId: rid(),
+    });
+    await ensureSectorIndices(fake.client, "alpha");
+    fake.tables.sectorIndex!.find((i) => i.realmId === "alpha" && i.sectorKey === "industry")!
+      .value = 1500;
+    await depositToCompany(fake.client, {
+      userId: "alice",
+      companyId: alpha.id,
+      amount: 1000,
+      requestId: rid(),
+    });
+    await depositToCompany(fake.client, {
+      userId: "bob",
+      companyId: home.id,
+      amount: 1000,
+      requestId: rid(),
+    });
+    expect(company(alpha.id).fairValue).toBe(1500);
+    expect(company(home.id).fairValue).toBe(1000);
+  });
+
+  it("refuses to withdraw or dissolve while a credit line is drawn", async () => {
+    const id = await found("alice", "Alice Works");
+    await depositToCompany(fake.client, {
+      userId: "alice",
+      companyId: id,
+      amount: 500,
+      requestId: rid(),
+    });
+    company(id).creditDrawn = 200;
+    await expect(
+      withdrawFromCompany(fake.client, {
+        userId: "alice",
+        companyId: id,
+        amount: 100,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: id })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    company(id).creditDrawn = 0;
+    await expect(dissolveCompany(fake.client, { userId: "alice", companyId: id })).resolves.toMatchObject(
+      { returned: 500 }
+    );
+  });
+
+  it("dissolveCompanyTx runs inside the caller's transaction and returns its notices", async () => {
+    const id = await found("alice", "Alice Works");
+    const r = await fake.client.$transaction((tx: Db) =>
+      dissolveCompanyTx(tx, { userId: "alice", companyId: id })
+    );
+    expect(r).toEqual({ returned: 0, notices: [] });
+    expect(company(id).status).toBe("DELISTED");
   });
 });
 

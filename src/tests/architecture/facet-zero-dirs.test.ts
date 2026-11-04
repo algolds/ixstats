@@ -5,7 +5,12 @@ import { TELLS, isComment, walkTsx } from "./facet-tells";
 
 const ROOT = path.resolve(__dirname, "../../..");
 /** Converted directories stay at zero for every ratchet tell. Each app phase appends its own. */
-const ZERO_TELL_DIRS = ["src/components/halo", "src/components/shell"];
+const ZERO_TELL_DIRS = [
+  "src/components/halo",
+  "src/components/shell",
+  "src/components/exchange",
+  "src/app/_components/front-page",
+];
 
 describe.each(ZERO_TELL_DIRS)("%s has no AI-design tells", (dir) => {
   it.each(Object.keys(TELLS))("%s", (name) => {

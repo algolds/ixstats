@@ -12,6 +12,7 @@ import {
   type IiwikiFeature,
 } from "~/lib/wiki-os/iiwiki-switch";
 import { z } from "zod";
+import { Cache } from "~/lib/cache";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl, WIKI_SOURCES } from "~/lib/wiki-os/config";
 import { SISTER_READER_IDS } from "~/lib/wiki-os/wiki-hosts";
 
@@ -195,12 +196,20 @@ export async function fetchUserPageHistory(
   return { revisions, complete: !data.continue };
 }
 
+const PAGE_CREATOR_TTL_MS = 60 * 60 * 1000;
+const pageCreatorCache = new Cache<{ creator: string | null }>(PAGE_CREATOR_TTL_MS);
+
 /**
  * Author of the page's first revision, normalised; null if the page does not exist. A redirect is followed
  * (`redirects=1`): the creator is the target page's, never the redirect's, which anyone who moved or aliased
  * the article may have made.
  */
 export async function fetchPageCreator(source: ProofSource, title: string): Promise<string | null> {
+  const cacheKey = `${source}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
+  if (source !== "ixwiki") {
+    const cached = pageCreatorCache.get(cacheKey);
+    if (cached) return cached.creator;
+  }
   const data = await wikiQuery(
     source,
     {
@@ -214,7 +223,11 @@ export async function fetchPageCreator(source: ProofSource, title: string): Prom
     RevisionsSchema
   );
   const creator = data.query.pages[0]?.revisions?.[0]?.user;
-  return creator ? normalizeWikiUsername(creator) : null;
+  const normalized = creator ? normalizeWikiUsername(creator) : null;
+  if (source !== "ixwiki") {
+    pageCreatorCache.set(cacheKey, { creator: normalized }, PAGE_CREATOR_TTL_MS);
+  }
+  return normalized;
 }
 
 const AllUsersSchema = z.object({

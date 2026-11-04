@@ -1,6 +1,6 @@
 /**
- * Exchange phase 2 procedures: the share market and dividends, sector indices and funds,
- * company decisions and government tenders. Spec: docs/specs/2026-10-06-exchange-economy-design.md §8.
+ * Exchange market procedures: the share market, two-sided order book and dividends,
+ * sector indices and funds, company strategic decisions and government tenders.
  * Every mutation is rate limited per procedure, acts as the signed-in user and checks the
  * Exchange flag inside its transaction; money-moving ones take a client `requestId`.
  */
@@ -11,36 +11,62 @@ import {
   protectedProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { ExchangeError } from "~/lib/vault/exchange-service";
 import { SECTOR_KEYS } from "~/lib/exchange/companies";
-import { createGovernmentContract } from "~/lib/exchange/contracts";
+import { createGovernmentContract, TENDER_FUNDINGS } from "~/lib/exchange/contracts";
 import {
+  ACQUIRE_MAX,
+  ACQUIRE_MIN,
   DECISION_TYPES,
   EXPAND_MAX,
-  EXPAND_MIN,
+  LOBBY_TARGETS,
+  PRICING_STRATEGIES,
+  RND_FOCI,
   listDecisions,
   submitDecision,
 } from "~/lib/exchange/decisions";
 import { declareDividend, listDividends } from "~/lib/exchange/dividends";
 import { listShareMarket } from "~/lib/exchange/queries";
-import { buySectorUnits, getSectorMarket, sellSectorUnits } from "~/lib/exchange/sectors";
+import {
+  buySectorUnits,
+  getSectorMarket,
+  sellSectorUnits,
+  setSectorDmModifier,
+} from "~/lib/exchange/sectors";
 import {
   MAX_SHARES_ISSUED,
   buyShares,
+  cancelBuyOrder,
   cancelListing,
+  getOrderBook,
   issueShares,
   listShares,
+  placeBuyOrder,
   setShareTrading,
 } from "~/lib/exchange/shares";
+import { SUB_INDUSTRY_KEYS } from "~/lib/exchange/taxonomy";
+import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
 import { guard } from "./_errors";
 
 const requestId = z.string().min(8).max(64);
 const id = z.string().min(1);
 const shares = z.number().int().min(1).max(MAX_SHARES_ISSUED);
+const price = z.number().min(0.01).max(1_000_000).multipleOf(0.01);
 
 export const exchangeMarketsRouter = createTRPCRouter({
-  /** Open share listings, cheapest first. */
-  getShareMarket: protectedProcedure.query(({ ctx }) =>
-    guard("load the share market", () => listShareMarket(ctx.db, ctx.user.id))
+  /** Open share listings in a realm, cheapest first. */
+  getShareMarket: protectedProcedure
+    .input(z.object({ realmId: id.optional() }).optional())
+    .query(({ ctx, input }) =>
+      guard("load the share market", () =>
+        listShareMarket(ctx.db, ctx.user.id, input?.realmId ?? DEFAULT_REALM_ID)
+      )
+    ),
+
+  /** Aggregated bid/ask depth and last traded price for a company. */
+  getOrderBook: protectedProcedure.input(z.object({ companyId: id })).query(({ ctx, input }) =>
+    guard("load the order book", () => getOrderBook(ctx.db, input.companyId))
   ),
 
   setShareTrading: rateLimitedMutationProcedure
@@ -62,7 +88,7 @@ export const exchangeMarketsRouter = createTRPCRouter({
       z.object({
         companyId: id,
         shares,
-        pricePerShare: z.number().min(0.01).max(1_000_000).multipleOf(0.01),
+        pricePerShare: price,
         requestId,
       })
     )
@@ -82,6 +108,29 @@ export const exchangeMarketsRouter = createTRPCRouter({
     .input(z.object({ listingId: id, shares, requestId }))
     .mutation(({ ctx, input }) =>
       guard("buy shares", () => buyShares(ctx.db, { userId: ctx.user.id, ...input }))
+    ),
+
+  placeBuyOrder: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        companyId: id,
+        shares,
+        maxPricePerShare: price,
+        requestId,
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("place the buy order", () =>
+        placeBuyOrder(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  cancelBuyOrder: rateLimitedMutationProcedure
+    .input(z.object({ orderId: id }))
+    .mutation(({ ctx, input }) =>
+      guard("cancel the buy order", () =>
+        cancelBuyOrder(ctx.db, { userId: ctx.user.id, orderId: input.orderId })
+      )
     ),
 
   declareDividend: rateLimitedMutationProcedure
@@ -106,8 +155,14 @@ export const exchangeMarketsRouter = createTRPCRouter({
       z.object({
         companyId: id,
         type: z.enum(DECISION_TYPES),
-        amount: z.number().int().min(EXPAND_MIN).max(EXPAND_MAX).optional(),
+        amount: z.number().int().min(1).max(EXPAND_MAX).optional(),
+        focus: z.enum(RND_FOCI).optional(),
         sectorKey: z.enum(SECTOR_KEYS).optional(),
+        subIndustryKey: z.enum(SUB_INDUSTRY_KEYS).optional(),
+        target: z.enum(LOBBY_TARGETS).optional(),
+        strategy: z.enum(PRICING_STRATEGIES).optional(),
+        targetCompanyId: id.optional(),
+        offerAmount: z.number().int().min(ACQUIRE_MIN).max(ACQUIRE_MAX).optional(),
         requestId,
       })
     )
@@ -115,14 +170,19 @@ export const exchangeMarketsRouter = createTRPCRouter({
       guard("queue the decision", () => submitDecision(ctx.db, { userId: ctx.user.id, ...input }))
     ),
 
-  /** Sector indices with history, fund unit prices and my positions. */
-  getSectors: protectedProcedure.query(({ ctx }) =>
-    guard("load the sectors", () => getSectorMarket(ctx.db, ctx.user.id))
-  ),
+  /** Sector indices with history, fund unit prices and my positions for a realm. */
+  getSectors: protectedProcedure
+    .input(z.object({ realmId: id.optional() }).optional())
+    .query(({ ctx, input }) =>
+      guard("load the sectors", () =>
+        getSectorMarket(ctx.db, ctx.user.id, input?.realmId ?? DEFAULT_REALM_ID)
+      )
+    ),
 
   buySectorUnits: rateLimitedMutationProcedure
     .input(
       z.object({
+        realmId: id.default(DEFAULT_REALM_ID),
         sectorKey: z.enum(SECTOR_KEYS),
         amount: z.number().int().min(1).max(1_000_000),
         requestId,
@@ -135,6 +195,7 @@ export const exchangeMarketsRouter = createTRPCRouter({
   sellSectorUnits: rateLimitedMutationProcedure
     .input(
       z.object({
+        realmId: id.default(DEFAULT_REALM_ID),
         sectorKey: z.enum(SECTOR_KEYS),
         fraction: z.number().gt(0).max(1),
         requestId,
@@ -144,7 +205,39 @@ export const exchangeMarketsRouter = createTRPCRouter({
       guard("sell fund units", () => sellSectorUnits(ctx.db, { userId: ctx.user.id, ...input }))
     ),
 
-  /** Post a government tender for a nation you own, funded from your wallet. */
+  /** Adjust a sector's DM modifier in a realm the caller moderates or administers. */
+  setSectorDmModifier: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        realmId: id.default(DEFAULT_REALM_ID),
+        sectorKey: z.enum(SECTOR_KEYS),
+        value: z.number().min(-0.5).max(2),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("set the sector modifier", async () => {
+        const realm = await ctx.db.realm.findUnique({
+          where: { id: input.realmId },
+          select: { ownerId: true },
+        });
+        const permitted =
+          isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
+        if (!permitted) {
+          throw new ExchangeError(
+            "FORBIDDEN",
+            "Only a realm's administrators can adjust its sector modifier"
+          );
+        }
+        return setSectorDmModifier(ctx.db, {
+          realmId: input.realmId,
+          sectorKey: input.sectorKey,
+          value: input.value,
+          actorUserId: ctx.user.id,
+        });
+      })
+    ),
+
+  /** Post a government tender for a nation you own, funded from its treasury or your wallet. */
   createTender: rateLimitedMutationProcedure
     .input(
       z.object({
@@ -154,6 +247,9 @@ export const exchangeMarketsRouter = createTRPCRouter({
         sectorKey: z.enum(SECTOR_KEYS),
         value: z.number().int().min(10).max(10_000_000),
         biddingDays: z.number().int().min(1).max(30),
+        fundedBy: z.enum(TENDER_FUNDINGS).optional(),
+        linkedDirectiveId: id.optional(),
+        linkedIssueId: id.optional(),
         requestId,
       })
     )

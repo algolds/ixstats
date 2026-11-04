@@ -1,25 +1,93 @@
 /**
  * The Exchange market tick (cron job `exchange-market`, src/server/cron/jobs.ts; off unless
- * named in CRON_ENABLED_JOBS). Spec: docs/specs/2026-10-06-exchange-economy-design.md §8.
+ * named in CRON_ENABLED_JOBS). Spec: docs/specs/2026-11-01-exchange-phase-3-design.md
  *
- * 1. Recompute the four sector indices from Exchange activity and rebalance the sector
- *    funds (sectors.ts), recording SectorIndexHistory.
- * 2. Apply company decisions that have waited their day (decisions.ts).
- * 3. Refresh every ACTIVE company's fair value against the new index levels.
+ * In order: each nation's treasury stipend, the sector indices, every realm's company operations,
+ * the decisions that have waited their day, the proposals whose vote window has closed, the
+ * lapsed contracts, the corporate feedback into each nation's GDP, and each active company's
+ * fair value.
  *
- * Every step is safe to re-run: a second run in a row moves each index by its next capped
- * step, applies no decision twice and re-records fair value.
+ * Every step is safe to re-run: a stipend is keyed per nation per tick, a realm's operations per
+ * realm per tick, decisions apply once, and the other steps act only on rows still open.
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { getExchangeConfig } from "~/lib/vault/exchange-config";
+import { round2 } from "./amounts";
 import { refreshFairValue } from "./companies";
 import { resolveDueDecisions } from "./decisions";
+import { expireLapsedContracts } from "./expiry";
+import { syncCorporateFeedback } from "./feedback";
+import { finalizeProposalsTx } from "./governance";
+import { notifyExchange } from "./notify";
+import { operatingTickKey, runCompanyOperations, TICKS_PER_DAY } from "./operations";
 import { computeSectorIndices } from "./sectors";
+import { mintStipendTx, stipendFor } from "./treasury";
 
-export async function runExchangeMarketTick(db: PrismaClient) {
-  const nowMs = Date.now();
-  const indices = await computeSectorIndices(db, nowMs);
-  const decisionsApplied = await resolveDueDecisions(db, nowMs);
+/** Nations that host an operating company or already hold a treasury. */
+async function stipendNationsOf(db: PrismaClient) {
+  const [hosts, treasuries] = await Promise.all([
+    db.company.findMany({
+      where: { hqCountryId: { not: null }, status: { in: ["ACTIVE", "DISTRESSED"] } },
+      select: { hqCountryId: true },
+    }),
+    db.nationTreasury.findMany({ select: { countryId: true } }),
+  ]);
+  const ids = [
+    ...new Set([
+      ...hosts.flatMap((h) => (h.hqCountryId ? [h.hqCountryId] : [])),
+      ...treasuries.map((t) => t.countryId),
+    ]),
+  ];
+  if (ids.length === 0) return [];
+  return db.country.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, realmId: true, economicTier: true },
+  });
+}
+
+async function mintStipendsOf(db: PrismaClient, nowMs: number, tickKey: string): Promise<number> {
+  const cfg = await getExchangeConfig(db);
+  let minted = 0;
+  for (const nation of await stipendNationsOf(db)) {
+    const amount = stipendFor(nation.economicTier, cfg.treasuryDailyStipend / TICKS_PER_DAY);
+    try {
+      minted += await db.$transaction((tx) =>
+        mintStipendTx(tx, {
+          countryId: nation.id,
+          realmId: nation.realmId,
+          ixTime: nowMs,
+          cap: cfg.treasuryCap,
+          amount,
+          key: `exchange-stipend:${nation.id}:${tickKey}`,
+        })
+      );
+    } catch (error) {
+      console.error(`[Exchange] stipend for ${nation.id} failed:`, error);
+    }
+  }
+  return round2(minted);
+}
+
+async function finalizeProposalsOf(db: PrismaClient, nowMs: number): Promise<number> {
+  const due = await db.companyProposal.findMany({
+    where: { status: "OPEN", expiresIxTime: { lte: nowMs } },
+    select: { companyId: true },
+  });
+  let expired = 0;
+  for (const companyId of new Set(due.map((p) => p.companyId))) {
+    try {
+      const result = await db.$transaction((tx) => finalizeProposalsTx(tx, companyId, nowMs));
+      notifyExchange(result.notices);
+      expired += result.expired;
+    } catch (error) {
+      console.error(`[Exchange] settling proposals of ${companyId} failed:`, error);
+    }
+  }
+  return expired;
+}
+
+async function refreshActiveFairValues(db: PrismaClient): Promise<number> {
   const companies = await db.company.findMany({
     where: { status: "ACTIVE" },
     select: { id: true },
@@ -33,9 +101,28 @@ export async function runExchangeMarketTick(db: PrismaClient) {
       console.error(`[Exchange] refreshing fair value of ${id} failed:`, error);
     }
   }
+  return refreshed;
+}
+
+export async function runExchangeMarketTick(db: PrismaClient) {
+  const nowMs = Date.now();
+  const tickKey = operatingTickKey(nowMs);
+  const stipendsMinted = await mintStipendsOf(db, nowMs, tickKey);
+  const indices = await computeSectorIndices(db, nowMs);
+  const operations = await runCompanyOperations(db, nowMs);
+  const decisionsApplied = await resolveDueDecisions(db, nowMs);
+  const proposalsExpired = await finalizeProposalsOf(db, nowMs);
+  const contracts = await expireLapsedContracts(db, nowMs);
+  const feedback = await syncCorporateFeedback(db, nowMs);
+  const companiesRefreshed = await refreshActiveFairValues(db);
   return {
+    stipendsMinted,
     indices: indices.map((i) => ({ sector: i.sectorKey, value: i.value })),
+    operations,
     decisionsApplied,
-    companiesRefreshed: refreshed,
+    proposalsExpired,
+    contracts,
+    feedback,
+    companiesRefreshed,
   };
 }

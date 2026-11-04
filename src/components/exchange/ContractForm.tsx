@@ -18,22 +18,33 @@ import {
 } from "./shared";
 
 interface ContractFormProps {
+  realmId: string;
   companies: ReadonlyArray<{ id: string; name: string; capital: number }>;
-  /** Nations the viewer owns: they can post government tenders funded from their wallet. */
+  /** Nations the viewer owns: they can post government tenders funded from their treasury or wallet. */
   nations: ReadonlyArray<{ id: string; name: string }>;
   walletBalance: number;
   onDone: () => void;
 }
 
-type IssuerKind = "company" | "nation";
+type IssuerKind = "company" | "nation" | "faucet";
+type TenderFunding = "TREASURY" | "WALLET";
 
 /**
- * Post a contract. From a company (B2B), its value moves from the company's capital into
- * escrow; from a nation (a government tender, B2G), from the owner's wallet.
+ * Post a contract: from a company (B2B, escrowed from company capital), from a nation
+ * (B2G tender, escrowed from nation treasury or owner wallet), or as a realm DM faucet tender.
  */
-export function ContractForm({ companies, nations, walletBalance, onDone }: ContractFormProps) {
+export function ContractForm({
+  realmId,
+  companies,
+  nations,
+  walletBalance,
+  onDone,
+}: ContractFormProps) {
   const notify = useNotify();
-  const [kind, setKind] = useState<IssuerKind>(companies.length > 0 ? "company" : "nation");
+  const [kindState, setKindState] = useState({
+    kind: (companies.length > 0 ? "company" : nations.length > 0 ? "nation" : "faucet") as IssuerKind,
+    fundedBy: "TREASURY" as TenderFunding,
+  });
   const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
   const [countryId, setCountryId] = useState(nations[0]?.id ?? "");
   const [title, setTitle] = useState("");
@@ -42,9 +53,15 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
   const [rawValue, setRawValue] = useState("");
   const [rawDays, setRawDays] = useState("7");
   const [requestId, rotate] = useRequestId();
+
+  const { kind, fundedBy } = kindState;
   const value = parseAmount(rawValue);
   const days = parseAmount(rawDays);
   const company = companies.find((c) => c.id === companyId);
+  const treasury = api.exchange.getTreasury.useQuery(
+    { countryId },
+    { enabled: kind === "nation" && Boolean(countryId) }
+  );
 
   const handlers = {
     onSuccess: () => {
@@ -59,10 +76,18 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
   };
   const create = api.exchange.createContract.useMutation(handlers);
   const tender = api.exchange.createTender.useMutation(handlers);
-  const pending = create.isPending || tender.isPending;
+  const faucet = api.exchange.createFaucetTender.useMutation(handlers);
+  const pending = create.isPending || tender.isPending || faucet.isPending;
 
-  const issuerChosen = kind === "company" ? !!companyId : !!countryId;
+  const issuerChosen =
+    kind === "company" ? Boolean(companyId) : kind === "nation" ? Boolean(countryId) : true;
   const valid = issuerChosen && title.trim().length >= 3 && value >= 10 && days >= 1 && days <= 30;
+
+  const issuerOptions = [
+    ...(companies.length > 0 ? [{ value: "company", label: "A company" }] : []),
+    ...(nations.length > 0 ? [{ value: "nation", label: "My nation (tender)" }] : []),
+    { value: "faucet", label: "Realm faucet (DM)" },
+  ];
 
   return (
     <form
@@ -78,24 +103,25 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
           biddingDays: days,
           requestId,
         };
-        if (kind === "company") create.mutate({ issuerCompanyId: companyId, ...terms });
-        else tender.mutate({ countryId, ...terms });
+        if (kind === "company") {
+          create.mutate({ issuerCompanyId: companyId, ...terms });
+        } else if (kind === "nation") {
+          tender.mutate({ countryId, fundedBy, ...terms });
+        } else {
+          faucet.mutate({ realmId, ...terms });
+        }
       }}
     >
-      {companies.length > 0 && nations.length > 0 && (
-        <SegmentedControl
-          aria-label="Issued by"
-          size="sm"
-          value={kind}
-          onValueChange={(v) => setKind(v as IssuerKind)}
-          options={[
-            { value: "company", label: "A company" },
-            { value: "nation", label: "My nation (tender)" },
-          ]}
-        />
-      )}
+      <SegmentedControl
+        aria-label="Issued by"
+        size="sm"
+        value={kind}
+        onValueChange={(v) => setKindState({ ...kindState, kind: v as IssuerKind })}
+        options={issuerOptions}
+      />
+
       <div className="grid gap-3 sm:grid-cols-2">
-        {kind === "company" ? (
+        {kind === "company" && (
           <Field id="exchange-contract-company" label="Issuing company">
             <CompanySelect
               id="exchange-contract-company"
@@ -104,7 +130,8 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
               onChange={setCompanyId}
             />
           </Field>
-        ) : (
+        )}
+        {kind === "nation" && (
           <Field id="exchange-contract-nation" label="Issuing nation">
             <CompanySelect
               id="exchange-contract-nation"
@@ -118,6 +145,29 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
           <SectorSelect id="exchange-contract-sector" value={sector} onChange={setSector} />
         </Field>
       </div>
+
+      {kind === "nation" && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <SegmentedControl
+            aria-label="Tender funding source"
+            size="sm"
+            value={fundedBy}
+            onValueChange={(v) => setKindState({ ...kindState, fundedBy: v as TenderFunding })}
+            options={[
+              { value: "TREASURY", label: "Nation treasury" },
+              { value: "WALLET", label: "Personal wallet" },
+            ]}
+          />
+          {treasury.data && (
+            <span className="text-caption text-label-secondary tabular-nums">
+              Nation treasury: {formatSovereigns(treasury.data.balance)} /{" "}
+              {formatSovereigns(treasury.data.cap)} cap (daily stipend{" "}
+              {formatSovereigns(treasury.data.dailyStipend)})
+            </span>
+          )}
+        </div>
+      )}
+
       <Field id="exchange-contract-title" label="Title">
         <Input
           id="exchange-contract-title"
@@ -158,16 +208,32 @@ export function ContractForm({ companies, nations, walletBalance, onDone }: Cont
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="sm" disabled={!valid || pending}>
-          {pending ? "Posting..." : kind === "company" ? "Post contract" : "Post tender"}
+          {pending
+            ? "Posting..."
+            : kind === "company"
+              ? "Post contract"
+              : kind === "nation"
+                ? "Post tender"
+                : "Post faucet tender"}
         </Button>
         {kind === "company" && company && (
-          <span className="text-caption text-label-secondary">
+          <span className="text-caption text-label-secondary tabular-nums">
             {company.name} holds {formatSovereigns(company.capital)}
           </span>
         )}
-        {kind === "nation" && (
-          <span className="text-caption text-label-secondary">
+        {kind === "nation" && fundedBy === "TREASURY" && treasury.data && (
+          <span className="text-caption text-label-secondary tabular-nums">
+            Escrow comes from nation treasury ({formatSovereigns(treasury.data.balance)})
+          </span>
+        )}
+        {kind === "nation" && fundedBy === "WALLET" && (
+          <span className="text-caption text-label-secondary tabular-nums">
             Escrow comes from your wallet ({formatSovereigns(walletBalance)})
+          </span>
+        )}
+        {kind === "faucet" && (
+          <span className="text-caption text-label-secondary">
+            Minted from the realm weekly faucet cap (realm moderators and site admins only)
           </span>
         )}
       </div>

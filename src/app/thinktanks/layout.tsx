@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { AuthenticationGuard } from "~/components/mycountry/shared/primitives";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 export const metadata: Metadata = {
@@ -18,7 +19,9 @@ export default function ThinktanksLayout({ children }: { children: React.ReactNo
     >
       <div data-app="thinkpages" className="relative min-h-screen">
         <PortalTintSync />
-        <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">{children}</div>
+        <AuthenticationGuard>
+          <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">{children}</div>
+        </AuthenticationGuard>
       </div>
     </Suspense>
   );

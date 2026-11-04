@@ -4,30 +4,80 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_REALM_ID, SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
-import { listMyCompanies } from "./companies";
+import { INDEX_BASE, SECTOR_KEYS, listMyCompanies } from "./companies";
+import { DAY_MS } from "./contracts";
 import { round2, type Db } from "./guards";
+import { ACTIVITY_WINDOW_DAYS, SECTOR_LABELS } from "./sectors";
 
-/** Everything the Exchange page header needs in one round trip. */
-export async function getExchangeOverview(db: PrismaClient, userId: string) {
+/** Everything the Exchange page header needs for one realm in one round trip. */
+export async function getExchangeOverview(
+  db: PrismaClient,
+  userId: string,
+  realmId: string = DEFAULT_REALM_ID
+) {
   const [vaultCfg, cfg] = await Promise.all([getVaultConfig(db), getExchangeConfig(db)]);
   const balance = await exchangeService.getBalance(userId, db);
-  const [companies, transactions, holdings, nations] = await Promise.all([
-    listMyCompanies(db, userId),
-    exchangeService.getTransactions(userId, db, 15),
-    listMyHoldings(db, userId),
-    listMyNations(db, userId),
-  ]);
+  const [companies, transactions, holdings, nations, buyOrders, realmNations, realms] =
+    await Promise.all([
+      listMyCompanies(db, userId, realmId),
+      exchangeService.getTransactions(userId, db, 15),
+      listMyHoldings(db, userId, realmId),
+      listMyNations(db, userId),
+      listMyBuyOrders(db, userId, realmId),
+      listRealmNations(db, realmId),
+      listOpenRealms(db),
+    ]);
   return {
+    realmId,
     isOpen: vaultCfg.isExchangeEnabled && !vaultCfg.isMaintenanceMode,
     wallet: balance,
     companyRules: { charterFee: cfg.charterFee, activeCompanyCap: cfg.activeCompanyCap },
     companies,
     transactions,
     holdings,
+    buyOrders,
     nations,
+    realmNations,
+    realms,
+  };
+}
+
+/**
+ * A realm's market overview: each macro sector's index and macro weight, with its active
+ * company count and completed contract volume over the activity window, plus the totals.
+ */
+export async function listRealmSectorSummary(db: Db, realmId: string, nowMs: number = Date.now()) {
+  const since = nowMs - ACTIVITY_WINDOW_DAYS * DAY_MS;
+  const [indices, companies, contracts] = await Promise.all([
+    db.sectorIndex.findMany({ where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } } }),
+    db.company.findMany({ where: { realmId, status: "ACTIVE" }, select: { sectorKey: true } }),
+    db.contract.findMany({
+      where: { realmId, status: "COMPLETED", closedIxTime: { gte: since } },
+      select: { sectorKey: true, value: true },
+    }),
+  ]);
+  const sectors = SECTOR_KEYS.map((sectorKey) => {
+    const row = indices.find((i) => i.sectorKey === sectorKey);
+    return {
+      sectorKey,
+      label: SECTOR_LABELS[sectorKey],
+      value: row?.value ?? INDEX_BASE,
+      macroWeight: row?.macroWeight ?? 0,
+      companyCount: companies.filter((c) => c.sectorKey === sectorKey).length,
+      volume30d: round2(
+        contracts.filter((k) => k.sectorKey === sectorKey).reduce((s, k) => s + k.value, 0)
+      ),
+    };
+  });
+  return {
+    realmId,
+    sectors,
+    companyCount: companies.length,
+    volume30d: round2(contracts.reduce((s, k) => s + k.value, 0)),
   };
 }
 
@@ -38,17 +88,61 @@ export async function listMyNations(db: Db, userId: string) {
     where: {
       OR: [{ ownerUserId: userId }, ...(user?.countryId ? [{ id: user.countryId }] : [])],
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true, realmId: true },
     take: 20,
   });
-  return rows.map((c) => ({ id: c.id, name: c.name }));
+  return rows.map((c) => ({ id: c.id, name: c.name, realmId: c.realmId }));
 }
 
-/** The user's shareholdings (shares on sale included), largest first. */
-export async function listMyHoldings(db: Db, userId: string) {
+/** Nations in the selected realm, for choosing a company's headquarters domicile. */
+export async function listRealmNations(db: Db, realmId: string) {
+  return db.country.findMany({
+    where: { realmId },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, economicTier: true, interestRates: true },
+    take: 150,
+  });
+}
+
+/** Open realms for the Exchange workspace switcher, with Ixnay always first. */
+export async function listOpenRealms(db: Db) {
+  const rows = await db.realm.findMany({
+    where: { status: "active", id: { notIn: [...SYSTEM_REALM_IDS, DEFAULT_REALM_ID] } },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+    take: 50,
+  });
+  return [{ id: DEFAULT_REALM_ID, name: "Ixnay" }, ...rows];
+}
+
+/** The user's open limit buy orders in one realm, newest first. */
+export async function listMyBuyOrders(db: Db, userId: string, realmId: string) {
+  const rows = await db.shareBuyOrder.findMany({
+    where: { buyerUserId: userId, status: "OPEN", company: { realmId } },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      company: { select: { id: true, name: true, sectorKey: true } },
+    },
+  });
+  return rows.map((o) => ({
+    id: o.id,
+    companyId: o.companyId,
+    companyName: o.company.name,
+    sectorKey: o.company.sectorKey,
+    shares: o.shares,
+    sharesOrdered: o.sharesOrdered,
+    maxPricePerShare: o.maxPricePerShare,
+    escrow: o.escrow,
+    createdAt: o.createdAt,
+  }));
+}
+
+/** The user's shareholdings in one realm (shares on sale included), largest first. */
+export async function listMyHoldings(db: Db, userId: string, realmId: string) {
   const [holdings, listings] = await Promise.all([
     db.shareholding.findMany({
-      where: { ownerUserId: userId },
+      where: { ownerUserId: userId, company: { realmId } },
       include: {
         company: {
           select: {
@@ -95,10 +189,10 @@ export async function listMyHoldings(db: Db, userId: string) {
     .sort((a, b) => b.fairValue - a.fairValue);
 }
 
-/** Open share listings across ACTIVE companies, cheapest first per company. */
-export async function listShareMarket(db: Db, userId: string) {
+/** Open share listings across one realm's ACTIVE companies, cheapest first. */
+export async function listShareMarket(db: Db, userId: string, realmId: string = DEFAULT_REALM_ID) {
   const rows = await db.shareListing.findMany({
-    where: { status: "OPEN" },
+    where: { status: "OPEN", company: { realmId, status: "ACTIVE" } },
     orderBy: [{ pricePerShare: "asc" }, { createdAt: "asc" }],
     take: 100,
     include: {
@@ -116,25 +210,22 @@ export async function listShareMarket(db: Db, userId: string) {
       },
     },
   });
-  return rows
-    .filter((l) => l.company.status === "ACTIVE")
-    .map((l) => ({
-      id: l.id,
-      companyId: l.companyId,
-      companyName: l.company.name,
-      sectorKey: l.company.sectorKey,
-      tradingOpen: l.company.tradingOpen,
-      primary: l.sellerUserId === null,
-      mine:
-        l.sellerUserId === userId || (l.sellerUserId === null && l.company.founderId === userId),
-      shares: l.shares,
-      sharesListed: l.sharesListed,
-      pricePerShare: l.pricePerShare,
-      fairPricePerShare:
-        l.company.sharesOutstanding > 0
-          ? round2(l.company.fairValue / l.company.sharesOutstanding)
-          : null,
-    }));
+  return rows.map((l) => ({
+    id: l.id,
+    companyId: l.companyId,
+    companyName: l.company.name,
+    sectorKey: l.company.sectorKey,
+    tradingOpen: l.company.tradingOpen,
+    primary: l.sellerUserId === null,
+    mine: l.sellerUserId === userId || (l.sellerUserId === null && l.company.founderId === userId),
+    shares: l.shares,
+    sharesListed: l.sharesListed,
+    pricePerShare: l.pricePerShare,
+    fairPricePerShare:
+      l.company.sharesOutstanding > 0
+        ? round2(l.company.fairValue / l.company.sharesOutstanding)
+        : null,
+  }));
 }
 
 export type ContractScope = "open" | "mine";
@@ -143,18 +234,25 @@ export type ContractScope = "open" | "mine";
  * "open": contracts still taking bids. "mine": contracts my companies issued, won or bid
  * on, in any status.
  */
-export async function listContracts(db: Db, userId: string, scope: ContractScope) {
+export async function listContracts(
+  db: Db,
+  userId: string,
+  scope: ContractScope,
+  realmId?: string
+) {
   const myCompanies = await db.company.findMany({
-    where: { founderId: userId },
+    where: { founderId: userId, ...(realmId ? { realmId } : {}) },
     select: { id: true },
   });
   const myIds = myCompanies.map((c) => c.id);
   const nowMs = Date.now();
+  const realmWhere = realmId ? { realmId } : {};
 
   const where =
     scope === "open"
-      ? { status: "OPEN", endIxTime: { gt: nowMs } }
+      ? { ...realmWhere, status: "OPEN", endIxTime: { gt: nowMs } }
       : {
+          ...realmWhere,
           OR: [
             { issuerUserId: userId },
             { winnerCompanyId: { in: myIds } },
@@ -167,10 +265,12 @@ export async function listContracts(db: Db, userId: string, scope: ContractScope
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      issuerCompany: { select: { id: true, name: true } },
+      issuerCompany: { select: { id: true, name: true, hqCountryId: true } },
       bids: {
         orderBy: { amount: "asc" },
-        include: { company: { select: { id: true, name: true, standing: true } } },
+        include: {
+          company: { select: { id: true, name: true, standing: true, hqCountryId: true } },
+        },
       },
     },
   });
@@ -192,17 +292,26 @@ export async function listContracts(db: Db, userId: string, scope: ContractScope
     const visibleBids = isIssuer ? c.bids : c.bids.filter((b) => myIds.includes(b.companyId));
     return {
       id: c.id,
+      realmId: c.realmId,
       type: c.type,
+      fundedBy: c.fundedBy,
       title: c.title,
       description: c.description,
       sectorKey: c.sectorKey,
       value: c.value,
       escrow: c.escrow,
       status: c.status,
+      issuerCountryId: c.issuerCountryId,
+      linkedDirectiveId: c.linkedDirectiveId,
+      linkedIssueId: c.linkedIssueId,
       issuer:
         c.issuerCompany ??
         (c.issuerCountryId
-          ? { id: c.issuerCountryId, name: nationNames.get(c.issuerCountryId) ?? "A nation" }
+          ? {
+              id: c.issuerCountryId,
+              name: nationNames.get(c.issuerCountryId) ?? "A nation",
+              hqCountryId: c.issuerCountryId,
+            }
           : null),
       winnerCompanyId: c.winnerCompanyId,
       awardedBidId: c.awardedBidId,

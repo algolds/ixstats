@@ -1,12 +1,16 @@
 /**
  * Dividends: the founder pays part of a company's capital to its shareholders, pro rata to
- * the shares each owns (listed shares included). Spec: docs/specs/2026-10-06-exchange-economy-design.md §8.
+ * the shares each owns (listed shares included). Spec: docs/specs/2026-10-06-exchange-economy-design.md.
  *
  * Exactness: each payout is rounded down to a whole cent and the company's capital drops
  * by exactly the sum paid; the sub-cent remainder never leaves capital. No ₷ is created or
  * lost. The company row is locked for the whole payout, so no trade can move shares
  * between reading the holders and paying them, and a CompanyDividend row with a unique
  * idempotency key makes a retried declaration pay once.
+ *
+ * Withholding: each holder's dividend is reduced by half the HQ nation's capital gains rate and the
+ * total is paid from capital into that nation's treasury. While credit is drawn, a dividend may not
+ * exceed half of the capital above the credit.
  */
 
 import type { PrismaClient } from "@prisma/client";
@@ -16,6 +20,11 @@ import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { formatSovereigns } from "./amounts";
+import { capGainsRateOf, ratedCents } from "./fills";
+import { transferToTreasuryTx } from "./treasury";
+
+const WITHHOLDING_SHARE = 0.5;
+const CREDIT_CAP_SHARE = 0.5;
 
 export interface DeclareDividendInput {
   userId: string;
@@ -34,6 +43,27 @@ export interface DividendResult {
 async function findDeclared(db: Db, key: string): Promise<DividendResult | null> {
   const row = await db.companyDividend.findUnique({ where: { idempotencyKey: key } });
   return row ? { paid: row.amount, holderCount: row.holderCount, alreadyApplied: true } : null;
+}
+
+function assertWithinCreditCap(
+  company: { capital: number; creditDrawn: number },
+  amount: number
+): void {
+  if (company.creditDrawn <= 0) return;
+  const cap = Math.floor(
+    toCents(Math.max(0, company.capital - company.creditDrawn)) * CREDIT_CAP_SHARE
+  );
+  if (toCents(amount) > cap) {
+    throw new ExchangeError(
+      "CONFLICT",
+      "While credit is drawn, a dividend can't exceed half the capital above it"
+    );
+  }
+}
+
+async function withholdingRateOf(tx: Db, hqCountryId: string | null): Promise<number> {
+  if (!hqCountryId) return 0;
+  return (await capGainsRateOf(tx, hqCountryId)) * WITHHOLDING_SHARE;
 }
 
 export async function declareDividend(
@@ -56,17 +86,28 @@ export async function declareDividend(
       if (input.amount > company.capital) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");
       }
+      assertWithinCreditCap(company, input.amount);
       await assertNoOpenPrimaryIssue(tx, company.id);
       const holders = await holdersOf(tx, company.id);
       const split = splitProRata(toCents(input.amount), holders);
       if (split.paidCents === 0) {
         throw new ExchangeError("INVALID_AMOUNT", "That amount is too small to split");
       }
+
+      const rate = await withholdingRateOf(tx, company.hqCountryId);
+      const payouts = split.payouts.map((p) => ({
+        userId: p.userId,
+        gross: p.cents,
+        tax: ratedCents(p.cents, rate),
+      }));
+      const withheldCents = payouts.reduce((s, p) => s + p.tax, 0);
       const paid = fromCents(split.paidCents);
+      // Capital leaves in two steps: the holders' share here, the withheld share once they are paid.
+      const netDebit = fromCents(split.paidCents - withheldCents);
 
       const { count } = await tx.company.updateMany({
-        where: { id: company.id, status: "ACTIVE", capital: { gte: paid } },
-        data: { capital: { decrement: paid } },
+        where: { id: company.id, status: "ACTIVE", capital: { gte: netDebit } },
+        data: { capital: { decrement: netDebit } },
       });
       if (count !== 1) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");
@@ -78,21 +119,21 @@ export async function declareDividend(
           declared: input.amount,
           amount: paid,
           shareCount: holders.reduce((s, h) => s + h.shares, 0),
-          holderCount: split.payouts.length,
+          holderCount: payouts.length,
           ixTime: Date.now(),
           idempotencyKey: key,
         },
       });
       // Pay in user-id order, the order trades lock wallets in, so the two can't deadlock.
-      const payouts = [...split.payouts].sort((a, b) => (a.userId < b.userId ? -1 : 1));
-      for (const p of payouts) {
-        const amount = fromCents(p.cents);
+      const ordered = [...payouts].sort((a, b) => (a.userId < b.userId ? -1 : 1));
+      for (const p of ordered) {
+        const amount = fromCents(p.gross - p.tax);
         await earnSovereignsTx(tx, {
           userId: p.userId,
           amount,
           type: "DIVIDEND",
           source: `DIVIDEND:${company.id}`,
-          metadata: { companyId: company.id, declared: input.amount },
+          metadata: { companyId: company.id, declared: input.amount, withheld: fromCents(p.tax) },
           idempotencyKey: `${key}:${p.userId}`,
         });
         if (p.userId !== input.userId) {
@@ -102,6 +143,17 @@ export async function declareDividend(
             message: `${formatSovereigns(amount)} for your shares is in your wallet.`,
           });
         }
+      }
+      if (withheldCents > 0 && company.hqCountryId) {
+        await transferToTreasuryTx(tx, {
+          from: { kind: "COMPANY", companyId: company.id },
+          countryId: company.hqCountryId,
+          realmId: company.realmId,
+          amount: fromCents(withheldCents),
+          type: "TAX",
+          source: `DIVIDEND:${company.id}`,
+          key: `${key}:withholding`,
+        });
       }
       await refreshFairValue(tx, company.id);
       return { paid, holderCount: payouts.length, alreadyApplied: false };

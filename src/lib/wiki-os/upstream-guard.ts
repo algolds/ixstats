@@ -259,20 +259,22 @@ class Circuit {
   }
 
   /** The cooldown when this failure opened the circuit, else null. */
-  fail(ticket: Ticket, now: number): number | null {
+  fail(ticket: Ticket, now: number, retryAfterMs?: number): number | null {
     if (ticket === "probe") {
       this.probing = false;
       this.failures += 1;
       this.reopenings += 1;
-      return this.open(now);
+      return this.open(now, retryAfterMs);
     }
     if (this.openUntil !== null) return null;
     this.failures += 1;
-    return this.failures >= this.options.failureThreshold ? this.open(now) : null;
+    return this.failures >= this.options.failureThreshold ? this.open(now, retryAfterMs) : null;
   }
 
-  private open(now: number): number {
-    const cooldown = Math.min(this.options.openMs * 2 ** this.reopenings, this.options.maxOpenMs);
+  private open(now: number, retryAfterMs?: number): number {
+    const baseCooldown = this.options.openMs * 2 ** this.reopenings;
+    const requested = retryAfterMs && retryAfterMs > baseCooldown ? retryAfterMs : baseCooldown;
+    const cooldown = Math.min(requested, this.options.maxOpenMs);
     this.openUntil = now + cooldown;
     return cooldown;
   }
@@ -308,11 +310,18 @@ async function parsedAnswer(response: Response): Promise<Response | "unreachable
   }
 }
 
+function parseRetryAfterMs(response: Response): number | undefined {
+  const raw = response.headers.get("retry-after")?.trim();
+  if (!raw) return undefined;
+  const seconds = Number(raw);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds * 1000) : undefined;
+}
+
 /** The wiki's answer, or why there is none. */
 async function send(
   url: string,
   request: GuardedRequest
-): Promise<Response | UnavailableReason | TooLarge> {
+): Promise<Response | TooLarge | { reason: UnavailableReason; retryAfterMs?: number }> {
   const userAgent = request.userAgent ?? DEFAULT_USER_AGENT;
   const signal = AbortSignal.timeout(timeoutOf(request.timeoutMs));
   let response: Response;
@@ -322,13 +331,18 @@ async function send(
       signal,
     });
   } catch {
-    return "unreachable";
+    return { reason: "unreachable" };
   }
   const verdict = verdictOf(response);
-  if (verdict === "ok") return response.ok ? parsedAnswer(response) : response;
+  if (verdict === "ok") {
+    if (!response.ok) return response;
+    const parsed = await parsedAnswer(response);
+    return parsed === "unreachable" ? { reason: "unreachable" } : parsed;
+  }
+  const retryAfterMs = parseRetryAfterMs(response);
   // Nobody reads a failed answer: release its connection.
   await response.body?.cancel().catch(() => undefined);
-  return verdict;
+  return { reason: verdict, retryAfterMs };
 }
 
 interface HostEntry {
@@ -384,14 +398,14 @@ export class HostGuard {
       if (outcome === "too-large") throw new SisterResponseTooLargeError(wiki);
       return outcome;
     }
-    const cooldown = circuit.fail(ticket, this.now());
+    const cooldown = circuit.fail(ticket, this.now(), outcome.retryAfterMs);
     if (cooldown !== null) {
       console.warn(
         `[upstream-guard] ${wiki} (${host}): circuit open after ${circuit.failureCount} failures in a row; ` +
           `next try in ${cooldown / 1000} s.`
       );
     }
-    throw new WikiUnavailableError(wiki, outcome);
+    throw new WikiUnavailableError(wiki, outcome.reason);
   }
 
   /** The breaker of `host` as the panel shows it; a host never called is closed. */

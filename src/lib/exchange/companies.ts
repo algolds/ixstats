@@ -1,16 +1,20 @@
 /**
- * Exchange companies (MVP). Spec: docs/specs/2026-10-06-exchange-economy-design.md §3.
+ * Exchange companies (MVP). Spec: docs/specs/2026-10-06-exchange-economy-design.md.
  *
- * Any signed-in player can charter up to `activeCompanyCap` ACTIVE companies for the
+ * Any signed-in player can charter up to `activeCompanyCap` ACTIVE companies per realm for the
  * charter fee (burned). The founder receives all FOUNDER_SHARES shares (one ShareIssuance
  * and one Shareholding row); shares then trade on the share market (shares.ts). A company
  * holds capital: the founder deposits ₷ from their wallet and withdraws it back, contract
  * escrow is funded from it, contract payouts land in it and dividends are paid from it.
  * Capital only moves with conditional updates. Control stays with the founder whatever
  * share they hold: shares carry dividends and value, not votes.
+ *
+ * A company belongs to one realm. Its name is unique within that realm, and its HQ nation
+ * must belong to the same realm, so the realm's tax, interest and sector rules apply.
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_REALM_ID, SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import {
   ExchangeError,
@@ -22,6 +26,8 @@ import { assertExchangeOpen, lockWallet, round2, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
+import { returnBuyOrders } from "./shares";
+import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 
 /** The four macro sectors, matching the SectorIndex rows. */
 export const SECTOR_KEYS = ["agriculture", "industry", "services", "government"] as const;
@@ -58,7 +64,7 @@ const DEFAULT_WEIGHTS: FairValueWeights = {
 };
 
 /**
- * Fair value (spec §8, sector-index valuation):
+ * Fair value, from the sector-index valuation:
  *   book   = capital + 0.25 × contracts won + 200 × standingWeight × positive standing
  *   factor = 1 + sectorWeight × (sector index ÷ 1,000 − 1), held to 0.5 .. 2
  *   value  = book × factor + decisionWeight × decisionValue (applied EXPAND decisions)
@@ -84,6 +90,7 @@ export async function refreshFairValue(tx: Db, companyId: string): Promise<void>
   const c = await tx.company.findUnique({
     where: { id: companyId },
     select: {
+      realmId: true,
       capital: true,
       contractsWonValue: true,
       standing: true,
@@ -93,7 +100,10 @@ export async function refreshFairValue(tx: Db, companyId: string): Promise<void>
   });
   if (!c) return;
   const [index, cfg] = await Promise.all([
-    tx.sectorIndex.findUnique({ where: { sectorKey: c.sectorKey }, select: { value: true } }),
+    tx.sectorIndex.findUnique({
+      where: { realmId_sectorKey: { realmId: c.realmId, sectorKey: c.sectorKey } },
+      select: { value: true },
+    }),
     getExchangeConfig(tx),
   ]);
   const breakdown = computeFairValue(c, index?.value ?? INDEX_BASE, cfg);
@@ -125,14 +135,83 @@ export interface FoundCompanyInput {
   userId: string;
   name: string;
   sectorKey: SectorKey;
+  /** Must belong to `sectorKey`; defaults to the sector's first sub-industry. */
+  subIndustryKey?: SubIndustryKey;
+  hqCountryId?: string | null;
+  /** Defaults to Ixnay (`"default"`). */
+  realmId?: string;
   requestId: string;
+}
+
+/**
+ * Only Ixnay and an active realm take charters. A system shelf never does, even when its
+ * realm row says active. This restates `isRealmOpen` from the realms module: importing it
+ * would pull the auth barrel and its database client into the exchange code.
+ */
+async function assertRealmOpenForCharters(tx: Db, realmId: string): Promise<void> {
+  if ((SYSTEM_REALM_IDS as readonly string[]).includes(realmId)) {
+    throw new ExchangeError("CONFLICT", "That realm does not take companies");
+  }
+  if (realmId === DEFAULT_REALM_ID) return;
+  const realm = await tx.realm.findUnique({ where: { id: realmId }, select: { status: true } });
+  if (realm?.status !== "active") {
+    throw new ExchangeError("CONFLICT", "That realm is not taking new companies");
+  }
+}
+
+async function assertHqInRealm(tx: Db, hqCountryId: string, realmId: string): Promise<void> {
+  const country = await tx.country.findUnique({
+    where: { id: hqCountryId },
+    select: { realmId: true },
+  });
+  if (country?.realmId !== realmId) {
+    throw new ExchangeError("NOT_FOUND", "No such nation in this realm");
+  }
+}
+
+function subIndustryFor(sectorKey: SectorKey, requested?: SubIndustryKey): SubIndustryKey {
+  const options = subIndustriesOf(sectorKey);
+  const key = requested ?? options[0]?.key;
+  if (!key || !options.some((sub) => sub.key === key)) {
+    throw new ExchangeError("INVALID_AMOUNT", "That sub-industry is not in this sector");
+  }
+  return key;
+}
+
+/** The checks a charter must pass before its fee is taken. Returns the exchange config. */
+async function assertCharterAllowed(
+  tx: Db,
+  input: FoundCompanyInput,
+  realmId: string,
+  name: string
+) {
+  await assertRealmOpenForCharters(tx, realmId);
+  if (input.hqCountryId) await assertHqInRealm(tx, input.hqCountryId, realmId);
+  const cfg = await getExchangeConfig(tx);
+  const active = await tx.company.count({
+    where: { founderId: input.userId, status: "ACTIVE", realmId },
+  });
+  if (active >= cfg.activeCompanyCap) {
+    throw new ExchangeError(
+      "LIMIT_REACHED",
+      `You can run up to ${cfg.activeCompanyCap} active companies in each realm`
+    );
+  }
+  const taken = await tx.company.findFirst({
+    where: { realmId, name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (taken) throw new ExchangeError("CONFLICT", "That company name is taken");
+  return cfg;
 }
 
 /** Charter a company: pay the fee, create it and give the founder every share. */
 export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
+  const realmId = input.realmId ?? DEFAULT_REALM_ID;
   const key = `exchange:charter:${input.userId}:${input.requestId}`;
   const name = input.name.trim();
-  const findExisting = () => db.company.findFirst({ where: { founderId: input.userId, name } });
+  const findExisting = () =>
+    db.company.findFirst({ where: { founderId: input.userId, realmId, name } });
 
   try {
     return await db.$transaction(async (tx) => {
@@ -141,25 +220,14 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
 
       const applied = await tx.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
       if (applied) {
-        const existing = await tx.company.findFirst({ where: { founderId: input.userId, name } });
+        const existing = await tx.company.findFirst({
+          where: { founderId: input.userId, realmId, name },
+        });
         if (existing) return { company: existing, alreadyApplied: true };
       }
 
-      const cfg = await getExchangeConfig(tx);
-      const active = await tx.company.count({
-        where: { founderId: input.userId, status: "ACTIVE" },
-      });
-      if (active >= cfg.activeCompanyCap) {
-        throw new ExchangeError(
-          "LIMIT_REACHED",
-          `You can run up to ${cfg.activeCompanyCap} active companies`
-        );
-      }
-      const taken = await tx.company.findFirst({
-        where: { name: { equals: name, mode: "insensitive" } },
-        select: { id: true },
-      });
-      if (taken) throw new ExchangeError("CONFLICT", "That company name is taken");
+      const subIndustryKey = subIndustryFor(input.sectorKey, input.subIndustryKey);
+      const cfg = await assertCharterAllowed(tx, input, realmId, name);
 
       if (cfg.charterFee > 0) {
         await spendSovereignsTx(tx, {
@@ -167,7 +235,7 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
           amount: cfg.charterFee,
           type: "CHARTER_FEE",
           source: `COMPANY_CHARTER:${name}`,
-          metadata: { name, sectorKey: input.sectorKey },
+          metadata: { name, sectorKey: input.sectorKey, realmId },
           idempotencyKey: key,
         });
       }
@@ -177,8 +245,11 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
       const company = await tx.company.create({
         data: {
           founderId: input.userId,
+          realmId,
           name,
           sectorKey: input.sectorKey,
+          subIndustryKey,
+          hqCountryId: input.hqCountryId ?? null,
           sharesIssued: FOUNDER_SHARES,
           sharesOutstanding: FOUNDER_SHARES,
           createdIxTime: now,
@@ -272,7 +343,8 @@ export async function assertNoOpenPrimaryIssue(tx: Db, companyId: string): Promi
 
 /**
  * Move ₷ from the company's capital back to the founder's wallet. Refused once anyone else
- * holds shares: capital they part own leaves only pro rata (dividends, dissolution).
+ * holds shares: capital they part own leaves only pro rata (dividends, dissolution). Refused
+ * too while a credit line is drawn, since the lender's claim sits on that capital.
  */
 export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveInput) {
   assertWholeAmount(input.amount);
@@ -281,13 +353,16 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
     return await db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
       await lockCompany(tx, input.companyId);
-      await requireOwnedCompany(tx, input.companyId, input.userId);
+      const company = await requireOwnedCompany(tx, input.companyId, input.userId);
       await lockWallet(tx, input.userId); // a same-key retry waits here, then sees the row
       const applied = await tx.exchangeTransaction.findUnique({
         where: { idempotencyKey: key },
         select: { balanceAfter: true },
       });
       if (applied) return { newBalance: applied.balanceAfter, alreadyApplied: true };
+      if (company.creditDrawn > 0) {
+        throw new ExchangeError("CONFLICT", "Repay the credit line before withdrawing");
+      }
       const holders = await holdersOf(tx, input.companyId);
       if (holders.some((h) => h.userId !== input.userId)) {
         throw new ExchangeError(
@@ -321,79 +396,97 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
   }
 }
 
+export interface DissolveResult {
+  /** What the founder took home from the liquidation. */
+  returned: number;
+  /** Notices for the other shareholders, sent once the enclosing transaction commits. */
+  notices: ExchangeNotice[];
+}
+
 /**
- * Close a company: refused while it issues or holds a live contract or has a decision
- * pending. Pending bids are withdrawn, open share listings cancelled (listed shares go back
- * to their holders) and the remaining capital is paid out pro rata to the shareholders, the
- * founder taking the rounding remainder (all of it when they hold every share).
+ * Close a company inside the caller's transaction: refused while it issues or holds a live
+ * contract, has a decision pending or has a credit line drawn. Pending bids are withdrawn,
+ * open share listings cancelled (listed shares go back to their holders) and the remaining
+ * capital is paid out pro rata to the shareholders, the founder taking the rounding remainder
+ * (all of it when they hold every share). Send `notices` after the transaction commits.
  */
+export async function dissolveCompanyTx(
+  tx: Db,
+  input: { userId: string; companyId: string }
+): Promise<DissolveResult> {
+  const notices: ExchangeNotice[] = [];
+  await assertExchangeOpen(tx);
+  await lockCompany(tx, input.companyId);
+  const company = await requireOwnedCompany(tx, input.companyId, input.userId);
+  if (company.creditDrawn > 0) {
+    throw new ExchangeError("CONFLICT", "Repay the credit line before dissolving this company");
+  }
+  const live = await tx.contract.count({
+    where: {
+      OR: [
+        { issuerCompanyId: company.id, status: { in: LIVE_CONTRACT_STATUSES } },
+        { winnerCompanyId: company.id, status: { in: ["AWARDED", "DISPUTED"] } },
+      ],
+    },
+  });
+  if (live > 0) {
+    throw new ExchangeError(
+      "CONFLICT",
+      "Settle or cancel this company's contracts before dissolving it"
+    );
+  }
+  const pending = await tx.companyDecision.count({
+    where: { companyId: company.id, appliedIxTime: null },
+  });
+  if (pending > 0) {
+    throw new ExchangeError("CONFLICT", "Wait for the pending decision to resolve first");
+  }
+  await tx.contractBid.deleteMany({ where: { companyId: company.id, outcome: null } });
+  await returnListedShares(tx, company.id);
+  await returnBuyOrders(tx, company.id);
+
+  const { count } = await tx.company.updateMany({
+    where: { id: company.id, status: "ACTIVE", capital: company.capital },
+    data: { status: "DELISTED", capital: 0, tradingOpen: false },
+  });
+  if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
+
+  const split = splitProRata(toCents(company.capital), await holdersOf(tx, company.id));
+  const payouts = new Map(split.payouts.map((p) => [p.userId, p.cents]));
+  payouts.set(input.userId, (payouts.get(input.userId) ?? 0) + split.remainderCents);
+  for (const [userId, cents] of [...payouts].sort(([a], [b]) => (a < b ? -1 : 1))) {
+    if (cents <= 0) continue;
+    const founder = userId === input.userId;
+    await earnSovereignsTx(tx, {
+      userId,
+      amount: fromCents(cents),
+      type: founder ? "COMPANY_WITHDRAW" : "DIVIDEND",
+      source: `COMPANY_DISSOLVE:${company.id}`,
+      metadata: { companyId: company.id, liquidation: true },
+      idempotencyKey: founder
+        ? `exchange:dissolve:${company.id}`
+        : `exchange:dissolve:${company.id}:${userId}`,
+    });
+    if (!founder) {
+      notices.push({
+        userId,
+        title: `${company.name} was dissolved`,
+        message: `Your share of its capital, ${formatSovereigns(fromCents(cents))}, is in your wallet.`,
+      });
+    }
+  }
+  await refreshFairValue(tx, company.id);
+  return { returned: fromCents(payouts.get(input.userId) ?? 0), notices };
+}
+
+/** Close a company in its own transaction and send the shareholders their notices. */
 export async function dissolveCompany(
   db: PrismaClient,
   input: { userId: string; companyId: string }
 ) {
-  const notices: ExchangeNotice[] = [];
-  const result = await db.$transaction(async (tx) => {
-    await assertExchangeOpen(tx);
-    await lockCompany(tx, input.companyId);
-    const company = await requireOwnedCompany(tx, input.companyId, input.userId);
-    const live = await tx.contract.count({
-      where: {
-        OR: [
-          { issuerCompanyId: company.id, status: { in: LIVE_CONTRACT_STATUSES } },
-          { winnerCompanyId: company.id, status: { in: ["AWARDED", "DISPUTED"] } },
-        ],
-      },
-    });
-    if (live > 0) {
-      throw new ExchangeError(
-        "CONFLICT",
-        "Settle or cancel this company's contracts before dissolving it"
-      );
-    }
-    const pending = await tx.companyDecision.count({
-      where: { companyId: company.id, appliedIxTime: null },
-    });
-    if (pending > 0) {
-      throw new ExchangeError("CONFLICT", "Wait for the pending decision to resolve first");
-    }
-    await tx.contractBid.deleteMany({ where: { companyId: company.id, outcome: null } });
-    await returnListedShares(tx, company.id);
-
-    const { count } = await tx.company.updateMany({
-      where: { id: company.id, status: "ACTIVE", capital: company.capital },
-      data: { status: "DELISTED", capital: 0, tradingOpen: false },
-    });
-    if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
-
-    const split = splitProRata(toCents(company.capital), await holdersOf(tx, company.id));
-    const payouts = new Map(split.payouts.map((p) => [p.userId, p.cents]));
-    payouts.set(input.userId, (payouts.get(input.userId) ?? 0) + split.remainderCents);
-    for (const [userId, cents] of [...payouts].sort(([a], [b]) => (a < b ? -1 : 1))) {
-      if (cents <= 0) continue;
-      const founder = userId === input.userId;
-      await earnSovereignsTx(tx, {
-        userId,
-        amount: fromCents(cents),
-        type: founder ? "COMPANY_WITHDRAW" : "DIVIDEND",
-        source: `COMPANY_DISSOLVE:${company.id}`,
-        metadata: { companyId: company.id, liquidation: true },
-        idempotencyKey: founder
-          ? `exchange:dissolve:${company.id}`
-          : `exchange:dissolve:${company.id}:${userId}`,
-      });
-      if (!founder) {
-        notices.push({
-          userId,
-          title: `${company.name} was dissolved`,
-          message: `Your share of its capital, ${formatSovereigns(fromCents(cents))}, is in your wallet.`,
-        });
-      }
-    }
-    await refreshFairValue(tx, company.id);
-    return { returned: fromCents(payouts.get(input.userId) ?? 0) };
-  });
-  notifyExchange(notices);
-  return result;
+  const result = await db.$transaction((tx) => dissolveCompanyTx(tx, input));
+  notifyExchange(result.notices);
+  return { returned: result.returned };
 }
 
 /** Cancel a company's open listings, giving secondary sellers their escrowed shares back. */
@@ -415,14 +508,28 @@ export async function returnListedShares(tx: Db, companyId: string): Promise<voi
 
 const COMPANY_SELECT = {
   id: true,
+  realmId: true,
   name: true,
   sectorKey: true,
+  subIndustryKey: true,
+  hqCountryId: true,
   capital: true,
   standing: true,
   fairValue: true,
   sharesIssued: true,
   contractsWonValue: true,
   decisionValue: true,
+  creditDrawn: true,
+  creditRating: true,
+  lastTradePrice: true,
+  lastTickRevenue: true,
+  lastTickExpenses: true,
+  lastTickTax: true,
+  lastTickNetIncome: true,
+  distressedSinceIxTime: true,
+  pricingStrategy: true,
+  lobbyBuffType: true,
+  lobbyBuffUntilIxTime: true,
   tradingOpen: true,
   sharesOutstanding: true,
   status: true,
@@ -430,10 +537,10 @@ const COMPANY_SELECT = {
   createdAt: true,
 } as const;
 
-/** The user's companies, newest first (DELISTED ones included, last). */
-export async function listMyCompanies(db: Db, userId: string) {
+/** The user's companies, newest first (DELISTED ones included, last). `realmId` narrows to one realm. */
+export async function listMyCompanies(db: Db, userId: string, realmId?: string) {
   const rows = await db.company.findMany({
-    where: { founderId: userId },
+    where: { founderId: userId, ...(realmId ? { realmId } : {}) },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     select: COMPANY_SELECT,
     take: 50,
@@ -441,10 +548,10 @@ export async function listMyCompanies(db: Db, userId: string) {
   return rows;
 }
 
-/** The directory: ACTIVE companies by fair value. */
-export async function listCompanies(db: Db, limit = 50) {
+/** The directory: ACTIVE companies by fair value. `realmId` narrows to one realm. */
+export async function listCompanies(db: Db, limit = 50, realmId?: string) {
   return db.company.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", ...(realmId ? { realmId } : {}) },
     orderBy: [{ fairValue: "desc" }, { createdAt: "asc" }],
     select: COMPANY_SELECT,
     take: Math.min(Math.max(limit, 1), 100),

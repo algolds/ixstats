@@ -239,8 +239,9 @@ export function FeedEmpty(props: EmptyStateProps) {
 
 export function UnifiedFeedContent({
   activeTab,
+  excludeAchievements = false,
   ...handlers
-}: FeedHandlers & { activeTab: FeedTab }) {
+}: FeedHandlers & { activeTab: FeedTab; excludeAchievements?: boolean }) {
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
     { limit: 50 },
     { refetchInterval: 60_000, staleTime: 30_000 }
@@ -254,15 +255,22 @@ export function UnifiedFeedContent({
     }
   );
 
-  const filteredFeed = useMemo(
-    () =>
-      groupRepeatedActivities(
-        groupWikiEdits(
-          selectFeed(activeTab, feedData?.activities, wikiChangesAsFeed(wikiRecentChanges ?? []))
+  const filteredFeed = useMemo(() => {
+    const raw = selectFeed(
+      activeTab,
+      feedData?.activities,
+      wikiChangesAsFeed(wikiRecentChanges ?? [])
+    );
+    const items = excludeAchievements
+      ? raw.filter(
+          (a) =>
+            a.type !== "achievement" &&
+            a.category !== "achievement" &&
+            !(a.source === "activity" && getActivityLabel(a).label === "Achievement")
         )
-      ),
-    [feedData, wikiRecentChanges, activeTab]
-  );
+      : raw;
+    return groupRepeatedActivities(groupWikiEdits(items));
+  }, [feedData, wikiRecentChanges, activeTab, excludeAchievements]);
 
   if (feedLoading) return <FeedSkeletons />;
 

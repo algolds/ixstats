@@ -8,7 +8,7 @@
  * decides which nations and which map a realm imports.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { globalCache } from "~/lib/cache";
+import { Cache, globalCache } from "~/lib/cache";
 import {
   REALM_WIKI_SOURCE_OPTIONS,
   realmWikiMap,
@@ -192,6 +192,9 @@ function wikiFailure(error: unknown): never {
  * 40 MB, SHA-1, 64 megapixels), then store the choice in `Realm.settings.map` (`source: { wiki, fileTitle, sha1 }`,
  * `attribution`, `file`). The map import will start from this choice; nothing is imported here.
  */
+const CHOSEN_MAP_ORIGINAL_TTL_MS = 15 * 60 * 1000;
+const chosenMapOriginalCache = new Cache<WikiFileOriginal>(CHOSEN_MAP_ORIGINAL_TTL_MS);
+
 export async function chooseRealmWikiMap(
   db: Pick<PrismaClient, "realm">,
   actor: RealmActor,
@@ -207,6 +210,12 @@ export async function chooseRealmWikiMap(
     const info = (await fetchWikiFileInfo(wiki.source, client.query, [title])).get(title);
     if (!info) throw new RealmWikiError("NOT_FOUND", `${title} was not found on the realm's wiki`);
     const original = await downloadWikiFileOriginal(wiki.source, info, { download: deps.download });
+    chosenMapOriginalCache.clear();
+    chosenMapOriginalCache.set(
+      `${wiki.source}:${info.fileTitle}:${original.sha1}`,
+      original,
+      CHOSEN_MAP_ORIGINAL_TTL_MS
+    );
     const map: RealmWikiMap = {
       source: { wiki: wiki.source, fileTitle: info.fileTitle, sha1: original.sha1 },
       attribution: original.attribution,
@@ -250,7 +259,11 @@ export async function fetchChosenWikiMapOriginal(
     if (!info) throw new RealmWikiError("NOT_FOUND", `${stored.source.fileTitle} is no longer on the wiki`);
     if (info.sha1 !== stored.source.sha1)
       throw new RealmWikiError("CONFLICT", "The wiki's file changed since it was chosen; re-check and choose it again");
-    const original = await downloadWikiFileOriginal(stored.source.wiki, info, { download: deps.download });
+    const cachedOriginal = !deps.download
+      ? chosenMapOriginalCache.get(`${stored.source.wiki}:${stored.source.fileTitle}:${info.sha1}`)
+      : null;
+    const original =
+      cachedOriginal ?? (await downloadWikiFileOriginal(stored.source.wiki, info, { download: deps.download }));
     return { ...original, filename: stored.source.fileTitle.replace(/^File:/, "") };
   } catch (error) {
     return wikiFailure(error);
@@ -302,7 +315,9 @@ export async function recheckRealmWikiMap(
 }
 
 const HINTS_CACHE_TTL_S = 60 * 60;
+const PARTIAL_HINTS_CACHE_TTL_S = 10 * 60;
 const hintsCacheKey = (realmId: string) => `realm-wiki-hints:${realmId}`;
+const infoboxHintsPromises = new Map<string, Promise<InfoboxHintsExport>>();
 
 export interface NationInfoboxHint {
   title: string;
@@ -336,40 +351,56 @@ export async function realmInfoboxHints(
   const cached = await globalCache.get<InfoboxHintsExport>(hintsCacheKey(realm.id));
   if (cached) return cached;
 
-  const client = clientFor(deps, wiki.source);
-  const roster = await discoverRoster(client, wiki);
-  let stopped = roster.stopped;
-  const hints: NationHint[] = [];
-  for (let i = 0; !stopped && i < roster.data.nations.length; i += HINT_BATCH) {
-    const step = await discoverNationHints(client, roster.data.nations.slice(i, i + HINT_BATCH));
-    hints.push(...step.data);
-    stopped = step.stopped;
-  }
-  const locators = hints.flatMap((hint) => (hint.mapFiles[0] ? [hint.mapFiles[0]] : []));
-  const files = new Map<string, WikiFileInfo>();
-  if (!stopped && locators.length > 0) {
+  const inflight = infoboxHintsPromises.get(realm.id);
+  if (inflight) return inflight;
+
+  const task = (async (): Promise<InfoboxHintsExport> => {
     try {
-      await fetchWikiFileInfo(wiki.source, client.query, locators, files, 200);
-    } catch (error) {
-      if (!(error instanceof DiscoveryStopped)) throw error;
-      stopped = { ...error.stop, phase: "hints" };
-    }
-  }
-  const result: InfoboxHintsExport = {
-    nations: hints.map((hint) => {
-      const locator = hint.mapFiles[0] ? asFileTitle(hint.mapFiles[0]) : null;
-      return {
-        title: hint.title,
-        hasInfobox: hint.hasInfobox,
-        capital: hint.capital,
-        capitalCoordinates: hint.capitalCoordinates,
-        locatorMap: locator ? { fileTitle: locator, thumbUrl: files.get(locator)?.thumbUrl ?? null } : null,
+      const client = clientFor(deps, wiki.source);
+      const roster = await discoverRoster(client, wiki);
+      let stopped = roster.stopped;
+      const hints: NationHint[] = [];
+      for (let i = 0; !stopped && i < roster.data.nations.length; i += HINT_BATCH) {
+        const step = await discoverNationHints(client, roster.data.nations.slice(i, i + HINT_BATCH));
+        hints.push(...step.data);
+        stopped = step.stopped;
+      }
+      const locators = hints.flatMap((hint) => (hint.mapFiles[0] ? [hint.mapFiles[0]] : []));
+      const files = new Map<string, WikiFileInfo>();
+      if (!stopped && locators.length > 0) {
+        try {
+          await fetchWikiFileInfo(wiki.source, client.query, locators, files, 200);
+        } catch (error) {
+          if (!(error instanceof DiscoveryStopped)) throw error;
+          stopped = { ...error.stop, phase: "hints" };
+        }
+      }
+      const result: InfoboxHintsExport = {
+        nations: hints.map((hint) => {
+          const locator = hint.mapFiles[0] ? asFileTitle(hint.mapFiles[0]) : null;
+          return {
+            title: hint.title,
+            hasInfobox: hint.hasInfobox,
+            capital: hint.capital,
+            capitalCoordinates: hint.capitalCoordinates,
+            locatorMap: locator ? { fileTitle: locator, thumbUrl: files.get(locator)?.thumbUrl ?? null } : null,
+          };
+        }),
+        complete: !stopped,
+        blocked: isBlockingStop(stopped),
+        stopped,
       };
-    }),
-    complete: !stopped,
-    blocked: isBlockingStop(stopped),
-    stopped,
-  };
-  if (result.complete) await globalCache.set(hintsCacheKey(realm.id), result, { ttl: HINTS_CACHE_TTL_S });
-  return result;
+      if (result.complete) {
+        await globalCache.set(hintsCacheKey(realm.id), result, { ttl: HINTS_CACHE_TTL_S });
+      } else if (result.nations.length > 0) {
+        await globalCache.set(hintsCacheKey(realm.id), result, { ttl: PARTIAL_HINTS_CACHE_TTL_S });
+      }
+      return result;
+    } finally {
+      infoboxHintsPromises.delete(realm.id);
+    }
+  })();
+
+  infoboxHintsPromises.set(realm.id, task);
+  return task;
 }

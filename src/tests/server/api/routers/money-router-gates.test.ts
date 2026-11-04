@@ -254,6 +254,28 @@ describe("input bounds", () => {
       { cardId: "c1", from: "x".repeat(263) },
     ],
     ["a statement direction that is not one", "vault.getTransactions", { direction: "sideways" }],
+    [
+      "a share buy order at 0 ₷",
+      "exchange.placeBuyOrder",
+      { companyId: "co_1", shares: 10, maxPricePerShare: 0, requestId: "req_12345678" },
+    ],
+    [
+      "a credit draw over the 250,000 ₷ cap",
+      "exchange.borrowCredit",
+      { companyId: "co_1", amount: 250_001, requestId: "req_12345678" },
+    ],
+    [
+      "a treasury tender below 10 ₷",
+      "exchange.createTreasuryTender",
+      {
+        countryId: "c1",
+        title: "Bridge",
+        sectorKey: "industry",
+        value: 5,
+        biddingDays: 3,
+        requestId: "req_12345678",
+      },
+    ],
   ])("refuses %s before reading anything", async (_label, path, input) => {
     const db = createMockPrisma();
     await expect(procedure(member(db), path)(input)).rejects.toMatchObject({

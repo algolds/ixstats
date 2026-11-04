@@ -16,6 +16,7 @@ import {
   countryWikiPage,
   countryWikiPages,
   extractWikiIntro,
+  fetchBulkWikiRichIntros,
   fetchWikiIntro,
   fetchWikiPageImages,
   fetchWikiRichIntro,
@@ -81,14 +82,7 @@ export const wikiProcedures = {
         .filter((c) => c.name);
       const ids = countries.flatMap((c) => (c.id ? [c.id] : []));
       const pages = await countryWikiPages(ctx.db, ids);
-      const results: Record<string, Awaited<ReturnType<typeof fetchWikiRichIntro>>> = {};
-      // Fetch concurrently (matches getBulkWikiIntros); input is capped at 50. (audit B5)
-      await Promise.all(
-        countries.map(async ({ name, id }) => {
-          results[name] = await fetchWikiRichIntro(name, id ? pages.get(id) : undefined);
-        })
-      );
-      return results;
+      return fetchBulkWikiRichIntros(countries, pages);
     }),
 
   getWikiSectionPreviews: cachedStaticProcedure

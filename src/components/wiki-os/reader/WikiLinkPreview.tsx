@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
@@ -26,14 +26,13 @@ interface WikiLinkPreviewProps {
   children: React.ReactNode;
 }
 
-export function WikiLinkPreview({ title, wiki = "ixwiki", children }: WikiLinkPreviewProps) {
-  // Prefetch intro for instant tooltip via global provider
-  const utils = api.useUtils();
-  useEffect(() => {
-    if (title) void utils.wikios.getIntro.prefetch({ title, wiki });
-  }, [title, wiki, utils]);
-
-  // Just render children — global provider handles the tooltip
+export function WikiLinkPreview({
+  title: _title,
+  wiki: _wiki = "ixwiki",
+  children,
+}: WikiLinkPreviewProps) {
+  // GlobalLinkTooltipProvider handles hover-triggered intro fetches after a 200ms hover delay;
+  // avoid eager mount-time prefetching of every rendered link.
   return <>{children}</>;
 }
 

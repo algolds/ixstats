@@ -1,12 +1,13 @@
 /**
- * Exchange admin procedures: the ₷ limits, dispute decisions and balance
- * adjustments. adminProcedure audit-logs every call; balance adjustments also carry the
- * admin and the reason in the ledger row's metadata, like vault.adminAdjustCredits.
- * The on/off flag is `isExchangeEnabled` in vault.adminSaveVaultConfig.
+ * Exchange admin procedures: the ₷ limits, dispute decisions, manual market ticks,
+ * sector DM modifiers and balance adjustments. adminProcedure audit-logs every call;
+ * balance adjustments also carry the admin and the reason in the ledger row's metadata,
+ * like vault.adminAdjustCredits. The on/off flag is `isExchangeEnabled` in vault.adminSaveVaultConfig.
  */
 
 import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   EXCHANGE_CONFIG_BOUNDS,
   EXCHANGE_CONFIG_KEYS,
@@ -15,8 +16,11 @@ import {
   type ExchangeConfig,
 } from "~/lib/vault/exchange-config";
 import { ExchangeError, exchangeService } from "~/lib/vault/exchange-service";
+import { SECTOR_KEYS } from "~/lib/exchange/companies";
 import { resolveDispute } from "~/lib/exchange/contracts";
+import { runExchangeMarketTick } from "~/lib/exchange/market";
 import { listDisputes } from "~/lib/exchange/queries";
+import { setSectorDmModifier } from "~/lib/exchange/sectors";
 import { guard } from "./_errors";
 
 const bounded = (field: keyof ExchangeConfig) =>
@@ -26,6 +30,10 @@ const configInput = z.object({
   charterFee: bounded("charterFee"),
   activeCompanyCap: bounded("activeCompanyCap").int(),
   seedSovereigns: bounded("seedSovereigns"),
+  treasuryDailyStipend: bounded("treasuryDailyStipend").optional(),
+  treasuryCap: bounded("treasuryCap").optional(),
+  realmWeeklyFaucetCap: bounded("realmWeeklyFaucetCap").optional(),
+  realmOperatingBudget: bounded("realmOperatingBudget").optional(),
 });
 
 export const exchangeAdminRouter = createTRPCRouter({
@@ -33,7 +41,9 @@ export const exchangeAdminRouter = createTRPCRouter({
 
   adminSaveExchangeConfig: adminProcedure.input(configInput).mutation(({ ctx, input }) =>
     guard("save the Exchange config", async () => {
-      const entries = Object.entries(input) as [keyof typeof input, number][];
+      const entries = (Object.entries(input) as [keyof typeof input, number | undefined][]).filter(
+        (entry): entry is [keyof typeof input, number] => entry[1] !== undefined
+      );
       await ctx.db.$transaction(
         entries.map(([field, value]) =>
           ctx.db.systemConfig.upsert({
@@ -51,6 +61,29 @@ export const exchangeAdminRouter = createTRPCRouter({
       return { success: true };
     })
   ),
+
+  adminRunMarketTick: adminProcedure.mutation(({ ctx }) =>
+    guard("run the market tick", () => runExchangeMarketTick(ctx.db))
+  ),
+
+  adminSetSectorDmModifier: adminProcedure
+    .input(
+      z.object({
+        realmId: z.string().min(1).default(DEFAULT_REALM_ID),
+        sectorKey: z.enum(SECTOR_KEYS),
+        value: z.number().min(-0.5).max(2),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("set the sector modifier", () =>
+        setSectorDmModifier(ctx.db, {
+          realmId: input.realmId,
+          sectorKey: input.sectorKey,
+          value: input.value,
+          actorUserId: ctx.auth?.userId ?? "admin",
+        })
+      )
+    ),
 
   adminListDisputes: adminProcedure.query(({ ctx }) =>
     guard("list disputes", () => listDisputes(ctx.db))
@@ -104,7 +137,6 @@ export const exchangeAdminRouter = createTRPCRouter({
                 metadata
               );
         if (!result.success) {
-          // A failed move reports why (no such user, or the debit would overdraw the wallet).
           throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", result.message ?? "Adjustment failed");
         }
         return { newBalance: result.newBalance };

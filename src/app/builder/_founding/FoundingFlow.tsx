@@ -553,10 +553,10 @@ export function FoundingFlowView() {
   );
 }
 
-/** The founding flow behind sign-in. */
+/** The founding flow behind sign-in; preserves any query (`?import=1`, `?step=`) on return. */
 export function FoundingFlow() {
   return (
-    <AuthenticationGuard redirectPath={FOUNDING_PATH}>
+    <AuthenticationGuard>
       <FoundingFlowView />
     </AuthenticationGuard>
   );

@@ -15,7 +15,11 @@ export function SovereignWalletCard({ overview }: { overview: Overview }) {
   return (
     <Card padding="lg" className="space-y-4">
       <CardTitle icon={<Wallet />}>Sovereign wallet</CardTitle>
-      <Stat label="Sovereigns" value={formatSovereigns(wallet.sovereigns)} />
+      <Stat
+        label="Sovereigns"
+        value={formatSovereigns(wallet.sovereigns)}
+        hint={`Lifetime earned ${formatSovereigns(wallet.lifetimeEarned)} · spent ${formatSovereigns(wallet.lifetimeSpent)}`}
+      />
 
       {transactions.length > 0 && (
         <div className="space-y-2">

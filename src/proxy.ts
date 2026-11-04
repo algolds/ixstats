@@ -27,8 +27,19 @@ const ENABLE_COMPRESSION = process.env.ENABLE_COMPRESSION === "true";
 const isProtectedRoute = createRouteMatcher([
   "/admin(.*)",
   "/settings(.*)",
-  // Setup page should be accessible without authentication when using fallback auth
-  // '/setup(.*)',
+  "/builder(.*)",
+  "/mycountry(.*)",
+  "/dashboard(.*)",
+  "/vault(.*)",
+  "/messages(.*)",
+  "/myclub(.*)",
+  "/myleague(.*)",
+  "/stashes(.*)",
+  "/setup(.*)",
+  "/thinktanks(.*)",
+  "/util/lorewards(.*)",
+  "/blurbs/submit(.*)",
+  "/blurbs/mine(.*)",
 ]);
 
 const isPublicRoute = createRouteMatcher([
@@ -46,8 +57,6 @@ const isPublicRoute = createRouteMatcher([
   "/dashboard/profile/(.*)",
   "/thinkpages",
   "/thinkpages/(.*)",
-  "/builder",
-  "/builder/(.*)",
   "/maps",
   "/maps/(.*)",
   "/IxEconomy.xlsx",

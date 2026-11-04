@@ -1,6 +1,7 @@
 // WikiOS Lorewards: today's race, the standings and the history. The player's own trophies live in the Vault;
 // an article's Loreward badge opens this page on its winner's trophies (?user=, and ?card= for the trophy card).
 import type { Metadata } from "next";
+import { AuthenticationGuard } from "~/components/mycountry/shared/primitives";
 import { WikiOSLayout } from "~/components/wiki-os/shared/WikiOSLayout";
 import { LorewardsView } from "~/components/lorewards/LorewardsView";
 
@@ -20,10 +21,12 @@ export default async function LorewardsPage({
 }) {
   const { user, card } = await searchParams;
   return (
-    <WikiOSLayout title="Lorewards">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
-        <LorewardsView focus="contest" username={first(user)} highlightCardId={first(card)} />
-      </div>
-    </WikiOSLayout>
+    <AuthenticationGuard>
+      <WikiOSLayout title="Lorewards">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
+          <LorewardsView focus="contest" username={first(user)} highlightCardId={first(card)} />
+        </div>
+      </WikiOSLayout>
+    </AuthenticationGuard>
   );
 }

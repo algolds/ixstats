@@ -73,4 +73,38 @@ describe("the proxy's /admin gate", () => {
     await run("/settings");
     expect(isAdminClerkUser).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["/builder", "/builder"],
+    ["/builder?import=1", "/builder?import=1"],
+    ["/mycountry", "/mycountry"],
+    ["/dashboard", "/dashboard"],
+    ["/dashboard/accounts", "/dashboard/accounts"],
+    ["/dashboard/saved", "/dashboard/saved"],
+    ["/vault", "/vault"],
+    ["/messages", "/messages"],
+    ["/stashes", "/stashes"],
+    ["/setup", "/setup"],
+    ["/thinktanks", "/thinktanks"],
+    ["/util/lorewards", "/util/lorewards"],
+    ["/blurbs/submit", "/blurbs/submit"],
+    ["/blurbs/mine", "/blurbs/mine"],
+  ])("redirects signed-out visitor from %s to /sign-in with redirect_url", async (path, target) => {
+    session = { userId: null, sessionClaims: null };
+    const res = await run(path);
+    const location = res.headers.get("location");
+    expect(location).not.toBeNull();
+    const url = new URL(location!);
+    expect(url.pathname).toBe("/sign-in");
+    expect(url.searchParams.get("redirect_url")).toBe(target);
+  });
+
+  it.each(["/", "/dashboard/post/123", "/dashboard/profile/abc", "/countries/caphiria", "/maps"])(
+    "lets signed-out visitor open public route %s without redirect",
+    async (path) => {
+      session = { userId: null, sessionClaims: null };
+      const res = await run(path);
+      expect(res.headers.get("location")).toBeNull();
+    }
+  );
 });

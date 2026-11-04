@@ -1,12 +1,13 @@
 "use client";
 
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
   StatUp as TrendingUp,
   Bank as Landmark,
+  Building,
   Coins,
   Globe as Globe2,
   Suitcase as Briefcase,
@@ -58,6 +59,17 @@ const TradeCommerceConsole = dynamic(
   () =>
     import("./TradeCommerceConsole").then((m) => ({
       default: m.TradeCommerceConsole,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="rounded-card h-64" />,
+  }
+);
+
+const CorporationsTreasuryConsole = dynamic(
+  () =>
+    import("./CorporationsTreasuryConsole").then((m) => ({
+      default: m.CorporationsTreasuryConsole,
     })),
   {
     ssr: false,
@@ -123,12 +135,13 @@ function giniLabel(raw: number | null): string {
 type Country = ReturnType<typeof useCountryData>["country"];
 type Dashboard = RouterOutputs["mycountry"]["getCountryDashboard"];
 
-// Short labels so all four fit a phone-width bar without truncating.
+// Short labels so all five fit a phone-width bar without truncating.
 const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = [
   { id: "report", label: "Report", icon: TrendingUp },
   { id: "budget", label: "Budget", icon: Landmark },
   { id: "taxes", label: "Taxes", icon: Coins },
   { id: "trade", label: "Trade", icon: Globe2 },
+  { id: "corporations", label: "Corporations", icon: Building },
 ];
 
 /** Whole dollars in compact notation, e.g. "$1.3B", "$44.5T"; "—" when missing or zero. */
@@ -361,7 +374,7 @@ interface EconomyDrillDownProps {
   onDeclare?: (goal: string) => void;
 }
 
-/** Economy drill-down: report, budget, taxes and trade tabs. Shared between the drill sheet and the full-page economy surface. */
+/** Economy drill-down: report, budget, taxes, trade and corporations tabs. Shared between the drill sheet and the full-page economy surface. */
 function EconomyDrillDownComponent({
   countryId,
   onDeclare,
@@ -371,6 +384,10 @@ function EconomyDrillDownComponent({
   const [activeTab, setActiveTab] = useState<EconomyTab>(
     () => economyTabFromParam(tabParam) ?? "report"
   );
+  useEffect(() => {
+    const next = economyTabFromParam(tabParam);
+    if (next) setActiveTab(next);
+  }, [tabParam]);
   const { country } = useCountryData();
   const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
     { countryId },
@@ -391,6 +408,9 @@ function EconomyDrillDownComponent({
       {activeTab === "budget" && <FiscalTab country={country} countryId={countryId} />}
       {activeTab === "taxes" && <FiscalPolicyConsole countryId={countryId} />}
       {activeTab === "trade" && <TradeCommerceConsole countryId={countryId} />}
+      {activeTab === "corporations" && (
+        <CorporationsTreasuryConsole countryId={countryId} countryName={country?.name} />
+      )}
     </div>
   );
 }

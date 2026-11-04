@@ -1,6 +1,12 @@
-import { KeyCommand as Command, WarningCircle as AlertCircle, Megaphone } from "iconoir-react";
+import {
+  Building,
+  KeyCommand as Command,
+  WarningCircle as AlertCircle,
+  Megaphone,
+} from "iconoir-react";
 import type { AgendaItem, AgendaUrgency } from "./agendaTypes";
 import { getSeverityRank } from "./agendaTypes";
+import { economyTabHref } from "~/lib/mycountry/routes";
 import type { RealmCalendar } from "~/lib/realms/realm-calendar";
 import { electionDisplayName } from "~/lib/realms/realm-year";
 import { PHASE_META, directiveTimeline } from "~/components/mycountry/directives/directive-model";
@@ -48,13 +54,22 @@ export interface AgendaSourceElection {
   createdAt?: Timestamp;
 }
 
-interface AgendaSources {
+export interface AgendaSourceCorporate {
+  treasuryBalance?: number | null;
+  treasuryCap?: number | null;
+  distressedCount?: number | null;
+  tendersWithBidsCount?: number | null;
+}
+
+export interface AgendaSources {
   /** Open national issues (`nationalIssues.getMyIssues`, status active). */
   issues?: readonly AgendaSourceIssue[];
   /** All intents (`intent.getTree`); only active directives are listed. */
   intents?: readonly AgendaSourceIntent[];
   /** Elections (`elections.getElections`); only future, not completed or cancelled. */
   elections?: readonly AgendaSourceElection[];
+  /** Optional corporate & nation ₷ treasury summary signals. */
+  corporate?: AgendaSourceCorporate | null;
   /** The nation's realm-clock "now". */
   nowIxTime: number;
   /** The nation's calendar, for the year in an election's name (as stored when omitted). */
@@ -62,6 +77,8 @@ interface AgendaSources {
   /** The realm's speed (0: paused). */
   multiplier: number;
 }
+
+export type AgendaInput = AgendaSources;
 
 type AgendaClock = Pick<AgendaSources, "nowIxTime" | "multiplier" | "calendar">;
 
@@ -189,16 +206,85 @@ const isUpcoming = (el: AgendaSourceElection, nowIxTime: number) =>
   !["completed", "cancelled"].includes(String(el.status ?? "").toLowerCase()) &&
   el.scheduledIxTime > nowIxTime;
 
+const CORPORATIONS_HREF = economyTabHref("corporations");
+
+function corporateItems(
+  corporate: AgendaSourceCorporate | null | undefined,
+  nowIxTime: number
+): AgendaItem[] {
+  if (!corporate) return [];
+  const items: AgendaItem[] = [];
+  const tendersWithBidsCount = corporate.tendersWithBidsCount ?? 0;
+  const distressedCount = corporate.distressedCount ?? 0;
+  const treasuryBalance = corporate.treasuryBalance ?? 0;
+  const treasuryCap = corporate.treasuryCap ?? 0;
+
+  if (tendersWithBidsCount > 0) {
+    items.push({
+      id: "corporate:tenders-awaiting-award",
+      kind: "corporate",
+      title: "B2G tenders awaiting award",
+      preview: `${tendersWithBidsCount} open ${tendersWithBidsCount === 1 ? "tender has" : "tenders have"} corporate bids ready for review.`,
+      statusLabel: "Treasury tender",
+      icon: Building,
+      tone: "accent",
+      receivedAt: nowIxTime,
+      urgency: "due-soon",
+      flagged: true,
+      drillKind: { kind: "economy" },
+      href: CORPORATIONS_HREF,
+    });
+  }
+
+  if (distressedCount > 0) {
+    items.push({
+      id: "corporate:distressed-companies",
+      kind: "corporate",
+      title: "Domiciled corporation in distress",
+      preview: `${distressedCount} headquartered ${distressedCount === 1 ? "corporation is" : "corporations are"} in the 72-hour grace window before bankruptcy liquidation.`,
+      statusLabel: "Corporate distress",
+      icon: AlertCircle,
+      tone: "critical",
+      receivedAt: nowIxTime,
+      urgency: "due-soon",
+      flagged: true,
+      drillKind: { kind: "economy" },
+      href: CORPORATIONS_HREF,
+    });
+  }
+
+  if (treasuryCap > 0 && treasuryBalance / treasuryCap >= 0.95) {
+    items.push({
+      id: "corporate:treasury-near-cap",
+      kind: "corporate",
+      title: "Nation ₷ treasury near cap",
+      preview:
+        "Stipend minting pauses at the treasury cap. Issue a B2G tender to deploy sovereign funds.",
+      statusLabel: "Nation treasury",
+      icon: Building,
+      tone: "warning",
+      receivedAt: nowIxTime,
+      urgency: null,
+      flagged: true,
+      drillKind: { kind: "economy" },
+      href: CORPORATIONS_HREF,
+    });
+  }
+
+  return items;
+}
+
 /**
  * The agenda's items, from real game state only: open national issues (with their deadline
- * pressure folded in), active directives and upcoming elections. Pure: the caller passes the
- * query data and the nation's realm-clock "now" and speed. Timing is relative (see
- * `formatAgendaTime`), never a date.
+ * pressure folded in), active directives, upcoming elections and corporate/treasury signals.
+ * Pure: the caller passes the query data and the nation's realm-clock "now" and speed. Timing
+ * is relative (see `formatAgendaTime`), never a date.
  */
 export function deriveAgendaItems({
   issues = [],
   intents = [],
   elections = [],
+  corporate,
   nowIxTime,
   multiplier,
   calendar,
@@ -210,6 +296,7 @@ export function deriveAgendaItems({
       .filter((it) => String(it.status ?? "").toLowerCase() === "active")
       .map((it) => directiveItem(it, nowIxTime)),
     ...elections.filter((el) => isUpcoming(el, nowIxTime)).map((el) => electionItem(el, clock)),
+    ...corporateItems(corporate, nowIxTime),
   ].sort(compareAgendaItems);
 }
 

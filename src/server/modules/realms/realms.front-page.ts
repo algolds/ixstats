@@ -1,6 +1,6 @@
 /**
- * The signed-out front page's realm-scoped and aggregate data: today's featured realm and its top nations, the
- * platform's headline counts, and the realms with open nations (the directory's rule).
+ * The signed-out front page's realm-scoped and aggregate data: Eurth (today's featured realm) and its top nations,
+ * the platform's headline counts, and the realms with open nations (the directory's rule).
  */
 import type { PrismaClient } from "@prisma/client";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
@@ -18,7 +18,15 @@ const countByRealm = (rows: Array<{ realmId: string; _count: { _all: number } }>
 export async function getFrontPage(db: PrismaClient, now = Date.now()) {
   const realms = await db.realm.findMany({
     where: DIRECTORY_REALM_WHERE,
-    select: { id: true, slug: true, name: true, thumbnail: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      tags: true,
+      foundedAt: true,
+      thumbnail: true,
+    },
   });
   const realmIds = realms.map((realm) => realm.id);
   const nations = { realmId: { in: realmIds }, isDemo: false };
@@ -43,7 +51,9 @@ export async function getFrontPage(db: PrismaClient, now = Date.now()) {
     hasPoliticalMap: mapped.has(realm.id),
   }));
   const featured =
-    pickFeaturedRealm(listed, now) ?? listed.find((realm) => realm.id === DEFAULT_REALM_ID) ?? null;
+    listed.find((realm) => realm.id === DEFAULT_REALM_ID || realm.slug === "eurth") ??
+    pickFeaturedRealm(listed, now) ??
+    null;
 
   const topNations = featured
     ? await db.country.findMany({
@@ -68,8 +78,12 @@ export async function getFrontPage(db: PrismaClient, now = Date.now()) {
     featured: featured && {
       slug: featured.slug,
       name: featured.name,
+      description: featured.description,
+      tags: featured.tags,
+      foundedAt: featured.foundedAt,
       thumbnail: featured.thumbnail,
       nationCount: featured.nationCount,
+      openNationCount: featured.openNationCount,
     },
     facts: {
       realms: listed.length,

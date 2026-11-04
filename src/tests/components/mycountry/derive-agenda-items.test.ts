@@ -74,3 +74,41 @@ describe("deadline pressure at the realm's speed", () => {
     expect(urgencyOf(0, now - DAY, now + DAY)[0]).toEqual(["issue", "overdue"]);
   });
 });
+
+describe("corporate and nation ₷ treasury agenda signals", () => {
+  it("emits up to 3 corporate agenda items routed to /mycountry/economy?tab=corporations", () => {
+    const items = deriveAgendaItems({
+      corporate: {
+        treasuryBalance: 48_000,
+        treasuryCap: 50_000,
+        distressedCount: 2,
+        tendersWithBidsCount: 1,
+      },
+      nowIxTime: now,
+      multiplier: 2,
+    });
+    expect(items.map((i) => i.title)).toEqual([
+      "B2G tenders awaiting award",
+      "Domiciled corporation in distress",
+      "Nation ₷ treasury near cap",
+    ]);
+    for (const item of items) {
+      expect(item.href).toBe("/mycountry/economy?tab=corporations");
+      expect(item.drillKind).toEqual({ kind: "economy" });
+    }
+  });
+
+  it("emits no corporate items when thresholds are not met", () => {
+    const items = deriveAgendaItems({
+      corporate: {
+        treasuryBalance: 20_000,
+        treasuryCap: 50_000,
+        distressedCount: 0,
+        tendersWithBidsCount: 0,
+      },
+      nowIxTime: now,
+      multiplier: 2,
+    });
+    expect(items).toEqual([]);
+  });
+});

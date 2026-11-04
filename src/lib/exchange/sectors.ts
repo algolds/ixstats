@@ -1,25 +1,27 @@
 /**
- * Sector indices and sector funds. Spec: docs/specs/2026-10-06-exchange-economy-design.md §8.
+ * Sector indices and sector funds, one set per realm. Spec: docs/specs/2026-10-06-exchange-economy-design.md.
  *
- * Index: one per macro sector (agriculture, industry, services, government), recomputed by
- * the `exchange-market` job from Exchange activity in that sector:
- *   activity = Σ capital + 100 × positive standing of ACTIVE companies in the sector
+ * Index: one per macro sector (agriculture, industry, services, government) in each realm,
+ * recomputed by the `exchange-market` job from Exchange activity in that sector:
+ *   activity = Σ capital + 100 × positive standing of the realm's ACTIVE companies in the sector
  *            + Σ value of the sector's contracts completed in the last 30 days
- *   target   = 1,000 × (1 + dmModifier) × (activity + 10,000) ÷ (base + 10,000)
+ *   target   = 1,000 × (1 + dmModifier) × (1 + macroTilt) × (activity + 10,000) ÷ (base + 10,000)
  * where `base` is the activity captured on the first compute. Each run moves the index at
- * most 5% toward its target, so one large deposit can't jump it. A SectorIndexHistory row
- * records every run.
+ * most 5% toward its target, so one large deposit can't jump it. The macro tilt moves the
+ * target by at most ±10%, by how far the sector's share of the realm's nominal GDP sits above
+ * or below a neutral 25%. A SectorIndexHistory row records every run.
  *
- * Funds (SectorPosition): a player buys units of a sector's fund with ₷ and sells them back
- * at the unit price, fund ₷ ÷ units outstanding. After each index run the four funds are
- * rebalanced by relative performance: fund_s × growth_s, scaled so the total is unchanged
- * and rounded to whole cents with the remainder placed exactly. No ₷ is ever created or
- * destroyed, so pumping an index can at most move ₷ between fund holders, never mint it.
+ * Funds (SectorPosition): a player buys units of a realm's sector fund with ₷ and sells them
+ * back at the unit price, fund ₷ ÷ units outstanding. After each index run the four funds of
+ * the realm are rebalanced by relative performance: fund_s × growth_s, scaled so the total is
+ * unchanged and rounded to whole cents with the remainder placed exactly. No ₷ is ever created
+ * or destroyed, so pumping an index can at most move ₷ between fund holders, never mint it.
  * No leverage, no shorting; a sale must wait 24 hours after the seller's last buy in that
- * sector, so nobody can buy just before a known run and sell just after it.
+ * sector of that realm, so nobody can buy just before a known run and sell just after it.
  */
 
 import type { PrismaClient } from "@prisma/client";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   ExchangeError,
   earnSovereignsTx,
@@ -29,6 +31,7 @@ import {
 import { INDEX_BASE, SECTOR_KEYS, type SectorKey } from "./companies";
 import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, lockWallet, type Db } from "./guards";
+import { countryMacroOf } from "./macro";
 import { fromCents, toCents } from "./ownership";
 
 export const SECTOR_LABELS: Record<SectorKey, string> = {
@@ -50,19 +53,33 @@ export const SELL_HOLD_MS = 24 * 60 * 60 * 1000;
 /** Unit price of an empty fund. */
 export const UNIT_START_PRICE = 1;
 
+export const DM_MODIFIER_MIN = -0.5;
+export const DM_MODIFIER_MAX = 2;
+
+/** A sector with a quarter of the realm's GDP is neutral: it neither lifts nor drags the target. */
+export const MACRO_NEUTRAL_WEIGHT = 0.25;
+const MACRO_TILT_SLOPE = 0.5;
+export const MACRO_TILT_LIMIT = 0.1;
+
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-/** Row-lock a sector index (its fund) until the transaction ends. */
-async function lockSector(tx: Db, sectorKey: string): Promise<void> {
-  await tx.$queryRaw`SELECT id FROM "exchange_sector_indices" WHERE "sectorKey" = ${sectorKey} FOR UPDATE`;
+/** Row-lock a realm's sector indices (and so its funds) until the transaction ends. */
+async function lockRealmSectors(tx: Db, realmId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM "exchange_sector_indices" WHERE "realmId" = ${realmId} FOR UPDATE`;
 }
 
-/** Create the four index rows at 1,000 if they don't exist yet. */
-export async function ensureSectorIndices(db: Db): Promise<void> {
+/** Create a realm's four index rows at 1,000 if they don't exist yet. */
+export async function ensureSectorIndices(db: Db, realmId: string): Promise<void> {
   await db.sectorIndex.createMany({
-    data: SECTOR_KEYS.map((sectorKey) => ({ sectorKey, label: SECTOR_LABELS[sectorKey] })),
+    data: SECTOR_KEYS.map((sectorKey) => ({ realmId, sectorKey, label: SECTOR_LABELS[sectorKey] })),
     skipDuplicates: true,
   });
+}
+
+/** The macro tilt on an index target: at most ±10%, scaled by the sector's GDP weight. */
+export function macroTiltOf(macroWeight: number): number {
+  const tilt = (macroWeight - MACRO_NEUTRAL_WEIGHT) * MACRO_TILT_SLOPE;
+  return Math.min(MACRO_TILT_LIMIT, Math.max(-MACRO_TILT_LIMIT, tilt));
 }
 
 /** The next index value: a step of at most MAX_STEP toward the activity target. */
@@ -70,13 +87,70 @@ export function nextIndexValue(
   previous: number,
   activity: number,
   base: number,
-  dmModifier = 0
+  dmModifier = 0,
+  macroWeight = MACRO_NEUTRAL_WEIGHT
 ): number {
   const target =
-    INDEX_BASE * (1 + dmModifier) * ((activity + ACTIVITY_FLOOR) / (base + ACTIVITY_FLOOR));
+    INDEX_BASE *
+    (1 + dmModifier) *
+    (1 + macroTiltOf(macroWeight)) *
+    ((activity + ACTIVITY_FLOOR) / (base + ACTIVITY_FLOOR));
   const ratio = previous > 0 ? target / previous : 1;
   const step = Math.min(1 + MAX_STEP, Math.max(1 - MAX_STEP, ratio));
   return Math.min(INDEX_MAX, Math.max(INDEX_MIN, round2(previous * step)));
+}
+
+/** One nation's contribution to its realm's sector weights. */
+export interface NationSectorShare {
+  nominalGDP: number | null;
+  sectorShares: Record<SectorKey, number>;
+  hasRecordedSector: boolean;
+}
+
+function neutralWeights(): Record<SectorKey, number> {
+  return Object.fromEntries(SECTOR_KEYS.map((key) => [key, MACRO_NEUTRAL_WEIGHT])) as Record<
+    SectorKey,
+    number
+  >;
+}
+
+function positiveGdp(nominalGDP: number | null): number {
+  return nominalGDP != null && Number.isFinite(nominalGDP) && nominalGDP > 0 ? nominalGDP : 0;
+}
+
+/**
+ * A realm's share of GDP per macro sector: each nation's recorded sector shares, weighted by
+ * its nominal GDP. With no GDP on record every nation counts equally. With no sector breakdown
+ * anywhere the weights stay neutral, so a realm with no data is not tilted.
+ */
+export function macroWeightsOf(nations: readonly NationSectorShare[]): Record<SectorKey, number> {
+  if (!nations.some((n) => n.hasRecordedSector)) return neutralWeights();
+  const gdpTotal = nations.reduce((sum, n) => sum + positiveGdp(n.nominalGDP), 0);
+  const weightOf = (n: NationSectorShare) => (gdpTotal > 0 ? positiveGdp(n.nominalGDP) : 1);
+  const total = gdpTotal > 0 ? gdpTotal : nations.length;
+  return Object.fromEntries(
+    SECTOR_KEYS.map((key) => [
+      key,
+      nations.reduce((sum, n) => sum + weightOf(n) * n.sectorShares[key], 0) / total,
+    ])
+  ) as Record<SectorKey, number>;
+}
+
+async function realmMacroWeights(db: Db, realmId: string): Promise<Record<SectorKey, number>> {
+  const countries = await db.country.findMany({
+    where: { realmId },
+    select: { nominalGDP: true, economicProfile: true },
+  });
+  return macroWeightsOf(
+    countries.map((c) => {
+      const macro = countryMacroOf(c);
+      return {
+        nominalGDP: c.nominalGDP,
+        sectorShares: macro.sectorShares,
+        hasRecordedSector: macro.hasRecordedSector,
+      };
+    })
+  );
 }
 
 /**
@@ -106,19 +180,20 @@ export function rebalanceFunds(
   return out;
 }
 
-/** Activity per sector right now (see the header for the formula). */
+/** Activity per sector in one realm right now (see the header for the formula). */
 export async function measureSectorActivity(
   db: Db,
+  realmId: string,
   nowMs: number
 ): Promise<Record<SectorKey, number>> {
   const since = nowMs - ACTIVITY_WINDOW_DAYS * DAY_MS;
   const [companies, contracts] = await Promise.all([
     db.company.findMany({
-      where: { status: "ACTIVE" },
+      where: { realmId, status: "ACTIVE" },
       select: { sectorKey: true, capital: true, standing: true },
     }),
     db.contract.findMany({
-      where: { status: "COMPLETED", closedIxTime: { gte: since } },
+      where: { realmId, status: "COMPLETED", closedIxTime: { gte: since } },
       select: { sectorKey: true, value: true },
     }),
   ]);
@@ -132,6 +207,7 @@ export async function measureSectorActivity(
 }
 
 export interface IndexRun {
+  realmId: string;
   sectorKey: string;
   previous: number;
   value: number;
@@ -139,21 +215,42 @@ export interface IndexRun {
   fund: number;
 }
 
-/** Recompute every index, rebalance the funds and record history, in one transaction. */
-export async function computeSectorIndices(
+/** Every realm with companies, plus Ixnay, which always has its indices. */
+async function indexedRealmIds(db: Db): Promise<string[]> {
+  const rows = await db.company.findMany({ distinct: ["realmId"], select: { realmId: true } });
+  return [...new Set([DEFAULT_REALM_ID, ...rows.map((r) => r.realmId)])];
+}
+
+/** Recompute one realm's indices, rebalance its funds and record history, in one transaction. */
+async function computeRealmSectorIndices(
   db: PrismaClient,
-  nowMs: number = Date.now()
+  realmId: string,
+  nowMs: number
 ): Promise<IndexRun[]> {
-  await ensureSectorIndices(db);
-  const activity = await measureSectorActivity(db, nowMs);
+  await ensureSectorIndices(db, realmId);
+  const [activity, weights] = await Promise.all([
+    measureSectorActivity(db, realmId, nowMs),
+    realmMacroWeights(db, realmId),
+  ]);
   return db.$transaction(async (tx) => {
-    for (const key of [...SECTOR_KEYS].sort()) await lockSector(tx, key);
-    const rows = await tx.sectorIndex.findMany({ where: { sectorKey: { in: [...SECTOR_KEYS] } } });
+    await lockRealmSectors(tx, realmId);
+    const rows = await tx.sectorIndex.findMany({
+      where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } },
+    });
     const next = rows.map((row) => {
-      const a = activity[row.sectorKey as SectorKey] ?? 0;
+      const key = row.sectorKey as SectorKey;
+      const a = activity[key] ?? 0;
       const base = row.baseTotal ?? a;
-      const value = nextIndexValue(row.value, a, base, row.dmModifier);
-      return { row, base, activity: a, value, growth: row.value > 0 ? value / row.value : 1 };
+      const macroWeight = weights[key];
+      const value = nextIndexValue(row.value, a, base, row.dmModifier, macroWeight);
+      return {
+        row,
+        base,
+        activity: a,
+        value,
+        macroWeight,
+        growth: row.value > 0 ? value / row.value : 1,
+      };
     });
     const funds = rebalanceFunds(
       next.map((n) => ({
@@ -167,12 +264,19 @@ export async function computeSectorIndices(
       const fund = fromCents(funds.get(n.row.sectorKey) ?? toCents(n.row.fundSovereigns));
       await tx.sectorIndex.update({
         where: { id: n.row.id },
-        data: { value: n.value, baseTotal: n.base, computedIxTime: nowMs, fundSovereigns: fund },
+        data: {
+          value: n.value,
+          baseTotal: n.base,
+          computedIxTime: nowMs,
+          fundSovereigns: fund,
+          macroWeight: n.macroWeight,
+        },
       });
       await tx.sectorIndexHistory.create({
-        data: { sectorKey: n.row.sectorKey, value: n.value, recordedIxTime: nowMs },
+        data: { realmId, sectorKey: n.row.sectorKey, value: n.value, recordedIxTime: nowMs },
       });
       runs.push({
+        realmId,
         sectorKey: n.row.sectorKey,
         previous: n.row.value,
         value: n.value,
@@ -181,6 +285,52 @@ export async function computeSectorIndices(
       });
     }
     return runs;
+  });
+}
+
+/** Recompute the indices of every realm (each in its own transaction). */
+export async function computeSectorIndices(
+  db: PrismaClient,
+  nowMs: number = Date.now()
+): Promise<IndexRun[]> {
+  const runs: IndexRun[] = [];
+  for (const realmId of await indexedRealmIds(db)) {
+    runs.push(...(await computeRealmSectorIndices(db, realmId, nowMs)));
+  }
+  return runs;
+}
+
+/**
+ * Set a realm sector's DM lever, clamped to its allowed range, and record the change in the
+ * admin audit log. The router checks who may do this.
+ */
+export async function setSectorDmModifier(
+  db: PrismaClient,
+  input: { realmId: string; sectorKey: SectorKey; value: number; actorUserId: string }
+) {
+  if (!Number.isFinite(input.value)) {
+    throw new ExchangeError("INVALID_AMOUNT", "The modifier must be a number");
+  }
+  const dmModifier = Math.min(DM_MODIFIER_MAX, Math.max(DM_MODIFIER_MIN, input.value));
+  const where = {
+    realmId_sectorKey: { realmId: input.realmId, sectorKey: input.sectorKey },
+  };
+  await ensureSectorIndices(db, input.realmId);
+  return db.$transaction(async (tx) => {
+    const before = await tx.sectorIndex.findUniqueOrThrow({ where, select: { dmModifier: true } });
+    const row = await tx.sectorIndex.update({ where, data: { dmModifier } });
+    await tx.adminAuditLog.create({
+      data: {
+        action: "EXCHANGE_SECTOR_DM",
+        targetType: "SectorIndex",
+        targetId: `${input.realmId}:${input.sectorKey}`,
+        targetName: SECTOR_LABELS[input.sectorKey],
+        changes: JSON.stringify({ from: before.dmModifier, to: dmModifier }),
+        adminId: input.actorUserId,
+        adminName: input.actorUserId,
+      },
+    });
+    return row;
   });
 }
 
@@ -196,6 +346,11 @@ export interface FundTradeResult {
   units: number;
   sovereigns: number;
   alreadyApplied: boolean;
+}
+
+/** The ledger source of a realm sector's fund trades; the sell hold reads it back. */
+function fundSource(realmId: string, sectorKey: string): string {
+  return `SECTOR_FUND:${realmId}:${sectorKey}`;
 }
 
 async function appliedTrade(db: Db, key: string): Promise<FundTradeResult | null> {
@@ -224,7 +379,13 @@ async function keyed(
 /** Buy fund units for `amount` ₷ at the current unit price. */
 export async function buySectorUnits(
   db: PrismaClient,
-  input: { userId: string; sectorKey: SectorKey; amount: number; requestId: string }
+  input: {
+    userId: string;
+    realmId: string;
+    sectorKey: SectorKey;
+    amount: number;
+    requestId: string;
+  }
 ): Promise<FundTradeResult> {
   if (
     !Number.isFinite(input.amount) ||
@@ -234,25 +395,27 @@ export async function buySectorUnits(
     throw new ExchangeError("INVALID_AMOUNT", "Amount must be positive, in whole cents");
   }
   const key = `exchange:sector-buy:${input.userId}:${input.requestId}`;
-  await ensureSectorIndices(db);
+  const source = fundSource(input.realmId, input.sectorKey);
+  const fundWhere = {
+    realmId_sectorKey: { realmId: input.realmId, sectorKey: input.sectorKey },
+  };
+  await ensureSectorIndices(db, input.realmId);
   return keyed(db, key, () =>
     db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
-      await lockSector(tx, input.sectorKey);
+      await lockRealmSectors(tx, input.realmId);
       await lockWallet(tx, input.userId);
       const applied = await appliedTrade(tx, key);
       if (applied) return applied;
 
-      const fund = await tx.sectorIndex.findUniqueOrThrow({
-        where: { sectorKey: input.sectorKey },
-      });
+      const fund = await tx.sectorIndex.findUniqueOrThrow({ where: fundWhere });
       const units = input.amount / unitPrice(fund);
       await spendSovereignsTx(tx, {
         userId: input.userId,
         amount: input.amount,
         type: "SECTOR_BUY",
-        source: `SECTOR_FUND:${input.sectorKey}`,
-        metadata: { sectorKey: input.sectorKey, units },
+        source,
+        metadata: { realmId: input.realmId, sectorKey: input.sectorKey, units },
         idempotencyKey: key,
       });
       await tx.sectorIndex.update({
@@ -263,7 +426,11 @@ export async function buySectorUnits(
         },
       });
       const where = {
-        ownerUserId_sectorKey: { ownerUserId: input.userId, sectorKey: input.sectorKey },
+        ownerUserId_realmId_sectorKey: {
+          ownerUserId: input.userId,
+          realmId: input.realmId,
+          sectorKey: input.sectorKey,
+        },
       };
       const position = await tx.sectorPosition.findUnique({ where });
       if (position) {
@@ -279,6 +446,7 @@ export async function buySectorUnits(
         await tx.sectorPosition.create({
           data: {
             ownerUserId: input.userId,
+            realmId: input.realmId,
             sectorKey: input.sectorKey,
             units,
             avgCost: input.amount / units,
@@ -293,22 +461,35 @@ export async function buySectorUnits(
 /** Sell a fraction (0 to 1; 1 sells everything) of your units at the current unit price. */
 export async function sellSectorUnits(
   db: PrismaClient,
-  input: { userId: string; sectorKey: SectorKey; fraction: number; requestId: string }
+  input: {
+    userId: string;
+    realmId: string;
+    sectorKey: SectorKey;
+    fraction: number;
+    requestId: string;
+  }
 ): Promise<FundTradeResult> {
   if (!Number.isFinite(input.fraction) || input.fraction <= 0 || input.fraction > 1) {
     throw new ExchangeError("INVALID_AMOUNT", "Sell between 0 and 100% of your units");
   }
   const key = `exchange:sector-sell:${input.userId}:${input.requestId}`;
+  const source = fundSource(input.realmId, input.sectorKey);
   return keyed(db, key, () =>
     db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
-      await lockSector(tx, input.sectorKey);
+      await lockRealmSectors(tx, input.realmId);
       const wallet = await lockWallet(tx, input.userId);
       const applied = await appliedTrade(tx, key);
       if (applied) return applied;
 
       const position = await tx.sectorPosition.findUnique({
-        where: { ownerUserId_sectorKey: { ownerUserId: input.userId, sectorKey: input.sectorKey } },
+        where: {
+          ownerUserId_realmId_sectorKey: {
+            ownerUserId: input.userId,
+            realmId: input.realmId,
+            sectorKey: input.sectorKey,
+          },
+        },
       });
       if (!position || position.units <= 0) {
         throw new ExchangeError("INVALID_AMOUNT", "You hold no units in this sector");
@@ -317,7 +498,7 @@ export async function sellSectorUnits(
         where: {
           walletId: wallet.id,
           type: "SECTOR_BUY",
-          source: `SECTOR_FUND:${input.sectorKey}`,
+          source,
           createdAt: { gt: new Date(Date.now() - SELL_HOLD_MS) },
         },
         select: { id: true },
@@ -330,7 +511,7 @@ export async function sellSectorUnits(
       }
 
       const fund = await tx.sectorIndex.findUniqueOrThrow({
-        where: { sectorKey: input.sectorKey },
+        where: { realmId_sectorKey: { realmId: input.realmId, sectorKey: input.sectorKey } },
       });
       const units = input.fraction === 1 ? position.units : position.units * input.fraction;
       const fundCents = toCents(fund.fundSovereigns);
@@ -357,8 +538,8 @@ export async function sellSectorUnits(
         userId: input.userId,
         amount: sovereigns,
         type: "SECTOR_SELL",
-        source: `SECTOR_FUND:${input.sectorKey}`,
-        metadata: { sectorKey: input.sectorKey, units },
+        source,
+        metadata: { realmId: input.realmId, sectorKey: input.sectorKey, units },
         idempotencyKey: key,
       });
       return { units, sovereigns, alreadyApplied: false };
@@ -366,17 +547,19 @@ export async function sellSectorUnits(
   );
 }
 
-/** Indices with recent history and fund prices, plus the caller's positions. */
-export async function getSectorMarket(db: Db, userId: string) {
+/** A realm's indices with recent history and fund prices, plus the caller's positions there. */
+export async function getSectorMarket(db: Db, userId: string, realmId: string) {
   const [indices, history, positions] = await Promise.all([
-    db.sectorIndex.findMany({ where: { sectorKey: { in: [...SECTOR_KEYS] } } }),
+    db.sectorIndex.findMany({ where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } } }),
     db.sectorIndexHistory.findMany({
-      where: { sectorKey: { in: [...SECTOR_KEYS] } },
+      where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } },
       orderBy: { recordedIxTime: "desc" },
       take: 4 * 60,
       select: { sectorKey: true, value: true, recordedAt: true },
     }),
-    db.sectorPosition.findMany({ where: { ownerUserId: userId, units: { gt: 0 } } }),
+    db.sectorPosition.findMany({
+      where: { ownerUserId: userId, realmId, units: { gt: 0 } },
+    }),
   ]);
   return SECTOR_KEYS.map((sectorKey) => {
     const row = indices.find((i) => i.sectorKey === sectorKey);
@@ -390,6 +573,8 @@ export async function getSectorMarket(db: Db, userId: string) {
       sectorKey,
       label: SECTOR_LABELS[sectorKey],
       value: row?.value ?? INDEX_BASE,
+      macroWeight: row?.macroWeight ?? 0,
+      dmModifier: row?.dmModifier ?? 0,
       computedIxTime: row?.computedIxTime ?? null,
       fund: fund.fundSovereigns,
       unitPrice: Math.round(price * 10_000) / 10_000,

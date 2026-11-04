@@ -48,8 +48,8 @@ const followed = (file: string) => !Object.keys(NOT_FOLLOWED).some((skip) => fil
 // re-bound at runtime is not seen; an unscannable procedure is caught by the "reads every app mutation" case.
 /** A write to a table that holds IxCredits, Sovereigns or card ownership, through Prisma or raw SQL. */
 const MONEY_WRITE = new RegExp(
-  String.raw`\b(vaultTransaction|myVault|cardOwnership|cardTransferEvent|cardDustBalance|cardDustEvent|cardListing|cardAuction|auctionBid|tradeOffer|exchangeWallet|exchangeTransaction|shareholding|shareListing|shareIssuance|companyDividend|sectorPosition|contractBid)\s*\.\s*(create|createMany|update|updateMany|upsert|delete|deleteMany)\b` +
-    String.raw`|\b(UPDATE|INSERT INTO|DELETE FROM)\s+"?(MyVault|VaultTransaction|CardOwnership|CardDustBalance|CardListing|CardAuction|TradeOffer|ExchangeWallet|ExchangeTransaction|Shareholding|ShareListing)\b`
+  String.raw`\b(vaultTransaction|myVault|cardOwnership|cardTransferEvent|cardDustBalance|cardDustEvent|cardListing|cardAuction|auctionBid|tradeOffer|exchangeWallet|exchangeTransaction|shareholding|shareListing|shareIssuance|companyDividend|sectorPosition|contractBid|nationTreasury|nationTreasuryEntry|shareBuyOrder)\s*\.\s*(create|createMany|update|updateMany|upsert|delete|deleteMany)\b` +
+    String.raw`|\b(UPDATE|INSERT INTO|DELETE FROM)\s+"?(MyVault|VaultTransaction|CardOwnership|CardDustBalance|CardListing|CardAuction|TradeOffer|ExchangeWallet|ExchangeTransaction|Shareholding|ShareListing|NationTreasury|NationTreasuryEntry|ShareBuyOrder)\b`
 );
 
 const IMPORT =

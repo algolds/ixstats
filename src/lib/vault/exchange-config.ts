@@ -24,6 +24,14 @@ export interface ExchangeConfig {
   valuationSectorWeight: number;
   valuationStandingWeight: number;
   valuationDecisionWeight: number;
+  /** Base ₷ a nation treasury receives per day, scaled by economic tier (treasury.ts stipendFor). */
+  treasuryDailyStipend: number;
+  /** Most ₷ a nation treasury may hold. A stipend that would exceed it is cut to the room left. */
+  treasuryCap: number;
+  /** Most ₷ a realm may mint through faucet tenders in a rolling seven days. */
+  realmWeeklyFaucetCap: number;
+  /** Most ₷ per market tick a realm may mint from operating revenue, shared pro rata by its companies. */
+  realmOperatingBudget: number;
 }
 
 export const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
@@ -35,6 +43,10 @@ export const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
   valuationSectorWeight: 1.0,
   valuationStandingWeight: 0.5,
   valuationDecisionWeight: 1.0,
+  treasuryDailyStipend: 250,
+  treasuryCap: 25_000,
+  realmWeeklyFaucetCap: 10_000,
+  realmOperatingBudget: 500,
 };
 
 /** Inclusive [min, max] for every field; admin saves and database reads are both held to it. */
@@ -45,6 +57,10 @@ export const EXCHANGE_CONFIG_BOUNDS: Record<keyof ExchangeConfig, readonly [numb
   valuationSectorWeight: [0, 10],
   valuationStandingWeight: [0, 10],
   valuationDecisionWeight: [0, 10],
+  treasuryDailyStipend: [0, 50_000],
+  treasuryCap: [1_000, 1_000_000],
+  realmWeeklyFaucetCap: [0, 10_000_000],
+  realmOperatingBudget: [0, 1_000_000],
 };
 
 /** Maps a config field to its `exchange_*` SystemConfig key. */
@@ -55,6 +71,10 @@ export const EXCHANGE_CONFIG_KEYS = {
   valuationSectorWeight: "exchange_valuation_sector_weight",
   valuationStandingWeight: "exchange_valuation_standing_weight",
   valuationDecisionWeight: "exchange_valuation_decision_weight",
+  treasuryDailyStipend: "exchange_treasury_daily_stipend",
+  treasuryCap: "exchange_treasury_cap",
+  realmWeeklyFaucetCap: "exchange_realm_weekly_faucet_cap",
+  realmOperatingBudget: "exchange_realm_operating_budget",
 } as const satisfies Record<keyof ExchangeConfig, string>;
 
 /** Anything with a systemConfig delegate: a PrismaClient or an interactive transaction client. */

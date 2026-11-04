@@ -357,13 +357,19 @@ export const APPS: readonly AppDefinition[] = [
         icon: BookmarkBook,
         requires: "signed-in",
       },
-      { id: "lorewards", label: "Lorewards", href: "/util/lorewards", icon: Trophy },
+      {
+        id: "lorewards",
+        label: "Lorewards",
+        href: "/util/lorewards",
+        icon: Trophy,
+        requires: "signed-in",
+      },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
   },
   {
     // The forum, ThinkTanks and the member's ThinkPages accounts. FORUM_HOME is the prefix of every forum route (c, t,
-    // r, mod, post); signed-out visitors keep Forums and ThinkTanks (the others need a sign-in or a moderator role). /dashboard/accounts outranks Home's /dashboard because the longest prefix wins.
+    // r, mod, post); signed-out visitors keep Forums (the others need a sign-in or a moderator role). /dashboard/accounts outranks Home's /dashboard because the longest prefix wins.
     id: "thinkpages",
     label: "ThinkPages",
     href: FORUM_HOME,
@@ -372,7 +378,13 @@ export const APPS: readonly AppDefinition[] = [
     match: [FORUM_HOME, "/thinktanks", "/dashboard/accounts"],
     sections: [
       { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },
-      { id: "thinktanks", label: "ThinkTanks", href: "/thinktanks", icon: LightBulbOn },
+      {
+        id: "thinktanks",
+        label: "ThinkTanks",
+        href: "/thinktanks",
+        icon: LightBulbOn,
+        requires: "signed-in",
+      },
       {
         id: "accounts",
         label: "Accounts",

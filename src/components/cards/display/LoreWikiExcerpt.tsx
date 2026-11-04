@@ -43,7 +43,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
       wikiSource: articleSource ?? "ixwiki",
     },
     {
-      enabled: !!targetArticleTitle && articleSource !== null,
+      enabled: !storedExcerpt && !!targetArticleTitle && articleSource !== null,
       staleTime: 10 * 60 * 1000,
     }
   );

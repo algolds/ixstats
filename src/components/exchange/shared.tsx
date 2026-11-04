@@ -10,8 +10,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  CREDIT_RATINGS,
+  SUB_INDUSTRIES,
+  borrowRateFor,
+  subIndustriesOf,
+  type CreditRating,
+  type SubIndustry,
+  type SubIndustryKey,
+} from "~/lib/exchange/taxonomy";
+import { formatSovereigns, round2 } from "~/lib/exchange/amounts";
 
-export { formatSovereigns } from "~/lib/exchange/amounts";
+export { formatSovereigns, round2 };
+export {
+  CREDIT_RATINGS,
+  SUB_INDUSTRIES,
+  borrowRateFor,
+  subIndustriesOf,
+  type CreditRating,
+  type SubIndustry,
+  type SubIndustryKey,
+};
 
 export const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -24,6 +43,14 @@ export type Sector = (typeof SECTORS)[number]["value"];
 
 export function sectorLabel(key: string): string {
   return SECTORS.find((s) => s.value === key)?.label ?? key;
+}
+
+export function subIndustryOf(key: string): SubIndustry | undefined {
+  return SUB_INDUSTRIES.find((s) => s.key === key);
+}
+
+export function subIndustryLabel(key: string): string {
+  return subIndustryOf(key)?.label ?? key;
 }
 
 function newId(): string {
@@ -77,6 +104,35 @@ export function SectorSelect({
   );
 }
 
+export function SubIndustrySelect({
+  id,
+  sectorKey,
+  value,
+  onChange,
+}: {
+  id: string;
+  sectorKey: Sector;
+  value: SubIndustryKey;
+  onChange: (value: SubIndustryKey) => void;
+}) {
+  const options = subIndustriesOf(sectorKey);
+  const effective = options.some((o) => o.key === value) ? value : (options[0]?.key ?? value);
+  return (
+    <Select value={effective} onValueChange={(v) => onChange(v as SubIndustryKey)}>
+      <SelectTrigger id={id} size="sm" aria-label="Sub-industry">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((sub) => (
+          <SelectItem key={sub.key} value={sub.key}>
+            {sub.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 export function CompanySelect({
   id,
   companies,
@@ -111,8 +167,12 @@ const STATUS_TONE: Record<string, BadgeVariant> = {
   CANCELLED: "default",
   DISPUTED: "warning",
   ACTIVE: "success",
+  DISTRESSED: "warning",
   DELISTED: "default",
   BANKRUPT: "destructive",
+  PASSED: "success",
+  REJECTED: "destructive",
+  EXPIRED: "default",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -122,16 +182,83 @@ const STATUS_LABEL: Record<string, string> = {
   CANCELLED: "Cancelled",
   DISPUTED: "Disputed",
   ACTIVE: "Active",
+  DISTRESSED: "Distressed",
   DELISTED: "Dissolved",
   BANKRUPT: "Bankrupt",
+  PASSED: "Passed",
+  REJECTED: "Rejected",
+  EXPIRED: "Expired",
 };
 
 export function StatusBadge({ status }: { status: string }) {
   return <Badge variant={STATUS_TONE[status] ?? "default"}>{STATUS_LABEL[status] ?? status}</Badge>;
 }
 
+const RATING_TONE: Record<string, BadgeVariant> = {
+  AAA: "success",
+  AA: "success",
+  A: "info",
+  BBB: "info",
+  B: "secondary",
+  CCC: "warning",
+  D: "destructive",
+};
+
+export function CreditRatingBadge({ rating }: { rating: string }) {
+  return <Badge variant={RATING_TONE[rating] ?? "default"}>Rating {rating}</Badge>;
+}
+
 /** Parse a whole-number amount field; NaN when empty or invalid. */
 export function parseAmount(raw: string): number {
   const n = Number(raw);
   return Number.isInteger(n) && n > 0 ? n : Number.NaN;
+}
+
+/** Parse a positive cent-precision amount field; NaN when empty or invalid. */
+export function parseDecimalAmount(raw: string): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0.01 && Math.round(n * 100) === Math.round(n * 10000) / 100
+    ? Math.round(n * 100) / 100
+    : Number.NaN;
+}
+
+export interface FairValueBreakdown {
+  capital: number;
+  contracts: number;
+  standing: number;
+  sectorFactor: number;
+  decisions: number;
+  fairValue: number;
+}
+
+/** Client-safe valuation breakdown matching the server formula at default weights. */
+export function computeFairValue(
+  c: { capital: number; contractsWonValue: number; standing: number; decisionValue?: number },
+  sectorIndexValue: number = 1000
+): FairValueBreakdown {
+  const contracts = round2(0.25 * c.contractsWonValue);
+  const standing = round2(100 * Math.max(0, c.standing));
+  const rawFactor = sectorIndexValue / 1000;
+  const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
+  const decisions = round2(c.decisionValue ?? 0);
+  const fairValue = round2((c.capital + contracts + standing) * sectorFactor + decisions);
+  return { capital: c.capital, contracts, standing, sectorFactor, decisions, fairValue };
+}
+
+/** Maximum Central Bank credit line available for a company's productive plant and contract record. */
+export function creditLimitFor(c: { decisionValue: number; contractsWonValue: number }): number {
+  return round2(Math.min(250_000, 0.5 * (c.decisionValue + 0.25 * c.contractsWonValue)));
+}
+
+/** Annualized Central Bank borrow rate for a company's HQ interest rate and credit rating. */
+export function borrowRateOf(hqRate: number | null, rating: string): number {
+  const r = CREDIT_RATINGS.find((x) => x === rating) ?? "D";
+  return borrowRateFor(hqRate, r) ?? borrowRateFor(hqRate, "CCC") ?? 0;
+}
+
+/** Hours left in the 72-hour distress grace window before liquidation. */
+export function distressHoursLeft(distressedSinceIxTime: number | null): number {
+  if (!distressedSinceIxTime) return 72;
+  const deadline = distressedSinceIxTime + 72 * 3600 * 1000;
+  return Math.max(0, Math.ceil((deadline - Date.now()) / (3600 * 1000)));
 }

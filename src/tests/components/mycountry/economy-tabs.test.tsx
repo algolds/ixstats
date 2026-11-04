@@ -20,6 +20,7 @@ globalThis.ResizeObserver ??= class {
 
 const mockState: { tab: string | null; country: object | null } = { tab: null, country: null };
 const mockMutate = jest.fn();
+const mockCreateTender = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: () => mockState.tab }),
@@ -53,7 +54,13 @@ jest.mock("~/hooks/useNotify", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    useUtils: () => ({ countries: { getByIdWithEconomicData: { invalidate: jest.fn() } } }),
+    useUtils: () => ({
+      countries: { getByIdWithEconomicData: { invalidate: jest.fn() } },
+      exchange: {
+        getTreasury: { invalidate: jest.fn() },
+        getRealmCorporateSummary: { invalidate: jest.fn() },
+      },
+    }),
     mycountry: {
       getCountryDashboard: {
         useQuery: () => ({ data: { economicVitality: 70, governmentalEfficiency: 60 } }),
@@ -62,11 +69,107 @@ jest.mock("~/trpc/react", () => ({
     economics: {
       updateFiscalSystem: { useMutation: () => ({ mutate: mockMutate, isPending: false }) },
     },
+    exchange: {
+      getTreasury: {
+        useQuery: () => ({
+          isLoading: false,
+          data: {
+            balance: 14_250,
+            cap: 50_000,
+            dailyStipend: 150,
+            lifetimeStipend: 4_500,
+            lifetimeTaxEarned: 6_200,
+            lifetimeTariffEarned: 2_300,
+            lifetimeInterestEarned: 1_250,
+            lifetimeSpent: 3_000,
+            lastStipendIxTime: 1000,
+            recent: [
+              {
+                id: "ent-1",
+                type: "TAX",
+                amount: 420,
+                balanceAfter: 14_250,
+                source: "CORP_TAX:comp-1",
+                ixTime: 1000,
+                createdAt: new Date("2026-11-01T00:00:00Z"),
+              },
+            ],
+          },
+        }),
+      },
+      getRealmCorporateSummary: {
+        useQuery: () => ({
+          isLoading: false,
+          data: {
+            countryId: "c1",
+            realmId: "default",
+            companies: [
+              {
+                id: "comp-1",
+                name: "Valdris Logistics Corp",
+                sectorKey: "services",
+                subIndustryKey: "logistics",
+                status: "ACTIVE",
+                fairValue: 18_500,
+                capital: 9_000,
+                standing: 8,
+                creditDrawn: 1_200,
+                creditLimit: 6_400,
+                creditRating: "AA",
+                lastTickRevenue: 950,
+                lastTickExpenses: 620,
+                lastTickTax: 66,
+                lastTickNetIncome: 264,
+                distressedSinceIxTime: null,
+                founderId: "u1",
+              },
+            ],
+            totals: {
+              companyCount: 1,
+              distressedCount: 0,
+              totalFairValue: 18_500,
+              totalCapital: 9_000,
+              totalCreditDrawn: 1_200,
+              lastTickRevenue: 950,
+              lastTickTax: 66,
+              lastTickNetIncome: 264,
+            },
+            corporateGdpShift: 0.014,
+            taxCompetitiveness: {
+              effectiveCorpTaxRate: 0.18,
+              capGainsTaxRate: 0.15,
+              interestRate: 0.045,
+              realmAvgCorpTaxRate: 0.21,
+            },
+            openTenders: [
+              {
+                id: "ten-1",
+                title: "Deepwater Port Dredging",
+                sectorKey: "services",
+                value: 2_500,
+                fundedBy: "TREASURY",
+                status: "OPEN",
+                endIxTime: 5000,
+                linkedDirectiveId: null,
+                linkedIssueId: null,
+                bidCount: 2,
+                lowestBid: 2_100,
+              },
+            ],
+          },
+        }),
+      },
+      createTreasuryTender: {
+        useMutation: () => ({ mutate: mockCreateTender, isPending: false }),
+      },
+    },
   },
 }));
 
 import { EconomyDrillDown } from "~/components/mycountry/shell/EconomyDrillDown";
 import { FiscalPolicyConsole } from "~/components/mycountry/shell/FiscalPolicyConsole";
+import { CorporationsTreasuryConsole } from "~/components/mycountry/shell/CorporationsTreasuryConsole";
+import { CorporateTreasuryInsights } from "~/components/mycountry/shell/rails/EconomyRail";
 
 const COUNTRY = {
   currentTotalGdp: 100e9,
@@ -139,11 +242,14 @@ describe("Economy tabs", () => {
     ["budget", "budget-dashboard"],
     ["monetary", "taxes"],
     ["taxes", "taxes"],
+    ["corporations", "corporations"],
   ])("?tab=%s opens the right tab", (tab, expected) => {
     mockState.tab = tab;
     render(<EconomyDrillDown countryId="c1" />);
     if (expected === "budget-dashboard")
       expect(screen.getByTestId("budget-dashboard")).toBeInTheDocument();
+    else if (expected === "corporations")
+      expect(screen.getByRole("tab", { name: "Corporations", selected: true })).toBeInTheDocument();
     else expect(screen.getByRole("tab", { name: "Taxes", selected: true })).toBeInTheDocument();
   });
 
@@ -210,5 +316,50 @@ describe("Tax rates console", () => {
     });
     expect(screen.getByLabelText("Save and lock Income tax rate")).toBeEnabled();
     jest.useRealTimers();
+  });
+});
+
+describe("Corporations & ₷ treasury console and rail", () => {
+  it("renders treasury KPIs, domiciled corporations, ledger entries, and posts a B2G tender", () => {
+    mockCreateTender.mockReset();
+    render(<CorporationsTreasuryConsole countryId="c1" countryName="Valdris" />);
+
+    expect(within(tile("Nation ₷ treasury")).getByText("₷14,250")).toBeInTheDocument();
+    expect(within(tile("Macro GDP feedback")).getByText("+1.40%")).toBeInTheDocument();
+    expect(screen.getByText("Valdris Logistics Corp")).toBeInTheDocument();
+    expect(screen.getByText("Global Logistics & Shipping")).toBeInTheDocument();
+    expect(screen.getByText("Rating AA")).toBeInTheDocument();
+    expect(screen.getByText("Deepwater Port Dredging")).toBeInTheDocument();
+    expect(screen.getByText("Corporate profit tax")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Tender title"), {
+      target: { value: "National Grid Transformer Upgrade" },
+    });
+    fireEvent.change(screen.getByLabelText("Ceiling value (₷)"), {
+      target: { value: "1200" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Post B2G tender" }));
+
+    expect(mockCreateTender).toHaveBeenCalledWith(
+      expect.objectContaining({
+        countryId: "c1",
+        title: "National Grid Transformer Upgrade",
+        sectorKey: "services",
+        value: 1200,
+        biddingDays: 7,
+        fundedBy: "TREASURY",
+      })
+    );
+  });
+
+  it("renders CorporateTreasuryInsights in EconomyRail", () => {
+    render(<CorporateTreasuryInsights countryId="c1" />);
+    expect(screen.getByText("Corporate & ₷ treasury")).toBeInTheDocument();
+    expect(screen.getByText("1 corporations")).toBeInTheDocument();
+    expect(screen.getByText("18.0% vs 21.0%")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Open corporations console/i })).toHaveAttribute(
+      "href",
+      "/mycountry/economy?tab=corporations"
+    );
   });
 });

@@ -3,7 +3,7 @@ import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import type { StatusTone } from "../status-tone";
 
 /** Where an agenda item comes from. */
-type AgendaItemKind = "issue" | "directive" | "election";
+type AgendaItemKind = "issue" | "directive" | "election" | "corporate";
 
 /**
  * How pressing an item is, relative to its deadline. Never a calendar date: an item is either
@@ -32,6 +32,7 @@ export interface AgendaItem {
   flagged: boolean;
   drillKind?: Exclude<DrillSheetKind, { kind: "intent" } | null>;
   intentId?: string;
+  href?: string;
 }
 
 export function getSeverityRank(s: string): number {

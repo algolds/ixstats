@@ -9,6 +9,7 @@
  *   const candidate = await wikiLoreCardGenerator.generateCard("Article_Title", "ixwiki");
  */
 
+import { Cache } from "~/lib/cache";
 import { archivedTitlesAmong, withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
 import { cleanWikitextExcerpt } from "~/lib/wiki-os/transformers/wikitext-parser";
@@ -83,6 +84,11 @@ const EXCERPT_CHARS = 2000;
 /** How long one read of a sister wiki may take; a hung answer fails the article, not the run. */
 const WIKI_READ_TIMEOUT_MS = 10_000;
 
+/** Author lookup cache TTL (10 minutes) + in-flight deduplication map for sister wikis. */
+const AUTHOR_INFO_TTL_MS = 10 * 60 * 1000;
+const authorInfoCache = new Cache<CardAuthorInfo>(AUTHOR_INFO_TTL_MS);
+const authorInfoPromises = new Map<string, Promise<CardAuthorInfo | null>>();
+
 /** Reads at once: the pace of a caller outside an import run. */
 const unpaced: Pace = (read) => read();
 
@@ -120,7 +126,11 @@ class WikiLoreCardGenerator {
     wikiSource: CardArticleSource,
     options: { requireImage?: boolean; minLength?: number; pace?: Pace } = {}
   ): Promise<LoreCardCandidate> {
-    const articleData = await this.fetchArticleData(articleTitle, wikiSource, options.pace);
+    const minLength = options.minLength ?? MIN_ARTICLE_LENGTH;
+    const articleData = await this.fetchArticleData(articleTitle, wikiSource, options.pace, {
+      requireImage: options.requireImage,
+      minLength,
+    });
     if (!articleData) {
       throw new ArticleRejected(
         "missing",
@@ -134,7 +144,6 @@ class WikiLoreCardGenerator {
       throw new ArticleRejected("no-image", `"${articleTitle}" has no usable image.`);
     }
     const signals = this.analyzeArticleQuality(articleData);
-    const minLength = options.minLength ?? MIN_ARTICLE_LENGTH;
     if (signals.length < minLength) {
       throw new ArticleRejected(
         "too-short",
@@ -171,7 +180,8 @@ class WikiLoreCardGenerator {
   private async fetchArticleData(
     title: string,
     wikiSource: CardArticleSource,
-    pace: Pace = unpaced
+    pace: Pace = unpaced,
+    gates?: { requireImage?: boolean; minLength?: number }
   ): Promise<ArticleData | null> {
     if (readsPostgres(wikiSource)) return this.fetchIxwikiArticleData(title);
     // MediaWiki may still have a page WikiOS deleted: it is not a card's source.
@@ -180,16 +190,17 @@ class WikiLoreCardGenerator {
       pace(async () => mwJson(await mwQuery(wikiSource, params, WIKI_READ_TIMEOUT_MS), wikiSource));
     const data = await read({
       titles: title,
-      prop: "extracts|pageimages|info|categories|links|revisions|images|contributors",
+      prop: "extracts|pageimages|info|categories|revisions|images|contributors",
+      list: "backlinks",
+      bltitle: title,
+      bllimit: "500",
       exchars: String(EXCERPT_CHARS), // first ~2000 chars for the full excerpt
       exlimit: "1",
       explaintext: "1",
       exsectionformat: "plain", // section headings as plain lines, not `== Heading ==`
       piprop: "original|name",
       pithumbsize: "500",
-      inprop: "url",
       cllimit: "50",
-      pllimit: "500", // up to 500 links (inbound indicator)
       rvprop: "content|timestamp|user|comment", // full wikitext, user, and timestamp
       imlimit: "10",
       pclimit: "10", // up to 10 contributors
@@ -200,22 +211,35 @@ class WikiLoreCardGenerator {
     const page = firstPage<MwPage>(data);
     if (!page || page.missing !== undefined || page.invalid !== undefined) return null;
     assertArticle(page);
+    if (isAbandonedLore(page.categories ?? [])) {
+      throw new ArticleRejected("abandoned", ABANDONED_LORE_REASON);
+    }
 
     const wikitext = page.revisions?.[0]?.["*"] || "";
+    const text = this.removeTemplates(wikitext);
+    if (gates?.minLength !== undefined && text.length < gates.minLength) {
+      throw new ArticleRejected(
+        "too-short",
+        `"${title}" is too short (${text.length} characters; the minimum is ${gates.minLength}).`
+      );
+    }
+
     const featured = await this.resolveFeaturedImage(
       page,
       this.parseInfobox(wikitext),
       wikiSource,
       pace
     );
+    if (gates?.requireImage && !featured?.url) {
+      throw new ArticleRejected("no-image", `"${title}" has no usable image.`);
+    }
 
-    const backlinks = await read({ list: "backlinks", bltitle: title, bllimit: "500" });
-    const inboundLinks = backlinks.query?.backlinks?.length ?? 0;
+    const inboundLinks = data.query?.backlinks?.length ?? 0;
 
     return {
       ...page,
       authorInfo: await this.lookupAuthorInfo(page, title, wikiSource, pace),
-      text: this.removeTemplates(wikitext),
+      text,
       rawText: wikitext,
       image: featured?.url,
       imageFile: featured?.file ?? null,
@@ -252,6 +276,10 @@ class WikiLoreCardGenerator {
 
   /** Creator: earliest non-bot editor, else the first non-bot editor among the fetched revisions. */
   private async lookupAuthorInfo(page: MwPage, title: string, wikiSource: WikiSource, pace: Pace) {
+    const cacheKey = `${wikiSource}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
+    const cached = authorInfoCache.get(cacheKey);
+    if (cached) return cached;
+
     let found = { creator: "", createdAt: "", isBotFiltered: false };
     try {
       const early = await pace(async () => {
@@ -283,7 +311,11 @@ class WikiLoreCardGenerator {
         }
       }
     }
-    return buildAuthorInfo(found, (page.contributors || []) as Array<{ name: string }>);
+    const info = buildAuthorInfo(found, (page.contributors || []) as Array<{ name: string }>);
+    for (const key of [...titleKeys(title, true), ...titleKeys(page.title, true)]) {
+      authorInfoCache.set(`${wikiSource}:${key}`, info, AUTHOR_INFO_TTL_MS);
+    }
+    return info;
   }
 
   /**
@@ -413,55 +445,83 @@ class WikiLoreCardGenerator {
     const uniqueTitles = Array.from(
       new Set(titles.map((t) => t.trim()).filter((t) => t.length > 0))
     );
+    const uncachedTitles: string[] = [];
+    for (const title of uniqueTitles) {
+      const normalizedKey = title.replace(/_/g, " ").trim().toLowerCase();
+      const cached = authorInfoCache.get(`${wikiSource}:${normalizedKey}`);
+      if (cached) {
+        for (const key of titleKeys(title, true)) resultMap.set(key, cached);
+      } else {
+        uncachedTitles.push(title);
+      }
+    }
 
     const fetchOne = async (title: string) => {
-      try {
-        const res = await mwQuery(
-          wikiSource,
-          {
-            titles: title,
-            prop: "revisions|contributors",
-            rvdir: "newer",
-            rvlimit: "5",
-            rvprop: "user|timestamp|comment",
-            pclimit: "10",
-          },
-          10000
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const p = firstPage<MediaWikiPageItem>(data);
-        if (!p || p.missing) return;
+      const inflightKey = `${wikiSource}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
+      let inflight = authorInfoPromises.get(inflightKey);
+      if (!inflight) {
+        inflight = (async (): Promise<CardAuthorInfo | null> => {
+          try {
+            const res = await mwQuery(
+              wikiSource,
+              {
+                titles: title,
+                prop: "revisions|contributors",
+                rvdir: "newer",
+                rvlimit: "5",
+                rvprop: "user|timestamp|comment",
+                pclimit: "10",
+              },
+              10000
+            );
+            if (!res.ok) return null;
+            const data = await res.json();
+            const p = firstPage<MediaWikiPageItem>(data);
+            if (!p || p.missing) return null;
 
-        const revs = (p.revisions || []) as RevisionUser[];
-        let found = pickCreator(revs);
-        // Everything filtered as a bot: credit the very first editor anyway
-        const firstEditor = revs[0]?.user && cleanWikiUsername(revs[0].user);
-        if (!found.creator && firstEditor) {
-          found = { ...found, creator: firstEditor, createdAt: revs[0]!.timestamp };
-        }
-        const info = buildAuthorInfo(found, (p.contributors || []) as Array<{ name: string }>);
+            const revs = (p.revisions || []) as RevisionUser[];
+            let found = pickCreator(revs);
+            // Everything filtered as a bot: credit the very first editor anyway
+            const firstEditor = revs[0]?.user && cleanWikiUsername(revs[0].user);
+            if (!found.creator && firstEditor) {
+              found = { ...found, creator: firstEditor, createdAt: revs[0]!.timestamp };
+            }
+            const info = buildAuthorInfo(found, (p.contributors || []) as Array<{ name: string }>);
 
-        // Register under every spelling the title may be looked up by (incl. normalizations/redirects)
-        const aliases = [...(data.query?.normalized ?? []), ...(data.query?.redirects ?? [])];
-        const keys = [
-          ...titleKeys(title, true),
-          ...titleKeys(p.title, true),
-          ...aliases.flatMap((a: { from?: string; to?: string }) => [
-            ...titleKeys(a.from),
-            ...titleKeys(a.to),
-          ]),
-        ];
-        for (const key of keys) resultMap.set(key, info);
-      } catch (e) {
-        console.error(`[Lore Card Generator] Author info fetch failed for "${title}":`, e);
+            // Register under every spelling the title may be looked up by (incl. normalizations/redirects)
+            const aliases = [...(data.query?.normalized ?? []), ...(data.query?.redirects ?? [])];
+            const keys = [
+              ...titleKeys(title, true),
+              ...titleKeys(p.title, true),
+              ...aliases.flatMap((a: { from?: string; to?: string }) => [
+                ...titleKeys(a.from),
+                ...titleKeys(a.to),
+              ]),
+            ];
+            for (const key of keys) {
+              authorInfoCache.set(`${wikiSource}:${key}`, info, AUTHOR_INFO_TTL_MS);
+              resultMap.set(key, info);
+            }
+            return info;
+          } catch (e) {
+            console.error(`[Lore Card Generator] Author info fetch failed for "${title}":`, e);
+            return null;
+          } finally {
+            authorInfoPromises.delete(inflightKey);
+          }
+        })();
+        authorInfoPromises.set(inflightKey, inflight);
+      }
+      const info = await inflight;
+      if (info) {
+        for (const key of titleKeys(title, true)) resultMap.set(key, info);
       }
     };
 
     // Concurrently process titles in chunks of 8
     const CHUNK_SIZE = 8;
-    for (let i = 0; i < uniqueTitles.length; i += CHUNK_SIZE) {
-      await Promise.all(uniqueTitles.slice(i, i + CHUNK_SIZE).map(fetchOne));
+    for (let i = 0; i < uncachedTitles.length; i += CHUNK_SIZE) {
+      await Promise.all(uncachedTitles.slice(i, i + CHUNK_SIZE).map(fetchOne));
     }
     return resultMap;
   }

@@ -24,8 +24,9 @@ export function ContractsCard({
 }) {
   const [scope, setScope] = useState<Scope>("open");
   const [posting, setPosting] = useState(false);
-  const contracts = api.exchange.listContracts.useQuery({ scope });
+  const contracts = api.exchange.listContracts.useQuery({ scope, realmId: overview.realmId });
   const activeCompanies = overview.companies.filter((c) => c.status === "ACTIVE");
+  const realmNations = overview.nations.filter((n) => n.realmId === overview.realmId);
   const rows = contracts.data ?? [];
 
   const refresh = () => {
@@ -49,15 +50,16 @@ export function ContractsCard({
         />
       </div>
 
-      {overview.isOpen && (activeCompanies.length > 0 || overview.nations.length > 0) && (
+      {overview.isOpen && (
         <div className="space-y-3">
           <Button size="sm" variant="secondary" onClick={() => setPosting((p) => !p)}>
-            {posting ? "Close" : "Post a contract"}
+            {posting ? "Close" : "Post a contract or tender"}
           </Button>
           {posting && (
             <ContractForm
+              realmId={overview.realmId}
               companies={activeCompanies}
-              nations={overview.nations}
+              nations={realmNations.length > 0 ? realmNations : overview.nations}
               walletBalance={overview.wallet.sovereigns}
               onDone={() => {
                 setPosting(false);
@@ -78,7 +80,7 @@ export function ContractsCard({
           title={scope === "open" ? "No open contracts" : "No contracts yet"}
           message={
             scope === "open"
-              ? "When a company posts work, it shows up here for bids."
+              ? "When a company or nation posts work in this realm, it shows up here for bids."
               : "Contracts your companies post, bid on or win show up here."
           }
         />

@@ -11,7 +11,7 @@ export const MYCOUNTRY_PATH = "/mycountry";
 export const MYCOUNTRY_WELCOME_PATH = "/mycountry/welcome";
 
 /** The Economy section's tabs, as `?tab=` takes them. */
-export const ECONOMY_TABS = ["report", "budget", "taxes", "trade"] as const;
+export const ECONOMY_TABS = ["report", "budget", "taxes", "trade", "corporations"] as const;
 export type EconomyTab = (typeof ECONOMY_TABS)[number];
 
 /** Tab ids older links carry: "fiscal" was the budget, "monetary" the tax rates. */

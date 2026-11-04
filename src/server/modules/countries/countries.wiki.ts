@@ -11,6 +11,7 @@ import {
   getPageSections,
   getPageImages as wikiBridgePageImages,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getBatchWikitext } from "~/lib/wiki-os/adapters/mediawiki/bridge/batch-reader";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
 import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
@@ -325,6 +326,69 @@ export async function fetchWikiRichIntro(
     }
   );
   return found?.value ?? null;
+}
+
+/**
+ * Bulk-fetch rich wiki intros for up to 50 countries.
+ * Resolves IxWiki pages from PostgreSQL first, then batches all remaining sister-wiki titles into a single
+ * pipe-delimited MediaWiki API call per sister wiki (`getBatchWikitext`) so map loads never fan out 20 concurrent
+ * single-title HTTP requests against the 8-in-flight upstream limiter.
+ */
+export async function fetchBulkWikiRichIntros(
+  countries: Array<{ name: string; id?: string }>,
+  pages: Map<string, WikiPageRef>
+): Promise<Record<string, { paragraphs: string[]; wikiUrl: string } | null>> {
+  const results: Record<string, { paragraphs: string[]; wikiUrl: string } | null> = {};
+  const sisterBatchByWiki = new Map<WikiSource, Set<string>>();
+  const pendingSisterCountries: Array<{ name: string; page: WikiPageRef }> = [];
+
+  await Promise.all(
+    countries.map(async ({ name, id }) => {
+      const own = id ? pages.get(id) : undefined;
+      if (own && own.wiki !== "ixwiki") {
+        let set = sisterBatchByWiki.get(own.wiki);
+        if (!set) {
+          set = new Set();
+          sisterBatchByWiki.set(own.wiki, set);
+        }
+        set.add(own.title);
+        pendingSisterCountries.push({ name, page: own });
+        return;
+      }
+
+      // Try IxWiki first (local PostgreSQL lookup)
+      const ixTitle = own?.title ?? name;
+      const ixIntro = await fetchWikiRichIntro(name, { title: ixTitle, wiki: "ixwiki" });
+      if (ixIntro || own?.wiki === "ixwiki") {
+        results[name] = ixIntro;
+        return;
+      }
+
+      // No own page and not on IxWiki: queue for batched iiwiki lookup
+      let iiSet = sisterBatchByWiki.get("iiwiki");
+      if (!iiSet) {
+        iiSet = new Set();
+        sisterBatchByWiki.set("iiwiki", iiSet);
+      }
+      iiSet.add(name);
+      pendingSisterCountries.push({ name, page: { title: name, wiki: "iiwiki" } });
+    })
+  );
+
+  // Warm the bridge cache with 1 batched MediaWiki request per sister wiki
+  for (const [wiki, titleSet] of sisterBatchByWiki.entries()) {
+    if (titleSet.size > 0) {
+      await getBatchWikitext(Array.from(titleSet), wiki);
+    }
+  }
+
+  await Promise.all(
+    pendingSisterCountries.map(async ({ name, page }) => {
+      results[name] = await fetchWikiRichIntro(name, page);
+    })
+  );
+
+  return results;
 }
 
 /** A level-2 section's opening text as a plain-text preview of up to 200 characters, or undefined. */

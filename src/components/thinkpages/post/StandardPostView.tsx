@@ -117,17 +117,27 @@ function PostContextBanners({ post, blurbMeta }: { post: any; blurbMeta: PostSta
 }
 
 /** The post's "More post actions" items, shared by its dropdown and its right-click menu. */
-function PostMoreItems({ post, state }: { post: any; state: PostState }) {
+function PostMoreItems({
+  post,
+  state,
+  canInteract,
+}: {
+  post: any;
+  state: PostState;
+  canInteract: boolean;
+}) {
   const { isOwnPost, canEdit, canDelete } = state;
   const manage = [
     { show: isOwnPost, Icon: Pin, label: post.pinned ? "Unpin" : "Pin", onClick: state.handlePin },
     { show: canEdit, Icon: Edit, label: "Edit", onClick: state.handleEdit },
     { show: canDelete, Icon: Trash2, label: "Delete", onClick: state.handleDelete, danger: true },
   ].filter((item) => item.show);
-  const always = [
-    { Icon: Bookmark, label: "Bookmark", onClick: state.handleBookmark },
-    { Icon: Flag, label: "Flag", onClick: state.handleFlag },
-  ];
+  const always = canInteract
+    ? [
+        { Icon: Bookmark, label: "Bookmark", onClick: state.handleBookmark },
+        { Icon: Flag, label: "Flag", onClick: state.handleFlag },
+      ]
+    : [];
 
   const renderItem = ({ Icon, label, onClick, danger }: (typeof manage)[number]) => (
     <DropdownMenuItem
@@ -146,13 +156,21 @@ function PostMoreItems({ post, state }: { post: any; state: PostState }) {
   return (
     <>
       {manage.map(renderItem)}
-      {manage.length > 0 && <DropdownMenuSeparator />}
+      {manage.length > 0 && always.length > 0 && <DropdownMenuSeparator />}
       {always.map((item) => renderItem({ ...item, show: true }))}
     </>
   );
 }
 
-function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
+function PostMoreMenu({
+  post,
+  state,
+  canInteract,
+}: {
+  post: any;
+  state: PostState;
+  canInteract: boolean;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -163,7 +181,7 @@ function PostMoreMenu({ post, state }: { post: any; state: PostState }) {
         <MoreHorizontal className="size-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
-        <PostMoreItems post={post} state={state} />
+        <PostMoreItems post={post} state={state} canInteract={canInteract} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -177,12 +195,14 @@ export function StandardPostView({
   showThread = false,
   ThinkpagesPostComponent,
 }: StandardPostViewProps) {
-  const { onAccountClick } = ctx;
+  const { onAccountClick, currentUserAccountId } = ctx;
   const { account } = post;
+  const canInteract = Boolean(currentUserAccountId);
+  const hasMoreActions = canInteract || state.isOwnPost || state.canEdit || state.canDelete;
 
   return (
     <ContextMenu>
-      <ContextMenuTrigger asChild>
+      <ContextMenuTrigger asChild disabled={!hasMoreActions}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -305,9 +325,11 @@ export function StandardPostView({
                 size="md"
               />
 
-              <div className="flex items-center justify-end">
-                <PostMoreMenu post={post} state={state} />
-              </div>
+              {hasMoreActions && (
+                <div className="flex items-center justify-end">
+                  <PostMoreMenu post={post} state={state} canInteract={canInteract} />
+                </div>
+              )}
 
               <PostComposers post={post} state={state} ctx={ctx} />
 
@@ -325,7 +347,7 @@ export function StandardPostView({
         </motion.div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
-        <PostMoreItems post={post} state={state} />
+        <PostMoreItems post={post} state={state} canInteract={canInteract} />
       </ContextMenuContent>
     </ContextMenu>
   );

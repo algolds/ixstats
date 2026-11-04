@@ -1,13 +1,11 @@
 # The Exchange (₷ Sovereigns)
 
-**Last updated:** 2026-10-14 · **Status:** 🟡 MVP and phase 2 live behind a vault flag (on by default), as a **Labs** section: companies,
-B2B contracts and B2G tenders, the share market and dividends, sector indices and funds, company decisions. The IxCredits
-conversion was removed (2026-10-14). The two Exchange cron jobs are off until named in `CRON_ENABLED_JOBS`. Design, phase 2 and what is left:
-[specs/2026-10-06-exchange-economy-design.md](../specs/2026-10-06-exchange-economy-design.md).
+**Last updated:** 2026-11-03 · **Status:** 🟢 Phase 3 live behind a vault flag (on by default), as a **Labs** section (`/labs/exchange`) and integrated into `/mycountry/economy?tab=corporations`: realm-scoped companies with 12 sub-industries and HQ nation domiciles, Nation ₷ Treasuries and DM faucet tenders, a two-sided Bid/Ask share order book with capital-gains and dividend withholding taxes, 6 strategic company decisions (`EXPAND`, `ENTER_SECTOR`, `RND`, `LOBBY`, `PRICE`, `ACQUIRE`), shareholder governance proposals and M&A buyouts, Central Bank credit lines, `ACTIVE → DISTRESSED → BANKRUPT` lifecycle, and bounded corporate-to-GDP macro feedback. Design specs:
+[specs/2026-10-06-exchange-economy-design.md](../specs/2026-10-06-exchange-economy-design.md) and [specs/2026-11-01-exchange-phase-3-design.md](../specs/2026-11-01-exchange-phase-3-design.md).
 
 The Exchange is the in-world capital economy, in its own currency, the Sovereign (₷). It is kept entirely apart from
 [IxCredits](ixcredits.md): there is no conversion in either direction, so ₷ comes from the starting balance, contracts,
-shares, dividends, sector funds and MyClub. MyClub ([myleague.md](myleague.md)) also spends and earns ₷ through the
+shares, dividends, sector funds, operating revenue, nation treasuries and MyClub. MyClub ([myleague.md](myleague.md)) also spends and earns ₷ through the
 same wallet.
 
 **Access:** the Exchange lives at `/labs/exchange` and is gated with Labs (`src/app/labs/layout.tsx`, rule in `src/lib/navigation/labs-gate.ts`: signed-out visitors go to sign-in). Labs is open to every signed-in user while the admin `showLabsTab` setting is on (the default); when it is off, only admins and holders of the `labs.access` permission (and everyone in a development build) get in, and anyone else gets a 404. That includes the links in Exchange notifications (`/labs/exchange`): a user without Labs access who follows one sees a 404. The Vault's old Exchange address answers with a 308 to `/labs/exchange`, keeping the query (`movedPageRedirectFor` in `src/lib/navigation/moved-pages.ts`, applied by `src/proxy.ts`).
@@ -16,71 +14,32 @@ same wallet.
 
 | Layer | Location |
 |---|---|
-| Page | `/labs/exchange` (`src/app/labs/exchange/page.tsx` → `ExchangeSection`); Labs sidebar entry "Exchange"; the Vault's old Exchange address redirects there (a 308 from `src/proxy.ts`) |
-| UI | `src/components/exchange/`: `SovereignWalletCard` (balance, recent activity), `CompaniesCard` (charter, deposit, withdraw, dissolve) + `CompanyControls` (trading switch, share issue, dividend, decisions), `ContractsCard` + `ContractRow` + `ContractForm` (open/mine lists, post a contract or a nation's tender, bid, award, complete, cancel, release, dispute), `SharesCard` (share market, my shares, list for sale), `SectorsCard` (indices with history, fund buy/sell) |
-| Admin | `/admin/vault` → **Exchange** tab (`src/app/admin/vault/ExchangeAdmin.tsx`): charter fee, company cap and starting balance, disputes, ₷ adjustments. On/off switch: **System config** → "Enable the Exchange" |
-| Router | `api.exchange.*` (`src/server/api/routers/exchange/`). `index.ts`: `getOverview`, `listCompanies`, `foundCompany`, `depositToCompany`, `withdrawFromCompany`, `dissolveCompany`, `listContracts`, `createContract`, `placeBid`, `withdrawBid`, `awardContract`, `completeContract`, `cancelContract`, `releaseContract`, `disputeContract`. `markets.ts`: `getShareMarket`, `setShareTrading`, `issueShares`, `listShares`, `cancelShareListing`, `buyShares`, `declareDividend`, `getCompanyRecord`, `submitDecision`, `getSectors`, `buySectorUnits`, `sellSectorUnits`, `createTender`. `admin.ts`: `adminGetExchangeConfig`, `adminSaveExchangeConfig`, `adminListDisputes`, `adminResolveDispute`, `adminAdjustSovereigns` |
+| Page | `/labs/exchange` (`src/app/labs/exchange/page.tsx` → `ExchangeSection`); Labs sidebar entry "Exchange"; `/mycountry/economy?tab=corporations` (`CorporationsTreasuryConsole`) |
+| UI | `src/components/exchange/` (Facet 4 zero-tell locked): `ExchangeSection` (realm switcher, 4-tile KPI strip, 5-tab workspace, sticky `CompanyInspector`), `SovereignWalletCard`, `CompaniesCard` + `CompanyControls` (charter with sub-industry and HQ nation, P&L statement, Central Bank credit draw/repay, distress grace banner, 6 decision types), `ContractsCard` + `ContractRow` + `ContractForm` (B2B contracts, B2G treasury/wallet tenders, DM faucet tenders, cross-border tariff badges), `SharesCard` (two-sided Bid/Ask order book depth, limit buy orders, ask listings, cap-gains preview), `SectorsCard` (realm-scoped indices, macro GDP weight, DM modifier lever, fund buy/sell), `GovernanceCard` (shareholder proposals, voting, acquisition offers) |
+| MyCountry UI | `src/components/mycountry/shell/CorporationsTreasuryConsole.tsx` (`Corporations` tab in `EconomyDrillDown.tsx`), corporate telemetry in `EconomyRail.tsx`, and executive alerts in `deriveAgendaItems.ts` |
+| Admin | `/admin/vault` → **Exchange** tab (`src/app/admin/vault/ExchangeAdmin.tsx`): charter fee, company cap, starting balance, treasury daily stipend/cap, realm weekly faucet cap, realm operating budget, manual market tick runner (`adminRunMarketTick`), sector DM modifiers (`adminSetSectorDmModifier`), disputes, ₷ adjustments. On/off switch: **System config** → "Enable the Exchange" |
+| Router | `api.exchange.*` (`src/server/api/routers/exchange/`). `index.ts`: `getOverview`, `listCompanies`, `foundCompany`, `depositToCompany`, `withdrawFromCompany`, `dissolveCompany`, `listContracts`, `createContract`, `placeBid`, `withdrawBid`, `awardContract`, `completeContract`, `cancelContract`, `releaseContract`, `disputeContract`. `markets.ts`: `getShareMarket`, `getOrderBook`, `setShareTrading`, `issueShares`, `listShares`, `cancelShareListing`, `buyShares`, `placeBuyOrder`, `cancelBuyOrder`, `declareDividend`, `getCompanyRecord`, `submitDecision`, `getSectors`, `buySectorUnits`, `sellSectorUnits`, `setSectorDmModifier`, `createTender`. `governance.ts`: `listProposals`, `openProposal`, `castVote`, `getAcquisitionOffers`. `treasury.ts`: `getTreasury`, `getRealmCorporateSummary`, `createTreasuryTender`, `createFaucetTender`, `borrowCredit`, `repayCredit`. `admin.ts`: `adminGetExchangeConfig`, `adminSaveExchangeConfig`, `adminRunMarketTick`, `adminSetSectorDmModifier`, `adminListDisputes`, `adminResolveDispute`, `adminAdjustSovereigns` |
 | Wallet ledger | `src/lib/vault/exchange-service.ts`: `getOrCreateWallet`, `earnSovereignsTx`, `spendSovereignsTx`, `lockWallet`, `exchangeService.earn/spend` (MyClub's entry point) |
 | Config | `src/lib/vault/exchange-config.ts` (`exchange_*` SystemConfig keys, clamped); flag `isExchangeEnabled` in `src/lib/vault/vault-perks.ts` |
-| Logic | `src/lib/exchange/`: `companies.ts`, `contracts.ts` (B2B and B2G), `shares.ts`, `dividends.ts`, `ownership.ts` (holders, company lock, exact pro rata split), `sectors.ts`, `decisions.ts`, `expiry.ts`, `market.ts`, `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` (pure, shared with the UI) |
+| Logic | `src/lib/exchange/`: `taxonomy.ts` (4×12 sub-industries, supply-chain multipliers, credit ratings), `macro.ts` (nation macro & realm GDP sector weights), `treasury.ts` (Nation ₷ Treasury ledger & stipends), `companies.ts`, `contracts.ts` + `contract-settlement.ts` + `tariffs.ts` (B2B, B2G treasury/wallet, DM faucet, cross-border tariffs & FTAs), `shares.ts` + `fills.ts` (two-sided Bid/Ask order book & cap-gains tax), `dividends.ts`, `ownership.ts`, `sectors.ts`, `decisions.ts` (6 decision types), `governance.ts` (shareholder proposals & ballots), `acquisition.ts` (pro-rata M&A buyouts), `operations.ts` (tick P&L statement), `credit.ts` (Central Bank credit lines), `distress.ts` (`ACTIVE → DISTRESSED → BANKRUPT`), `feedback.ts` (`±5%` GDP level adjustment via `syncLevelEffects`), `expiry.ts`, `market.ts` (`runExchangeMarketTick`), `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` |
 | Jobs | `exchange-market` (`7 */6 * * *`, `market.ts` `runExchangeMarketTick`) and `exchange-contract-expiry` (`*/15 * * * *`, `expiry.ts` `expireLapsedContracts`) in `src/server/cron/jobs.ts`; both off unless named in `CRON_ENABLED_JOBS` |
-| Schema | `prisma/schema/exchange.prisma` |
-| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (companies and contracts, shares and dividends, sectors and decisions, tenders and expiry; in-memory database: `src/tests/helpers/fake-exchange-db.ts`), the router's auth gates and input bounds in `src/tests/server/api/routers/money-router-gates.test.ts` |
+| Schema | `prisma/schema/exchange.prisma` (`ExchangeWallet`, `ExchangeTransaction`, `Company`, `CompanyValueHistory`, `ShareIssuance`, `Shareholding`, `ShareListing`, `ShareBuyOrder`, `CompanyDividend`, `CompanyDecision`, `CompanyProposal`, `CompanyVote`, `SectorIndex`, `SectorIndexHistory`, `SectorPosition`, `Contract`, `ContractBid`, `NationTreasury`, `NationTreasuryEntry`) |
+| Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (11 unit test suites covering taxonomy, macro, treasury, companies/contracts, shares/dividends/orderbook, sectors/decisions, tenders/expiry, governance, acquisition, operations, distress, feedback, and market tick; in-memory database: `src/tests/helpers/fake-exchange-db.ts`), `src/tests/server/api/routers/money-router-gates.test.ts`, `src/tests/architecture/play-as-money.test.ts`, `src/tests/architecture/platform-real-time.test.ts`, `src/tests/architecture/facet-zero-dirs.test.ts` |
 
-## Money rules
+## Money & Simulation Rules
 
-- **Wallets** start at 1,000 ₷ (`exchange_seed_sovereigns`); the seed is written once even when first visits race.
-- **Spending** is a conditional decrement: a wallet never goes negative and concurrent spends can't overdraw it.
-  `exchangeService.spend` returns `{ success: false }` on a shortfall; `spendSovereignsTx` throws `ExchangeError` so the
-  caller's transaction rolls back.
-- **Idempotency:** pass `idempotencyKey` (namespaced, e.g. `exchange:convert:<userId>:<requestId>`). The wallet row is
-  locked, the key looked up, and the unique index on `exchange_transactions.idempotencyKey` is the backstop.
-- **No conversion:** the IxCredits and Sovereigns bridge (`conversion.ts`, the convert UI, the `exchange.convert` procedure and the `exchange_convert_*` and `exchange_revenue_*` settings) was removed. `SPEND_EXCHANGE` and `EARN_EXCHANGE` vault rows and `CONVERT_IN` / `CONVERT_OUT` exchange rows from before stay in the ledgers as history; a leftover `exchange_convert_*` or `exchange_revenue_*` SystemConfig row is ignored.
-- **Companies:** charter fee 1,000 ₷ (burned), 3 active per player, 1,000 founder shares. Capital moves only with
-  conditional updates; contracts escrow from it and pay into it. Once anyone else holds shares (or a new issue is on
-  sale), the founder can't withdraw capital: it leaves only as dividends or on dissolution, pro rata.
-- **Contracts:** OPEN → AWARDED → COMPLETED, with cancel (issuer, while open), release (contractor, once awarded,
-  standing −1), dispute (either party; an admin pays the contractor or refunds the issuer) and expiry (the job, 3 days
-  after bidding closes with no award). Every transition is a conditional update on the current status, so escrow is
-  paid out once. A **B2G tender** is posted by a nation's owner and escrowed from their wallet; a winner in the
-  tender's sector earns +2 standing.
-- **Shares:** fixed-price listings. A primary issue (founder only) sells new shares at fair value per share into
-  capital; a secondary listing escrows a holder's shares until sold or cancelled. The founder switches trading on or
-  off (off at charter). Trades lock the company row, then wallets in user-id order.
-- **Dividends:** pro rata to all shares held (listed ones included), each payout rounded down to a cent; capital drops
-  by exactly the sum paid, so no ₷ is created or lost. A dividend is refused while the company's own primary issue is
-  on sale (`assertNoOpenPrimaryIssue`, under the company lock, as for a withdrawal): that issue's price was set from the
-  capital.
-- **Sector funds:** buy and sell units at fund ₷ ÷ units. Each `exchange-market` run moves each index at most 5% toward
-  its activity target and rebalances the four funds by relative growth, exact to the cent: no ₷ is minted. A sale waits
-  24 hours after the seller's last buy in that sector.
-- **Decisions:** one pending per company, paid from capital at once (burned). `EXPAND` adds its cost to fair value,
-  `ENTER_SECTOR` (500 ₷) moves the company; the market job applies them a day later, once each.
+- **Wallets** start at 1,000 ₷ (`exchange_seed_sovereigns`), global per user; companies, contracts, sector indices/positions, order books, proposals and nation treasuries are scoped per `realmId` (defaulting to `"default"` for Ixnay).
+- **Spending & Idempotency:** conditional decrements under row locks (`SELECT ... FOR UPDATE`), keyed on `idempotencyKey` (`exchange_transactions.idempotencyKey` and `exchange_nation_treasury_entries.idempotencyKey`).
+- **Companies, Sub-Industries & Domicile:** charter fee 1,000 ₷ (burned), up to `activeCompanyCap` (3) active companies per player per realm, 1,000 founder shares. Each company chooses one of 12 sub-industries across the 4 macro sectors (`taxonomy.ts`) and an optional HQ nation (`hqCountryId`) in the same realm.
+- **Nation ₷ Treasuries & Stipends:** each nation with domiciled companies or an existing treasury receives a tick stipend (`exchange_treasury_daily_stipend` ÷ 4 ticks/day, scaled `0.5x–2.0x` by `economicTier`) up to `exchange_treasury_cap` (`25,000 ₷`), plus corporate income taxes, capital-gains taxes, dividend withholding, cross-border tariffs, Central Bank loan interest, and `50%` of `LOBBY` spend.
+- **Operating P&L & Realm Faucet Cap:** each 6-hour market tick (`operations.ts`) computes gross operating revenue (` ProductiveBase × BaseMargin × SectorIndexFactor × MacroGrowthFactor × SupplyChainFactor × PricingFactor`), deducts upkeep, inflation-scaled overhead, and credit interest, and transfers corporate tax on positive EBT to the HQ treasury. Net positive operating inflows from the system faucet are scaled pro rata so total minted operating revenue per realm per tick never exceeds `exchange_realm_operating_budget` (`500 ₷`/tick).
+- **Central Bank Credit & Distress Lifecycle:** companies rated `AAA` through `B` can draw up to `min(250,000, 0.5 × (decisionValue + 0.25 × contractsWonValue))` from their HQ nation's treasury at the nation's base interest rate plus rating spread (`credit.ts`). If `capital <= 0` after a tick or `creditDrawn > 1.2 × creditLimit`, the company enters `DISTRESSED` with a 72-hour grace window (`distress.ts`). If uncured after 72 hours, it transitions to `BANKRUPT`, cancelling open orders, repaying HQ treasury credit up to remaining capital, distributing any surplus pro rata to shareholders, and applying `-2` standing.
+- **Contracts & Tariffs:** B2B contracts escrow from company capital; B2G tenders escrow from the nation's `₷` treasury (`TREASURY`, default) or the owner's wallet (`WALLET`), and can link to a national Directive or Issue; DM faucet tenders (`FAUCET`) mint escrow up to `exchange_realm_weekly_faucet_cap` (`10,000 ₷` rolling 7d). Cross-border contract completions pay the issuing nation's sector tariff into its treasury unless an active `free_trade` agreement links the two nations (`tariffs.ts`).
+- **Two-Sided Share Order Book & Taxes:** players post sell listings (`ShareListing`) or escrowed limit buy orders (`ShareBuyOrder`). Orders cross automatically by price-time priority at the resting order's price (`fills.ts`), refunding any price improvement to the buyer. Secondary sales with a positive gain over `avgCost` pay the HQ nation's capital-gains tax into its treasury; dividends withhold `50%` of the HQ capital-gains rate into the HQ treasury.
+- **Decisions, Governance & M&A:** founders queue `EXPAND`, `ENTER_SECTOR`, `RND` (`efficiency` or deterministic `breakthrough`), `LOBBY` (`sector`, `b2g`, `tax_relief` for 14d), `PRICE` (`undercut`, `balanced`, `premium`), or `ACQUIRE` (`decisions.ts`). When outside shareholders hold `≥ 10%` of `sharesOutstanding`, share dilutions (`ISSUE_SHARES`), voluntary liquidations (`LIQUIDATE`), and acquisition offers (`ACQUIRE_OFFER`) require a shareholder vote (`governance.ts`, `acquisition.ts`).
+- **Macro Feedback Loop:** each tick (`feedback.ts`) computes a bounded `±5%` GDP level adjustment (`gdp_level_adjustment` via `syncLevelEffects`) for nations with domiciled companies from corporate net income, B2G completions, and bankruptcy penalties.
 
 ## Ledger types
 
-`ExchangeTransaction.type`: `CONVERT_IN` and `CONVERT_OUT` (old rows only), `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`,
-`SHARE_BUY`/`SHARE_SELL` (share trades, source `SHARES:<companyId>`; MyClub also uses them for transfer escrow),
-`DIVIDEND` (dividends and liquidation payouts), `SECTOR_BUY`/`SECTOR_SELL` (source `SECTOR_FUND:<sector>`),
-`CONTRACT_ESCROW`/`CONTRACT_REFUND` (wallet-funded tenders), `CONTRACT_PAYOUT` (reserved), `ADMIN_ADJUSTMENT` (also
-the wallet seed, source `WALLET_SEED`), and MyClub's `STADIUM_UPGRADE`, `TRAINING_FEE`, `TEAM_TRAINING`,
-`PREDICTION_STAKE`, `PREDICTION_PAYOUT`. Contract payouts land in company capital, so they show on the contract and bid
-rows, not the wallet ledger; dividends are also recorded per company in `CompanyDividend`.
-
-## Notifications
-
-Bids (to the issuer), awards (winner; losing bidders at low priority), completions, releases, disputes and dispute
-decisions (both parties), expiries, share sales, dividends and applied decisions go through `notificationAPI` as
-"economic" notices from source `exchange` (`src/lib/exchange/notify.ts`), so each recipient's category toggle and
-minimum urgency apply. They are sent after the transaction commits and never block or undo a move.
-
-## Known gaps
-
-- `RND`, `ACQUIRE`, `LOBBY` and `PRICE` decisions, admin- or sim-issued tenders (a ₷ faucet), a nation ₷ treasury and an
-  order book are not built (spec §8, "Still not built").
-- Sector indices follow Exchange activity, not a nation's economic model; nothing sets `SectorIndex.dmModifier` yet.
-- Two colluding accounts can drain a company's capital through a contract to an accomplice; fees bound it. ₷ can no longer be turned into IxC.
-- MyClub's ₷ moves ignore the Exchange flag on purpose (they predate the Exchange), but they refuse in vault
-  maintenance mode like every other write ([myleague.md](myleague.md#economic-integration)).
-- There is no admin-registered event key for Exchange notifications; the notification guard treats `exchangeNotification`
-  as enabled.
+- `ExchangeTransaction.type`: `CONVERT_IN` and `CONVERT_OUT` (historical only), `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`, `SHARE_BUY`, `SHARE_SELL`, `SHARE_ORDER_ESCROW`, `SHARE_ORDER_REFUND`, `DIVIDEND`, `SECTOR_BUY`, `SECTOR_SELL`, `CONTRACT_ESCROW`, `CONTRACT_REFUND`, `CONTRACT_PAYOUT`, `TREASURY_PAYMENT`, `ADMIN_ADJUSTMENT`, plus MyClub's `STADIUM_UPGRADE`, `TRAINING_FEE`, `TEAM_TRAINING`, `PREDICTION_STAKE`, `PREDICTION_PAYOUT`.
+- `NationTreasuryEntry.type`: `STIPEND`, `TAX`, `TARIFF`, `INTEREST`, `LOBBY`, `B2G_ESCROW`, `B2G_REFUND`, `SPEND`.

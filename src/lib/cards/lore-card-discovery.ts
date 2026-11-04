@@ -3,6 +3,7 @@
  * main-namespace page, and random image-bearing pages. IxWiki's come from Postgres once WikiOS v1 is on
  * (v1-switch.ts); another wiki's from its MediaWiki API with the IxStats-Builder user agent (mwQuery).
  */
+import { Cache } from "~/lib/cache";
 import type { MediaWikiAllCategoriesItem } from "~/lib/wiki-os/types";
 import { withoutArchivedTitles } from "~/lib/wiki-os/core/archived-titles";
 import { CategoryService } from "~/lib/wiki-os/core/category-service";
@@ -10,6 +11,7 @@ import { isWikiosV1Enabled } from "~/lib/wiki-os/v1-switch";
 import type { WikiSource } from "~/lib/wiki-os/config";
 import type { Pace } from "~/lib/realms/sources/wiki-discovery-client";
 import type { CardWikiSource } from "./card-sources";
+import { isAbandonedLore } from "./category-mappings";
 import { mwJson, mwQuery, type MwError } from "./lore-card-mediawiki";
 import {
   ixwikiCategoryTitles,
@@ -135,6 +137,11 @@ function fetchAllMainNamespacePages(wikiSource: WikiSource, reach: ListReach): P
   );
 }
 
+const CATEGORY_DISCOVERY_TTL_MS = 5 * 60 * 1000;
+const categorySearchCache = new Cache<string[]>(CATEGORY_DISCOVERY_TTL_MS);
+const categoryInfoCache = new Cache<CategoryCounts>(CATEGORY_DISCOVERY_TTL_MS);
+const MIN_RANDOM_ARTICLE_BYTES = 600;
+
 /** Category names starting with `prefix`, for the importer's category picker. */
 async function searchCategories(
   prefix: string,
@@ -143,6 +150,9 @@ async function searchCategories(
 ): Promise<string[]> {
   const capped = Math.min(Math.max(limit, 1), 100);
   if (readsPostgres(wikiSource)) return CategoryService.autocomplete(prefix, capped);
+  const cacheKey = `${wikiSource}:${capped}:${prefix}`;
+  const cached = categorySearchCache.get(cacheKey);
+  if (cached) return cached;
   try {
     const res = await mwQuery(
       wikiSource,
@@ -156,7 +166,9 @@ async function searchCategories(
     const data = (await res.json()) as {
       query?: { allcategories?: MediaWikiAllCategoriesItem[] };
     };
-    return (data.query?.allcategories ?? []).map((c) => c["*"] || c.title || "");
+    const names = (data.query?.allcategories ?? []).map((c) => c["*"] || c.title || "");
+    categorySearchCache.set(cacheKey, names, CATEGORY_DISCOVERY_TTL_MS);
+    return names;
   } catch (error) {
     console.error("[Lore Card Discovery] allcategories fetch failed:", error);
     return [];
@@ -181,10 +193,21 @@ async function getCategoriesInfo(
     .map((c) => (c.startsWith("Category:") ? c : `Category:${c}`))
     .slice(0, 50);
   if (titles.length === 0) return result;
+  const uncachedTitles: string[] = [];
+  for (const fullTitle of titles) {
+    const shortName = fullTitle.replace(/^Category:\s*/i, "");
+    const cached = categoryInfoCache.get(`${wikiSource}:${shortName}`);
+    if (cached) {
+      result[shortName] = result[fullTitle] = cached;
+    } else {
+      uncachedTitles.push(fullTitle);
+    }
+  }
+  if (uncachedTitles.length === 0) return result;
   try {
     const res = await mwQuery(
       wikiSource,
-      { prop: "categoryinfo", titles: titles.join("|") },
+      { prop: "categoryinfo", titles: uncachedTitles.join("|") },
       10000
     );
     if (!res.ok) return result;
@@ -193,7 +216,9 @@ async function getCategoriesInfo(
     };
     for (const page of Object.values(data.query?.pages ?? {})) {
       if (!page.categoryinfo || !page.title) continue;
-      result[page.title.replace(/^Category:\s*/i, "")] = page.categoryinfo;
+      const shortName = page.title.replace(/^Category:\s*/i, "");
+      categoryInfoCache.set(`${wikiSource}:${shortName}`, page.categoryinfo, CATEGORY_DISCOVERY_TTL_MS);
+      result[shortName] = page.categoryinfo;
       result[page.title] = page.categoryinfo;
     }
   } catch (error) {
@@ -204,7 +229,7 @@ async function getCategoriesInfo(
 
 /**
  * Random articles that have a page image (the daily import's draw). One request: `generator=random` with
- * `prop=pageimages`, over-fetching to cover pages without one (a per-article image check tripped the wiki's rate
+ * `prop=pageimages|info|categories`, over-fetching to cover pages without one (a per-article image check tripped the wiki's rate
  * limit). A sister wiki's answer is read through mwJson: a refusal throws DiscoveryStopped and any other failed read
  * throws, so the daily import reports the wiki instead of drawing nothing.
  */
@@ -219,15 +244,21 @@ async function fetchRandomArticlesWithImages(
       generator: "random",
       grnnamespace: "0",
       grnlimit: String(Math.min(count * 3, 50)),
-      prop: "pageimages",
+      prop: "pageimages|info|categories",
       piprop: "original",
       pilimit: "max",
+      cllimit: "50",
     },
     12000
   );
   const data = await mwJson(response, wikiSource);
   const titles = Object.values(data.query?.pages ?? {})
-    .filter((page) => page.original?.source)
+    .filter(
+      (page) =>
+        page.original?.source &&
+        (page.length === undefined || page.length >= MIN_RANDOM_ARTICLE_BYTES) &&
+        !isAbandonedLore(page.categories ?? [])
+    )
     .map((page) => page.title);
   return withoutArchivedTitles(titles.slice(0, count), wikiSource);
 }

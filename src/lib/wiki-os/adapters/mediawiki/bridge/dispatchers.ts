@@ -51,6 +51,18 @@ import {
 export { getImageUrl } from "~/lib/wiki-os/transformers/image-url";
 
 const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
+const searchPromises = new Map<string, Promise<WikiSearchResult[]>>();
+const pageImagesPromises = new Map<string, Promise<PageImage[] | null>>();
+
+const SISTER_WIKITEXT_TTL_MS = 30 * 60 * 1000;
+const SISTER_MISSING_TTL_MS = 10 * 60 * 1000;
+const SISTER_SEARCH_TTL_MS = 5 * 60 * 1000;
+
+type CachedWikitextEntry = WikiArticle | { readonly missing: true };
+
+const isMissingWikitext = (
+  entry: CachedWikitextEntry
+): entry is { readonly missing: true } => "missing" in entry;
 
 /**
  * Get raw article wikitext. Uses PostgreSQL (<2ms) for ixwiki, HTTP for iiwiki/althistory. Null only for a missing
@@ -67,13 +79,30 @@ export async function getArticleWikitext(
     return ixwikiGetWikitext(title);
   }
 
-  // Non-ixwiki: HTTP fetch with request deduplication
-  const key = `${wiki}:${title}`;
+  const normalizedKey = `wikitext:${wiki}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
+  const cached = cacheGet<CachedWikitextEntry>(normalizedKey);
+  if (cached) {
+    return isMissingWikitext(cached) ? null : cached;
+  }
+
+  // Non-ixwiki: HTTP fetch with request deduplication and L1 TTL cache
+  const key = `${wiki}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
   let promise = wikitextPromises.get(key);
   if (!promise) {
     promise = (async () => {
       try {
-        return await readSisterWikitext(wiki, title);
+        const article = await readSisterWikitext(wiki, title);
+        if (article) {
+          cacheSet(normalizedKey, article, SISTER_WIKITEXT_TTL_MS);
+          const resolvedKey = `wikitext:${wiki}:${article.title.toLowerCase()}`;
+          if (resolvedKey !== normalizedKey) {
+            const { redirectedFrom: _redirectedFrom, ...targetArticle } = article;
+            cacheSet(resolvedKey, targetArticle, SISTER_WIKITEXT_TTL_MS);
+          }
+        } else {
+          cacheSet(normalizedKey, { missing: true }, SISTER_MISSING_TTL_MS);
+        }
+        return article;
       } finally {
         wikitextPromises.delete(key);
       }
@@ -93,11 +122,14 @@ export async function getArticleIntro(
   wiki: WikiSource = "ixwiki"
 ): Promise<WikiIntro | null> {
   const cacheKey = `intro:${wiki}:${title}`;
-  const cached = cacheGet<WikiIntro>(cacheKey);
-  if (cached) return cached;
+  const cached = cacheGet<WikiIntro | { readonly missing: true }>(cacheKey);
+  if (cached) return "missing" in cached ? null : cached;
 
   const article = await getArticleWikitext(title, wiki);
-  if (!article) return null;
+  if (!article) {
+    cacheSet(cacheKey, { missing: true }, SISTER_MISSING_TTL_MS);
+    return null;
+  }
 
   const intro = extractIntroFromWikitext(article.wikitext);
   const result: WikiIntro = { title: article.title, text: intro };
@@ -129,7 +161,25 @@ export async function searchPages(
     }
     return ixwikiSearch(query, limit);
   }
-  return searchSisterWiki(wiki, query, limit);
+
+  const searchKey = `opensearch:${wiki}:${limit}:${query.trim().toLowerCase()}`;
+  const cached = cacheGet<WikiSearchResult[]>(searchKey);
+  if (cached) return cached;
+
+  let pending = searchPromises.get(searchKey);
+  if (!pending) {
+    pending = (async () => {
+      try {
+        const results = await searchSisterWiki(wiki, query, limit);
+        cacheSet(searchKey, results, SISTER_SEARCH_TTL_MS);
+        return results;
+      } finally {
+        searchPromises.delete(searchKey);
+      }
+    })();
+    searchPromises.set(searchKey, pending);
+  }
+  return pending;
 }
 
 /**
@@ -448,7 +498,28 @@ export async function getPageImages(
   }
 ) {
   const wiki = opts?.wiki ?? "ixwiki";
-  if (wiki !== "ixwiki") return httpGetPageImages(title, wiki, opts);
+  if (wiki !== "ixwiki") {
+    const noneKey = `pageimages:none:${wiki}:${title}`;
+    if (cacheGet<boolean>(noneKey)) return null;
+
+    const inflightKey = `${wiki}:${title}:${opts?.thumbWidth ?? 200}:${opts?.limit ?? 50}`;
+    let pending = pageImagesPromises.get(inflightKey);
+    if (!pending) {
+      pending = (async () => {
+        try {
+          const images = await httpGetPageImages(title, wiki, opts);
+          if (images === null) {
+            cacheSet(noneKey, true, SISTER_MISSING_TTL_MS);
+          }
+          return images;
+        } finally {
+          pageImagesPromises.delete(inflightKey);
+        }
+      })();
+      pageImagesPromises.set(inflightKey, pending);
+    }
+    return pending;
+  }
   const { title: shown } = await ixwikiResolveRedirect(title);
   return ixwikiGetPageImages(shown, opts);
 }

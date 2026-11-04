@@ -13,24 +13,21 @@ interface PaneProps {
   title: React.ReactNode;
   icon: React.ReactNode;
   subtitle?: React.ReactNode;
-  /** The way into the full thing, top right. */
+  /** The way into the full section, top right. */
   link?: { href: string; label: string };
-  /** The app this pane previews; its tint replaces the page's ink. */
-  app?: "maps" | "wiki" | "thinkpages" | "realms";
   content?: ContentType;
   className?: string;
-  /** Rendered flush (no padding), for the map. */
+  /** Rendered flush (no padding), for full-bleed stages. */
   flush?: boolean;
   children: React.ReactNode;
 }
 
-/** A front page section: tinted icon and headline title, an optional way in, then the content. */
+/** A front page section on the shared iron-gall ink palette: icon and headline title, an optional way in, then the content. */
 export function Pane({
   title,
   icon,
   subtitle,
   link,
-  app,
   content,
   className,
   flush = false,
@@ -38,7 +35,6 @@ export function Pane({
 }: PaneProps) {
   return (
     <Card
-      data-app={app}
       content={content}
       padding={flush ? "none" : "md"}
       className={cn("flex min-w-0 flex-col", className)}
@@ -69,10 +65,6 @@ export function Pane({
     </Card>
   );
 }
-
-/** Live lists: a row that arrives on refetch fades in; nothing else on the page moves. */
-export const FADE_IN_ROWS =
-  "[&>li]:transition-opacity [&>li]:duration-fast [&>li]:starting:opacity-0 motion-reduce:[&>li]:transition-none";
 
 /** The slice of a tRPC query a pane needs for its states. */
 export interface PaneQuery {

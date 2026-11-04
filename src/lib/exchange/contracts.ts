@@ -1,6 +1,6 @@
 /**
  * Exchange contracts: B2B (a company issues) and B2G (a nation's owner issues a government
- * tender). Spec: docs/specs/2026-10-06-exchange-economy-design.md §4 and §8.
+ * tender). Spec: docs/specs/2026-11-01-exchange-phase-3-design.md
  *
  *   OPEN ──award──▶ AWARDED ──complete──▶ COMPLETED
  *    │                 │ └──release (contractor)──▶ CANCELLED
@@ -8,25 +8,27 @@
  *    └─expire (job, expiry.ts)─▶ CANCELLED
  *
  * Escrow (= value) is funded when the contract is posted: from the issuing company's capital
- * (B2B, `fundedBy` COMPANY) or from the nation owner's ₷ wallet (B2G, `fundedBy` WALLET).
- * Awarding a bid keeps the bid amount in escrow and refunds the rest to the funder;
- * completion pays escrow to the winner's capital; cancellation refunds it. Every
- * transition is a conditional update on the current status, so a double click, a retry or
- * two racing parties can move a contract only once, and escrow is paid out only once.
- * Parties are notified after the transaction commits (notify.ts).
+ * (B2B), from the issuing nation's treasury or the owner's ₷ wallet (B2G, `fundedBy`), or
+ * minted by a realm faucet (`FAUCET`, capped per realm per week). Awarding a bid keeps the bid
+ * amount in escrow and returns the rest to the funder; completion pays escrow to the winner's
+ * capital, less any cross-border tariff; cancellation returns it. Faucet escrow is burned on
+ * return, because it was never taken from anyone. Every transition is a conditional update on
+ * the current status, so a double click, a retry or two racing parties can move a contract
+ * only once, and escrow is paid out only once. Parties are notified after the transaction
+ * commits (notify.ts).
  */
 
-import type { PrismaClient } from "@prisma/client";
-import {
-  ExchangeError,
-  earnSovereignsTx,
-  isUniqueViolation,
-  spendSovereignsTx,
-} from "~/lib/vault/exchange-service";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { ExchangeError, isUniqueViolation, spendSovereignsTx } from "~/lib/vault/exchange-service";
+import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./amounts";
+import { formatSovereigns, round2 } from "./amounts";
+import { payContractor, refundIssuer } from "./contract-settlement";
+import { debitTreasuryTx } from "./treasury";
+
+export { refundIssuer } from "./contract-settlement";
 
 export const CONTRACT_STATUSES = ["OPEN", "AWARDED", "COMPLETED", "CANCELLED", "DISPUTED"] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
@@ -34,6 +36,12 @@ export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
 /** Spam guard: OPEN contracts one company (or one nation, for tenders) may have at once. */
 export const MAX_OPEN_CONTRACTS_PER_COMPANY = 10;
 export const DAY_MS = 86_400_000;
+/** The rolling window a realm's faucet cap is measured over, in real days. */
+export const FAUCET_WINDOW_DAYS = 7;
+
+/** Where a tender's escrow comes from: the owner's ₷ wallet, or the nation's treasury. */
+export const TENDER_FUNDINGS = ["WALLET", "TREASURY"] as const;
+export type TenderFunding = (typeof TENDER_FUNDINGS)[number];
 
 /** Which transitions each status allows. The functions below enforce the same table. */
 export const CONTRACT_TRANSITIONS: Record<ContractStatus, readonly ContractStatus[]> = {
@@ -57,7 +65,7 @@ export async function transition(
   contractId: string,
   from: ContractStatus,
   to: ContractStatus,
-  data: Record<string, unknown> = {}
+  data: Prisma.ContractUncheckedUpdateManyInput = {}
 ) {
   if (!canTransition(from, to)) {
     throw new ExchangeError("CONFLICT", `A contract can't go from ${from} to ${to}`);
@@ -74,76 +82,6 @@ export async function transition(
   return before;
 }
 
-interface Funded {
-  id: string;
-  issuerCompanyId: string | null;
-  issuerUserId: string | null;
-  fundedBy: string | null;
-}
-
-/**
- * Return escrow to whoever funded it: the issuing company's capital, or the issuer's wallet
- * for a wallet-funded tender (keyed per contract and step, so it is credited once).
- */
-export async function refundIssuer(tx: Db, contract: Funded, amount: number, step: string) {
-  if (amount <= 0) return;
-  if (contract.fundedBy === "WALLET") {
-    if (!contract.issuerUserId) return;
-    await earnSovereignsTx(tx, {
-      userId: contract.issuerUserId,
-      amount,
-      type: "CONTRACT_REFUND",
-      source: `CONTRACT:${contract.id}`,
-      metadata: { contractId: contract.id, step },
-      idempotencyKey: `exchange:contract-refund:${contract.id}:${step}`,
-    });
-    return;
-  }
-  if (!contract.issuerCompanyId) return;
-  await tx.company.update({
-    where: { id: contract.issuerCompanyId },
-    data: { capital: { increment: amount } },
-  });
-  await refreshFairValue(tx, contract.issuerCompanyId);
-}
-
-/**
- * Pay escrow to the winning company and credit its record: standing +1, and +1 more for a
- * government tender in the company's own sector (the sector-matched bonus).
- */
-async function payContractor(
-  tx: Db,
-  contract: {
-    winnerCompanyId: string | null;
-    awardedBidId: string | null;
-    type: string;
-    sectorKey: string;
-  },
-  amount: number
-) {
-  const companyId = contract.winnerCompanyId!;
-  const company = await tx.company.findUnique({
-    where: { id: companyId },
-    select: { sectorKey: true },
-  });
-  const delta = contract.type === "B2G" && company?.sectorKey === contract.sectorKey ? 2 : 1;
-  await tx.company.update({
-    where: { id: companyId },
-    data: {
-      capital: { increment: amount },
-      contractsWonValue: { increment: amount },
-      standing: { increment: delta },
-    },
-  });
-  if (contract.awardedBidId) {
-    await tx.contractBid.update({
-      where: { id: contract.awardedBidId },
-      data: { standingDelta: delta },
-    });
-  }
-  await refreshFairValue(tx, companyId);
-}
-
 async function penaliseContractor(tx: Db, companyId: string, bidId: string | null) {
   await tx.company.update({ where: { id: companyId }, data: { standing: { decrement: 1 } } });
   if (bidId) await tx.contractBid.update({ where: { id: bidId }, data: { standingDelta: -1 } });
@@ -158,7 +96,7 @@ async function founderOf(tx: Db, companyId: string | null): Promise<string | nul
 
 /**
  * The issuer may act only while they still found the issuing company (B2B), or as the
- * player who posted and funded the tender (B2G).
+ * player who posted and funded the tender (B2G, and the faucet's tenders).
  */
 async function requireIssuer(tx: Db, contractId: string, userId: string) {
   const contract = await tx.contract.findUnique({ where: { id: contractId } });
@@ -166,7 +104,7 @@ async function requireIssuer(tx: Db, contractId: string, userId: string) {
   if (contract.issuerUserId !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuer can do that");
   }
-  if (contract.fundedBy === "WALLET") return contract;
+  if (contract.type === "B2G") return contract;
   if (!contract.issuerCompanyId || (await founderOf(tx, contract.issuerCompanyId)) !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuing company can do that");
   }
@@ -203,6 +141,19 @@ export interface CreateContractInput extends ContractTerms {
 export interface CreateTenderInput extends ContractTerms {
   /** The nation issuing the tender; the caller must own it (or act as it). */
   countryId: string;
+  /** Where escrow comes from. Defaults to the nation's treasury. */
+  fundedBy?: TenderFunding;
+  /** The national Directive this tender was issued from, when there is one. */
+  linkedDirectiveId?: string | null;
+  /** The national Issue this tender was issued from, when there is one. */
+  linkedIssueId?: string | null;
+}
+
+export interface CreateFaucetTenderInput extends ContractTerms {
+  /** The realm whose weekly faucet pays for the tender. */
+  realmId: string;
+  /** Whether the caller may draw on the faucet. The caller decides; this module only reads it. */
+  permitted: boolean;
 }
 
 function assertValue(value: number) {
@@ -211,9 +162,10 @@ function assertValue(value: number) {
   }
 }
 
-function contractData(input: ContractTerms, key: string) {
+function contractData(input: ContractTerms, key: string, realmId: string) {
   const now = Date.now();
   return {
+    realmId,
     title: input.title.trim(),
     description: input.description?.trim() || null,
     sectorKey: input.sectorKey,
@@ -228,7 +180,7 @@ function contractData(input: ContractTerms, key: string) {
 }
 
 /** Run a keyed post; a racing duplicate that lost on the unique key gets the winner's contract. */
-async function keyedPost<T extends { contract: unknown }>(
+async function keyedPost<T extends { contract: object }>(
   db: PrismaClient,
   key: string,
   run: () => Promise<T>
@@ -254,7 +206,7 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
       const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
       if (existing) return { contract: existing, alreadyApplied: true };
 
-      await requireOwnedCompany(tx, input.issuerCompanyId, input.userId);
+      const company = await requireOwnedCompany(tx, input.issuerCompanyId, input.userId);
       const open = await tx.contract.count({
         where: { issuerCompanyId: input.issuerCompanyId, status: "OPEN" },
       });
@@ -278,7 +230,7 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
 
       const contract = await tx.contract.create({
         data: {
-          ...contractData(input, key),
+          ...contractData(input, key, company.realmId),
           type: "B2B",
           fundedBy: "COMPANY",
           issuerCompanyId: input.issuerCompanyId,
@@ -294,7 +246,7 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
 async function requireCountryOwner(tx: Db, countryId: string, userId: string) {
   const country = await tx.country.findUnique({
     where: { id: countryId },
-    select: { id: true, name: true, ownerUserId: true },
+    select: { id: true, name: true, ownerUserId: true, realmId: true },
   });
   if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
   if (country.ownerUserId === userId) return country;
@@ -303,13 +255,41 @@ async function requireCountryOwner(tx: Db, countryId: string, userId: string) {
   throw new ExchangeError("FORBIDDEN", "Only the nation's owner can issue its tenders");
 }
 
+/** Take a tender's escrow from the owner's wallet or from the nation's treasury. */
+async function fundTender(
+  tx: Db,
+  input: { countryId: string; userId: string; value: number; title: string; key: string },
+  fundedBy: TenderFunding
+) {
+  if (fundedBy === "WALLET") {
+    await spendSovereignsTx(tx, {
+      userId: input.userId,
+      amount: input.value,
+      type: "CONTRACT_ESCROW",
+      source: `TENDER:${input.countryId}`,
+      metadata: { countryId: input.countryId, title: input.title.trim() },
+      idempotencyKey: `${input.key}:escrow`,
+    });
+    return;
+  }
+  await debitTreasuryTx(tx, {
+    countryId: input.countryId,
+    amount: input.value,
+    type: "B2G_ESCROW",
+    source: `TENDER:${input.countryId}`,
+    key: `${input.key}:escrow`,
+  });
+}
+
 /**
- * Post a government tender (B2G) for a nation the caller owns. Escrow comes from the
- * owner's ₷ wallet (nations hold no ₷ treasury); refunds go back there. Companies bid as on
- * B2B contracts; a winner in the tender's sector earns an extra point of standing.
+ * Post a government tender (B2G) for a nation the caller owns. Escrow comes from the nation's
+ * treasury by default, or from the owner's ₷ wallet; refunds go back to the same place.
+ * Companies bid as on B2B contracts; a winner in the tender's sector earns an extra point of
+ * standing.
  */
 export async function createGovernmentContract(db: PrismaClient, input: CreateTenderInput) {
   assertValue(input.value);
+  const fundedBy: TenderFunding = input.fundedBy ?? "TREASURY";
   const key = `exchange:tender:${input.userId}:${input.requestId}`;
   return keyedPost(db, key, () =>
     db.$transaction(async (tx) => {
@@ -317,7 +297,7 @@ export async function createGovernmentContract(db: PrismaClient, input: CreateTe
       const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
       if (existing) return { contract: existing, alreadyApplied: true };
 
-      await requireCountryOwner(tx, input.countryId, input.userId);
+      const country = await requireCountryOwner(tx, input.countryId, input.userId);
       const open = await tx.contract.count({
         where: { issuerCountryId: input.countryId, status: "OPEN" },
       });
@@ -327,20 +307,68 @@ export async function createGovernmentContract(db: PrismaClient, input: CreateTe
           `A nation can have up to ${MAX_OPEN_CONTRACTS_PER_COMPANY} open tenders`
         );
       }
-      await spendSovereignsTx(tx, {
-        userId: input.userId,
-        amount: input.value,
-        type: "CONTRACT_ESCROW",
-        source: `TENDER:${input.countryId}`,
-        metadata: { countryId: input.countryId, title: input.title.trim() },
-        idempotencyKey: `${key}:escrow`,
-      });
+      await fundTender(tx, { ...input, key }, fundedBy);
       const contract = await tx.contract.create({
         data: {
-          ...contractData(input, key),
+          ...contractData(input, key, country.realmId),
           type: "B2G",
-          fundedBy: "WALLET",
+          fundedBy,
           issuerCountryId: input.countryId,
+          linkedDirectiveId: input.linkedDirectiveId ?? null,
+          linkedIssueId: input.linkedIssueId ?? null,
+        },
+      });
+      return { contract, alreadyApplied: false };
+    })
+  );
+}
+
+/** A realm's faucet is one lock: two tenders can't both pass the cap check at once. */
+async function lockRealm(tx: Db, realmId: string): Promise<void> {
+  await tx.$queryRaw`SELECT id FROM "realms" WHERE id = ${realmId} FOR UPDATE`;
+}
+
+async function faucetMintedSince(tx: Db, realmId: string, sinceMs: number): Promise<number> {
+  const totals = await tx.contract.aggregate({
+    where: { realmId, fundedBy: "FAUCET", createdIxTime: { gte: sinceMs } },
+    _sum: { value: true },
+  });
+  return totals._sum.value ?? 0;
+}
+
+/**
+ * Post a tender whose escrow the realm's faucet mints. Only what the realm minted over the
+ * last FAUCET_WINDOW_DAYS counts against its weekly cap, whatever became of those tenders,
+ * since returned faucet escrow is burned and can't be minted again.
+ */
+export async function createFaucetTender(db: PrismaClient, input: CreateFaucetTenderInput) {
+  assertValue(input.value);
+  if (!input.permitted) {
+    throw new ExchangeError("FORBIDDEN", "Only a realm's administrators can open its faucet");
+  }
+  const key = `exchange:faucet:${input.userId}:${input.requestId}`;
+  return keyedPost(db, key, () =>
+    db.$transaction(async (tx) => {
+      await assertExchangeOpen(tx);
+      const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
+      if (existing) return { contract: existing, alreadyApplied: true };
+
+      await lockRealm(tx, input.realmId);
+      const cap = (await getExchangeConfig(tx)).realmWeeklyFaucetCap;
+      const since = Date.now() - FAUCET_WINDOW_DAYS * DAY_MS;
+      const minted = await faucetMintedSince(tx, input.realmId, since);
+      if (round2(minted + input.value) > cap) {
+        const left = Math.max(0, round2(cap - minted));
+        throw new ExchangeError(
+          "LIMIT_REACHED",
+          `This realm's faucet has ${formatSovereigns(left)} left this week`
+        );
+      }
+      const contract = await tx.contract.create({
+        data: {
+          ...contractData(input, key, input.realmId),
+          type: "B2G",
+          fundedBy: "FAUCET",
         },
       });
       return { contract, alreadyApplied: false };
@@ -356,7 +384,7 @@ export interface PlaceBidInput {
   amount: number;
 }
 
-/** Bid (or re-bid) on an OPEN contract with one of your companies. */
+/** Bid (or re-bid) on an OPEN contract with one of your companies, in the contract's realm. */
 export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
   const notices: ExchangeNotice[] = [];
   const bid = await db.$transaction(async (tx) => {
@@ -364,6 +392,9 @@ export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
     const company = await requireOwnedCompany(tx, input.companyId, input.userId);
     const contract = await tx.contract.findUnique({ where: { id: input.contractId } });
     if (!contract) throw new ExchangeError("NOT_FOUND", "Contract not found");
+    if (contract.realmId !== company.realmId) {
+      throw new ExchangeError("FORBIDDEN", "A company can only bid on contracts in its own realm");
+    }
     if (contract.status !== "OPEN" || contract.endIxTime <= Date.now()) {
       throw new ExchangeError("CONFLICT", "Bidding on this contract has closed");
     }
@@ -479,7 +510,7 @@ export async function awardContract(
   return result;
 }
 
-/** Issuer confirms delivery: escrow is paid to the contractor's capital. */
+/** Issuer confirms delivery: escrow is paid to the contractor's capital, less any tariff. */
 export async function completeContract(
   db: PrismaClient,
   input: { userId: string; contractId: string }
@@ -492,16 +523,26 @@ export async function completeContract(
       escrow: 0,
       closedIxTime: Date.now(),
     });
-    await payContractor(tx, before, before.escrow);
+    const { net, tariffPaid } = await payContractor(tx, before, before.escrow);
     const founder = await founderOf(tx, before.winnerCompanyId);
     if (founder) {
       notices.push({
         userId: founder,
         title: `${before.title} completed`,
-        message: `${formatSovereigns(before.escrow)} was paid into your company's capital.`,
+        message: `${formatSovereigns(net)} was paid into your company's capital.`,
       });
     }
-    return { paid: before.escrow };
+    if (before.issuerUserId) {
+      const tariffNote =
+        tariffPaid > 0 ? ` ${formatSovereigns(tariffPaid)} of tariff went to your treasury.` : "";
+      notices.push({
+        userId: before.issuerUserId,
+        title: `${before.title} completed`,
+        message: `Delivery is confirmed and the contractor has been paid.${tariffNote}`,
+        priority: "low",
+      });
+    }
+    return { paid: net, tariffPaid };
   });
   notifyExchange(notices);
   return result;

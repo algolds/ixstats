@@ -88,7 +88,7 @@ function usePostPermissions(post: any, currentUserAccountId: string) {
   const { user: currentUserData } = usePermissions();
   const currentUserRoleLevel = currentUserData?.role?.level ?? 100;
 
-  const isOwnPost = currentUserAccountId === post.account?.id;
+  const isOwnPost = Boolean(currentUserAccountId) && currentUserAccountId === post.account?.id;
   const isCurrentUserStaff = currentUserRoleLevel === 20;
   const targetAccountId: string | undefined = post.account?.id;
 
@@ -312,6 +312,7 @@ export function useThinkpagesPost(post: any, currentUserAccountId: string, showT
   };
 
   const handleReply = () => {
+    if (!currentUserAccountId) return;
     setShowReplyComposer(!showReplyComposer);
     if (!showReplyComposer) setReplyText(`@${post.account?.username} `);
   };

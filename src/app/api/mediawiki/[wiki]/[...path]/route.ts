@@ -11,7 +11,7 @@
  */
 import { iiwikiSourceAllowed } from "~/lib/wiki-os/iiwiki-switch";
 import { NextRequest, NextResponse } from "next/server";
-import { externalApiCache } from "~/lib/cache";
+import { Cache, externalApiCache } from "~/lib/cache";
 import { getWiki, MEDIA_CORS_HEADERS, WIKI_USER_AGENT, type WikiConfig } from "../../_config";
 import {
   encodePath,
@@ -102,6 +102,10 @@ function cleanFilename(rawName: string): string {
   return filename.replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "").trim();
 }
 
+const MISSING_FILE_TTL_MS = 10 * 60 * 1000;
+const missingFileResolutionCache = new Cache<boolean>(MISSING_FILE_TTL_MS);
+const fileResolutionPromises = new Map<string, Promise<string | null>>();
+
 /** Resolve a file name (never a URL) to its direct upload URL, cached for 30 days. */
 async function resolveFilePath(wiki: WikiConfig, wikiKey: string, filename: string) {
   const cacheOptions = {
@@ -114,9 +118,27 @@ async function resolveFilePath(wiki: WikiConfig, wikiKey: string, filename: stri
   const cached = await externalApiCache.get<{ url: string }>(cacheOptions).catch(() => null);
   if (cached?.data?.url) return cached.data.url;
 
-  const directUrl = await resolveViaImageInfo(wiki, filename);
-  if (directUrl) await externalApiCache.set(cacheOptions, { url: directUrl }).catch(() => {});
-  return directUrl;
+  const memKey = `${wikiKey}:${filename}`;
+  if (missingFileResolutionCache.get(memKey)) return null;
+
+  let inflight = fileResolutionPromises.get(memKey);
+  if (!inflight) {
+    inflight = (async () => {
+      try {
+        const directUrl = await resolveViaImageInfo(wiki, filename);
+        if (directUrl) {
+          await externalApiCache.set(cacheOptions, { url: directUrl }).catch(() => {});
+        } else {
+          missingFileResolutionCache.set(memKey, true, MISSING_FILE_TTL_MS);
+        }
+        return directUrl;
+      } finally {
+        fileResolutionPromises.delete(memKey);
+      }
+    })();
+    fileResolutionPromises.set(memKey, inflight);
+  }
+  return inflight;
 }
 
 export async function GET(

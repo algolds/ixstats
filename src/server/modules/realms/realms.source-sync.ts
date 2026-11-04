@@ -499,7 +499,8 @@ export const LIVE_RUN_DEPS: RunDeps = {
     isProofSource(wikiSource)
       ? resolveWikiRedirects(
           (params, schema) => wikiQuery(wikiSource, params, schema, "realms"),
-          titles
+          titles,
+          wikiSource
         )
       : Promise.resolve({}),
 };

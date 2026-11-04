@@ -99,7 +99,12 @@ export function cacheSet<T>(key: string, data: T, ttlMs: number = 30 * 60 * 1000
  * spelling it was asked for: those keys hold the raw or lower-cased title.
  */
 export function evictBridgeCacheForTitle(title: string, wiki: WikiSource): number {
-  const prefixes = [`intro:${wiki}:`, `wikitext:${wiki}:`, `pageimages:${wiki}:`];
+  const prefixes = [
+    `intro:${wiki}:`,
+    `wikitext:${wiki}:`,
+    `pageimages:${wiki}:`,
+    `pageimages:none:${wiki}:`,
+  ];
   let evicted = 0;
   for (const key of wikiBridgeCache.keys()) {
     const prefix = prefixes.find((candidate) => key.startsWith(candidate));

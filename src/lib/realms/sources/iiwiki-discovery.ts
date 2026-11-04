@@ -278,7 +278,14 @@ export async function discoverNationHints(
     if (batch.length === 0) return;
     const responses = await queryAll(
       client.query,
-      { prop: "revisions", rvprop: "content", rvslots: "main", redirects: "1", titles: batch.join("|") },
+      {
+        prop: "revisions",
+        rvprop: "content",
+        rvslots: "main",
+        rvsection: "0",
+        redirects: "1",
+        titles: batch.join("|"),
+      },
       ContentSchema
     );
     // Map a returned title back to the title asked for, through normalization and redirects.

@@ -170,6 +170,7 @@ export function PostActions({
 
   // ActionPill has two sizes; the large toolbar uses the standalone `md` pill.
   const pillSize = size === "sm" ? "sm" : "md";
+  const canInteract = Boolean(currentUserAccountId);
 
   return (
     <div className={cn("flex items-center justify-between", className)}>
@@ -179,7 +180,12 @@ export function PostActions({
           tone="info"
           icon={<MessageCircle />}
           count={showCounts && replyCount > 0 ? replyCount : undefined}
-          onClick={() => onReply?.(postId)}
+          disabled={!canInteract}
+          onClick={() => {
+            if (!canInteract) return;
+            onReply?.(postId);
+          }}
+          title={canInteract ? "Reply to post" : "Sign in to reply"}
           aria-label="Reply to post"
         >
           Reply
@@ -190,7 +196,9 @@ export function PostActions({
           pressed={isReposted}
           icon={<Repeat2 />}
           count={showCounts && repostCount > 0 ? repostCount : undefined}
+          disabled={!canInteract}
           onClick={handleRepost}
+          title={canInteract ? "Repost" : "Sign in to repost"}
           aria-label="Repost"
         >
           Repost
@@ -204,20 +212,22 @@ export function PostActions({
             pressed={isLiked || showReactionPopup}
             icon={<Heart className={cn(isLiked && "fill-current")} />}
             count={showCounts && likeCount > 0 ? likeCount : undefined}
+            disabled={!canInteract}
             onClick={(e) => {
               e.stopPropagation();
-              handleLike();
+              if (!canInteract) return;
+              void handleLike();
             }}
             onContextMenu={(e) => {
+              if (!canInteract) return;
               e.preventDefault();
               e.stopPropagation();
               setShowReactionPopup(!showReactionPopup);
             }}
-            className={cn(!currentUserAccountId && "cursor-not-allowed opacity-50")}
             title={
-              currentUserAccountId
+              canInteract
                 ? "Click to like (right-click for emoji reactions)"
-                : "Please select a ThinkPages account first"
+                : "Sign in to like or react"
             }
             aria-label="Like post"
           >
@@ -225,21 +235,23 @@ export function PostActions({
           </ActionPill>
 
           {/* Reaction popup, anchored to the like button (opened by right-click). */}
-          <Popover open={showReactionPopup} onOpenChange={setShowReactionPopup}>
-            <PopoverTrigger asChild>
-              <span
-                aria-hidden="true"
-                tabIndex={-1}
-                className="pointer-events-none absolute inset-0"
-              />
-            </PopoverTrigger>
-            <PopoverContent side="top" align="center" className="w-auto p-3">
-              <ReactionPopup
-                onSelectReaction={handleReaction}
-                postReactionCounts={reactionCounts}
-              />
-            </PopoverContent>
-          </Popover>
+          {canInteract && (
+            <Popover open={showReactionPopup} onOpenChange={setShowReactionPopup}>
+              <PopoverTrigger asChild>
+                <span
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  className="pointer-events-none absolute inset-0"
+                />
+              </PopoverTrigger>
+              <PopoverContent side="top" align="center" className="w-auto p-3">
+                <ReactionPopup
+                  onSelectReaction={handleReaction}
+                  postReactionCounts={reactionCounts}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
 
         <ActionPill size={pillSize} icon={<Share />} onClick={handleShare} aria-label="Share post">

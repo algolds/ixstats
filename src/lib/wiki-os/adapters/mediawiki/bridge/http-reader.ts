@@ -441,8 +441,11 @@ export async function fetchMediaWikiImageBatch(
         if (page.missing || !page.imageinfo?.[0]) continue;
         const imgUrl = page.imageinfo[0].url ?? page.imageinfo[0].thumburl;
         if (imgUrl && page.title) {
+          const withoutPrefix = page.title.replace(/^File:/i, "");
           result.set(page.title, imgUrl);
-          result.set(page.title.replace(/^File:/i, ""), imgUrl);
+          result.set(withoutPrefix, imgUrl);
+          result.set(page.title.replace(/ /g, "_"), imgUrl);
+          result.set(withoutPrefix.replace(/ /g, "_"), imgUrl);
         }
       }
     } catch (err) {

@@ -11,12 +11,26 @@ import { CompanySelect, StatusBadge, formatSovereigns, parseAmount, sectorLabel 
 
 type Contract = RouterOutputs["exchange"]["listContracts"][number];
 
+const FUNDING_LABEL: Record<string, string> = {
+  TREASURY: "Treasury",
+  WALLET: "Wallet",
+  FAUCET: "Realm faucet",
+  COMPANY: "Company capital",
+};
+
 interface ContractRowProps {
   contract: Contract;
   /** The viewer's ACTIVE companies, for bidding. */
-  companies: ReadonlyArray<{ id: string; name: string }>;
+  companies: ReadonlyArray<{ id: string; name: string; hqCountryId?: string | null }>;
   isOpen: boolean;
   onDone: () => void;
+}
+
+function isCrossBorder(
+  issuerCountryId: string | null | undefined,
+  bidderHqCountryId: string | null | undefined
+): boolean {
+  return Boolean(issuerCountryId && bidderHqCountryId && issuerCountryId !== bidderHqCountryId);
 }
 
 function useContractActions(onDone: () => void) {
@@ -51,36 +65,47 @@ function BidForm({
   const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
   const [raw, setRaw] = useState(String(contract.value));
   const amount = parseAmount(raw);
+  const selected = companies.find((c) => c.id === companyId);
+  const issuerCountryId = contract.issuerCountryId ?? contract.issuer?.hqCountryId ?? null;
+  const crossBorder = isCrossBorder(issuerCountryId, selected?.hqCountryId);
+
   if (companies.length === 0) {
     return (
       <p className="text-caption text-label-secondary">Charter a company to bid on contracts.</p>
     );
   }
   return (
-    <div className="flex flex-wrap items-end gap-2">
-      <div className="w-48">
-        <CompanySelect
-          id={`bid-company-${contract.id}`}
-          companies={companies}
-          value={companyId}
-          onChange={setCompanyId}
-        />
+    <div className="space-y-1.5">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-48">
+          <CompanySelect
+            id={`bid-company-${contract.id}`}
+            companies={companies}
+            value={companyId}
+            onChange={setCompanyId}
+          />
+        </div>
+        <div className="w-32">
+          <Input
+            aria-label="Your price"
+            inputMode="numeric"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value.replace(/[^0-9]/g, ""))}
+          />
+        </div>
+        <Button
+          size="sm"
+          disabled={actions.placeBid.isPending || !companyId || Number.isNaN(amount)}
+          onClick={() => actions.placeBid.mutate({ contractId: contract.id, companyId, amount })}
+        >
+          Bid
+        </Button>
       </div>
-      <div className="w-32">
-        <Input
-          aria-label="Your price"
-          inputMode="numeric"
-          value={raw}
-          onChange={(e) => setRaw(e.target.value.replace(/[^0-9]/g, ""))}
-        />
-      </div>
-      <Button
-        size="sm"
-        disabled={actions.placeBid.isPending || !companyId || Number.isNaN(amount)}
-        onClick={() => actions.placeBid.mutate({ contractId: contract.id, companyId, amount })}
-      >
-        Bid
-      </Button>
+      {crossBorder && (
+        <p className="text-caption text-label-tertiary">
+          Cross-border bid: settlement applies the issuer nation import tariff on payout.
+        </p>
+      )}
     </div>
   );
 }
@@ -129,21 +154,26 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
   const actions = useContractActions(onDone);
   const myBid = contract.bids.find((b) => b.mine);
   const { role, status } = contract;
+  const issuerCountryId = contract.issuerCountryId ?? contract.issuer?.hqCountryId ?? null;
+  const fundingLabel =
+    FUNDING_LABEL[contract.fundedBy ?? (contract.type === "B2G" ? "WALLET" : "COMPANY")] ??
+    "Company capital";
 
   return (
     <Card padding="sm" className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-body text-label font-medium">{contract.title}</p>
-          <p className="text-caption text-label-secondary">
-            {contract.issuer?.name ?? "Government"} · {sectorLabel(contract.sectorKey)} ·{" "}
+          <p className="text-caption text-label-secondary tabular-nums">
+            {contract.issuer?.name ?? "Realm faucet"} · {sectorLabel(contract.sectorKey)} ·{" "}
             {formatSovereigns(contract.value)}
             {contract.biddingOpen &&
               ` · bids close ${new Date(contract.biddingClosesAt).toLocaleDateString()}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {contract.type === "B2G" && <Badge variant="info">Government tender</Badge>}
+          <Badge variant="outline">{fundingLabel}</Badge>
           <StatusBadge status={status} />
         </div>
       </div>
@@ -156,32 +186,41 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
       {role === "issuer" && status === "OPEN" && (
         <div className="space-y-2">
           <p className="text-footnote text-label font-medium">Bids ({contract.bids.length})</p>
-          {contract.bids.map((b) => (
-            <div key={b.id} className="text-footnote flex items-center justify-between gap-2">
-              <span className="text-label">
-                {b.company.name}{" "}
-                <span className="text-label-secondary">standing {b.company.standing}</span>
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="tabular-nums">{formatSovereigns(b.amount)}</span>
-                {isOpen && (
-                  <Button
-                    size="xs"
-                    disabled={actions.award.isPending}
-                    onClick={() => actions.award.mutate({ contractId: contract.id, bidId: b.id })}
-                  >
-                    Award
-                  </Button>
-                )}
-              </span>
-            </div>
-          ))}
+          {contract.bids.map((b) => {
+            const crossBorder = isCrossBorder(issuerCountryId, b.company.hqCountryId);
+            return (
+              <div key={b.id} className="text-footnote flex items-center justify-between gap-2">
+                <span className="text-label flex flex-wrap items-center gap-1.5">
+                  <span>{b.company.name}</span>
+                  <span className="text-label-secondary tabular-nums">
+                    standing {b.company.standing}
+                  </span>
+                  {crossBorder && <Badge variant="outline">Cross-border</Badge>}
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="tabular-nums">{formatSovereigns(b.amount)}</span>
+                  {isOpen && (
+                    <Button
+                      size="xs"
+                      disabled={actions.award.isPending}
+                      onClick={() =>
+                        actions.award.mutate({ contractId: contract.id, bidId: b.id })
+                      }
+                    >
+                      Award
+                    </Button>
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {role !== "issuer" && myBid && (
-        <p className="text-footnote text-label-secondary">
+        <p className="text-footnote text-label-secondary tabular-nums">
           Your bid from {myBid.company.name}: {formatSovereigns(myBid.amount)}
+          {isCrossBorder(issuerCountryId, myBid.company.hqCountryId) ? " · cross-border" : ""}
           {myBid.outcome ? ` (${myBid.outcome === "WON" ? "won" : "not chosen"})` : ""}
         </p>
       )}

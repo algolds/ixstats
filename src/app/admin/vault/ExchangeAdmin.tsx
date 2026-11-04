@@ -8,15 +8,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
 
 const CONFIG_FIELDS = [
   { key: "charterFee", label: "Company charter fee (₷)", step: "1" },
   { key: "activeCompanyCap", label: "Active companies per player", step: "1" },
   { key: "seedSovereigns", label: "Starting balance for new wallets (₷)", step: "1" },
+  { key: "treasuryDailyStipend", label: "Base daily nation treasury stipend (₷)", step: "1" },
+  { key: "treasuryCap", label: "Nation treasury balance cap (₷)", step: "1" },
+  { key: "realmWeeklyFaucetCap", label: "Realm weekly faucet tender cap (₷)", step: "1" },
+  { key: "realmOperatingBudget", label: "Realm operating budget per tick (₷)", step: "1" },
 ] as const;
 
 type ConfigKey = (typeof CONFIG_FIELDS)[number]["key"];
+type SectorKey = "agriculture" | "industry" | "services" | "government";
 
 function ConfigForm() {
   const notify = useNotify();
@@ -77,6 +89,133 @@ function ConfigForm() {
   );
 }
 
+function MarketTickSection() {
+  const notify = useNotify();
+  const tick = api.exchange.adminRunMarketTick.useMutation({
+    onSuccess: (r) => {
+      notify.success(
+        "Market tick completed",
+        `Minted ₷${r.stipendsMinted.toLocaleString("en-US")} in stipends · refreshed ${r.companiesRefreshed} companies`
+      );
+    },
+    onError: (e) => notify.error("Market tick failed", e.message),
+  });
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-footnote text-label-secondary">
+          Mints nation treasury stipends, updates sector indices, runs company P&L operations,
+          applies due strategic decisions, settles expired proposals and syncs corporate GDP
+          feedback.
+        </p>
+        <Button size="sm" disabled={tick.isPending} onClick={() => tick.mutate()}>
+          {tick.isPending ? "Running tick..." : "Run market tick now"}
+        </Button>
+      </div>
+      {tick.data && (
+        <div className="border-separator bg-fill-4 rounded-control grid grid-cols-2 gap-3 border p-3 sm:grid-cols-4">
+          <div className="text-caption tabular-nums">
+            <span className="text-label-secondary block">Stipends minted</span>
+            <span className="text-label font-medium">
+              ₷{tick.data.stipendsMinted.toLocaleString("en-US")}
+            </span>
+          </div>
+          <div className="text-caption tabular-nums">
+            <span className="text-label-secondary block">Decisions applied</span>
+            <span className="text-label font-medium">{tick.data.decisionsApplied}</span>
+          </div>
+          <div className="text-caption tabular-nums">
+            <span className="text-label-secondary block">Proposals expired</span>
+            <span className="text-label font-medium">{tick.data.proposalsExpired}</span>
+          </div>
+          <div className="text-caption tabular-nums">
+            <span className="text-label-secondary block">Companies refreshed</span>
+            <span className="text-label font-medium">{tick.data.companiesRefreshed}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SectorDmForm() {
+  const notify = useNotify();
+  const [dmState, setDmState] = useState({
+    realmId: "default",
+    sectorKey: "services" as SectorKey,
+    value: "0",
+  });
+  const setMod = api.exchange.adminSetSectorDmModifier.useMutation({
+    onSuccess: (r) => {
+      notify.success(
+        "Sector modifier saved",
+        `${r.label} in ${r.realmId} set to ${r.dmModifier}`
+      );
+    },
+    onError: (e) => notify.error("Could not set modifier", e.message),
+  });
+  const val = Number(dmState.value);
+  const valid =
+    Boolean(dmState.realmId.trim()) && Number.isFinite(val) && val >= -0.5 && val <= 2;
+
+  return (
+    <form
+      className="grid gap-3 sm:grid-cols-4 sm:items-end"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!valid) return;
+        setMod.mutate({
+          realmId: dmState.realmId.trim(),
+          sectorKey: dmState.sectorKey,
+          value: val,
+        });
+      }}
+    >
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="exchange-dm-realm">Realm id</Label>
+        <Input
+          id="exchange-dm-realm"
+          value={dmState.realmId}
+          onChange={(e) => setDmState({ ...dmState, realmId: e.target.value })}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="exchange-dm-sector">Sector</Label>
+        <Select
+          value={dmState.sectorKey}
+          onValueChange={(v) => setDmState({ ...dmState, sectorKey: v as SectorKey })}
+        >
+          <SelectTrigger id="exchange-dm-sector" size="sm" aria-label="Sector">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="agriculture">Agriculture</SelectItem>
+            <SelectItem value="industry">Industry</SelectItem>
+            <SelectItem value="services">Services</SelectItem>
+            <SelectItem value="government">Government</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="exchange-dm-value">Modifier (-0.5 to 2.0)</Label>
+        <Input
+          id="exchange-dm-value"
+          type="number"
+          step="0.05"
+          min="-0.5"
+          max="2"
+          value={dmState.value}
+          onChange={(e) => setDmState({ ...dmState, value: e.target.value })}
+        />
+      </div>
+      <Button type="submit" size="sm" disabled={setMod.isPending || !valid}>
+        Set sector modifier
+      </Button>
+    </form>
+  );
+}
+
 function DisputeRow({
   dispute,
   onDone,
@@ -103,7 +242,7 @@ function DisputeRow({
   return (
     <div className="border-separator rounded-control space-y-2 border p-4">
       <p className="text-body text-label font-medium">{dispute.title}</p>
-      <p className="text-footnote text-label-secondary">
+      <p className="text-footnote text-label-secondary tabular-nums">
         Issued by {dispute.issuerCompany?.name ?? "a nation (government tender)"}. Escrow ₷
         {dispute.escrow.toLocaleString("en-US")}. Reason: {dispute.disputeReason}
       </p>
@@ -138,32 +277,37 @@ function DisputeRow({
 
 function AdjustForm() {
   const notify = useNotify();
-  const [userId, setUserId] = useState("");
-  const [amount, setAmount] = useState("");
-  const [reason, setReason] = useState("");
+  const [adjustState, setAdjustState] = useState({
+    userId: "",
+    amount: "",
+    reason: "",
+  });
   const adjust = api.exchange.adminAdjustSovereigns.useMutation({
     onSuccess: (r) => {
       notify.success("Balance adjusted", `New balance ₷${r.newBalance.toLocaleString("en-US")}`);
-      setAmount("");
-      setReason("");
+      setAdjustState((prev) => ({ ...prev, amount: "", reason: "" }));
     },
     onError: (e) => notify.error("Could not adjust", e.message),
   });
-  const n = Number(amount);
+  const n = Number(adjustState.amount);
   return (
     <form
       className="grid gap-3 sm:grid-cols-4 sm:items-end"
       onSubmit={(e) => {
         e.preventDefault();
-        adjust.mutate({ targetUserId: userId.trim(), amount: n, reason });
+        adjust.mutate({
+          targetUserId: adjustState.userId.trim(),
+          amount: n,
+          reason: adjustState.reason,
+        });
       }}
     >
       <div className="flex flex-col gap-2">
         <Label htmlFor="exchange-adjust-user">User id or Clerk id</Label>
         <Input
           id="exchange-adjust-user"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
+          value={adjustState.userId}
+          onChange={(e) => setAdjustState({ ...adjustState, userId: e.target.value })}
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -171,22 +315,27 @@ function AdjustForm() {
         <Input
           id="exchange-adjust-amount"
           type="number"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          value={adjustState.amount}
+          onChange={(e) => setAdjustState({ ...adjustState, amount: e.target.value })}
         />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="exchange-adjust-reason">Reason</Label>
         <Input
           id="exchange-adjust-reason"
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
+          value={adjustState.reason}
+          onChange={(e) => setAdjustState({ ...adjustState, reason: e.target.value })}
         />
       </div>
       <Button
         type="submit"
         size="sm"
-        disabled={adjust.isPending || !userId.trim() || !n || reason.trim().length < 3}
+        disabled={
+          adjust.isPending ||
+          !adjustState.userId.trim() ||
+          !n ||
+          adjustState.reason.trim().length < 3
+        }
       >
         Adjust Sovereigns
       </Button>
@@ -194,7 +343,7 @@ function AdjustForm() {
   );
 }
 
-/** Admin: Exchange rates and limits, dispute decisions, ₷ balance adjustments. */
+/** Admin: Exchange rates and limits, manual market ticks, sector DM modifiers, disputes and ₷ balance adjustments. */
 export function ExchangeAdmin() {
   const disputes = api.exchange.adminListDisputes.useQuery();
   return (
@@ -205,6 +354,15 @@ export function ExchangeAdmin() {
         </CardHeader>
         <CardContent>
           <ConfigForm />
+        </CardContent>
+      </Card>
+      <Card className="flex flex-col gap-6 py-6">
+        <CardHeader>
+          <CardTitle className="text-label text-title-3">Market tick and sector DM lever</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <MarketTickSection />
+          <SectorDmForm />
         </CardContent>
       </Card>
       <Card className="flex flex-col gap-6 py-6">

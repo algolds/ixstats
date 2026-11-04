@@ -20,19 +20,27 @@ interface MediaWikiQueryBatchPage {
   pageid?: number;
   title?: string;
   missing?: boolean;
-  revisions?: Array<{ slots?: { main?: { "*"?: string } }; content?: string; "*"?: string }>;
+  revisions?: Array<{
+    revid?: number;
+    slots?: { main?: { "*"?: string } };
+    content?: string;
+    "*"?: string;
+  }>;
 }
 
 interface MediaWikiQueryBatchResponse {
   query?: {
+    normalized?: Array<{ from?: string; to?: string }>;
+    redirects?: Array<{ from?: string; to?: string }>;
     pages?: Record<string, MediaWikiQueryBatchPage> | MediaWikiQueryBatchPage[];
   };
 }
 
 const BATCH_CHUNK_SIZE = 50;
+const SISTER_MISSING_TTL_MS = 10 * 60 * 1000;
 
 const cacheKey = (wiki: WikiSource, title: string): string =>
-  `wikitext:${wiki}:${title.toLowerCase()}`;
+  `wikitext:${wiki}:${title.replace(/_/g, " ").trim().toLowerCase()}`;
 
 /** IxWiki articles live in PostgreSQL, so each title is a local lookup. */
 async function loadIxwikiArticles(titles: string[], results: Map<string, WikiArticle>) {
@@ -63,20 +71,33 @@ async function loadSisterWikiChunk(
     action: "query",
     titles: chunk.join("|"),
     prop: "revisions",
-    rvprop: "content",
+    rvprop: "content|ids",
     rvslots: "main",
+    redirects: "1",
   });
 
+  const normalizedMap = new Map<string, string>();
+  for (const n of response?.query?.normalized ?? []) {
+    if (n.from && n.to) normalizedMap.set(n.from.toLowerCase(), n.to.toLowerCase());
+  }
+  const redirectMap = new Map<string, string>();
+  for (const r of response?.query?.redirects ?? []) {
+    if (r.from && r.to) redirectMap.set(r.from.toLowerCase(), r.to.toLowerCase());
+  }
+
   const returnedTitles = new Set<string>();
+  const byResolvedTitle = new Map<string, WikiArticle>();
   for (const page of pagesOf(response?.query?.pages)) {
     if (!page.title) continue;
-    returnedTitles.add(page.title.toLowerCase());
+    const lowerTitle = page.title.toLowerCase();
+    returnedTitles.add(lowerTitle);
 
     const rev = page.revisions?.[0];
     const wikitext = rev?.slots?.main?.["*"] ?? rev?.content ?? rev?.["*"] ?? "";
     const isPresent = !page.missing && wikitext && page.pageid && page.pageid > 0;
     if (!isPresent) {
       intelligentLoreCache.markMissingPage(wiki, page.title);
+      cacheSet(cacheKey(wiki, page.title), { missing: true }, SISTER_MISSING_TTL_MS);
       continue;
     }
 
@@ -85,15 +106,29 @@ async function loadSisterWikiChunk(
       pageId: page.pageid!,
       wikitext,
       length: wikitext.length,
+      ...(rev?.revid !== undefined ? { revId: rev.revid } : {}),
     };
     cacheSet(cacheKey(wiki, page.title), article);
-    results.set(page.title.toLowerCase(), article);
+    results.set(lowerTitle, article);
+    byResolvedTitle.set(lowerTitle, article);
   }
 
-  // Requested titles completely absent from the response are missing pages.
+  // Map requested titles through normalization/redirects and mark truly absent ones as missing.
   for (const requestedTitle of chunk) {
-    if (!returnedTitles.has(requestedTitle.toLowerCase())) {
+    const reqLower = requestedTitle.toLowerCase();
+    const normTarget = normalizedMap.get(reqLower) ?? reqLower;
+    const finalTarget = redirectMap.get(normTarget) ?? redirectMap.get(reqLower) ?? normTarget;
+    const resolvedArticle = byResolvedTitle.get(finalTarget);
+    if (resolvedArticle) {
+      const redirected =
+        redirectMap.has(normTarget) || redirectMap.has(reqLower)
+          ? { ...resolvedArticle, redirectedFrom: requestedTitle }
+          : resolvedArticle;
+      cacheSet(cacheKey(wiki, requestedTitle), redirected);
+      results.set(reqLower, redirected);
+    } else if (!returnedTitles.has(finalTarget) || !byResolvedTitle.has(finalTarget)) {
       intelligentLoreCache.markMissingPage(wiki, requestedTitle);
+      cacheSet(cacheKey(wiki, requestedTitle), { missing: true }, SISTER_MISSING_TTL_MS);
     }
   }
 }
@@ -113,10 +148,12 @@ export async function getBatchWikitext(
   for (const title of new Set(titles.map((t) => t.trim()).filter(Boolean))) {
     if (intelligentLoreCache.isKnownMissingPage(wiki, title)) continue;
 
-    const cached = cacheGet<WikiArticle>(cacheKey(wiki, title));
+    const cached = cacheGet<WikiArticle | { readonly missing: true }>(cacheKey(wiki, title));
     if (cached) {
-      results.set(title.toLowerCase(), cached);
-      results.set(cached.title.toLowerCase(), cached);
+      if (!("missing" in cached)) {
+        results.set(title.toLowerCase(), cached);
+        results.set(cached.title.toLowerCase(), cached);
+      }
     } else {
       neededTitles.push(title);
     }

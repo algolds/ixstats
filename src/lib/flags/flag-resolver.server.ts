@@ -164,7 +164,12 @@ export class ServerFlagResolver implements FlagResolver {
       const commonsMap = await fetchMediaWikiImageBatch(candidates);
 
       for (const candidate of candidates) {
-        const found = commonsMap.get(candidate) || commonsMap.get(`File:${candidate}`);
+        const spaced = candidate.replace(/_/g, " ");
+        const found =
+          commonsMap.get(candidate) ||
+          commonsMap.get(`File:${candidate}`) ||
+          commonsMap.get(spaced) ||
+          commonsMap.get(`File:${spaced}`);
         if (found) {
           return {
             countryName,
@@ -186,7 +191,12 @@ export class ServerFlagResolver implements FlagResolver {
         const iiwikiMap = await fetchMediaWikiImageBatch(candidates, getMediaWikiApiUrl("iiwiki"));
 
         for (const candidate of candidates) {
-          const found = iiwikiMap.get(candidate) || iiwikiMap.get(`File:${candidate}`);
+          const spaced = candidate.replace(/_/g, " ");
+          const found =
+            iiwikiMap.get(candidate) ||
+            iiwikiMap.get(`File:${candidate}`) ||
+            iiwikiMap.get(spaced) ||
+            iiwikiMap.get(`File:${spaced}`);
           if (found) {
             return {
               countryName,

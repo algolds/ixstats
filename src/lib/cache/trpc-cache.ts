@@ -150,17 +150,17 @@ export function shouldSkipCache(
 const encodePayload = <T>(value: T): string => JSON.stringify(superjson.serialize(value));
 
 /** Decode a value written by encodePayload; null for legacy/invalid payloads. */
-function decodePayload<T>(raw: string): T | null {
+function decodePayload<T>(raw: string): { data: T } | null {
   const parsed: SuperJSONResult | null = JSON.parse(raw);
   if (parsed === null || typeof parsed !== "object" || !("json" in parsed)) return null;
-  return superjson.deserialize<T | undefined>(parsed) ?? null;
+  return { data: (superjson.deserialize<T | undefined>(parsed) ?? null) as T };
 }
 
 /**
  * Get cached value. While Redis is ready it is the only tier (a Redis miss is a miss);
  * memory is used only when Redis is unavailable or errors.
  */
-async function getCachedValue<T>(key: string): Promise<T | null> {
+async function getCachedValue<T>(key: string): Promise<{ data: T } | null> {
   const redisClient = getSharedRedis();
 
   if (isRedisReady(redisClient)) {
@@ -243,13 +243,13 @@ export function createCacheMiddlewareFactory(options: TrpcCacheOptions) {
     const cacheKey = generateCacheKey(path, input, userId, namespace, realmKey);
 
     // Check cache
-    const cached = await getCachedValue<CachedData>(cacheKey);
+    const cached = await getCachedValue<CachedData | null>(cacheKey);
     if (cached !== null) {
       if (process.env.NODE_ENV === "development") {
         console.log(`[TRPC_CACHE] HIT: ${path}`);
       }
       // Rebuilt around the current request's ctx: the stored payload is only the procedure's data.
-      return { marker: MIDDLEWARE_MARKER, ok: true, data: cached, ctx } as T;
+      return { marker: MIDDLEWARE_MARKER, ok: true, data: cached.data, ctx } as T;
     }
 
     // Execute procedure

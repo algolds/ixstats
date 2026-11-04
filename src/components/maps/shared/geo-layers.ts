@@ -20,6 +20,7 @@ export function addGeoLayers(
   map.addSource(sourceId, {
     type: "geojson",
     data: Array.isArray(data) ? { type: "FeatureCollection", features: data } : data,
+    generateId: true,
   });
   for (const layer of layers)
     map.addLayer({ ...layer, source: sourceId } as unknown as LayerSpecification);

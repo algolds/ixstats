@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import type { FeatureCollection } from "geojson";
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { GeoJSONSource, Map as MapLibreMap, MapMouseEvent } from "maplibre-gl";
 import { buildBaseStyle, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { api } from "~/trpc/react";
 import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
@@ -18,6 +18,15 @@ import { useEmbedInRange } from "~/components/maps/widgets/hooks/useEmbedInRange
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { IXNAY_SLUG } from "~/lib/realms/realm-ids";
 import { cn } from "~/lib/utils/cn";
+
+export interface EmbedPoliticalFeature {
+  featureId: string;
+  displayName: string;
+  fillColor: string;
+  countryId: string | null;
+  centroidLng: number;
+  centroidLat: number;
+}
 
 interface CoordinatesMapEmbedProps {
   lat: number;
@@ -33,6 +42,8 @@ interface CoordinatesMapEmbedProps {
   /** False: a plain realm map, with no marker at the coordinates and no coordinates label. */
   marker?: boolean;
   className?: string;
+  onCountryHover?: (country: EmbedPoliticalFeature | null) => void;
+  onCountryClick?: (country: EmbedPoliticalFeature) => void;
 }
 
 /** Popup title as a text node: the title comes from wiki markup, so it is never parsed as HTML. */
@@ -65,20 +76,25 @@ export function needsWikiRealmLookup(
 }
 
 const POLITICAL_SOURCE_ID = "source-world-political";
+const POLITICAL_FILL_ID = "world-political-fill";
 
 const POLITICAL_LAYERS: LayerDef[] = [
   {
-    id: "world-political-fill",
+    id: POLITICAL_FILL_ID,
     type: "fill",
     paint: {
       "fill-color": ["coalesce", ["get", "_fillColor"], ["get", "fillColor"], "#c5cae9"],
-      "fill-opacity": 0.45,
+      "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.72, 0.45],
     },
   },
   {
     id: "world-political-stroke",
     type: "line",
-    paint: { "line-color": "#475569", "line-width": 0.8, "line-opacity": 0.5 },
+    paint: {
+      "line-color": "#475569",
+      "line-width": ["case", ["boolean", ["feature-state", "hover"], false], 1.6, 0.8],
+      "line-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.9, 0.5],
+    },
   },
   {
     id: "world-political-labels",
@@ -100,6 +116,46 @@ const POLITICAL_LAYERS: LayerDef[] = [
   },
 ];
 
+function toPoliticalFeature(
+  props: Record<string, string | number | boolean | null | undefined> | null | undefined,
+  fallbackLngLat: { lng: number; lat: number }
+): EmbedPoliticalFeature {
+  const rawCountryId = props?._countryId ?? props?.countryId;
+  const countryId =
+    typeof rawCountryId === "string" && rawCountryId.length > 0 && rawCountryId !== "null"
+      ? rawCountryId
+      : null;
+  const rawName = props?._displayName ?? props?.name;
+  const displayName =
+    typeof rawName === "string" && rawName.length > 0 ? rawName : "Unclaimed territory";
+  const rawFill = props?._fillColor ?? props?.fillColor;
+  const fillColor = typeof rawFill === "string" && rawFill.length > 0 ? rawFill : "#c5cae9";
+  const rawFeatureId = props?._id ?? props?.id;
+  const featureId = typeof rawFeatureId === "string" ? rawFeatureId : String(rawFeatureId ?? "");
+  const centroidLng =
+    typeof props?._centroidLng === "number" ? props._centroidLng : fallbackLngLat.lng;
+  const centroidLat =
+    typeof props?._centroidLat === "number" ? props._centroidLat : fallbackLngLat.lat;
+
+  return {
+    featureId,
+    displayName,
+    fillColor,
+    countryId,
+    centroidLng,
+    centroidLat,
+  };
+}
+
+function setPoliticalHover(map: MapLibreMap, id: number | null, hover: boolean) {
+  if (id === null || !map.getSource(POLITICAL_SOURCE_ID)) return;
+  try {
+    map.setFeatureState({ source: POLITICAL_SOURCE_ID, id }, { hover });
+  } catch {
+    // Source may still be updating
+  }
+}
+
 /** Show the political layer: its data goes into the source the map already has, else the source and layers are added. */
 function showPolitical(map: MapLibreMap, data: FeatureCollection) {
   const source = map.getSource(POLITICAL_SOURCE_ID) as GeoJSONSource | undefined;
@@ -115,6 +171,8 @@ export function CoordinatesMapEmbed({
   realm: realmProp,
   marker = true,
   className,
+  onCountryHover,
+  onCountryClick,
 }: CoordinatesMapEmbedProps) {
   const wiki = useWikiContext();
   const explicitRealm = embedRealm(realmProp, wiki);
@@ -122,6 +180,15 @@ export function CoordinatesMapEmbed({
   const elementRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
+  const hoveredIdRef = useRef<number | null>(null);
+  const hoverClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onHoverRef = useRef(onCountryHover);
+  const onClickRef = useRef(onCountryClick);
+
+  useEffect(() => {
+    onHoverRef.current = onCountryHover;
+    onClickRef.current = onCountryClick;
+  }, [onCountryHover, onCountryClick]);
 
   const inRange = useEmbedInRange(elementRef);
   const [mapReady, setMapReady] = useState(false);
@@ -184,6 +251,10 @@ export function CoordinatesMapEmbed({
         style: baseStyle,
         center: [lng, lat],
         zoom: zoom,
+        minZoom: marker ? undefined : zoom,
+        renderWorldCopies: false,
+        dragRotate: false,
+        touchPitch: false,
         attributionControl: false,
         interactive: interactiveVal,
         // Touch: one finger scrolls the page, two pan the map.
@@ -203,6 +274,63 @@ export function CoordinatesMapEmbed({
           }
         }
 
+        if (interactiveVal) {
+          const cancelHoverClear = () => {
+            if (hoverClearTimerRef.current !== null) {
+              clearTimeout(hoverClearTimerRef.current);
+              hoverClearTimerRef.current = null;
+            }
+          };
+
+          map.on("mousemove", (e: MapMouseEvent) => {
+            if (!map.getLayer(POLITICAL_FILL_ID)) return;
+            const feature = map.queryRenderedFeatures(e.point, {
+              layers: [POLITICAL_FILL_ID],
+            })[0];
+            const nextId = typeof feature?.id === "number" ? feature.id : null;
+
+            if (feature && nextId !== null) {
+              cancelHoverClear();
+              if (hoveredIdRef.current !== nextId) {
+                setPoliticalHover(map, hoveredIdRef.current, false);
+                hoveredIdRef.current = nextId;
+                setPoliticalHover(map, nextId, true);
+                onHoverRef.current?.(toPoliticalFeature(feature.properties, e.lngLat));
+              }
+              map.getCanvas().style.cursor = "pointer";
+              return;
+            }
+
+            if (hoveredIdRef.current !== null) {
+              setPoliticalHover(map, hoveredIdRef.current, false);
+              hoveredIdRef.current = null;
+              map.getCanvas().style.cursor = "";
+              cancelHoverClear();
+              hoverClearTimerRef.current = setTimeout(() => {
+                hoverClearTimerRef.current = null;
+                onHoverRef.current?.(null);
+              }, 100);
+            }
+          });
+
+          map.getCanvas().addEventListener("mouseleave", () => {
+            cancelHoverClear();
+            setPoliticalHover(map, hoveredIdRef.current, false);
+            hoveredIdRef.current = null;
+            map.getCanvas().style.cursor = "";
+            onHoverRef.current?.(null);
+          });
+
+          map.on("click", (e: MapMouseEvent) => {
+            if (!map.getLayer(POLITICAL_FILL_ID)) return;
+            const feature = map.queryRenderedFeatures(e.point, {
+              layers: [POLITICAL_FILL_ID],
+            })[0];
+            if (!feature) return;
+            onClickRef.current?.(toPoliticalFeature(feature.properties, e.lngLat));
+          });
+        }
+
         setMapReady(true);
       });
     },
@@ -217,6 +345,11 @@ export function CoordinatesMapEmbed({
     return () => {
       cancelled = true;
       clearTimeout(timer);
+      if (hoverClearTimerRef.current !== null) {
+        clearTimeout(hoverClearTimerRef.current);
+        hoverClearTimerRef.current = null;
+      }
+      hoveredIdRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
