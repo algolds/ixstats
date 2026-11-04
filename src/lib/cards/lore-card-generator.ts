@@ -86,7 +86,7 @@ const WIKI_READ_TIMEOUT_MS = 10_000;
 
 /** Author lookup cache TTL (10 minutes) + in-flight deduplication map for sister wikis. */
 const AUTHOR_INFO_TTL_MS = 10 * 60 * 1000;
-const authorInfoCache = new Cache<CardAuthorInfo>(AUTHOR_INFO_TTL_MS);
+const authorInfoCache = new Cache<CardAuthorInfo>({ defaultTtlMs: AUTHOR_INFO_TTL_MS });
 const authorInfoPromises = new Map<string, Promise<CardAuthorInfo | null>>();
 
 /** Reads at once: the pace of a caller outside an import run. */

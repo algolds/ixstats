@@ -193,7 +193,7 @@ function wikiFailure(error: unknown): never {
  * `attribution`, `file`). The map import will start from this choice; nothing is imported here.
  */
 const CHOSEN_MAP_ORIGINAL_TTL_MS = 15 * 60 * 1000;
-const chosenMapOriginalCache = new Cache<WikiFileOriginal>(CHOSEN_MAP_ORIGINAL_TTL_MS);
+const chosenMapOriginalCache = new Cache<WikiFileOriginal>({ defaultTtlMs: CHOSEN_MAP_ORIGINAL_TTL_MS });
 
 export async function chooseRealmWikiMap(
   db: Pick<PrismaClient, "realm">,

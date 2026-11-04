@@ -284,7 +284,7 @@ function DecisionControls({
   const [kind, setKind] = useState<DecisionType>("EXPAND");
   const [form, setForm] = useState({
     rawAmount: "",
-    sector: defaultNextSector,
+    sector: defaultNextSector as Sector,
     subIndustry: (subIndustriesOf(defaultNextSector)[0]?.key ?? "energy_mining") as SubIndustryKey,
     focus: "efficiency" as RndFocus,
     target: "sector" as LobbyTarget,

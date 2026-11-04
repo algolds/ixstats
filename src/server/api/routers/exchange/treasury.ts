@@ -125,9 +125,9 @@ export const exchangeTreasuryRouter = createTRPCRouter({
         const realmAvgCorpTaxRate =
           validMacros.length > 0
             ? round2(
-                validMacros.reduce((s, m) => s + m.effectiveCorpTaxRate, 0) / validMacros.length
+                validMacros.reduce((s, m) => s + m.corporateTaxRate, 0) / validMacros.length
               )
-            : (macro?.effectiveCorpTaxRate ?? 0.2);
+            : (macro?.corporateTaxRate ?? 0.2);
 
         const enriched = companies.map((c) => ({
           ...c,
@@ -150,7 +150,7 @@ export const exchangeTreasuryRouter = createTRPCRouter({
           },
           corporateGdpShift: treasury?.corporateGdpShift ?? 0,
           taxCompetitiveness: {
-            effectiveCorpTaxRate: macro?.effectiveCorpTaxRate ?? 0.2,
+            effectiveCorpTaxRate: macro?.corporateTaxRate ?? 0.2,
             capGainsTaxRate: macro?.capGainsTaxRate ?? 0.15,
             interestRate: macro?.interestRate ?? 0.05,
             realmAvgCorpTaxRate,

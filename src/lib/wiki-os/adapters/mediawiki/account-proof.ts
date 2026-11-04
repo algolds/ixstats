@@ -197,7 +197,7 @@ export async function fetchUserPageHistory(
 }
 
 const PAGE_CREATOR_TTL_MS = 60 * 60 * 1000;
-const pageCreatorCache = new Cache<{ creator: string | null }>(PAGE_CREATOR_TTL_MS);
+const pageCreatorCache = new Cache<{ creator: string | null }>({ defaultTtlMs: PAGE_CREATOR_TTL_MS });
 
 /**
  * Author of the page's first revision, normalised; null if the page does not exist. A redirect is followed

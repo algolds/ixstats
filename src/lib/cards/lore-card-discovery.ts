@@ -138,8 +138,8 @@ function fetchAllMainNamespacePages(wikiSource: WikiSource, reach: ListReach): P
 }
 
 const CATEGORY_DISCOVERY_TTL_MS = 5 * 60 * 1000;
-const categorySearchCache = new Cache<string[]>(CATEGORY_DISCOVERY_TTL_MS);
-const categoryInfoCache = new Cache<CategoryCounts>(CATEGORY_DISCOVERY_TTL_MS);
+const categorySearchCache = new Cache<string[]>({ defaultTtlMs: CATEGORY_DISCOVERY_TTL_MS });
+const categoryInfoCache = new Cache<CategoryCounts>({ defaultTtlMs: CATEGORY_DISCOVERY_TTL_MS });
 const MIN_RANDOM_ARTICLE_BYTES = 600;
 
 /** Category names starting with `prefix`, for the importer's category picker. */

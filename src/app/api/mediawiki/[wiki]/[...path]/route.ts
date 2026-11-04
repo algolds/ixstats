@@ -103,7 +103,7 @@ function cleanFilename(rawName: string): string {
 }
 
 const MISSING_FILE_TTL_MS = 10 * 60 * 1000;
-const missingFileResolutionCache = new Cache<boolean>(MISSING_FILE_TTL_MS);
+const missingFileResolutionCache = new Cache<boolean>({ defaultTtlMs: MISSING_FILE_TTL_MS });
 const fileResolutionPromises = new Map<string, Promise<string | null>>();
 
 /** Resolve a file name (never a URL) to its direct upload URL, cached for 30 days. */

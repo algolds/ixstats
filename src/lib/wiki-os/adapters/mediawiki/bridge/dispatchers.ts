@@ -10,6 +10,7 @@ import {
   type WikiIntro,
   type WikiSection,
   type WikiRecentChange,
+  type PageImage,
   cacheGet,
   cacheSet,
 } from "./types";

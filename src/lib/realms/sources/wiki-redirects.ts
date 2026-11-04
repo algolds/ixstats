@@ -8,7 +8,7 @@ import type { WikiQuery } from "~/lib/realms/lore-import";
 
 const BATCH = 50;
 const REDIRECT_CACHE_TTL_MS = 60 * 60 * 1000;
-const redirectCache = new Cache<{ target: string | null }>(REDIRECT_CACHE_TTL_MS);
+const redirectCache = new Cache<{ target: string | null }>({ defaultTtlMs: REDIRECT_CACHE_TTL_MS });
 
 const Hop = z.object({ from: z.string(), to: z.string() });
 const Answer = z.object({
