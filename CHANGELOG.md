@@ -5,15 +5,17 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.0 "Lobster Crosby"**, channel Stable, to players; internally 1.5.0, see
+**IxStates 1.0.2 "Lobster Crosby"**, channel Stable, to players; internally 1.5.1, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
 
+## [1.5.1] — 2026-11-03 "Lobster Crosby" (public 1.0.2)
+
 ### ⚡ IIWiki & sister-wiki API call optimization (2026-11-03)
 
-No version or capability integer moves. Audited every outbound and client-triggered IIWiki (`iiwiki.com`) and sister-wiki MediaWiki API call across WikiOS, Countries, IxVault/Lore Cards, Realms, Flags, Identity, and the MediaWiki proxy routes, consolidating requests and adding caching/in-flight deduplication to reduce outbound API traffic by ~75–85%.
+Platform patch bump (`1.5.0` → `1.5.1`, public `1.0.2`). Audited every outbound and client-triggered IIWiki (`iiwiki.com`) and sister-wiki MediaWiki API call across WikiOS, Countries, IxVault/Lore Cards, Realms, Flags, Identity, and the MediaWiki proxy routes, consolidating requests and adding caching/in-flight deduplication to reduce outbound API traffic by ~75–85%.
 
 - **Core WikiOS bridge & tRPC cache (`src/lib/wiki-os/adapters/mediawiki/bridge/`, `src/lib/cache/trpc-cache.ts`):**
   - Added 30-minute positive and 10-minute negative (`{ missing: true }`) caching plus in-flight promise deduplication for `getArticleWikitext`, caching under both requested and redirect-resolved titles.
