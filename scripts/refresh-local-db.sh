@@ -81,6 +81,8 @@ bunx prisma db execute --schema prisma/schema --file prisma/migrations/202611051
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261105120001_wikios_sync_dead_letters/migration.sql
 # Beta feedback: the stash item's wiki column and key, then the batch's other additions
 bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261106120000_beta_feedback/migration.sql
+# Exchange Phase 3: realm-scoped companies, sectors and contracts, nation treasuries, buy orders, governance
+bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261107120000_exchange_phase3/migration.sql
 # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
 # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
 # refuses to do. Idempotent; the runbooks' manual run_sql steps and the starter-force reset stay as written.

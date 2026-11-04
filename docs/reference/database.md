@@ -3,7 +3,7 @@
 **Last updated:** 2026-10-21
 
 Prisma schema: `prisma/schema/*.prisma` (<!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> files, incl. `base.prisma` for datasource/generator and `enums.prisma`)
-Models: **<!-- BEGIN_DOCS:COUNT:models -->335<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->47<!-- END_DOCS:COUNT:enums --> enums)
+Models: **<!-- BEGIN_DOCS:COUNT:models -->340<!-- END_DOCS:COUNT:models -->** (plus <!-- BEGIN_DOCS:COUNT:enums -->47<!-- END_DOCS:COUNT:enums --> enums)
 
 ## Domain Groupings
 | Domain | Representative Models |
@@ -49,7 +49,7 @@ SELECT * FROM "GovernmentComponent" WHERE countryId = ? AND componentType = ? AN
 ```
 
 ## Migration & Tooling
-- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->68<!-- END_DOCS:COUNT:migrations --> migrations)
+- `prisma/migrations/*` – Linear migration history (<!-- BEGIN_DOCS:COUNT:migrations -->69<!-- END_DOCS:COUNT:migrations --> migrations)
 - `bun run db:migrate:force` – Development migrations (protected by default)
 - `bun run db:migrate:deploy` – Production-safe migration execution
 - `bun run db:studio` – Visual inspection of the database (there is no `db:studio:prod` script)

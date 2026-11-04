@@ -274,6 +274,9 @@ else
     # Beta feedback (docs/superpowers/plans/2026-10-29-beta-feedback-features.md): the stash item's wiki column and the key that
     # allows one page per wiki, then the batch's other additions. Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261106120000_beta_feedback/migration.sql || exit 1
+    # Exchange Phase 3 (docs/specs/2026-11-01-exchange-phase-3-design.md): realm-scoped companies, sectors and contracts,
+    # nation treasuries, share buy order book and shareholder governance. Additive and idempotent.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261107120000_exchange_phase3/migration.sql || exit 1
 
     # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
     # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
