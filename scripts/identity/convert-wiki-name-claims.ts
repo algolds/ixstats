@@ -140,8 +140,12 @@ async function main(): Promise<void> {
 }
 
 if (import.meta.main) {
-  main().catch((error: Error) => {
-    console.error(`[convert-wiki-name-claims] failed: ${error.message}`);
-    process.exitCode = 1;
-  });
+  main()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((error: Error) => {
+      console.error(`[convert-wiki-name-claims] failed: ${error.message}`);
+      process.exit(1);
+    });
 }
