@@ -178,6 +178,8 @@ export const env = createEnv({
     NEXT_PUBLIC_IXSTATES_URL: z.string().url().optional(),
     // Map glyph (font PBF) URL template that overrides the default
     NEXT_PUBLIC_MAP_GLYPHS_URL: z.string().optional(),
+    // Optional public media CDN origin (e.g. https://media.ixwiki.com) for WikiOS and platform media
+    NEXT_PUBLIC_MEDIA_CDN_URL: z.string().url().optional(),
     // "true" grants MyCountry Premium features to every user (test builds; keep off in production)
     NEXT_PUBLIC_PREMIUM_FOR_ALL: z.string().optional(),
   },
@@ -269,6 +271,7 @@ export const env = createEnv({
     NEXT_PUBLIC_WIKIOS_STANDALONE: process.env.NEXT_PUBLIC_WIKIOS_STANDALONE,
     NEXT_PUBLIC_IXSTATES_URL: process.env.NEXT_PUBLIC_IXSTATES_URL,
     NEXT_PUBLIC_MAP_GLYPHS_URL: process.env.NEXT_PUBLIC_MAP_GLYPHS_URL,
+    NEXT_PUBLIC_MEDIA_CDN_URL: process.env.NEXT_PUBLIC_MEDIA_CDN_URL,
     NEXT_PUBLIC_PREMIUM_FOR_ALL: process.env.NEXT_PUBLIC_PREMIUM_FOR_ALL,
   },
   /**

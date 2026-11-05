@@ -2,7 +2,7 @@
 
 import { createHash } from "crypto";
 import { getBasePath, withBasePath } from "~/lib/base-path";
-import { isMediaWikiUrl, mediaWikiImageUrl, type WikiSource } from "../config";
+import { isMediaWikiUrl, mediaWikiImageUrl, STAGED_FILE_PATH, type WikiSource } from "../config";
 import { forwardFinder } from "../wikitext/forward-finder";
 import { sisterMediaPath } from "../sister-media";
 import {
@@ -220,9 +220,16 @@ export function normalizeWikiImageUrl(rawUrl: string | null | undefined): string
     return withBasePath(`/api/mediawiki/ixwiki/${subpath}`);
   }
 
-  // Relative path on IxWiki; an image already proxied (a sister page's, with the base path) stays as it is
+  // Relative path on IxWiki; an image already proxied (a sister page's, with the base path) or staged stays as it is
   if (url.startsWith("/")) {
-    if (url.startsWith("/api/mediawiki/") || url.startsWith(`${getBasePath()}/api/mediawiki/`)) {
+    const basePath = getBasePath();
+    if (url.startsWith("/api/mediawiki/") || (basePath && url.startsWith(`${basePath}/api/mediawiki/`))) {
+      return url;
+    }
+    if (url.startsWith(STAGED_FILE_PATH)) {
+      return withBasePath(url);
+    }
+    if (basePath && url.startsWith(`${basePath}${STAGED_FILE_PATH}`)) {
       return url;
     }
     const cleanPath = url.replace(/^\/+/, "");
@@ -640,6 +647,7 @@ export function extractLeadImagePath(wikitext: string | null | undefined): strin
 export function resolveStoredImageUrl(stored: string | null | undefined): string | null {
   if (!stored) return null;
   if (stored.startsWith("/images/")) return normalizeWikiImageUrl(stored);
+  if (stored.startsWith(STAGED_FILE_PATH)) return withBasePath(stored);
   if (stored.startsWith("/")) return stored;
   return normalizeWikiImageUrl(stored) ?? stored;
 }

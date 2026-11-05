@@ -55,7 +55,7 @@ const wikitextPromises = new Map<string, Promise<WikiArticle | null>>();
 const searchPromises = new Map<string, Promise<WikiSearchResult[]>>();
 const pageImagesPromises = new Map<string, Promise<PageImage[] | null>>();
 
-const SISTER_WIKITEXT_TTL_MS = 30 * 60 * 1000;
+const SISTER_WIKITEXT_TTL_MS = 10 * 60 * 1000;
 const SISTER_MISSING_TTL_MS = 10 * 60 * 1000;
 const SISTER_SEARCH_TTL_MS = 5 * 60 * 1000;
 

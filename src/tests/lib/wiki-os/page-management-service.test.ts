@@ -10,6 +10,7 @@ import {
   PageOperationError,
   type PageActor,
 } from "~/lib/wiki-os/core/page-management-service";
+import { mwSha1Base36 } from "~/lib/wiki-os/xml/sha1";
 import { notifyWatchers } from "~/lib/wiki-os/services/watchlist-notify";
 const mockFindFirst = jest.fn();
 const mockFindMany = jest.fn();
@@ -126,6 +127,11 @@ describe("PageManagementService.movePage", () => {
       redirectTargetSlug: "Talk:New name",
       summary: null,
     });
+    expect(mockRevisionCreate.mock.calls[0]?.[0].data).toMatchObject({
+      articleId: "redirect",
+      wikitext: "#REDIRECT [[Talk:New name]]",
+      sha1: mwSha1Base36("#REDIRECT [[Talk:New name]]"),
+    });
     expect(mockLogCreate.mock.calls[0]?.[0].data).toMatchObject({ title: "Talk:New name" });
   });
 
@@ -176,7 +182,7 @@ describe("PageManagementService.movePage", () => {
 describe("PageManagementService.movePage: deleted pages and protections (plan 409 review)", () => {
   const archived = { ...original, status: "ARCHIVED" };
 
-  it("a deleted page does not exist for a mover who may not see deleted pages", async () => {
+  it("refuses moving a deleted page (must be undeleted first, matching MediaWiki)", async () => {
     pages({ old_name: archived });
     await expect(
       PageManagementService.movePage("old_name", "New name", "x", actor)
@@ -186,41 +192,11 @@ describe("PageManagementService.movePage: deleted pages and protections (plan 40
     expect(mockRestrictionUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("moves a deleted page for a caller allowed to, and leaves no redirect for it", async () => {
-    pages({ old_name: archived });
-    const result = await PageManagementService.movePage(
-      "old_name",
-      "New name",
-      "x",
-      actor,
-      "ixwiki",
-      {
-        includeArchived: true,
-      }
-    );
-    expect(result.redirectArticleId).toBeNull();
-    expect(mockCreate).not.toHaveBeenCalled();
-    expect(mockLogCreate.mock.calls[0]?.[0].data.params).toMatchObject({ redirectCreated: false });
-  });
-
-  it("does not bring a deleted talk page along unless it may", async () => {
+  it("does not bring a deleted talk page along when moving its subject page", async () => {
     pages({ old_name: original, "talk:old_name": { ...talkOriginal, status: "ARCHIVED" } });
     expect(
       (await PageManagementService.movePage("old_name", "New name", "x", actor)).talk
     ).toBeNull();
-
-    pages({ old_name: original, "talk:old_name": { ...talkOriginal, status: "ARCHIVED" } });
-    const result = await PageManagementService.movePage(
-      "old_name",
-      "New name",
-      "x",
-      actor,
-      "ixwiki",
-      {
-        includeArchived: true,
-      }
-    );
-    expect(result.talk).not.toBeNull();
   });
 
   it("moves the edit, move and upload protections with the page, replacing stale ones at the destination", async () => {
@@ -379,12 +355,12 @@ describe("PageManagementService and the mirror outbox (plan 407)", () => {
       id: `log:${data.title}`,
     }));
   });
-  it("writes no job for a deleted page that is moved: MediaWiki has nothing at that title", async () => {
+  it("writes no job when a deleted page is asked to move (refused with NOT_FOUND)", async () => {
     pages({ old_name: { ...original, status: "ARCHIVED" } });
 
-    await PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki", {
-      includeArchived: true,
-    });
+    await expect(
+      PageManagementService.movePage("old_name", "new_name", "tidy", actor, "ixwiki")
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
     expect(mockJobCreate).not.toHaveBeenCalled();
   });

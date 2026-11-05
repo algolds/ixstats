@@ -187,6 +187,32 @@ export function mediaWikiOrigin(): string {
 }
 
 /**
+ * Optional public media CDN origin (`NEXT_PUBLIC_MEDIA_CDN_URL`, e.g. `https://media.ixwiki.com`), with no trailing
+ * slash. Returns `null` when unset, blank, or not an http(s) origin. Read at call time so tests and runtime can set it.
+ */
+export function mediaCdnOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_MEDIA_CDN_URL?.trim().replace(/\/+$/, "");
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
+export function mediaCdnHost(): string | null {
+  const origin = mediaCdnOrigin();
+  if (!origin) return null;
+  try {
+    return new URL(origin).hostname;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * The wiki's `api.php`. A server-side call asks for the `internal` one (the loopback engine when
  * configured); the `public` one is for a URL a browser or an outside tool follows.
  */

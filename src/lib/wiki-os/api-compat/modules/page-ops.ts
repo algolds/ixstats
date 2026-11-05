@@ -99,12 +99,10 @@ export async function runMove(rc: ApiContext): Promise<JsonObject> {
   // Moving without a redirect is a right of its own (MediaWiki's suppressredirect).
   if (!leaveRedirect) await services.requireRight(rc.session.ctx, "suppressredirect");
   await services.authorizeMove(rc.session.ctx, from.title, to.title, { moveTalk, leaveRedirect });
-  const { rights } = rc.session.permissions;
   const moved = await withPageCodes(
     services.movePage(from.title, to.title, reason, actorOf(rc), {
       leaveRedirect,
       moveTalk,
-      includeArchived: rights.has("deletedhistory") && rights.has("undelete"),
     }),
     { NOT_FOUND: "missingtitle", CONFLICT: "articleexists", BAD_REQUEST: "selfmove", IMMOBILE: "immobilenamespace" }
   );

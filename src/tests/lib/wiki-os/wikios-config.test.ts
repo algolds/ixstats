@@ -9,11 +9,13 @@ import {
   buildWikiosConfig,
   isMediaWikiUrl,
   loopbackRendererMissing,
+  mediaCdnHost,
+  mediaCdnOrigin,
   mediaWikiHostPattern,
   mirrorWriteUrlMissing,
   mirrorWriteUrlProblem,
 } from "~/lib/wiki-os/config";
-import { isAllowedMediaUrl } from "~/lib/wiki-os/media-hosts";
+import { isAllowedMediaUrl, wikiFileHosts } from "~/lib/wiki-os/media-hosts";
 import { SISTER_WIKI_HOSTS, sisterWikiFileHosts, sisterWikiHost } from "~/lib/wiki-os/wiki-hosts";
 
 describe("buildWikiosConfig", () => {
@@ -264,6 +266,24 @@ describe("the wiki hosts", () => {
       expect(sisterWikiFileHosts(SISTER_WIKI_HOSTS.iiwiki)).toEqual(["iiwiki.com"]);
       expect(sisterWikiFileHosts(SISTER_WIKI_HOSTS.althistory)).toEqual(["althistory.fandom.com", "static.wikia.nocookie.net"]);
       expect(sisterWikiHost("hasOwnProperty")).toBeNull();
+    });
+    it("allows a configured NEXT_PUBLIC_MEDIA_CDN_URL host for IxWiki files when set", () => {
+      const saved = process.env.NEXT_PUBLIC_MEDIA_CDN_URL;
+      try {
+        delete process.env.NEXT_PUBLIC_MEDIA_CDN_URL;
+        expect(mediaCdnOrigin()).toBeNull();
+        expect(mediaCdnHost()).toBeNull();
+        expect(isAllowedMediaUrl("https://media.ixwiki.com/wiki/a/ab/Flag.png")).toBe(false);
+
+        process.env.NEXT_PUBLIC_MEDIA_CDN_URL = "https://media.ixwiki.com/";
+        expect(mediaCdnOrigin()).toBe("https://media.ixwiki.com");
+        expect(mediaCdnHost()).toBe("media.ixwiki.com");
+        expect(isAllowedMediaUrl("https://media.ixwiki.com/wiki/a/ab/Flag.png")).toBe(true);
+        expect(wikiFileHosts("ixwiki").has("media.ixwiki.com")).toBe(true);
+      } finally {
+        if (saved === undefined) delete process.env.NEXT_PUBLIC_MEDIA_CDN_URL;
+        else process.env.NEXT_PUBLIC_MEDIA_CDN_URL = saved;
+      }
     });
   });
 });

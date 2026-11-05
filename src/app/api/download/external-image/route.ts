@@ -1,6 +1,6 @@
 // API endpoint for downloading external images and saving to server filesystem
 // Handles CORS issues, validates downloaded images, and caches them locally
-import { DEFAULT_USER_AGENT } from "~/lib/wiki-os/config";
+import { DEFAULT_USER_AGENT, mediaCdnHost, mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { IIWIKI_DISABLED_MESSAGE, iiwikiAllows } from "~/lib/wiki-os/iiwiki-switch";
 import { isIiwikiUrl } from "~/lib/wiki-os/wiki-hosts";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,7 +8,6 @@ import { auth } from "@clerk/nextjs/server";
 import { writeFile, mkdir, access, rename, unlink } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { rateLimiter } from "~/lib/cache";
 import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
@@ -44,6 +43,10 @@ function isTrustedDomain(url: string): boolean {
     const urlObj = new URL(url);
     if (!["http:", "https:"].includes(urlObj.protocol)) {
       return false;
+    }
+    const cdnHost = mediaCdnHost();
+    if (cdnHost && (urlObj.hostname === cdnHost || urlObj.hostname.endsWith("." + cdnHost))) {
+      return true;
     }
     return TRUSTED_DOMAINS.some(
       (domain) => urlObj.hostname === domain || urlObj.hostname.endsWith("." + domain)

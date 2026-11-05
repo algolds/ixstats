@@ -18,6 +18,7 @@ import { evictWikiTitleCaches } from "../services/title-cache-eviction";
 import { notifyWatchers, type HeadChange } from "../services/watchlist-notify";
 import { PageReports } from "./page-reports";
 import { PageOperationError } from "./page-operation-error";
+import { mwSha1Base36 } from "../xml/sha1";
 
 export type { MediaUsageItem } from "./page-reports";
 
@@ -67,11 +68,6 @@ export interface MovePageOptions {
   leaveRedirect?: boolean;
   /** Move the talk page along when it exists and the destination talk page does not (default true). */
   moveTalk?: boolean;
-  /**
-   * May a deleted (archived) page be moved (default false: to the mover it does not exist)? Only for a
-   * caller who holds both `deletedhistory` and `undelete`. No redirect is left for a deleted page.
-   */
-  includeArchived?: boolean;
 }
 
 /** The protections that follow a page when it moves; create-protection belongs to the title, so it stays. */
@@ -118,7 +114,7 @@ export class PageManagementService {
     reason: string,
     actor: PageActor,
     realm = "ixwiki",
-    { leaveRedirect = true, moveTalk = true, includeArchived = false }: MovePageOptions = {}
+    { leaveRedirect = true, moveTalk = true }: MovePageOptions = {}
   ): Promise<MovePageResult> {
     const target = canonicalizeTitle(newTitle, { source: realm });
     if (!target) throw new PageOperationError("BAD_REQUEST", "Invalid title");
@@ -132,7 +128,7 @@ export class PageManagementService {
     }
 
     const result = await db.$transaction(async (tx) => {
-      const move = { reason, actor, realm, leaveRedirect, includeArchived };
+      const move = { reason, actor, realm, leaveRedirect };
       const moved = await this.moveOne(tx, oldSlugOrTitle, target, move);
       const fromTalk = moveTalk ? talkTitleOf(oldSlugOrTitle, realm) : null;
       const toTalk = moveTalk ? talkTitleOf(target.title, realm) : null;
@@ -140,7 +136,7 @@ export class PageManagementService {
       const talk =
         fromTalk &&
         talkTarget &&
-        (await this.canMoveTalk(tx, fromTalk, talkTarget, realm, includeArchived))
+        (await this.canMoveTalk(tx, fromTalk, talkTarget, realm))
           ? await this.moveOne(tx, fromTalk, talkTarget, move)
           : null;
       return { success: true, ...moved, talk };
@@ -172,19 +168,18 @@ export class PageManagementService {
     return result;
   }
 
-  /** Whether the talk page `fromTalk` exists and the destination talk page is free. */
+  /** Whether the talk page `fromTalk` exists (and is not archived) and the destination talk page is free. */
   private static async canMoveTalk(
     tx: Prisma.TransactionClient,
     fromTalk: string,
     talkTarget: CanonicalTitle,
-    realm: string,
-    includeArchived: boolean
+    realm: string
   ): Promise<boolean> {
     const [source, destination] = await Promise.all([
       findPage(tx, fromTalk, realm),
       findPage(tx, talkTarget.title, realm),
     ]);
-    const movable = source !== null && (includeArchived || source.status !== "ARCHIVED");
+    const movable = source !== null && source.status !== "ARCHIVED";
     return movable && destination === null;
   }
 
@@ -197,13 +192,11 @@ export class PageManagementService {
       actor,
       realm,
       leaveRedirect,
-      includeArchived,
     }: {
       reason: string;
       actor: PageActor;
       realm: string;
       leaveRedirect: boolean;
-      includeArchived: boolean;
     }
   ): Promise<MoveOneResult> {
     const { title: newCanonicalTitle, slug: newSlug } = target;
@@ -221,8 +214,8 @@ export class PageManagementService {
     if (original.namespace === FILE_NAMESPACE)
       throw new PageOperationError("IMMOBILE", FILE_MOVE_REFUSED);
 
-    // A deleted page does not exist for a mover who may not see deleted pages.
-    if (original.status === "ARCHIVED" && !includeArchived) {
+    // A deleted page cannot be moved; it must be restored (undeleted) first, matching MediaWiki.
+    if (original.status === "ARCHIVED") {
       throw new PageOperationError(
         "NOT_FOUND",
         `Article "${oldSlugOrTitle}" not found in realm "${realm}".`
@@ -387,6 +380,7 @@ export class PageManagementService {
       data: {
         articleId: redirectArticle.id,
         wikitext,
+        sha1: mwSha1Base36(wikitext),
         summary,
         source: realm,
         author: actor.name,

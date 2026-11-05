@@ -129,6 +129,9 @@ describe("URLs in a stored post", () => {
       expect(has('<img src="/projects/ixstates/api/mediawiki/ixwiki/images/a/ab/X.png">')).toBe(
         true
       );
+      expect(has('<img src="/images/discord/123-att.png">')).toBe(true);
+      expect(has('<img src="/api/wiki/file/Flag_of_Eurth.png">')).toBe(true);
+      expect(has('<img src="/projects/ixstates/api/wiki/file/Flag_of_Eurth.png">')).toBe(true);
       expect(has('<img src="data:x"><img src="/images/uploads/a.png">')).toBe(true);
     });
 

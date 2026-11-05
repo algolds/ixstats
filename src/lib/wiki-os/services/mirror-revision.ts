@@ -360,7 +360,7 @@ async function promoteWinner(
   title: string,
   revision: MirroredRevision,
   current: CurrentRevision | null
-): Promise<number> {
+): Promise<{ revid: number; pageid: number | null }> {
   const result = await executeMediaWikiWrite({
     action: "edit",
     title,
@@ -375,7 +375,11 @@ async function promoteWinner(
   // `nochange`: the page already had this text, and `oldrevid` is the revision that holds it.
   const revid = edit?.newrevid ?? edit?.oldrevid;
   if (revid === undefined) throw new Error(`MediaWiki saved "${title}" but gave no revision id`);
-  return revid;
+  const pageid =
+    typeof edit?.pageid === "number" && edit.pageid > 0
+      ? edit.pageid
+      : (current?.pageid ?? null);
+  return { revid, pageid };
 }
 
 /** Give the WikiOS revision the id of the MediaWiki revision it is. */
@@ -392,12 +396,20 @@ async function stampRevision(revision: MirroredRevision, mwRevId: number): Promi
   }
 }
 
-/** The article remembers the MediaWiki revision that holds its current text. */
-async function stampArticle(job: MirrorJob, mwRevId: number): Promise<void> {
+/** The article remembers the MediaWiki revision (and page id, when known) that holds its current text. */
+async function stampArticle(
+  job: MirrorJob,
+  mwRevId: number,
+  mwPageId: number | null = null
+): Promise<void> {
   if (!job.articleId) return;
   await db.wikiArticle.updateMany({
     where: { id: job.articleId },
-    data: { mwLatestRevId: mwRevId, lastMwSyncAt: new Date() },
+    data: {
+      mwLatestRevId: mwRevId,
+      lastMwSyncAt: new Date(),
+      ...(mwPageId !== null ? { mwPageId } : {}),
+    },
   });
 }
 
@@ -420,6 +432,7 @@ type HeadFate =
   | {
       kind: "current" | "promoted";
       revid: number;
+      pageid: number | null;
       history: HistoryEntry[] | null;
       except: number | null;
     }
@@ -438,7 +451,13 @@ async function headFate(
   const current = await currentRevision(title);
   const except = current?.revid ?? null;
   if (current !== null && current.sha1 === mwSha1Base36(head.revision.wikitext)) {
-    return { kind: "current", revid: current.revid, history: null, except };
+    return {
+      kind: "current",
+      revid: current.revid,
+      pageid: current.pageid ?? null,
+      history: null,
+      except,
+    };
   }
   const history = await recentHistory(title);
   const later = laterClassicRevision(
@@ -447,9 +466,11 @@ async function headFate(
     sent.map((member) => member.revision)
   );
   if (later !== null) return { kind: "history", later, history, except };
+  const promoted = await promoteWinner(title, head.revision, current);
   return {
     kind: "promoted",
-    revid: await promoteWinner(title, head.revision, current),
+    revid: promoted.revid,
+    pageid: promoted.pageid,
     history,
     except,
   };
@@ -525,7 +546,7 @@ async function settleImported(
   );
   if (head && current) {
     await stampRevision(head.revision, current.revid);
-    await stampArticle(head.job, current.revid);
+    await stampArticle(head.job, current.revid, current.pageid);
   }
 
   return plan.members.map((member): BatchOutcome => {

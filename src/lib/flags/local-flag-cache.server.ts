@@ -27,11 +27,13 @@ class LocalFlagCacheAdapter implements PersistentFlagCacheAdapter {
 
     // 1. Index local flag files present on disk in public/flags/
     const localDiskFiles = new Set<string>();
+    const diskFileNames: string[] = [];
     if (fs.existsSync(flagsDir)) {
       try {
         const files = fs.readdirSync(flagsDir);
         for (const file of files) {
           localDiskFiles.add(file.toLowerCase());
+          diskFileNames.push(file);
         }
       } catch (err) {
         console.warn("[LocalFlagCache] Error reading flags directory:", err);
@@ -118,6 +120,17 @@ class LocalFlagCacheAdapter implements PersistentFlagCacheAdapter {
         if (normName === "slovak republic") this.cache.set("slovakia", flagUrl);
         if (normName === "kyrgyz republic") this.cache.set("kyrgyzstan", flagUrl);
         if (normName === "lao pdr") this.cache.set("laos", flagUrl);
+      }
+    }
+
+    // 3b. Index any remaining flag image files on disk (e.g. runtime-localized realm flags
+    // that survived a deploy reset of metadata.json)
+    for (const file of diskFileNames) {
+      if (!/\.(?:svg|png|jpe?g|webp|gif)$/i.test(file)) continue;
+      const stem = file.replace(/\.[^.]+$/, "");
+      const normalized = normalizeCountryName(stem);
+      if (normalized && !this.cache.has(normalized)) {
+        this.cache.set(normalized, withBasePath(`/flags/${file}`));
       }
     }
 

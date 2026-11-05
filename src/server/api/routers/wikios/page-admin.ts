@@ -90,12 +90,10 @@ export const wikiosPageAdminRouter = createTRPCRouter({
       // Moving without a redirect is a right of its own (MediaWiki's suppressredirect).
       if (!input.leaveRedirect) await requireRight(ctx, "suppressredirect");
       await authorizeMove(ctx, from, to, input);
-      const { rights } = await getWikiPermissions(ctx);
       const moved = await refusals(
         PageManagementService.movePage(from, to, input.reason, actorOf(ctx), "ixwiki", {
           leaveRedirect: input.leaveRedirect,
           moveTalk: input.moveTalk,
-          includeArchived: rights.has("deletedhistory") && rights.has("undelete"),
         })
       );
       return {

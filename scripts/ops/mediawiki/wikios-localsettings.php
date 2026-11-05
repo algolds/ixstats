@@ -14,11 +14,15 @@
  *   2. Notifies WikiOS of every page saved on the web (PageSaveComplete -> the URL in WIKIOS_WEBHOOK_URL), only
  *      when both WIKIOS_WEBHOOK_SECRET and WIKIOS_WEBHOOK_URL are set in the PHP-FPM pool environment. Without
  *      either it sends nothing.
+ *   3. Wires MediaWiki's DiscordNotifications extension for WikiOS imports (AfterImportPage -> DiscordNotifier)
+ *      using the imported revision's real author (with `wikios>` stripped), edit summary, minor flag, byte delta,
+ *      and both classic IxWiki + WikiOS (`/wiki/<Title>` on WIKIOS_PUBLIC_URL / https://beta.ixwiki.com) links,
+ *      while excluding the `wikios-mirror` bot group from raw PageSaveComplete notifications.
  *
  * What only the deferred ixwiki.com takeover turns on, with define( 'WIKIOS_TAKEOVER', true ) before the require
  * (the IxStates launch never defines it):
- *   3. Moves classic MediaWiki page URLs to /classic/$1 so WikiOS can own /wiki/*.
- *   4. Points canonical URLs of existing content pages at WikiOS.
+ *   4. Moves classic MediaWiki page URLs to /classic/$1 so WikiOS can own /wiki/*.
+ *   5. Points canonical URLs of existing content pages at WikiOS.
  */
 
 use MediaWiki\Deferred\DeferredUpdates;
@@ -173,6 +177,144 @@ $wgHooks['PageSaveComplete'][] = static function (
 			wfDebugLog( 'wikios', "sync-webhook failed for [[$title]]: " . $status->getWikiText() );
 		}
 	} );
+};
+
+// ---------------------------------------------------------------------------------------------
+// 3. Outbound DiscordNotifications bridge for WikiOS imports:
+//    WikiOS mirrors page creations and edits to MediaWiki via `action=import` as `WikiOSMirror`
+//    (in group `wikios-mirror`). MediaWiki's `ImportableOldRevisionImporter` does not fire
+//    `PageSaveComplete`, and `ImportReporter`'s trailing dummy revision is marked minor and
+//    authored by `WikiOSMirror`.
+//
+//    - Suppress `wikios-mirror` from DiscordNotifications' own hooks (`$wgDiscordExcludeConditions`)
+//      so bot dummy/promotion edits never post as `WikiOSMirror`.
+//    - In `AfterImportPage` (which runs inside `WikiImporter::finishImportPage` right after the
+//      imported revision becomes the page's current revision and before the dummy revision is
+//      saved), forward the newest imported revision to `DiscordNotifier` with its real author
+//      (stripping `wikios>` so DiscordNotifier's `<url|label>` regex never breaks on `>`), edit
+//      summary, minor-edit check, byte delta, and both classic IxWiki + WikiOS links.
+// ---------------------------------------------------------------------------------------------
+$wgDiscordExcludeConditions['groups'] = array_values( array_unique( array_merge(
+	$wgDiscordExcludeConditions['groups'] ?? [],
+	[ 'wikios-mirror' ]
+) ) );
+
+$wgHooks['AfterImportPage'][] = static function (
+	$title,
+	$foreignTitle,
+	$revCount,
+	$sRevCount,
+	$pageInfo
+) {
+	if ( $sRevCount <= 0 || !$title ) {
+		return;
+	}
+
+	$services = MediaWikiServices::getInstance();
+	if ( !$services->hasService( 'DiscordNotifier' ) ) {
+		return;
+	}
+
+	$performer = \MediaWiki\Context\RequestContext::getMain()->getUser();
+	if ( !in_array( 'wikios-mirror', $services->getUserGroupManager()->getUserGroups( $performer ), true ) ) {
+		return;
+	}
+
+	$config = $services->getConfigFactory()->makeConfig( 'DiscordNotifications' );
+	$enabledActions = $config->get( 'DiscordNotificationEnabledActions' );
+
+	$wikiPage = $services->getWikiPageFactory()->newFromTitle( $title );
+	$wikiPage->loadPageData( \Wikimedia\Rdbms\IDBAccessObject::READ_LATEST );
+	$revisionRecord = $wikiPage->getRevisionRecord();
+	if ( !$revisionRecord ) {
+		return;
+	}
+
+	$revisionLookup = $services->getRevisionLookup();
+	$oldestInBatch = $revisionRecord;
+	for ( $i = 1; $i < $sRevCount; $i++ ) {
+		$prev = $revisionLookup->getPreviousRevision( $oldestInBatch );
+		if ( !$prev ) {
+			break;
+		}
+		$oldestInBatch = $prev;
+	}
+	$priorRevision = $revisionLookup->getPreviousRevision( $oldestInBatch );
+	$isNew = ( $priorRevision === null );
+
+	if ( $isNew && empty( $enabledActions['AddedArticle'] ) ) {
+		return;
+	}
+	if ( !$isNew && empty( $enabledActions['EditedArticle'] ) ) {
+		return;
+	}
+	if ( $isNew && $title->inNamespace( NS_FILE ) ) {
+		return;
+	}
+
+	$isMinor = $revisionRecord->isMinor();
+	if ( !$isNew && $isMinor && $config->get( 'DiscordIgnoreMinorEdits' ) ) {
+		return;
+	}
+
+	/** @var \Miraheze\DiscordNotifications\DiscordNotifier $discordNotifier */
+	$discordNotifier = $services->getService( 'DiscordNotifier' );
+
+	$revUser = $revisionRecord->getUser();
+	$rawUserName = $revUser ? $revUser->getName() : 'Community Contributor';
+	if ( str_starts_with( $rawUserName, 'wikios>' ) ) {
+		$rawUserName = substr( $rawUserName, strlen( 'wikios>' ) );
+	}
+	$cleanUserName = trim( str_replace( '>', '', $rawUserName ) );
+	if ( $cleanUserName === '' ) {
+		$cleanUserName = 'Community Contributor';
+	}
+	$displayUser = ( $revUser && $revUser->getName() === $cleanUserName )
+		? $revUser
+		: \MediaWiki\User\UserIdentityValue::newAnonymous( $cleanUserName );
+
+	$comment = $revisionRecord->getComment();
+	$summary = $comment ? trim( strip_tags( $comment->text ) ) : '';
+
+	$articleText = $discordNotifier->getDiscordArticleText( $wikiPage, !$isNew );
+	$wikiosBase = rtrim( (string)getenv( 'WIKIOS_PUBLIC_URL' ) ?: 'https://beta.ixwiki.com', '/' );
+	$wikiosPath = '/wiki/' . wfUrlencode( $title->getPrefixedDBkey() );
+	if ( !str_contains( $articleText, $wikiosPath ) ) {
+		$articleText .= sprintf( ' ([WikiOS](%s%s))', $wikiosBase, $wikiosPath );
+	}
+
+	if ( $isNew ) {
+		$message = $discordNotifier->getMessage(
+			'discordnotifications-article-created',
+			$discordNotifier->getDiscordUserText( $displayUser ),
+			$articleText,
+			$summary === '' ? '' : $discordNotifier->getMessageWithPlaintextParams( 'discordnotifications-summary', $summary )
+		);
+		if ( $config->get( 'DiscordIncludeDiffSize' ) ) {
+			$message .= ' (' . $discordNotifier->getMessage(
+				'discordnotifications-bytes',
+				sprintf( '%d', (int)$revisionRecord->getSize() )
+			) . ')';
+		}
+		$discordNotifier->notify( $message, $displayUser, 'article_inserted', [], null, $title );
+	} else {
+		$message = $discordNotifier->getMessage(
+			'discordnotifications-article-saved',
+			$discordNotifier->getDiscordUserText( $displayUser ),
+			$isMinor
+				? $discordNotifier->getMessage( 'discordnotifications-article-saved-minor-edits' )
+				: $discordNotifier->getMessage( 'discordnotifications-article-saved-edit' ),
+			$articleText,
+			$summary === '' ? '' : $discordNotifier->getMessageWithPlaintextParams( 'discordnotifications-summary', $summary )
+		);
+		if ( $config->get( 'DiscordIncludeDiffSize' ) && $priorRevision ) {
+			$message .= ' (' . $discordNotifier->getMessage(
+				'discordnotifications-bytes',
+				sprintf( '%+d', (int)$revisionRecord->getSize() - (int)$priorRevision->getSize() )
+			) . ')';
+		}
+		$discordNotifier->notify( $message, $displayUser, 'article_saved', [], null, $title );
+	}
 };
 
 // ---------------------------------------------------------------------------------------------

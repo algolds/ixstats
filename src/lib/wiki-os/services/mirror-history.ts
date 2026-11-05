@@ -23,6 +23,7 @@ const revisionsPageSchema = z.object({
   query: z.object({
     pages: z.array(
       z.looseObject({
+        pageid: z.number().optional(),
         revisions: z
           .array(
             z.looseObject({
@@ -42,6 +43,8 @@ const revisionsPageSchema = z.object({
 
 export interface CurrentRevision {
   revid: number;
+  /** MediaWiki's `page_id` of the page holding this revision; null when omitted by a fake/stub. */
+  pageid?: number | null;
   /** `rev_sha1` in MediaWiki's base 36; null when MediaWiki hides it. */
   sha1: string | null;
   /** Who made it; null when MediaWiki hides that. */
@@ -81,10 +84,12 @@ export async function currentRevision(title: string): Promise<CurrentRevision | 
     },
     revisionsPageSchema
   );
-  const revision = data.query.pages[0]?.revisions?.[0];
+  const page = data.query.pages[0];
+  const revision = page?.revisions?.[0];
   if (!revision) return null;
   return {
     revid: revision.revid,
+    pageid: typeof page?.pageid === "number" && page.pageid > 0 ? page.pageid : null,
     sha1: revision.sha1 ? sha1HexToBase36(revision.sha1) : null,
     user: revision.user ?? null,
     // never missing in practice; if it were, the classic revision counts as saved now: it wins, nothing is lost

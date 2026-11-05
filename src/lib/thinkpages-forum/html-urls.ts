@@ -30,8 +30,14 @@ const FORUM_HOME_PATH = new RegExp(`^${FORUM_HOME}(?=[?#]|$)`);
 // An `<img>` tag's double-quoted `src` (the sanitizer and the editor both write double quotes).
 const IMAGE_SRC = /<img\b(?:"[^"]*"|'[^']*'|[^>"'])*?\ssrc="([^"]*)"/gi;
 const HTTP_URL = /^https?:\/\/[^\s/]/i;
-/** Where the app's own images live: uploads, downloaded external images and the MediaWiki media proxy. */
-const IMAGE_PATH_PREFIXES = ["/images/uploads/", "/images/downloaded/", "/api/mediawiki/"] as const;
+/** Where the app's own images live: uploads, downloaded external images, Discord attachments, and WikiOS media routes. */
+const IMAGE_PATH_PREFIXES = [
+  "/images/uploads/",
+  "/images/downloaded/",
+  "/images/discord/",
+  "/api/mediawiki/",
+  "/api/wiki/file/",
+] as const;
 
 function rebaseAttribute(
   match: string,

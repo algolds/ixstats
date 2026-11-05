@@ -199,6 +199,8 @@ public/images/uploads/*
 !public/images/uploads/.gitkeep
 public/images/downloaded/*
 !public/images/downloaded/.gitkeep
+public/images/discord/*
+!public/images/discord/.gitkeep
 economy-builder-refactor-plan.md
 /public/*
 /tests/*
@@ -227,6 +229,7 @@ scripts/onoma/raw/
 /public/images/*
 !/public/images/uploads/
 !/public/images/downloaded/
+!/public/images/discord/
 !/public/images/onoma-*.svg
 !/public/favicon-onoma.svg
 !/public/images/wiki*

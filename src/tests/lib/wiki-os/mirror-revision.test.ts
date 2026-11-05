@@ -376,6 +376,27 @@ describeEachWikiosMode("revision jobs", () => {
       });
       expect(requestsTo("edit")).toHaveLength(0);
     });
+
+    it("stamps mwPageId on the article when MediaWiki reports pageid on the current revision", async () => {
+      wiki.on("query", () => ({
+        query: {
+          pages: [
+            {
+              pageid: 24996,
+              title: "Foo bar",
+              revisions: [{ revid: 777, sha1: hexSha1(TEXT) }],
+            },
+          ],
+        },
+      }));
+
+      await expect(runRevisionJob(job())).resolves.toBe(777);
+
+      expect(mockArticleUpdateMany).toHaveBeenCalledWith({
+        where: { id: "art-1" },
+        data: { mwLatestRevId: 777, mwPageId: 24996, lastMwSyncAt: expect.any(Date) },
+      });
+    });
     it("compares the text exactly: a trailing newline is part of the hash", async () => {
       currentRevisionIs(778, TEXT.trimEnd());
       wiki.on("edit", () => ({ edit: { result: "Success", newrevid: 779 } }));

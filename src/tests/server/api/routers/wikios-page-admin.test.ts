@@ -235,9 +235,12 @@ describe("movePage", () => {
       tables.wikiArticle.rows.find((row) => row.id === "a-old")!.status = "ARCHIVED";
     });
 
-    it("is NOT_FOUND to a mover without deletedhistory and undelete, and changes nothing", async () => {
+    it("is NOT_FOUND when archived (must be undeleted before moving), and changes nothing", async () => {
       await expect(
         as(memberCtx()).movePage({ from: "Old name", to: "New name" })
+      ).rejects.toMatchObject({ code: "NOT_FOUND" });
+      await expect(
+        as(sysopCtx()).movePage({ from: "Old name", to: "New name" })
       ).rejects.toMatchObject({ code: "NOT_FOUND" });
 
       expect(tables.wikiArticle.rows.map((row) => row.title).sort()).toEqual([

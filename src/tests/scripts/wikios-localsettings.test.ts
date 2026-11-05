@@ -118,6 +118,24 @@ describe("wikios-localsettings.php", () => {
     );
     expect(naming).toEqual([]);
   });
+
+  it("wires AfterImportPage to DiscordNotifier for wikios-mirror imports with stripped wikios> handles and dual classic/WikiOS links", () => {
+    expect(php).toContain("$wgDiscordExcludeConditions['groups']");
+    expect(php).toContain("[ 'wikios-mirror' ]");
+
+    const [hookAt = -1] = codeOffsetsOf("$wgHooks['AfterImportPage']");
+    expect(hookAt).toBeGreaterThan(-1);
+    const [start, end] = blockFrom(code, hookAt);
+    const hook = php.slice(start, end);
+
+    expect(hook).toContain("$services->hasService( 'DiscordNotifier' )");
+    expect(hook).toContain("in_array( 'wikios-mirror',");
+    expect(hook).toContain("str_starts_with( $rawUserName, 'wikios>' )");
+    expect(hook).toContain("getenv( 'WIKIOS_PUBLIC_URL' ) ?: 'https://beta.ixwiki.com'");
+    expect(hook).toContain("'/wiki/' . wfUrlencode( $title->getPrefixedDBkey() )");
+    expect(hook).toContain("'discordnotifications-article-created'");
+    expect(hook).toContain("'discordnotifications-article-saved'");
+  });
 });
 
 describe("the test MediaWiki", () => {

@@ -534,13 +534,12 @@ describe("delete, undelete, move, protect and rollback", () => {
         "Gamma",
         { moveTalk: true, leaveRedirect: true },
       ]);
-      // a sysop whose grants include delete (deletedhistory + undelete) may also move a deleted page
       expect(called("movePage")[0]!.args).toEqual([
         "Alpha",
         "Gamma",
         "rename",
         { userId: "u-heku", name: "Heku" },
-        { leaveRedirect: true, moveTalk: true, includeArchived: true },
+        { leaveRedirect: true, moveTalk: true },
       ]);
       const order = calls.map((c) => c.name);
       expect(order.indexOf("authorizeMove")).toBeLessThan(order.indexOf("movePage"));

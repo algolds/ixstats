@@ -13,6 +13,22 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [1.5.1] — 2026-11-03 "Lobster Crosby" (public 1.0.2)
 
+### 🔄 WikiOS ↔ IxWiki MediaWiki Sync Hardening & DiscordNotifications Bridge (2026-11-04)
+
+- **Bidirectional WikiOS ↔ MediaWiki sync fixes (`src/lib/wiki-os/core/page-management-service.ts`, `src/lib/wiki-os/services/mirror-history.ts`, `src/lib/wiki-os/services/mirror-revision.ts`, `src/server/api/routers/wikios/page-admin.ts`, `src/lib/wiki-os/api-compat/modules/page-ops.ts`):**
+  - Stamped `sha1: mwSha1Base36(wikitext)` on redirect revisions created by `PageManagementService.movePage` (`createRedirect`) so classic MediaWiki edits to moved redirect pages match their base revision in SQL without triggering false-positive edit conflicts.
+  - Captured MediaWiki's `pageid` in `currentRevision(title)` and `promoteWinner` and stamped `WikiArticle.mwPageId` alongside `mwLatestRevId` in `stampArticle` when mirroring newly created WikiOS pages.
+  - Disallowed moving `ARCHIVED` pages in WikiOS (`movePage`), requiring undelete before move to match classic MediaWiki (`action=move`) and prevent title desynchronization on restore.
+  - Enabled `story-chain-wiki-sync` in production `CRON_ENABLED_JOBS`.
+- **MediaWiki `DiscordNotifications` v3 bridge for WikiOS (`scripts/ops/mediawiki/wikios-localsettings.php`):**
+  - Wired `AfterImportPage` to `DiscordNotifier` for `wikios-mirror` imports using the imported revision's real author (stripping the `wikios>` prefix so `<url|label>` link formatting never breaks on `>`), edit summary, minor-edit check, byte delta, and dual classic IxWiki + relative WikiOS (`/wiki/<Title>` on `https://beta.ixwiki.com`) links.
+  - Excluded the `wikios-mirror` bot group (`$wgDiscordExcludeConditions['groups']`) and configured `$wgDiscordExcludeConditions['titles']['namespaces']` so bot dummy/promotion revisions and excluded talk/system namespaces do not emit duplicate or unwanted notifications.
+- **Media pipeline, standalone flag persistence & CDN readiness (`src/lib/wiki-os/transformers/image-url.ts`, `src/lib/wiki-os/core/media-asset-service.ts`, `src/server/modules/realms/realms.flags.ts`, `src/lib/flags/local-flag-cache.server.ts`, `src/lib/thinkpages-forum/html-urls.ts`, `src/lib/wiki-os/config.ts`, `src/lib/wiki-os/media-hosts.ts`, `src/lib/security/csp.ts`, `next.config.js`):**
+  - Exempted staged WikiOS upload paths (`/api/wiki/file/`) in `normalizeWikiImageUrl` and `resolveStoredImageUrl` so pre-mirror uploads retain their valid route under `withBasePath`.
+  - Unified `MediaAssetService.getMd5ShardPath`, `findAsset`, and `findAssets` with `image-url.ts` (safe URI decoding, control-char stripping, first-letter uppercase canonicalization, and `slug` fallback lookup).
+  - Updated `localizeRealmFlag` to mirror localized flags into `.next/standalone/public/flags` and `LocalFlagCacheAdapter.initialize` to index all flag files on disk even if `metadata.json` is reset on deploy.
+  - Added `/images/discord/` and `/api/wiki/file/` to `IMAGE_PATH_PREFIXES` in `html-urls.ts` and wired optional `NEXT_PUBLIC_MEDIA_CDN_URL` support across SSRF allowlists, CSP `media-src`, external image downloader, and Next.js `remotePatterns`.
+
 ### ⚡ IIWiki & sister-wiki API call optimization (2026-11-03)
 
 Platform patch bump (`1.5.0` → `1.5.1`, public `1.0.2`). Audited every outbound and client-triggered IIWiki (`iiwiki.com`) and sister-wiki MediaWiki API call across WikiOS, Countries, IxVault/Lore Cards, Realms, Flags, Identity, and the MediaWiki proxy routes, consolidating requests and adding caching/in-flight deduplication to reduce outbound API traffic by ~75–85%.

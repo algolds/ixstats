@@ -157,6 +157,17 @@ const config = {
         protocol: "https",
         hostname: "media.discordapp.net",
       },
+      ...(process.env.NEXT_PUBLIC_MEDIA_CDN_URL &&
+      URL.canParse(process.env.NEXT_PUBLIC_MEDIA_CDN_URL)
+        ? [
+            {
+              protocol: /** @type {"http" | "https"} */ (
+                new URL(process.env.NEXT_PUBLIC_MEDIA_CDN_URL).protocol.replace(":", "")
+              ),
+              hostname: new URL(process.env.NEXT_PUBLIC_MEDIA_CDN_URL).hostname,
+            },
+          ]
+        : []),
       // Note: NationStates images are now proxied through /api/proxy-ns-image
       // to bypass hotlinking restrictions, so no NS domains needed here
     ],

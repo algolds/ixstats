@@ -9,7 +9,7 @@
  *
  * If Clerk SDK breaks, check: https://clerk.com/docs/security/csp
  */
-import { mediaWikiOrigin } from "~/lib/wiki-os/config";
+import { mediaCdnOrigin, mediaWikiOrigin } from "~/lib/wiki-os/config";
 
 // oxlint-disable-next-line typescript/no-unused-vars
 export function buildCSPTemplate(standalone: boolean): string {
@@ -20,6 +20,11 @@ export function buildCSPTemplate(standalone: boolean): string {
   const scriptSrc = isDevelopment
     ? `script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev`
     : `script-src 'self' 'unsafe-inline' 'nonce-__NONCE__' https://clerk.ixwiki.com https://accounts.ixwiki.com https://*.clerk.accounts.dev https://static.cloudflareinsights.com`;
+
+  const cdnOrigin = mediaCdnOrigin();
+  const mediaSrc = cdnOrigin
+    ? `media-src 'self' ${mediaWikiOrigin()} ${cdnOrigin} data: blob:`
+    : `media-src 'self' ${mediaWikiOrigin()} data: blob:`;
 
   const directives = [
     `default-src 'self'`,
@@ -35,7 +40,7 @@ export function buildCSPTemplate(standalone: boolean): string {
       : `connect-src 'self' blob: https: wss:`,
     `frame-src 'self' https://clerk.ixwiki.com https://accounts.ixwiki.com https://maps.ixwiki.com`,
     `worker-src 'self' blob:`,
-    `media-src 'self' ${mediaWikiOrigin()} data: blob:`,
+    mediaSrc,
     `object-src 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,

@@ -15,7 +15,7 @@
  * build's copy (`.next/standalone/public`, copied by scripts/post-build.sh), so new files are copied there too.
  */
 import type { PrismaClient } from "@prisma/client";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { invalidateCache } from "~/lib/cache";
@@ -35,6 +35,8 @@ import { wikiQuery } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { WIKI_SOURCES, type WikiSource } from "~/lib/wiki-os/config";
 
 const flagsDir = () => path.join(process.cwd(), "public", "flags");
+const standalonePublicDir = () => path.join(process.cwd(), ".next", "standalone", "public");
+const standaloneFlagsDir = () => path.join(standalonePublicDir(), "flags");
 const metadataPath = () => path.join(flagsDir(), "metadata.json");
 
 const MetadataEntry = z.object({ fileName: z.string() }).passthrough();
@@ -97,6 +99,13 @@ async function localize(
   if (!fileName) throw new Error("the realm or country slug has no usable characters");
   await mkdir(flagsDir(), { recursive: true });
   await writeFile(path.join(flagsDir(), fileName), stored.data);
+  try {
+    await access(standalonePublicDir());
+    await mkdir(standaloneFlagsDir(), { recursive: true });
+    await writeFile(path.join(standaloneFlagsDir(), fileName), stored.data);
+  } catch {
+    // No standalone public directory present (e.g. dev/test) — skip standalone copy
+  }
   const wiki = WIKI_SOURCES[task.ref.source];
   metadata.flags[fileName.replace(/\.[^.]+$/, "")] = {
     fileName,

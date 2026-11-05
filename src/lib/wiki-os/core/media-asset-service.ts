@@ -73,7 +73,23 @@ export class MediaAssetService {
     hash: string;
     cleanName: string;
   } {
-    const cleanName = filename.replace(/^(?:File|Image):/i, "").replace(/ /g, "_");
+    let decoded = filename;
+    try {
+      decoded = decodeURIComponent(filename);
+    } catch {
+      // malformed percent-encoding — use the raw filename
+    }
+
+    let cleanName = decoded
+      .replace(/^(?:File|Image):/i, "")
+      .replace(/[\u200B-\u200F\u2028-\u202F\uFEFF\x00-\x1F]/g, "")
+      .replace(/\s+/g, "_")
+      .trim();
+
+    if (cleanName.length > 0) {
+      cleanName = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+    }
+
     const hash = crypto.createHash("md5").update(cleanName).digest("hex");
     const shard = `${hash[0]}/${hash.slice(0, 2)}`;
     return {
@@ -88,23 +104,19 @@ export class MediaAssetService {
    * Resolve an asset from PostgreSQL `wiki_assets` by filename or slug (<1ms)
    */
   static async findAsset(filenameOrSlug: string): Promise<MediaAssetRecord | null> {
-    const clean = filenameOrSlug
-      .replace(/^(?:File|Image):/i, "")
-      .replace(/ /g, "_")
-      .trim();
-    if (!clean) return null;
+    const { hash, cleanName } = this.getMd5ShardPath(filenameOrSlug);
+    if (!cleanName) return null;
 
-    const slug = clean.toLowerCase();
-    const { hash } = this.getMd5ShardPath(clean);
+    const slug = cleanName.toLowerCase();
 
     try {
       const asset = await db.wikiAsset.findFirst({
         where: {
           OR: [
             { md5Hash: hash },
-            { filename: clean },
+            { filename: cleanName },
             { slug },
-            { title: clean.replace(/_/g, " ") },
+            { title: cleanName.replace(/_/g, " ") },
           ],
         },
       });
@@ -122,20 +134,25 @@ export class MediaAssetService {
     const map = new Map<string, MediaAssetRecord>();
     if (!filenames || filenames.length === 0) return map;
 
-    const cleanNames = filenames
-      .map((f) =>
-        f
-          .replace(/^(?:File|Image):/i, "")
-          .replace(/ /g, "_")
-          .trim()
-      )
-      .filter(Boolean);
-    const hashes = cleanNames.map((n) => this.getMd5ShardPath(n).hash);
+    const cleanNames: string[] = [];
+    const hashes: string[] = [];
+    const slugs: string[] = [];
+    for (const f of filenames) {
+      const { cleanName, hash } = this.getMd5ShardPath(f);
+      if (!cleanName) continue;
+      cleanNames.push(cleanName);
+      hashes.push(hash);
+      slugs.push(cleanName.toLowerCase());
+    }
 
     try {
       const assets = await db.wikiAsset.findMany({
         where: {
-          OR: [{ filename: { in: cleanNames } }, { md5Hash: { in: hashes } }],
+          OR: [
+            { filename: { in: cleanNames } },
+            { md5Hash: { in: hashes } },
+            { slug: { in: slugs } },
+          ],
         },
       });
 
