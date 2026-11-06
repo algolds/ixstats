@@ -360,16 +360,32 @@ export const diplomaticPoliciesAlliancesRouter = createTRPCRouter({
         invitedByCountryId: ctx.user.countryId,
         invitedAt: new Date(),
       };
-      // Previously left, declined, withdrawn or expired: re-issue the invite.
-      const invite = existing
-        ? await ctx.db.allianceMember.update({ where: { id: existing.id }, data: inviteFields })
-        : await ctx.db.allianceMember.create({
-            data: {
-              allianceId: input.allianceId,
-              countryId: input.targetCountryId,
-              ...inviteFields,
-            },
+      // Previously left, declined, withdrawn or expired: re-issue the invite conditionally so an active member is never overwritten.
+      let invite;
+      if (existing) {
+        const claimed = await ctx.db.allianceMember.updateMany({
+          where: { id: existing.id, isActive: false, status: existing.status },
+          data: inviteFields,
+        });
+        if (claimed.count === 0) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Country membership changed; try again.",
           });
+        }
+        invite = await ctx.db.allianceMember.update({
+          where: { id: existing.id },
+          data: inviteFields,
+        });
+      } else {
+        invite = await ctx.db.allianceMember.create({
+          data: {
+            allianceId: input.allianceId,
+            countryId: input.targetCountryId,
+            ...inviteFields,
+          },
+        });
+      }
 
       // NPC (unowned) nations answer at once from their personality; players use their inbox.
       const npcStatus = await autoRespondNpcAllianceInvite(ctx.db, invite);

@@ -90,15 +90,23 @@ export function outcomeOf(tally: Tally, sharesOutstanding: number): "PASSED" | "
   return null;
 }
 
-async function tallyOf(tx: Db, proposalId: string): Promise<Tally> {
-  const ballots = await tx.companyVote.findMany({
-    where: { proposalId },
-    select: { support: true, shares: true },
-  });
+async function tallyOf(tx: Db, proposalId: string, companyId: string): Promise<Tally> {
+  const [ballots, holders] = await Promise.all([
+    tx.companyVote.findMany({
+      where: { proposalId },
+      select: { id: true, voterUserId: true, support: true, shares: true },
+    }),
+    holdersOf(tx, companyId),
+  ]);
+  const currentShares = new Map(holders.map((h) => [h.userId, h.shares]));
   const tally: Tally = { sharesFor: 0, sharesAgainst: 0 };
   for (const ballot of ballots) {
-    if (ballot.support) tally.sharesFor += ballot.shares;
-    else tally.sharesAgainst += ballot.shares;
+    const liveWeight = currentShares.get(ballot.voterUserId) ?? 0;
+    if (liveWeight !== ballot.shares) {
+      await tx.companyVote.update({ where: { id: ballot.id }, data: { shares: liveWeight } });
+    }
+    if (ballot.support) tally.sharesFor += liveWeight;
+    else tally.sharesAgainst += liveWeight;
   }
   return tally;
 }
@@ -158,7 +166,7 @@ async function settleTx(tx: Db, proposal: CompanyProposal, now: number): Promise
     where: { id: proposal.companyId },
     select: { sharesOutstanding: true },
   });
-  const tally = await tallyOf(tx, proposal.id);
+  const tally = await tallyOf(tx, proposal.id, proposal.companyId);
   const outcome = outcomeOf(tally, company.sharesOutstanding);
   if (outcome === null) {
     await tx.companyProposal.update({ where: { id: proposal.id }, data: tally });

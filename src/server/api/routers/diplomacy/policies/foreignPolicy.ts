@@ -309,13 +309,23 @@ export async function openForeignPolicyAction(db: PrismaClient, input: OpenForei
   const cooperative = COOPERATIVE_FP.has(input.actionType);
 
   // The duplicate check and the row it guards are one step under a per (initiator, target, type) lock, so two
-  // concurrent proposals cannot both pass it (two enacted embargoes doubled the effects).
+  // concurrent proposals cannot both pass it (two enacted embargoes doubled the effects). Symmetric cooperative
+  // agreements (free_trade, military_alliance) canonicalise the pair so A->B and B->A cannot both be open/active.
+  const pairLockKey = cooperative
+    ? `${[initiatorId, input.targetId].sort().join(":")}:${input.actionType}`
+    : `${initiatorId}:${input.targetId}:${input.actionType}`;
   const created = await db.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${FP_OPEN_LOCK_NAMESPACE}::int, hashtext(${`${initiatorId}:${input.targetId}:${input.actionType}`}))`;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${FP_OPEN_LOCK_NAMESPACE}::int, hashtext(${pairLockKey}))`;
     const existingAction = await tx.foreignPolicyAction.findFirst({
       where: {
-        initiatorId,
-        targetId: input.targetId,
+        ...(cooperative
+          ? {
+              OR: [
+                { initiatorId, targetId: input.targetId },
+                { initiatorId: input.targetId, targetId: initiatorId },
+              ],
+            }
+          : { initiatorId, targetId: input.targetId }),
         actionType: input.actionType,
         status: { in: ["proposed", "active"] },
       },

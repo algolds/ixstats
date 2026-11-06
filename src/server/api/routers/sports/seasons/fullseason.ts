@@ -36,10 +36,11 @@ async function simulateCircuitSeason(db: PrismaClient, season: SeasonWithLeague)
       isWet: false,
     });
 
-    await db.sportRace.update({
-      where: { id: race.id },
+    const claimed = await db.sportRace.updateMany({
+      where: { id: race.id, status: { in: ["upcoming", "qualifying_complete"] } },
       data: { status: "completed", results: raceResult.positions as any },
     });
+    if (claimed.count === 0) continue;
 
     for (const r of raceResult.positions.slice(0, 10)) {
       if (r.points > 0) {

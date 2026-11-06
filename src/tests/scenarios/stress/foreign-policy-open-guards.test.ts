@@ -115,3 +115,23 @@ it("sends one acceptance notice when two accepts race", async () => {
     .mock.calls.filter(([n]) => (n as { title?: string }).title === "Proposal Accepted");
   expect(accepted).toHaveLength(1);
 });
+
+it("blocks bidirectional duplicate cooperative agreements (A->B and B->A free_trade)", async () => {
+  const lena = await addOwner(db as never, "lena", "varshan");
+  const owen = await addOwner(db as never, "owen", "urcea");
+  const policies = createCallerFactory(diplomaticPoliciesRouter);
+
+  await policies(asOwner(db as never, lena)).proposeForeignPolicyAction({
+    targetId: "urcea",
+    actionType: "free_trade",
+  });
+
+  // Urcea cannot open a duplicate reverse free_trade proposal while Varshan->Urcea is proposed or active
+  await expect(
+    policies(asOwner(db as never, owen)).proposeForeignPolicyAction({
+      targetId: "varshan",
+      actionType: "free_trade",
+    })
+  ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  expect(await db.foreignPolicyAction.count({ where: { actionType: "free_trade" } })).toBe(1);
+});

@@ -226,10 +226,18 @@ async function recordDeliveries(tx: Tx, deliveries: readonly Delivery[]) {
   });
   const byKey = new Map(catalog.map((c) => [c.key, c]));
   for (const d of deliveries) {
-    await tx.procurementOrder.update({
-      where: { id: d.orderId },
-      data: { status: "delivered", deliveredClockMs: d.deliveredClockMs },
-    });
+    if (typeof tx.procurementOrder.updateMany === "function") {
+      const claimed = await tx.procurementOrder.updateMany({
+        where: { id: d.orderId, status: "ordered" },
+        data: { status: "delivered", deliveredClockMs: d.deliveredClockMs },
+      });
+      if (claimed.count === 0) continue;
+    } else {
+      await tx.procurementOrder.update({
+        where: { id: d.orderId },
+        data: { status: "delivered", deliveredClockMs: d.deliveredClockMs },
+      });
+    }
     const item = byKey.get(d.catalogKey);
     const existing = await tx.militaryAsset.findFirst({
       where: { branchId: d.branchId, catalogKey: d.catalogKey, designYear: d.designYear },

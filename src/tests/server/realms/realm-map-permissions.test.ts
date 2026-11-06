@@ -377,6 +377,14 @@ describe("world-mode border editing is realm-scoped", () => {
       code: "BAD_REQUEST",
     });
     expect(db.mapEditRequest!.update).toHaveBeenCalledTimes(1);
+
+    // Concurrent review that loses the pending claim refuses without applying feature mutations
+    db.mapLayer!.findFirst!.mockResolvedValue({ id: "ml1", areaSqKm: null, realmId: EURTH });
+    db.mapEditRequest!.updateMany!.mockResolvedValueOnce({ count: 0 });
+    await expect(queue.approveEdit({ editId: "req1" })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
+    expect(db.mapLayer!.update).toHaveBeenCalledTimes(1);
   });
 });
 

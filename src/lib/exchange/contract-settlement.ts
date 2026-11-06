@@ -45,13 +45,29 @@ async function refundTreasury(tx: Db, contract: Funded, amount: number, step: st
   });
 }
 
-async function refundCompany(tx: Db, contract: Funded, amount: number) {
+async function refundCompany(tx: Db, contract: Funded, amount: number, step: string) {
   if (!contract.issuerCompanyId) return;
-  await tx.company.update({
+  const company = await tx.company.findUnique({
     where: { id: contract.issuerCompanyId },
-    data: { capital: { increment: amount } },
+    select: { status: true, founderId: true },
   });
-  await refreshFairValue(tx, contract.issuerCompanyId);
+  if (!company) return;
+  if (company.status === "ACTIVE" || company.status === "DISTRESSED") {
+    await tx.company.update({
+      where: { id: contract.issuerCompanyId },
+      data: { capital: { increment: amount } },
+    });
+    await refreshFairValue(tx, contract.issuerCompanyId);
+    return;
+  }
+  await earnSovereignsTx(tx, {
+    userId: contract.issuerUserId ?? company.founderId,
+    amount,
+    type: "CONTRACT_REFUND",
+    source: `CONTRACT:${contract.id}`,
+    metadata: { contractId: contract.id, companyId: contract.issuerCompanyId, step },
+    idempotencyKey: `exchange:contract-refund:${contract.id}:${step}`,
+  });
 }
 
 /**
@@ -69,7 +85,7 @@ export async function refundIssuer(tx: Db, contract: Funded, amount: number, ste
     case "WALLET":
       return refundWallet(tx, contract, amount, step);
     default:
-      return refundCompany(tx, contract, amount);
+      return refundCompany(tx, contract, amount, step);
   }
 }
 
@@ -101,6 +117,9 @@ export async function payContractor(
   const companyId = contract.winnerCompanyId!;
   const company = await tx.company.findUnique({ where: { id: companyId } });
   if (!company) throw new ExchangeError("NOT_FOUND", "Contractor not found");
+  if (company.status !== "ACTIVE" && company.status !== "DISTRESSED") {
+    throw new ExchangeError("CONFLICT", "Contractor is no longer operating");
+  }
   const delta = standingGainOf(contract, company, Date.now());
   const tariff = await tariffOn(tx, contract, company.hqCountryId, amount);
   const tariffPaid = tariff?.amount ?? 0;

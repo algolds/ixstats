@@ -11,11 +11,16 @@ interface LeaveResult {
   newFounderCountryId: string | null;
 }
 
+const ALLIANCE_LEAVE_LOCK_NAMESPACE = 7201;
+
 export async function leaveAllianceMembership(
   db: PrismaClient,
   membership: { id: string; allianceId: string }
 ): Promise<LeaveResult> {
   return db.$transaction(async (tx) => {
+    if (typeof (tx as { $executeRaw?: unknown }).$executeRaw === "function") {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ALLIANCE_LEAVE_LOCK_NAMESPACE}::int, hashtext(${membership.allianceId}))`;
+    }
     const left = await tx.allianceMember.updateMany({
       where: { id: membership.id, isActive: true },
       // A role means something only while active: a founder who rejoins later comes back as a member.
@@ -34,7 +39,12 @@ export async function leaveAllianceMembership(
     }
 
     const heir = remaining.some((m) => m.role === "founder") ? null : remaining[0]!;
-    if (heir) await tx.allianceMember.update({ where: { id: heir.id }, data: { role: "founder" } });
+    if (heir) {
+      await tx.allianceMember.updateMany({
+        where: { id: heir.id, isActive: true },
+        data: { role: "founder" },
+      });
+    }
     await tx.alliance.update({
       where: { id: membership.allianceId },
       data: { memberCount: remaining.length },

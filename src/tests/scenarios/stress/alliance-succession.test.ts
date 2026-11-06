@@ -46,4 +46,7 @@ it("passes the founder role to the earliest-joined member, then dissolves with t
   expect(await leave("c")).toMatchObject({ left: false });
   expect(await leave("b")).toEqual({ left: true, dissolved: true, newFounderCountryId: null });
   expect(await db.alliance.count()).toBe(0);
+  expect(db.store.log).toEqual(
+    expect.arrayContaining([expect.objectContaining({ kind: "advisory", key: "pact" })])
+  );
 });

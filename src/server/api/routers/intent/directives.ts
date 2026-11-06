@@ -335,17 +335,32 @@ export const intentDirectivesRouter = createTRPCRouter({
       // Abandoning and withdrawing the directive's public row are one write: the directive can never be
       // abandoned while its row stays public. No row (an older directive, a failed declare) is not an error.
       const data = { status: input.status };
+      const claimStatus = async (dbClient: Pick<PrismaClient, "intent">) => {
+        if (typeof dbClient.intent.updateMany === "function") {
+          const claimed = await dbClient.intent.updateMany({
+            where: { id: input.id, status: intent.status },
+            data,
+          });
+          if (claimed.count === 0) {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: `An intent cannot move from ${intent.status} to ${input.status}.`,
+            });
+          }
+        }
+        return dbClient.intent.update({ where: { id: input.id }, data });
+      };
       // Abandoning also stops the directive's effects at the share phased in so far (the rest never lands).
       const updated =
         input.status === "abandoned"
           ? await ctx.db.$transaction(async (tx) => {
-              const row = await tx.intent.update({ where: { id: input.id }, data });
+              const row = await claimStatus(tx);
               await withdrawDirectiveActivity(tx, input.id);
               const now = (await clockForCountry(tx as PrismaClient, intent.countryId)).now();
               await stopDirectiveEffectsAt(tx, intent, now);
               return row;
             })
-          : await ctx.db.intent.update({ where: { id: input.id }, data });
+          : await claimStatus(ctx.db);
 
       if (input.status === "completed") {
         try {

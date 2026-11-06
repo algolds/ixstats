@@ -47,6 +47,12 @@ export const sportsTransfersRouter = createTRPCRouter({
           if (!player.team || player.team.ownerUserId !== ctx.user.id) {
             throw new TRPCError({ code: "FORBIDDEN", message: "You do not own this player" });
           }
+          if (!player.isActive || player.careerStage === "retired") {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "Retired or inactive players cannot be listed for transfer",
+            });
+          }
           return tx.sportTransferListing.upsert({
             where: { playerId: input.playerId },
             update: { price: input.price, status: "open", teamId: player.teamId },

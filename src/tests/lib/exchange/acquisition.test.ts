@@ -283,4 +283,70 @@ describe("an offer the target can't take at resolution", () => {
     expect(offer.effect).toMatchObject({ refunded: 10_000 });
     expect(offer.effect).toHaveProperty("rejected");
   });
+
+  it("allows acquiring a DISTRESSED target (distressed M&A buyout) and refuses a DELISTED target", async () => {
+    row("co").status = "DISTRESSED";
+    row("co").distressedSinceIxTime = Date.now() - DAY_MS;
+
+    const offer = await offerAndResolve(10_000);
+    const { proposal } = await castVote(fake.client, {
+      userId: "bob",
+      proposalId: offer.id,
+      support: true,
+    });
+    expect(proposal.status).toBe("PASSED");
+    expect(row("co")).toMatchObject({
+      status: "DELISTED",
+      distressedSinceIxTime: null,
+      standing: 0,
+      decisionValue: 0,
+    });
+    expect(row("buyer")).toMatchObject({ decisionValue: 80, standing: 2 });
+
+    // A second ACQUIRE against the now-DELISTED company must be refused at submission.
+    await expect(
+      submitDecision(fake.client, {
+        userId: "carol",
+        companyId: "buyer",
+        type: "ACQUIRE",
+        offerAmount: 5_000,
+        targetCompanyId: "co",
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("expires competing OPEN proposals and refunds competing ACQUIRE_OFFER escrows when acquired", async () => {
+    fake.tables.user!.push({ id: "dave", clerkUserId: "c_dave" });
+    fake.tables.company!.push({
+      id: "rival",
+      realmId: "default",
+      founderId: "dave",
+      name: "Rival Co",
+      sectorKey: "services",
+      capital: 30_000,
+      creditDrawn: 0,
+      sharesIssued: 1000,
+      sharesOutstanding: 1000,
+      status: "ACTIVE",
+    });
+
+    const carolOffer = await offerAndResolve(10_000);
+    await submitDecision(fake.client, {
+      userId: "dave",
+      companyId: "rival",
+      type: "ACQUIRE",
+      offerAmount: 12_000,
+      targetCompanyId: "co",
+      requestId: rid(),
+    });
+    await resolveDueDecisions(fake.client, later() + 2 * DAY_MS);
+    expect(row("rival").capital).toBe(18_000);
+
+    // Shareholders approve Carol's offer; Dave's competing offer is expired and refunded immediately.
+    await castVote(fake.client, { userId: "bob", proposalId: carolOffer.id, support: true });
+    const rivalProposal = proposals().find((p) => p.proposerUserId === "dave")!;
+    expect(rivalProposal.status).toBe("EXPIRED");
+    expect(row("rival").capital).toBe(30_000);
+  });
 });

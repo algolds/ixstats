@@ -36,6 +36,7 @@ jest.mock("~/lib/notifications/api", () => ({ notificationAPI: { create: jest.fn
 
 import type { PrismaClient } from "@prisma/client";
 import { advanceSportsSeasons } from "~/lib/sports/season-cron";
+import { transitionSeasonAction, transitionToNextStage } from "~/lib/sports/transition";
 import { decidedAfterRegulation } from "~/lib/sports/match-outcome";
 import { SPORTS_TROPHY_TITLE } from "~/lib/sports/trophy-titles";
 import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
@@ -597,6 +598,97 @@ describe("sports-season (memory)", () => {
   // settlements of one match (the match-day button and the cron, or a retry) both paid every winner
   it("pays each winner once when two settlements of one match race", async () => {
     await raceSettlement(w);
+  });
+
+  it("does not advance multi-stage season until all current-stage matches finish, and blocks double season transitions", async () => {
+    await db.sportLeague.update({
+      where: { id: w.leagueId },
+      data: {
+        settings: {
+          stages: [
+            { id: 1, type: "league", name: "Group Stage" },
+            { id: 2, type: "bracket", name: "Playoffs", teams: 2 },
+          ],
+        },
+      },
+    });
+    const season = await lifecycle(asPerson(db as never, w.manager)).startSeason({
+      leagueId: w.leagueId,
+    });
+    const matches = await db.sportMatch.findMany({
+      where: { seasonId: season.id },
+      orderBy: { matchDay: "asc" },
+    });
+    expect(matches.length).toBeGreaterThanOrEqual(2);
+
+    // Simulating matchday 1 leaves matchday 2 scheduled: stage must remain 1, with 0 Stage 2 brackets
+    await matchDay(asPerson(db as never, w.manager)).simulateMatchDay({
+      seasonId: season.id,
+      matchDay: 1,
+    });
+    expect(
+      (await db.sportSeason.findUniqueOrThrow({ where: { id: season.id } })).activeStage
+    ).toBe(1);
+    expect(await db.sportBracket.count({ where: { seasonId: season.id, stage: 2 } })).toBe(0);
+
+    // Simulating the remaining stage 1 matchday advances activeStage to 2 once
+    for (const m of matches.slice(1)) {
+      await matchDay(asPerson(db as never, w.manager)).simulateSingleMatch({ matchId: m.id });
+    }
+    expect(
+      (await db.sportSeason.findUniqueOrThrow({ where: { id: season.id } })).activeStage
+    ).toBe(2);
+    expect(await transitionToNextStage(db as never, season.id)).toBe(false);
+
+    // Complete season and verify transitionSeasonAction cannot run twice
+    await db.sportSeason.update({
+      where: { id: season.id },
+      data: { status: "completed", championTeamId: w.north },
+    });
+    const first = await transitionSeasonAction(db as never, season.id);
+    expect(first.newSeasonNumber).toBe(2);
+    await expect(transitionSeasonAction(db as never, season.id)).rejects.toThrow(
+      /already been transitioned/
+    );
+    expect(await db.sportSeason.count({ where: { leagueId: w.leagueId } })).toBe(2);
+  });
+
+  it("settles open predictions when overrideMatchResult completes a scheduled match, and blocks listing retired players", async () => {
+    const season = await lifecycle(asPerson(db as never, w.manager)).startSeason({
+      leagueId: w.leagueId,
+    });
+    const opener = (
+      await db.sportMatch.findMany({ where: { seasonId: season.id, matchDay: 1 } })
+    )[0]!;
+
+    await predictions(asPerson(db as never, w.ana)).placePrediction({
+      matchId: opener.id,
+      outcome: "home",
+      stake: 100,
+    });
+    expect((await sovereignsOf(db as never, [w.ana.id]))[w.ana.id]).toBe(400);
+
+    await schedule(asPerson(db as never, w.manager)).overrideMatchResult({
+      matchId: opener.id,
+      homeScore: 3,
+      awayScore: 1,
+    });
+    const bet = await db.sportPrediction.findFirstOrThrow({ where: { matchId: opener.id } });
+    expect(bet.status).toBe("won");
+    expect((await sovereignsOf(db as never, [w.ana.id]))[w.ana.id]).toBe(500);
+
+    // Retired player cannot be listed for transfer
+    const vetId = `${w.north}-p00`;
+    await db.sportPlayer.update({
+      where: { id: vetId },
+      data: { isActive: false, careerStage: "retired" },
+    });
+    await expect(
+      transfers(asPerson(db as never, w.cleo)).listPlayerForTransfer({
+        playerId: vetId,
+        price: 200,
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });
 

@@ -214,6 +214,16 @@ export const securityPvPConflictsRouter = createTRPCRouter({
       }
 
       if (!input.accept) {
+        const claimed = await ctx.db.militaryConflict.updateMany({
+          where: { id: input.conflictId, status: "proposed" },
+          data: { status: "resolved", winner: PVP_UNFOUGHT.declined },
+        });
+        if (claimed.count === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Conflict is not in proposed state.",
+          });
+        }
         const declined = await ctx.db.militaryConflict.update({
           where: { id: input.conflictId },
           data: { status: "resolved", winner: PVP_UNFOUGHT.declined },
@@ -252,6 +262,16 @@ export const securityPvPConflictsRouter = createTRPCRouter({
       // The seed is fixed now, from the battle, the moment and the challenger's orders: nothing rerolls it.
       const clock = await clockForCountry(ctx.db, conflict.defenderId);
       const startClockMs = clock.now();
+      const claimed = await ctx.db.militaryConflict.updateMany({
+        where: { id: input.conflictId, status: "proposed" },
+        data: { status: "active", defenderApproved: true },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Conflict is not in proposed state.",
+        });
+      }
       const accepted = await ctx.db.militaryConflict.update({
         where: { id: input.conflictId },
         data: {

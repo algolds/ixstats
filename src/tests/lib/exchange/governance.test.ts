@@ -207,6 +207,30 @@ describe("voting", () => {
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(proposals()[0]).toMatchObject({ sharesFor: 400, sharesAgainst: 0 });
   });
+
+  it("re-weights ballots by current holdings so transferred shares cannot vote twice", async () => {
+    const proposalId = await openDissolve();
+    // Alice holds 400 shares (40%) and automatically voted FOR on opening.
+    // Suppose Alice transfers 200 shares to Dave and Dave votes FOR: total support must stay 400 (40%), not 600.
+    const aliceHolding = fake.tables.shareholding!.find(
+      (s) => s.companyId === "co" && s.ownerUserId === "alice"
+    )!;
+    aliceHolding.shares = 200;
+    fake.tables.shareholding!.push({
+      companyId: "co",
+      ownerUserId: "dave",
+      shares: 200,
+      avgCost: 1,
+    });
+
+    const { proposal } = await castVote(fake.client, {
+      userId: "dave",
+      proposalId,
+      support: true,
+    });
+    expect(proposal).toMatchObject({ status: "OPEN", sharesFor: 400, sharesAgainst: 0 });
+    expect(company().status).toBe("ACTIVE");
+  });
 });
 
 describe("expiry", () => {

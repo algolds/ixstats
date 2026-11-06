@@ -67,7 +67,7 @@ export async function acquisitionBlocker(
 
 function targetProblem(target: Company, buyer: AcquisitionBuyer, offerAmount: number): string | null {
   if (target.realmId !== buyer.realmId) return "That company is in another realm";
-  if (target.status !== "ACTIVE" && target.status !== "DELISTED") {
+  if (target.status !== "ACTIVE" && target.status !== "DISTRESSED") {
     return "That company can't be bought";
   }
   if (target.founderId === buyer.founderId) return "You already run that company";
@@ -120,6 +120,36 @@ export async function returnOfferTx(
 }
 
 /**
+ * Close any remaining OPEN proposals on a company that is ceasing operations (dissolved, acquired, or
+ * liquidated), returning any escrowed acquisition offers to their buyers.
+ */
+export async function closeCompanyProposalsTx(
+  tx: Db,
+  companyId: string,
+  now: number
+): Promise<void> {
+  const open = await tx.companyProposal.findMany({
+    where: { companyId, status: "OPEN" },
+  });
+  for (const proposal of open) {
+    const { count } = await tx.companyProposal.updateMany({
+      where: { id: proposal.id, status: "OPEN" },
+      data: { status: "EXPIRED", resolvedIxTime: now },
+    });
+    if (count !== 1) continue;
+    if (proposal.type === "ACQUIRE_OFFER") {
+      const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
+      await returnOfferTx(tx, {
+        companyId: buyerCompanyId,
+        founderId: proposal.proposerUserId,
+        amount: offerAmount,
+        key: `exchange:acquire-return:${proposal.id}`,
+      });
+    }
+  }
+}
+
+/**
  * Carry out an approved offer inside the vote's transaction. The target is locked before the buyer,
  * the order every company-pair move uses. A failed check throws, which rolls the vote back and leaves
  * the proposal OPEN.
@@ -127,7 +157,7 @@ export async function returnOfferTx(
 export async function executeAcquisition(
   tx: Db,
   proposal: CompanyProposal,
-  _now: number
+  now: number
 ): Promise<ExchangeNotice[]> {
   const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
   await lockCompany(tx, proposal.companyId);
@@ -144,6 +174,7 @@ export async function executeAcquisition(
   await repayCreditTx(tx, target, proposal.id);
   await returnListedShares(tx, target.id);
   await returnBuyOrders(tx, target.id);
+  await closeCompanyProposalsTx(tx, target.id, now);
   const notices = await distributeTx(tx, {
     proposal,
     target,
@@ -151,22 +182,26 @@ export async function executeAcquisition(
     holders: await holdersOf(tx, target.id),
   });
 
+  const { count } = await tx.company.updateMany({
+    where: { id: target.id, status: { in: ["ACTIVE", "DISTRESSED"] } },
+    data: {
+      status: "DELISTED",
+      tradingOpen: false,
+      decisionValue: 0,
+      standing: 0,
+      contractsWonValue: 0,
+      creditDrawn: 0,
+      distressedSinceIxTime: null,
+    },
+  });
+  if (count !== 1) throw new ExchangeError("CONFLICT", "That company can't be bought");
+
   await tx.company.update({
     where: { id: buyer.id },
     data: {
       decisionValue: { increment: round2(ACQUIRED_PLANT_SHARE * target.decisionValue) },
       standing: { increment: round2(ACQUIRED_STANDING_SHARE * Math.max(0, target.standing)) },
       contractsWonValue: { increment: round2(ACQUIRED_STANDING_SHARE * target.contractsWonValue) },
-    },
-  });
-  await tx.company.update({
-    where: { id: target.id },
-    data: {
-      status: "DELISTED",
-      tradingOpen: false,
-      decisionValue: 0,
-      contractsWonValue: 0,
-      creditDrawn: 0,
     },
   });
   await refreshFairValue(tx, target.id);

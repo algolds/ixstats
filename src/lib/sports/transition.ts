@@ -2,7 +2,8 @@ import { type PrismaClient, type Prisma as PrismaTypes } from "@prisma/client";
 import { getPreset, getSportEmoji, type SportPresetKey } from "./presets";
 import { processAging } from "./aging";
 import { generateCoach, generateRookieClass } from "./talent";
-import { DEFAULT_MATCH_INTERVAL_DAYS, persistSeasonSchedule } from "./scheduler";
+import { persistSeasonSchedule } from "./scheduler";
+export { transitionToNextStage } from "./stage-transition";
 import { resolveMatch, type TeamRatingVector } from "./resolver";
 import { teamWageBill } from "./team-rating";
 import { clamp } from "~/lib/utils";
@@ -10,6 +11,7 @@ import { mediaWikiImageUrl } from "~/lib/wiki-os/config";
 import { CardFinish, CardType, type CardRarity } from "~/lib/cards/enums";
 import { mintCopy } from "~/lib/cards/mint";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { exchangeService } from "~/lib/vault/exchange-service";
 import { seasonChampionsTitle, worldCupChampionsTitle } from "./trophy-titles";
 
 type Prisma =
@@ -422,6 +424,13 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
   const season = await loadSeason(prisma, seasonId);
   if (!season) throw new Error("Season not found");
   if (season.status !== "completed") throw new Error("Season is not completed yet");
+  if (typeof prisma.sportSeason?.findFirst === "function") {
+    const existingNext = await prisma.sportSeason.findFirst({
+      where: { leagueId: season.leagueId, seasonNumber: { gt: season.seasonNumber } },
+      select: { id: true },
+    });
+    if (existingNext) throw new Error("Season has already been transitioned");
+  }
 
   await postSeasonSummaryBulletin(prisma, season);
 
@@ -481,7 +490,60 @@ export async function transitionSeasonAction(prisma: Prisma, seasonId: string) {
   });
 
   const executeUpdates = async (tx: any) => {
+    if (typeof tx.sportSeason?.findFirst === "function") {
+      const existingNext = await tx.sportSeason.findFirst({
+        where: { leagueId: season.leagueId, seasonNumber: { gt: season.seasonNumber } },
+        select: { id: true },
+      });
+      if (existingNext) throw new Error("Season has already been transitioned");
+    }
+
     await updateAged(tx.sportPlayer, playerResults, playersForAging);
+
+    const retiredPlayerIds = playerResults.filter((r) => r.retired).map((r) => r.playerId);
+    if (retiredPlayerIds.length > 0 && tx.sportTransferListing) {
+      const openListings =
+        typeof tx.sportTransferListing.findMany === "function"
+          ? await tx.sportTransferListing.findMany({
+              where: { playerId: { in: retiredPlayerIds }, status: "open" },
+              select: { id: true },
+            })
+          : [];
+      if (typeof tx.sportTransferListing.updateMany === "function") {
+        await tx.sportTransferListing.updateMany({
+          where: { playerId: { in: retiredPlayerIds }, status: "open" },
+          data: { status: "cancelled" },
+        });
+      }
+      if (openListings.length > 0 && tx.sportTransferBid) {
+        const listingIds = openListings.map((l: { id: string }) => l.id);
+        const pendingBids =
+          typeof tx.sportTransferBid.findMany === "function"
+            ? await tx.sportTransferBid.findMany({
+                where: { listingId: { in: listingIds }, status: "pending" },
+                select: { id: true, bidderUserId: true, amount: true },
+              })
+            : [];
+        for (const bid of pendingBids) {
+          const claimed = await tx.sportTransferBid.updateMany({
+            where: { id: bid.id, status: "pending" },
+            data: { status: "expired" },
+          });
+          if (claimed.count === 1) {
+            const source = `TRANSFER_BID_REFUND:${bid.id}`;
+            await exchangeService.earn(
+              bid.bidderUserId,
+              bid.amount,
+              "ADMIN_ADJUSTMENT",
+              source,
+              tx,
+              undefined,
+              { idempotencyKey: source }
+            );
+          }
+        }
+      }
+    }
 
     const retiredCoachTeamIds: string[] = [];
     await updateAged(tx.sportCoach, coachResults, coachesForAging, (coach) => {
@@ -825,131 +887,4 @@ async function simulateWorldCup(tx: any, seasonNumber: number) {
     }
     round = next;
   }
-}
-
-/** Scheduled one-hour-apart first-round brackets for the given pairings. */
-async function createBrackets(
-  prisma: Prisma,
-  seasonId: string,
-  stageId: number,
-  pairings: Array<[string, string]>
-) {
-  const nowMs = Date.now();
-  for (const [i, [team1Id, team2Id]] of pairings.entries()) {
-    await prisma.sportBracket.create({
-      data: {
-        seasonId,
-        round: 1,
-        fighter1Id: team1Id,
-        fighter2Id: team2Id,
-        stage: stageId,
-        status: "scheduled",
-        scheduledIxTime: nowMs + (i + 1) * 3600000,
-      } as any,
-    });
-  }
-}
-
-/** Top two of each (alphabetically paired) division cross over: A1 vs B2, B1 vs A2. */
-function crossDivisionPairings(standings: any[]): Array<[string, string]> {
-  const groups: Record<string, any[]> = {};
-  for (const s of standings) (groups[s.division || "Default Group"] ??= []).push(s);
-
-  const divisions = Object.keys(groups).sort();
-  const topTwo = (div: string): string[] =>
-    [...groups[div]!]
-      .sort((a, b) => b.points - a.points || b.pointsFor - a.pointsFor)
-      .slice(0, 2)
-      .map((s) => s.teamId)
-      .filter(Boolean);
-
-  const pairings: Array<[string, string]> = [];
-  for (let i = 0; i + 1 < divisions.length; i += 2) {
-    const [a1, a2] = topTwo(divisions[i]!);
-    const [b1, b2] = topTwo(divisions[i + 1]!);
-    if (a1 && b2) pairings.push([a1, b2]);
-    if (b1 && a2) pairings.push([b1, a2]);
-  }
-  return pairings;
-}
-
-/** Circle-method round robin: one match day per round. */
-function roundRobinFixtures(teamIds: string[]) {
-  const n = teamIds.length;
-  const fixtures: Array<{ homeTeamId: string; awayTeamId: string; matchDay: number }> = [];
-  for (let r = 0; r < n - 1; r++) {
-    for (let i = 0; i < n / 2; i++) {
-      const home = (r + i) % (n - 1);
-      const away = i === 0 ? n - 1 : (n - 1 - i + r) % (n - 1);
-      fixtures.push({ homeTeamId: teamIds[home]!, awayTeamId: teamIds[away]!, matchDay: r + 1 });
-    }
-  }
-  return fixtures;
-}
-
-export async function transitionToNextStage(prisma: Prisma, seasonId: string): Promise<boolean> {
-  const season = await prisma.sportSeason.findUnique({
-    where: { id: seasonId },
-    include: { league: true },
-  });
-  if (!season) return false;
-
-  const stages = (season.league.settings as any)?.stages;
-  if (!Array.isArray(stages)) return false;
-
-  const currentStageId = (season as any).activeStage ?? 1;
-  const nextStage = stages.find((s: any) => s.id === currentStageId + 1);
-  if (!nextStage) return false; // no next stage: the season is done
-
-  // Standings of the current stage decide the qualifiers
-  const standings = await prisma.sportStanding.findMany({
-    where: { seasonId },
-    orderBy: [{ points: "desc" }, { pointsFor: "desc" }],
-  });
-  if (standings.length === 0) return false;
-
-  const isBracket = nextStage.type === "bracket" || nextStage.type === "golden_box";
-
-  if (standings.some((s: any) => s.division)) {
-    if (isBracket) {
-      await createBrackets(prisma, seasonId, nextStage.id, crossDivisionPairings(standings));
-    }
-  } else {
-    // Standard top-K qualifiers (e.g. top 4 for Golden Box); a bracket plays 1 vs 4, 2 vs 3 (or a single final)
-    const qualified = standings.map((s: any) => s.teamId).slice(0, nextStage.teams || 4);
-
-    if (isBracket) {
-      const pairings: Array<[string, string]> =
-        qualified.length >= 4
-          ? [
-              [qualified[0], qualified[3]],
-              [qualified[1], qualified[2]],
-            ]
-          : qualified.length >= 2
-            ? [[qualified[0], qualified[1]]]
-            : [];
-      await createBrackets(prisma, seasonId, nextStage.id, pairings);
-    } else if (nextStage.type === "league" || nextStage.type === "round_robin") {
-      const nowMs = Date.now();
-      for (const fix of roundRobinFixtures(qualified)) {
-        await prisma.sportMatch.create({
-          data: {
-            seasonId,
-            matchDay: fix.matchDay,
-            homeTeamId: fix.homeTeamId,
-            awayTeamId: fix.awayTeamId,
-            stage: nextStage.id,
-            status: "scheduled",
-            scheduledIxTime: nowMs + fix.matchDay * DEFAULT_MATCH_INTERVAL_DAYS * 86_400_000,
-          } as any,
-        });
-      }
-    }
-  }
-
-  await prisma.sportSeason.update({
-    where: { id: seasonId },
-    data: { activeStage: nextStage.id } as any,
-  });
-  return true;
 }

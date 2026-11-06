@@ -223,6 +223,9 @@ async function recordResults(
   seatsWonPerParty: Map<string, number>,
   totalVotesCast: number
 ) {
+  if (typeof db.electionResult.deleteMany === "function") {
+    await db.electionResult.deleteMany({ where: { electionId } });
+  }
   const results: {
     partyId: string;
     candidateId: string;

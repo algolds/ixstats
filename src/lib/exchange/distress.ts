@@ -25,6 +25,7 @@ import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, splitProRata, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
+import { closeCompanyProposalsTx } from "./acquisition";
 import { debitTreasuryTx, transferToTreasuryTx } from "./treasury";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -228,6 +229,7 @@ async function liquidateTx(tx: Db, input: LifecycleInput, notices: ExchangeNotic
   const key = `op:${c.realmId}:${input.tickKey}:${c.id}:liquidation`;
   await returnListedShares(tx, c.id);
   await returnBuyOrders(tx, c.id);
+  await closeCompanyProposalsTx(tx, c.id, input.nowMs);
 
   const recovered = await recoverPlantTx(tx, input, key);
   let cash = input.cashCents + recovered;

@@ -101,6 +101,14 @@ describe("security.respondToConflict", () => {
     });
     expect(db.militaryConflict.update).not.toHaveBeenCalled();
   });
+
+  it("refuses to accept or decline a challenge that was concurrently withdrawn", async () => {
+    db.militaryConflict.updateMany.mockResolvedValue({ count: 0 });
+    await expect(
+      conflicts("freeDefender").respondToConflict({ conflictId: "conflict_1", accept: true })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.militaryConflict.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("security.proposePvPConflict", () => {

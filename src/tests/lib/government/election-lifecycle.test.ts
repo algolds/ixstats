@@ -642,4 +642,20 @@ describe("MC-2 politics lifecycle", () => {
     expect(await processDueElections()).toMatchObject({ resolved: 1 });
     expect(first.status).toBe("completed");
   });
+
+  it("clears partial electionResult rows when retrying a failed count", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    jest.spyOn(console, "error").mockImplementation(() => undefined);
+    // Fail during seat reassignment AFTER recordResults has inserted ElectionResult rows
+    fakeDb.legislativeSeat.update.mockRejectedValueOnce(new Error("seat write failed"));
+
+    expect(await processDueElections()).toMatchObject({ resolved: 0, skipped: 1 });
+    expect(first.status).toBe("upcoming");
+
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    expect(first.status).toBe("completed");
+    expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
+  });
 });

@@ -190,8 +190,8 @@ export const nationalIssuesPlayerRouter = createTRPCRouter({
       }
 
       if (issue.status === "pending") {
-        await ctx.db.nationalIssue.update({
-          where: { id: input.id },
+        await ctx.db.nationalIssue.updateMany({
+          where: { id: input.id, status: "pending" },
           data: { status: "viewed" },
         });
       }

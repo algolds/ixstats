@@ -149,6 +149,8 @@ describe("endOperation", () => {
     await expect(operations().endOperation({ operationId: "op_1" })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
+    expect(db.deployment.updateMany).not.toHaveBeenCalled();
+    expect(readiness).not.toHaveBeenCalled();
     expect(db.militaryOperation.update).not.toHaveBeenCalled();
   });
 

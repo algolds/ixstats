@@ -96,3 +96,21 @@ it("writes the consequence log the brief shows in plain words (no emoji, no shou
   expect(consequenceLog).toContain("The gamble backfired");
   expect(consequenceLog).not.toMatch(/[☀-➿]|[A-Z]{4,}/u);
 });
+
+it("markViewed does not reopen an already-responded issue back to viewed", async () => {
+  const owner = issues(asOwner(db as never, await addOwner(db as never, "lena", "testland")));
+  const issueId = (await NationalIssuesEngine.forceGenerate("strike", "testland", db as never))!;
+
+  // Race markViewed and respond; once responded, a second respond must still be rejected
+  await Promise.all([
+    owner.markViewed({ id: issueId }),
+    owner.respond({ issueId, optionId: "negotiate" }),
+  ]);
+  expect((await db.nationalIssue.findUnique({ where: { id: issueId } }))?.status).toBe(
+    "responded"
+  );
+  await expect(owner.respond({ issueId, optionId: "negotiate" })).rejects.toMatchObject({
+    code: "BAD_REQUEST",
+    message: "Issue already resolved",
+  });
+});

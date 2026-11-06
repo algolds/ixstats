@@ -27,6 +27,7 @@ import { notifyExchange, type ExchangeNotice } from "./notify";
 import { formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { returnBuyOrders } from "./shares";
+import { closeCompanyProposalsTx } from "./acquisition";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 
 /** The four macro sectors, matching the SectorIndex rows. */
@@ -118,13 +119,19 @@ export async function refreshFairValue(tx: Db, companyId: string): Promise<void>
   });
 }
 
-/** Load a company the user founded and that is still ACTIVE, or throw. */
-export async function requireOwnedCompany(tx: Db, companyId: string, userId: string) {
+/** Load a company the user founded and that is still ACTIVE (or DISTRESSED when allowed), or throw. */
+export async function requireOwnedCompany(
+  tx: Db,
+  companyId: string,
+  userId: string,
+  allowDistress = false
+) {
   const company = await tx.company.findUnique({ where: { id: companyId } });
   if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
   if (company.founderId !== userId) {
     throw new ExchangeError("FORBIDDEN", "You did not found this company");
   }
+  if (allowDistress && company.status === "DISTRESSED") return company;
   if (company.status !== "ACTIVE") {
     throw new ExchangeError("CONFLICT", "This company is no longer active");
   }
@@ -301,7 +308,7 @@ export async function depositToCompany(db: PrismaClient, input: CapitalMoveInput
     return await db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
       await lockCompany(tx, input.companyId);
-      await requireOwnedCompany(tx, input.companyId, input.userId);
+      const company = await requireOwnedCompany(tx, input.companyId, input.userId, true);
       const r = await spendSovereignsTx(tx, {
         userId: input.userId,
         amount: input.amount,
@@ -311,9 +318,20 @@ export async function depositToCompany(db: PrismaClient, input: CapitalMoveInput
         idempotencyKey: key,
       });
       if (r.alreadyApplied) return { newBalance: r.newBalance, alreadyApplied: true };
+      const creditLimit = Math.min(
+        250_000,
+        0.5 * (company.decisionValue + 0.25 * company.contractsWonValue)
+      );
+      const cured =
+        company.status === "DISTRESSED" &&
+        company.capital + input.amount >= 0 &&
+        company.creditDrawn <= creditLimit + 1e-9;
       await tx.company.update({
         where: { id: input.companyId },
-        data: { capital: { increment: input.amount } },
+        data: {
+          capital: { increment: input.amount },
+          ...(cured ? { status: "ACTIVE", distressedSinceIxTime: null } : {}),
+        },
       });
       await refreshFairValue(tx, input.companyId);
       return { newBalance: r.newBalance, alreadyApplied: false };
@@ -444,10 +462,18 @@ export async function dissolveCompanyTx(
   await tx.contractBid.deleteMany({ where: { companyId: company.id, outcome: null } });
   await returnListedShares(tx, company.id);
   await returnBuyOrders(tx, company.id);
+  await closeCompanyProposalsTx(tx, company.id, Date.now());
 
   const { count } = await tx.company.updateMany({
     where: { id: company.id, status: "ACTIVE", capital: company.capital },
-    data: { status: "DELISTED", capital: 0, tradingOpen: false },
+    data: {
+      status: "DELISTED",
+      capital: 0,
+      tradingOpen: false,
+      decisionValue: 0,
+      standing: 0,
+      contractsWonValue: 0,
+    },
   });
   if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
 

@@ -392,8 +392,8 @@ async function advanceCircuitRace(
 
   const nowMs = Date.now();
 
-  await prisma.sportRace.update({
-    where: { id: race.id },
+  const claimed = await prisma.sportRace.updateMany({
+    where: { id: race.id, status: { in: ["upcoming", "qualifying_complete"] } },
     data: {
       status: "completed",
       raceIxTime: race.raceIxTime ?? nowMs,
@@ -410,6 +410,7 @@ async function advanceCircuitRace(
       weather: isWet ? "wet" : "dry",
     },
   });
+  if (claimed.count === 0) return false;
 
   // Check if season complete
   const remainingRaces = await prisma.sportRace.count({

@@ -355,6 +355,23 @@ export const securityOperationsRouter = createTRPCRouter({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
       }
 
+      // End operation on the nation's realm clock. Rows from before startIxTime was stamped fall
+      // back to their creation (on Ixnay's timeline, which every realm clock shares).
+      const endIxTime = (await clockForCountry(ctx.db, operation.countryId)).now();
+      const durationRating = operationSuccessRating({
+        durationIxDays: operation.duration,
+        startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),
+        endIxTime,
+      });
+      // Claim the end once BEFORE recalling deployments or applying readiness changes.
+      const claimed = await ctx.db.militaryOperation.updateMany({
+        where: { id: input.operationId, status: { in: ["active", "planned"] } },
+        data: { status: "completed", endIxTime },
+      });
+      if (claimed.count === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
+      }
+
       // Recall all deployments
       await ctx.db.deployment.updateMany({
         where: { operationId: input.operationId, status: "deployed" },
@@ -373,22 +390,6 @@ export const securityOperationsRouter = createTRPCRouter({
         generalsMultiplier: generals ? GENERALS_READINESS_MULTIPLIER : 1,
       });
 
-      // End operation on the nation's realm clock. Rows from before startIxTime was stamped fall
-      // back to their creation (on Ixnay's timeline, which every realm clock shares).
-      const endIxTime = (await clockForCountry(ctx.db, operation.countryId)).now();
-      const durationRating = operationSuccessRating({
-        durationIxDays: operation.duration,
-        startIxTime: operation.startIxTime || IxTime.convertToIxTime(operation.createdAt.getTime()),
-        endIxTime,
-      });
-      // Claim the end once, then fight a sealed intervention against the target's real forces.
-      const claimed = await ctx.db.militaryOperation.updateMany({
-        where: { id: input.operationId, status: { in: ["active", "planned"] } },
-        data: { status: "completed", endIxTime },
-      });
-      if (claimed.count === 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Operation is not active." });
-      }
       const battle = await resolveIntervention(ctx.db, operation);
       const successRating = combinedRating(durationRating, battle?.result.band ?? null);
       const updated = await ctx.db.militaryOperation.update({

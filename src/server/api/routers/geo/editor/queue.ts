@@ -112,7 +112,8 @@ async function applyBorderAdjust(
   edit: MapEditRequest,
   proposed: Proposed,
   actorId: string,
-  reviewNote: string | undefined
+  reviewNote: string | undefined,
+  onValidated?: () => Promise<void>
 ) {
   // The feature the edit was filed against, still active on the edit's realm map
   const mapLayer =
@@ -128,6 +129,7 @@ async function applyBorderAdjust(
   }
   // Checked again on approval (it was checked when filed): the stored edit can change before it is reviewed
   await validateGeometryValid(db, proposed.geometry as Record<string, unknown>);
+  if (onValidated) await onValidated();
 
   await db.mapLayer.update({
     where: { id: mapLayer.id },
@@ -249,6 +251,29 @@ function applyPoiEdit(db: PrismaClient, edit: MapEditRequest, p: Proposed) {
   });
 }
 
+/** Atomically claims a pending edit request so concurrent reviews cannot both apply. */
+async function claimReview(
+  db: PrismaClient,
+  input: { editId: string; reviewNote?: string },
+  status: "approved" | "rejected",
+  reviewerId: string
+) {
+  if (typeof db.mapEditRequest.updateMany === "function") {
+    const claimed = await db.mapEditRequest.updateMany({
+      where: { id: input.editId, status: "pending" },
+      data: {
+        status,
+        reviewedBy: reviewerId,
+        reviewedAt: new Date(),
+        reviewNote: input.reviewNote ?? null,
+      },
+    });
+    if (claimed.count === 0) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: `Edit already reviewed` });
+    }
+  }
+}
+
 /** Marks a pending edit request approved or rejected. */
 function recordReview(
   db: PrismaClient,
@@ -328,6 +353,7 @@ export const geoEditorQueueRouter = createTRPCRouter({
   approveEdit: adminProcedure.input(reviewInput).mutation(async ({ ctx, input }) => {
     const edit = await loadPendingEdit(ctx.db, input.editId);
     const proposed = edit.proposedData as Proposed;
+    const claim = () => claimReview(ctx.db, input, "approved", ctx.user.clerkUserId);
 
     if (edit.editType === "border_adjust" && edit.operation === "update") {
       await applyBorderAdjust(
@@ -335,14 +361,20 @@ export const geoEditorQueueRouter = createTRPCRouter({
         edit,
         proposed,
         ctx.user.clerkUserId ?? "system",
-        input.reviewNote
+        input.reviewNote,
+        claim
       );
     } else if (edit.editType === "subdivision") {
+      await claim();
       await applySubdivisionEdit(ctx.db, edit, proposed);
     } else if (edit.editType === "city") {
+      await claim();
       await applyCityEdit(ctx.db, edit, proposed);
     } else if (edit.editType === "poi") {
+      await claim();
       await applyPoiEdit(ctx.db, edit, proposed);
+    } else {
+      await claim();
     }
 
     await recordReview(ctx.db, input, "approved", ctx.user.clerkUserId);
@@ -354,6 +386,7 @@ export const geoEditorQueueRouter = createTRPCRouter({
    */
   rejectEdit: adminProcedure.input(reviewInput).mutation(async ({ ctx, input }) => {
     await loadPendingEdit(ctx.db, input.editId);
+    await claimReview(ctx.db, input, "rejected", ctx.user.clerkUserId);
     await recordReview(ctx.db, input, "rejected", ctx.user.clerkUserId);
     return { id: input.editId, status: "rejected" as const };
   }),

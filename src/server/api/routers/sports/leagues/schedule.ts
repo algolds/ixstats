@@ -12,6 +12,7 @@ import {
 import { TRPCError } from "@trpc/server";
 import { persistSeasonSchedule } from "~/lib/sports";
 import { recalculateStandings } from "./helpers";
+import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
 import { assertSportsEconomyOpen, TEAM_BADGE } from "~/server/api/routers/sports/_shared";
 import { refundOpenPredictionsTx } from "~/server/api/routers/sports/escrow";
 import { assertOwnsLeague, viewerCanManageLeague } from "~/server/api/routers/sports/league-access";
@@ -143,6 +144,11 @@ export const leaguesScheduleRouter = createTRPCRouter({
         });
 
         await recalculateStandings(ctx.db, match.seasonId);
+        await resolveMatchPredictions(
+          ctx.db,
+          input.matchId,
+          outcomeFromScores(input.homeScore, input.awayScore)
+        );
 
         return updatedMatch;
       } catch (error) {

@@ -487,4 +487,51 @@ describe("contract state machine", () => {
     setup({ vault_isExchangeEnabled: "false" });
     await expect(found("alice", "Alice Works")).rejects.toMatchObject({ code: "DISABLED" });
   });
+
+  it("allows depositing capital into a DISTRESSED company and cures it when credit is within limit", async () => {
+    const id = await found("alice", "Alice Works");
+    company(id).status = "DISTRESSED";
+    company(id).distressedSinceIxTime = Date.now() - 1000;
+    company(id).creditDrawn = 0;
+
+    await depositToCompany(fake.client, {
+      userId: "alice",
+      companyId: id,
+      amount: 500,
+      requestId: rid(),
+    });
+    expect(company(id)).toMatchObject({
+      status: "ACTIVE",
+      capital: 500,
+      distressedSinceIxTime: null,
+    });
+  });
+
+  it("refunds contract escrow to founder wallet if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
+    const { aliceCo, bobCo, contractId, bidId } = await openContractWithBid();
+    await awardContract(fake.client, { userId: "alice", contractId, bidId });
+
+    // If contractor goes BANKRUPT before completion, completing the contract is blocked with CONFLICT.
+    company(bobCo).status = "BANKRUPT";
+    await expect(
+      completeContract(fake.client, { userId: "alice", contractId })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund lands in alice's wallet.
+    await disputeContract(fake.client, {
+      userId: "alice",
+      contractId,
+      reason: "Contractor went bankrupt",
+    });
+    company(aliceCo).status = "BANKRUPT";
+    company(aliceCo).capital = 0;
+    const aliceWalletBefore = sov("alice");
+    await resolveDispute(fake.client, {
+      contractId,
+      outcome: "REFUND_ISSUER",
+      note: "Refund to founder wallet",
+    });
+    expect(sov("alice")).toBe(aliceWalletBefore + 300);
+    expect(company(aliceCo).capital).toBe(0);
+  });
 });
