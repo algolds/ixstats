@@ -76,4 +76,13 @@ describe("runExchangeMarketTick", () => {
     expect((fake.tables.nationTreasuryEntry ?? []).filter((e) => e.type === "TAX")).toHaveLength(1);
     expect(fake.tables.company![0]!.capital).toBe(capital);
   });
+
+  it("runs bond payments and policy headlines and reports both", async () => {
+    const result = await runExchangeMarketTick(fake.client);
+    expect(result.bonds).toEqual({ couponsPaid: 0, matured: 0, defaulted: 0 });
+    expect(result.policyHeadlines).toBe(0);
+    expect(fake.tables.exchangeNationSnapshot).toEqual([
+      expect.objectContaining({ countryId: NATION }),
+    ]);
+  });
 });

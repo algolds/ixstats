@@ -23,6 +23,9 @@ import { notifyExchange } from "./notify";
 import { operatingTickKey, runCompanyOperations, TICKS_PER_DAY } from "./operations";
 import { computeSectorIndices } from "./sectors";
 import { mintStipendTx, stipendFor } from "./treasury";
+import { runBondPayments } from "./bonds";
+import { alertWatchers } from "./news";
+import { runPolicyHeadlines } from "./policy";
 
 /** Nations that host an operating company or already hold a treasury. */
 async function stipendNationsOf(db: PrismaClient) {
@@ -108,6 +111,7 @@ export async function runExchangeMarketTick(db: PrismaClient) {
   const nowMs = Date.now();
   const tickKey = operatingTickKey(nowMs);
   const stipendsMinted = await mintStipendsOf(db, nowMs, tickKey);
+  const bonds = await runBondPayments(db, nowMs);
   const indices = await computeSectorIndices(db, nowMs);
   const operations = await runCompanyOperations(db, nowMs);
   const decisionsApplied = await resolveDueDecisions(db, nowMs);
@@ -115,8 +119,12 @@ export async function runExchangeMarketTick(db: PrismaClient) {
   const contracts = await expireLapsedContracts(db, nowMs);
   const feedback = await syncCorporateFeedback(db, nowMs);
   const companiesRefreshed = await refreshActiveFairValues(db);
+  const policy = await runPolicyHeadlines(db, nowMs);
+  await alertWatchers(db, [...bonds.news, ...policy]);
   return {
     stipendsMinted,
+    bonds: { couponsPaid: bonds.couponsPaid, matured: bonds.matured, defaulted: bonds.defaulted },
+    policyHeadlines: policy.length,
     indices: indices.map((i) => ({ sector: i.sectorKey, value: i.value })),
     operations,
     decisionsApplied,
