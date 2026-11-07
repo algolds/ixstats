@@ -13,7 +13,7 @@
  * must belong to the same realm, so the realm's tax, interest and sector rules apply.
  */
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { DEFAULT_REALM_ID, SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import {
@@ -551,6 +551,8 @@ const COMPANY_SELECT = {
   sectorKey: true,
   subIndustryKey: true,
   hqCountryId: true,
+  wikiSlug: true,
+  wikiData: true,
   capital: true,
   standing: true,
   fairValue: true,

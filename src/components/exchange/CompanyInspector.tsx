@@ -73,8 +73,8 @@ export function CompanyInspector({
 
   const cutoffMs = Date.now() - THIRTY_DAYS_MS;
   const trailing30dDividends = dividends
-    .filter((d) => d.paidIxTime >= cutoffMs)
-    .reduce((sum, d) => sum + d.totalAmount, 0);
+    .filter((d) => new Date(d.createdAt).getTime() >= cutoffMs)
+    .reduce((sum, d) => sum + d.amount, 0);
 
   const metrics = computeCompanyMetrics({
     capital: company.capital,
@@ -358,16 +358,15 @@ export function CompanyInspector({
             <div key={d.id} className="text-caption flex justify-between gap-2 tabular-nums">
               <span className="text-label-secondary">Dividend paid</span>
               <span className="text-label">
-                {formatSovereigns(d.totalAmount)} ({formatSovereigns(d.amountPerShare)}/sh)
+                {formatSovereigns(d.amount)} (
+                {d.shareCount > 0 ? formatSovereigns(d.amount / d.shareCount) : "—"}/sh)
               </span>
             </div>
           ))}
           {decisions.slice(0, 3).map((dec) => (
             <div key={dec.id} className="text-caption flex justify-between gap-2 tabular-nums">
               <span className="text-label-secondary">Decision: {dec.type}</span>
-              <span className="text-label">
-                {dec.cost > 0 ? formatSovereigns(dec.cost) : dec.status}
-              </span>
+              <span className="text-label">{dec.appliedIxTime ? "Applied" : "Pending"}</span>
             </div>
           ))}
         </div>
