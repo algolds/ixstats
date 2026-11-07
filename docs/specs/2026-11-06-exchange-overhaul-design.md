@@ -230,6 +230,49 @@ about (company, bond, nation, tender), and the market move it caused.
 - The coupling caps are unchanged.
 - Bonds and the wealth fund change only the ₷ treasury, never MyCountry's budget figures.
 
+## 11a. Release 2 decisions (owner, 2026-11-07) and how they are built
+
+**Owner decisions:**
+- **The press route is the `#business` hashtag.** A public ThinkPages post tagged `#business` by a media, government
+  or linked corporate account appears in its realm's Today in business, as an excerpt that links to the post.
+- **Companies get a voice now.** In My companies, a founder links one of their corporate ThinkPages accounts to their
+  company. That account's `#business` posts are the company's press releases, shown on the company page.
+- **The wealth fund is capped at half the treasury.** Fund cash plus holdings at cost may not exceed 50% of the
+  treasury's balance plus the fund. This comes on top of the 25% stake cap per company.
+- **A story follows its post.** Delete or hide the post and the story leaves the Exchange. ThinkPages moderation is the
+  only moderation.
+
+*My calls, for the builder:*
+- **The fund is an account.** Each nation's wealth fund is a fund account: a system user and wallet per nation
+  (`NationTreasury.fundUserId`). It trades through the existing order book, bond and fund engine, unchanged.
+  - The treasurer moves ₷ between the treasury and the fund (deposit and withdraw). The 50% cap is checked on deposit.
+  - Dividends, coupons and sales land in the fund.
+  - The fund account is left out of leaderboards and notifications. Its holdings are public on the nation page.
+- **What the fund may not buy:**
+  - its own nation's bonds;
+  - a company the owner founded or holds shares in;
+  - more than 25% of any company, counting its holdings, listed shares and open buy orders.
+- **No self-dealing in lending or tenders either.** A nation's treasury also won't lend to (credit lines) or award its
+  tenders to a company the owner founded or holds shares in.
+- **Lending terms** sit on `NationTreasury`:
+  - `lendingSpread`, from −2 to +10 percentage points, is added to the rating spread;
+  - `companyCreditCap`, from ₷0 to ₷250,000, caps each domestic company's line.
+  - The defaults (0 and ₷250,000) keep today's behaviour. Borrowing, the tick's interest and its credit-limit check
+    all use them.
+- **Which posts become stories:**
+  - The post must be public, top-level (no replies or reposts) and carry no content warning.
+  - It must come from an active account.
+  - The tag matches case-insensitively.
+  - Stories are read live from ThinkPages (no copy), so a deleted or hidden post drops out on its own.
+  - Press stories get no watcher alerts in R2.
+- **Account links** are one-to-one: one corporate account per company, one company per account. The account must
+  belong to the founder.
+- **Trading as the treasury:** the trade sheet gets a "Trade as" switch (you, or your nation's treasury) when the
+  viewer owns a nation in the realm.
+- **The realm DM lever** (sector modifiers) returns on Markets, Funds, for realm managers.
+- **The Treasury section** becomes overview, wealth fund, bonds and lending terms. Posting a tender stays on Tenders,
+  which already funds tenders from the treasury.
+
 ## 12. Releases
 
 - **R1, Watch.**
