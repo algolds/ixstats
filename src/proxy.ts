@@ -59,6 +59,9 @@ const isPublicRoute = createRouteMatcher([
   "/thinkpages/(.*)",
   "/maps",
   "/maps/(.*)",
+  // The Exchange is public to watch; its mutations need sign-in (docs/specs/2026-11-06-exchange-overhaul-design.md).
+  "/exchange",
+  "/exchange/(.*)",
   "/IxEconomy.xlsx",
 ]);
 

@@ -18,7 +18,7 @@ export interface ExchangeNotice {
   href?: string;
 }
 
-const EXCHANGE_HREF = "/labs/exchange";
+const EXCHANGE_HREF = "/exchange";
 
 /** Send each notice; returns how many the API accepted (a filtered one counts as not sent). */
 export async function sendExchangeNotices(notices: readonly ExchangeNotice[]): Promise<number> {

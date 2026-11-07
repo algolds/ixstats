@@ -88,7 +88,16 @@ export type NavBadge = { kind: "count"; value: number } | { kind: "action"; labe
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default tint (iron-gall ink). */
-type AppTint = "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs";
+type AppTint =
+  | "admin"
+  | "mycountry"
+  | "maps"
+  | "thinkpages"
+  | "vault"
+  | "wiki"
+  | "realms"
+  | "labs"
+  | "exchange";
 
 type AppId =
   | "home"
@@ -99,6 +108,7 @@ type AppId =
   | "thinkpages"
   | "countries"
   | "labs"
+  | "exchange"
   | "help"
   | "admin"
   | "settings";
@@ -146,9 +156,10 @@ interface AppSection {
 /**
  * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `forum-moderator`: site staff
  * or any forum category or realm moderator.
- * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher).
+ * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher). `nation-owner`: a member who owns
+ * a nation (the Exchange's Treasury).
  */
-type SectionRequirement = "mycountry-premium" | "forum-moderator" | "signed-in" | "admin";
+type SectionRequirement = "mycountry-premium" | "forum-moderator" | "signed-in" | "admin" | "nation-owner";
 
 export interface AppDefinition {
   id: AppId;
@@ -423,6 +434,30 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
+    // The market terminal (docs/specs/2026-11-06-exchange-overhaul-design.md): public to watch, actions need sign-in.
+    id: "exchange",
+    label: "Exchange",
+    href: "/exchange",
+    icon: Coins,
+    tint: "exchange",
+    match: ["/exchange"],
+    sections: [
+      { id: "front", label: "Front page", href: "/exchange", icon: HomeSimple, exact: true },
+      {
+        id: "markets",
+        label: "Markets",
+        href: "/exchange/markets",
+        icon: StatsReport,
+        match: ["/exchange/c", "/exchange/b", "/exchange/n", "/exchange/s"],
+      },
+      { id: "tenders", label: "Tenders", href: "/exchange/tenders", icon: Journal },
+      { id: "leaderboards", label: "Leaderboards", href: "/exchange/leaderboards", icon: Leaderboard },
+      { id: "portfolio", label: "Portfolio", href: "/exchange/portfolio", icon: Wallet, requires: "signed-in" },
+      { id: "companies", label: "My companies", href: "/exchange/companies", icon: Building, requires: "signed-in" },
+      { id: "treasury", label: "Treasury", href: "/exchange/treasury", icon: Crown, requires: "nation-owner" },
+    ],
+  },
+  {
     id: "labs",
     label: "Labs",
     href: "/labs/onoma",
@@ -436,7 +471,6 @@ export const APPS: readonly AppDefinition[] = [
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
       { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
-      { id: "exchange", label: "Exchange", href: "/labs/exchange", icon: Coins },
       { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
       { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
     ],
@@ -628,6 +662,7 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "wiki",
   "thinkpages",
   "vault",
+  "exchange",
   "labs",
   "help",
 ];
@@ -802,6 +837,8 @@ interface AppVisibilityContext {
   hasMycountryPremium?: boolean;
   /** Site staff or a forum moderator (`forum-moderator` sections). */
   forumModerator?: boolean;
+  /** Owns a nation (the Exchange's Treasury section). */
+  ownsNation?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
 }
 
@@ -813,6 +850,7 @@ export function getVisibleApps({
   hasLabsAccess = false,
   hasMycountryPremium = false,
   forumModerator = false,
+  ownsNation = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
   const granted: Record<SectionRequirement, boolean> = {
@@ -820,6 +858,7 @@ export function getVisibleApps({
     "forum-moderator": forumModerator,
     "signed-in": signedIn,
     admin: canOpenAdmin,
+    "nation-owner": signedIn && ownsNation,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;

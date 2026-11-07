@@ -7,8 +7,9 @@ import { stripBasePath } from "~/lib/base-path";
 
 /** Old address → new address. */
 const MOVED_PAGES: ReadonlyMap<string, string> = new Map([
-  // The Exchange became a Labs section (docs/systems/exchange.md).
-  ["/vault/exchange", "/labs/exchange"],
+  // The Exchange left the Vault, then Labs, for its own app (docs/specs/2026-11-06-exchange-overhaul-design.md).
+  ["/vault/exchange", "/exchange"],
+  ["/labs/exchange", "/exchange"],
 ]);
 
 /**

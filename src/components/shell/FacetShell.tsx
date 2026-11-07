@@ -77,6 +77,7 @@ export function FacetShell() {
           hasLabsAccess,
           hasMycountryPremium,
           forumModerator,
+          ownsNation: Boolean(country),
           navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
         }
       : { signedIn: false, isAdmin: false }
