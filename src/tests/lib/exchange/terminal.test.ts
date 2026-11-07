@@ -9,6 +9,7 @@ jest.mock("~/lib/exchange/notify", () => ({
 
 import {
   changePct,
+  getBondPage,
   getCompanyPage,
   getFrontPage,
   getNationPage,
@@ -194,5 +195,62 @@ describe("getPortfolio", () => {
       expect.objectContaining({ companyId: "co", shares: 300, value: 330 }),
     ]);
     expect(portfolio.totalValue).toBeCloseTo(630, 2);
+  });
+});
+
+describe("bond prices", () => {
+  it("read the nation's interest rate the same way whether it is stored as a percent or a fraction", async () => {
+    const price = async (interestRates: number) => {
+      setup(false);
+      fake.tables.country![0]!.interestRates = interestRates;
+      fake.tables.nationBond = [
+        {
+          id: "b1",
+          countryId: "na",
+          realmId: "default",
+          issuerUserId: "alice",
+          faceValue: 100,
+          unitsIssued: 100,
+          unitsSold: 0,
+          couponRate: 0.07,
+          termWeeks: 10,
+          weeksPaid: 0,
+          status: "OPEN",
+          lastTradePrice: null,
+          issuedAt: new Date(),
+        },
+      ];
+      fake.tables.nationTreasury = [
+        { id: "t", countryId: "na", realmId: "default", balance: 0, creditRating: "A" },
+      ];
+      return (await getBondPage(fake.client, "b1", null))?.bond.price;
+    };
+    expect(await price(0.05)).toBe(await price(5));
+    expect(await price(5)).toBe(100);
+  });
+});
+
+describe("the realm index history", () => {
+  it("charts the newest points when the history is longer than the read limit", async () => {
+    setup(false);
+    const rows = Array.from({ length: 4001 }, (_, i) => ({
+      sectorKey: "industry",
+      value: i === 4000 ? 2000 : 1000,
+      recordedIxTime: i + 1,
+    }));
+    // A history reader that honours orderBy and take, as Postgres does (the fake ignores orderBy).
+    const history = {
+      findMany: async (args: { orderBy?: { recordedIxTime: "asc" | "desc" }; take?: number }) => {
+        const dir = args.orderBy?.recordedIxTime === "desc" ? -1 : 1;
+        return [...rows]
+          .sort((a, b) => dir * (a.recordedIxTime - b.recordedIxTime))
+          .slice(0, args.take ?? rows.length);
+      },
+    };
+    const db = new Proxy(fake.client, {
+      get: (target, prop) => (prop === "sectorIndexHistory" ? history : target[prop]),
+    });
+    const page = await getFrontPage(db, "default");
+    expect(page.index.series.at(-1)).toEqual({ t: 4001, value: 1250 });
   });
 });

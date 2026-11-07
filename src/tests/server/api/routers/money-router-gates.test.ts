@@ -72,7 +72,6 @@ const PUBLIC = [
   "exchange.bondPage",
   "exchange.nationPage",
   "exchange.story",
-  "exchange.news",
   "exchange.leaderboards",
 ];
 

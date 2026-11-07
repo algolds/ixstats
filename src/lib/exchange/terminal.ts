@@ -10,6 +10,7 @@ import { round2 } from "./amounts";
 import { bondPriceOf, modelBondPrice, weeksLeftOf } from "./bonds";
 import type { SectorKey } from "./companies";
 import type { Db } from "./guards";
+import { rateToFraction } from "./macro";
 import { listNews, type NewsRow } from "./news";
 import { getOrderBook } from "./shares";
 import { SECTOR_LABELS, unitPrice } from "./sectors";
@@ -173,7 +174,7 @@ async function bondViews(db: Db, bonds: readonly NationBond[], nowMs: number): P
     const nation = nations.find((n) => n.id === b.countryId);
     const rating = ratingOf(treasuries.find((t) => t.countryId === b.countryId)?.creditRating);
     const weeksLeft = weeksLeftOf(b, nowMs);
-    const baseRate = nation?.interestRates ? nation.interestRates / 100 : 0.05;
+    const baseRate = rateToFraction(nation?.interestRates) ?? 0.05;
     const model = modelBondPrice({
       faceValue: b.faceValue,
       couponRate: b.couponRate,
@@ -215,7 +216,8 @@ export async function getFrontPage(db: Db, realmId: string, nowMs: number = Date
     db.sectorIndex.findMany({ where: { realmId } }),
     db.sectorIndexHistory.findMany({
       where: { realmId },
-      orderBy: { recordedIxTime: "asc" },
+      // The newest points: the series is re-sorted by time below.
+      orderBy: { recordedIxTime: "desc" },
       take: 4000,
       select: { sectorKey: true, value: true, recordedIxTime: true },
     }),

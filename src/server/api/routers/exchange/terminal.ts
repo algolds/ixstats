@@ -37,7 +37,6 @@ import {
   getPortfolio,
   getStory,
 } from "~/lib/exchange/terminal";
-import { listNews } from "~/lib/exchange/news";
 import { listOpenRealms } from "~/lib/exchange/queries";
 import { guard } from "./_errors";
 
@@ -103,19 +102,6 @@ export const exchangeTerminalRouter = createTRPCRouter({
     .input(z.object({ newsId: id }))
     .query(({ ctx, input }) =>
       guard("load the story", async () => found(await getStory(ctx.db, input.newsId), "Story"))
-    ),
-
-  news: publicProcedure
-    .input(realm.extend({ before: z.date().optional() }))
-    .query(({ ctx, input }) =>
-      guard("load the news", () =>
-        listNews(ctx.db, {
-          realmId: realmOf(input),
-          prominence: "HEADLINE",
-          take: 30,
-          before: input.before,
-        })
-      )
     ),
 
   leaderboards: publicProcedure
