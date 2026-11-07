@@ -191,10 +191,12 @@ export function CompanyPage({ companyId }: { companyId: string }) {
         <div className="space-y-4 lg:col-span-2">
           <Card content="visualization" padding="lg" className="space-y-2">
             <Figure size="hero" value={sov(data.price)} />
-            <p className="text-footnote">
-              <ChangeLabel pct={data.changePct} />{" "}
-              <span className="text-label-secondary">over a day</span>
-            </p>
+            {data.changePct !== null && (
+              <p className="text-footnote">
+                <ChangeLabel pct={data.changePct} />{" "}
+                <span className="text-label-secondary">over a day</span>
+              </p>
+            )}
             <IndexChart series={data.valueHistory} />
           </Card>
           <Card content="data" padding="md" className="space-y-3">

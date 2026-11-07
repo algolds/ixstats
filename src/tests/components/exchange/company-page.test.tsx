@@ -84,6 +84,12 @@ describe("CompanyPage", () => {
     );
   });
 
+  it("leaves out the change line until there is a change", () => {
+    mockPage = { ...mockPage, changePct: null };
+    render(<CompanyPage companyId="c1" />);
+    expect(screen.queryByText("over a day")).toBeNull();
+  });
+
   it("opens the order book under Advanced", () => {
     render(<CompanyPage companyId="c1" />);
     expect(screen.queryByText("Bids")).toBeNull();

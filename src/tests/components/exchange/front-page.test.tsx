@@ -92,6 +92,7 @@ describe("FrontPage", () => {
     expect(screen.getByText("1,000.00")).toBeInTheDocument();
     expect(screen.getByText("No stories yet")).toBeInTheDocument();
     expect(screen.getByText("No bonds on the board yet")).toBeInTheDocument();
+    expect(screen.queryByText("today")).toBeNull();
     expect(container.querySelector(".uppercase")).toBeNull();
   });
 });

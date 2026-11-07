@@ -30,10 +30,12 @@ function IndexCard({ data }: { data: FrontPageData }) {
       <div>
         <p className="text-footnote text-label-secondary">{data.realm.name} realm index</p>
         <Figure size="hero" value={formatSovereignFigure(data.index.value)} />
-        <p className="text-footnote">
-          <ChangeLabel pct={data.index.changePct} />{" "}
-          <span className="text-label-secondary">today</span>
-        </p>
+        {data.index.changePct !== null && (
+          <p className="text-footnote">
+            <ChangeLabel pct={data.index.changePct} />{" "}
+            <span className="text-label-secondary">today</span>
+          </p>
+        )}
       </div>
       <IndexChart series={pointsIn(data.index.series, range)} />
       <SegmentedControl
