@@ -7,10 +7,16 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { exchangeRouteOf, type ExchangeRoute } from "~/lib/exchange/routes";
 import { ExchangeHeader } from "./ExchangeHeader";
 import { FrontPage } from "./FrontPage";
+import { LeaderboardsPage } from "./LeaderboardsPage";
+import { MarketsPage } from "./MarketsPage";
 
 /** The page for one Exchange address. */
 function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: string }) {
-  if (route.kind === "section" && route.section === "front") return <FrontPage realmId={realmId} />;
+  if (route.kind === "section") {
+    if (route.section === "front") return <FrontPage realmId={realmId} />;
+    if (route.section === "markets") return <MarketsPage realmId={realmId} />;
+    if (route.section === "leaderboards") return <LeaderboardsPage realmId={realmId} />;
+  }
   if (route.kind === "unknown") {
     return <EmptyState title="Nothing here" message="This Exchange address doesn't exist." />;
   }
