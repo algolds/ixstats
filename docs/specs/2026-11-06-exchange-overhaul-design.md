@@ -125,7 +125,7 @@ Each object has its own page below these sections:
 
 *My calls:*
 - The realm is a query parameter (`?realm=`), defaulting to the realm of your active nation.
-- Routes are `/exchange`, `/exchange/markets`, `/exchange/tenders`, `/exchange/portfolio`, `/exchange/treasury`, `/exchange/companies`, plus object pages under `/exchange/c/[slug]`, `/exchange/b/[id]`, `/exchange/n/[slug]` and `/exchange/s/[id]`.
+- Routes are `/exchange`, `/exchange/markets`, `/exchange/tenders`, `/exchange/portfolio`, `/exchange/treasury`, `/exchange/companies`, plus object pages under `/exchange/c/[id]`, `/exchange/b/[id]`, `/exchange/n/[id]` and `/exchange/s/[id]`, all by id because `Company` has no slug. A Leaderboards section sits beside the six.
 - Use the single-page router pattern (as `CardsHub`), with section state derived from the path.
 - `notify.ts` links go to the object's page.
 
@@ -179,7 +179,7 @@ As approved in mockup B (`.superpowers/brainstorm/*/content/chase-direction.html
     - the default becomes a front-page story;
     - the nation can't issue new bonds for a ban period.
   - *My calls:*
-    - maturity from 1 to 10 years;
+    - maturity from 1 to 12 weeks, with coupons paid weekly. Years of real or realm time are too long to play; the R1 plan settled this.
     - outstanding principal per nation capped at a multiple of the treasury cap;
     - the ban period is 30 real days.
   - A bond is issued, priced and paid in ₷. Its page also shows the nation's own currency name, plus the ₷ rate when MyCountry has one.
