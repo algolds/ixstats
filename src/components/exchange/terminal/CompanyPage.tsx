@@ -114,7 +114,11 @@ function Header({ data }: { data: CompanyPageData }) {
     <EntityHeader
       art={
         wiki?.logoUrl ? (
-          <img src={assetUrl(wiki.logoUrl) ?? undefined} alt="" className="rounded-control size-14 object-contain" />
+          <img
+            src={assetUrl(wiki.logoUrl) ?? undefined}
+            alt=""
+            className="rounded-control size-14 object-contain"
+          />
         ) : undefined
       }
       name={c.name}

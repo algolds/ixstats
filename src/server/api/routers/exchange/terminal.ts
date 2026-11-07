@@ -95,7 +95,7 @@ export const exchangeTerminalRouter = createTRPCRouter({
     .input(z.object({ countryId: id }))
     .query(({ ctx, input }) =>
       guard("load the nation", async () =>
-        found(await getNationPage(ctx.db, input.countryId), "Nation")
+        found(await getNationPage(ctx.db, input.countryId, ctx.user?.id ?? null), "Nation")
       )
     ),
 

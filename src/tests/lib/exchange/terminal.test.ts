@@ -148,6 +148,15 @@ describe("getNationPage", () => {
     const page = await getNationPage(fake.client, "na");
     expect(page).toMatchObject({ id: "na", name: "Caphiria", currencyRate: null });
     expect(page?.companies.map((c) => c.id)).toEqual(["co"]);
+    expect(page?.viewer).toEqual({ watching: false });
+  });
+
+  it("knows when the viewer watches the nation", async () => {
+    setup();
+    fake.tables.exchangeWatch = [
+      { id: "w1", userId: "bob", subjectKind: "NATION", subjectId: "na" },
+    ];
+    expect((await getNationPage(fake.client, "na", "bob"))?.viewer).toEqual({ watching: true });
   });
 });
 

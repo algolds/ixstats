@@ -583,7 +583,12 @@ export async function getBondPage(
 }
 export type BondPage = NonNullable<Awaited<ReturnType<typeof getBondPage>>>;
 
-export async function getNationPage(db: Db, countryId: string, nowMs: number = Date.now()) {
+export async function getNationPage(
+  db: Db,
+  countryId: string,
+  viewerId: string | null = null,
+  nowMs: number = Date.now()
+) {
   const country = await db.country.findUnique({
     where: { id: countryId },
     select: { id: true, name: true, flag: true, realmId: true, currencyExchangeRate: true },
@@ -601,7 +606,9 @@ export async function getNationPage(db: Db, countryId: string, nowMs: number = D
     db.company.findMany({ where: { hqCountryId: countryId, status: { in: LIVE } } }),
     newsFor(db, { realmId: country.realmId, subject: { countryId }, take: 10 }),
   ]);
+  const watching = await isWatching(db, viewerId, "NATION", countryId);
   return {
+    viewer: { watching },
     id: country.id,
     name: country.name,
     flagUrl: country.flag,

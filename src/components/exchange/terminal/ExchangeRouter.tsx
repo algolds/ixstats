@@ -6,10 +6,13 @@ import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { exchangeRouteOf, type ExchangeRoute } from "~/lib/exchange/routes";
 import { ExchangeHeader } from "./ExchangeHeader";
+import { BondPage } from "./BondPage";
 import { CompanyPage } from "./CompanyPage";
 import { FrontPage } from "./FrontPage";
 import { LeaderboardsPage } from "./LeaderboardsPage";
 import { MarketsPage } from "./MarketsPage";
+import { NationPage } from "./NationPage";
+import { StoryPage } from "./StoryPage";
 
 /** The page for one Exchange address. */
 function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: string }) {
@@ -19,6 +22,9 @@ function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: strin
     if (route.section === "leaderboards") return <LeaderboardsPage realmId={realmId} />;
   }
   if (route.kind === "company") return <CompanyPage companyId={route.id} />;
+  if (route.kind === "bond") return <BondPage bondId={route.id} />;
+  if (route.kind === "nation") return <NationPage countryId={route.id} />;
+  if (route.kind === "story") return <StoryPage newsId={route.id} />;
   if (route.kind === "unknown") {
     return <EmptyState title="Nothing here" message="This Exchange address doesn't exist." />;
   }
