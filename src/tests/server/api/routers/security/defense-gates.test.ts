@@ -328,7 +328,10 @@ describe("force structure input bounds", () => {
       forces("owner").setBranchAllocation({ id: "b1", effortShare: 1.5 })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await expect(
-      forces("owner").setBranchAllocation({ id: "b1", targetActive: FORCE_LIMITS.maxActiveDuty + 1 })
+      forces("owner").setBranchAllocation({
+        id: "b1",
+        targetActive: FORCE_LIMITS.maxActiveDuty + 1,
+      })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     await forces("owner").setBranchAllocation({ id: "b1", targetActive: null });
     expect(setBranchAllocation).toHaveBeenCalledWith(db, {

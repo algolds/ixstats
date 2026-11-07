@@ -1,11 +1,16 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { EmptyState } from "~/components/ui/empty-state";
+import { useViewerRealmId } from "~/hooks/useViewerRealmId";
+import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { exchangeRouteOf, type ExchangeRoute } from "~/lib/exchange/routes";
+import { ExchangeHeader } from "./ExchangeHeader";
+import { FrontPage } from "./FrontPage";
 
-/** The page for one Exchange address. Each section and object page fills in its own component. */
-function ExchangePage({ route }: { route: ExchangeRoute }) {
+/** The page for one Exchange address. */
+function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: string }) {
+  if (route.kind === "section" && route.section === "front") return <FrontPage realmId={realmId} />;
   if (route.kind === "unknown") {
     return <EmptyState title="Nothing here" message="This Exchange address doesn't exist." />;
   }
@@ -13,10 +18,18 @@ function ExchangePage({ route }: { route: ExchangeRoute }) {
 }
 
 /**
- * The Exchange's one router (single-page pattern, as MyCountry and the cards hub): the page comes from the path,
- * so a sidebar click or the back button changes it without a route transition.
+ * The Exchange's one router (single-page pattern, as MyCountry and the cards hub): the page comes from the path and
+ * the realm from `?realm=` (else the viewer's own realm), so a sidebar click or the back button changes it without a
+ * route transition.
  */
 export function ExchangeRouter() {
   const route = exchangeRouteOf(usePathname());
-  return <ExchangePage route={route} />;
+  const viewerRealm = useViewerRealmId();
+  const realmId = useSearchParams().get("realm") ?? viewerRealm ?? DEFAULT_REALM_ID;
+  return (
+    <>
+      <ExchangeHeader realmId={realmId} />
+      <ExchangePage route={route} realmId={realmId} />
+    </>
+  );
 }

@@ -71,13 +71,16 @@ describe("the terminal, signed out", () => {
     await expect(caller.exchange.frontPage({})).resolves.toMatchObject({
       realm: { id: "default" },
     });
+    await expect(caller.exchange.realms()).resolves.toEqual([{ id: "default", name: "Ixnay" }]);
     await expect(caller.exchange.markets({ kind: "companies" })).resolves.toEqual([
       expect.objectContaining({ id: "co", name: "Caphirian Steel" }),
     ]);
   });
 
   it("keeps the portfolio behind sign-in", async () => {
-    await expect(signedOutCaller().exchange.portfolio({})).rejects.toThrow(/Authentication required/);
+    await expect(signedOutCaller().exchange.portfolio({})).rejects.toThrow(
+      /Authentication required/
+    );
   });
 
   it("answers a company page with no user id or email", async () => {

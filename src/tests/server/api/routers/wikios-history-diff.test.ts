@@ -38,10 +38,20 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { resolveDiffRefs } from "~/lib/wiki-os/diff-refs";
 import { wikiosHistoryDiffRouter } from "~/server/api/routers/wikios/history-diff";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
-import { getArticleHistoryShadow, getRevisionWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
+import {
+  getArticleHistoryShadow,
+  getRevisionWikitextShadow,
+} from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { ThrottledError } from "~/lib/wiki-os/services/outbound-limiter";
 import { TIMING_BUDGET_SCALE } from "~/tests/helpers/timing-budget";
-import { DIFF_MAX_BYTES_PER_SIDE, DIFF_MAX_LINES_PER_SIDE, DIFF_MAX_ROWS, type DiffRow, DiffTooLargeError, diffWikitext } from "~/lib/wiki-os/transformers/wikitext-diff";
+import {
+  DIFF_MAX_BYTES_PER_SIDE,
+  DIFF_MAX_LINES_PER_SIDE,
+  DIFF_MAX_ROWS,
+  type DiffRow,
+  DiffTooLargeError,
+  diffWikitext,
+} from "~/lib/wiki-os/transformers/wikitext-diff";
 
 const caller = () =>
   createCallerFactory(wikiosHistoryDiffRouter)(
@@ -384,7 +394,9 @@ describe("limits", () => {
 
       await expect(caller().getHistory({ title: "Foo" })).rejects.toThrow(/Too many requests/);
       await expect(caller().getDiff({ torev: "2" })).rejects.toThrow(/Too many requests/);
-      await expect(caller().getRevisionContent({ revid: "2" })).rejects.toThrow(/Too many requests/);
+      await expect(caller().getRevisionContent({ revid: "2" })).rejects.toThrow(
+        /Too many requests/
+      );
       await expect(caller().getRevisionHtml({ ref: "2" })).rejects.toThrow(/Too many requests/);
 
       expect(getArticleHistoryShadow).not.toHaveBeenCalled();
@@ -395,7 +407,8 @@ describe("limits", () => {
 
   describe("getDiff answers are bounded", () => {
     it("answers two 2 MB texts of one-character lines in a few hundred bytes, not megabytes", async () => {
-      const oneCharLines = (char: string) => Array.from({ length: 1_000_000 }, () => char).join("\n"); // ~2 MB
+      const oneCharLines = (char: string) =>
+        Array.from({ length: 1_000_000 }, () => char).join("\n"); // ~2 MB
       jest
         .mocked(getRevisionWikitextShadow)
         .mockResolvedValueOnce(text(oneCharLines("b")))
@@ -549,7 +562,12 @@ describe("the diff engine", () => {
       // the removed lines first, then the added ones, as Myers' script reads once deletions go first
       const swapped = diffWikitext("x\na\nb\ny", "x\nc\nd\ny", { context: Infinity });
       expect(rowsOf(swapped).map((r) => `${r.type[0]}${r.content}`)).toEqual([
-        "cx", "ra", "rb", "ac", "ad", "cy",
+        "cx",
+        "ra",
+        "rb",
+        "ac",
+        "ad",
+        "cy",
       ]);
       // one shared line in the middle still goes through the shortest-script search
       const shared = diffWikitext("x\na\nk\nb\ny", "x\nc\nk\nd\ny");

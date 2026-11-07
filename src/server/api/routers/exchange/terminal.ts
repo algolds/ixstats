@@ -38,6 +38,7 @@ import {
   getStory,
 } from "~/lib/exchange/terminal";
 import { listNews } from "~/lib/exchange/news";
+import { listOpenRealms } from "~/lib/exchange/queries";
 import { guard } from "./_errors";
 
 const id = z.string().min(1).max(64);
@@ -53,6 +54,11 @@ function found<T>(value: T | null, what: string): T {
 }
 
 export const exchangeTerminalRouter = createTRPCRouter({
+  /** The realms whose markets can be watched, Ixnay first. */
+  realms: publicProcedure.query(({ ctx }) =>
+    guard("list the realms", () => listOpenRealms(ctx.db))
+  ),
+
   frontPage: publicProcedure
     .input(realm)
     .query(({ ctx, input }) =>

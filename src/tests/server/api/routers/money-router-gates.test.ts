@@ -65,6 +65,7 @@ const PUBLIC = [
   "nsImport.getVerificationUrl",
   "nsImport.requestSelfServiceTakedown",
   // The Exchange terminal is public to watch (docs/specs/2026-11-06-exchange-overhaul-design.md).
+  "exchange.realms",
   "exchange.frontPage",
   "exchange.markets",
   "exchange.companyPage",

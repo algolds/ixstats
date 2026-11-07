@@ -83,7 +83,10 @@ beforeEach(() => {
     currentGdpPerCapita: 50_000,
     currentPopulation: 10_000_000,
   });
-  db.militaryOperation.update.mockImplementation(async ({ data }: { data: object }) => ({ status: "completed", ...data }));
+  db.militaryOperation.update.mockImplementation(async ({ data }: { data: object }) => ({
+    status: "completed",
+    ...data,
+  }));
   db.militaryOperation.updateMany.mockResolvedValue({ count: 1 });
   db.governmentComponent.findMany.mockResolvedValue([]);
 });
@@ -160,8 +163,12 @@ describe("endOperation", () => {
       operationId: "op_1",
       successRating: "success",
     } as { operationId: string });
-    expect(db.militaryOperation.updateMany.mock.calls[0]![0].data).toMatchObject({ status: "completed" });
-    expect(db.militaryOperation.update.mock.calls[0]![0].data).toMatchObject({ successRating: "failure" });
+    expect(db.militaryOperation.updateMany.mock.calls[0]![0].data).toMatchObject({
+      status: "completed",
+    });
+    expect(db.militaryOperation.update.mock.calls[0]![0].data).toMatchObject({
+      successRating: "failure",
+    });
   });
 });
 

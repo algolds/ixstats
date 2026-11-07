@@ -19,7 +19,14 @@ jest.mock("~/server/modules/combat", () => ({
   sealIntervention: jest.fn(async () => ({})),
   resolveIntervention: jest.fn(async () => null),
   commitStrike: jest.fn(async () => ({
-    conflict: { id: "c_1", status: "resolved", winner: "country_1", seed: "abc", inputSnapshot: "{}", orders: "{}" },
+    conflict: {
+      id: "c_1",
+      status: "resolved",
+      winner: "country_1",
+      seed: "abc",
+      inputSnapshot: "{}",
+      orders: "{}",
+    },
     result: { objectiveReached: true, band: "success" },
   })),
 }));
@@ -133,7 +140,10 @@ describe("operations on the combat model", () => {
         targetCountryId: "country_far",
         personnelDeployed: 100,
       })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST", message: "Both nations must be in the same realm" });
+    ).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+      message: "Both nations must be in the same realm",
+    });
     expect(db.militaryOperation.create).not.toHaveBeenCalled();
   });
 
@@ -153,7 +163,12 @@ describe("operations on the combat model", () => {
 
   it("an intervention needs a target", async () => {
     await expect(
-      operations().createOperation({ countryId: OWN, operationType: "intervention", name: "Nowhere", personnelDeployed: 10 })
+      operations().createOperation({
+        countryId: OWN,
+        operationType: "intervention",
+        name: "Nowhere",
+        personnelDeployed: 10,
+      })
     ).rejects.toMatchObject({ code: "BAD_REQUEST" });
   });
 });

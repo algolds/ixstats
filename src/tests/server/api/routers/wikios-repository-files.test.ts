@@ -57,7 +57,11 @@ describe("repositoryFiles: ixwiki", () => {
     const first = await signedOut().repositoryFiles({ source: "ixwiki", limit: 2 });
     expect(mockSearch.mock.calls[0]![0]).toMatchObject({ limit: 2, offset: 0 });
     expect(first.files).toHaveLength(2);
-    expect(first.files[0]).toMatchObject({ name: "F_0.png", title: "File:F 0.png", blurhash: null });
+    expect(first.files[0]).toMatchObject({
+      name: "F_0.png",
+      title: "File:F 0.png",
+      blurhash: null,
+    });
     expect(first.nextCursor).toBe("2");
 
     mockSearch.mockResolvedValueOnce([asset(2)]);
@@ -83,7 +87,11 @@ describe("repositoryFiles: ixwiki", () => {
     expect(last.nextCursor).toBeNull();
 
     mockSearch.mockResolvedValueOnce(Array.from({ length: 40 }, (_, i) => asset(i)));
-    const before = await signedOut().repositoryFiles({ source: "ixwiki", limit: 40, cursor: "1920" });
+    const before = await signedOut().repositoryFiles({
+      source: "ixwiki",
+      limit: 40,
+      cursor: "1920",
+    });
     expect(before.nextCursor).toBe("1960");
   });
   it("rejects a cursor that is not an offset", async () => {
@@ -100,9 +108,9 @@ describe("repositoryFiles: iiwiki", () => {
     ["gsrsearch", "x"],
   ])("rejects a cursor that carries %s (not a continuation key)", async (key, value) => {
     const cursor = Buffer.from(JSON.stringify({ [key]: value }), "utf-8").toString("base64url");
-    await expect(
-      signedOut().repositoryFiles({ source: "iiwiki", cursor })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(signedOut().repositoryFiles({ source: "iiwiki", cursor })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
   });
 });
 
@@ -115,9 +123,9 @@ describe("sisterFileInfo", () => {
     ["an empty title", [""]],
   ])("rejects %s", async (_label, titles) => {
     guard = installFetchGuard();
-    await expect(
-      signedOut().sisterFileInfo({ wiki: "iiwiki", titles })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(signedOut().sisterFileInfo({ wiki: "iiwiki", titles })).rejects.toMatchObject({
+      code: "BAD_REQUEST",
+    });
     expect(guard.calls()).toHaveLength(0);
   });
 
@@ -136,7 +144,10 @@ describe("sisterFileInfo", () => {
     guard = installFetchGuard(() => ({ query: { pages: {} } }));
     try {
       await signedOut().sisterFileInfo({ wiki: "iiwiki", titles: ["File:A.png"] });
-      expect(check).toHaveBeenCalledWith(expect.anything(), "sisterwiki", { maxRequests: 120, windowMs: 60_000 });
+      expect(check).toHaveBeenCalledWith(expect.anything(), "sisterwiki", {
+        maxRequests: 120,
+        windowMs: 60_000,
+      });
     } finally {
       enabled.mockRestore();
       check.mockRestore();
