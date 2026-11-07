@@ -35,7 +35,7 @@
     "auth:check:dev": "NODE_ENV=development node scripts/setup/check-auth-config.js",
     "auth:check:prod": "NODE_ENV=production node scripts/setup/check-auth-config.js",
     "auth:validate:prod": "node scripts/setup/validate-clerk-production.js",
-    "build": "node scripts/setup/copy-maplibre-worker.mjs && ./scripts/with-base-path.sh next build && bun run postbuild",
+    "build": "node scripts/setup/copy-maplibre-worker.mjs && ./scripts/with-base-path.sh next build",
     "build:fast": "node scripts/setup/copy-maplibre-worker.mjs && SKIP_ENV_VALIDATION=true ./scripts/with-base-path.sh next build && bun run postbuild",
     "build:ixworld": "./scripts/deploy-ixworld.sh",
     "check": "bun run typecheck && echo '✓ Type checking complete. Run bun run build for full validation.'",

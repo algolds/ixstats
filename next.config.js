@@ -81,7 +81,7 @@ const config = {
   // TypeScript performance
   typescript: {
     ignoreBuildErrors: false,
-    tsconfigPath: "./tsconfig.json",
+    tsconfigPath: "./tsconfig.build.json",
   },
 
   // Build performance
@@ -122,8 +122,14 @@ const config = {
   // Production optimizations
   poweredByHeader: false, // Remove X-Powered-By header
 
-  // Output standalone for Docker/production deployment
-  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // Standalone output only for the builds that ship it (deploy-ixworld.sh, deploy-wikios.sh); the main app runs
+  // `next start` from .next and never reads .next/standalone.
+  output:
+    process.env.NEXT_BUILD_STANDALONE === "true" ||
+    process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true" ||
+    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE === "true"
+      ? "standalone"
+      : undefined,
   outputFileTracingExcludes: {
     "*": [
       "./backups/**/*",

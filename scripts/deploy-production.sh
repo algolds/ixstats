@@ -15,6 +15,14 @@
 
 set -e
 
+# One deploy at a time, and never beside deploy-ixworld.sh or deploy-wikios.sh: all three move .next aside, and those
+# two already share this lock. flock releases it on any exit, SIGKILL included.
+exec 200>/tmp/deploy-ixworld.lock
+if ! flock -n 200; then
+    echo "❌ Another deploy (production, IxWorld or WikiOS) holds /tmp/deploy-ixworld.lock: wait for it to finish"
+    exit 1
+fi
+
 echo "🚀 Starting production deployment for IxStates..."
 
 # Check if we're in the right directory
@@ -327,8 +335,15 @@ NEXT_PREV=".next.prev"
 restore_previous_build() {
     if [ -d "$NEXT_PREV" ]; then
         echo "↩️  Restoring the previous build from $NEXT_PREV"
+        # Keep the build cache (Turbopack + tsbuildinfo) for the retry.
+        if [ -d .next/cache ] && [ ! -d "$NEXT_PREV/cache" ]; then
+            mv .next/cache "$NEXT_PREV/cache"
+        fi
         rm -rf .next
         mv "$NEXT_PREV" .next
+    fi
+    if [ "${PAUSED_BG_WORKERS:-0}" = "1" ]; then
+        pm2 start ixstats-cron ixstats-ixtwitter > /dev/null 2>&1 200>&- || true
     fi
 }
 if [ -d ".next.ixstats-saved" ]; then
@@ -345,9 +360,23 @@ if [ -d "$NEXT_PREV" ]; then
 fi
 if [ -d ".next" ]; then
     mv .next "$NEXT_PREV"
+    # The build cache comes back: without it every build compiles cold (~7 min) and rewrites ~600 MB of cache.
+    if [ -d "$NEXT_PREV/cache" ]; then
+        mkdir -p .next
+        mv "$NEXT_PREV/cache" .next/cache
+    fi
 fi
 trap restore_previous_build EXIT
 trap 'exit 1' INT TERM
+
+# Cron and IxTwitter pause during the build (~370 MB RAM, and no jobs competing with the compile); the PM2 reload
+# below starts them again, or restore_previous_build does if the deploy stops first. Jobs due meanwhile are skipped.
+PAUSED_BG_WORKERS=0
+if command -v pm2 &> /dev/null && [ -f ecosystem.config.cjs ]; then
+    echo "⏸️  Pausing ixstats-cron and ixstats-ixtwitter for the build..."
+    pm2 stop ixstats-cron ixstats-ixtwitter > /dev/null 2>&1 200>&- || true
+    PAUSED_BG_WORKERS=1
+fi
 
 # Build the application
 echo "🔨 Building application..."
@@ -429,7 +458,7 @@ else
         fi
     fi
     # A failed reload aborts the deploy instead of leaving stale cron/ws processes running silently.
-    pm2 startOrReload ecosystem.config.cjs --update-env --silent
+    pm2 startOrReload ecosystem.config.cjs --update-env --silent 200>&-
 fi
 
 # The weekly WikiOS proof may run again: release the lease the proof check took. A failed release only means the lease
@@ -485,4 +514,5 @@ trap - EXIT
 ) &
 
 # Use simplified production start script
-exec ./start-production.sh
+# The server must not inherit the deploy lock (fd 200).
+exec ./start-production.sh 200>&-
