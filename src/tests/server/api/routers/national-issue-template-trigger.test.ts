@@ -8,10 +8,7 @@ import { nationalIssuesTemplatesRouter } from "~/server/api/routers/national-iss
 import { createIdorContext } from "~/tests/helpers/country-idor-context";
 
 const RANKED = JSON.stringify({
-  and: [
-    { rank: { field: "inflationRate" } },
-    { rank: { field: "actualGdpGrowth", side: "best", share: 0.5 } },
-  ],
+  and: [{ rank: { field: "inflationRate" } }, { rank: { field: "actualGdpGrowth", side: "best", share: 0.5 } }],
 });
 
 function setup() {
@@ -45,10 +42,7 @@ it("stores a rank trigger exactly as the editor sent it", async () => {
 it("refuses a trigger with an unknown ranked field, and JSON that does not parse", async () => {
   const { caller, create, update } = setup();
   await expect(
-    caller.t.createTemplate({
-      ...base,
-      triggerConditions: JSON.stringify({ rank: { field: "shoeSize" } }),
-    })
+    caller.t.createTemplate({ ...base, triggerConditions: JSON.stringify({ rank: { field: "shoeSize" } }) })
   ).rejects.toThrow(/not a ranked field/);
   await expect(caller.t.updateTemplate({ id: "t1", triggerConditions: "{nope" })).rejects.toThrow(
     /Invalid triggerConditions JSON/

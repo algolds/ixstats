@@ -360,11 +360,13 @@ it("runs the admin recalculation as the cron's job, under its lock, and refuses 
 });
 
 it("moves only Ixnay's nations with the bot clock's epoch sync (other realms keep their own clocks)", async () => {
-  const fetchMock = jest.spyOn(globalThis, "fetch").mockResolvedValue({
-    ok: true,
-    status: 200,
-    json: async () => ({ message: "ok" }),
-  } as Response);
+  const fetchMock = jest
+    .spyOn(globalThis, "fetch")
+    .mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: "ok" }),
+    } as Response);
   db.country.updateMany.mockResolvedValue({ count: 3 });
   const targetEpoch = Date.UTC(2040, 0, 1);
   await call.adminSystem(ctx("an admin")).syncEpochWithData({ targetEpoch });

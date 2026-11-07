@@ -29,11 +29,7 @@ import { wikiCacheRouter } from "~/server/api/routers/wikiCache";
 import { cardsSheetRouter } from "~/server/api/routers/cards/sheet";
 import { ArticleRepository } from "~/lib/wiki-os/core";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import {
-  getArticleIntro,
-  getArticleWikitext,
-  getInfobox,
-} from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { getArticleIntro, getArticleWikitext, getInfobox } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getArticleSummaryFromShadow } from "~/lib/wiki-os/core/native-search-service";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
 import { fakeWikiDb } from "~/tests/helpers/fake-wiki-db";

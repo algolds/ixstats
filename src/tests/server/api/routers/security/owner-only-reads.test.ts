@@ -87,18 +87,18 @@ describe("security.getOperations", () => {
   });
 
   it("shows them to the owner", async () => {
-    const [op] = await createCallerFactory(securityOperationsRouter)(ctxFor("owner")).getOperations(
-      { countryId: OWN }
-    );
+    const [op] = await createCallerFactory(securityOperationsRouter)(
+      ctxFor("owner")
+    ).getOperations({ countryId: OWN });
     expect(op).toMatchObject({ personnelDeployed: 5000, dailyCost: 1e6, gdpDrain: 0.001 });
   });
 });
 
 describe("security.getConflicts", () => {
   it("hides casualties and damage from a nation outside the conflict", async () => {
-    const [c] = await createCallerFactory(securityConflictsRouter)(ctxFor("stranger")).getConflicts(
-      { countryId: OWN }
-    );
+    const [c] = await createCallerFactory(securityConflictsRouter)(
+      ctxFor("stranger")
+    ).getConflicts({ countryId: OWN });
     expect(c).toMatchObject({ id: "c_1", winner: OWN });
     expect(c).not.toHaveProperty("initiatorCasualties");
     expect(c).not.toHaveProperty("economicDamage");
