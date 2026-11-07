@@ -22,7 +22,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { ExchangeError, isUniqueViolation, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
-import { assertExchangeOpen, type Db } from "./guards";
+import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { alertWatchers, publishContractNewsTx, type PublishedHeadline } from "./news";
 import { formatSovereigns, round2 } from "./amounts";
@@ -241,19 +241,6 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
       return { contract, alreadyApplied: false };
     })
   );
-}
-
-/** The nation must be the caller's: they own it or play as it. */
-async function requireCountryOwner(tx: Db, countryId: string, userId: string) {
-  const country = await tx.country.findUnique({
-    where: { id: countryId },
-    select: { id: true, name: true, ownerUserId: true, realmId: true },
-  });
-  if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
-  if (country.ownerUserId === userId) return country;
-  const user = await tx.user.findUnique({ where: { id: userId }, select: { countryId: true } });
-  if (user?.countryId === countryId) return country;
-  throw new ExchangeError("FORBIDDEN", "Only the nation's owner can issue its tenders");
 }
 
 /** Take a tender's escrow from the owner's wallet or from the nation's treasury. */

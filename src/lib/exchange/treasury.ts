@@ -12,13 +12,13 @@ import type { Db } from "./guards";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchange-service";
 
-export type TreasuryInflowType = "TAX" | "TARIFF" | "INTEREST" | "LOBBY" | "B2G_ESCROW";
-export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND";
+export type TreasuryInflowType =
+  "TAX" | "TARIFF" | "INTEREST" | "LOBBY" | "B2G_ESCROW" | "BOND_SALE";
+export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND" | "BOND_COUPON" | "BOND_PRINCIPAL";
 type TreasuryEntryType = "STIPEND" | "B2G_REFUND" | TreasuryInflowType | TreasuryOutflowType;
 
 export type TreasuryPayer =
-  | { kind: "COMPANY"; companyId: string }
-  | { kind: "WALLET"; userId: string };
+  { kind: "COMPANY"; companyId: string } | { kind: "WALLET"; userId: string };
 
 export interface StipendMintInput {
   countryId: string;
@@ -153,6 +153,15 @@ async function lockTreasuryRow(tx: Db, id: string): Promise<NationTreasury> {
 async function lockTreasuryFor(tx: Db, countryId: string, realmId: string) {
   const { id } = await getOrCreateTreasury(tx, countryId, realmId);
   return lockTreasuryRow(tx, id);
+}
+
+/** Row-lock a nation's treasury (creating it if it has none) and return it as it is under the lock. */
+export async function lockTreasuryTx(
+  tx: Db,
+  countryId: string,
+  realmId: string
+): Promise<NationTreasury> {
+  return lockTreasuryFor(tx, countryId, realmId);
 }
 
 async function alreadyApplied(tx: Db, key: string): Promise<boolean> {

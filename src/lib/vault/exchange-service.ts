@@ -48,7 +48,11 @@ export type ExchangeTxType =
   | "TEAM_TRAINING"
   | "STADIUM_UPGRADE"
   | "PREDICTION_STAKE"
-  | "PREDICTION_PAYOUT";
+  | "PREDICTION_PAYOUT"
+  | "BOND_BUY"
+  | "BOND_SELL"
+  | "BOND_COUPON"
+  | "BOND_PRINCIPAL";
 
 export type ExchangeErrorCode =
   | "INVALID_AMOUNT"
