@@ -386,6 +386,10 @@ model NationTreasury {
   lifetimeSpent          Float    @default(0)
   corporateGdpShift      Float    @default(0)
   lastStipendIxTime      Float?
+  /// The nation's credit rating (AAA..D), recomputed after bond moves and on each market tick.
+  creditRating           String    @default("A")
+  /// After a bond default, no new bonds until this time.
+  bondBanUntil           DateTime?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @default(now()) @updatedAt
 
@@ -471,4 +475,119 @@ model CompanyVote {
   @@unique([proposalId, voterUserId])
   @@index([voterUserId])
   @@map("exchange_company_votes")
+}
+
+/// A nation's bond issue (Exchange terminal R1, docs/specs/2026-11-06-exchange-overhaul-design.md §7). Units of
+/// faceValue ₷, sold by the treasury, paying couponRate (annual) weekly for termWeeks, principal in the last week.
+/// status: OPEN | MATURED | DEFAULTED.
+model NationBond {
+  id             String        @id @default(cuid())
+  countryId      String
+  realmId        String        @default("default")
+  issuerUserId   String
+  faceValue      Float         @default(100)
+  unitsIssued    Int
+  unitsSold      Int           @default(0)
+  couponRate     Float
+  termWeeks      Int
+  weeksPaid      Int           @default(0)
+  status         String        @default("OPEN")
+  lastTradePrice Float?
+  issuedAt       DateTime      @default(now())
+  idempotencyKey String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @default(now()) @updatedAt
+  holdings       BondHolding[]
+  listings       BondListing[]
+
+  @@index([countryId, status])
+  @@index([realmId, status])
+  @@map("exchange_nation_bonds")
+}
+
+/// One owner's units of a NationBond (listed units are escrowed out of `units`).
+model BondHolding {
+  id          String     @id @default(cuid())
+  bondId      String
+  ownerUserId String
+  units       Int        @default(0)
+  avgCost     Float      @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @default(now()) @updatedAt
+  bond        NationBond @relation(fields: [bondId], references: [id], onDelete: Cascade)
+
+  @@unique([bondId, ownerUserId])
+  @@index([ownerUserId])
+  @@map("exchange_bond_holdings")
+}
+
+/// A holder's offer to sell bond units at a fixed price. status: OPEN | FILLED | CANCELLED.
+model BondListing {
+  id             String     @id @default(cuid())
+  bondId         String
+  sellerUserId   String
+  units          Int
+  unitsListed    Int
+  pricePerUnit   Float
+  status         String     @default("OPEN")
+  idempotencyKey String?    @unique
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @default(now()) @updatedAt
+  bond           NationBond @relation(fields: [bondId], references: [id], onDelete: Cascade)
+
+  @@index([bondId, status])
+  @@index([sellerUserId])
+  @@map("exchange_bond_listings")
+}
+
+/// Business news and live activity (news.ts). prominence: HEADLINE (Today in business) | ACTIVITY (live activity).
+/// sourceKind: EXCHANGE | NATION | COMPANY. Never names a user. key makes a retried publish a no-op.
+model ExchangeNewsItem {
+  id         String   @id @default(cuid())
+  realmId    String   @default("default")
+  kind       String
+  prominence String
+  sourceKind String
+  sourceId   String?
+  headline   String
+  body       String?
+  companyId  String?
+  bondId     String?
+  countryId  String?
+  contractId String?
+  movePct    Float?
+  key        String   @unique
+  createdAt  DateTime @default(now())
+
+  @@index([realmId, prominence, createdAt])
+  @@index([companyId])
+  @@index([bondId])
+  @@index([countryId])
+  @@map("exchange_news_items")
+}
+
+/// The last policy figures the market tick saw for a nation (policy.ts), to turn changes into headlines.
+model ExchangeNationSnapshot {
+  countryId        String   @id
+  corporateTaxRate Float
+  capGainsTaxRate  Float
+  interestRate     Float
+  tariffs          Json
+  ftaPartnerIds    Json
+  updatedAt        DateTime @default(now()) @updatedAt
+
+  @@map("exchange_nation_snapshots")
+}
+
+/// A watchlist entry. subjectKind: COMPANY | BOND | NATION.
+model ExchangeWatch {
+  id          String   @id @default(cuid())
+  userId      String
+  subjectKind String
+  subjectId   String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, subjectKind, subjectId])
+  @@index([subjectKind, subjectId])
+  @@map("exchange_watches")
 }
