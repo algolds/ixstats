@@ -28,7 +28,7 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.5.1 "Lobster Crosby"** | **Release Candidate** |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.2 "Lobster Crosby"** | **Release Candidate** |
 | **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
 | | IxVault | v3 | Wallet, Achievements, Cards & Store |
@@ -132,7 +132,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,116<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,118<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 

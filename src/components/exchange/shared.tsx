@@ -14,7 +14,9 @@ import {
   CREDIT_RATINGS,
   SUB_INDUSTRIES,
   borrowRateFor,
+  computeCompanyMetrics,
   subIndustriesOf,
+  type CompanyMetrics,
   type CreditRating,
   type SubIndustry,
   type SubIndustryKey,
@@ -26,7 +28,9 @@ export {
   CREDIT_RATINGS,
   SUB_INDUSTRIES,
   borrowRateFor,
+  computeCompanyMetrics,
   subIndustriesOf,
+  type CompanyMetrics,
   type CreditRating,
   type SubIndustry,
   type SubIndustryKey,
@@ -222,6 +226,50 @@ export function parseDecimalAmount(raw: string): number {
     : Number.NaN;
 }
 
+export interface CompanyWikiData {
+  wikiSlug: string;
+  pageTitle: string;
+  logoUrl: string | null;
+  motto: string | null;
+  summary: string | null;
+  historyExcerpt: string | null;
+  foundedText: string | null;
+  keyPeople: string | null;
+  products: string | null;
+  headquartersText: string | null;
+  industryText: string | null;
+  syncedAt: string;
+}
+
+function strOrNull(v: string | number | boolean | object | null | undefined): string | null {
+  return typeof v === "string" && v.trim() ? v : null;
+}
+
+/** Narrow a Prisma `JsonValue` (`wikiData`) into a typed `CompanyWikiData` record. */
+export function readCompanyWikiData(
+  raw: string | number | boolean | object | null | undefined
+): CompanyWikiData | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const r = raw as Record<string, string | number | boolean | object | null | undefined>;
+  const wikiSlug = strOrNull(r.wikiSlug);
+  const pageTitle = strOrNull(r.pageTitle) ?? (wikiSlug ? wikiSlug.replace(/_/g, " ") : null);
+  if (!wikiSlug || !pageTitle) return null;
+  return {
+    wikiSlug,
+    pageTitle,
+    logoUrl: strOrNull(r.logoUrl),
+    motto: strOrNull(r.motto),
+    summary: strOrNull(r.summary),
+    historyExcerpt: strOrNull(r.historyExcerpt),
+    foundedText: strOrNull(r.foundedText),
+    keyPeople: strOrNull(r.keyPeople),
+    products: strOrNull(r.products),
+    headquartersText: strOrNull(r.headquartersText),
+    industryText: strOrNull(r.industryText),
+    syncedAt: strOrNull(r.syncedAt) ?? "",
+  };
+}
+
 export interface FairValueBreakdown {
   capital: number;
   contracts: number;
@@ -233,16 +281,23 @@ export interface FairValueBreakdown {
 
 /** Client-safe valuation breakdown matching the server formula at default weights. */
 export function computeFairValue(
-  c: { capital: number; contractsWonValue: number; standing: number; decisionValue?: number },
+  c: {
+    capital: number;
+    creditDrawn?: number;
+    contractsWonValue: number;
+    standing: number;
+    decisionValue?: number;
+  },
   sectorIndexValue: number = 1000
 ): FairValueBreakdown {
+  const netCapital = round2(Math.max(0, c.capital - (c.creditDrawn ?? 0)));
   const contracts = round2(0.25 * c.contractsWonValue);
   const standing = round2(100 * Math.max(0, c.standing));
   const rawFactor = sectorIndexValue / 1000;
   const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
   const decisions = round2(c.decisionValue ?? 0);
-  const fairValue = round2((c.capital + contracts + standing) * sectorFactor + decisions);
-  return { capital: c.capital, contracts, standing, sectorFactor, decisions, fairValue };
+  const fairValue = round2((netCapital + contracts + standing) * sectorFactor + decisions);
+  return { capital: netCapital, contracts, standing, sectorFactor, decisions, fairValue };
 }
 
 /** Maximum Central Bank credit line available for a company's productive plant and contract record. */

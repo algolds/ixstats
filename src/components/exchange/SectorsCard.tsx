@@ -46,11 +46,13 @@ function SectorTile({
   realmId,
   sector,
   isOpen,
+  canManageRealm = false,
   onDone,
 }: {
   realmId: string;
   sector: SectorRow;
   isOpen: boolean;
+  canManageRealm?: boolean;
   onDone: () => void;
 }) {
   const notify = useNotify();
@@ -173,16 +175,18 @@ function SectorTile({
               </Button>
             </>
           )}
-          <Button
-            size="xs"
-            variant="ghost"
-            onClick={() => setTileState({ ...tileState, dmOpen: !tileState.dmOpen })}
-          >
-            {tileState.dmOpen ? "Hide DM lever" : "DM lever"}
-          </Button>
+          {canManageRealm && (
+            <Button
+              size="xs"
+              variant="ghost"
+              onClick={() => setTileState({ ...tileState, dmOpen: !tileState.dmOpen })}
+            >
+              {tileState.dmOpen ? "Hide DM lever" : "DM lever"}
+            </Button>
+          )}
         </div>
       )}
-      {tileState.dmOpen && (
+      {canManageRealm && tileState.dmOpen && (
         <div className="border-separator flex flex-wrap items-end gap-2 border-t pt-2">
           <div className="w-28">
             <Input
@@ -216,10 +220,12 @@ function SectorTile({
 export function SectorsCard({
   realmId = "default",
   isOpen,
+  canManageRealm = false,
   onChanged,
 }: {
   realmId?: string;
   isOpen: boolean;
+  canManageRealm?: boolean;
   onChanged: () => void;
 }) {
   const sectors = api.exchange.getSectors.useQuery({ realmId });
@@ -246,6 +252,7 @@ export function SectorsCard({
               realmId={realmId}
               sector={s}
               isOpen={isOpen}
+              canManageRealm={canManageRealm}
               onDone={refresh}
             />
           ))}

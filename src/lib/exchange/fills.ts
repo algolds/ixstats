@@ -257,8 +257,14 @@ export async function creditHolding(
     });
     return;
   }
-  const total = holding.shares + shares;
-  const avgCost = Math.round(((holding.shares * holding.avgCost + cost) / total) * 100) / 100;
+  const openListings = await tx.shareListing.findMany({
+    where: { companyId, sellerUserId: userId, status: "OPEN" },
+    select: { shares: true },
+  });
+  const escrowedShares = openListings.reduce((sum, l) => sum + l.shares, 0);
+  const existingOwned = holding.shares + escrowedShares;
+  const total = existingOwned + shares;
+  const avgCost = Math.round(((existingOwned * holding.avgCost + cost) / total) * 100) / 100;
   await tx.shareholding.update({
     where: { id: holding.id },
     data: { shares: { increment: shares }, avgCost },

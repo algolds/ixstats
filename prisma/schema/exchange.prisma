@@ -86,6 +86,8 @@ model Company {
   lastTickTax           Float                 @default(0)
   lastTickNetIncome     Float                 @default(0)
   distressedSinceIxTime Float?
+  wikiSlug              String?
+  wikiData              Json?
   status                String                @default("ACTIVE")
   createdIxTime         Float
   createdAt             DateTime              @default(now())
@@ -108,6 +110,7 @@ model Company {
   @@index([status])
   @@index([realmId, status])
   @@index([hqCountryId])
+  @@index([wikiSlug])
   @@map("exchange_companies")
 }
 

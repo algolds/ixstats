@@ -29,7 +29,7 @@ export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
-    patch: 1,
+    patch: 2,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
@@ -80,7 +80,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 2,
+    patch: 3,
     release: "Lobster Crosby",
     channel: "Stable" as ReleaseChannel,
   },

@@ -417,16 +417,44 @@ export const wikiosSearchRouter = createTRPCRouter({
           mode: "insensitive",
         };
       }
-      return ctx.db.pointOfInterest.findMany({
-        where,
-        take: input.limit,
-        select: {
-          id: true,
-          name: true,
-          category: true,
-          coordinates: true,
-          countryId: true,
-        },
-      });
+      const [companies, pois] = await Promise.all([
+        typeof ctx.db.company?.findMany === "function"
+          ? ctx.db.company.findMany({
+              where: {
+                status: { in: ["ACTIVE", "DISTRESSED"] },
+                ...(input.countryId ? { hqCountryId: input.countryId } : {}),
+                ...(input.query
+                  ? { name: { contains: input.query, mode: "insensitive" } }
+                  : {}),
+              },
+              take: input.limit,
+              select: {
+                id: true,
+                name: true,
+                sectorKey: true,
+                hqCountryId: true,
+              },
+            })
+          : Promise.resolve([]),
+        ctx.db.pointOfInterest.findMany({
+          where,
+          take: input.limit,
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            coordinates: true,
+            countryId: true,
+          },
+        }),
+      ]);
+      const companyItems = companies.map((c) => ({
+        id: `company:${c.id}`,
+        name: c.name,
+        category: `exchange · ${c.sectorKey}`,
+        coordinates: null,
+        countryId: c.hqCountryId ?? "",
+      }));
+      return [...companyItems, ...pois].slice(0, input.limit);
     }),
 });

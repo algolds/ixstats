@@ -23,6 +23,7 @@ interface ContractFormProps {
   /** Nations the viewer owns: they can post government tenders funded from their treasury or wallet. */
   nations: ReadonlyArray<{ id: string; name: string }>;
   walletBalance: number;
+  canManageRealm?: boolean;
   onDone: () => void;
 }
 
@@ -38,11 +39,20 @@ export function ContractForm({
   companies,
   nations,
   walletBalance,
+  canManageRealm = false,
   onDone,
 }: ContractFormProps) {
   const notify = useNotify();
   const [kindState, setKindState] = useState({
-    kind: (companies.length > 0 ? "company" : nations.length > 0 ? "nation" : "faucet") as IssuerKind,
+    kind: (
+      companies.length > 0
+        ? "company"
+        : nations.length > 0
+          ? "nation"
+          : canManageRealm
+            ? "faucet"
+            : "company"
+    ) as IssuerKind,
     fundedBy: "TREASURY" as TenderFunding,
   });
   const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
@@ -80,14 +90,26 @@ export function ContractForm({
   const pending = create.isPending || tender.isPending || faucet.isPending;
 
   const issuerChosen =
-    kind === "company" ? Boolean(companyId) : kind === "nation" ? Boolean(countryId) : true;
+    kind === "company"
+      ? Boolean(companyId)
+      : kind === "nation"
+        ? Boolean(countryId)
+        : canManageRealm;
   const valid = issuerChosen && title.trim().length >= 3 && value >= 10 && days >= 1 && days <= 30;
 
   const issuerOptions = [
     ...(companies.length > 0 ? [{ value: "company", label: "A company" }] : []),
     ...(nations.length > 0 ? [{ value: "nation", label: "My nation (tender)" }] : []),
-    { value: "faucet", label: "Realm faucet (DM)" },
+    ...(canManageRealm ? [{ value: "faucet", label: "Realm faucet (DM)" }] : []),
   ];
+
+  if (issuerOptions.length === 0) {
+    return (
+      <p className="text-caption text-label-secondary">
+        Charter an active company or claim a nation in this realm to post a contract or tender.
+      </p>
+    );
+  }
 
   return (
     <form

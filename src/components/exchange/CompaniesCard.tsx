@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Building, WarningTriangle } from "iconoir-react";
+import Link from "next/link";
+import { BookStack, Building, RefreshDouble, WarningTriangle } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
@@ -27,16 +28,19 @@ import {
   distressHoursLeft,
   formatSovereigns,
   parseAmount,
+  readCompanyWikiData,
   sectorLabel,
   subIndustriesOf,
   subIndustryLabel,
   useRequestId,
+  type CompanyWikiData,
   type Sector,
   type SubIndustryKey,
 } from "./shared";
 
 type Overview = RouterOutputs["exchange"]["getOverview"];
 type Company = Overview["companies"][number];
+type WikiPreview = RouterOutputs["exchange"]["previewWikiCompany"];
 
 const LOBBY_LABELS: Record<string, string> = {
   sector: "Sector boost",
@@ -44,19 +48,66 @@ const LOBBY_LABELS: Record<string, string> = {
   tax_relief: "Tax relief",
 };
 
+function WikiLoreBanner({ wikiData, wikiSlug }: { wikiData: CompanyWikiData | null; wikiSlug?: string | null }) {
+  const slug = wikiData?.wikiSlug ?? wikiSlug ?? null;
+  if (!slug && !wikiData) return null;
+  return (
+    <div className="border-separator bg-fill-4 rounded-control space-y-1.5 border p-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          {wikiData?.logoUrl && (
+            <img
+              src={wikiData.logoUrl}
+              alt={`${wikiData.pageTitle} logo`}
+              className="border-separator bg-surface-1 size-7 rounded object-contain p-0.5 border"
+            />
+          )}
+          <div>
+            {slug && (
+              <Link
+                href={`/wiki/${encodeURIComponent(slug)}`}
+                className="text-caption text-accent inline-flex items-center gap-1 font-medium hover:underline"
+              >
+                <BookStack className="size-3.5" aria-hidden />
+                WikiOS: {slug.replace(/_/g, " ")}
+              </Link>
+            )}
+            {wikiData?.motto && (
+              <p className="text-caption text-label-secondary italic">“{wikiData.motto}”</p>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {wikiData?.foundedText && <Badge variant="outline">Founded: {wikiData.foundedText}</Badge>}
+          {wikiData?.keyPeople && <Badge variant="outline">Leadership: {wikiData.keyPeople}</Badge>}
+          {wikiData?.products && <Badge variant="outline">Products: {wikiData.products}</Badge>}
+        </div>
+      </div>
+      {wikiData?.summary && (
+        <p className="text-caption text-label-secondary line-clamp-2">{wikiData.summary}</p>
+      )}
+    </div>
+  );
+}
+
 function FoundCompanyForm({ overview, onDone }: { overview: Overview; onDone: () => void }) {
   const notify = useNotify();
+  const utils = api.useUtils();
   const [form, setForm] = useState({
     name: "",
     sector: "services" as Sector,
     subIndustryKey: "finance_insurance" as SubIndustryKey,
     hqCountryId: overview.nations.find((n) => n.realmId === overview.realmId)?.id ?? "none",
+    wikiInput: "",
   });
+  const [wikiPreview, setWikiPreview] = useState<WikiPreview | null>(null);
+  const [fetchingWiki, setFetchingWiki] = useState(false);
   const [requestId, rotate] = useRequestId();
   const found = api.exchange.foundCompany.useMutation({
     onSuccess: ({ company }) => {
       notify.success("Company chartered", `${company.name} is open for business`);
-      setForm((prev) => ({ ...prev, name: "" }));
+      setForm((prev) => ({ ...prev, name: "", wikiInput: "" }));
+      setWikiPreview(null);
       rotate();
       onDone();
     },
@@ -66,6 +117,38 @@ function FoundCompanyForm({ overview, onDone }: { overview: Overview; onDone: ()
     (c) => c.status === "ACTIVE" || c.status === "DISTRESSED"
   ).length;
   const atCap = active >= overview.companyRules.activeCompanyCap;
+
+  const handleImportWiki = async () => {
+    const title = form.wikiInput.trim() || form.name.trim();
+    if (!title) return;
+    setFetchingWiki(true);
+    try {
+      const preview = await utils.exchange.previewWikiCompany.fetch({
+        wikiTitle: title,
+        realmId: overview.realmId,
+      });
+      setWikiPreview(preview);
+      setForm((prev) => ({
+        ...prev,
+        name: preview.companyName.slice(0, 60),
+        sector: preview.sectorKey as Sector,
+        subIndustryKey: preview.subIndustryKey,
+        hqCountryId: preview.hqCountryId ?? prev.hqCountryId,
+        wikiInput: preview.wikiSlug,
+      }));
+      notify.success(
+        "Imported from WikiOS",
+        `Loaded ${preview.pageTitle} (${subIndustryLabel(preview.subIndustryKey)})`
+      );
+    } catch (err) {
+      notify.error(
+        "Could not import from WikiOS",
+        err instanceof Error ? err.message : "WikiOS article not found"
+      );
+    } finally {
+      setFetchingWiki(false);
+    }
+  };
 
   return (
     <form
@@ -77,12 +160,52 @@ function FoundCompanyForm({ overview, onDone }: { overview: Overview; onDone: ()
           sectorKey: form.sector,
           subIndustryKey: form.subIndustryKey,
           hqCountryId: form.hqCountryId === "none" ? null : form.hqCountryId,
+          wikiSlug: wikiPreview?.wikiSlug ?? (form.wikiInput.trim() || null),
           realmId: overview.realmId,
           requestId,
         });
       }}
     >
-      <p className="text-footnote text-label font-medium">Charter a company</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-footnote text-label font-medium">Charter a company</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="w-52 sm:w-64">
+            <Input
+              aria-label="WikiOS article title or URL"
+              value={form.wikiInput}
+              onChange={(e) => setForm({ ...form, wikiInput: e.target.value })}
+              placeholder="WikiOS page (e.g. Vanguard Aerospace)"
+            />
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={fetchingWiki || (!form.wikiInput.trim() && !form.name.trim())}
+            onClick={() => void handleImportWiki()}
+          >
+            <BookStack className="mr-1.5 size-3.5" aria-hidden />
+            {fetchingWiki ? "Importing..." : "Sync from WikiOS"}
+          </Button>
+          {wikiPreview && (
+            <Button
+              type="button"
+              size="xs"
+              variant="ghost"
+              onClick={() => {
+                setWikiPreview(null);
+                setForm((prev) => ({ ...prev, wikiInput: "" }));
+              }}
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {wikiPreview && (
+        <WikiLoreBanner wikiData={wikiPreview.wikiData} wikiSlug={wikiPreview.wikiSlug} />
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field id="exchange-company-name" label="Company name">
           <Input
@@ -166,9 +289,16 @@ function CompanyRow({
   onDone: () => void;
 }) {
   const notify = useNotify();
-  const [rowState, setRowState] = useState({ raw: "", confirmDissolve: false });
+  const [rowState, setRowState] = useState({
+    raw: "",
+    confirmDissolve: false,
+    showWikiSync: false,
+    wikiTitle: company.wikiSlug ?? company.name,
+    applyTaxonomyAndHq: false,
+  });
   const [requestId, rotate] = useRequestId();
   const amount = parseAmount(rowState.raw);
+  const wikiData = readCompanyWikiData(company.wikiData);
   const done = (title: string) => () => {
     notify.success(title);
     setRowState((prev) => ({ ...prev, raw: "" }));
@@ -196,7 +326,15 @@ function CompanyRow({
       notify.error("Could not dissolve", e.message);
     },
   });
-  const busy = deposit.isPending || withdraw.isPending || dissolve.isPending;
+  const syncWiki = api.exchange.syncCompanyWiki.useMutation({
+    onSuccess: ({ preview }) => {
+      notify.success("Synced from WikiOS", `Updated lore from ${preview.pageTitle}`);
+      setRowState((prev) => ({ ...prev, showWikiSync: false, wikiTitle: preview.wikiSlug }));
+      onDone();
+    },
+    onError: (e) => notify.error("WikiOS sync failed", e.message),
+  });
+  const busy = deposit.isPending || withdraw.isPending || dissolve.isPending || syncWiki.isPending;
   const active = company.status === "ACTIVE";
   const distressed = company.status === "DISTRESSED";
   const operating = active || distressed;
@@ -213,19 +351,44 @@ function CompanyRow({
   return (
     <Card padding="sm" className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-body text-label truncate font-medium">{company.name}</p>
-            {onSelect && (
-              <Button size="xs" variant="ghost" onClick={() => onSelect(company.id)}>
-                Inspect
-              </Button>
-            )}
+        <div className="flex min-w-0 items-center gap-2.5">
+          {wikiData?.logoUrl && (
+            <img
+              src={wikiData.logoUrl}
+              alt={`${company.name} logo`}
+              className="border-separator bg-surface-1 size-8 shrink-0 rounded object-contain p-0.5 border"
+            />
+          )}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-body text-label truncate font-medium">{company.name}</p>
+              {onSelect && (
+                <Button size="xs" variant="ghost" onClick={() => onSelect(company.id)}>
+                  Inspect
+                </Button>
+              )}
+              {operating && (
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() =>
+                    setRowState((prev) => ({
+                      ...prev,
+                      showWikiSync: !prev.showWikiSync,
+                      wikiTitle: prev.wikiTitle || company.wikiSlug || company.name,
+                    }))
+                  }
+                >
+                  <RefreshDouble className="mr-1 size-3" aria-hidden />
+                  Sync Wiki
+                </Button>
+              )}
+            </div>
+            <p className="text-caption text-label-secondary">
+              {subIndustryLabel(company.subIndustryKey)} · {sectorLabel(company.sectorKey)}
+              {hqNation ? ` · HQ ${hqNation.name}` : " · Unincorporated"}
+            </p>
           </div>
-          <p className="text-caption text-label-secondary">
-            {subIndustryLabel(company.subIndustryKey)} · {sectorLabel(company.sectorKey)}
-            {hqNation ? ` · HQ ${hqNation.name}` : " · Unincorporated"}
-          </p>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="outline">Pricing: {company.pricingStrategy}</Badge>
@@ -238,6 +401,46 @@ function CompanyRow({
           <StatusBadge status={company.status} />
         </div>
       </div>
+
+      {(wikiData || company.wikiSlug) && (
+        <WikiLoreBanner wikiData={wikiData} wikiSlug={company.wikiSlug} />
+      )}
+
+      {operating && rowState.showWikiSync && (
+        <div className="border-separator bg-fill-4 rounded-control flex flex-wrap items-center gap-2 border p-2.5">
+          <div className="min-w-48 flex-1">
+            <Input
+              aria-label={`WikiOS page title for ${company.name}`}
+              value={rowState.wikiTitle}
+              onChange={(e) => setRowState({ ...rowState, wikiTitle: e.target.value })}
+              placeholder="WikiOS article title (e.g. Vanguard Aerospace)"
+            />
+          </div>
+          <label className="text-caption text-label-secondary flex items-center gap-1.5 select-none">
+            <input
+              type="checkbox"
+              checked={rowState.applyTaxonomyAndHq}
+              onChange={(e) => setRowState({ ...rowState, applyTaxonomyAndHq: e.target.checked })}
+            />
+            Also update sector &amp; HQ from infobox
+          </label>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={busy || !rowState.wikiTitle.trim()}
+            onClick={() =>
+              syncWiki.mutate({
+                companyId: company.id,
+                wikiTitle: rowState.wikiTitle.trim(),
+                applyTaxonomyAndHq: rowState.applyTaxonomyAndHq,
+              })
+            }
+          >
+            <BookStack className="mr-1.5 size-3.5" aria-hidden />
+            {syncWiki.isPending ? "Syncing..." : "Pull WikiOS Data"}
+          </Button>
+        </div>
+      )}
 
       {distressed && (
         <div className="border-separator bg-fill-3 rounded-control flex items-start gap-2 border p-3">
@@ -288,7 +491,7 @@ function CompanyRow({
         </div>
       </div>
 
-      {active && (
+      {operating && (
         <div className="flex flex-wrap items-end gap-2">
           <div className="w-32">
             <Input
@@ -307,28 +510,32 @@ function CompanyRow({
             disabled={busy || Number.isNaN(amount)}
             onClick={() => deposit.mutate({ companyId: company.id, amount, requestId })}
           >
-            Deposit
+            {distressed ? "Deposit to cure" : "Deposit"}
           </Button>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy || Number.isNaN(amount)}
-            onClick={() => withdraw.mutate({ companyId: company.id, amount, requestId })}
-          >
-            Withdraw
-          </Button>
-          <Button
-            size="sm"
-            variant={rowState.confirmDissolve ? "destructive" : "ghost"}
-            disabled={busy}
-            onClick={() =>
-              rowState.confirmDissolve
-                ? dissolve.mutate({ companyId: company.id })
-                : setRowState({ ...rowState, confirmDissolve: true })
-            }
-          >
-            {rowState.confirmDissolve ? "Confirm dissolve" : "Dissolve"}
-          </Button>
+          {active && (
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={busy || Number.isNaN(amount)}
+                onClick={() => withdraw.mutate({ companyId: company.id, amount, requestId })}
+              >
+                Withdraw
+              </Button>
+              <Button
+                size="sm"
+                variant={rowState.confirmDissolve ? "destructive" : "ghost"}
+                disabled={busy}
+                onClick={() =>
+                  rowState.confirmDissolve
+                    ? dissolve.mutate({ companyId: company.id })
+                    : setRowState({ ...rowState, confirmDissolve: true })
+                }
+              >
+                {rowState.confirmDissolve ? "Confirm dissolve" : "Dissolve"}
+              </Button>
+            </>
+          )}
         </div>
       )}
       {operating && (

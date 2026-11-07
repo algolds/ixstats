@@ -61,6 +61,7 @@ export function ContractsCard({
               companies={activeCompanies}
               nations={realmNations.length > 0 ? realmNations : overview.nations}
               walletBalance={overview.wallet.sovereigns}
+              canManageRealm={overview.canManageRealm}
               onDone={() => {
                 setPosting(false);
                 setScope("mine");

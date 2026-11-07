@@ -26,10 +26,18 @@ import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
 
 const BUSINESS_FIELDS = [
-  { value: "revenue", label: "Annual revenue" },
-  { value: "employees", label: "Employees count" },
+  { value: "revenue", label: "Revenue (Tick / Annual)" },
+  { value: "net_income", label: "Net income (Exchange)" },
+  { value: "fair_value", label: "Fair value (Exchange)" },
+  { value: "market_cap", label: "Market capitalization (Exchange)" },
+  { value: "share_price", label: "Share price (Exchange)" },
+  { value: "capital", label: "Capital balance (Exchange)" },
+  { value: "credit_rating", label: "Credit rating (Exchange)" },
+  { value: "standing", label: "Corporate standing (Exchange)" },
   { value: "sector", label: "Industry sector" },
-  { value: "founded", label: "Year founded" },
+  { value: "industry", label: "Sub-industry" },
+  { value: "founded", label: "Year / date founded" },
+  { value: "employees", label: "Employees count (POI)" },
 ];
 
 type BusinessModalTab = "search" | "create";

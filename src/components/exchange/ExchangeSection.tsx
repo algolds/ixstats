@@ -292,6 +292,7 @@ export function ExchangeSection() {
                   <SectorsCard
                     realmId={overview.data.realmId}
                     isOpen={overview.data.isOpen}
+                    canManageRealm={overview.data.canManageRealm}
                     onChanged={refresh}
                   />
                 </TabsContent>
@@ -343,6 +344,10 @@ export function ExchangeSection() {
                 companies={allCompanies}
                 realmNations={overview.data.realmNations}
                 sectorIndexValue={inspectedSectorValue}
+                canSyncWiki={
+                  overview.data.companies.some((c) => c.id === inspectedCompany.id) ||
+                  overview.data.canManageRealm
+                }
                 onSelectCompany={(companyId) =>
                   setWorkspace({ ...workspace, selectedCompanyId: companyId })
                 }
@@ -353,6 +358,7 @@ export function ExchangeSection() {
                     selectedCompanyId: inspectedCompany.id,
                   })
                 }
+                onSynced={refresh}
               />
             )}
           </div>

@@ -5,6 +5,15 @@ import { resolveActiveCountryId } from "~/lib/wiki-os/storage";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { formatSovereigns } from "~/lib/exchange/amounts";
+import { SUB_INDUSTRIES, computeCompanyMetrics } from "~/lib/exchange/taxonomy";
+
+const EXCHANGE_SECTOR_LABELS: Record<string, string> = {
+  agriculture: "Agriculture",
+  industry: "Industry",
+  services: "Services",
+  government: "Government",
+};
 
 export interface WikiPlaceholderMetadata {
   label: string;
@@ -256,8 +265,167 @@ const placeholderName = (p: string) => p.split(":")[1]?.replace(/_/g, " ");
 
 const nameKey = (name: string) => name.toLowerCase();
 
+type PoiRecord = { name: string; countryId: string; metadata: unknown; country?: any };
+
+type ExchangeCompanyRecord = {
+  id: string;
+  name: string;
+  wikiSlug?: string | null;
+  wikiData?: unknown;
+  sectorKey: string;
+  subIndustryKey: string;
+  hqCountryId: string | null;
+  capital: number;
+  standing: number;
+  fairValue: number;
+  sharesOutstanding: number;
+  decisionValue: number;
+  creditDrawn: number;
+  creditRating: string;
+  lastTradePrice: number | null;
+  lastTickRevenue: number;
+  lastTickNetIncome: number;
+  status: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+function resolveExchangeCompanyField(
+  p: string,
+  company: ExchangeCompanyRecord,
+  field: string,
+  countries: CountryRecord[]
+): CanonicalPlaceholderResult | null {
+  const f = field.toLowerCase().replace(/[\s-]+/g, "_");
+  const metrics = computeCompanyMetrics({ ...company, trailing30dDividends: 0 });
+  const wikiMeta = (company.wikiData ?? null) as Record<string, unknown> | null;
+  const hqCountry = company.hqCountryId
+    ? countries.find((c) => c.id === company.hqCountryId)
+    : undefined;
+
+  let label = field;
+  let rawVal: number | string | null = null;
+  let formatted = "";
+
+  switch (f) {
+    case "revenue":
+    case "last_tick_revenue":
+      label = "Tick Revenue";
+      rawVal = company.lastTickRevenue;
+      formatted = formatSovereigns(company.lastTickRevenue);
+      break;
+    case "net_income":
+    case "netincome":
+    case "profit":
+      label = "Net Income";
+      rawVal = company.lastTickNetIncome;
+      formatted = formatSovereigns(company.lastTickNetIncome);
+      break;
+    case "capital":
+    case "cash":
+      label = "Capital";
+      rawVal = company.capital;
+      formatted = formatSovereigns(company.capital);
+      break;
+    case "fair_value":
+    case "fairvalue":
+    case "valuation":
+      label = "Fair Value";
+      rawVal = company.fairValue;
+      formatted = formatSovereigns(company.fairValue);
+      break;
+    case "market_cap":
+    case "marketcap":
+      label = "Market Cap";
+      rawVal = metrics.marketCap;
+      formatted = formatSovereigns(metrics.marketCap);
+      break;
+    case "share_price":
+    case "shareprice":
+    case "price":
+      label = "Share Price";
+      rawVal = metrics.sharePrice;
+      formatted = formatSovereigns(metrics.sharePrice);
+      break;
+    case "book_value":
+    case "bookvalue":
+      label = "Book Value";
+      rawVal = metrics.bookValue;
+      formatted = formatSovereigns(metrics.bookValue);
+      break;
+    case "credit_rating":
+    case "rating":
+      label = "Credit Rating";
+      rawVal = company.creditRating;
+      formatted = company.creditRating;
+      break;
+    case "standing":
+      label = "Standing";
+      rawVal = company.standing;
+      formatted = company.standing.toFixed(1);
+      break;
+    case "sector":
+      label = "Industry Sector";
+      rawVal = EXCHANGE_SECTOR_LABELS[company.sectorKey] ?? company.sectorKey;
+      formatted = String(rawVal);
+      break;
+    case "industry":
+    case "sub_industry":
+      label = "Sub-Industry";
+      rawVal =
+        SUB_INDUSTRIES.find((s) => s.key === company.subIndustryKey)?.label ??
+        EXCHANGE_SECTOR_LABELS[company.sectorKey] ??
+        company.sectorKey;
+      formatted = String(rawVal);
+      break;
+    case "founded": {
+      label = "Founded";
+      const wikiFounded =
+        typeof wikiMeta?.foundedText === "string" && wikiMeta.foundedText.trim()
+          ? wikiMeta.foundedText.trim()
+          : null;
+      rawVal =
+        wikiFounded ??
+        (company.createdAt instanceof Date
+          ? String(company.createdAt.getFullYear())
+          : "Chartered");
+      formatted = String(rawVal);
+      break;
+    }
+    case "shares":
+    case "shares_outstanding":
+      label = "Shares Outstanding";
+      rawVal = company.sharesOutstanding;
+      formatted = company.sharesOutstanding.toLocaleString("en-US");
+      break;
+    case "status":
+      label = "Status";
+      rawVal = company.status;
+      formatted = company.status;
+      break;
+    default:
+      return null;
+  }
+
+  return {
+    key: p,
+    value: formatted,
+    rawVal,
+    status: "resolved",
+    metadata: {
+      label,
+      companyName: company.name,
+      countryName: hqCountry?.name,
+      lastCalculated:
+        company.updatedAt instanceof Date ? company.updatedAt.toISOString() : undefined,
+      detailsUrl: "/labs/exchange",
+    },
+  };
+}
+
 function resolveBusinessField(
   p: string,
+  exchangeCompanies: ExchangeCompanyRecord[],
   pois: PoiRecord[],
   countries: CountryRecord[]
 ): CanonicalPlaceholderResult {
@@ -265,8 +433,22 @@ function resolveBusinessField(
   const field = p.split(":")[2];
   if (!companyName || !field) return failure(p, "Unknown Field", "malformed");
 
-  const poi = pois.find((item) => nameKey(item.name) === nameKey(companyName));
-  if (!poi) return failure(p, "Unknown Company", "not-found");
+  const targetKey = nameKey(companyName);
+  const exchangeCo = exchangeCompanies.find(
+    (item) =>
+      nameKey(item.name) === targetKey ||
+      (!!item.wikiSlug && nameKey(item.wikiSlug.replace(/_/g, " ")) === targetKey)
+  );
+  if (exchangeCo) {
+    const resolved = resolveExchangeCompanyField(p, exchangeCo, field, countries);
+    if (resolved) return resolved;
+  }
+
+  const poi = pois.find((item) => nameKey(item.name) === targetKey);
+  if (!poi) {
+    if (exchangeCo) return failure(p, "Unknown Field", "unknown-field");
+    return failure(p, "Unknown Company", "not-found");
+  }
 
   const spec = BUSINESS_FIELDS[field.toLowerCase()];
   if (!spec) return failure(p, "Unknown Field", "unknown-field");
@@ -299,8 +481,6 @@ function resolveBusinessField(
   };
 }
 
-type PoiRecord = { name: string; countryId: string; metadata: unknown; country?: any };
-
 export async function resolveWikiPlaceholderValues(
   placeholders: readonly string[],
   db: Prisma.TransactionClient | any,
@@ -319,12 +499,32 @@ export async function resolveWikiPlaceholderValues(
   ];
   const countryNames = namesFor("CountryData:");
   const companyNames = namesFor("BusinessData:");
+  const companySlugs = companyNames.map((n) => n.replace(/\s+/g, "_"));
+
+  // Fetch all required Exchange companies first so their HQ countries can be included
+  const exchangeCompanies: ExchangeCompanyRecord[] =
+    companyNames.length > 0 && typeof db.company?.findMany === "function"
+      ? await db.company.findMany({
+          where: {
+            OR: [
+              { name: { in: companyNames, mode: "insensitive" } },
+              { wikiSlug: { in: companySlugs, mode: "insensitive" } },
+            ],
+          },
+        })
+      : [];
+  const hqCountryIds = [
+    ...new Set(
+      exchangeCompanies.map((c) => c.hqCountryId).filter((id): id is string => !!id)
+    ),
+  ];
 
   // Fetch all required countries in a single query
   const countries: CountryRecord[] = await db.country.findMany({
     where: {
       OR: [
         ...(activeCountryId ? [{ id: activeCountryId }] : []),
+        ...(hqCountryIds.length > 0 ? [{ id: { in: hqCountryIds } }] : []),
         // CountryData:<name> names an Ixnay nation — names repeat across realms (ruling E-p).
         ...(countryNames.length > 0
           ? [{ realmId: DEFAULT_REALM_ID, name: { in: countryNames, mode: "insensitive" } }]
@@ -377,7 +577,8 @@ export async function resolveWikiPlaceholderValues(
       if (!country) return failure(p, "Unknown Country", "not-found");
       return resolveCountryField(p, country, field, ranks);
     }
-    if (p.startsWith("BusinessData:")) return resolveBusinessField(p, pois, countries);
+    if (p.startsWith("BusinessData:"))
+      return resolveBusinessField(p, exchangeCompanies, pois, countries);
     return failure(p, "Unknown Field", "malformed");
   });
 }

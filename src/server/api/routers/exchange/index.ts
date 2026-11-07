@@ -34,8 +34,14 @@ import {
   releaseContract,
   withdrawBid,
 } from "~/lib/exchange/contracts";
+import {
+  previewWikiCompany,
+  syncCompanyFromWiki,
+  toCompanyWikiSlug,
+} from "~/lib/exchange/company-wiki";
 import { getExchangeOverview, listContracts } from "~/lib/exchange/queries";
 import { SUB_INDUSTRY_KEYS } from "~/lib/exchange/taxonomy";
+import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
 import { guard } from "./_errors";
 import { exchangeAdminRouter } from "./admin";
 import { exchangeGovernanceRouter } from "./governance";
@@ -51,15 +57,59 @@ const exchangeUserRouter = createTRPCRouter({
   getOverview: protectedProcedure
     .input(z.object({ realmId: id.optional() }).optional())
     .query(({ ctx, input }) =>
-      guard("load the Exchange", () =>
-        getExchangeOverview(ctx.db, ctx.user.id, input?.realmId ?? DEFAULT_REALM_ID)
-      )
+      guard("load the Exchange", async () => {
+        const realmId = input?.realmId ?? DEFAULT_REALM_ID;
+        const [overview, realm] = await Promise.all([
+          getExchangeOverview(ctx.db, ctx.user.id, realmId),
+          realmId === DEFAULT_REALM_ID
+            ? Promise.resolve(null)
+            : ctx.db.realm.findUnique({ where: { id: realmId }, select: { ownerId: true } }),
+        ]);
+        const canManageRealm =
+          isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
+        return { ...overview, canManageRealm };
+      })
     ),
 
   listCompanies: protectedProcedure
     .input(z.object({ realmId: id.optional(), limit: z.number().int().min(1).max(100).optional() }).optional())
     .query(({ ctx, input }) =>
       guard("list companies", () => listCompanies(ctx.db, input?.limit ?? 50, input?.realmId))
+    ),
+
+  /** Preview company lore, logo, sector/sub-industry, and HQ nation from a WikiOS page. */
+  previewWikiCompany: protectedProcedure
+    .input(
+      z.object({
+        wikiTitle: z.string().trim().min(1).max(200),
+        realmId: id.optional(),
+      })
+    )
+    .query(({ ctx, input }) =>
+      guard("preview the WikiOS company page", () =>
+        previewWikiCompany(ctx, input.wikiTitle, input.realmId ?? DEFAULT_REALM_ID)
+      )
+    ),
+
+  /** Sync an existing company's lore and metadata from a WikiOS article. */
+  syncCompanyWiki: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        companyId: id,
+        wikiTitle: z.string().trim().min(1).max(200).optional(),
+        applyTaxonomyAndHq: z.boolean().optional(),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("sync the company from WikiOS", () =>
+        syncCompanyFromWiki(ctx, {
+          companyId: input.companyId,
+          wikiTitle: input.wikiTitle,
+          applyTaxonomyAndHq: input.applyTaxonomyAndHq,
+          userId: ctx.user.id,
+          isAdmin: isSiteAdmin(ctx.user),
+        })
+      )
     ),
 
   foundCompany: rateLimitedMutationProcedure
@@ -69,12 +119,34 @@ const exchangeUserRouter = createTRPCRouter({
         sectorKey: z.enum(SECTOR_KEYS),
         subIndustryKey: z.enum(SUB_INDUSTRY_KEYS).optional(),
         hqCountryId: id.nullable().optional(),
+        wikiSlug: z.string().trim().max(200).nullable().optional(),
         realmId: id.optional(),
         requestId,
       })
     )
     .mutation(({ ctx, input }) =>
-      guard("found the company", () => foundCompany(ctx.db, { userId: ctx.user.id, ...input }))
+      guard("found the company", async () => {
+        const cleanSlug = toCompanyWikiSlug(input.wikiSlug);
+        let wikiData: Record<string, string | null> | undefined;
+        if (cleanSlug) {
+          try {
+            const preview = await previewWikiCompany(
+              ctx,
+              cleanSlug,
+              input.realmId ?? DEFAULT_REALM_ID
+            );
+            wikiData = { ...preview.wikiData };
+          } catch {
+            // If the linked wiki page does not exist yet, still link the slug for future sync.
+          }
+        }
+        return foundCompany(ctx.db, {
+          userId: ctx.user.id,
+          ...input,
+          wikiSlug: cleanSlug,
+          wikiData,
+        });
+      })
     ),
 
   depositToCompany: rateLimitedMutationProcedure

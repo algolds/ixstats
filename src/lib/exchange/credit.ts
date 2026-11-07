@@ -7,6 +7,7 @@
 import type { Company, PrismaClient } from "@prisma/client";
 import { ExchangeError, isUniqueViolation } from "~/lib/vault/exchange-service";
 import { formatSovereigns } from "./amounts";
+import { refreshFairValue } from "./companies";
 import { distressDecision } from "./distress";
 import { assertExchangeOpen, type Db } from "./guards";
 import { fromCents, lockCompany, toCents } from "./ownership";
@@ -169,6 +170,7 @@ export async function borrowCredit(
           creditRating: rating,
         },
       });
+      await refreshFairValue(tx, company.id);
       return {
         alreadyApplied: false,
         creditDrawn: company.creditDrawn + amount,
@@ -220,6 +222,7 @@ export async function repayCredit(db: PrismaClient, input: CreditLineInput): Pro
         data: { creditDrawn: { decrement: amount } },
       });
       if (count !== 1) throw new ExchangeError("CONFLICT", "The credit line changed; try again");
+      await refreshFairValue(tx, company.id);
       const after = await tx.company.findUniqueOrThrow({ where: { id: company.id } });
       const cured =
         distressDecision({
