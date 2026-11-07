@@ -39,59 +39,13 @@ export const FOUNDER_SHARES = 1000;
 /** Statuses a contract can hold while it still ties up a company. */
 export const LIVE_CONTRACT_STATUSES = ["OPEN", "AWARDED", "DISPUTED"];
 
-/** The index level every sector starts at (SectorIndex.value default). */
-export const INDEX_BASE = 1000;
-
-export interface FairValueWeights {
-  valuationSectorWeight: number;
-  valuationStandingWeight: number;
-  valuationDecisionWeight: number;
-}
-
-export interface FairValueBreakdown {
-  capital: number;
-  contracts: number;
-  standing: number;
-  /** Multiplier from the company's sector index (1 at the base level of 1,000). */
-  sectorFactor: number;
-  decisions: number;
-  fairValue: number;
-}
-
-const DEFAULT_WEIGHTS: FairValueWeights = {
-  valuationSectorWeight: 1,
-  valuationStandingWeight: 0.5,
-  valuationDecisionWeight: 1,
-};
-
-/**
- * Fair value, from the sector-index valuation:
- *   book   = capital + 0.25 × contracts won + 200 × standingWeight × positive standing
- *   factor = 1 + sectorWeight × (sector index ÷ 1,000 − 1), held to 0.5 .. 2
- *   value  = book × factor + decisionWeight × decisionValue (applied EXPAND decisions)
- * With the default weights and an index at 1,000 this is the MVP formula (100 per point of
- * standing). It is a reference price for primary share issues and the directory, not money.
- */
-export function computeFairValue(
-  c: {
-    capital: number;
-    creditDrawn?: number;
-    contractsWonValue: number;
-    standing: number;
-    decisionValue?: number;
-  },
-  sectorIndexValue: number = INDEX_BASE,
-  weights: FairValueWeights = DEFAULT_WEIGHTS
-): FairValueBreakdown {
-  const netCapital = Math.max(0, round2(c.capital - (c.creditDrawn ?? 0)));
-  const contracts = round2(0.25 * c.contractsWonValue);
-  const standing = round2(200 * weights.valuationStandingWeight * Math.max(0, c.standing));
-  const rawFactor = 1 + weights.valuationSectorWeight * (sectorIndexValue / INDEX_BASE - 1);
-  const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
-  const decisions = round2(weights.valuationDecisionWeight * (c.decisionValue ?? 0));
-  const fairValue = round2((netCapital + contracts + standing) * sectorFactor + decisions);
-  return { capital: netCapital, contracts, standing, sectorFactor, decisions, fairValue };
-}
+export {
+  INDEX_BASE,
+  computeFairValue,
+  type FairValueBreakdown,
+  type FairValueWeights,
+} from "./valuation";
+import { INDEX_BASE, computeFairValue } from "./valuation";
 
 /** Recompute a company's fair value and record a CompanyValueHistory row. */
 export async function refreshFairValue(tx: Db, companyId: string): Promise<void> {

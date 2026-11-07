@@ -270,46 +270,13 @@ export function readCompanyWikiData(
   };
 }
 
-export interface FairValueBreakdown {
-  capital: number;
-  contracts: number;
-  standing: number;
-  sectorFactor: number;
-  decisions: number;
-  fairValue: number;
-}
-
-/** Client-safe valuation breakdown matching the server formula at default weights. */
-export function computeFairValue(
-  c: {
-    capital: number;
-    creditDrawn?: number;
-    contractsWonValue: number;
-    standing: number;
-    decisionValue?: number;
-  },
-  sectorIndexValue: number = 1000
-): FairValueBreakdown {
-  const netCapital = round2(Math.max(0, c.capital - (c.creditDrawn ?? 0)));
-  const contracts = round2(0.25 * c.contractsWonValue);
-  const standing = round2(100 * Math.max(0, c.standing));
-  const rawFactor = sectorIndexValue / 1000;
-  const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
-  const decisions = round2(c.decisionValue ?? 0);
-  const fairValue = round2((netCapital + contracts + standing) * sectorFactor + decisions);
-  return { capital: netCapital, contracts, standing, sectorFactor, decisions, fairValue };
-}
-
-/** Maximum Central Bank credit line available for a company's productive plant and contract record. */
-export function creditLimitFor(c: { decisionValue: number; contractsWonValue: number }): number {
-  return round2(Math.min(250_000, 0.5 * (c.decisionValue + 0.25 * c.contractsWonValue)));
-}
-
-/** Annualized Central Bank borrow rate for a company's HQ interest rate and credit rating. */
-export function borrowRateOf(hqRate: number | null, rating: string): number {
-  const r = CREDIT_RATINGS.find((x) => x === rating) ?? "D";
-  return borrowRateFor(hqRate, r) ?? borrowRateFor(hqRate, "CCC") ?? 0;
-}
+// One copy of the money math for the UI and the server.
+export {
+  borrowRateOf,
+  computeFairValue,
+  creditLimitFor,
+  type FairValueBreakdown,
+} from "~/lib/exchange/valuation";
 
 /** Hours left in the 72-hour distress grace window before liquidation. */
 export function distressHoursLeft(distressedSinceIxTime: number | null): number {

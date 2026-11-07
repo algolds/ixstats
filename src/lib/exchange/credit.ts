@@ -12,12 +12,9 @@ import { distressDecision } from "./distress";
 import { assertExchangeOpen, type Db } from "./guards";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import { macroOfCountry } from "./tariffs";
-import { CREDIT_RATINGS, borrowRateFor, creditRatingFor, type CreditRating } from "./taxonomy";
+import { CREDIT_RATINGS, creditRatingFor, type CreditRating } from "./taxonomy";
 import { transferToTreasuryTx, debitTreasuryTx } from "./treasury";
 
-const CREDIT_LIMIT_CAP = 250_000;
-const CREDIT_LIMIT_SHARE = 0.5;
-const CONTRACT_CREDIT_SHARE = 0.25;
 const LENDING_FLOOR: CreditRating = "B";
 const EPS = 1e-9;
 
@@ -41,26 +38,12 @@ export interface RepayResult {
   cured: boolean;
 }
 
-function ratingOf(rating: string): CreditRating {
-  return CREDIT_RATINGS.find((r) => r === rating) ?? "D";
-}
-
 function isLendable(rating: CreditRating): boolean {
   return CREDIT_RATINGS.indexOf(rating) <= CREDIT_RATINGS.indexOf(LENDING_FLOOR);
 }
 
-/**
- * The rate a company borrows at: the HQ nation's rate plus the rating spread. A D-rated borrower
- * already owes money it cannot repay, so it pays the CCC rate rather than a rate with no spread.
- */
-export function borrowRateOf(hqRate: number, rating: string): number {
-  return borrowRateFor(hqRate, ratingOf(rating)) ?? borrowRateFor(hqRate, "CCC") ?? 0;
-}
-
-export function creditLimitFor(c: Pick<Company, "decisionValue" | "contractsWonValue">): number {
-  const basis = c.decisionValue + CONTRACT_CREDIT_SHARE * c.contractsWonValue;
-  return Math.min(CREDIT_LIMIT_CAP, CREDIT_LIMIT_SHARE * basis);
-}
+export { borrowRateOf, creditLimitFor } from "./valuation";
+import { borrowRateOf, creditLimitFor } from "./valuation";
 
 function liveRatingOf(
   c: Pick<Company, "standing" | "creditDrawn" | "capital" | "decisionValue" | "lastTickNetIncome">
