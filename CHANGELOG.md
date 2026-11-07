@@ -5,11 +5,27 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.2 "Lobster Crosby"**, channel Stable, to players; internally 1.5.1, see
+**IxStates 1.0.4 "Lobster Crosby"**, channel Stable, to players; internally 1.5.3, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.5.3] — 2026-11-07 "Lobster Crosby" (public 1.0.4)
+
+### 💱 The Exchange becomes its own app: the market terminal (Exchange 1, new)
+
+- **New First-Party App, `EXCHANGE_VERSION` 1.** The Exchange leaves Labs for its own app at `/exchange`, public to watch, with a Chase-based brand. Its blue is the one named exception to the 30° palette rule, beside the Wiki navy. `/labs/exchange` and `/vault/exchange` redirect. Design: `docs/specs/2026-11-06-exchange-overhaul-design.md`; brand: `docs/systems/exchange-brand-guide.md`.
+- **The front page:** the realm index, Today in business, sectors, movers, nation bonds and live activity.
+- **Markets and object pages:** Markets (companies, nation bonds, sector funds), company, bond, nation and story pages, a trade sheet, a watch star and watcher alerts, Portfolio and Leaderboards.
+- **Nation bonds:**
+  - Owners issue 1–12 week bonds from Treasury, with weekly coupons from the treasury and principal in the last week.
+  - Nations get credit ratings.
+  - A short treasury defaults: holders are paid pro rata, the nation is rated D, and it can't issue for 30 days.
+- **Business news:** automatic headlines from trades, dividends, tenders, distress, bankruptcies, acquisitions, votes, bond events and MyCountry policy changes. Players show as "a private investor", never by username.
+- **Under the hood:** the money math is shared between the UI and the server; the old one-page workspace is gone.
+- **Help and runbook:** a help page at `/help/exchange/overview`, and the deploy runbook `docs/history/operations/deploy-exchange-terminal-2026-11.md`. The deploy turns on the `exchange-market` and `exchange-contract-expiry` cron jobs.
+- **Also in this release:** the deploy pipeline keeps the build cache, drops the unused standalone output on the main build, and writes zstd backups.
 
 ## [1.5.1] — 2026-11-03 "Lobster Crosby" (public 1.0.2)
 

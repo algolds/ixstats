@@ -148,7 +148,7 @@ The platform maintains strict separation between the **Platform SemVer Level** a
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
    *Current:* **`IxStates 1.0.0 "Lobster Crosby"`** (Channel: *Stable*) publicly; internally **1.5.0** (channel *Release Candidate* in `INTERNAL_VERSIONS`).
-2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION`, `WIKIOS_VERSION`, `IXVAULT_VERSION`; public 1 each, internal 3, 1 and 3).
+2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION`, `WIKIOS_VERSION`, `IXVAULT_VERSION`, `EXCHANGE_VERSION`; public 1 each, internal 3, 1, 3 and 1).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`), identical in both registries.
 4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION` (incl. LoreWards / Wiki Awards), `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`, `ONOMA_VERSION`), the design system (`FACET_VERSION`) and the WikiOS sub-system `CANVAS_VERSION`: public 1 each; internal 6, 4, 3, 3, 1, 2, 6, 4, Facet 4 and Canvas 1.
 5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`IXFORUM_VERSION`, the public `major.minor`: `1.0`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.

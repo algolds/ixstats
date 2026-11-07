@@ -185,7 +185,7 @@ IxStates follows an OS-inspired release model where all components read from a c
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.5.2 "Lobster Crosby"** | **Release Candidate** |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.3 "Lobster Crosby"** | **Release Candidate** |
 | **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
 | | IxVault | v3 | Wallet, Achievements, Cards & Store |

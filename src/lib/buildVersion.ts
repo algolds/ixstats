@@ -29,7 +29,7 @@ export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
-    patch: 2,
+    patch: 3,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
@@ -38,6 +38,7 @@ export const INTERNAL_VERSIONS = {
   apps: {
     ixworld: 3, // v3: PostGIS vector tiles for terrain, packed map data, ~1 MB first load; v2: modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
+    exchange: 1, // the market terminal at /exchange: front page and business news, markets, company, bond and nation pages, portfolio, nation bonds (2026-11)
     ixvault: 3, // v3: the collectathon hub (Wallet statement, Achievements, Cards, Store and Lorewards under one app, in the sidebar for everyone), the nightly Vault dividend, trophy cards; v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
 
@@ -80,11 +81,11 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 3,
+    patch: 4,
     release: "Lobster Crosby",
     channel: "Stable" as ReleaseChannel,
   },
-  apps: { ixworld: 1, wikios: 1, ixvault: 1 },
+  apps: { ixworld: 1, wikios: 1, ixvault: 1, exchange: 1 },
   engines: INTERNAL_VERSIONS.engines,
   systems: {
     mycountry: 1,
@@ -195,6 +196,7 @@ export function getChannelStatus(channel: ReleaseChannel): ChannelStatus {
 export const IXWORLD_VERSION = String(VERSIONS.apps.ixworld);
 export const WIKIOS_VERSION = String(VERSIONS.apps.wikios);
 export const IXVAULT_VERSION = String(VERSIONS.apps.ixvault);
+export const EXCHANGE_VERSION = String(VERSIONS.apps.exchange);
 
 // IxForum is NOT independently versioned yet — it inherits the platform
 // version (Major.Minor) until it is promoted to a first-class App.

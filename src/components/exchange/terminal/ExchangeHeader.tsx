@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { EXCHANGE_VERSION } from "~/lib/buildVersion";
 import { EXCHANGE_PATHS } from "~/lib/exchange/routes";
 import { ExchangeWordmark, Pill } from "./brand";
 
@@ -26,9 +27,12 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
   };
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <Link href={EXCHANGE_PATHS.front} aria-label="Exchange front page">
-        <ExchangeWordmark />
-      </Link>
+      <span className="flex items-baseline gap-2">
+        <Link href={EXCHANGE_PATHS.front} aria-label="Exchange front page">
+          <ExchangeWordmark />
+        </Link>
+        <span className="text-caption text-label-secondary tabular-nums">v{EXCHANGE_VERSION}</span>
+      </span>
       <div className="flex items-center gap-2">
         {realms.data && realms.data.length > 1 && (
           <div className="w-40">
