@@ -69,7 +69,8 @@ export interface NationRatingInput {
 /** A nation's credit rating: treasury cover for its outstanding bonds, a notch off for shrinking or weak government. */
 export function nationRatingFor(i: NationRatingInput): CreditRating {
   if (i.banned) return "D";
-  const coverage = i.balance / Math.max(1, i.outstandingPrincipal);
+  // A nation that owes nothing is fully covered, whatever its balance.
+  const coverage = i.outstandingPrincipal <= 0 ? Infinity : i.balance / i.outstandingPrincipal;
   const base = COVERAGE_LADDER.find(([floor]) => coverage >= floor)?.[1] ?? "CCC";
   const notches =
     (i.growth !== null && i.growth < 0 ? 1 : 0) + (i.governmentEfficiency < 0.3 ? 1 : 0);
@@ -357,6 +358,7 @@ export async function buyBondPrimary(
       where: { id: bond.id },
       data: { unitsSold: { increment: input.units } },
     });
+    await refreshNationRatingTx(tx, bond.countryId, bond.realmId, Date.now());
     await creditHoldingTx(tx, bond.id, input.userId, input.units, paid);
     await publishNewsTx(tx, {
       realmId: bond.realmId,

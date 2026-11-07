@@ -112,6 +112,10 @@ describe("nationRatingFor", () => {
     ).toBe("CCC");
   });
 
+  it("rates a nation that owes nothing at the top, whatever its balance", () => {
+    expect(nationRatingFor({ ...base, balance: 0, outstandingPrincipal: 0 })).toBe("AAA");
+  });
+
   it("is D while the nation is banned after a default", () => {
     expect(nationRatingFor({ ...base, balance: 1e9, outstandingPrincipal: 1, banned: true })).toBe(
       "D"
@@ -208,6 +212,7 @@ describe("issueBond", () => {
 describe("buyBondPrimary", () => {
   it("moves the units' face from the buyer to the treasury, once per request", async () => {
     const id = await issue();
+    treasury().creditRating = "B"; // stale, so the re-rate after the sale shows
     const requestId = rid();
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
@@ -216,6 +221,8 @@ describe("buyBondPrimary", () => {
     expect(bond(id).unitsSold).toBe(10);
     expect(holding("bob")).toBe(10);
     expect(news("bond_bought")[0]!.headline).toBe("A private investor bought 10 Caphiria bonds");
+    // Re-rated after the sale: 51,000 in the treasury covers the 1,000 outstanding.
+    expect(treasury().creditRating).toBe("AAA");
   });
 
   it("adds a second purchase to the same holding at the blended cost", async () => {
