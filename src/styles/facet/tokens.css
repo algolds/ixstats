@@ -591,6 +591,14 @@
     --tint-dark-strong: #fcc2d4;
     --on-tint-dark: #0b0c0f;
   }
+  [data-app="exchange"] {
+    --tint-light: #0f70bb;
+    --tint-light-strong: #0b5ea8;
+    --on-tint-light: #ffffff;
+    --tint-dark: #5ea6ee;
+    --tint-dark-strong: #8bbff2;
+    --on-tint-dark: #0b0c0f;
+  }
 
   :root,
   [data-app] {

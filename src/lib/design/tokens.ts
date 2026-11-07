@@ -130,6 +130,7 @@ export const APP_IDS = [
   "wiki",
   "realms",
   "labs",
+  "exchange",
   "admin",
 ] as const;
 type AppId = (typeof APP_IDS)[number];
@@ -186,6 +187,11 @@ export const APP_TINTS = {
   vault: {
     light: { tint: "#851f47", strong: "#710637", onTint: "#ffffff" },
     dark: { tint: "#f3a3bd", strong: "#fcc2d4", onTint: "#0b0c0f" },
+  },
+  // Chase-style blue (owner 2026-11-06); the one palette exception, beside the Wiki navy (app-palette.test.ts).
+  exchange: {
+    light: { tint: "#0f70bb", strong: "#0b5ea8", onTint: "#ffffff" },
+    dark: { tint: "#5ea6ee", strong: "#8bbff2", onTint: "#0b0c0f" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */

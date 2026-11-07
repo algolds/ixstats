@@ -26,6 +26,12 @@ function oklch(hex: string): { l: number; c: number; h: number } {
 const hueGap = (x: number, y: number) => Math.min(Math.abs(x - y), 360 - Math.abs(x - y));
 const entries = Object.entries(APP_TINTS).filter(([app]) => app !== INK);
 
+/**
+ * Owner 2026-11-06 (docs/specs/2026-11-06-exchange-overhaul-design.md §4): the Exchange takes a Chase-style blue next to
+ * the IxWiki navy; the two differ by lightness and saturation instead of hue. The only pair exempt from the 30° rule.
+ */
+const HUE_EXCEPTIONS = new Set(["exchange/wiki", "wiki/exchange"]);
+
 describe("Facet app palette", () => {
   it.each(["light", "dark"] as const)(
     "gives every app its own hue, 30 degrees clear (%s)",
@@ -33,6 +39,7 @@ describe("Facet app palette", () => {
       const close: string[] = [];
       entries.forEach(([a, x], i) =>
         entries.slice(i + 1).forEach(([b, y]) => {
+          if (HUE_EXCEPTIONS.has(`${a}/${b}`)) return;
           const gap = hueGap(oklch(x[mode].tint).h, oklch(y[mode].tint).h);
           if (gap < 30) close.push(`${a}/${b}: ${gap.toFixed(1)}`);
         })
@@ -44,4 +51,21 @@ describe("Facet app palette", () => {
   it.each(["light", "dark"] as const)("keeps the default an ink, not a colour (%s)", (mode) => {
     expect(oklch(APP_TINTS[INK][mode].tint).c).toBeLessThan(0.04);
   });
+
+  it.each(["light", "dark"] as const)(
+    "exempts only Exchange/Wiki, and the Exchange still sits clear of every other app (%s)",
+    (mode) => {
+      expect(APP_TINTS).toHaveProperty("exchange");
+      const exchange = oklch(APP_TINTS.exchange[mode].tint).h;
+      const close = entries
+        .filter(([app]) => app !== "exchange" && app !== "wiki")
+        .filter(([, set]) => hueGap(exchange, oklch(set[mode].tint).h) < 30)
+        .map(([app]) => app);
+      expect(close).toEqual([]);
+      // The exception is a lightness difference: the Exchange blue is clearly lighter than the Wiki navy in light mode.
+      if (mode === "light") {
+        expect(oklch(APP_TINTS.exchange.light.tint).l - oklch(APP_TINTS.wiki.light.tint).l).toBeGreaterThan(0.1);
+      }
+    }
+  );
 });

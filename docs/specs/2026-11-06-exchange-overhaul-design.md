@@ -81,7 +81,7 @@ a product to match.
 | Navigation | **Sidebar sections.** No in-page tabs. |
 | Brand | The name stays **"Exchange"**, with a full brand: wordmark, number typography and a brand guide in `docs/systems/`. |
 | Look | **Chase as the base**, and the mockup is approved: white canvas, one confident blue, big friendly figures, pill buttons and filters, generous spacing, a bold wordmark. |
-| Colour | Chase-style blue: **#117ACA light, #5AA9E6 dark**. Exchange and Wiki get **one named exception** to the 30° hue rule; they differ by lightness and saturation instead. |
+| Colour | Chase-style blue: **#0F70BB light, #5EA6EE dark**. These are tuned from Chase's #117ACA so the light blue passes AA on white and the dark blue clears Maps by 30°. Exchange and Wiki get **one named exception** to the 30° hue rule; they differ by lightness and saturation instead. |
 | Watching | Watchlist, alerts, nation pages, leaderboards. |
 | Currency | **₷ settles everything**: one wallet, MyClub unchanged, the same money-safety rules. Nation pages and bonds also **show the nation's own currency**: its MyCountry name and symbol, plus a ₷ rate where `currencyExchangeRate` is set (16 of 280 nations today). That is display only; there is no FX system. |
 | Access | **Signed-out visitors can watch**: the front page, Markets and object pages are public and read-only. Every action needs sign-in. The admin kill switch `isExchangeEnabled` still closes trading. |
@@ -94,7 +94,7 @@ a product to match.
 
 - The app is public for watching: signed-out visitors get the read-only pages, and every mutation stays behind sign-in, rate limits and `isExchangeEnabled`. The Labs gate no longer applies.
 - New app id **`exchange`** in `APP_IDS` (`src/lib/design/tokens.ts`) and in the sidebar (`src/lib/navigation/app-sections.ts`). It is removed from the Labs sections.
-- `APP_TINTS.exchange`: tint #117ACA (light) and #5AA9E6 (dark), each with a `strong` and an `onTint`.
+- `APP_TINTS.exchange`: tint #0F70BB (light) and #5EA6EE (dark), each with a `strong` and an `onTint`.
   - #117ACA is 4.51:1 on white, at the AA edge. Darken it slightly if `token-contrast.test.ts` fails on any background role (tint on background must be ≥ 4.5:1, tint on other roles ≥ 3:1).
   - `app-palette.test.ts` gets one explicit, commented exception for the `exchange`/`wiki` pair. Every other pair keeps the 30° rule.
 - Brand pieces, recorded in a new `docs/systems/exchange-brand-guide.md`:
