@@ -6,6 +6,7 @@ import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { exchangeRouteOf, type ExchangeRoute } from "~/lib/exchange/routes";
 import { ExchangeHeader } from "./ExchangeHeader";
+import { CompanyPage } from "./CompanyPage";
 import { FrontPage } from "./FrontPage";
 import { LeaderboardsPage } from "./LeaderboardsPage";
 import { MarketsPage } from "./MarketsPage";
@@ -17,6 +18,7 @@ function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: strin
     if (route.section === "markets") return <MarketsPage realmId={realmId} />;
     if (route.section === "leaderboards") return <LeaderboardsPage realmId={realmId} />;
   }
+  if (route.kind === "company") return <CompanyPage companyId={route.id} />;
   if (route.kind === "unknown") {
     return <EmptyState title="Nothing here" message="This Exchange address doesn't exist." />;
   }
