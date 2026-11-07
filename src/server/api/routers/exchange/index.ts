@@ -46,6 +46,7 @@ import { guard } from "./_errors";
 import { exchangeAdminRouter } from "./admin";
 import { exchangeGovernanceRouter } from "./governance";
 import { exchangeMarketsRouter } from "./markets";
+import { exchangeTerminalRouter } from "./terminal";
 import { exchangeTreasuryRouter } from "./treasury";
 
 const requestId = z.string().min(8).max(64);
@@ -249,5 +250,6 @@ export const exchangeRouter = mergeRouters(
   exchangeMarketsRouter,
   exchangeGovernanceRouter,
   exchangeTreasuryRouter,
-  exchangeAdminRouter
+  exchangeAdminRouter,
+  exchangeTerminalRouter
 );
