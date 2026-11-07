@@ -91,11 +91,13 @@ async function startsWithGzip(file: string): Promise<boolean> {
 export async function listWorldBundleUploads(): Promise<
   Array<{ uploadId: string; storedAt: number }>
 > {
-  const base = await realpath(mapImportDir()).catch(() => null);
-  const folder = base && path.join(base, "uploads");
+  const base = await realpath(/*turbopackIgnore: true*/ mapImportDir()).catch(() => null);
+  const folder = base && path.join(/*turbopackIgnore: true*/ base, "uploads");
   // An uploads folder that is a link to somewhere else is not this folder: nothing in it is ours to remove
-  if (!folder || (await realpath(folder).catch(() => null)) !== folder) return [];
-  const names = await readdir(folder).catch(() => [] as string[]);
+  if (!folder || (await realpath(/*turbopackIgnore: true*/ folder).catch(() => null)) !== folder) {
+    return [];
+  }
+  const names = await readdir(/*turbopackIgnore: true*/ folder).catch(() => [] as string[]);
   const found: Array<{ uploadId: string; storedAt: number }> = [];
   for (const uploadId of names.filter(isUploadId)) {
     const info = await lstat(uploadPath(uploadId)).catch(() => null);

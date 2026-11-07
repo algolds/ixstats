@@ -22,18 +22,22 @@ const shape = RealmRasterLayerSchema.shape;
 /** The folder holding every built version of a realm's raster layer, or null for an invalid name. */
 export function rasterLayerDir(realmId: string, layerId: string): string | null {
   if (!REALM_ID.test(realmId) || !shape.id.safeParse(layerId).success) return null;
-  return path.join(mapRasterDir(), realmId, layerId);
+  return path.join(/*turbopackIgnore: true*/ mapRasterDir(), realmId, layerId);
 }
 
 /** The folder of one built version of a realm's raster layer, or null for an invalid name. */
 export function rasterVersionDir(realmId: string, layerId: string, version: string): string | null {
   const dir = rasterLayerDir(realmId, layerId);
-  return dir && shape.version.safeParse(version).success ? path.join(dir, version) : null;
+  return dir && shape.version.safeParse(version).success
+    ? path.join(/*turbopackIgnore: true*/ dir, version)
+    : null;
 }
 
 /** A tile's file in a version folder, or null when z/x/y is not a tile of the pyramid. */
 export function rasterTileFile(dir: string, z: number, x: number, y: number): string | null {
-  return isRasterTileCoord(z, x, y) ? path.join(dir, String(z), String(x), `${y}.webp`) : null;
+  return isRasterTileCoord(z, x, y)
+    ? path.join(/*turbopackIgnore: true*/ dir, String(z), String(x), `${y}.webp`)
+    : null;
 }
 
 export const RASTER_LEGEND_FILE = "legend.webp";

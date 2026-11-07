@@ -124,6 +124,24 @@ const config = {
 
   // Output standalone for Docker/production deployment
   output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  outputFileTracingExcludes: {
+    "*": [
+      "./backups/**/*",
+      "./odysseus/**/*",
+      "./kokoro-cache/**/*",
+      "./traces/**/*",
+      "./scratch/**/*",
+      "./.bench-out/**/*",
+      "./.map-imports/**/*",
+      "./.opencode/**/*",
+      "./.superpowers/**/*",
+      "./.remember/**/*",
+      "./tests/**/*",
+      "./docs/**/*",
+      "./scripts/**/*",
+      "./plans/**/*",
+    ],
+  },
 
   // It's good practice to keep your image domains defined.
   images: {

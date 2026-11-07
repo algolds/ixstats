@@ -48,18 +48,18 @@ export type TileArgs = readonly [
 ];
 
 function realmDir(realmId: string): string | null {
-  return REALM_ID.test(realmId) ? path.join(mapTileDir(), realmId) : null;
+  return REALM_ID.test(realmId) ? path.join(/*turbopackIgnore: true*/ mapTileDir(), realmId) : null;
 }
 
 function formatDir(realmId: string): string | null {
   const dir = realmDir(realmId);
-  return dir && path.join(dir, FORMAT_DIR);
+  return dir && path.join(/*turbopackIgnore: true*/ dir, FORMAT_DIR);
 }
 
 function versionDir(realmId: string, version: number): string | null {
   const dir = formatDir(realmId);
   return dir && Number.isSafeInteger(version) && version >= 0
-    ? path.join(dir, String(version))
+    ? path.join(/*turbopackIgnore: true*/ dir, String(version))
     : null;
 }
 
@@ -67,7 +67,7 @@ function versionDir(realmId: string, version: number): string | null {
 function tileFile(...[realmId, version, layer, z, x, y]: TileArgs): string | null {
   const dir = versionDir(realmId, version);
   if (!dir || !isTiledLayer(layer) || !isTileCoord(z, x, y)) return null;
-  return path.join(dir, layer, String(z), String(x), `${y}.pbf`);
+  return path.join(/*turbopackIgnore: true*/ dir, layer, String(z), String(x), `${y}.pbf`);
 }
 
 const memory = new ByteBoundedCache<Buffer>({
@@ -219,22 +219,24 @@ export async function removeStaleTileVersions(
   const root = realmDir(realmId);
   const dir = formatDir(realmId);
   if (!root || !dir) return 0;
-  const versions = (await readdir(dir).catch(() => [] as string[]))
+  const versions = (await readdir(/*turbopackIgnore: true*/ dir).catch(() => [] as string[]))
     .filter((name) => /^\d+$/.test(name))
     .map(Number);
   versions.sort((a, b) => a - b);
   let removed = 0;
   for (const [i, version] of versions.entries()) {
     if (version >= currentVersion) break;
-    const folder = (v: number) => path.join(dir, String(v));
+    const folder = (v: number) => path.join(/*turbopackIgnore: true*/ dir, String(v));
     if (now - (await readyAt(folder(versions[i + 1] ?? version))) <= STALE_AFTER_MS) continue;
     await rm(folder(version), { recursive: true, force: true });
     removed++;
   }
-  for (const name of await readdir(root).catch(() => [] as string[])) {
+  for (const name of await readdir(/*turbopackIgnore: true*/ root).catch(() => [] as string[])) {
     if (name === FORMAT_DIR || !FORMAT_DIR_NAME.test(name)) continue;
-    if (now - (await readyAt(path.join(root, name))) <= STALE_AFTER_MS) continue;
-    await rm(path.join(root, name), { recursive: true, force: true });
+    if (now - (await readyAt(path.join(/*turbopackIgnore: true*/ root, name))) <= STALE_AFTER_MS) {
+      continue;
+    }
+    await rm(path.join(/*turbopackIgnore: true*/ root, name), { recursive: true, force: true });
     removed++;
   }
   return removed;

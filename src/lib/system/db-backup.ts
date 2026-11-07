@@ -295,7 +295,7 @@ interface BackupResult {
 export async function createDatabaseBackup(
   options: Partial<BackupArgs> & { databaseUrl?: string; now?: Date } = {}
 ): Promise<BackupResult> {
-  const dir = resolve(options.dir ?? DEFAULT_BACKUP_DIR);
+  const dir = resolve(/*turbopackIgnore: true*/ options.dir ?? DEFAULT_BACKUP_DIR);
   const keep = options.keep ?? DEFAULT_BACKUP_KEEP;
   if (!Number.isInteger(keep) || keep < 1) throw new Error("keep must be a positive integer");
   const target = resolveTarget({
@@ -303,35 +303,44 @@ export async function createDatabaseBackup(
     databaseUrl: options.databaseUrl ?? process.env.DATABASE_URL,
   });
 
-  mkdirSync(dir, { recursive: true });
-  const file = join(dir, backupFileName(options.now ?? new Date()));
-  if (existsSync(file)) throw new Error(`Backup file already exists: ${file}`);
+  mkdirSync(/*turbopackIgnore: true*/ dir, { recursive: true });
+  const file = join(/*turbopackIgnore: true*/ dir, backupFileName(options.now ?? new Date()));
+  if (existsSync(/*turbopackIgnore: true*/ file)) {
+    throw new Error(`Backup file already exists: ${file}`);
+  }
   const partial = `${file}.partial`;
   try {
     await runToFile(dumpCommand(target), partial);
-    const bytes = statSync(partial).size;
+    const bytes = statSync(/*turbopackIgnore: true*/ partial).size;
     if (bytes === 0) throw new Error("pg_dump produced an empty file");
-    renameSync(partial, file);
+    renameSync(/*turbopackIgnore: true*/ partial, /*turbopackIgnore: true*/ file);
   } catch (error) {
-    if (existsSync(partial)) unlinkSync(partial);
+    if (existsSync(/*turbopackIgnore: true*/ partial)) unlinkSync(/*turbopackIgnore: true*/ partial);
     throw error;
   }
 
-  const pruned = selectBackupsToPrune(readdirSync(dir), keep);
-  for (const name of pruned) unlinkSync(join(dir, name));
-  return { file, bytes: statSync(file).size, target: target.kind, pruned };
+  const pruned = selectBackupsToPrune(readdirSync(/*turbopackIgnore: true*/ dir), keep);
+  for (const name of pruned) {
+    unlinkSync(join(/*turbopackIgnore: true*/ dir, name));
+  }
+  return {
+    file,
+    bytes: statSync(/*turbopackIgnore: true*/ file).size,
+    target: target.kind,
+    pruned,
+  };
 }
 
 /** Restore a dump into `target` with pg_restore --clean --if-exists --no-owner. */
 export function restoreDatabaseBackup(target: DbTarget, file: string): Promise<void> {
   const spec = restoreCommand(target, file);
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(spec.command, spec.args, {
+    const child = spawn(/*turbopackIgnore: true*/ spec.command, spec.args, {
       env: childEnv(spec),
       stdio: [spec.stdin ? "pipe" : "ignore", "inherit", "inherit"],
     });
     if (spec.stdin && child.stdin) {
-      const input = createReadStream(spec.stdin);
+      const input = createReadStream(/*turbopackIgnore: true*/ spec.stdin);
       input.on("error", (error) => {
         child.kill();
         reject(error);
