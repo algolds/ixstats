@@ -16,6 +16,7 @@ import {
 } from "~/lib/exchange/routes";
 import type { MarketRow } from "~/lib/exchange/terminal";
 import { ChangeLabel, Figure, formatSovereignFigure } from "./brand";
+import { TradeButton } from "./TradeSheet";
 
 const KIND_LABELS: Record<MarketKind, string> = {
   companies: "Companies",
@@ -49,7 +50,7 @@ function RowDetail({ row }: { row: MarketRow }) {
   return <span className="text-footnote text-label-secondary">Unit price</span>;
 }
 
-function MarketRowItem({ row }: { row: MarketRow }) {
+function MarketRowItem({ row, realmId }: { row: MarketRow; realmId: string }) {
   const href = hrefOf(row);
   const name = (
     <span className="min-w-0">
@@ -75,6 +76,17 @@ function MarketRowItem({ row }: { row: MarketRow }) {
         <Figure value={`₷${formatSovereignFigure(row.price)}`} />
         <RowDetail row={row} />
       </div>
+      {row.kind === "funds" && (
+        <TradeButton
+          instrument={{
+            kind: "fund",
+            sectorKey: row.sectorKey,
+            realmId,
+            name: row.name,
+            price: row.price,
+          }}
+        />
+      )}
     </li>
   );
 }
@@ -119,7 +131,7 @@ export function MarketsPage({ realmId }: { realmId: string }) {
       ) : (
         <ul className="divide-separator divide-y">
           {(markets.data ?? []).map((row) => (
-            <MarketRowItem key={`${row.kind}:${row.id}`} row={row} />
+            <MarketRowItem key={`${row.kind}:${row.id}`} row={row} realmId={realmId} />
           ))}
         </ul>
       )}

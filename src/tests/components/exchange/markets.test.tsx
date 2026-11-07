@@ -71,6 +71,23 @@ describe("MarketsPage", () => {
     expect(screen.getByText(/4.20% · AA/)).toBeInTheDocument();
   });
 
+  it("lets a fund be traded from its row", () => {
+    mockParams = new URLSearchParams("kind=funds");
+    mockRows = [
+      {
+        kind: "funds",
+        id: "industry",
+        name: "Industry fund",
+        subtitle: "Sector index fund",
+        price: 1.25,
+        changePct: null,
+        sectorKey: "industry",
+      },
+    ];
+    render(<MarketsPage realmId="default" />);
+    expect(screen.getByRole("button", { name: "Trade" })).toBeInTheDocument();
+  });
+
   it("writes the search into the address", () => {
     mockParams = new URLSearchParams("kind=companies");
     mockRows = [];
