@@ -37,4 +37,4 @@ The full guide is [MyLeague & MyClub](/help/labs/myleague-myclub).
 
 ## Exchange (Sovereigns)
 
-The [Exchange](/labs/exchange) is the Sovereign (₷) economy: found companies, post and bid on contracts, trade shares and invest in sector funds. It moved here from the Vault (an old Vault link to it brings you here), and it follows the Labs rules above: if Labs is switched off for you, the Exchange shows a not found page, including from a notification link. Sovereigns and IxCredits can no longer be converted into each other.
+The [Exchange](/exchange) left Labs and is now its own app in the sidebar, open to everyone to watch. Old Labs and Vault links to it bring you there. Sovereigns and IxCredits still can't be converted into each other.

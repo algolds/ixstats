@@ -26,7 +26,6 @@ describe("valuation", () => {
     expect(server.computeFairValue).toBe(computeFairValue);
     expect(credit.creditLimitFor).toBe(creditLimitFor);
     expect(credit.borrowRateOf).toBe(borrowRateOf);
-    expect(ui.computeFairValue).toBe(computeFairValue);
     expect(ui.creditLimitFor).toBe(creditLimitFor);
     expect(ui.borrowRateOf).toBe(borrowRateOf);
   });

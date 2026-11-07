@@ -131,7 +131,7 @@ Versioning communicates:
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
  │ • Onoma Studio (v4)        │ Linguistic engine, phonetic Markov chains, Kokoro TTS (/labs/onoma)
  │ • MyLeague & MyClub (v1)   │ 7-sport season simulation engine and franchise ownership (/myleague, /myclub)
- │ • Exchange (Sovereigns)    │ Companies, contracts, shares, sector funds & WikiOS lore (/labs/exchange)
+ │ • Exchange (Sovereigns)    │ The market terminal: news, markets, bonds & companies (/exchange)
  │ • Vexel (v1)               │ Procedural heraldic coat-of-arms and vector flag studio (/labs/vexel)
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```

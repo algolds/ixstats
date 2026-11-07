@@ -34,6 +34,7 @@ import { SUB_INDUSTRIES } from "~/lib/exchange/taxonomy";
 import { cn } from "~/lib/utils";
 import { SheetSection } from "./SheetSection";
 import { STATUS_TEXT } from "./rails/shared";
+import { EXCHANGE_PATHS } from "~/lib/exchange/routes";
 
 const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -428,8 +429,8 @@ export function CorporationsTreasuryConsole({
         icon={Building}
         accessory={
           <Button asChild variant="outline" size="sm">
-            <Link href="/labs/exchange">
-              Open Exchange
+            <Link href={EXCHANGE_PATHS.treasury}>
+              Open the Treasury
               <ArrowUpRight aria-hidden="true" />
             </Link>
           </Button>

@@ -7,6 +7,7 @@ import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { formatSovereigns } from "~/lib/exchange/amounts";
 import { SUB_INDUSTRIES, computeCompanyMetrics } from "~/lib/exchange/taxonomy";
+import { companyHref } from "~/lib/exchange/routes";
 
 const EXCHANGE_SECTOR_LABELS: Record<string, string> = {
   agriculture: "Agriculture",
@@ -418,7 +419,7 @@ function resolveExchangeCompanyField(
       countryName: hqCountry?.name,
       lastCalculated:
         company.updatedAt instanceof Date ? company.updatedAt.toISOString() : undefined,
-      detailsUrl: "/labs/exchange",
+      detailsUrl: companyHref(company.id),
     },
   };
 }

@@ -27,7 +27,7 @@ There is no Vault rail: the global source list (`src/lib/navigation/app-sections
 - **The card workshop** — Break down copies for dust per realm, fuse duplicates into Foil and Holo, and craft missing cards for dust plus IxC (`crafting.getNumbers`, `getDust`, `breakDown`, `fuse`, `craft`), from the card sheet and Mine's select mode. The old recipe crafting was removed in Phase 1, and its old page redirects to Mine; see `docs/systems/cards.md`.
 - **NationStates import** — Verify ownership and import an NS deck (`nsImport.requestVerification`, `checkVerification`, `importDeck`); see `docs/systems/ns-integration.md`.
 - **Achievements and Lorewards** — `/vault/achievements` (see `docs/systems/achievements.md`); the Lorewards tab wraps the shared `LorewardsView` (`VaultLorewardsPanel`).
-- **The Exchange (₷)** — lives in Labs at `/labs/exchange`, apart from the Vault; there is no IxC ⇄ ₷ conversion. See `docs/systems/exchange.md`.
+- **The Exchange (₷)** — its own app at `/exchange`, apart from the Vault; there is no IxC ⇄ ₷ conversion. See `docs/systems/exchange.md`.
 - **IxCredits** — Earn (the daily claim, achievement unlocks, Lorewards payouts, NS deck import, card sales and the nightly Vault dividend; no country action pays) and spend (packs, the market, crafting, the store). Caps, formulas, and transaction types in `docs/systems/ixcredits.md`.
 
 ## Architecture

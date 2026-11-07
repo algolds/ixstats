@@ -11,30 +11,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  CREDIT_RATINGS,
   SUB_INDUSTRIES,
-  borrowRateFor,
-  computeCompanyMetrics,
   subIndustriesOf,
-  type CompanyMetrics,
-  type CreditRating,
   type SubIndustry,
   type SubIndustryKey,
 } from "~/lib/exchange/taxonomy";
 import { formatSovereigns, round2 } from "~/lib/exchange/amounts";
 
 export { formatSovereigns, round2 };
-export {
-  CREDIT_RATINGS,
-  SUB_INDUSTRIES,
-  borrowRateFor,
-  computeCompanyMetrics,
-  subIndustriesOf,
-  type CompanyMetrics,
-  type CreditRating,
-  type SubIndustry,
-  type SubIndustryKey,
-};
+export { subIndustriesOf, type SubIndustryKey };
 
 export const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -49,7 +34,7 @@ export function sectorLabel(key: string): string {
   return SECTORS.find((s) => s.value === key)?.label ?? key;
 }
 
-export function subIndustryOf(key: string): SubIndustry | undefined {
+function subIndustryOf(key: string): SubIndustry | undefined {
   return SUB_INDUSTRIES.find((s) => s.key === key);
 }
 
@@ -271,12 +256,7 @@ export function readCompanyWikiData(
 }
 
 // One copy of the money math for the UI and the server.
-export {
-  borrowRateOf,
-  computeFairValue,
-  creditLimitFor,
-  type FairValueBreakdown,
-} from "~/lib/exchange/valuation";
+export { borrowRateOf, creditLimitFor } from "~/lib/exchange/valuation";
 
 /** Hours left in the 72-hour distress grace window before liquidation. */
 export function distressHoursLeft(distressedSinceIxTime: number | null): number {

@@ -30,6 +30,7 @@ import {
   type DistressState,
   type LifecycleInput,
 } from "~/lib/exchange/distress";
+import type { Db } from "~/lib/exchange/guards";
 import { runCompanyOperations } from "~/lib/exchange/operations";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
@@ -208,14 +209,14 @@ describe("the news feed", () => {
   it("headlines a company entering distress, once per entry", async () => {
     setup({ status: "ACTIVE", distressedSinceIxTime: null });
     const input: LifecycleInput = {
-      company: co(),
+      company: await fake.client.company.findUniqueOrThrow({ where: { id: "co1" } }),
       hq: null,
       cashCents: 0,
       creditDrawn: 0,
       tickKey: "t1",
       nowMs: T0,
     };
-    await fake.client.$transaction((tx) => applyDistressTx(tx, "DISTRESS", input, []));
+    await fake.client.$transaction((tx: Db) => applyDistressTx(tx, "DISTRESS", input, []));
     expect(
       (fake.tables.exchangeNewsItem ?? []).map((n) => [n.kind, n.prominence, n.companyId])
     ).toEqual([["distress", "HEADLINE", "co1"]]);
