@@ -24,6 +24,7 @@ import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
+import { alertWatchers, publishContractNewsTx, type PublishedHeadline } from "./news";
 import { formatSovereigns, round2 } from "./amounts";
 import { payContractor, refundIssuer } from "./contract-settlement";
 import { debitTreasuryTx } from "./treasury";
@@ -467,6 +468,7 @@ export async function awardContract(
   input: { userId: string; contractId: string; bidId: string }
 ) {
   const notices: ExchangeNotice[] = [];
+  let headline: PublishedHeadline | null = null;
   const result = await db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     await requireIssuer(tx, input.contractId, input.userId);
@@ -491,6 +493,7 @@ export async function awardContract(
       data: { outcome: "LOST" },
     });
     await refundIssuer(tx, before, before.escrow - bid.amount, "award");
+    headline = await publishContractNewsTx(tx, before, bid.companyId, "tender_awarded");
     notices.push({
       userId: bid.company.founderId,
       title: `You won ${before.title}`,
@@ -507,6 +510,7 @@ export async function awardContract(
     return { awarded: true };
   });
   notifyExchange(notices);
+  if (headline) await alertWatchers(db, [headline]);
   return result;
 }
 
@@ -516,6 +520,7 @@ export async function completeContract(
   input: { userId: string; contractId: string }
 ) {
   const notices: ExchangeNotice[] = [];
+  let headline: PublishedHeadline | null = null;
   const result = await db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     await requireIssuer(tx, input.contractId, input.userId);
@@ -524,6 +529,14 @@ export async function completeContract(
       closedIxTime: Date.now(),
     });
     const { net, tariffPaid } = await payContractor(tx, before, before.escrow);
+    if (before.winnerCompanyId) {
+      headline = await publishContractNewsTx(
+        tx,
+        before,
+        before.winnerCompanyId,
+        "tender_completed"
+      );
+    }
     const founder = await founderOf(tx, before.winnerCompanyId);
     if (founder) {
       notices.push({
@@ -545,6 +558,7 @@ export async function completeContract(
     return { paid: net, tariffPaid };
   });
   notifyExchange(notices);
+  if (headline) await alertWatchers(db, [headline]);
   return result;
 }
 

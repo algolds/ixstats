@@ -200,10 +200,15 @@ describe("an approved acquisition", () => {
 
     expect(row("co")).toMatchObject({ status: "DELISTED", capital: 0, decisionValue: 0 });
     expect(row("buyer")).toMatchObject({ capital: 39_999, decisionValue: 80, standing: 2 });
+    expect((fake.tables.exchangeNewsItem ?? []).filter((n) => n.kind === "acquisition")).toEqual([
+      expect.objectContaining({ prominence: "HEADLINE", companyId: "co" }),
+    ]);
   });
 
   it("absorbs the target into the buyer when the buyer's founder holds every share", async () => {
-    fake.tables.shareholding = [{ companyId: "co", ownerUserId: "carol", shares: 1000, avgCost: 1 }];
+    fake.tables.shareholding = [
+      { companyId: "co", ownerUserId: "carol", shares: 1000, avgCost: 1 },
+    ];
     await offerAndResolve(10_000);
     expect(row("co")).toMatchObject({ status: "DELISTED", capital: 0 });
     expect(row("buyer").capital).toBe(70_000);

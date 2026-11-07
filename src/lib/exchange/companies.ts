@@ -29,6 +29,7 @@ import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./owne
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
+import { publishNewsTx } from "./news";
 
 /** The four macro sectors, matching the SectorIndex rows. */
 export const SECTOR_KEYS = ["agriculture", "industry", "services", "government"] as const;
@@ -240,6 +241,17 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         },
       });
       await refreshFairValue(tx, company.id);
+      await publishNewsTx(tx, {
+        realmId,
+        kind: "company_listed",
+        prominence: "ACTIVITY",
+        sourceKind: "COMPANY",
+        sourceId: company.id,
+        headline: `${company.name} listed on the Exchange`,
+        companyId: company.id,
+        countryId: company.hqCountryId ?? undefined,
+        key: `news:company_listed:${company.id}`,
+      });
       return { company, alreadyApplied: false };
     });
   } catch (error) {

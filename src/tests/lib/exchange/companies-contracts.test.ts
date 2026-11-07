@@ -21,7 +21,7 @@ import {
   createContract,
   disputeContract,
   placeBid,
-  resolveDispute
+  resolveDispute,
 } from "~/lib/exchange/contracts";
 import type { Db } from "~/lib/exchange/guards";
 import { ensureSectorIndices } from "~/lib/exchange/sectors";
@@ -120,6 +120,15 @@ describe("companies", () => {
       expect.objectContaining({ companyId: id, ownerUserId: "alice", shares: 1000 }),
     ]);
     expect(fake.tables.shareIssuance).toHaveLength(1);
+    expect((fake.tables.exchangeNewsItem ?? []).filter((n) => n.kind === "company_listed")).toEqual(
+      [
+        expect.objectContaining({
+          prominence: "ACTIVITY",
+          companyId: id,
+          headline: "Alice Works listed on the Exchange",
+        }),
+      ]
+    );
   });
 
   it("applies a retried charter once", async () => {
@@ -338,8 +347,9 @@ describe("companies", () => {
       requestId: rid(),
     });
     await ensureSectorIndices(fake.client, "alpha");
-    fake.tables.sectorIndex!.find((i) => i.realmId === "alpha" && i.sectorKey === "industry")!
-      .value = 1500;
+    fake.tables.sectorIndex!.find(
+      (i) => i.realmId === "alpha" && i.sectorKey === "industry"
+    )!.value = 1500;
     await depositToCompany(fake.client, {
       userId: "alice",
       companyId: alpha.id,
@@ -378,9 +388,9 @@ describe("companies", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
     company(id).creditDrawn = 0;
-    await expect(dissolveCompany(fake.client, { userId: "alice", companyId: id })).resolves.toMatchObject(
-      { returned: 500 }
-    );
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: id })
+    ).resolves.toMatchObject({ returned: 500 });
   });
 
   it("dissolveCompanyTx runs inside the caller's transaction and returns its notices", async () => {
@@ -436,6 +446,13 @@ describe("contract state machine", () => {
     expect(company(bobCo)).toMatchObject({ capital: 300, contractsWonValue: 300, standing: 1 });
     expect(contract(contractId)).toMatchObject({ status: "COMPLETED", escrow: 0 });
     expect(totalMoney()).toBe(before);
+    const kinds = (fake.tables.exchangeNewsItem ?? [])
+      .filter((n) => n.contractId === contractId)
+      .map((n) => [n.kind, n.prominence]);
+    expect(kinds).toEqual([
+      ["tender_awarded", "ACTIVITY"],
+      ["tender_completed", "ACTIVITY"],
+    ]);
   });
 
   it("cancel refunds escrow; a cancelled contract can't be awarded", async () => {

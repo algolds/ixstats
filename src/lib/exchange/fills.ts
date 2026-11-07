@@ -14,6 +14,7 @@ import type { ExchangeNotice } from "./notify";
 import { fromCents, toCents } from "./ownership";
 import { formatSovereigns } from "./amounts";
 import { countryMacroOf } from "./macro";
+import { LARGE_TRADE_SOVEREIGNS, publishNewsTx } from "./news";
 import { transferToTreasuryTx } from "./treasury";
 
 const MACRO_COUNTRY_SELECT = {
@@ -271,10 +272,35 @@ export async function creditHolding(
   });
 }
 
-export async function recordTrade(tx: Db, companyId: string, price: number): Promise<void> {
+/** Record a fill: the company's last price, and the trade on the live activity feed (a headline when it is large). */
+export async function recordTrade(
+  tx: Db,
+  companyId: string,
+  price: number,
+  shares: number,
+  tradeKey: string
+): Promise<void> {
+  const before = await tx.company.findUnique({
+    where: { id: companyId },
+    select: { name: true, realmId: true, lastTradePrice: true },
+  });
   await tx.company.update({
     where: { id: companyId },
     data: { lastTradePrice: price, lastTradeIxTime: Date.now() },
+  });
+  if (!before) return;
+  const value = price * shares;
+  await publishNewsTx(tx, {
+    realmId: before.realmId,
+    kind: "trade",
+    prominence: value >= LARGE_TRADE_SOVEREIGNS ? "HEADLINE" : "ACTIVITY",
+    sourceKind: "EXCHANGE",
+    headline: `${shares.toLocaleString("en-US")} ${shares === 1 ? "share" : "shares"} of ${before.name} traded at ${formatSovereigns(price)}`,
+    companyId,
+    movePct: before.lastTradePrice
+      ? ((price - before.lastTradePrice) / before.lastTradePrice) * 100
+      : undefined,
+    key: `news:trade:${tradeKey}`,
   });
 }
 
@@ -310,6 +336,6 @@ export async function fillBuyerAgainstAsk(
     shares,
     fromCents(toCents(ask.pricePerShare) * shares)
   );
-  await recordTrade(tx, company.id, ask.pricePerShare);
+  await recordTrade(tx, company.id, ask.pricePerShare, shares, key);
   return net;
 }

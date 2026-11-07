@@ -411,7 +411,7 @@ async function matchAsk(
       shares,
       fromCents(toCents(price) * shares)
     );
-    await recordTrade(tx, company.id, price);
+    await recordTrade(tx, company.id, price, shares, `exchange:share-fill:${ask.id}:${bid.id}`);
     pushSaleNotice(notices, company, ask.sellerUserId, bid.buyerUserId, shares, net);
     notices.push(boughtNotice(company, bid.buyerUserId, shares, price));
   }

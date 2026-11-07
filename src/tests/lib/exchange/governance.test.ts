@@ -106,15 +106,30 @@ describe("opening a proposal", () => {
 
   it("refuses to open a proposal for someone who doesn't found the company", async () => {
     await expect(
-      openProposal(fake.client, { userId: "bob", companyId: "co", type: "DISSOLVE", requestId: rid() })
+      openProposal(fake.client, {
+        userId: "bob",
+        companyId: "co",
+        type: "DISSOLVE",
+        requestId: rid(),
+      })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
     expect(proposals()).toHaveLength(0);
   });
 
   it("refuses a second open proposal of the same kind while one is open", async () => {
-    await openProposal(fake.client, { userId: "alice", companyId: "co", type: "DISSOLVE", requestId: rid() });
+    await openProposal(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      type: "DISSOLVE",
+      requestId: rid(),
+    });
     await expect(
-      openProposal(fake.client, { userId: "alice", companyId: "co", type: "DISSOLVE", requestId: rid() })
+      openProposal(fake.client, {
+        userId: "alice",
+        companyId: "co",
+        type: "DISSOLVE",
+        requestId: rid(),
+      })
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(proposals()).toHaveLength(1);
   });
@@ -173,6 +188,9 @@ describe("voting", () => {
     const { proposal } = await castVote(fake.client, { userId: "bob", proposalId, support: true });
     expect(proposal).toMatchObject({ status: "PASSED", sharesFor: 750, sharesAgainst: 0 });
     expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect((fake.tables.exchangeNewsItem ?? []).filter((n) => n.kind === "vote_passed")).toEqual([
+      expect.objectContaining({ prominence: "HEADLINE", companyId: "co" }),
+    ]);
     // The founder takes 40%, bob 35% and carol 25%, each cent exact.
     expect(sov("alice")).toBe(5000 + 8000);
     expect(sov("bob")).toBe(5000 + 7000);

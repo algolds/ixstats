@@ -19,6 +19,7 @@ import type { ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { transferToTreasuryTx } from "./treasury";
+import { publishNewsTx } from "./news";
 
 /** Share of the target's productive plant (decisionValue) the buyer takes over. */
 export const ACQUIRED_PLANT_SHARE = 0.8;
@@ -65,7 +66,11 @@ export async function acquisitionBlocker(
   return pending > 0 ? "That company has a decision pending" : null;
 }
 
-function targetProblem(target: Company, buyer: AcquisitionBuyer, offerAmount: number): string | null {
+function targetProblem(
+  target: Company,
+  buyer: AcquisitionBuyer,
+  offerAmount: number
+): string | null {
   if (target.realmId !== buyer.realmId) return "That company is in another realm";
   if (target.status !== "ACTIVE" && target.status !== "DISTRESSED") {
     return "That company can't be bought";
@@ -206,6 +211,16 @@ export async function executeAcquisition(
   });
   await refreshFairValue(tx, target.id);
   await refreshFairValue(tx, buyer.id);
+  await publishNewsTx(tx, {
+    realmId: target.realmId,
+    kind: "acquisition",
+    prominence: "HEADLINE",
+    sourceKind: "COMPANY",
+    sourceId: buyer.id,
+    headline: `${buyer.name} acquires ${target.name} for ${formatSovereigns(offerAmount)}`,
+    companyId: target.id,
+    key: `news:acquisition:${proposal.id}`,
+  });
   notices.push({
     userId: proposal.proposerUserId,
     title: `${target.name} is now part of ${buyer.name}`,
@@ -283,7 +298,8 @@ async function payOutTx(
   const split = splitProRata(cents, holders);
   const centsOf = new Map(split.payouts.map((p) => [p.userId, p.cents]));
   const [largest] = holders;
-  if (largest) centsOf.set(largest.userId, (centsOf.get(largest.userId) ?? 0) + split.remainderCents);
+  if (largest)
+    centsOf.set(largest.userId, (centsOf.get(largest.userId) ?? 0) + split.remainderCents);
 
   const notices: ExchangeNotice[] = [];
   for (const holder of holders) {

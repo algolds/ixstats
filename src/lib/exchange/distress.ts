@@ -27,6 +27,7 @@ import { fromCents, holdersOf, splitProRata, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
 import { debitTreasuryTx, transferToTreasuryTx } from "./treasury";
+import { publishNewsTx } from "./news";
 
 const HOUR_MS = 60 * 60 * 1000;
 export const DISTRESS_GRACE_MS = 72 * HOUR_MS;
@@ -124,6 +125,16 @@ async function enterDistressTx(tx: Db, input: LifecycleInput, notices: ExchangeN
   await setStatusTx(tx, c.id, "ACTIVE", {
     status: "DISTRESSED",
     distressedSinceIxTime: input.nowMs,
+  });
+  await publishNewsTx(tx, {
+    realmId: c.realmId,
+    kind: "distress",
+    prominence: "HEADLINE",
+    sourceKind: "EXCHANGE",
+    headline: `${c.name} enters distress with 72 hours to recapitalise`,
+    companyId: c.id,
+    countryId: c.hqCountryId ?? undefined,
+    key: `news:distress:${c.id}:${input.nowMs}`,
   });
   notices.push(...distressNotices(c, await holdersOf(tx, c.id)));
 }
@@ -249,6 +260,16 @@ async function liquidateTx(tx: Db, input: LifecycleInput, notices: ExchangeNotic
     tradingOpen: false,
   });
   await refreshFairValue(tx, c.id);
+  await publishNewsTx(tx, {
+    realmId: c.realmId,
+    kind: "bankruptcy",
+    prominence: "HEADLINE",
+    sourceKind: "EXCHANGE",
+    headline: `${c.name} goes bankrupt; its plant is sold and holders are paid out`,
+    companyId: c.id,
+    countryId: c.hqCountryId ?? undefined,
+    key: `news:bankruptcy:${c.id}`,
+  });
   notices.push({
     userId: c.founderId,
     title: `${c.name} went bankrupt`,

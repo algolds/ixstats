@@ -23,7 +23,13 @@ jest.mock("~/lib/exchange/macro", () => ({
   }),
 }));
 import { notifyExchange } from "~/lib/exchange/notify";
-import { DISTRESS_GRACE_MS, distressDecision, type DistressState } from "~/lib/exchange/distress";
+import {
+  DISTRESS_GRACE_MS,
+  applyDistressTx,
+  distressDecision,
+  type DistressState,
+  type LifecycleInput,
+} from "~/lib/exchange/distress";
 import { runCompanyOperations } from "~/lib/exchange/operations";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
@@ -155,6 +161,11 @@ describe("72-hour bankruptcy", () => {
       distressedSinceIxTime: null,
       tradingOpen: false,
     });
+    expect(
+      (fake.tables.exchangeNewsItem ?? [])
+        .filter((n) => n.companyId === "co1")
+        .map((n) => [n.kind, n.prominence])
+    ).toEqual([["bankruptcy", "HEADLINE"]]);
     expect(treasuryBalance()).toBeCloseTo(4866.67, 2);
     expect(fake.tables.nationTreasuryEntry).toEqual([
       expect.objectContaining({ type: "SPEND", amount: -133.33, source: "PLANT_RECOVERY:co1" }),
@@ -190,5 +201,23 @@ describe("72-hour bankruptcy", () => {
         expect.objectContaining({ type: "INTEREST", amount: 133.33, source: "LIQUIDATION:co1" }),
       ])
     );
+  });
+});
+
+describe("the news feed", () => {
+  it("headlines a company entering distress, once per entry", async () => {
+    setup({ status: "ACTIVE", distressedSinceIxTime: null });
+    const input: LifecycleInput = {
+      company: co(),
+      hq: null,
+      cashCents: 0,
+      creditDrawn: 0,
+      tickKey: "t1",
+      nowMs: T0,
+    };
+    await fake.client.$transaction((tx) => applyDistressTx(tx, "DISTRESS", input, []));
+    expect(
+      (fake.tables.exchangeNewsItem ?? []).map((n) => [n.kind, n.prominence, n.companyId])
+    ).toEqual([["distress", "HEADLINE", "co1"]]);
   });
 });

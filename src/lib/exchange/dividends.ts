@@ -22,6 +22,7 @@ import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./owne
 import { formatSovereigns } from "./amounts";
 import { capGainsRateOf, ratedCents } from "./fills";
 import { transferToTreasuryTx } from "./treasury";
+import { alertWatchers, publishNewsTx, type PublishedHeadline } from "./news";
 
 const WITHHOLDING_SHARE = 0.5;
 const CREDIT_CAP_SHARE = 0.5;
@@ -75,6 +76,7 @@ export async function declareDividend(
   }
   const key = `exchange:dividend:${input.userId}:${input.requestId}`;
   const notices: ExchangeNotice[] = [];
+  let headline: PublishedHeadline | null = null;
   try {
     const result = await db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
@@ -156,9 +158,20 @@ export async function declareDividend(
         });
       }
       await refreshFairValue(tx, company.id);
+      headline = await publishNewsTx(tx, {
+        realmId: company.realmId,
+        kind: "dividend",
+        prominence: "HEADLINE",
+        sourceKind: "COMPANY",
+        sourceId: company.id,
+        headline: `${company.name} pays a ${formatSovereigns(paid)} dividend`,
+        companyId: company.id,
+        key: `news:dividend:${key}`,
+      });
       return { paid, holderCount: payouts.length, alreadyApplied: false };
     });
     notifyExchange(notices);
+    if (headline) await alertWatchers(db, [headline]);
     return result;
   } catch (error) {
     if (isUniqueViolation(error)) {
