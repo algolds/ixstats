@@ -1,6 +1,6 @@
 ---
 title: Labs: Onoma, Vexel, MyLeague & More
-description: The experimental tools - language and name generation, sports leagues and clubs, flags, and the Exchange.
+description: The experimental tools - language and name generation, sports leagues and clubs, and flags.
 badge: Labs
 nextHref: /help/labs/myleague-myclub
 nextLabel: MyLeague & MyClub
@@ -37,4 +37,4 @@ The full guide is [MyLeague & MyClub](/help/labs/myleague-myclub).
 
 ## Exchange (Sovereigns)
 
-The [Exchange](/exchange) left Labs and is now its own app in the sidebar, open to everyone to watch. Old Labs and Vault links to it bring you there. Sovereigns and IxCredits still can't be converted into each other.
+The [Exchange](/exchange) left Labs and is now its own app in the sidebar, open to everyone to watch. See [The Exchange](/help/exchange/overview).
