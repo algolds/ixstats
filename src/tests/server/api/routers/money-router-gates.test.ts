@@ -274,6 +274,20 @@ describe("input bounds", () => {
       { companyId: "co_1", amount: 250_001, requestId: "req_12345678" },
     ],
     [
+      "a wealth fund deposit of 0 ₷",
+      "exchange.depositToFund",
+      { countryId: "c1", amount: 0, requestId: "req_12345678" },
+    ],
+    [
+      "a fund order for 0 bond units",
+      "exchange.fundTrade",
+      {
+        countryId: "c1",
+        order: { kind: "bond-buy", bondId: "b1", units: 0 },
+        requestId: "req_12345678",
+      },
+    ],
+    [
       "a lending spread over 10%",
       "exchange.setLendingTerms",
       { countryId: "c1", spread: 0.2, cap: 1000 },

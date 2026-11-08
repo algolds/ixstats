@@ -6,6 +6,8 @@
  * a failure is logged, never thrown, so it can't undo or block a settled move.
  */
 
+import { isFundUser } from "./fund-ids";
+
 export type ExchangeNoticePriority = "low" | "medium" | "high";
 
 export interface ExchangeNotice {
@@ -21,7 +23,9 @@ export interface ExchangeNotice {
 const EXCHANGE_HREF = "/exchange";
 
 /** Send each notice; returns how many the API accepted (a filtered one counts as not sent). */
-export async function sendExchangeNotices(notices: readonly ExchangeNotice[]): Promise<number> {
+export async function sendExchangeNotices(all: readonly ExchangeNotice[]): Promise<number> {
+  // A nation's wealth fund is a system account: it never gets notices.
+  const notices = all.filter((n) => !isFundUser(n.userId));
   if (notices.length === 0) return 0;
   let sent = 0;
   try {

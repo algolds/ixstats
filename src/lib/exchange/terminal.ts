@@ -10,6 +10,7 @@ import { round2 } from "./amounts";
 import { bondPriceOf, modelBondPrice, weeksLeftOf } from "./bonds";
 import type { SectorKey } from "./companies";
 import type { Db } from "./guards";
+import { isFundUser } from "./fund-ids";
 import { rateToFraction } from "./macro";
 import { listNews, type NewsRow } from "./news";
 import { getOrderBook } from "./shares";
@@ -603,13 +604,21 @@ export async function getNationPage(
       select: { currency: true, currencySymbol: true },
     }),
     treasurySummary(db, countryId, cfg.treasuryCap),
-    db.nationTreasury.findUnique({ where: { countryId }, select: { creditRating: true } }),
+    db.nationTreasury.findUnique({
+      where: { countryId },
+      select: { creditRating: true, fundUserId: true },
+    }),
     db.nationBond.findMany({ where: { countryId } }),
     db.company.findMany({ where: { hqCountryId: countryId, status: { in: LIVE } } }),
     newsFor(db, { realmId: country.realmId, subject: { countryId }, take: 10 }),
   ]);
   const watching = await isWatching(db, viewerId, "NATION", countryId);
+  // The wealth fund's holdings are public (spec §11a).
+  const fund = treasuryRow?.fundUserId
+    ? await getPortfolio(db, treasuryRow.fundUserId, country.realmId, nowMs)
+    : null;
   return {
+    fund,
     viewer: { watching },
     id: country.id,
     name: country.name,
@@ -827,7 +836,10 @@ export async function getLeaderboards(db: Db, realmId: string, nowMs: number = D
     where: { units: { gt: 0 } },
     select: { ownerUserId: true },
   });
-  const userIds = [...new Set([...holders, ...bondHolders].map((h) => h.ownerUserId))];
+  // Nations' wealth funds are not investors.
+  const userIds = [...new Set([...holders, ...bondHolders].map((h) => h.ownerUserId))].filter(
+    (u) => !isFundUser(u)
+  );
   const values = await Promise.all(
     userIds.map(async (u) => (await getPortfolio(db, u, realmId, nowMs)).totalValue)
   );
