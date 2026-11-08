@@ -13,6 +13,7 @@ import type { Db } from "./guards";
 import { isFundUser } from "./fund-ids";
 import { rateToFraction } from "./macro";
 import { listNews, type NewsRow } from "./news";
+import { listBusinessPosts, mergeNews } from "./press";
 import { getOrderBook } from "./shares";
 import { SECTOR_LABELS, unitPrice } from "./sectors";
 import {
@@ -91,6 +92,8 @@ export function companyPrice(
 
 export interface NewsItem extends NewsRow {
   sourceName: string;
+  /** Where the item opens when it isn't an Exchange story (a ThinkPages post). */
+  href?: string;
 }
 
 /** Name each item's source: the Exchange, a nation or a company. */
@@ -114,6 +117,15 @@ async function withSourceNames(db: Db, rows: readonly NewsRow[]): Promise<NewsIt
 
 async function newsFor(db: Db, args: Parameters<typeof listNews>[1]): Promise<NewsItem[]> {
   return withSourceNames(db, await listNews(db, args));
+}
+
+/** Exchange stories and live #business posts together, newest first. */
+async function storiesFor(db: Db, args: Parameters<typeof listNews>[1]): Promise<NewsItem[]> {
+  const [news, press] = await Promise.all([
+    newsFor(db, args),
+    listBusinessPosts(db, { realmId: args.realmId, ...args.subject, take: args.take }),
+  ]);
+  return mergeNews(news, press).slice(0, args.take ?? 20);
 }
 
 async function realmOf(db: Db, realmId: string): Promise<{ id: string; name: string }> {
@@ -224,7 +236,7 @@ export async function getFrontPage(db: Db, realmId: string, nowMs: number = Date
     }),
     db.company.findMany({ where: { realmId, status: { in: LIVE } } }),
     db.nationBond.findMany({ where: { realmId, status: "OPEN" }, take: 6 }),
-    newsFor(db, { realmId, prominence: "HEADLINE", take: 10 }),
+    storiesFor(db, { realmId, prominence: "HEADLINE", take: 10 }),
     newsFor(db, { realmId, prominence: "ACTIVITY", take: 12 }),
   ]);
   const weights = Object.fromEntries(
@@ -471,7 +483,7 @@ export async function getCompanyPage(
       shareholdersOf(db, company),
       getOrderBook(db, companyId),
       companyFilings(db, companyId),
-      newsFor(db, { realmId: company.realmId, subject: { companyId }, take: 10 }),
+      storiesFor(db, { realmId: company.realmId, subject: { companyId }, take: 10 }),
       company.hqCountryId
         ? db.country.findUnique({
             where: { id: company.hqCountryId },
@@ -610,7 +622,7 @@ export async function getNationPage(
     }),
     db.nationBond.findMany({ where: { countryId } }),
     db.company.findMany({ where: { hqCountryId: countryId, status: { in: LIVE } } }),
-    newsFor(db, { realmId: country.realmId, subject: { countryId }, take: 10 }),
+    storiesFor(db, { realmId: country.realmId, subject: { countryId }, take: 10 }),
   ]);
   const watching = await isWatching(db, viewerId, "NATION", countryId);
   // The wealth fund's holdings are public (spec §11a).

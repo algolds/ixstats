@@ -183,6 +183,9 @@ function matchValue(actual: any, cond: any): boolean {
     if (op === "startsWith" && !(typeof actual === "string" && actual.startsWith(v as string))) {
       return false;
     }
+    if (op === "contains" && !(typeof actual === "string" && norm(actual).includes(norm(v)))) {
+      return false;
+    }
   }
   return true;
 }
@@ -208,6 +211,7 @@ const OPS: Record<string, true> = {
   not: true,
   mode: true,
   startsWith: true,
+  contains: true,
 };
 
 function matches(row: Row, where: Row = {}): boolean {

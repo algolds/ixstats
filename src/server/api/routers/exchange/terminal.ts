@@ -40,6 +40,7 @@ import {
 import { listOpenRealms } from "~/lib/exchange/queries";
 import { SECTOR_KEYS } from "~/lib/exchange/companies";
 import { depositToFund, fundSummary, fundTrade, withdrawFromFund } from "~/lib/exchange/fund";
+import { linkCompanyAccount, unlinkCompanyAccount } from "~/lib/exchange/press";
 import {
   COMPANY_CREDIT_CAP_MAX,
   LENDING_SPREAD_MAX,
@@ -221,6 +222,22 @@ export const exchangeTerminalRouter = createTRPCRouter({
     .mutation(({ ctx, input }) =>
       guard("set the lending terms", () =>
         setLendingTerms(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  linkCompanyAccount: rateLimitedMutationProcedure
+    .input(z.object({ companyId: id, accountId: id }))
+    .mutation(({ ctx, input }) =>
+      guard("link the company's ThinkPages account", () =>
+        linkCompanyAccount(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  unlinkCompanyAccount: rateLimitedMutationProcedure
+    .input(z.object({ companyId: id }))
+    .mutation(({ ctx, input }) =>
+      guard("unlink the company's ThinkPages account", () =>
+        unlinkCompanyAccount(ctx.db, { userId: ctx.user.id, ...input })
       )
     ),
 

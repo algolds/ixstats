@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
+import { CompanyPressControls } from "./CompanyPressControls";
 import {
   CompanySelect,
   SectorSelect,
@@ -522,7 +523,7 @@ function DecisionControls({
   );
 }
 
-/** Founder controls for an operating company: shares, dividends, credit line and strategy. */
+/** Founder controls for an operating company: shares, dividends, credit line, press account and strategy. */
 export function CompanyControls({
   company,
   hqInterestRate = null,
@@ -559,6 +560,7 @@ export function CompanyControls({
         lending={lending}
         onDone={onDone}
       />
+      <CompanyPressControls company={company} onDone={onDone} />
       <DecisionControls company={company} acquireTargets={acquireTargets} onDone={onDone} />
     </div>
   );
