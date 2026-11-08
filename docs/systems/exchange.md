@@ -1,6 +1,6 @@
 # The Exchange (₷ Sovereigns)
 
-**Last updated:** 2026-11-07 · **Status:** 🟢 Terminal R1: the Exchange is its own app at `/exchange`, public to watch (actions need sign-in), with a front page (realm index, Today in business, sectors, movers, nation bonds, live activity), markets, company, bond, nation and story pages, a portfolio with watchlist and alerts, leaderboards, a trade sheet, and nation bonds with credit ratings and default. Underneath, the Phase 3 engine: realm-scoped companies with 12 sub-industries and HQ domiciles, nation ₷ treasuries and DM faucet tenders, a two-sided order book with capital-gains and dividend withholding taxes, company decisions, shareholder governance and M&A, central bank credit, the `ACTIVE → DISTRESSED → BANKRUPT` lifecycle and bounded corporate-to-GDP feedback. Design specs: [specs/2026-11-06-exchange-overhaul-design.md](../specs/2026-11-06-exchange-overhaul-design.md) (the terminal), [specs/2026-11-01-exchange-phase-3-design.md](../specs/2026-11-01-exchange-phase-3-design.md) and [specs/2026-10-06-exchange-economy-design.md](../specs/2026-10-06-exchange-economy-design.md). Brand: [exchange-brand-guide.md](exchange-brand-guide.md). Deploy: [deploy-exchange-terminal-2026-11.md](../history/operations/deploy-exchange-terminal-2026-11.md).
+**Last updated:** 2026-11-08 · **Status:** 🟢 Terminal R2: nation wealth funds, lending terms, trading as the treasury, `#business` press from ThinkPages and realm sector levers, on top of R1: the Exchange is its own app at `/exchange`, public to watch (actions need sign-in), with a front page (realm index, Today in business, sectors, movers, nation bonds, live activity), markets, company, bond, nation and story pages, a portfolio with watchlist and alerts, leaderboards, a trade sheet, and nation bonds with credit ratings and default. Underneath, the Phase 3 engine: realm-scoped companies with 12 sub-industries and HQ domiciles, nation ₷ treasuries and DM faucet tenders, a two-sided order book with capital-gains and dividend withholding taxes, company decisions, shareholder governance and M&A, central bank credit, the `ACTIVE → DISTRESSED → BANKRUPT` lifecycle and bounded corporate-to-GDP feedback. Design specs: [specs/2026-11-06-exchange-overhaul-design.md](../specs/2026-11-06-exchange-overhaul-design.md) (the terminal), [specs/2026-11-01-exchange-phase-3-design.md](../specs/2026-11-01-exchange-phase-3-design.md) and [specs/2026-10-06-exchange-economy-design.md](../specs/2026-10-06-exchange-economy-design.md). Brand: [exchange-brand-guide.md](exchange-brand-guide.md). Deploy: [deploy-exchange-terminal-2026-11.md](../history/operations/deploy-exchange-terminal-2026-11.md).
 
 The Exchange is the in-world capital economy, in its own currency, the Sovereign (₷). It is kept entirely apart from
 [IxCredits](ixcredits.md): there is no conversion in either direction, so ₷ comes from the starting balance, contracts,
@@ -41,7 +41,7 @@ same wallet.
 ## Ledger types
 
 - `ExchangeTransaction.type`: `CONVERT_IN` and `CONVERT_OUT` (historical only), `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`, `SHARE_BUY`, `SHARE_SELL`, `SHARE_ORDER_ESCROW`, `SHARE_ORDER_REFUND`, `DIVIDEND`, `SECTOR_BUY`, `SECTOR_SELL`, `CONTRACT_ESCROW`, `CONTRACT_REFUND`, `CONTRACT_PAYOUT`, `TREASURY_PAYMENT`, `BOND_BUY`, `BOND_SELL`, `BOND_COUPON`, `BOND_PRINCIPAL`, `ADMIN_ADJUSTMENT`, plus MyClub's `STADIUM_UPGRADE`, `TRAINING_FEE`, `TEAM_TRAINING`, `PREDICTION_STAKE`, `PREDICTION_PAYOUT`.
-- `NationTreasuryEntry.type`: `STIPEND`, `TAX`, `TARIFF`, `INTEREST`, `LOBBY`, `B2G_ESCROW`, `B2G_REFUND`, `SPEND`, `BOND_SALE`, `BOND_COUPON`, `BOND_PRINCIPAL`.
+- `NationTreasuryEntry.type`: `STIPEND`, `TAX`, `TARIFF`, `INTEREST`, `LOBBY`, `B2G_ESCROW`, `B2G_REFUND`, `SPEND`, `BOND_SALE`, `BOND_COUPON`, `BOND_PRINCIPAL`, `FUND_RETURN`.
 
 ## Nation bonds (terminal R1)
 
@@ -58,6 +58,36 @@ same wallet.
   - The default is a front-page story.
 - **Ratings:** `nationRatingFor` sets a nation's rating from treasury cover for its outstanding bonds, one notch down
   for shrinking growth and one more for weak government. It runs after every issue and every paid week.
+
+## Wealth fund and lending (terminal R2)
+
+- **The fund account:** `ensureFundUser` makes one system user per nation (`treasury-fund-<countryId>`, Clerk id
+  `system:<countryId>`) with its own wallet, remembered as `NationTreasury.fundUserId`. It trades through the ordinary
+  engine with request ids prefixed `fund:`, so every fill, fee and tax applies.
+- **Moving money:** `depositToFund` debits the treasury (`SPEND`) and credits the fund wallet (`TREASURY_PAYMENT`);
+  `withdrawFromFund` reverses it (`FUND_RETURN`). A deposit that would put more than half of treasury plus fund into
+  the fund is refused (`LIMIT_REACHED`).
+- **Guardrails:** owner only (`requireCountryOwner`). No buying the owner's companies (founded or held by the
+  nation's owner), the nation's own bonds, or more than 25% of a company. Fund trades publish an activity item such
+  as "Caphiria Treasury bought 5 Urcea bonds".
+- **Out of player surfaces:** fund users are left out of leaderboards and never get notices (`isFundUser`).
+- **Lending terms:** `NationTreasury.lendingSpread` (−0.02 to 0.10, added to the borrow rate, which never goes below 0) and `companyCreditCap`
+  (default ₷250,000, at most the global credit cap) apply to companies domiciled in the nation. Lending is exempt from
+  the self-dealing rule (owner ruling); B2G tender awards to the owner's companies are refused.
+
+## Business press (terminal R2)
+
+- **What shows:** public, top-level, unwarned ThinkPages posts tagged `#business` (any case) by an active media or
+  government account of a realm nation, or by a company's linked corporate account (`Company.thinkpagesAccountId`).
+- **Read live:** `listBusinessPosts` reads posts at request time and merges them into front page, company and nation
+  news, so deleting, hiding or warning a post removes it. Government posts show under the nation's name, media under
+  the account's display name, and linked accounts under the company's name. Each opens `/dashboard/post/<id>`.
+- **Linking:** a founder links one of their own corporate accounts; an account speaks for one company at a time.
+
+## Sector levers (terminal R2)
+
+Realm moderators and site admins set each sector's `dmModifier` (−0.5 to 2) from Markets → Funds, through
+`setSectorDmModifier`. The next index tick uses it, and every change is audited.
 
 ## Business news
 

@@ -1,4 +1,4 @@
-# Deploy runbook: Exchange terminal, Release 1 (2026-11)
+# Deploy runbook: Exchange terminal, Releases 1 and 2 (2026-11)
 
 The deploy notes for the Exchange overhaul, Release 1 ([design](../../specs/2026-11-06-exchange-overhaul-design.md),
 [system doc](../../systems/exchange.md)). The Exchange becomes its own app at `/exchange`, public to watch, with nation
@@ -34,6 +34,17 @@ Promote the release to the deploy branch and run `./scripts/deploy-production.sh
   (nullable). The additive step leaves columns on existing tables to the push, and neither column needs a backfill.
 
 Nothing else changes in the database. No data script runs.
+
+### Release 2 (1.5.4)
+
+If R2 ships in the same deploy as R1, or after it, `db push` also adds four columns. None needs a backfill, and there is
+no SQL or data script:
+
+- `exchange_nation_treasuries.fundUserId` (nullable, unique): the nation's wealth fund account, made on first deposit.
+- `exchange_nation_treasuries.lendingSpread` (default `0`) and `companyCreditCap` (default `250000`).
+- `exchange_companies.thinkpagesAccountId` (nullable, unique): a company's linked press account.
+
+Fund accounts are ordinary `users` rows with ids starting `treasury-fund-`; leave them in place on rollback.
 
 ## 3. Turn the cron jobs on
 
