@@ -5,11 +5,28 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.4 "Lobster Crosby"**, channel Stable, to players; internally 1.5.3, see
+**IxStates 1.0.5 "Lobster Crosby"**, channel Stable, to players; internally 1.5.4, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.5.4] — 2026-11-08 "Lobster Crosby" (public 1.0.5)
+
+### 💱 The Exchange, Release 2: the treasury as a player (Exchange 2)
+
+- **`EXCHANGE_VERSION` 2.** Design: `docs/specs/2026-11-06-exchange-overhaul-design.md` §8 and §11a.
+- **Wealth fund:**
+  - Each nation can open a fund that trades through the ordinary order book as its own account.
+  - The owner moves ₷ between treasury and fund, up to half of the two together.
+  - The fund can't buy its owner's companies or its own nation's bonds, or hold more than 25% of a company.
+  - Its holdings are public on the nation page. It never shows on leaderboards and gets no notices.
+- **Trading as the treasury:** a nation's owner switches the trade sheet between "You" and "<Nation> Treasury".
+- **Lending terms:** owners set a spread from −2% (a subsidy) to +10% and a per-company credit cap for companies domiciled in their nation. Credit stays open to the owner's own companies at the published terms; tenders can't be awarded to them.
+- **Treasury section:** an overview with lifetime inflows, the wealth fund, bonds and lending terms.
+- **Business press:** public, top-level ThinkPages posts tagged `#business` by a realm's media and government accounts, or by a company's linked corporate account, appear in the front page, company and nation news and open the post. They're read live, so ThinkPages moderation is the only moderation. Founders link a corporate account under their company's controls.
+- **Sector levers:** realm managers set each sector's demand modifier (−0.5 to 2) from Markets → Funds.
+- **Deploy:** `db push` adds four columns, with no SQL or data script (runbook `docs/history/operations/deploy-exchange-terminal-2026-11.md`, Release 2).
 
 ## [1.5.3] — 2026-11-07 "Lobster Crosby" (public 1.0.4)
 

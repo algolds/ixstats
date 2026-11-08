@@ -25,6 +25,7 @@ import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./compani
 import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { alertWatchers, publishContractNewsTx, type PublishedHeadline } from "./news";
+import { assertNotOwnersCompany } from "./lending";
 import { formatSovereigns, round2 } from "./amounts";
 import { payContractor, refundIssuer } from "./contract-settlement";
 import { debitTreasuryTx } from "./treasury";
@@ -468,6 +469,13 @@ export async function awardContract(
     }
     if (bid.company.status !== "ACTIVE") {
       throw new ExchangeError("CONFLICT", "That company is no longer active");
+    }
+    const tender = await tx.contract.findUnique({
+      where: { id: input.contractId },
+      select: { type: true, issuerCountryId: true },
+    });
+    if (tender?.type === "B2G" && tender.issuerCountryId) {
+      await assertNotOwnersCompany(tx, tender.issuerCountryId, bid.companyId);
     }
     const before = await transition(tx, input.contractId, "OPEN", "AWARDED", {
       winnerCompanyId: bid.companyId,

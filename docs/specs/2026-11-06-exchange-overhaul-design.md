@@ -252,8 +252,12 @@ about (company, bond, nation, tender), and the market move it caused.
   - its own nation's bonds;
   - a company the owner founded or holds shares in;
   - more than 25% of any company, counting its holdings, listed shares and open buy orders.
-- **No self-dealing in lending or tenders either.** A nation's treasury also won't lend to (credit lines) or award its
-  tenders to a company the owner founded or holds shares in.
+- **No self-dealing in tenders either.** A nation's treasury also won't award its tenders to a company the owner
+  founded or holds shares in.
+- **Lending is exempt (owner, 2026-11-07).** Companies live in their founder's own nation, so a strict rule would leave
+  almost no company able to borrow. Credit lines stay open to the owner's own companies, because the terms are published
+  and the same for every domestic company. The rule covers the discretionary moves only: wealth-fund buys and tender
+  awards.
 - **Lending terms** sit on `NationTreasury`:
   - `lendingSpread`, from −2 to +10 percentage points, is added to the rating spread;
   - `companyCreditCap`, from ₷0 to ₷250,000, caps each domestic company's line.

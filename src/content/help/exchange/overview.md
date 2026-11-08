@@ -53,6 +53,20 @@ If you own a nation, **Treasury** appears in the sidebar. From [the Treasury](/e
 
 Money from units sold goes into your nation's treasury. The coupons and the final repayment come out of it, so issue only what your treasury can carry. A nation's outstanding bonds are capped at four times the treasury's cap.
 
+### The wealth fund
+
+Your nation can invest. Move ₷ from the treasury into its **wealth fund**, up to half of the two together, then open any trade sheet and switch "Trade as" to your nation's Treasury. The fund buys shares, bonds and sector funds like any investor, and its holdings are public on your nation's page.
+
+A few things it can't do: buy companies you founded or hold, buy your own nation's bonds, or own more than a quarter of any company.
+
+### Lending terms
+
+Companies headquartered in your nation borrow from its Central Bank. In the Treasury you set a spread on their rate, from 2% below to 10% above the base and a credit cap per company. Your own companies can borrow at the same published terms, but you can't award your own tenders to them.
+
 ## Companies and tenders
 
 Charter and run a company from [My companies](/exchange/companies): capital, credit, decisions and dividends. Government tenders and company contracts are on [Tenders](/exchange/tenders), where companies bid and issuers award. Both need you to be signed in.
+
+## Business press
+
+Post on ThinkPages with **#business** to make the news. Public posts from your nation's media and government accounts appear in Today in business and on your nation's page. To give a company a voice, open its controls under My companies and link one of your corporate ThinkPages accounts; its #business posts then appear on the company's page. Replies, reposts and posts with a content warning stay out, and a deleted post leaves the Exchange too.

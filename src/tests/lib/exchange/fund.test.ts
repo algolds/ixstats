@@ -1,0 +1,241 @@
+/**
+ * The wealth fund (spec §11a): a per-nation fund account that trades through the ordinary engine. The owner moves ₷
+ * between treasury and fund (capped at half the treasury), and the fund may not buy its owner's companies, its own
+ * bonds, or more than 25% of a company. The fund account never shows on leaderboards or receives notices.
+ */
+jest.mock("~/lib/notifications/api", () => ({
+  notificationAPI: { create: jest.fn(async () => "n1") },
+}));
+
+import { notificationAPI } from "~/lib/notifications/api";
+import {
+  FUND_USER_PREFIX,
+  depositToFund,
+  ensureFundUser,
+  fundTrade,
+  withdrawFromFund,
+} from "~/lib/exchange/fund";
+import { sendExchangeNotices } from "~/lib/exchange/notify";
+import { getLeaderboards, getNationPage } from "~/lib/exchange/terminal";
+import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
+import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
+import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
+
+const NA = "na";
+const FUND = `${FUND_USER_PREFIX}${NA}`;
+let fake: FakeDb;
+let seq = 0;
+const rid = () => `request-${++seq}`;
+
+function company(id: string, founderId: string) {
+  return {
+    id,
+    name: id === "co1" ? "Alice Works" : "Bob Steel",
+    founderId,
+    realmId: "default",
+    sectorKey: "industry",
+    subIndustryKey: "heavy_manufacturing",
+    hqCountryId: NA,
+    capital: 1000,
+    fairValue: 1000,
+    standing: 0,
+    contractsWonValue: 0,
+    decisionValue: 0,
+    sharesIssued: 1000,
+    sharesOutstanding: 1000,
+    creditDrawn: 0,
+    creditRating: "A",
+    tradingOpen: true,
+    status: "ACTIVE",
+  };
+}
+
+function setup(balance = 10_000) {
+  invalidateExchangeConfigCache();
+  invalidateVaultConfigCache();
+  fake = createFakeExchangeDb({
+    user: ["alice", "bob"].map((id) => ({ id, clerkUserId: `c_${id}`, countryId: null })),
+    exchangeWallet: ["alice", "bob"].map((userId) => ({
+      id: `w_${userId}`,
+      userId,
+      sovereigns: 50_000,
+      lifetimeEarned: 50_000,
+      lifetimeSpent: 0,
+    })),
+    country: [
+      { id: NA, name: "Caphiria", realmId: "default", ownerUserId: "alice" },
+      { id: "nb", name: "Urcea", realmId: "default", ownerUserId: "bob" },
+    ],
+    nationTreasury: [
+      { id: "t_na", countryId: NA, realmId: "default", balance },
+      { id: "t_nb", countryId: "nb", realmId: "default", balance: 5000 },
+    ],
+    company: [company("co1", "alice"), company("co2", "bob")],
+    shareholding: [
+      { id: "sh1", companyId: "co1", ownerUserId: "alice", shares: 1000, avgCost: 1 },
+      { id: "sh2", companyId: "co2", ownerUserId: "bob", shares: 1000, avgCost: 1 },
+    ],
+    nationBond: [
+      {
+        id: "b_nb",
+        countryId: "nb",
+        realmId: "default",
+        issuerUserId: "bob",
+        faceValue: 100,
+        unitsIssued: 100,
+        unitsSold: 0,
+        couponRate: 0.05,
+        termWeeks: 4,
+        weeksPaid: 0,
+        status: "OPEN",
+        issuedAt: new Date(),
+      },
+      {
+        id: "b_na",
+        countryId: NA,
+        realmId: "default",
+        issuerUserId: "alice",
+        faceValue: 100,
+        unitsIssued: 100,
+        unitsSold: 0,
+        couponRate: 0.05,
+        termWeeks: 4,
+        weeksPaid: 0,
+        status: "OPEN",
+        issuedAt: new Date(),
+      },
+    ],
+    systemConfig: [],
+  });
+}
+
+const treasury = (id = NA) => fake.tables.nationTreasury!.find((t) => t.countryId === id)!;
+const fundCash = () => fake.tables.exchangeWallet!.find((w) => w.userId === FUND)?.sovereigns ?? 0;
+const deposit = (amount: number) =>
+  depositToFund(fake.client, { userId: "alice", countryId: NA, amount, requestId: rid() });
+
+beforeEach(() => setup());
+
+describe("the fund account", () => {
+  it("is created once, with a wallet, and remembered on the treasury", async () => {
+    await ensureFundUser(fake.client, NA);
+    await ensureFundUser(fake.client, NA);
+    expect(fake.tables.user!.filter((u) => u.id === FUND)).toHaveLength(1);
+    expect(fake.tables.exchangeWallet!.filter((w) => w.userId === FUND)).toHaveLength(1);
+    expect(treasury().fundUserId).toBe(FUND);
+  });
+});
+
+describe("deposit and withdraw", () => {
+  it("moves ₷ from the treasury into the fund and back", async () => {
+    await deposit(1000);
+    expect(treasury().balance).toBe(9000);
+    expect(fundCash()).toBe(1000);
+    await withdrawFromFund(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      amount: 400,
+      requestId: rid(),
+    });
+    expect(treasury().balance).toBe(9400);
+    expect(fundCash()).toBe(600);
+  });
+
+  it("refuses a deposit that takes the fund past half, moving nothing", async () => {
+    await deposit(4000);
+    await expect(deposit(1001)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
+    expect(treasury().balance).toBe(6000);
+    expect(fundCash()).toBe(4000);
+  });
+
+  it("lets only the owner move the fund", async () => {
+    await expect(
+      depositToFund(fake.client, { userId: "bob", countryId: NA, amount: 100, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+});
+
+describe("what the fund may buy", () => {
+  beforeEach(async () => {
+    await deposit(5000);
+  });
+  const trade = (order: Parameters<typeof fundTrade>[1]["order"]) =>
+    fundTrade(fake.client, { userId: "alice", countryId: NA, order, requestId: rid() });
+
+  it("refuses the owner's own company, moving nothing", async () => {
+    await expect(
+      trade({ kind: "shares-buy", companyId: "co1", shares: 10, maxPricePerShare: 2 })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(fundCash()).toBe(5000);
+  });
+
+  it("refuses its own nation's bonds", async () => {
+    await expect(trade({ kind: "bond-buy", bondId: "b_na", units: 5 })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+  });
+
+  it("refuses a stake past 25% of a company", async () => {
+    await expect(
+      trade({ kind: "shares-buy", companyId: "co2", shares: 251, maxPricePerShare: 2 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+    });
+  });
+
+  it("buys another nation's bonds with fund cash, held by the fund", async () => {
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 5 });
+    expect(fundCash()).toBe(4500);
+    expect(fake.tables.bondHolding).toEqual([
+      expect.objectContaining({ bondId: "b_nb", ownerUserId: FUND, units: 5 }),
+    ]);
+    expect(
+      (fake.tables.exchangeNewsItem ?? []).some(
+        (n) => n.headline === "Caphiria Treasury bought 5 Urcea bonds"
+      )
+    ).toBe(true);
+  });
+});
+
+describe("public holdings", () => {
+  it("shows the fund's holdings on the nation page", async () => {
+    await deposit(2000);
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId: rid(),
+    });
+    const page = await getNationPage(fake.client, NA);
+    expect(page?.fund?.bonds).toEqual([expect.objectContaining({ bondId: "b_nb", units: 5 })]);
+    expect(page?.fund?.wallet).toBe(1500);
+    expect((await getNationPage(fake.client, "nb"))?.fund).toBeNull();
+  });
+});
+
+describe("the fund stays out of player surfaces", () => {
+  it("never shows on the investor leaderboard", async () => {
+    await deposit(2000);
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId: rid(),
+    });
+    const boards = await getLeaderboards(fake.client, "default");
+    expect(boards.investors).toHaveLength(2); // alice and bob, not the fund
+  });
+
+  it("gets no notifications", async () => {
+    jest.mocked(notificationAPI.create).mockClear();
+    await sendExchangeNotices([
+      { userId: FUND, title: "Dividend", message: "x" },
+      { userId: "alice", title: "Dividend", message: "x" },
+    ]);
+    expect(jest.mocked(notificationAPI.create).mock.calls.map(([n]) => n.userId)).toEqual([
+      "alice",
+    ]);
+  });
+});

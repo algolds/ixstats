@@ -540,6 +540,7 @@ const COMPANY_SELECT = {
   sharesOutstanding: true,
   status: true,
   founderId: true,
+  thinkpagesAccountId: true,
   createdAt: true,
 } as const;
 

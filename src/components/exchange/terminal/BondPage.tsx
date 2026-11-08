@@ -13,6 +13,7 @@ import { Figure, SectionTitle, formatSovereignFigure } from "./brand";
 import { NewsList } from "./NewsList";
 import { TradeButton } from "./TradeSheet";
 import { WatchStar } from "./WatchStar";
+import { useTreasuryActor } from "./useTreasuryActor";
 
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
@@ -20,6 +21,7 @@ const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 /** One nation bond: its price and yield, what is left on sale, and who sells. */
 export function BondPage({ bondId }: { bondId: string }) {
   const { data, isLoading, error } = api.exchange.bondPage.useQuery({ bondId });
+  const treasury = useTreasuryActor(data?.bond.realmId);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   if (!data)
     return <EmptyState title="Bond not found" message={error?.message ?? "It may have matured."} />;
@@ -44,6 +46,7 @@ export function BondPage({ bondId }: { bondId: string }) {
             <WatchStar subjectKind="BOND" subjectId={b.bondId} watching={data.viewer.watching} />
             {open && (
               <TradeButton
+                treasury={treasury}
                 instrument={{
                   kind: "bond",
                   bondId: b.bondId,

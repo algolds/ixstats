@@ -12,6 +12,7 @@ import { INDEX_BASE, SECTOR_KEYS, listMyCompanies } from "./companies";
 import { DAY_MS } from "./contracts";
 import { round2, type Db } from "./guards";
 import { ACTIVITY_WINDOW_DAYS, SECTOR_LABELS } from "./sectors";
+import { COMPANY_CREDIT_CAP_MAX, lendingTermsFor } from "./lending";
 
 /** Everything the Exchange page header needs for one realm in one round trip. */
 export async function getExchangeOverview(
@@ -94,14 +95,26 @@ export async function listMyNations(db: Db, userId: string) {
   return rows.map((c) => ({ id: c.id, name: c.name, realmId: c.realmId }));
 }
 
-/** Nations in the selected realm, for choosing a company's headquarters domicile. */
+/** Nations in the selected realm, for choosing a company's headquarters domicile, with their lending terms. */
 export async function listRealmNations(db: Db, realmId: string) {
-  return db.country.findMany({
+  const nations = await db.country.findMany({
     where: { realmId },
     orderBy: { name: "asc" },
     select: { id: true, name: true, economicTier: true, interestRates: true },
     take: 150,
   });
+  const terms = await lendingTermsFor(
+    db,
+    nations.map((n) => n.id)
+  );
+  return nations.map((n) => ({
+    id: n.id,
+    name: n.name,
+    economicTier: n.economicTier,
+    interestRates: n.interestRates,
+    lendingSpread: terms.get(n.id)?.spread ?? 0,
+    companyCreditCap: terms.get(n.id)?.cap ?? COMPANY_CREDIT_CAP_MAX,
+  }));
 }
 
 /** Open realms for the Exchange workspace switcher, with Ixnay always first. */

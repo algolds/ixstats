@@ -25,6 +25,7 @@ import { fromCents, lockCompany, toCents } from "./ownership";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { SUB_INDUSTRIES, creditRatingFor, supplyChainFactor } from "./taxonomy";
 import { transferToTreasuryTx, type TreasuryInflowType } from "./treasury";
+import { lendingTermsFor, type LendingTerms } from "./lending";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const TICKS_PER_DAY = 4;
@@ -145,6 +146,7 @@ interface RealmContext {
   nowMs: number;
   indexOf: ReadonlyMap<string, number>;
   macros: ReadonlyMap<string, CountryMacro>;
+  terms: ReadonlyMap<string, LendingTerms>;
   realmSubIndustries: string[];
   suppliedByContract: ReadonlySet<string>;
 }
@@ -262,6 +264,7 @@ async function realmContextTx(
   });
   const hqIds = rows.flatMap((r) => (r.hqCountryId ? [r.hqCountryId] : []));
   const macros = await loadMacros(tx, hqIds);
+  const terms = await lendingTermsFor(tx, hqIds);
   const suppliedByContract = await suppliedByContractTx(tx, realmId, rows, nowMs);
   return {
     realmId,
@@ -269,6 +272,7 @@ async function realmContextTx(
     nowMs,
     indexOf: new Map(indices.map((i) => [i.sectorKey, i.value])),
     macros,
+    terms,
     realmSubIndustries: rows.map((r) => r.subIndustryKey),
     suppliedByContract,
   };
@@ -293,7 +297,8 @@ function draftOf(c: Company, ctx: RealmContext): Draft | null {
   const inflation = macro?.inflation ?? 0;
   const upkeep =
     ((base * sub.upkeepRate) / TICKS_PER_DAY) * (1 + Math.max(0, inflation - INFLATION_FLOOR));
-  const rate = macro ? borrowRateOf(macro.interestRate, c.creditRating) : 0;
+  const spread = c.hqCountryId ? (ctx.terms.get(c.hqCountryId)?.spread ?? 0) : 0;
+  const rate = macro ? borrowRateOf(macro.interestRate, c.creditRating, spread) : 0;
   const interest = (c.creditDrawn * rate) / (DAYS_PER_YEAR * TICKS_PER_DAY);
   const relief = c.lobbyBuffType === "tax_relief" && (c.lobbyBuffUntilIxTime ?? 0) > ctx.nowMs;
   return {
@@ -400,7 +405,7 @@ async function settleTx(
     unpaid,
     capital,
     creditDrawn,
-    creditLimit: creditLimitFor(c),
+    creditLimit: creditLimitFor(c, c.hqCountryId ? ctx.terms.get(c.hqCountryId)?.cap : undefined),
     nowMs: ctx.nowMs,
   });
   await applyDistressTx(

@@ -15,7 +15,8 @@ import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchan
 export type TreasuryInflowType =
   "TAX" | "TARIFF" | "INTEREST" | "LOBBY" | "B2G_ESCROW" | "BOND_SALE";
 export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND" | "BOND_COUPON" | "BOND_PRINCIPAL";
-type TreasuryEntryType = "STIPEND" | "B2G_REFUND" | TreasuryInflowType | TreasuryOutflowType;
+type TreasuryEntryType =
+  "STIPEND" | "B2G_REFUND" | "FUND_RETURN" | TreasuryInflowType | TreasuryOutflowType;
 
 export type TreasuryPayer =
   { kind: "COMPANY"; companyId: string } | { kind: "WALLET"; userId: string };
@@ -43,7 +44,7 @@ export interface TreasuryCreditInput {
   countryId: string;
   realmId: string;
   amount: number;
-  type: "B2G_REFUND";
+  type: "B2G_REFUND" | "FUND_RETURN";
   source: string;
   key: string;
 }
@@ -338,7 +339,7 @@ export async function transferToTreasuryTx(tx: Db, input: TreasuryTransferInput)
   });
 }
 
-/** Credit a treasury with no payer. Only refunds of an earlier B2G escrow use it. */
+/** Credit a treasury with no payer: refunds of an earlier B2G escrow, and ₷ returned from the wealth fund. */
 export async function creditTreasuryTx(tx: Db, input: TreasuryCreditInput): Promise<number> {
   const cents = positiveCents(input.amount);
   const t = await lockTreasuryFor(tx, input.countryId, input.realmId);

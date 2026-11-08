@@ -21,7 +21,7 @@ export function NewsList({
     <ul className="divide-separator divide-y">
       {items.map((item) => (
         <li key={item.id} className={emphasis === "headline" ? "py-3" : "py-2"}>
-          <Link href={storyHref(item.id)} className="group block">
+          <Link href={item.href ?? storyHref(item.id)} className="group block">
             <span className="text-caption text-label-secondary">
               {item.sourceName} · {ageLabel(item.createdAt)}
             </span>

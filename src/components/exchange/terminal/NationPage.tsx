@@ -12,6 +12,7 @@ import type { NationPage as NationPageData } from "~/lib/exchange/terminal";
 import { CreditRatingBadge } from "../shared";
 import { Figure, SectionTitle, formatSovereignFigure } from "./brand";
 import { NewsList } from "./NewsList";
+import { FundHoldings } from "./TreasuryFund";
 import { WatchStar } from "./WatchStar";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
@@ -79,6 +80,15 @@ export function NationPage({ countryId }: { countryId: string }) {
               </ul>
             )}
           </Card>
+          {data.fund && (
+            <Card content="data" padding="md" className="space-y-2">
+              <SectionTitle>Wealth fund</SectionTitle>
+              <p className="text-footnote text-label-secondary">
+                Cash {sov(data.fund.wallet)} · worth {sov(data.fund.totalValue)}
+              </p>
+              <FundHoldings portfolio={data.fund} />
+            </Card>
+          )}
           <Card content="data" padding="md" className="space-y-2">
             <SectionTitle>Companies based here</SectionTitle>
             {data.companies.length === 0 ? (

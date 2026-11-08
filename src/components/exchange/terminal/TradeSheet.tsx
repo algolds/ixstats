@@ -20,6 +20,7 @@ import type { SectorKey } from "~/lib/exchange/companies";
 import { useRequestId } from "../shared";
 import { Pill, formatSovereignFigure } from "./brand";
 import { useSignInHref } from "./useSignInHref";
+import type { FundOrder } from "~/lib/exchange/fund";
 
 export type TradeInstrument =
   | {
@@ -103,13 +104,39 @@ function useDone() {
   return () => void utils.exchange.invalidate();
 }
 
-function ShareTrade({ i }: { i: Extract<TradeInstrument, { kind: "share" }> }) {
+/**
+ * Trading as the treasury: the same form, sent as one wealth-fund order (fundTrade) when a nation is chosen, else the
+ * player's own run.
+ */
+function useFundRun(
+  fundCountryId: string | undefined,
+  orderOf: (side: Side, amount: number) => FundOrder,
+  own: { run: Run; pending: boolean; error: string | null }
+) {
+  const done = useDone();
+  const fund = api.exchange.fundTrade.useMutation({ onSuccess: done });
+  if (!fundCountryId) return own;
+  const run: Run = (side, amount, requestId, onSuccess) =>
+    fund.mutate(
+      { countryId: fundCountryId, order: orderOf(side, amount), requestId },
+      { onSuccess }
+    );
+  return { run, pending: fund.isPending, error: fund.error?.message ?? null };
+}
+
+function ShareTrade({
+  i,
+  fundCountryId,
+}: {
+  i: Extract<TradeInstrument, { kind: "share" }>;
+  fundCountryId?: string;
+}) {
   const done = useDone();
   const buy = api.exchange.placeBuyOrder.useMutation({ onSuccess: done });
   const sell = api.exchange.listShares.useMutation({ onSuccess: done });
   const buyAt = round2(i.bestAsk ?? i.price);
   const sellAt = round2(i.bestBid ?? i.price);
-  const run: Run = (side, shares, requestId, onSuccess) =>
+  const ownRun: Run = (side, shares, requestId, onSuccess) =>
     side === "buy"
       ? buy.mutate(
           { companyId: i.companyId, shares, maxPricePerShare: buyAt, requestId },
@@ -119,6 +146,18 @@ function ShareTrade({ i }: { i: Extract<TradeInstrument, { kind: "share" }> }) {
           { companyId: i.companyId, shares, pricePerShare: sellAt, requestId },
           { onSuccess }
         );
+  const { run, pending, error } = useFundRun(
+    fundCountryId,
+    (side, shares) =>
+      side === "buy"
+        ? { kind: "shares-buy", companyId: i.companyId, shares, maxPricePerShare: buyAt }
+        : { kind: "shares-sell", companyId: i.companyId, shares, pricePerShare: sellAt },
+    {
+      run: ownRun,
+      pending: buy.isPending || sell.isPending,
+      error: buy.error?.message ?? sell.error?.message ?? null,
+    }
+  );
   return (
     <TradeForm
       unit={{ buy: "Shares to buy", sell: "Shares to sell" }}
@@ -126,19 +165,25 @@ function ShareTrade({ i }: { i: Extract<TradeInstrument, { kind: "share" }> }) {
         `${n} shares at ₷${formatSovereignFigure(side === "buy" ? buyAt : sellAt)}: about ₷${formatSovereignFigure(n * (side === "buy" ? buyAt : sellAt))}${side === "sell" ? ", before capital gains tax" : ""}`
       }
       run={run}
-      pending={buy.isPending || sell.isPending}
-      error={buy.error?.message ?? sell.error?.message ?? null}
+      pending={pending}
+      error={error}
     />
   );
 }
 
-function BondTrade({ i }: { i: Extract<TradeInstrument, { kind: "bond" }> }) {
+function BondTrade({
+  i,
+  fundCountryId,
+}: {
+  i: Extract<TradeInstrument, { kind: "bond" }>;
+  fundCountryId?: string;
+}) {
   const done = useDone();
   const primary = api.exchange.buyBondPrimary.useMutation({ onSuccess: done });
   const take = api.exchange.buyBondListing.useMutation({ onSuccess: done });
   const list = api.exchange.listBondUnits.useMutation({ onSuccess: done });
   const buyAt = i.unitsLeft > 0 ? i.faceValue : (i.cheapestListing?.pricePerUnit ?? i.price);
-  const run: Run = (side, units, requestId, onSuccess) => {
+  const ownRun: Run = (side, units, requestId, onSuccess) => {
     if (side === "sell") {
       list.mutate(
         { bondId: i.bondId, units, pricePerUnit: round2(i.price), requestId },
@@ -150,6 +195,18 @@ function BondTrade({ i }: { i: Extract<TradeInstrument, { kind: "bond" }> }) {
       take.mutate({ listingId: i.cheapestListing.id, units, requestId }, { onSuccess });
     }
   };
+  const { run, pending, error } = useFundRun(
+    fundCountryId,
+    (side, units) =>
+      side === "buy"
+        ? { kind: "bond-buy", bondId: i.bondId, units }
+        : { kind: "bond-sell", bondId: i.bondId, units, pricePerUnit: round2(i.price) },
+    {
+      run: ownRun,
+      pending: primary.isPending || take.isPending || list.isPending,
+      error: primary.error?.message ?? take.error?.message ?? list.error?.message ?? null,
+    }
+  );
   return (
     <TradeForm
       unit={{ buy: "Units to buy", sell: "Units to list for sale" }}
@@ -159,17 +216,23 @@ function BondTrade({ i }: { i: Extract<TradeInstrument, { kind: "bond" }> }) {
           : `${n} units listed at ₷${formatSovereignFigure(i.price)}`
       }
       run={run}
-      pending={primary.isPending || take.isPending || list.isPending}
-      error={primary.error?.message ?? take.error?.message ?? list.error?.message ?? null}
+      pending={pending}
+      error={error}
     />
   );
 }
 
-function FundTrade({ i }: { i: Extract<TradeInstrument, { kind: "fund" }> }) {
+function FundTrade({
+  i,
+  fundCountryId,
+}: {
+  i: Extract<TradeInstrument, { kind: "fund" }>;
+  fundCountryId?: string;
+}) {
   const done = useDone();
   const buy = api.exchange.buySectorUnits.useMutation({ onSuccess: done });
   const sell = api.exchange.sellSectorUnits.useMutation({ onSuccess: done });
-  const run: Run = (side, n, requestId, onSuccess) =>
+  const ownRun: Run = (side, n, requestId, onSuccess) =>
     side === "buy"
       ? buy.mutate(
           { realmId: i.realmId, sectorKey: i.sectorKey, amount: Math.round(n), requestId },
@@ -179,6 +242,18 @@ function FundTrade({ i }: { i: Extract<TradeInstrument, { kind: "fund" }> }) {
           { realmId: i.realmId, sectorKey: i.sectorKey, fraction: Math.min(1, n / 100), requestId },
           { onSuccess }
         );
+  const { run, pending, error } = useFundRun(
+    fundCountryId,
+    (side, n) =>
+      side === "buy"
+        ? { kind: "fund-buy", sectorKey: i.sectorKey, amount: Math.round(n) }
+        : { kind: "fund-sell", sectorKey: i.sectorKey, fraction: Math.min(1, n / 100) },
+    {
+      run: ownRun,
+      pending: buy.isPending || sell.isPending,
+      error: buy.error?.message ?? sell.error?.message ?? null,
+    }
+  );
   return (
     <TradeForm
       unit={{ buy: "₷ to invest", sell: "Percent of your units to sell" }}
@@ -188,8 +263,8 @@ function FundTrade({ i }: { i: Extract<TradeInstrument, { kind: "fund" }> }) {
           : `${Math.min(100, n)}% of your units`
       }
       run={run}
-      pending={buy.isPending || sell.isPending}
-      error={buy.error?.message ?? sell.error?.message ?? null}
+      pending={pending}
+      error={error}
     />
   );
 }
@@ -199,13 +274,18 @@ export function TradeSheet({
   instrument,
   open,
   onOpenChange,
+  treasury,
 }: {
   instrument: TradeInstrument;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** A nation the viewer can trade for (its wealth fund): adds the "Trade as" switch. */
+  treasury?: { countryId: string; name: string };
 }) {
   const { isSignedIn } = useAuth();
   const signInHref = useSignInHref();
+  const [actor, setActor] = useState<"you" | "treasury">("you");
+  const fundCountryId = treasury && actor === "treasury" ? treasury.countryId : undefined;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -220,12 +300,31 @@ export function TradeSheet({
               <Link href={signInHref}>Sign in</Link>
             </Pill>
           </div>
-        ) : instrument.kind === "share" ? (
-          <ShareTrade i={instrument} />
-        ) : instrument.kind === "bond" ? (
-          <BondTrade i={instrument} />
         ) : (
-          <FundTrade i={instrument} />
+          <>
+            {treasury && (
+              <div className="px-4 pt-4">
+                <SegmentedControl
+                  fullWidth
+                  size="sm"
+                  aria-label="Trade as"
+                  value={actor}
+                  onValueChange={setActor}
+                  options={[
+                    { value: "you", label: "You" },
+                    { value: "treasury", label: `${treasury.name} Treasury` },
+                  ]}
+                />
+              </div>
+            )}
+            {instrument.kind === "share" ? (
+              <ShareTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+            ) : instrument.kind === "bond" ? (
+              <BondTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+            ) : (
+              <FundTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+            )}
+          </>
         )}
       </SheetContent>
     </Sheet>
@@ -236,15 +335,17 @@ export function TradeSheet({
 export function TradeButton({
   instrument,
   label = "Trade",
+  treasury,
 }: {
   instrument: TradeInstrument;
   label?: string;
+  treasury?: { countryId: string; name: string };
 }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Pill onClick={() => setOpen(true)}>{label}</Pill>
-      <TradeSheet instrument={instrument} open={open} onOpenChange={setOpen} />
+      <TradeSheet instrument={instrument} open={open} onOpenChange={setOpen} treasury={treasury} />
     </>
   );
 }

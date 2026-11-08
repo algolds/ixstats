@@ -38,6 +38,15 @@ import {
   getStory,
 } from "~/lib/exchange/terminal";
 import { listOpenRealms } from "~/lib/exchange/queries";
+import { SECTOR_KEYS } from "~/lib/exchange/companies";
+import { depositToFund, fundSummary, fundTrade, withdrawFromFund } from "~/lib/exchange/fund";
+import { linkCompanyAccount, unlinkCompanyAccount } from "~/lib/exchange/press";
+import {
+  COMPANY_CREDIT_CAP_MAX,
+  LENDING_SPREAD_MAX,
+  LENDING_SPREAD_MIN,
+  setLendingTerms,
+} from "~/lib/exchange/lending";
 import { guard } from "./_errors";
 
 const id = z.string().min(1).max(64);
@@ -46,6 +55,43 @@ const realm = z.object({ realmId: id.optional() });
 const realmOf = (input: { realmId?: string }) => input.realmId ?? DEFAULT_REALM_ID;
 const units = z.number().int().min(1).max(BOND_UNITS_MAX);
 const WATCH_KINDS = ["COMPANY", "BOND", "NATION"] as const;
+const fundAmount = z.number().min(0.01).max(10_000_000);
+const sharePrice = z.number().min(0.01).max(1_000_000).multipleOf(0.01);
+const fundOrder = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("shares-buy"),
+    companyId: id,
+    shares: z.number().int().min(1).max(1_000_000),
+    maxPricePerShare: sharePrice,
+  }),
+  z.object({
+    kind: z.literal("shares-sell"),
+    companyId: id,
+    shares: z.number().int().min(1).max(1_000_000),
+    pricePerShare: sharePrice,
+  }),
+  z.object({ kind: z.literal("bond-buy"), bondId: id, units }),
+  z.object({
+    kind: z.literal("bond-sell"),
+    bondId: id,
+    units,
+    pricePerUnit: z
+      .number()
+      .min(0.01)
+      .max(BOND_FACE * 10)
+      .multipleOf(0.01),
+  }),
+  z.object({
+    kind: z.literal("fund-buy"),
+    sectorKey: z.enum(SECTOR_KEYS),
+    amount: z.number().int().min(1).max(1_000_000),
+  }),
+  z.object({
+    kind: z.literal("fund-sell"),
+    sectorKey: z.enum(SECTOR_KEYS),
+    fraction: z.number().gt(0).max(1),
+  }),
+]);
 
 function found<T>(value: T | null, what: string): T {
   if (value === null) throw new ExchangeError("NOT_FOUND", `${what} not found`);
@@ -133,6 +179,66 @@ export const exchangeTerminalRouter = createTRPCRouter({
         await ctx.db.exchangeWatch.createMany({ data: [where], skipDuplicates: true });
         return { watching: true };
       })
+    ),
+
+  fundSummary: protectedProcedure
+    .input(z.object({ countryId: id }))
+    .query(({ ctx, input }) =>
+      guard("load the wealth fund", () => fundSummary(ctx.db, input.countryId))
+    ),
+
+  depositToFund: rateLimitedMutationProcedure
+    .input(z.object({ countryId: id, amount: fundAmount, requestId }))
+    .mutation(({ ctx, input }) =>
+      guard("move ₷ into the wealth fund", () =>
+        depositToFund(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  withdrawFromFund: rateLimitedMutationProcedure
+    .input(z.object({ countryId: id, amount: fundAmount, requestId }))
+    .mutation(({ ctx, input }) =>
+      guard("move ₷ back to the treasury", () =>
+        withdrawFromFund(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  fundTrade: rateLimitedMutationProcedure
+    .input(z.object({ countryId: id, order: fundOrder, requestId }))
+    .mutation(({ ctx, input }) =>
+      guard("place the wealth fund's order", () =>
+        fundTrade(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  setLendingTerms: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        countryId: id,
+        spread: z.number().min(LENDING_SPREAD_MIN).max(LENDING_SPREAD_MAX),
+        cap: z.number().min(0).max(COMPANY_CREDIT_CAP_MAX),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("set the lending terms", () =>
+        setLendingTerms(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  linkCompanyAccount: rateLimitedMutationProcedure
+    .input(z.object({ companyId: id, accountId: id }))
+    .mutation(({ ctx, input }) =>
+      guard("link the company's ThinkPages account", () =>
+        linkCompanyAccount(ctx.db, { userId: ctx.user.id, ...input })
+      )
+    ),
+
+  unlinkCompanyAccount: rateLimitedMutationProcedure
+    .input(z.object({ companyId: id }))
+    .mutation(({ ctx, input }) =>
+      guard("unlink the company's ThinkPages account", () =>
+        unlinkCompanyAccount(ctx.db, { userId: ctx.user.id, ...input })
+      )
     ),
 
   issueBond: rateLimitedMutationProcedure

@@ -15,7 +15,7 @@ const UNIQUE: Record<string, string[][]> = {
   user: [["id"], ["clerkUserId"]],
   exchangeWallet: [["userId"]],
   exchangeTransaction: [["idempotencyKey"]],
-  company: [["realmId", "name"]],
+  company: [["realmId", "name"], ["thinkpagesAccountId"]],
   contract: [["idempotencyKey"]],
   contractBid: [["contractId", "companyId"]],
   shareholding: [["companyId", "ownerUserId"]],
@@ -25,7 +25,7 @@ const UNIQUE: Record<string, string[][]> = {
   sectorPosition: [["ownerUserId", "realmId", "sectorKey"]],
   myVault: [["userId"]],
   vaultTransaction: [["idempotencyKey"]],
-  nationTreasury: [["countryId"]],
+  nationTreasury: [["countryId"], ["fundUserId"]],
   nationTreasuryEntry: [["idempotencyKey"]],
   shareBuyOrder: [["idempotencyKey"]],
   companyProposal: [["idempotencyKey"]],
@@ -43,6 +43,7 @@ const DEFAULTS: Record<string, () => Row> = {
   company: () => ({
     realmId: "default",
     hqCountryId: null,
+    thinkpagesAccountId: null,
     subIndustryKey: "software_media",
     capital: 0,
     standing: 0,
@@ -106,6 +107,9 @@ const DEFAULTS: Record<string, () => Row> = {
     lastStipendIxTime: null,
     creditRating: "A",
     bondBanUntil: null,
+    fundUserId: null,
+    lendingSpread: 0,
+    companyCreditCap: 250000,
   }),
   nationBond: () => ({
     realmId: "default",
@@ -179,6 +183,9 @@ function matchValue(actual: any, cond: any): boolean {
     if (op === "startsWith" && !(typeof actual === "string" && actual.startsWith(v as string))) {
       return false;
     }
+    if (op === "contains" && !(typeof actual === "string" && norm(actual).includes(norm(v)))) {
+      return false;
+    }
   }
   return true;
 }
@@ -204,6 +211,7 @@ const OPS: Record<string, true> = {
   not: true,
   mode: true,
   startsWith: true,
+  contains: true,
 };
 
 function matches(row: Row, where: Row = {}): boolean {

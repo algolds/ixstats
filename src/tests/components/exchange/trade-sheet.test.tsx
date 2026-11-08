@@ -42,6 +42,7 @@ jest.mock("~/trpc/react", () => {
         listBondUnits: mutation("listBondUnits"),
         buySectorUnits: mutation("buySectorUnits"),
         sellSectorUnits: mutation("sellSectorUnits"),
+        fundTrade: { useMutation: () => ({ mutate: jest.fn(), isPending: false, error: null }) },
       },
     },
   };

@@ -15,6 +15,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({ exchange: { invalidate: jest.fn() } }),
     exchange: {
+      getOverview: { useQuery: () => ({ data: undefined }) },
       nationPage: { useQuery: () => ({ data: mockNation, isLoading: false, error: null }) },
       bondPage: { useQuery: () => ({ data: mockBond, isLoading: false, error: null }) },
       story: { useQuery: () => ({ data: mockStory, isLoading: false, error: null }) },

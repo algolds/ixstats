@@ -88,6 +88,8 @@ model Company {
   distressedSinceIxTime Float?
   wikiSlug              String?
   wikiData              Json?
+  /// The founder's corporate ThinkPages account whose #business posts are this company's press releases.
+  thinkpagesAccountId   String?               @unique
   status                String                @default("ACTIVE")
   createdIxTime         Float
   createdAt             DateTime              @default(now())
@@ -390,6 +392,12 @@ model NationTreasury {
   creditRating           String    @default("A")
   /// After a bond default, no new bonds until this time.
   bondBanUntil           DateTime?
+  /// The wealth fund's account: a system user and wallet that trades for the treasury (fund.ts).
+  fundUserId             String?   @unique
+  /// Added to the rating spread on domestic credit lines (lending.ts), -0.02..0.10.
+  lendingSpread          Float     @default(0)
+  /// The most any one domestic company may borrow from this treasury.
+  companyCreditCap       Float     @default(250000)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @default(now()) @updatedAt
 

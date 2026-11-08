@@ -10,6 +10,8 @@ let mockParams = new URLSearchParams("kind=bonds");
 let mockSignedIn = false;
 let mockRows: MarketRow[] = [];
 const mockMarkets = jest.fn();
+const mockSetModifier = jest.fn();
+let mockCanManage = false;
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
@@ -23,6 +25,22 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({ exchange: { invalidate: jest.fn() } }),
     exchange: {
+      getOverview: {
+        useQuery: () => ({
+          data: { realmId: "default", nations: [], canManageRealm: mockCanManage },
+        }),
+      },
+      getSectors: {
+        useQuery: () => ({
+          data: [
+            { sectorKey: "industry", label: "Industry", dmModifier: 0 },
+            { sectorKey: "services", label: "Services", dmModifier: 0.25 },
+          ],
+        }),
+      },
+      setSectorDmModifier: {
+        useMutation: () => ({ mutate: mockSetModifier, isPending: false }),
+      },
       markets: {
         useQuery: (input: unknown) => {
           mockMarkets(input);
@@ -40,6 +58,31 @@ import { WatchStar } from "~/components/exchange/terminal/WatchStar";
 beforeEach(() => {
   mockReplace.mockReset();
   mockMarkets.mockReset();
+  mockSetModifier.mockReset();
+  mockCanManage = false;
+});
+
+describe("sector levers", () => {
+  it("lets a realm manager set a sector's demand modifier from the funds view", () => {
+    mockParams = new URLSearchParams("kind=funds");
+    mockCanManage = true;
+    render(<MarketsPage realmId="default" />);
+    expect(screen.getByRole("heading", { name: "Sector levers" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Services modifier")).toHaveValue(0.25);
+    fireEvent.change(screen.getByLabelText("Industry modifier"), { target: { value: "0.5" } });
+    fireEvent.click(screen.getByRole("button", { name: "Set Industry" }));
+    expect(mockSetModifier).toHaveBeenCalledWith({
+      realmId: "default",
+      sectorKey: "industry",
+      value: 0.5,
+    });
+  });
+
+  it("is hidden from everyone else", () => {
+    mockParams = new URLSearchParams("kind=funds");
+    render(<MarketsPage realmId="default" />);
+    expect(screen.queryByRole("heading", { name: "Sector levers" })).not.toBeInTheDocument();
+  });
 });
 
 describe("MarketsPage", () => {
