@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow, and the live Facet rules of the stylesheets: the five layers (only chrome and
+ * cannot regrow, and the live Facet rules of the stylesheets: the six layers (only chrome and
  * overlay blur), the content-type scopes, facet-on-dark, the one rarity palette, and the accent
  * utilities as Tailwind compiles them.
  *
@@ -402,17 +402,28 @@ describe("Facet layers", () => {
   const utility = (name: string) =>
     new RegExp(`@utility ${name} \\{([\\s\\S]*?)\\n\\}`).exec(layers)?.[1] ?? "";
 
-  it.each(["facet-canvas", "facet-pane", "facet-well", "facet-chrome", "facet-overlay"])(
-    "defines the %s layer utility",
-    (name) => {
-      expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
-    }
-  );
+  it.each([
+    "facet-canvas",
+    "facet-pane",
+    "facet-well",
+    "facet-chrome",
+    "facet-overlay",
+    "facet-lens",
+  ])("defines the %s layer utility", (name) => {
+    expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
+  });
 
   it("blurs only chrome and overlay (the pane has no backdrop-filter)", () => {
     expect(utility("facet-pane")).not.toMatch(/backdrop-filter/);
     expect(utility("facet-chrome")).toMatch(/backdrop-filter/);
     expect(utility("facet-overlay")).toMatch(/backdrop-filter/);
+  });
+
+  it("the lens refracts through the one shared filter and goes solid when asked", () => {
+    const lens = utility("facet-lens");
+    expect(lens).toMatch(/backdrop-filter: url\(#facet-lens\);/);
+    expect(lens).toMatch(/@variant transparency-reduced \{[^}]*backdrop-filter: none;/);
+    expect(lens).toMatch(/@variant contrast-more \{[^}]*backdrop-filter: none;/);
   });
 
   it("chrome points secondary labels at the vibrant role; pane and well read the accent before the tint", () => {

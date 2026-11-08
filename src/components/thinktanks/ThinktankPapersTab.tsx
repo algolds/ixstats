@@ -20,7 +20,6 @@ import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 
@@ -136,26 +135,22 @@ function DocEditor({ groupId, doc, onDone, onCancel }: DocEditorProps) {
 
   const createDocMutation = api.thinkpages.createThinktankDocument.useMutation({
     onSuccess: (newDoc: any) => {
-      soundEffects.success();
       notify.success("Working Paper drafted");
       invalidateDocs();
       onDone(newDoc.id);
     },
     onError: (err: any) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to draft paper");
     },
   });
 
   const updateDocMutation = api.thinkpages.updateThinktankDocument.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       notify.success("Paper updated");
       invalidateDocs();
       onDone();
     },
     onError: (err: any) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to update paper");
     },
   });
@@ -166,7 +161,6 @@ function DocEditor({ groupId, doc, onDone, onCancel }: DocEditorProps) {
       return;
     }
 
-    soundEffects.press();
     const fields = { title: title.trim(), content: content.trim(), isPublic };
     if (doc) updateDocMutation.mutate({ documentId: doc.id, ...fields });
     else createDocMutation.mutate({ groupId, ...fields });
@@ -242,13 +236,11 @@ function DocReader({ groupId, doc, isMember, onEdit, onDeleted }: DocReaderProps
 
   const deleteDocMutation = api.thinkpages.deleteThinktankDocument.useMutation({
     onSuccess: () => {
-      soundEffects.release();
       notify.success("Paper removed.");
       onDeleted();
       invalidateDocs();
     },
     onError: (err: any) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to delete paper");
     },
   });
@@ -334,11 +326,9 @@ export function ThinktankPapersTab({ groupId, isMember = true }: ThinktankPapers
         isMember={isMember}
         selectedId={mode === "create" ? undefined : activeDoc?.id}
         onNew={() => {
-          soundEffects.press();
           setMode("create");
         }}
         onSelect={(id) => {
-          soundEffects.press();
           view(id);
         }}
       />
@@ -358,7 +348,6 @@ export function ThinktankPapersTab({ groupId, isMember = true }: ThinktankPapers
             doc={activeDoc}
             isMember={isMember}
             onEdit={() => {
-              soundEffects.press();
               setMode("edit");
             }}
             onDeleted={() => setSelectedDocId(null)}

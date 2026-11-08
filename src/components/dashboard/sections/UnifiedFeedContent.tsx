@@ -7,6 +7,7 @@ import { RssFeed as Rss, Group as Users } from "iconoir-react";
 import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import { groupWikiEdits } from "~/lib/feed/group-wiki-edits";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
@@ -38,30 +39,6 @@ function groupRuns(
     i = end;
   }
   return result;
-}
-
-const wikiPageKey = (a: any) => (a.source === "wiki" && a.content?.metadata?.pageTitle) || null;
-
-/** Consecutive wiki edits to the same page become one entry. */
-function groupWikiEdits(activities: any[]): any[] {
-  return groupRuns(activities, wikiPageKey, (group, i) => {
-    const pageTitle = wikiPageKey(group[0]);
-    const editors = new Set(group.map((g) => g.user?.name).filter(Boolean));
-    const isNew = group.some((g) => g.content?.title?.startsWith("New wiki page"));
-    return {
-      ...group[0],
-      id: `wiki-grouped-${pageTitle}-${i}`,
-      content: {
-        ...group[0].content,
-        title: isNew ? `New wiki page: ${pageTitle}` : pageTitle,
-      },
-      _grouped: true,
-      _editCount: group.length,
-      _editors: Array.from(editors),
-      _subEdits: group,
-      _isNew: isNew,
-    };
-  });
 }
 
 // Repeated IxStats activities of the same type by the same user within a time window.

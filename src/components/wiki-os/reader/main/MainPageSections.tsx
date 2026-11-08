@@ -49,8 +49,6 @@ export function RecentActivitySection({
         <h2 className="text-label text-headline">Recent activity</h2>
         <Link
           href="/util/recent-changes"
-          data-cuelume-press="press"
-          data-cuelume-hover="tick"
           className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
         >
           <span>View all</span>
@@ -85,8 +83,6 @@ export function RecentActivitySection({
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/wiki/${encodeURIComponent((rc.title ?? "").replace(/ /g, "_"))}`}
-                          data-cuelume-press="droplet"
-                          data-cuelume-hover="tick"
                           className="text-label rounded-control-sm text-caption hover:text-tint focus-visible:ring-tint sm:text-headline truncate font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                         >
                           {rc.title}
@@ -177,8 +173,6 @@ export function CountriesSection({ countries }: Pick<MainPageContentProps, "coun
         <h2 className="text-label text-headline">Explore countries</h2>
         <Link
           href={ixstatesLinkHref("/countries")}
-          data-cuelume-press="press"
-          data-cuelume-hover="tick"
           className="text-label-secondary hover:text-label group/all rounded-control-sm text-caption focus-visible:ring-indigo flex items-center gap-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
           <span>All {countries.length} realms</span>
@@ -196,8 +190,6 @@ export function CountriesSection({ countries }: Pick<MainPageContentProps, "coun
           >
             <Link
               href={`/wiki/${encodeURIComponent((c.name ?? "").replace(/ /g, "_"))}`}
-              data-cuelume-press="droplet"
-              data-cuelume-hover="tick"
               className={cn(
                 "group rounded-card relative flex flex-col overflow-hidden p-3",
                 "border-separator border",

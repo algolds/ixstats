@@ -28,7 +28,6 @@ import { Switch } from "~/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
 import { api } from "~/trpc/react";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { THINKTANK_CATEGORIES, ThinktankDialogHeader, ThinktankField } from "./ThinktankFormParts";
 import { assetUrl } from "~/lib/base-path";
@@ -172,24 +171,20 @@ function InviteMembersSection({ groupId, isOpen }: { groupId: string; isOpen: bo
   const inviteMutation = api.thinkpages.inviteToThinktank.useMutation({
     onSuccess: (result) => {
       if (result.skipped > 0 && result.count === 0) {
-        soundEffects.error();
         notify.error("This user can't be invited (their privacy settings don't allow it).");
         return;
       }
-      soundEffects.success();
       notify.success(`Invitation sent to ${inviteTarget?.displayName ?? inviteInput.trim()}!`);
       setInviteInput("");
       setInviteTarget(null);
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to send invitation");
     },
   });
 
   const handleSendInvite = () => {
     if (!inviteTarget) return;
-    soundEffects.press();
     inviteMutation.mutate({ groupId, userIds: [inviteTarget.userId] });
   };
 
@@ -231,7 +226,6 @@ function InviteMembersSection({ groupId, isOpen }: { groupId: string; isOpen: bo
               <button
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setInviteTarget({
                     userId: u.userId,
                     username: u.username,
@@ -269,7 +263,6 @@ function InviteCodeRow({ groupId }: { groupId: string }) {
   const notify = useNotify();
   const createCode = api.thinkpages.createThinktankInviteCode.useMutation({
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to create an invite code");
     },
   });
@@ -323,35 +316,30 @@ export function ThinktankSettingsModal({
   const updateGroupMutation = api.thinkpages.updateThinktank.useMutation();
   const updateSettingsMutation = api.thinkpages.updateGroupSettings.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       notify.success("Group settings updated");
       void utils.thinkpages.getThinktankById.invalidate({ groupId });
       void utils.thinkpages.getThinktanks.invalidate();
       onClose();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to update settings");
     },
   });
 
   const deleteGroupMutation = api.thinkpages.deleteThinktank.useMutation({
     onSuccess: () => {
-      soundEffects.release();
       notify.success("Group disbanded.");
       void utils.thinkpages.getThinktanks.invalidate();
       onClose();
       onDeleteSuccess?.();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to delete group");
     },
   });
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    soundEffects.press();
 
     await updateGroupMutation.mutateAsync({
       groupId,
@@ -439,7 +427,6 @@ export function ThinktankSettingsModal({
                 <Switch
                   checked={allowPersonaPosting}
                   onCheckedChange={(checked) => {
-                    soundEffects.press();
                     setAllowPersonaPosting(checked);
                   }}
                 />
@@ -472,7 +459,6 @@ export function ThinktankSettingsModal({
               <Switch
                 checked={isPublic}
                 onCheckedChange={(checked) => {
-                  soundEffects.press();
                   setType(checked ? "public" : "private");
                 }}
               />
@@ -522,7 +508,6 @@ export function ThinktankSettingsModal({
           isOpen
           onClose={() => setMediaTarget(null)}
           onImageSelect={(imageUrl) => {
-            soundEffects.success();
             if (mediaTarget === "avatar") {
               setAvatarUrl(imageUrl);
               notify.success("Emblem updated from repository");

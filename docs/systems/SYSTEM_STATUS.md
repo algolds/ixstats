@@ -124,7 +124,7 @@ found several that are partly built, read-only, or broken, so each row now carri
 |---|:---:|---|---|:---:|---|
 | Facet design system | v4 | global | `src/styles/facet/`, `src/components/ui/facet*` | ✅ Live | Five layers and the sidebar shell are in; the per-app sweep is in progress ([facet-design-system.md](../reference/facet-design-system.md)) |
 | Halo overlay & command palette | v6 | global | `src/components/halo/` | ✅ Live | |
-| Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | 17 synthesized cues |
+| Cuelume audio | v1 | global | `src/lib/sound/cuelume.ts` | ✅ Live | cuelume 0.2.8: 14 cues with emphasis; 10 app moments (`soundCues`) |
 | Admin console | platform | `/admin/*` | `admin/`, `AdminRouter.tsx` | ✅ Live | The sidebar's area list is the admin navigation; `/admin/calculations` has a page; `auditLogMiddleware` persists every admin mutation and failed call to `AuditLog` (PL-1) |
 | Help center | platform | `/help` | `src/content/help/`, `src/app/help/_lib/help-sections.ts` | ✅ Live | All 69 articles are registered (a test checks it); see [help.md](help.md) |
 | Rate limiting | platform | — | `src/lib/cache/rate-limiter.ts`, `trpc/middleware.ts` | 🟡 Partial | Fewer than 100 non-admin procedures of 922 are limited; 243 mutations are unlimited; no `X-RateLimit-*` headers |

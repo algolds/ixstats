@@ -63,7 +63,7 @@ export const INTERNAL_VERSIONS = {
 
   // Design system.
   design: {
-    facet: 4, // v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
+    facet: 5, // v5: the Lens layer (refractive liquid glass with dispersion, FacetMaterial layer="lens"), scroll-linked hero depth; v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).
@@ -97,7 +97,7 @@ export const VERSIONS = {
     halo: 1,
     onoma: 1,
   },
-  design: { facet: 1 },
+  design: { facet: 2 },
   subSystems: { canvas: 1 },
   build: BUILD_VERSION,
 } as const;

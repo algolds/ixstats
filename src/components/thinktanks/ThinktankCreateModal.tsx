@@ -10,7 +10,6 @@ import { Switch } from "~/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { MediaSearchModal } from "~/components/wiki-os/media-search/MediaSearchModal";
 import { api } from "~/trpc/react";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { THINKTANK_CATEGORIES, ThinktankDialogHeader, ThinktankField } from "./ThinktankFormParts";
@@ -38,7 +37,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
 
   const createMutation = api.thinkpages.createThinktank.useMutation({
     onSuccess: (newGroup) => {
-      soundEffects.success();
       notify.success("Group created");
       void utils.thinkpages.getThinktanks.invalidate();
 
@@ -58,7 +56,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
       }
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to create group");
     },
   });
@@ -67,7 +64,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
     e.preventDefault();
     if (!name.trim()) return;
 
-    soundEffects.press();
     const tags = tagsInput
       .split(",")
       .map((t) => t.trim().replace(/^#/, ""))
@@ -184,7 +180,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
               <Switch
                 checked={allowPersonaPosting}
                 onCheckedChange={(c) => {
-                  soundEffects.press();
                   setAllowPersonaPosting(c);
                 }}
               />
@@ -211,7 +206,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  soundEffects.press();
                   setType(type === "public" ? "private" : "public");
                 }}
                 className="border-separator"
@@ -238,7 +232,6 @@ export function ThinktankCreateModal({ isOpen, onClose, onCreated }: ThinktankCr
           isOpen={showMediaModal}
           onClose={() => setShowMediaModal(false)}
           onImageSelect={(imageUrl) => {
-            soundEffects.success();
             setAvatarUrl(imageUrl);
             setShowMediaModal(false);
             notify.success("Emblem selected from repository");

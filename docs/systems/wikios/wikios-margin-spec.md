@@ -163,7 +163,7 @@ export function SelectionCapsule({ contentRef, onAddHighlight, onOpenThreadDraft
 // Hold-to-Resolve pattern with progressive clip-path reveal
 export function HoldToResolveButton({ isResolved, onResolveToggle, isPending }) {
   const [holding, setHolding] = useState(false);
-  // 900ms timer triggers onResolveToggle and soundEffects.success()
+  // 900ms timer triggers onResolveToggle and soundCues.success()
   // Progress overlay animates clipPath from inset(0 100% 0 0) to inset(0 0% 0 0)
 }
 ```

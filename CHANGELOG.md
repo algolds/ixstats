@@ -11,6 +11,29 @@ capability integer. Each release entry below lists which components advanced and
 
 ## [Unreleased]
 
+### 🔍 Facet 5: the Lens, and a new front-page hero (Facet 5, public 2)
+
+- **`FACET_VERSION` 5 (public 2).** Facet gains a sixth layer, **Lens**: refractive liquid glass for a brand moment. `FacetMaterial layer="lens"` renders its own filter (`LensFilter`), which bends the backdrop at the edges, splits red, green and blue there and leaves the middle clear. Chromium shows the refraction; other engines show a frosted pane, and Reduce Transparency and Increase Contrast make it solid. `Card variant="lens"` and `LensSurface` (top-level Cards inside become lenses, nested ones stay wells) bring it to content cards, and every lens shares one filter (`#facet-lens`, rendered once in the root layout). Rules (never on Chrome or an Overlay, never glass on glass, content panes only where the owner chooses) are in `docs/reference/facet-design-system.md` §3, and the guards and the materials lab cover it.
+- **Scroll depth utilities:** `scroll-recede` fades a top-of-page hero as it scrolls away and `scroll-parallax` makes its backdrop trail the page. Both are CSS only and off under Reduce Motion.
+- **Front-page hero:**
+  - A centred IxStates wordmark (Schibsted Grotesk 800, hand-spaced, also outlined as `public/images/ixstates-wordmark.svg`) under the free-standing Ixnay emblem, on a Lens.
+  - Behind it, an LV-style monogram of the emblem and the app marks (MyCountry crown, Maps compass, Wiki W, Realms hexagon), each lightly in its app's tint, with scroll and mouse parallax.
+  - One "Sign in" button (Clerk's sign-in-or-up flow) and "Explore realms". The nation counts use the MyCountry crown.
+- **Front page on the Lens:** the featured realm panel, every feed card and the Wiki pane are lenses instead of grey panes and wells, with hairlines in place of the grey fills inside them.
+- **Front-page fixes from the audit:**
+  - On phones, "Create a country" now sits under the hero instead of after the whole feed.
+  - The right rail stays pinned under the top bar as the feed scrolls; when it's taller than the window it scrolls inside itself.
+  - The feed lists each wiki page once per window (every edit to it folds into one entry), on the front page and the dashboard.
+  - Text links in the hero get 44px touch targets, and the feed has a heading for screen readers.
+  - The builder card has the IIWiki logo on its import row and a full-width Start building button.
+
+### 🔊 Cuelume 0.2.8
+
+- **Upgraded `cuelume` from 0.2.2 to 0.2.8:** fourteen cues named for their job (`open`, `close`, `navigate`, `ready`, `warning`, `attention` and so on), with emphasis. `soundCues` keeps its names, gains `warning` and `attention`, and each cue takes an optional emphasis. Turning sound on now unlocks audio in that click, so the first cue isn't lost.
+- **Audit:** the retired per-control sounds are gone: 52 press, 4 release and 12 toggle calls, and every `data-cuelume-*` attribute (about 85, with the delegated binding that read them). The legacy `soundEffects` palette is removed.
+- **No more double sounds:** 46 cues that played next to a toast, which already plays its own, are removed. Toasts play their cue at subtle emphasis; critical ones ask for attention.
+- **Dialogs:** Dialog, Sheet and AlertDialog play dismiss however they close (button, Escape or outside click), not only from their × button. Route arrival is subtle.
+
 ## [1.5.4] — 2026-11-08 "Lobster Crosby" (public 1.0.5)
 
 ### 💱 The Exchange, Release 2: the treasury as a player (Exchange 2)

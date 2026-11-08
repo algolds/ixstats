@@ -10,7 +10,7 @@ import {
 } from "~/stores/toastQueueStore";
 import { useNotificationStore } from "~/stores/notificationStore";
 import type { NotificationCategory } from "~/types/unified-notifications";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 export interface NotifyStoreOptions {
   title: string;
@@ -41,12 +41,13 @@ function toSeverity(priority: ToastPriority): "urgent" | "important" | "informat
   }
 }
 
+/** A toast plays the cue for what it reports, subtle; a critical one asks for attention. */
 function playToastSound(type: ToastType, priority: ToastPriority): void {
-  if (priority === "critical") soundEffects.pulse();
-  else if (type === "success") soundEffects.success();
-  else if (type === "error") soundEffects.error();
-  else if (type === "warning") soundEffects.bloom();
-  else soundEffects.chime();
+  if (priority === "critical") soundCues.attention();
+  else if (type === "success") soundCues.success("subtle");
+  else if (type === "error") soundCues.error("subtle");
+  else if (type === "warning") soundCues.warning("subtle");
+  else soundCues.notify("subtle");
 }
 
 /**

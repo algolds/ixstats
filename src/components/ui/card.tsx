@@ -3,7 +3,7 @@
 import * as React from "react";
 import { cn } from "~/lib/utils/cn";
 
-type CardVariant = "pane" | "well";
+type CardVariant = "pane" | "well" | "lens";
 type CardPadding = "none" | "sm" | "md" | "lg";
 export type ContentType =
   | "prose"
@@ -21,14 +21,20 @@ export type ContentType =
 const VARIANT: Record<CardVariant, string> = {
   pane: "facet-pane text-label rounded-card",
   well: "facet-well text-label rounded-row",
+  lens: "facet-lens text-label rounded-card",
 };
 
 const PADDING: Record<CardVariant, Record<CardPadding, string>> = {
   pane: { none: "", sm: "p-3", md: "p-4 md:p-5", lg: "p-5 md:p-6" },
   well: { none: "", sm: "p-3", md: "p-4", lg: "p-4 md:p-5" },
+  lens: { none: "", sm: "p-3", md: "p-4 md:p-5", lg: "p-5 md:p-6" },
 };
 
-const DEFAULT_PADDING: Record<CardVariant, CardPadding> = { pane: "none", well: "md" };
+const DEFAULT_PADDING: Record<CardVariant, CardPadding> = {
+  pane: "none",
+  well: "md",
+  lens: "none",
+};
 
 const INTERACTIVE =
   "facet-press facet-lift pointer-coarse:min-h-11 cursor-pointer select-none focus-visible:outline-tint focus-visible:outline-2 focus-visible:outline-offset-2";
@@ -36,9 +42,24 @@ const INTERACTIVE =
 /** True inside a Card: a nested Card renders as a well so glass never sits on glass. */
 const InsideCard = React.createContext(false);
 
+/** What a top-level Card is made of: a glass pane, or a Lens inside `LensSurface`. */
+const TopLevelVariant = React.createContext<"pane" | "lens">("pane");
+
 /** Overlays (Dialog, Sheet, Popover) are their own surface: Cards inside start as panes again. */
 export function SurfaceReset({ children }: { children: React.ReactNode }) {
-  return <InsideCard.Provider value={false}>{children}</InsideCard.Provider>;
+  return (
+    <TopLevelVariant.Provider value="pane">
+      <InsideCard.Provider value={false}>{children}</InsideCard.Provider>
+    </TopLevelVariant.Provider>
+  );
+}
+
+/**
+ * Top-level Cards inside render as Lens (Facet layer 5) instead of panes; nested Cards are still
+ * wells. For a section the owner wants on liquid glass, such as the front page's feed.
+ */
+export function LensSurface({ children }: { children: React.ReactNode }) {
+  return <TopLevelVariant.Provider value="lens">{children}</TopLevelVariant.Provider>;
 }
 
 /** Chrome is glass too: Cards inside it render as wells. */
@@ -47,7 +68,7 @@ export function InsideSurface({ children }: { children: React.ReactNode }) {
 }
 
 interface CardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "content"> {
-  /** `pane` (glass content card) at top level, `well` (solid inset) inside another Card. */
+  /** `pane` (glass content card) at top level, `well` (solid inset) inside another Card, `lens` (refractive glass, Facet layer 5). */
   variant?: CardVariant;
   /** Default: none for a pane, `md` for a well. */
   padding?: CardPadding;
@@ -73,7 +94,8 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
     ref
   ) => {
     const nested = React.useContext(InsideCard);
-    const resolved: CardVariant = variant ?? (nested ? "well" : "pane");
+    const topLevel = React.useContext(TopLevelVariant);
+    const resolved: CardVariant = variant ?? (nested ? "well" : topLevel);
     const isButton = interactive && Boolean(onClick);
     const handleKeyDown: React.KeyboardEventHandler<HTMLDivElement> | undefined = isButton
       ? (event) => {

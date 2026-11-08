@@ -27,6 +27,46 @@
   --facet-press-scale: 0.99;
 }
 
+/* A top-of-page hero that recedes over the first 320px of scroll: it fades, shrinks a touch and
+   drifts slower than the page. Tied to scroll position (no JS, no layout change, so nothing below
+   it jumps); scrolling back up reverses it. Clip its parent. Without scroll-driven animation
+   support, or under Reduce Motion, it simply scrolls away. */
+@utility scroll-recede {
+  @supports (animation-timeline: scroll()) {
+    @variant motion-safe {
+      animation: scroll-recede linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 320px;
+    }
+  }
+}
+
+/* The backdrop behind a scroll-recede hero: over the same 320px it trails the page by 96px, so the
+   hero reads in depth. Make the element 96px taller than its box, overhanging the top. */
+@utility scroll-parallax {
+  @supports (animation-timeline: scroll()) {
+    @variant motion-safe {
+      animation: scroll-parallax linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 320px;
+    }
+  }
+}
+
+@keyframes scroll-parallax {
+  to {
+    translate: 0 96px;
+  }
+}
+
+@keyframes scroll-recede {
+  to {
+    opacity: 0;
+    scale: 0.96;
+    translate: 0 40%;
+  }
+}
+
 @utility facet-lift {
   transition-property:
     color, background-color, border-color, outline-color, box-shadow, opacity, scale, translate;

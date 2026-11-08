@@ -21,7 +21,7 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { NSTakedownModal } from "../modals/NSTakedownModal";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";
 import { Input } from "~/components/ui/input";
@@ -77,7 +77,6 @@ function FilterForm(props: {
       onSubmit={(e) => {
         e.preventDefault();
         if (value) {
-          soundEffects.press();
           props.onSubmit(value);
         }
       }}
@@ -92,13 +91,7 @@ function FilterForm(props: {
           className="bg-muted/20 border-border/60 h-8 pl-8 text-xs"
         />
       </div>
-      <Button
-        type="submit"
-        disabled={!value || props.pending}
-        data-cuelume-press="soft"
-        variant="secondary"
-        size="sm"
-      >
+      <Button type="submit" disabled={!value || props.pending} variant="secondary" size="sm">
         {props.pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : props.buttonIcon}
         <span>{props.buttonLabel}</span>
       </Button>
@@ -153,11 +146,9 @@ function AccountList(props: {
           <Button
             type="button"
             onClick={() => {
-              soundEffects.press();
               props.onAction(account.id);
             }}
             disabled={props.pending}
-            data-cuelume-press="soft"
             variant="secondary"
             size="sm"
           >
@@ -187,44 +178,37 @@ function BlockingFilters(props: {
   const setInput = (tab: FilterTab) => (value: string) =>
     setInputs((prev) => ({ ...prev, [tab]: value }));
 
-  /** Success: sound + toast + refresh the lists; failure: error sound + toast. */
-  const listMutation = (
-    success: string,
-    failure: string,
-    sound: "bloom" | "press",
-    afterSuccess?: () => void
-  ) => ({
+  /** Success: toast (it carries the cue) and refresh the lists; failure: error toast. */
+  const listMutation = (success: string, failure: string, afterSuccess?: () => void) => ({
     onSuccess: () => {
-      soundEffects[sound]();
       notify.success(success);
       afterSuccess?.();
       void utils.users.getPrivacySettings.invalidate();
     },
     onError: (err: { message?: string }) => {
-      soundEffects.error();
       notify.error(err.message || failure);
     },
   });
 
   const blockMutation = api.users.blockAccount.useMutation(
-    listMutation("Account added to blocklist", "Failed to block account", "bloom", () =>
+    listMutation("Account added to blocklist", "Failed to block account", () =>
       setInput("blocked")("")
     )
   );
   const unblockMutation = api.users.unblockAccount.useMutation(
-    listMutation("Account removed from blocklist", "Failed to unblock account", "press")
+    listMutation("Account removed from blocklist", "Failed to unblock account")
   );
   const muteMutation = api.users.muteAccount.useMutation(
-    listMutation("Account muted", "Failed to mute account", "bloom", () => setInput("muted")(""))
+    listMutation("Account muted", "Failed to mute account", () => setInput("muted")(""))
   );
   const unmuteMutation = api.users.unmuteAccount.useMutation(
-    listMutation("Account unmuted", "Failed to unmute account", "press")
+    listMutation("Account unmuted", "Failed to unmute account")
   );
   const addKeywordMutation = api.users.addMutedKeyword.useMutation(
-    listMutation("Word muted", "Failed to mute word", "bloom", () => setInput("keywords")(""))
+    listMutation("Word muted", "Failed to mute word", () => setInput("keywords")(""))
   );
   const removeKeywordMutation = api.users.removeMutedKeyword.useMutation(
-    listMutation("Word unmuted", "Failed to unmute word", "press")
+    listMutation("Word unmuted", "Failed to unmute word")
   );
 
   return (
@@ -235,7 +219,6 @@ function BlockingFilters(props: {
         fullWidth
         value={activeFilterTab}
         onValueChange={(tab) => {
-          soundEffects.press();
           setActiveFilterTab(tab);
         }}
         options={[
@@ -347,7 +330,6 @@ function SecurityAndDataGroup() {
   const handleExportData = async () => {
     try {
       setIsExporting(true);
-      soundEffects.press();
       const { data } = await fetchExportData();
       if (!data) throw new Error("The export returned no data");
 
@@ -362,10 +344,8 @@ function SecurityAndDataGroup() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      soundEffects.bloom();
       notify.success("Data archive downloaded");
     } catch (err) {
-      soundEffects.error();
       notify.error(
         err instanceof Error && err.message ? err.message : "Failed to generate data archive"
       );
@@ -389,7 +369,6 @@ function SecurityAndDataGroup() {
           type="button"
           onClick={handleExportData}
           disabled={isExporting}
-          data-cuelume-press="soft"
           variant="secondary"
           size="sm"
         >
@@ -413,10 +392,8 @@ function SecurityAndDataGroup() {
         <Button
           type="button"
           onClick={() => {
-            soundEffects.press();
             clerk.openUserProfile();
           }}
-          data-cuelume-press="soft"
           variant="secondary"
           size="sm"
         >
@@ -445,7 +422,6 @@ export function PrivacySecurityPanel() {
   // Optimistic update of the privacy config
   const updateConfigMutation = api.users.updatePrivacyConfig.useMutation({
     onMutate: async (newValues) => {
-      soundEffects.toggle();
       await utils.users.getPrivacySettings.cancel();
       const prevData = utils.users.getPrivacySettings.getData();
       if (prevData) {
@@ -457,7 +433,7 @@ export function PrivacySecurityPanel() {
       return { prevData };
     },
     onError: (err, _newValues, context) => {
-      soundEffects.error();
+      soundCues.error();
       if (context?.prevData) {
         utils.users.getPrivacySettings.setData(undefined, context.prevData);
       }
@@ -530,7 +506,6 @@ export function PrivacySecurityPanel() {
               <Select
                 value={config?.[row.key] ?? "everyone"}
                 onValueChange={(val) => {
-                  soundEffects.press();
                   setOption(row.key, val as PrivacyConfig[typeof row.key]);
                 }}
               >
@@ -578,17 +553,13 @@ export function PrivacySecurityPanel() {
         >
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href="/settings?tab=cards" data-cuelume-press="soft">
-                Manage deck
-              </Link>
+              <Link href="/settings?tab=cards">Manage deck</Link>
             </Button>
             <Button
               type="button"
               onClick={() => {
-                soundEffects.press();
                 setShowTakedownModal(true);
               }}
-              data-cuelume-press="soft"
               variant="secondary"
               size="sm"
               className="hover:text-destructive"

@@ -14,15 +14,13 @@ import { createAbsoluteUrl, cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
 export function MyCountryActionsView({ onClose }: DIViewProps) {
-  React.useEffect(() => {
-    soundEffects.scan();
-  }, []);
+  React.useEffect(() => {}, []);
 
   const navigateToSection = useCallback(
     (section: string) => {
@@ -93,7 +91,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
           variant="ghost"
           size="icon-sm"
           onClick={() => {
-            soundEffects.droplet();
+            soundCues.dismiss();
             onClose();
           }}
           className="text-label-secondary hover:text-label"

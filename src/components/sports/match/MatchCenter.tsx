@@ -5,7 +5,6 @@ import { Play, SystemRestart as Loader2, Trophy, Activity, ArrowLeft, Clock } fr
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
-import { soundCues } from "~/lib/sound/cuelume";
 import { getSportTheme } from "~/lib/sports/theming";
 import { MatchSurface } from "~/components/sports/surfaces/MatchSurface";
 import { MatchPredictionPanel } from "~/components/sports/match/MatchPredictionPanel";
@@ -56,7 +55,6 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
   const simulateMutation = api.sports.simulateSingleMatch.useMutation({
     onSuccess: async () => {
-      soundCues.success();
       setIsSimulatingState(false);
       notify.success("Match simulation concluded");
       await utils.sports.getMatchDetails.invalidate({ matchId });

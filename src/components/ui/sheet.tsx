@@ -56,9 +56,7 @@ const SheetTrigger = SheetPrimitive.Trigger;
 const SheetClose = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Close>,
   React.ComponentPropsWithoutRef<typeof SheetPrimitive.Close>
->(({ ...props }, ref) => (
-  <SheetPrimitive.Close ref={ref} data-cuelume-press="droplet" {...props} />
-));
+>(({ ...props }, ref) => <SheetPrimitive.Close ref={ref} {...props} />);
 SheetClose.displayName = "SheetClose";
 
 const SheetPortal = SheetPrimitive.Portal;
@@ -171,8 +169,10 @@ const SheetContent = React.forwardRef<
       resolvedSide === "bottom" && (automatic || (detents !== undefined && detents.length > 0));
 
     React.useEffect(() => {
-      // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
+      // Present on open, dismiss on close however it closes. Optional calls: some tests mock
+      // ~/lib/sound/cuelume with a partial `soundCues`.
       soundCues?.present?.();
+      return () => soundCues?.dismiss?.();
     }, []);
 
     const closeRef = React.useRef<HTMLButtonElement>(null);
@@ -195,7 +195,6 @@ const SheetContent = React.forwardRef<
     const closeButton = (
       <SheetPrimitive.Close
         ref={closeRef}
-        data-cuelume-press="droplet"
         data-slot="sheet-close"
         className={cn(dismissButtonClassName, !showCloseButton && "hidden")}
       >
@@ -213,10 +212,7 @@ const SheetContent = React.forwardRef<
               detents={detents && detents.length > 0 ? detents : DEFAULT_DETENTS}
               defaultDetent={defaultDetent}
               onDetentChange={onDetentChange}
-              onDismiss={() => {
-                soundCues?.dismiss?.();
-                closeRef.current?.click();
-              }}
+              onDismiss={() => closeRef.current?.click()}
               className={className}
               closeButton={closeButton}
             >

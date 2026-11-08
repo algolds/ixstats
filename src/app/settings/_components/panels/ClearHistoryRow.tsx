@@ -15,7 +15,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { SettingsRow } from "../primitives";
 
 /** Session-storage keys of the recently viewed lists this browser keeps (WikiOS, forum). */
@@ -44,7 +43,6 @@ export function ClearHistoryRow({ glyphClass }: { glyphClass: string }) {
   const clearHistory = api.users.clearHistory.useMutation({
     onSuccess: (result) => {
       forgetRecentlyViewed();
-      soundEffects.bloom();
       notify.success(
         `History cleared: ${result.notifications} notifications and ${result.readReceipts} read receipts`
       );
@@ -52,7 +50,6 @@ export function ClearHistoryRow({ glyphClass }: { glyphClass: string }) {
       void utils.notifications.getUnreadCount.invalidate();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to clear history");
     },
   });
@@ -68,11 +65,9 @@ export function ClearHistoryRow({ glyphClass }: { glyphClass: string }) {
         <Button
           type="button"
           onClick={() => {
-            soundEffects.press();
             setOpen(true);
           }}
           disabled={clearHistory.isPending}
-          data-cuelume-press="soft"
           variant="secondary"
           size="sm"
         >
@@ -93,7 +88,7 @@ export function ClearHistoryRow({ glyphClass }: { glyphClass: string }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-            <AlertDialogCancel onClick={() => soundEffects.press()}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
               onClick={() => clearHistory.mutate({ confirm: true })}

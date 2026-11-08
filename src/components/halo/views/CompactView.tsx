@@ -17,7 +17,7 @@ import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 import { PreText } from "~/components/ui/pretext";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { assetUrl } from "~/lib/base-path";
 import { wikiAccent } from "~/components/halo/plugins/wiki/accent";
@@ -280,7 +280,6 @@ function CompactViewComponent({
                 label="Search"
                 icon={Search}
                 onClick={() => {
-                  soundEffects.scan();
                   onSwitchMode("search");
                 }}
               />
@@ -292,7 +291,7 @@ function CompactViewComponent({
                   badge={totalUnreadCount}
                   iconClassName={totalUnreadCount > 0 ? "text-yellow" : undefined}
                   onClick={() => {
-                    soundEffects.bloom();
+                    soundCues.present("subtle");
                     onSwitchMode("notifications");
                   }}
                 />
@@ -302,7 +301,7 @@ function CompactViewComponent({
                 label="Settings"
                 icon={Settings}
                 onClick={() => {
-                  soundEffects.bloom();
+                  soundCues.present("subtle");
                   onSwitchMode("settings");
                 }}
               />

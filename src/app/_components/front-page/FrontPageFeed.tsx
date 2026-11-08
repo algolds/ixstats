@@ -41,7 +41,11 @@ export function FrontPageFeed() {
   };
 
   return (
-    <section aria-label="Activity stream" className="min-w-0">
+    <section aria-labelledby="front-page-activity" className="min-w-0">
+      {/* The feed's cards are h3s; this gives them their h2 (the hero's realm is the only other). */}
+      <h2 id="front-page-activity" className="sr-only">
+        Latest activity
+      </h2>
       <UnifiedFeedContent activeTab="all" excludeAchievements {...feedHandlers} />
     </section>
   );

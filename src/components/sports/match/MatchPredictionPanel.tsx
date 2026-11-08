@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundCues } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -27,12 +26,10 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
 
   const place = api.sports.placePrediction.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Prediction placed");
       void utils.sports.getMatchPredictions.invalidate({ matchId });
     },
     onError: (err) => {
-      soundCues.error();
       notify.error(err.message || "Failed to place prediction");
     },
   });

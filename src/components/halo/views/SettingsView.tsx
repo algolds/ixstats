@@ -32,7 +32,7 @@ import { useActiveDIPlugin } from "../plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
 import { useLocalPref, ToggleSwitch, SectionLabel } from "./settings/SettingsControls";
@@ -97,17 +97,15 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    soundEffects.loading();
     try {
       const promises: Promise<unknown>[] = [refetchCountries()];
       if (isSignedIn && user?.id) {
         promises.push(refetchNotifications());
       }
       await Promise.allSettled(promises);
-      soundEffects.ready();
     } catch (error) {
       console.error("Refresh failed:", error);
-      soundEffects.error();
+      soundCues.error();
     } finally {
       setIsRefreshing(false);
     }
@@ -200,15 +198,14 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
             iconBg={soundEnabled ? "bg-green/15" : "bg-fill-4"}
             label="Sound"
             description={soundEnabled ? "Enabled" : "Muted"}
-            onIconClick={soundEnabled ? () => previewSound("chime") : undefined}
-            iconTitle={soundEnabled ? "Tap to test sound chime" : undefined}
+            onIconClick={soundEnabled ? () => previewSound("ready") : undefined}
+            iconTitle={soundEnabled ? "Tap to test the notification sound" : undefined}
           >
             <ToggleSwitch
               enabled={soundEnabled}
               onToggle={() => {
                 const next = !soundEnabled;
                 setSoundEnabled(next);
-                if (next) soundEffects.toggle();
               }}
             />
           </SettingsRow>
@@ -478,7 +475,7 @@ function SettingsHeader({
           variant="ghost"
           size="icon-sm"
           onClick={() => {
-            soundEffects.droplet();
+            soundCues.dismiss();
             onClose();
           }}
           aria-label="Close"

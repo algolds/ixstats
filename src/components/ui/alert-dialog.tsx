@@ -48,8 +48,10 @@ function AlertDialogContent({
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   React.useEffect(() => {
-    // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
+    // Present on open, dismiss on close however it closes. Optional calls: some tests mock
+    // ~/lib/sound/cuelume with a partial `soundCues`.
     soundCues?.present?.();
+    return () => soundCues?.dismiss?.();
   }, []);
 
   return (
@@ -146,7 +148,6 @@ function AlertDialogClose({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
-      data-cuelume-press="droplet"
       data-slot="alert-dialog-close"
       className={cn(buttonVariants({ variant: "secondary" }), className)}
       {...props}

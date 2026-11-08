@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Coins,
   Compass,
+  Crown,
   Globe,
   Group as Users,
   Map as MapIcon,
@@ -16,13 +17,16 @@ import {
   CoordinatesMapEmbed,
   type EmbedPoliticalFeature,
 } from "~/components/maps/widgets/CoordinatesMapEmbed";
+import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { springSmooth } from "~/lib/design/motion";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, hitSlop } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { Skeleton } from "~/components/ui/skeleton";
-import { SignInButton, SignUpButton } from "~/context/auth-context";
+import { SignInButton } from "~/context/auth-context";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { assetUrl, withBasePath } from "~/lib/base-path";
 import { formatCurrency } from "~/lib/utils";
@@ -57,7 +61,76 @@ function useIdleWorldZoom(box: React.RefObject<HTMLDivElement | null>): number |
   return zoom;
 }
 
+/**
+ * The monogram's layers, each a tile in its app's tint: the emblem and the W in the Wiki navy. `depth`
+ * is how far a layer drifts from the pointer, in px at the hero's edge: the emblems sit deeper than the
+ * app marks, so the pattern separates into two planes as the mouse moves.
+ */
+const MONOGRAM_LAYERS = (
+  [
+    ["wiki", 8],
+    ["mycountry", 16],
+    ["maps", 16],
+    ["realms", 16],
+  ] as const
+).map(([app, depth]) => ({
+  app,
+  depth,
+  style: {
+    "--monogram": `url("${withBasePath(`/images/ix-monogram-${app}.svg`)}")`,
+  } as CSSProperties,
+}));
+
+/** The emblem, painted in the Wiki tint through a mask so it holds contrast in both themes. */
+const EMBLEM_STYLE = {
+  maskImage: `url("${withBasePath("/images/ix-logo.svg?v=2")}")`,
+  maskSize: "contain",
+  maskRepeat: "no-repeat",
+} satisfies CSSProperties;
+
+function MonogramLayer({
+  app,
+  depth,
+  style,
+  px,
+  py,
+}: (typeof MONOGRAM_LAYERS)[number] & { px: MotionValue<number>; py: MotionValue<number> }) {
+  const x = useTransform(px, (v) => v * -depth);
+  const y = useTransform(py, (v) => v * -depth);
+  return (
+    <motion.div
+      data-app={app}
+      className="facet-monogram absolute -inset-6"
+      style={{ ...style, x, y }}
+    />
+  );
+}
+
+const WORDMARK_STYLE = {
+  maskImage: `url("${withBasePath("/images/ixstates-wordmark.svg")}")`,
+  maskSize: "contain",
+  maskRepeat: "no-repeat",
+} satisfies CSSProperties;
+
 function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }) {
+  const reduceMotion = useFacetReducedMotion();
+  const pointerX = useMotionValue(0);
+  const pointerY = useMotionValue(0);
+  const px = useSpring(pointerX, springSmooth);
+  const py = useSpring(pointerY, springSmooth);
+
+  // The pointer's place in the hero, -1 to 1 on each axis; mouse only (touch has no hover to follow).
+  const followPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse" || reduceMotion) return;
+    const box = event.currentTarget.getBoundingClientRect();
+    pointerX.set(((event.clientX - box.left) / box.width) * 2 - 1);
+    pointerY.set(((event.clientY - box.top) / box.height) * 2 - 1);
+  };
+  const recentre = () => {
+    pointerX.set(0);
+    pointerY.set(0);
+  };
+
   const platformStats = [
     {
       href: "/realms",
@@ -68,8 +141,8 @@ function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }
     },
     {
       href: "/countries",
-      icon: TriangleFlag,
-      tone: "text-green",
+      icon: Crown,
+      tone: "text-yellow",
       label: "nations",
       value: facts ? facts.nations.toLocaleString() : "–",
     },
@@ -83,38 +156,52 @@ function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }
   ] as const;
 
   return (
-    <div className="border-separator relative flex flex-wrap items-center justify-between gap-3 border-b px-3 py-3 md:px-4">
-      <div className="flex min-w-0 flex-wrap items-center gap-3.5">
-        <Link
-          href="/realms"
-          className="group/brand rounded-control focus-visible:outline-tint flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <span className="bg-surface border-separator group-hover/brand:border-tint/40 rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border p-1.5 transition-colors duration-fast">
-            <img
-              src={withBasePath("/images/ix-logo.svg?v=2")}
-              alt=""
-              className="size-full object-contain"
-            />
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-title-2 text-label leading-none font-semibold tracking-tight">
-              IxStates
-            </span>
-            <span className="text-footnote text-label-secondary mt-1 leading-tight">
-              The operating system for worldbuilding
-            </span>
-          </span>
-        </Link>
-
+    <div
+      className="border-separator relative overflow-hidden border-b px-4 py-8 text-center md:py-10"
+      onPointerMove={followPointer}
+      onPointerLeave={recentre}
+    >
+      <div
+        aria-hidden
+        className="scroll-parallax pointer-events-none absolute inset-x-0 -top-24 bottom-0 print:hidden"
+      >
+        {MONOGRAM_LAYERS.map((layer) => (
+          <MonogramLayer key={layer.app} {...layer} px={px} py={py} />
+        ))}
+      </div>
+      <FacetMaterial
+        layer="lens"
+        aria-hidden
+        className="scroll-recede pointer-events-none absolute inset-x-3 inset-y-4 mx-auto max-w-[640px] rounded-[32px] md:inset-y-5 print:hidden"
+      />
+      <div className="scroll-recede relative flex flex-col items-center">
+        <span aria-hidden data-app="wiki" className="bg-tint block size-16" style={EMBLEM_STYLE} />
+        {/* The wordmark asset (Schibsted Grotesk 800, hand-spaced, outlined) painted in the label ink
+            through a mask, so it follows the theme. Sized in em off text-display: 74 of its 100-unit
+            em tall, so it scales with the user's text size like the title it replaces. */}
+        <h1 className="text-display mt-4 leading-none">
+          <span className="sr-only">IxStates</span>
+          <span
+            aria-hidden
+            className="bg-label block aspect-[417/74] h-[0.74em]"
+            style={WORDMARK_STYLE}
+          />
+        </h1>
+        <p className="text-title-3 text-label-secondary mt-2 font-normal">
+          The operating system for worldbuilding
+        </p>
         <div
           aria-label="Platform totals"
-          className="border-separator hidden items-center gap-3 border-l pl-3.5 lg:flex"
+          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
         >
           {platformStats.map(({ href, icon: Icon, tone, label, value }) => (
             <Link
               key={label}
               href={href}
-              className="text-footnote text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm inline-flex items-center gap-1.5 tabular-nums transition-colors duration-fast focus-visible:outline-2"
+              className={cn(
+                "text-footnote text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm duration-fast relative inline-flex items-center gap-1.5 tabular-nums transition-colors focus-visible:outline-2",
+                hitSlop
+              )}
             >
               <Icon aria-hidden className={cn(tone, "size-3.5 shrink-0")} />
               <span className="text-label font-medium">{value}</span>
@@ -122,23 +209,19 @@ function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }
             </Link>
           ))}
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="hidden rounded-full sm:inline-flex" asChild>
-          <Link href="/realms">Explore realms</Link>
-        </Button>
-        <SignInButton mode="modal">
-          <Button variant="secondary" size="sm" className="rounded-full">
-            Sign in
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          {/* ponytail: Clerk's sign-in-or-up flow; the email decides which, so one button covers both */}
+          <SignInButton mode="modal" withSignUp>
+            <Button size="lg" className="rounded-full">
+              <span>Sign in</span>
+              <NavArrowRight aria-hidden />
+            </Button>
+          </SignInButton>
+          <Button variant="secondary" size="lg" className="rounded-full" asChild>
+            <Link href="/realms">Explore realms</Link>
           </Button>
-        </SignInButton>
-        <SignUpButton mode="modal">
-          <Button size="sm" className="shrink-0 rounded-full">
-            <span>Join</span>
-            <NavArrowRight aria-hidden />
-          </Button>
-        </SignUpButton>
+        </div>
       </div>
     </div>
   );
@@ -275,7 +358,10 @@ function HeroMapStage({
             ) : (
               <Link
                 href={`/r/${encodeURIComponent(realm.slug)}`}
-                className="text-footnote text-label truncate font-medium hover:underline"
+                className={cn(
+                  "text-footnote text-label relative truncate font-medium hover:underline",
+                  hitSlop
+                )}
               >
                 {realm.name}
               </Link>
@@ -289,7 +375,10 @@ function HeroMapStage({
           ) : (
             <Link
               href={`/maps?realm=${encodeURIComponent(realm.slug)}`}
-              className="text-footnote text-tint-ink inline-flex shrink-0 items-center gap-0.5 font-medium hover:underline"
+              className={cn(
+                "text-footnote text-tint-ink relative inline-flex shrink-0 items-center gap-0.5 font-medium hover:underline",
+                hitSlop
+              )}
             >
               Open in Atlas
               <NavArrowRight aria-hidden className="size-3.5" />
@@ -322,14 +411,14 @@ function RealmHeroIdentity({ realm }: { realm: FeaturedRealmItem | undefined }) 
       className="group/title rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-2"
       title={`Visit ${realm.name}`}
     >
-      <div className="bg-surface border-separator group-hover/title:border-tint/40 rounded-control flex size-11 shrink-0 items-center justify-center overflow-hidden border p-1 transition-colors duration-fast">
+      <div className="bg-surface border-separator group-hover/title:border-tint/40 rounded-control duration-fast flex size-11 shrink-0 items-center justify-center overflow-hidden border p-1 transition-colors">
         <RealmAvatar thumbnail={realm.thumbnail} className="size-full" />
       </div>
 
       <div className="flex min-w-0 flex-col">
-        <h1 className="text-label text-title-3 group-hover/title:text-tint truncate transition-colors duration-fast group-hover/title:underline">
+        <h2 className="text-label text-title-3 group-hover/title:text-tint duration-fast truncate transition-colors group-hover/title:underline">
           {realm.name}
-        </h1>
+        </h2>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
           <Badge variant="default">Featured realm</Badge>
           {foundedYear && (
@@ -360,15 +449,14 @@ export function FrontPageHero({
   facts: FrontPageData["facts"] | undefined;
   isLoading?: boolean;
 }) {
-  const watermarkSrc = assetUrl(realm?.thumbnail) ?? withBasePath("/images/ix-logo.svg?v=2");
   const topNations = nations.slice(0, 4);
   const topGdpSum = nations.reduce((sum, n) => sum + (n.currentTotalGdp || 0), 0);
 
   const realmHeadline = [
     {
       href: realm ? `/countries?realm=${encodeURIComponent(realm.slug)}` : "/countries",
-      icon: TriangleFlag,
-      tone: "text-blue",
+      icon: Crown,
+      tone: "text-yellow",
       label: "Nations",
       value: realm ? realm.nationCount.toLocaleString() : "–",
     },
@@ -394,14 +482,15 @@ export function FrontPageHero({
 
   return (
     <Card className="relative overflow-hidden">
-      <FlagWatermark src={watermarkSrc} />
-
       <PlatformTopBar facts={facts} />
 
       <div className="relative grid gap-3 p-3 md:grid-cols-5">
         <HeroMapStage realm={realm} nations={nations} className="md:col-span-3" />
 
-        <div className="bg-surface-secondary rounded-row shadow-card relative flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2">
+        <FacetMaterial
+          layer="lens"
+          className="rounded-row flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2"
+        >
           <div className="flex items-start justify-between gap-2">
             <RealmHeroIdentity realm={realm} />
             {realm && (
@@ -418,8 +507,8 @@ export function FrontPageHero({
             <p className="text-footnote text-label-secondary line-clamp-2">{realm.description}</p>
           )}
 
-          <div className="bg-surface rounded-row border-separator flex min-h-0 flex-1 flex-col overflow-hidden border">
-            <div className="divide-separator bg-surface-secondary grid grid-cols-3 divide-x p-2">
+          <div className="rounded-row border-separator flex min-h-0 flex-1 flex-col overflow-hidden border">
+            <div className="divide-separator grid grid-cols-3 divide-x p-2">
               {realmHeadline.map(({ href, icon: Icon, tone, label, value }) => (
                 <Link key={label} href={href} className={SNAPSHOT_CELL}>
                   <Icon aria-hidden className={cn(tone, "size-4 shrink-0", ICON_TINT)} />
@@ -448,7 +537,7 @@ export function FrontPageHero({
                     <Link
                       key={nation.id}
                       href={`/countries/${encodeURIComponent(nation.slug ?? nation.id)}`}
-                      className="bg-surface-secondary hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group flex items-center gap-2 p-2 text-left transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2"
+                      className="bg-fill-4 hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group duration-fast flex items-center gap-2 p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                       title={`${nation.name} (${nation.economicTier})`}
                     >
                       {nation.flagUrl ? (
@@ -492,14 +581,14 @@ export function FrontPageHero({
               )}
             </div>
 
-            <dl className="border-separator divide-separator bg-surface-secondary grid grid-cols-2 divide-x border-t py-2">
+            <dl className="border-separator divide-separator grid grid-cols-2 divide-x border-t py-2">
               <div className="flex min-w-0 items-center justify-center gap-1.5 px-2">
                 <MapIcon aria-hidden className="text-blue size-3.5 shrink-0" />
                 <dt className="text-label-secondary text-footnote">Atlas</dt>
                 <dd className="text-label text-caption truncate font-medium">
                   <Link
                     href={realm ? `/maps?realm=${encodeURIComponent(realm.slug)}` : "/maps"}
-                    className="hover:underline"
+                    className={cn("relative hover:underline", hitSlop)}
                   >
                     Interactive map
                   </Link>
@@ -513,7 +602,7 @@ export function FrontPageHero({
                     href={
                       realm ? `/countries?realm=${encodeURIComponent(realm.slug)}` : "/countries"
                     }
-                    className="hover:underline"
+                    className={cn("relative hover:underline", hitSlop)}
                   >
                     {realm ? `All ${realm.nationCount.toLocaleString()} nations` : "All nations"}
                   </Link>
@@ -521,7 +610,7 @@ export function FrontPageHero({
               </div>
             </dl>
           </div>
-        </div>
+        </FacetMaterial>
       </div>
     </Card>
   );

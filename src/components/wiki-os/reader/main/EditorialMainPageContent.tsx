@@ -52,8 +52,6 @@ export function EditorialMainPageContent({
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
               href="/util/categories/Countries"
-              data-cuelume-press="press"
-              data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
             >
               <span>All topics</span>
@@ -73,8 +71,6 @@ export function EditorialMainPageContent({
                   <Link
                     key={cat.name}
                     href={`/util/categories/${encodeURIComponent(cat.name)}`}
-                    data-cuelume-press="page"
-                    data-cuelume-hover="tick"
                     className={cn(
                       "rounded-row flex items-start gap-2 p-2 sm:p-3",
                       "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"

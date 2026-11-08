@@ -18,7 +18,6 @@ import { cn } from "~/lib/utils";
 import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
 import { escapeRegExp } from "~/lib/utils/escape-regexp";
 import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
-import { soundEffects } from "~/lib/sound/cuelume";
 import type { MessagesSettings } from "./MessagesFolderNav";
 
 interface MessageAccount {
@@ -129,7 +128,6 @@ function ActionButton({
       className={className}
       title={label}
       onClick={() => {
-        soundEffects.press();
         onClick();
       }}
       aria-label={label}
@@ -212,7 +210,6 @@ function HoverActions({ message, isOwn, actions, onReply, onEdit }: HoverActions
                 aria-label={`React with ${emoji}`}
                 className="text-body flex size-7 items-center justify-center rounded-full motion-safe:hover:scale-125"
                 onClick={() => {
-                  soundEffects.success();
                   actions.onAddReaction(message.id, emoji);
                   setShowReactions(false);
                 }}

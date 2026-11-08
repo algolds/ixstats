@@ -155,7 +155,7 @@ stateDiagram-v2
 | **Drafting** | Spatial Consistency & Safety | localStorage draft persistence with live preview |
 | **Publishing** | Feedback & Predictability | Sub-300ms transition with instant save feedback |
 | **Review** | Fluid Continuity & Translucency | Slide-over inspector (`backdrop-filter: blur(24px)`) that never hides the article |
-| **Resolution** | Forgiveness & Tactile Commits | 0.9s progressive hold-to-resolve with interruptible release fallback and `soundEffects.success()` |
+| **Resolution** | Forgiveness & Tactile Commits | 0.9s progressive hold-to-resolve with interruptible release fallback and `soundCues.success()` |
 
 ---
 

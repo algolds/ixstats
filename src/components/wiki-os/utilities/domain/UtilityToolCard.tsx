@@ -25,8 +25,6 @@ export function UtilityToolCard({ tool }: { tool: UtilityTool }) {
       href={tool.href}
       target={tool.isExternal ? "_blank" : undefined}
       rel={tool.isExternal ? "noreferrer" : undefined}
-      data-cuelume-press="press"
-      data-cuelume-hover="tick"
       className="group border-separator bg-surface hover:border-tint/40 hover:bg-surface rounded-row hover:shadow-floating relative flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
     >
       <div>

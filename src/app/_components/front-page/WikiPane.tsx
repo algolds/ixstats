@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookStack, NavArrowRight, OpenBook, Search, Shuffle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import { HelpIcon } from "~/components/ui/help-icon";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
@@ -25,7 +24,8 @@ const SPOTLIGHT_OPTIONS = [
 const articlePath = (title: string) => `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
 function readAuthorName(
-  field: { username: string; timestamp?: string; avatar?: string | null } | string | null | undefined
+  field:
+    { username: string; timestamp?: string; avatar?: string | null } | string | null | undefined
 ): string | null {
   if (!field) return null;
   if (typeof field === "string") return field;
@@ -168,18 +168,14 @@ export function WikiPane() {
           )}
 
           {activeSpotlight && (
-            <Card variant="well" padding="sm">
+            <div className="border-separator rounded-row border p-3">
               <Link
                 href={`/wiki/${activeSpotlight.slug}`}
                 className="focus-visible:outline-tint rounded-control-sm group block focus-visible:outline-2"
               >
                 {activeSpotlight.image && (
                   <span className="border-separator bg-surface-primary rounded-control-sm mb-2.5 block overflow-hidden border">
-                    <img
-                      src={activeSpotlight.image}
-                      alt=""
-                      className="h-32 w-full object-cover"
-                    />
+                    <img src={activeSpotlight.image} alt="" className="h-32 w-full object-cover" />
                   </span>
                 )}
                 {!hasBothSpotlights && (
@@ -203,7 +199,7 @@ export function WikiPane() {
                   </span>
                 </span>
               </Link>
-            </Card>
+            </div>
           )}
 
           {edits.length > 0 && (

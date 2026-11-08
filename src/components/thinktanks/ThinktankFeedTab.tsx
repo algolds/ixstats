@@ -33,7 +33,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { Card } from "~/components/ui/card";
 import { assetUrl } from "~/lib/base-path";
@@ -132,7 +131,6 @@ function FeedComposer({
 
   const createPostMutation = api.thinkpages.createGroupPost.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       notify.success("Note published to group feed");
       setPostContent("");
       setMediaUrlInput("");
@@ -140,7 +138,6 @@ function FeedComposer({
       void utils.thinkpages.getGroupFeed.invalidate({ groupId });
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to post note");
     },
   });
@@ -155,7 +152,6 @@ function FeedComposer({
       return;
     }
 
-    soundEffects.press();
     createPostMutation.mutate({
       groupId,
       accountId: allowPersonaPosting && activeAccountId ? activeAccountId : undefined,
@@ -241,7 +237,6 @@ function FeedComposer({
               variant="ghost"
               size="sm"
               onClick={() => {
-                soundEffects.press();
                 setShowMediaInput((prev) => !prev);
               }}
               className={cn(
@@ -391,7 +386,6 @@ function JoinOverlay({
 
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       notify.success("Joined group");
       void utils.thinkpages.getThinktankById.invalidate({ groupId });
       void utils.thinkpages.getThinktanks.invalidate();
@@ -399,7 +393,6 @@ function JoinOverlay({
       onJoin?.();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to join group");
     },
   });
@@ -430,7 +423,6 @@ function JoinOverlay({
               notify.error("Please sign in to join groups.");
               return;
             }
-            soundEffects.press();
             joinMutation.mutate({ groupId });
           }}
           className="mt-5 w-full max-w-xs"
@@ -469,12 +461,10 @@ export function ThinktankFeedTab({
 
   const removePostMutation = api.thinkpages.removeGroupPost.useMutation({
     onSuccess: () => {
-      soundEffects.release();
       notify.success("Post removed from the feed.");
       void utils.thinkpages.getGroupFeed.invalidate({ groupId });
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to remove post");
     },
   });

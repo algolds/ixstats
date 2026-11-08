@@ -42,7 +42,7 @@ function DialogPortal({ ...props }: React.ComponentProps<typeof DialogPrimitive.
 }
 
 function DialogClose({ ...props }: React.ComponentProps<typeof DialogPrimitive.Close>) {
-  return <DialogPrimitive.Close data-cuelume-press="droplet" data-slot="dialog-close" {...props} />;
+  return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
 function DialogOverlay({
@@ -77,10 +77,13 @@ function DialogContent({
 }: DialogContentProps) {
   const animated = presentation === "animated";
 
-  // Present cue. Keyboard-invoked, instant presentations (the command palette) stay silent.
+  // Present on open, dismiss on close however it closes (button, Escape, outside). Keyboard-invoked,
+  // instant presentations (the command palette) stay silent.
   React.useEffect(() => {
-    // Optional calls: many tests mock ~/lib/sound/cuelume with only `soundEffects`.
-    if (animated) soundCues?.present?.();
+    if (!animated) return;
+    // Optional calls: some tests mock ~/lib/sound/cuelume with a partial `soundCues`.
+    soundCues?.present?.();
+    return () => soundCues?.dismiss?.();
   }, [animated]);
 
   return (
@@ -104,11 +107,7 @@ function DialogContent({
       >
         <SurfaceReset>{children}</SurfaceReset>
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-cuelume-press="droplet"
-            data-slot="dialog-close"
-            className={dismissButtonClassName}
-          >
+          <DialogPrimitive.Close data-slot="dialog-close" className={dismissButtonClassName}>
             <XIcon />
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>

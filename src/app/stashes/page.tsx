@@ -19,7 +19,6 @@ import {
   ChatBubble as MessageSquare,
 } from "iconoir-react";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { StashWelcomeModal } from "~/components/wiki-os/shared/StashWelcomeModal";
 import { Button } from "~/components/ui/button";
@@ -67,7 +66,6 @@ export default function StashesPage() {
   const createMutation = api.wikios.createStash.useMutation({
     onSuccess: (data) => {
       utils.wikios.getStashes.invalidate();
-      soundEffects.press();
       setError(null);
       setSelectedStashId(data.id);
       notify.success(`Created collection "${data.name}"`);
@@ -235,7 +233,6 @@ export default function StashesPage() {
   // Export current collection to Markdown
   const handleExportMarkdown = () => {
     if (!activeStash) return;
-    soundEffects.press();
     const lines = [
       `# ${activeStash.name} (Stash Export)`,
       `Exported from WikiOS Stash on ${new Date().toLocaleDateString()}`,
@@ -273,7 +270,6 @@ export default function StashesPage() {
   // Export current collection to JSON
   const handleExportJson = () => {
     if (!activeStash) return;
-    soundEffects.press();
     const data = {
       name: activeStash.name,
       color: activeStash.color,
@@ -463,7 +459,6 @@ export default function StashesPage() {
                           className="self-start sm:self-auto"
                           value={stashTab}
                           onValueChange={(next) => {
-                            soundEffects.press();
                             setStashTab(next);
                           }}
                           options={tabs.map((tab) => ({

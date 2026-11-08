@@ -7,7 +7,6 @@ import { ShieldAlert, OpenNewWindow as ExternalLink, Download } from "iconoir-re
 import { api } from "~/trpc/react";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { NationStatesLogo } from "~/components/cards/display/NationStatesLogo";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
@@ -51,13 +50,13 @@ export function NationStatesCardsPanel() {
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault" data-cuelume-press="soft">
+              <Link href="/vault">
                 <span>Open Vault</span>
                 <ExternalLink className="h-3 w-3 opacity-60" />
               </Link>
             </Button>
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault/import" data-cuelume-press="soft">
+              <Link href="/vault/import">
                 <NationStatesLogo size="xs" className="h-3 w-auto" />
                 <span>Import cards</span>
               </Link>
@@ -94,10 +93,7 @@ export function NationStatesCardsPanel() {
         >
           {newest && (
             <Button asChild variant="secondary" size="sm">
-              <Link
-                href={cardSheetHref(CARD_HUB_PATHS.mine, newest.cardId)}
-                data-cuelume-press="soft"
-              >
+              <Link href={cardSheetHref(CARD_HUB_PATHS.mine, newest.cardId)}>
                 Open {newest.title}
               </Link>
             </Button>
@@ -119,10 +115,8 @@ export function NationStatesCardsPanel() {
           <Button
             type="button"
             onClick={() => {
-              soundEffects.press();
               setShowTakedownModal(true);
             }}
-            data-cuelume-press="soft"
             variant="secondary"
             size="sm"
             className="hover:text-destructive"

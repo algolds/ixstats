@@ -55,7 +55,6 @@ export function FacetMobileCard<T extends Record<string, any>>({
     // The opaque content card; pressable (keyboard, focus ring) when onClick.
     <Card
       data-slot="facet-mobile-card"
-      data-cuelume-press
       onClick={onClick ? () => onClick(row) : undefined}
       className={cn("flex flex-col gap-3 p-4", className)}
       interactive

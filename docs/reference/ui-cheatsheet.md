@@ -15,7 +15,7 @@
 3. **Icons Standard**: Use `iconoir-react` exclusively. `lucide-react` is blocked.
 4. **Polymorphic Triggers (`asChild`)**: Always pass `asChild` to Radix triggers (`<DialogTrigger asChild>`, `<DropdownMenuTrigger asChild>`) when wrapping buttons or custom elements to avoid nested `<button>` errors.
 5. **Press feedback**: Controls change colour on press. Only pressable cards and tiles scale (`facet-press`, or `<Card interactive>`). Keep motion under 250ms.
-6. **Sound (Cuelume)**: Play only the `soundCues` moments (present, dismiss, success, error, destructive, arrival, reveal, notify). No hover ticks or per-control `data-cuelume-*` attributes.
+6. **Sound (Cuelume)**: Play only the `soundCues` moments (present, dismiss, success, warning, error, destructive, arrival, reveal, notify, attention). No hover, press or toggle sounds, no `data-cuelume-*` attributes, and no cue beside a `notify.*` toast (the toast plays its own).
 7. **Sticky clearance**: Sticky rails use `top-(--shell-top-offset)` so they clear the Halo band.
 
 ---
@@ -193,7 +193,7 @@ export function NotificationTrigger() {
   const notify = useNotify();
 
   const handleAction = () => {
-    // Automatically plays soundEffects.success() and pushes to Halo pill
+    // Plays the success cue (subtle) and pushes to the Halo pill; add no cue of your own
     notify.success("Directives Updated", "Civil capacity rebalanced across 4 sectors.");
   };
 

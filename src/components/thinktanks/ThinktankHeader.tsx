@@ -16,7 +16,6 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { assetUrl } from "~/lib/base-path";
@@ -64,7 +63,6 @@ const TABS: Array<{
 ];
 
 const withPress = (action: () => void) => () => {
-  soundEffects.press();
   action();
 };
 
@@ -73,7 +71,6 @@ function ShareButton({ groupId }: { groupId: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLink = () => {
-    soundEffects.press();
     void navigator.clipboard.writeText(`${window.location.origin}/thinktanks/${groupId}`);
     setCopied(true);
     notify.success("Group link copied to clipboard");
@@ -220,7 +217,6 @@ export function ThinktankHeader({
             aria-label="Group sections"
             value={activeTab}
             onValueChange={(id) => {
-              soundEffects.press();
               onTabChange(id as ThinktankTab);
             }}
             options={TABS.map(({ id, label, icon: Icon }) => ({

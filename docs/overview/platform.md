@@ -43,7 +43,7 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 | | Repository | v2 | Commons Media Explorer |
 | | Halo | v6 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v4 | Refraction / Depth Design System |
+| **Design** | Facet | v5 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling

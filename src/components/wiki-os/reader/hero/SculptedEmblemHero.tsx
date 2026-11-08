@@ -147,8 +147,6 @@ export function SculptedEmblemHero({
         {/* Action 1: Award-Winning Lore */}
         <Link
           href="/wiki/category:featured_articles"
-          data-cuelume-press="press"
-          data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "facet-chrome border-separator border",
@@ -166,8 +164,6 @@ export function SculptedEmblemHero({
         {/* Action 2: Getting Started */}
         <Link
           href="/wiki/IxWiki:Getting_Started"
-          data-cuelume-press="press"
-          data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "facet-chrome border-separator border",
@@ -185,8 +181,6 @@ export function SculptedEmblemHero({
         {/* Action 3: Resources */}
         <Link
           href="/util/repository"
-          data-cuelume-press="press"
-          data-cuelume-hover="tick"
           className={cn(
             "text-caption flex cursor-pointer items-center gap-2 rounded-full px-3 py-1",
             "facet-chrome border-separator border",
@@ -267,8 +261,6 @@ export function SculptedEmblemHero({
               >
                 <Link
                   href={`/wiki/${CANON_CHRONICLE_EVENTS[chronicleIndex].slug}`}
-                  data-cuelume-press="page"
-                  data-cuelume-hover="tick"
                   className="group/event rounded-control-sm focus-visible:outline-tint facet-press-subtle block outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   <div className="flex items-center gap-2">
@@ -293,8 +285,6 @@ export function SculptedEmblemHero({
           <button
             type="button"
             onClick={onOpenBlurbs}
-            data-cuelume-press="droplet"
-            data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
               "bg-surface border-separator shadow-card facet-lift border",
@@ -343,8 +333,6 @@ export function SculptedEmblemHero({
           <button
             type="button"
             onClick={onOpenBlurbs}
-            data-cuelume-press="droplet"
-            data-cuelume-hover="tick"
             className={cn(
               "rounded-card relative flex min-h-[82px] flex-col justify-between overflow-hidden p-3 sm:min-h-[86px] sm:p-4",
               "bg-surface border-separator shadow-card facet-lift border",
@@ -425,8 +413,6 @@ export function SculptedEmblemHero({
               <div className="text-label-secondary text-footnote flex items-center gap-2">
                 <Link
                   href="/wiki/IxWiki:Featured_articles"
-                  data-cuelume-press="page"
-                  data-cuelume-hover="tick"
                   className="hover:text-label text-caption flex items-center gap-1 transition-colors"
                 >
                   <History aria-hidden="true" className="h-3 w-3" />
@@ -435,8 +421,6 @@ export function SculptedEmblemHero({
                 <span className="text-label-secondary select-none">·</span>
                 <Link
                   href="/wiki/IxWiki:Featured_article_candidates"
-                  data-cuelume-press="page"
-                  data-cuelume-hover="tick"
                   className="text-caption hover:text-yellow-ink focus-visible:text-yellow-ink flex items-center gap-1 transition-colors"
                 >
                   <Lightbulb aria-hidden="true" className="h-3 w-3" />
@@ -459,8 +443,6 @@ export function SculptedEmblemHero({
                   <div>
                     <Link
                       href={`/wiki/${featuredArticleData.slug}`}
-                      data-cuelume-press="page"
-                      data-cuelume-hover="tick"
                       className="group/title rounded-control-sm focus-visible:ring-tint block focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <h3 className="text-label text-title-3 group-hover/title:text-yellow-ink group-focus-visible/title:text-yellow-ink sm:text-title-2 lg:text-title-1 transition-colors">
@@ -474,8 +456,6 @@ export function SculptedEmblemHero({
                   <div className="mt-3 flex items-center gap-3 sm:mt-4">
                     <Link
                       href={`/wiki/${featuredArticleData.slug}`}
-                      data-cuelume-press="droplet"
-                      data-cuelume-hover="tick"
                       className="text-label group/cta text-caption hover:text-yellow-ink focus-visible:text-yellow-ink inline-flex items-center gap-2 font-semibold transition-colors"
                     >
                       <span>Read full article</span>

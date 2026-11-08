@@ -8,7 +8,6 @@ import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useNotify } from "~/hooks/useNotify";
 import { useDebounce } from "~/hooks/useDebounce";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { usePathname } from "next/navigation";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
@@ -225,7 +224,6 @@ export function useDynamicIslandState() {
           case "toggle-sound": {
             const next = !soundSettings.enabled;
             soundSettings.setEnabled(next);
-            if (next) soundEffects.toggle();
             return;
           }
           case "toggle-compact": {

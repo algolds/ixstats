@@ -31,6 +31,7 @@ import { IxTimeProvider } from "~/context/IxTimeContext";
 import { WikiContextProvider } from "~/components/wiki-os/shared/WikiContext";
 import { LazyGameProviders } from "~/components/providers/LazyGameProviders";
 import { CuelumeSoundProvider } from "~/components/providers/CuelumeSoundProvider";
+import { LensFilter } from "~/components/ui/facet/shared/LensFilter";
 import { FacetMotionConfig } from "~/components/providers/FacetMotionConfig";
 import { AppearanceInitScript } from "~/components/providers/AppearanceInitScript";
 
@@ -86,6 +87,7 @@ function AppContent({
                       <GlobalLinkTooltips />
                       <NavigationTransitionHandler />
                       <CuelumeSoundProvider />
+                      <LensFilter />
                       <AppShell beforeMain={!isStandalone && <SetupRedirect />}>
                         {/* Media providers + MiniPlayer live in the (wiki-os) layout (narrator only). */}
                         {children}

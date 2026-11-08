@@ -165,3 +165,44 @@
     --color-control-thumb: color-mix(in srgb, var(--fill-ink) 26%, transparent);
   }
 }
+
+/* One layer of the Ixnay monogram: a tile from public/images/ix-monogram-*.svg painted lightly in
+   its app's tint, so set data-app on the element. Stack the layers (they share one lattice). The
+   component sets --monogram to the tile's url() (base-path aware). Off under Reduce Transparency
+   and Increase Contrast. */
+@utility facet-monogram {
+  background-color: color-mix(in srgb, var(--tint) 11%, transparent);
+  mask-image: var(--monogram);
+  mask-size: 280px 140px;
+  mask-repeat: repeat;
+  @variant transparency-reduced {
+    background-color: transparent;
+  }
+  @variant contrast-more {
+    background-color: transparent;
+  }
+}
+
+/* 5 · Lens: refractive glass over a decorative backdrop (FacetMaterial layer="lens"). It bends what
+   lies under its edges, splits the colours there and leaves its middle clear, with a light rim along
+   the top. The refraction is the one shared SVG filter #facet-lens, rendered once in the root layout
+   (components/ui/facet/shared/LensFilter.tsx); Chromium applies it, other engines show a plain frosted
+   pane. Keep it out of any ancestor with opacity, a filter or a mask, or its backdrop ends there.
+   Solid under Reduce Transparency and Increase Contrast. */
+@utility facet-lens {
+  background-color: color-mix(in srgb, var(--color-surface) 40%, transparent);
+  backdrop-filter: url(#facet-lens);
+  border: 1px solid var(--glass-hairline);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / calc(0.55 * var(--shadow-strength, 1))),
+    inset 0 -1px 0 0 rgb(0 0 0 / calc(0.04 * var(--shadow-strength, 1))),
+    0 8px 24px -12px rgb(0 0 0 / calc(0.18 * var(--shadow-strength, 1)));
+  @variant transparency-reduced {
+    background-color: var(--color-surface);
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface);
+    backdrop-filter: none;
+  }
+}

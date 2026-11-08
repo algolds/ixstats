@@ -1,8 +1,8 @@
 # Facet design system
 
-The canonical UI reference for Facet 4 (2026-10-04). Design rationale: [`docs/specs/2026-10-04-facet-4-design.md`](../specs/2026-10-04-facet-4-design.md).
+The canonical UI reference for Facet 5 (2026-11-08; Facet 4, 2026-10-04, plus the Lens layer). Design rationale: [`docs/specs/2026-10-04-facet-4-design.md`](../specs/2026-10-04-facet-4-design.md).
 
-Sources of truth: `src/styles/facet/tokens.css` (raw values), `layers.css` (the five layers and the content-type scopes), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `shell.css` (navigation variables), `src/styles/card-art.css` (content art, imported globally) and `src/styles/textures.css`, `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
+Sources of truth: `src/styles/facet/tokens.css` (raw values), `layers.css` (the six layers and the content-type scopes), `interaction.css` (press, lift, primary and gold paints, preference kill switches), `shell.css` (navigation variables), `src/styles/card-art.css` (content art, imported globally) and `src/styles/textures.css`, `src/lib/design/{appearance,motion,tokens}.ts`, `src/components/ui/**`, `src/components/shell/**`.
 
 Reuse a primitive before writing one. If a primitive is missing, add it to `src/components/ui/`.
 
@@ -91,7 +91,7 @@ Semantic colours (destructive, warning, success, info) always win over tint wher
 
 ## 3. Layers
 
-Every surface is one of five layers. All glass, blur, hairline and elevation live in `src/styles/facet/layers.css`, as Tailwind utilities.
+Every surface is one of six layers. All glass, blur, refraction, hairline and elevation live in `src/styles/facet/layers.css`, as Tailwind utilities.
 
 | # | Name | Utility | Paint | Shadow | Radius | z |
 |---|---|---|---|---|---|---|
@@ -100,6 +100,7 @@ Every surface is one of five layers. All glass, blur, hairline and elevation liv
 | 2 | Well | `facet-well` | solid `bg-surface-secondary` with a little tint mixed in | none | `rounded-row` | none |
 | 3 | Chrome | `facet-chrome` | glass with `backdrop-filter` | `shadow-floating` | per component | `z-chrome` |
 | 4 | Overlay | `facet-overlay` | thickest glass with `backdrop-filter`, over a scrim | `shadow-sheet` | `rounded-sheet` | `z-sheet` / `z-popover` |
+| 5 | Lens | `facet-lens` | liquid glass: a light frost, a top rim, and a refraction filter that bends and colour-splits the backdrop at its edges | a soft drop | per component | none |
 
 Components that provide each layer:
 
@@ -107,6 +108,7 @@ Components that provide each layer:
 - Pane: `Card`. Well: a `Card` nested inside a `Card`, or `variant="well"`.
 - Chrome: `FacetMaterial layer="chrome"` (sidebar, tab bar, toolbars, map controls, Halo).
 - Overlay: `Dialog`, `AlertDialog`, `Sheet`, `Popover`, `HoverCard`, `Select`, `Tooltip`, toasts, and `FacetMaterial layer="overlay"`.
+- Lens: `FacetMaterial layer="lens"`, `Card variant="lens"`, or any top-level `Card` inside `LensSurface` (nested Cards stay wells; `SurfaceReset` makes overlays panes again). Every lens points at one shared filter, `#facet-lens` (`LensFilter`, rendered once in the root layout), whose units are the lens's own box. The physics are fixed: the edge band, the strength and the dispersion (red bends least, blue most) are one material everywhere. The front page is the reference: the hero, the featured realm, the feed and the Wiki pane.
 
 Rules:
 
@@ -115,6 +117,9 @@ Rules:
 - Layer utilities paint only. They never set position, z-index, radius, margin or letter-spacing; the component owns those.
 - Reduce Transparency makes Pane, Chrome and Overlay opaque. Increase Contrast strengthens hairlines and labels. Both themes are supported.
 - Do not write `backdrop-blur-*`, glass fills or elevation outside `layers.css`.
+- A Lens is a choice for a surface, made by the owner: the brand hero over a decorative backdrop (a monogram such as `facet-monogram`, art, a map), and the front page's content panes (owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass. Elsewhere content stays on a Pane until the owner extends it.
+- A Lens samples what is painted beneath it inside its nearest ancestor with opacity, a filter or a mask. Keep it outside those: to fade it with its content, give the Lens the same animation as a sibling rather than nesting it.
+- The refraction needs Chromium (`url()` filters on backdrops). Elsewhere a Lens is a plain frosted pane, so the design must hold without the bend. Reduce Transparency and Increase Contrast make it solid.
 
 ## 4. Content types
 
@@ -265,7 +270,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
   - `facet-press` (scale 0.98; `facet-press-sm` 0.95; `facet-press-subtle` 0.99) and `facet-lift` are only for pressable cards and tiles. `Card interactive` applies both.
   - Never `transition-all`, never a `scale(0)` entrance.
   - Arbitrary transition lists name `scale` and `translate` (the properties Tailwind v4 writes), never `transform`.
-- Sounds (Cuelume): play only the `soundCues` moments (present, dismiss, success, error, destructive, arrival, reveal, notify). No hover ticks and no per-control `data-cuelume-*` attributes in new code.
+- Sounds (Cuelume 0.2.8): play only the `soundCues` moments (present, dismiss, success, warning, error, destructive, arrival, reveal, notify, attention), each with an optional emphasis (`subtle` for toasts and small confirmations). No hover, press, toggle, tab or select sounds, and no `data-cuelume-*` attributes. A toast already plays its cue, so never add a cue next to `notify.*`. Dialog, Sheet and AlertDialog play present on open and dismiss on close themselves.
 - Preferences are written to `<html>` and must all keep working. Use the Tailwind variants, not raw media queries:
   - Reduce Motion: `motion-reduce:` (honours `data-motion="reduced"`). Springs fall back to `REDUCED_MOTION_FADE`.
   - Reduce Transparency: `transparency-reduced:`. Glass tokens become opaque.
@@ -273,6 +278,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
   - Text size: `--text-scale`, 0.9 to 1.3. Use the text styles so it applies.
   - Density: `compact:` variant. Control heights are `--control-height-sm|md|lg`; use them, not fixed heights.
   - Sound off: `data-sound="off"`.
+- Scroll-linked depth for a top-of-page hero, in CSS (`interaction.css`), off under Reduce Motion: `scroll-recede` fades, shrinks and slows the hero's content over the first 320px of scroll; `scroll-parallax` makes its backdrop trail the page by 96px over the same range. Pointer parallax on such a backdrop uses `springSmooth` on mouse pointers only, and is off under Reduce Motion.
 - Targets are at least 44px on coarse pointers (`hitSlop`). Focus is a 2px tint outline (`focusRing`).
 
 ## 9. Copy
@@ -316,7 +322,7 @@ Four Facet files, one job each:
 | File | Holds |
 |---|---|
 | `src/styles/facet/tokens.css` | Raw values only: colour roles, tints, type, radius, spacing, motion, z |
-| `src/styles/facet/layers.css` | The five layers and the content-type scopes. The only file allowed `backdrop-filter`, glass fill, hairline or elevation. Transparency and contrast fallbacks |
+| `src/styles/facet/layers.css` | The six layers and the content-type scopes. The only file allowed `backdrop-filter`, glass fill, refraction, hairline or elevation. Transparency and contrast fallbacks |
 | `src/styles/facet/interaction.css` | Press, lift, primary and gold paints, focus, preference kill switches |
 | `src/styles/facet/shell.css` | Navigation variables |
 
@@ -330,7 +336,7 @@ Beside them: `src/styles/card-art.css` holds content art (card faces, holographi
 
 The tests under `src/tests/architecture/` enforce parts of this file. Run the relevant one when you change tokens, layers or a primitive.
 
-- `facet-guards.test.ts` (with the anti-slop gates): the five layer utilities exist; only Chrome and Overlay blur; `layers.css` is the only Facet sheet that blurs or paints glass; exactly four Facet sheets; no `material-*` class or `material=` prop; the content-type scopes.
+- `facet-guards.test.ts` (with the anti-slop gates): the six layer utilities exist; only Chrome and Overlay blur; the Lens refracts only through its component's `--lens-filter` and goes solid under Reduce Transparency and Increase Contrast; `layers.css` is the only Facet sheet that blurs or paints glass; exactly four Facet sheets; no `material-*` class or `material=` prop; the content-type scopes.
 - `facet-ratchet.test.ts`: counts of eyebrows, uppercase stat labels, em dashes, `Sparks`, emoji, `hover:scale`, hex classes, raw palette classes and `animate-ping` may only fall. Lower the baseline with `UPDATE_FACET_RATCHET=1 bun run test -- facet-ratchet` after removing tells.
 - `token-contrast.test.ts`: CSS tokens match `src/lib/design/tokens.ts`; AA contrast for label, tint and ink pairs, and for labels on the Pane over the tinted canvas and on Chrome, in both themes; Reduce Transparency and Increase Contrast make every layer opaque.
 - `css-layering.test.ts`: every Facet sheet is layered (no top-level rules, no `!important`), and utilities set no position, z-index, radius, margin or letter-spacing.

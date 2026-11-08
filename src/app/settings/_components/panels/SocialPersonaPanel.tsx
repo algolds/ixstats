@@ -86,20 +86,13 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
                     type="button"
                     onClick={handleSave}
                     disabled={updateAccountMutation.isPending}
-                    data-cuelume-press="soft"
                     variant="default"
                     size="sm"
                   >
                     <Save className="h-3.5 w-3.5" />
                     <span>{updateAccountMutation.isPending ? "Saving..." : "Save changes"}</span>
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={handleCancel}
-                    data-cuelume-press="soft"
-                    variant="secondary"
-                    size="sm"
-                  >
+                  <Button type="button" onClick={handleCancel} variant="secondary" size="sm">
                     <X className="h-3.5 w-3.5" />
                     <span>Cancel</span>
                   </Button>
@@ -108,7 +101,6 @@ export function SocialPersonaPanel({ userId: _userId }: SocialPersonaPanelProps)
                 <Button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  data-cuelume-press="soft"
                   variant="secondary"
                   size="sm"
                 >

@@ -33,7 +33,7 @@ import {
   getColors,
   relativeTime,
 } from "./tray/types";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { tweenFast } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -280,7 +280,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             variant="ghost"
             size="icon-sm"
             onClick={() => {
-              soundEffects.droplet();
+              soundCues.dismiss();
               onClose();
             }}
             className="text-label-secondary hover:text-label"

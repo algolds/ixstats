@@ -23,7 +23,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 
 const QUALITY_BADGES: Record<string, { label: string; class: string }> = {
@@ -71,19 +70,16 @@ export function CosmeticsUpgradesPanel() {
 
   const toggleEquipMutation = api.vault.toggleEquipCosmetic.useMutation({
     onSuccess: (res) => {
-      soundEffects.toggle();
       notify.success(res.isEquipped ? "Cosmetic equipped" : "Cosmetic unequipped");
       void utils.vault.getEquippedCosmetics.invalidate();
       void utils.vault.getPurchasedItems.invalidate();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to equip cosmetic");
     },
   });
 
   const handleRefreshAll = () => {
-    soundEffects.press();
     void utils.vault.invalidate();
     notify.success("Inventory updated");
   };
@@ -112,7 +108,7 @@ export function CosmeticsUpgradesPanel() {
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault" data-cuelume-press="soft">
+              <Link href="/vault">
                 <ShoppingCart className="h-3.5 w-3.5" />
                 <span>Vault store</span>
                 <ExternalLink className="h-3 w-3 opacity-60" />
@@ -121,7 +117,6 @@ export function CosmeticsUpgradesPanel() {
             <Button
               type="button"
               onClick={handleRefreshAll}
-              data-cuelume-press="soft"
               title="Sync with server"
               variant="secondary"
               size="icon-sm"
@@ -149,7 +144,7 @@ export function CosmeticsUpgradesPanel() {
               Buy profile effects, card borders and chat badges in the Vault store.
             </p>
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault" data-cuelume-press="soft">
+              <Link href="/vault">
                 <ShoppingCart className="h-3.5 w-3.5" />
                 <span>Browse the Vault store</span>
               </Link>
@@ -185,7 +180,6 @@ export function CosmeticsUpgradesPanel() {
                     type="button"
                     disabled={isToggling}
                     onClick={() => toggleEquipMutation.mutate({ itemId: item.id })}
-                    data-cuelume-press="soft"
                     variant={isEquipped ? "default" : "secondary"}
                     size="sm"
                   >
@@ -216,7 +210,7 @@ export function CosmeticsUpgradesPanel() {
               Buy card capacity and yield upgrades in the Vault store.
             </p>
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault" data-cuelume-press="soft">
+              <Link href="/vault">
                 <ShoppingCart className="h-3.5 w-3.5" />
                 <span>Browse the Vault store</span>
               </Link>

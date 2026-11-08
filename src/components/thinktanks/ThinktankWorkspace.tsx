@@ -6,7 +6,6 @@ import { Group } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -42,33 +41,28 @@ function useThinktankMembership(
 
   const joinMutation = api.thinkpages.joinThinktank.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       notify.success("Joined group");
       refresh();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to join group");
     },
   });
 
   const leaveMutation = api.thinkpages.leaveThinktank.useMutation({
     onSuccess: (result) => {
-      soundEffects.release();
       notify.success(
         result.disbanded ? "Left group. It had no other members and was disbanded." : "Left group."
       );
       refresh();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to leave group");
     },
   });
 
   const join = () => {
     if (!groupId || !currentUserId) return;
-    soundEffects.press();
     joinMutation.mutate({ groupId });
   };
 
@@ -79,7 +73,6 @@ function useThinktankMembership(
         ? "You are the last member. Leaving will disband this group. Continue?"
         : "Are you sure you want to leave this group?";
     if (confirm(prompt)) {
-      soundEffects.press();
       leaveMutation.mutate({ groupId });
     }
   };
@@ -187,7 +180,6 @@ export function ThinktankWorkspace({ initialGroupId: propGroupId }: ThinktankWor
   );
 
   const openGroup = (id: string) => {
-    soundEffects.press();
     setDirectoryOpen(false);
     router.push(`/thinktanks/${id}`);
   };

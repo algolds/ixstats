@@ -15,7 +15,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Switch } from "~/components/ui/switch";
-import { soundCues } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 
 interface LeagueControlDeckProps {
@@ -70,7 +69,6 @@ export function LeagueControlDeck({
 
   const setFeaturedMutation = api.sports.setFeaturedLeague.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success(
         isFeatured ? "League removed from lobby showcase" : "League pinned to lobby showcase"
       );
@@ -84,7 +82,6 @@ export function LeagueControlDeck({
   // Purge cache live mutation
   const clearCacheMutation = api.sports.clearSportsCache.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Sports cache purged");
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getStandings.invalidate();
@@ -98,7 +95,6 @@ export function LeagueControlDeck({
   // Regenerate schedule live mutation
   const regenerateScheduleMutation = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Schedule regenerated and shuffled");
       if (activeSeason) {
         void utils.sports.getSchedule.invalidate({ seasonId: activeSeason.id });

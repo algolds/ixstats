@@ -16,7 +16,6 @@ import { Label } from "~/components/ui/label";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { ACCOUNT_DELETION_GRACE_DAYS, confirmationMatches } from "~/lib/account/deletion";
 import { confirmationName, deletionNotice } from "~/lib/account/deletion-copy";
 import { SettingsRow } from "../primitives";
@@ -39,12 +38,10 @@ export function DeleteAccountRow({ glyphClass }: { glyphClass: string }) {
 
   const cancel = api.users.cancelAccountDeletion.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
       notify.success("Your account will not be deleted");
       refresh();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Could not cancel the deletion. Try again.");
     },
   });
@@ -60,7 +57,6 @@ export function DeleteAccountRow({ glyphClass }: { glyphClass: string }) {
         <Button
           type="button"
           onClick={() => {
-            soundEffects.press();
             cancel.mutate();
           }}
           disabled={cancel.isPending}
@@ -85,7 +81,6 @@ export function DeleteAccountRow({ glyphClass }: { glyphClass: string }) {
         <Button
           type="button"
           onClick={() => {
-            soundEffects.press();
             setOpen(true);
           }}
           variant="secondary"
@@ -136,7 +131,6 @@ function DeleteAccountDialog({
       onRequested();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Could not request the deletion. Try again.");
     },
   });

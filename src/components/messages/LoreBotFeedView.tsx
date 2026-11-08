@@ -22,7 +22,6 @@ import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { springSmooth } from "~/lib/design/motion";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 // oxlint-disable-next-line eslint/no-unused-vars
 import { WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
@@ -180,7 +179,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             aria-label="Lore feed filter"
             value={activeFilter}
             onValueChange={(value) => {
-              soundEffects.toggle();
               setActiveFilter(value);
             }}
             options={filterTabs.map((tab) => {

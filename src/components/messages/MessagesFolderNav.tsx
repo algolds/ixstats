@@ -14,7 +14,7 @@ import {
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 export interface MessagesSettings {
   notificationSounds: boolean;
@@ -71,12 +71,10 @@ export function MessagesFolderNav({
     const nextValue = !settings[key];
     if (key === "notificationSounds") {
       if (nextValue) {
-        soundEffects.chime();
+        soundCues.notify();
       } else {
-        soundEffects.toggle();
       }
     } else {
-      soundEffects.toggle();
     }
     onSettingsChange?.({ ...settings, [key]: nextValue });
   };
@@ -149,7 +147,7 @@ export function MessagesFolderNav({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      soundEffects.chime();
+                      soundCues.notify();
                     }}
                     title="Test notification sound"
                   >

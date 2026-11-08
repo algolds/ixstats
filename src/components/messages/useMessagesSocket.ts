@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { buildMessage, ownAccount } from "./useConversationMessages";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { MessageFolder } from "~/types/messages";
@@ -112,7 +112,7 @@ export function useMessagesSocket(options: Options) {
         settings.notificationSounds &&
         !mutedIds.includes(data.conversationId)
       ) {
-        soundEffects.chime();
+        soundCues.notify();
       }
       if (archivedIds.includes(data.conversationId)) options.onUnarchive(data.conversationId);
 

@@ -14,7 +14,6 @@ import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext";
 import { useLocalPref } from "~/components/halo/views/settings/SettingsControls";
@@ -41,12 +40,10 @@ export function WikiOSOptionsPanel() {
 
   const updateWikiPrefsMutation = api.users.updateWikiPreferences.useMutation({
     onSuccess: () => {
-      soundEffects.bloom();
       notify.success("Wiki preferences updated");
       void utils.users.getPreferences.invalidate();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to update preferences");
     },
   });
@@ -61,7 +58,7 @@ export function WikiOSOptionsPanel() {
         description="Reader navigation, citation previews, media styles and background lore scanning."
         actions={
           <Button asChild variant="secondary" size="sm">
-            <Link href="/wiki" data-cuelume-press="soft">
+            <Link href="/wiki">
               <WikiOSLogomark className="h-3.5 w-auto" />
               <span>Open WikiOS</span>
               <ExternalLink aria-hidden />
@@ -83,7 +80,6 @@ export function WikiOSOptionsPanel() {
           glyphClass="bg-purple-500/15 text-purple-500"
           checked={showCiteTooltips}
           onCheckedChange={(checked) => {
-            soundEffects.toggle();
             setShowCiteTooltips(checked);
           }}
         />
@@ -96,7 +92,6 @@ export function WikiOSOptionsPanel() {
           glyphClass="bg-cyan-500/15 text-cyan-500"
           checked={showWikiToc}
           onCheckedChange={(checked) => {
-            soundEffects.toggle();
             setShowWikiToc(checked);
           }}
         />
@@ -109,7 +104,6 @@ export function WikiOSOptionsPanel() {
           glyphClass="bg-blue-500/15 text-blue-500"
           checked={dynamicSearchWiki}
           onCheckedChange={(checked) => {
-            soundEffects.toggle();
             setDynamicSearchWiki(checked);
           }}
         />
@@ -122,7 +116,6 @@ export function WikiOSOptionsPanel() {
           glyphClass="bg-emerald-500/15 text-emerald-500"
           checked={openInNewTab}
           onCheckedChange={(checked) => {
-            soundEffects.toggle();
             setOpenInNewTab(checked);
           }}
         />
@@ -154,7 +147,6 @@ export function WikiOSOptionsPanel() {
             <Switch
               checked={mediaThemeMode === "plinth"}
               onCheckedChange={(checked) => {
-                soundEffects.toggle();
                 setMediaThemeMode(checked ? "plinth" : "auto");
               }}
             />
@@ -175,7 +167,6 @@ export function WikiOSOptionsPanel() {
           glyphClass="bg-indigo-500/15 text-indigo-500"
           checked={wikiAutoScan}
           onCheckedChange={(checked) => {
-            soundEffects.press();
             updateWikiPrefsMutation.mutate({ wikiAutoScan: checked });
           }}
           disabled={updateWikiPrefsMutation.isPending}
