@@ -24,7 +24,14 @@ jest.mock("~/trpc/react", () => {
             data: {
               id: "x1",
               name: "Caphiria",
-              treasury: { balance: 5000, cap: 25000 },
+              treasury: {
+                balance: 5000,
+                cap: 25000,
+                lifetimeStipend: 0,
+                lifetimeTaxEarned: 0,
+                lifetimeTariffEarned: 0,
+                lifetimeInterestEarned: 0,
+              },
               bonds: [],
               rating: "AA",
             },
@@ -32,6 +39,10 @@ jest.mock("~/trpc/react", () => {
           }),
         },
         issueBond: { useMutation: () => ({ mutate: mockIssue, isPending: false, error: null }) },
+        fundSummary: { useQuery: () => ({ data: undefined, isLoading: false }) },
+        depositToFund: idle,
+        withdrawFromFund: idle,
+        setLendingTerms: idle,
         cancelBuyOrder: idle,
         cancelShareListing: idle,
         cancelBondListing: idle,
@@ -71,6 +82,7 @@ describe("TreasuryPage", () => {
     mockOverview = {
       realmId: "default",
       nations: [{ id: "x1", name: "Caphiria", realmId: "default" }],
+      realmNations: [],
     };
     render(<TreasuryPage realmId="default" />);
     fireEvent.change(screen.getByLabelText("Units"), { target: { value: "100" } });
@@ -84,7 +96,7 @@ describe("TreasuryPage", () => {
   });
 
   it("tells a non-owner the Treasury is for a nation's owner", () => {
-    mockOverview = { realmId: "default", nations: [] };
+    mockOverview = { realmId: "default", nations: [], realmNations: [] };
     render(<TreasuryPage realmId="default" />);
     expect(screen.getByText("The Treasury is for a nation's owner.")).toBeInTheDocument();
   });

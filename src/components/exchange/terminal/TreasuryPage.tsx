@@ -13,6 +13,9 @@ import { bondHref, nationHref } from "~/lib/exchange/routes";
 import { useRequestId } from "../shared";
 import { Figure, Pill, SectionTitle, formatSovereignFigure } from "./brand";
 import { SignInPrompt } from "./SignInPrompt";
+import { TreasuryFund } from "./TreasuryFund";
+import { TreasuryLending } from "./TreasuryLending";
+import { EXCHANGE_PATHS } from "~/lib/exchange/routes";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 const FACE = 100;
@@ -106,11 +109,12 @@ function IssueBondForm({ countryId }: { countryId: string }) {
   );
 }
 
-/** The nation owner's desk: the treasury and its bonds (R1; the wealth fund and lending follow). */
+/** The nation owner's desk: the treasury, its wealth fund, its bonds and its lending terms. */
 export function TreasuryPage({ realmId }: { realmId: string }) {
   const { isSignedIn } = useAuth();
   const overview = api.exchange.getOverview.useQuery({ realmId }, { enabled: !!isSignedIn });
   const nation = overview.data?.nations.find((n) => n.realmId === realmId) ?? null;
+  const terms = overview.data?.realmNations.find((n) => n.id === nation?.id);
   const page = api.exchange.nationPage.useQuery(
     { countryId: nation?.id ?? "" },
     { enabled: !!nation }
@@ -133,7 +137,19 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
         <p className="text-footnote text-label-secondary">
           Cap {sov(page.data?.treasury.cap ?? 0)} · rating {page.data?.rating ?? "·"}
         </p>
+        {page.data && (
+          <p className="text-footnote text-label-secondary">
+            Earned so far: stipend {sov(page.data.treasury.lifetimeStipend)}, tax{" "}
+            {sov(page.data.treasury.lifetimeTaxEarned)}, tariffs{" "}
+            {sov(page.data.treasury.lifetimeTariffEarned)}, interest{" "}
+            {sov(page.data.treasury.lifetimeInterestEarned)}.{" "}
+            <Link href={EXCHANGE_PATHS.tenders} className="text-tint">
+              Post a tender
+            </Link>
+          </p>
+        )}
       </Card>
+      <TreasuryFund countryId={nation.id} />
       <IssueBondForm countryId={nation.id} />
       <Card content="data" padding="md" className="space-y-2">
         <SectionTitle>Your bonds</SectionTitle>
@@ -160,6 +176,13 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
           </ul>
         )}
       </Card>
+      {terms && (
+        <TreasuryLending
+          countryId={nation.id}
+          spread={terms.lendingSpread}
+          cap={terms.companyCreditCap}
+        />
+      )}
     </div>
   );
 }

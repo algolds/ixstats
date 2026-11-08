@@ -19,6 +19,7 @@ import { IndexChart } from "./IndexChart";
 import { NewsList } from "./NewsList";
 import { TradeButton } from "./TradeSheet";
 import { WatchStar } from "./WatchStar";
+import { useTreasuryActor } from "./useTreasuryActor";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 const ratio = (n: number | null, digits = 2) => (n === null ? "·" : n.toFixed(digits));
@@ -108,6 +109,7 @@ function Governance({ data }: { data: CompanyPageData }) {
 
 function Header({ data }: { data: CompanyPageData }) {
   const c = data.company;
+  const treasury = useTreasuryActor(c.realmId);
   const wiki = readCompanyWikiData(c.wikiData);
   const book = data.orderBook;
   return (
@@ -140,6 +142,7 @@ function Header({ data }: { data: CompanyPageData }) {
           <WatchStar subjectKind="COMPANY" subjectId={c.id} watching={data.viewer.watching} />
           {c.tradingOpen && (
             <TradeButton
+              treasury={treasury}
               instrument={{
                 kind: "share",
                 companyId: c.id,

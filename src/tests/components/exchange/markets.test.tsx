@@ -23,6 +23,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({ exchange: { invalidate: jest.fn() } }),
     exchange: {
+      getOverview: { useQuery: () => ({ data: undefined }) },
       markets: {
         useQuery: (input: unknown) => {
           mockMarkets(input);

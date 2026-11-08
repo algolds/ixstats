@@ -17,6 +17,7 @@ import {
 import type { MarketRow } from "~/lib/exchange/terminal";
 import { ChangeLabel, Figure, formatSovereignFigure } from "./brand";
 import { TradeButton } from "./TradeSheet";
+import { useTreasuryActor } from "./useTreasuryActor";
 
 const KIND_LABELS: Record<MarketKind, string> = {
   companies: "Companies",
@@ -50,7 +51,15 @@ function RowDetail({ row }: { row: MarketRow }) {
   return <span className="text-footnote text-label-secondary">Unit price</span>;
 }
 
-function MarketRowItem({ row, realmId }: { row: MarketRow; realmId: string }) {
+function MarketRowItem({
+  row,
+  realmId,
+  treasury,
+}: {
+  row: MarketRow;
+  realmId: string;
+  treasury?: { countryId: string; name: string };
+}) {
   const href = hrefOf(row);
   const name = (
     <span className="min-w-0">
@@ -78,6 +87,7 @@ function MarketRowItem({ row, realmId }: { row: MarketRow; realmId: string }) {
       </div>
       {row.kind === "funds" && (
         <TradeButton
+          treasury={treasury}
           instrument={{
             kind: "fund",
             sectorKey: row.sectorKey,
@@ -99,6 +109,7 @@ export function MarketsPage({ realmId }: { realmId: string }) {
   const kind = marketKindOf(params.get("kind"));
   const query = params.get("q") ?? "";
   const markets = api.exchange.markets.useQuery({ realmId, kind, query: query || undefined });
+  const treasury = useTreasuryActor(realmId);
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params.toString());
     if (value) next.set(key, value);
@@ -131,7 +142,12 @@ export function MarketsPage({ realmId }: { realmId: string }) {
       ) : (
         <ul className="divide-separator divide-y">
           {(markets.data ?? []).map((row) => (
-            <MarketRowItem key={`${row.kind}:${row.id}`} row={row} realmId={realmId} />
+            <MarketRowItem
+              key={`${row.kind}:${row.id}`}
+              row={row}
+              realmId={realmId}
+              treasury={treasury}
+            />
           ))}
         </ul>
       )}

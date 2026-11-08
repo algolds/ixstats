@@ -20,6 +20,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({ exchange: { invalidate: jest.fn() } }),
     exchange: {
+      getOverview: { useQuery: () => ({ data: undefined }) },
       companyPage: { useQuery: () => ({ data: mockPage, isLoading: false, error: null }) },
       toggleWatch: { useMutation: () => ({ mutate: jest.fn() }) },
       castVote: { useMutation: () => ({ mutate: jest.fn() }) },
