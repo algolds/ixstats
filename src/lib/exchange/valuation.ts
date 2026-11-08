@@ -64,16 +64,21 @@ const CREDIT_LIMIT_SHARE = 0.5;
 const CONTRACT_CREDIT_SHARE = 0.25;
 
 /** The Central Bank credit line a company's productive plant and contract record support. */
-export function creditLimitFor(c: { decisionValue: number; contractsWonValue: number }): number {
+/** The line a company's record supports, held to its home treasury's cap (lending terms; ₷250,000 by default). */
+export function creditLimitFor(
+  c: { decisionValue: number; contractsWonValue: number },
+  cap: number = CREDIT_LIMIT_CAP
+): number {
   const basis = c.decisionValue + CONTRACT_CREDIT_SHARE * c.contractsWonValue;
-  return Math.min(CREDIT_LIMIT_CAP, CREDIT_LIMIT_SHARE * basis);
+  return Math.min(CREDIT_LIMIT_CAP, cap, CREDIT_LIMIT_SHARE * basis);
 }
 
 /**
- * The rate a company borrows at: the HQ nation's rate plus the rating spread. A D-rated borrower
- * already owes money it cannot repay, so it pays the CCC rate rather than a rate with no spread.
+ * The rate a company borrows at: the HQ nation's rate plus the rating spread, plus the nation's extra spread (lending
+ * terms). A D-rated borrower already owes money it cannot repay, so it pays the CCC rate rather than no spread.
  */
-export function borrowRateOf(hqRate: number | null, rating: string): number {
+export function borrowRateOf(hqRate: number | null, rating: string, spread = 0): number {
   const r = CREDIT_RATINGS.find((x) => x === rating) ?? "D";
-  return borrowRateFor(hqRate, r) ?? borrowRateFor(hqRate, "CCC") ?? 0;
+  const base = borrowRateFor(hqRate, r) ?? borrowRateFor(hqRate, "CCC") ?? 0;
+  return Math.max(0, base + spread);
 }

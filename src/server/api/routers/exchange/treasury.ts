@@ -23,6 +23,7 @@ import { macroOfCountry } from "~/lib/exchange/tariffs";
 import { stipendFor, treasurySummary } from "~/lib/exchange/treasury";
 import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
 import { guard } from "./_errors";
+import { lendingTermsOf } from "~/lib/exchange/lending";
 
 const id = z.string().min(1);
 const requestId = z.string().min(8).max(64);
@@ -124,14 +125,13 @@ export const exchangeTreasuryRouter = createTRPCRouter({
         const validMacros = sampleMacros.filter((m): m is NonNullable<typeof m> => m !== null);
         const realmAvgCorpTaxRate =
           validMacros.length > 0
-            ? round2(
-                validMacros.reduce((s, m) => s + m.corporateTaxRate, 0) / validMacros.length
-              )
+            ? round2(validMacros.reduce((s, m) => s + m.corporateTaxRate, 0) / validMacros.length)
             : (macro?.corporateTaxRate ?? 0.2);
 
+        const terms = await lendingTermsOf(ctx.db, input.countryId);
         const enriched = companies.map((c) => ({
           ...c,
-          creditLimit: round2(creditLimitFor(c)),
+          creditLimit: round2(creditLimitFor(c, terms.cap)),
         }));
 
         return {
@@ -213,8 +213,7 @@ export const exchangeTreasuryRouter = createTRPCRouter({
           where: { id: input.realmId },
           select: { ownerId: true },
         });
-        const permitted =
-          isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
+        const permitted = isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
         return createFaucetTender(ctx.db, {
           userId: ctx.user.id,
           permitted,
@@ -236,9 +235,6 @@ export const exchangeTreasuryRouter = createTRPCRouter({
   repayCredit: rateLimitedMutationProcedure
     .input(z.object({ companyId: id, amount: creditAmount, requestId }))
     .mutation(({ ctx, input }) =>
-      guard("repay the credit line", () =>
-        repayCredit(ctx.db, { userId: ctx.user.id, ...input })
-      )
+      guard("repay the credit line", () => repayCredit(ctx.db, { userId: ctx.user.id, ...input }))
     ),
 });
-

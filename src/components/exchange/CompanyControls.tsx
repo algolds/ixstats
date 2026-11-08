@@ -164,10 +164,13 @@ function SharesControls({ company, onDone }: { company: Company; onDone: () => v
 function CreditLineControls({
   company,
   hqInterestRate,
+  lending,
   onDone,
 }: {
   company: Company;
   hqInterestRate: number | null;
+  /** The home treasury's lending terms (extra spread and per-company cap). */
+  lending?: { spread: number; cap: number };
   onDone: () => void;
 }) {
   const notify = useNotify();
@@ -175,9 +178,9 @@ function CreditLineControls({
   const [borrowId, rotateBorrow] = useRequestId();
   const [repayId, rotateRepay] = useRequestId();
   const amount = parseDecimalAmount(rawCredit);
-  const limit = creditLimitFor(company);
+  const limit = creditLimitFor(company, lending?.cap);
   const available = Math.max(0, Math.round((limit - company.creditDrawn) * 100) / 100);
-  const rate = borrowRateOf(hqInterestRate, company.creditRating);
+  const rate = borrowRateOf(hqInterestRate, company.creditRating, lending?.spread);
 
   const borrow = api.exchange.borrowCredit.useMutation({
     onSuccess: (r) => {
@@ -481,7 +484,12 @@ function DecisionControls({
             />
           </div>
         )}
-        <Button size="sm" variant="secondary" disabled={submit.isPending || !ready} onClick={handleQueue}>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={submit.isPending || !ready}
+          onClick={handleQueue}
+        >
           {kind === "EXPAND"
             ? "Invest"
             : kind === "ENTER_SECTOR"
@@ -518,11 +526,13 @@ function DecisionControls({
 export function CompanyControls({
   company,
   hqInterestRate = null,
+  lending,
   acquireTargets = [],
   onDone,
 }: {
   company: Company;
   hqInterestRate?: number | null;
+  lending?: { spread: number; cap: number };
   acquireTargets?: ReadonlyArray<{ id: string; name: string }>;
   onDone: () => void;
 }) {
@@ -543,7 +553,12 @@ export function CompanyControls({
         </Button>
       </div>
       <SharesControls company={company} onDone={onDone} />
-      <CreditLineControls company={company} hqInterestRate={hqInterestRate} onDone={onDone} />
+      <CreditLineControls
+        company={company}
+        hqInterestRate={hqInterestRate}
+        lending={lending}
+        onDone={onDone}
+      />
       <DecisionControls company={company} acquireTargets={acquireTargets} onDone={onDone} />
     </div>
   );

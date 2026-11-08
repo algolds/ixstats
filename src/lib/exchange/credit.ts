@@ -10,6 +10,7 @@ import { formatSovereigns } from "./amounts";
 import { refreshFairValue } from "./companies";
 import { distressDecision } from "./distress";
 import { assertExchangeOpen, type Db } from "./guards";
+import { lendingTermsOf } from "./lending";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import { macroOfCountry } from "./tariffs";
 import { CREDIT_RATINGS, creditRatingFor, type CreditRating } from "./taxonomy";
@@ -116,6 +117,9 @@ export async function borrowCredit(
           "The Central Bank lends only to a company with a home nation"
         );
       }
+      // Credit is open to the owner's own companies: the terms are the same for every domestic company (owner ruling
+      // 2026-11-07), so there is no favour to give.
+      const terms = await lendingTermsOf(tx, hq);
       const moved = await debitTreasuryTx(tx, {
         countryId: hq,
         amount,
@@ -123,13 +127,13 @@ export async function borrowCredit(
         source: `CREDIT_LINE:${company.id}`,
         key,
       });
-      const limit = creditLimitFor(company);
+      const limit = creditLimitFor(company, terms.cap);
       if (moved === 0) {
         return {
           alreadyApplied: true,
           creditDrawn: company.creditDrawn,
           creditLimit: limit,
-          rate: borrowRateOf(macro.interestRate, company.creditRating),
+          rate: borrowRateOf(macro.interestRate, company.creditRating, terms.spread),
         };
       }
       const rating = liveRatingOf(company);
@@ -158,7 +162,7 @@ export async function borrowCredit(
         alreadyApplied: false,
         creditDrawn: company.creditDrawn + amount,
         creditLimit: limit,
-        rate: borrowRateOf(macro.interestRate, rating),
+        rate: borrowRateOf(macro.interestRate, rating, terms.spread),
       };
     });
   } catch (error) {

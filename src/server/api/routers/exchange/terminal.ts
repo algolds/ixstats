@@ -38,6 +38,12 @@ import {
   getStory,
 } from "~/lib/exchange/terminal";
 import { listOpenRealms } from "~/lib/exchange/queries";
+import {
+  COMPANY_CREDIT_CAP_MAX,
+  LENDING_SPREAD_MAX,
+  LENDING_SPREAD_MIN,
+  setLendingTerms,
+} from "~/lib/exchange/lending";
 import { guard } from "./_errors";
 
 const id = z.string().min(1).max(64);
@@ -133,6 +139,20 @@ export const exchangeTerminalRouter = createTRPCRouter({
         await ctx.db.exchangeWatch.createMany({ data: [where], skipDuplicates: true });
         return { watching: true };
       })
+    ),
+
+  setLendingTerms: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        countryId: id,
+        spread: z.number().min(LENDING_SPREAD_MIN).max(LENDING_SPREAD_MAX),
+        cap: z.number().min(0).max(COMPANY_CREDIT_CAP_MAX),
+      })
+    )
+    .mutation(({ ctx, input }) =>
+      guard("set the lending terms", () =>
+        setLendingTerms(ctx.db, { userId: ctx.user.id, ...input })
+      )
     ),
 
   issueBond: rateLimitedMutationProcedure

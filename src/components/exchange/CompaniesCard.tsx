@@ -48,7 +48,13 @@ const LOBBY_LABELS: Record<string, string> = {
   tax_relief: "Tax relief",
 };
 
-function WikiLoreBanner({ wikiData, wikiSlug }: { wikiData: CompanyWikiData | null; wikiSlug?: string | null }) {
+function WikiLoreBanner({
+  wikiData,
+  wikiSlug,
+}: {
+  wikiData: CompanyWikiData | null;
+  wikiSlug?: string | null;
+}) {
   const slug = wikiData?.wikiSlug ?? wikiSlug ?? null;
   if (!slug && !wikiData) return null;
   return (
@@ -59,7 +65,7 @@ function WikiLoreBanner({ wikiData, wikiSlug }: { wikiData: CompanyWikiData | nu
             <img
               src={wikiData.logoUrl}
               alt={`${wikiData.pageTitle} logo`}
-              className="border-separator bg-surface-1 size-7 rounded object-contain p-0.5 border"
+              className="border-separator bg-surface-1 size-7 rounded border object-contain p-0.5"
             />
           )}
           <div>
@@ -78,7 +84,9 @@ function WikiLoreBanner({ wikiData, wikiSlug }: { wikiData: CompanyWikiData | nu
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
-          {wikiData?.foundedText && <Badge variant="outline">Founded: {wikiData.foundedText}</Badge>}
+          {wikiData?.foundedText && (
+            <Badge variant="outline">Founded: {wikiData.foundedText}</Badge>
+          )}
           {wikiData?.keyPeople && <Badge variant="outline">Leadership: {wikiData.keyPeople}</Badge>}
           {wikiData?.products && <Badge variant="outline">Products: {wikiData.products}</Badge>}
         </div>
@@ -356,7 +364,7 @@ function CompanyRow({
             <img
               src={wikiData.logoUrl}
               alt={`${company.name} logo`}
-              className="border-separator bg-surface-1 size-8 shrink-0 rounded object-contain p-0.5 border"
+              className="border-separator bg-surface-1 size-8 shrink-0 rounded border object-contain p-0.5"
             />
           )}
           <div className="min-w-0">
@@ -542,6 +550,11 @@ function CompanyRow({
         <CompanyControls
           company={company}
           hqInterestRate={hqInterestRate}
+          lending={
+            hqNation
+              ? { spread: hqNation.lendingSpread, cap: hqNation.companyCreditCap }
+              : undefined
+          }
           acquireTargets={acquireTargets}
           onDone={onDone}
         />
