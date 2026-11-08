@@ -62,7 +62,7 @@ same wallet.
 ## Wealth fund and lending (terminal R2)
 
 - **The fund account:** `ensureFundUser` makes one system user per nation (`treasury-fund-<countryId>`, Clerk id
-  `system:<countryId>`) with its own wallet, remembered as `NationTreasury.fundUserId`. It trades through the ordinary
+  `system:treasury-fund-<countryId>`) with its own wallet, remembered as `NationTreasury.fundUserId`. It trades through the ordinary
   engine with request ids prefixed `fund:`, so every fill, fee and tax applies.
 - **Moving money:** `depositToFund` debits the treasury (`SPEND`) and credits the fund wallet (`TREASURY_PAYMENT`);
   `withdrawFromFund` reverses it (`FUND_RETURN`). A deposit that would put more than half of treasury plus fund into
