@@ -130,6 +130,26 @@ async function erasePrivateRows(tx: Tx, ids: ErasureIds): Promise<void> {
   await eraseGenerationHistory(tx, ids);
 }
 
+/**
+ * Preferences, watches, mutes, alert thresholds, editor sessions, lore team memberships, poll votes and forum
+ * reactions are deleted; proposals and requests keep their review rows with free-text fields cleared.
+ */
+async function eraseMiscRows(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { userId: both(ids) };
+  await tx.mapEditorSession.deleteMany({ where });
+  await tx.pollVote.deleteMany({ where });
+  await tx.forumPostReaction.deleteMany({ where });
+  await tx.intelligenceAlertThreshold.deleteMany({ where });
+  await tx.cardWatchlist.deleteMany({ where });
+  await tx.cardNotificationMute.deleteMany({ where });
+  await tx.exchangeWatch.deleteMany({ where });
+  await tx.countryLoreAuthor.deleteMany({ where });
+  await tx.cardCategorySuggestion.updateMany({ where, data: { note: null } });
+  await tx.mapEditRequest.updateMany({ where, data: { proposedData: {} } });
+  await tx.loreCardRequest.deleteMany({ where: { userId: both(ids), status: "PENDING" } });
+  await tx.loreCardRequest.updateMany({ where, data: { adminNotes: null } });
+}
+
 async function eraseLogs(tx: Tx, ids: ErasureIds): Promise<void> {
   await tx.systemLog.deleteMany({ where: { userId: both(ids) } });
   await tx.auditLog.deleteMany({ where: { userId: both(ids) } });
@@ -149,6 +169,7 @@ export async function eraseRecords(
     personas.map((p) => p.id)
   );
   await erasePrivateRows(tx, ids);
+  await eraseMiscRows(tx, ids);
   await eraseLogs(tx, ids);
 }
 
