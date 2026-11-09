@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { api } from "~/trpc/server";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 const allCountryNames = async (): Promise<string[]> => {
@@ -12,13 +13,8 @@ const allCountryNames = async (): Promise<string[]> => {
 const invalidAction = (usage: string) =>
   NextResponse.json({ success: false, error: `Invalid action. Use ${usage}` }, { status: 400 });
 
-const failureResponse = (method: string, error: unknown) => {
-  console.error(`[FlagCache API] ${method} error:`, error);
-  return NextResponse.json(
-    { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-    { status: 500 }
-  );
-};
+const failureResponse = (method: string, error: unknown) =>
+  internalErrorResponse(`FlagCache API ${method}`, error);
 
 /** Resolver counters in the shapes the admin panel reads. */
 function resolverSnapshot() {
