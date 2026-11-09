@@ -107,8 +107,17 @@ async function requireIssuer(tx: Db, contractId: string, userId: string) {
     throw new ExchangeError("FORBIDDEN", "Only the issuer can do that");
   }
   if (contract.type === "B2G") return contract;
-  if (!contract.issuerCompanyId || (await founderOf(tx, contract.issuerCompanyId)) !== userId) {
+  const issuer = contract.issuerCompanyId
+    ? await tx.company.findUnique({
+        where: { id: contract.issuerCompanyId },
+        select: { founderId: true, status: true },
+      })
+    : null;
+  if (!issuer || issuer.founderId !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuing company can do that");
+  }
+  if (issuer.status !== "ACTIVE" && issuer.status !== "DISTRESSED") {
+    throw new ExchangeError("CONFLICT", "This company is closed");
   }
   return contract;
 }

@@ -45,29 +45,23 @@ async function refundTreasury(tx: Db, contract: Funded, amount: number, step: st
   });
 }
 
-async function refundCompany(tx: Db, contract: Funded, amount: number, step: string) {
+async function refundCompany(tx: Db, contract: Funded, amount: number, _step: string) {
   if (!contract.issuerCompanyId) return;
   const company = await tx.company.findUnique({
     where: { id: contract.issuerCompanyId },
-    select: { status: true, founderId: true },
+    select: { status: true },
   });
   if (!company) return;
-  if (company.status === "ACTIVE" || company.status === "DISTRESSED") {
-    await tx.company.update({
-      where: { id: contract.issuerCompanyId },
-      data: { capital: { increment: amount } },
-    });
-    await refreshFairValue(tx, contract.issuerCompanyId);
-    return;
+  if (company.status !== "ACTIVE" && company.status !== "DISTRESSED") {
+    console.warn(
+      `[exchange] refundCompany credited non-trading company ${contract.issuerCompanyId} (${company.status}) for contract ${contract.id}`
+    );
   }
-  await earnSovereignsTx(tx, {
-    userId: contract.issuerUserId ?? company.founderId,
-    amount,
-    type: "CONTRACT_REFUND",
-    source: `CONTRACT:${contract.id}`,
-    metadata: { contractId: contract.id, companyId: contract.issuerCompanyId, step },
-    idempotencyKey: `exchange:contract-refund:${contract.id}:${step}`,
+  await tx.company.update({
+    where: { id: contract.issuerCompanyId },
+    data: { capital: { increment: amount } },
   });
+  await refreshFairValue(tx, contract.issuerCompanyId);
 }
 
 /**

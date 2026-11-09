@@ -95,8 +95,8 @@ async function hasLiveContracts(tx: Db, companyId: string): Promise<boolean> {
 }
 
 /**
- * Hand an offer back to the buyer. An operating buyer gets it into capital; a buyer that has stopped
- * trading gets it in the founder's wallet. The caller guarantees the key is used once.
+ * Hand an offer back to the buyer's capital. If the buyer has already stopped trading, warn and
+ * credit capital anyway so the money stays on the company record rather than leaking to the founder.
  */
 export async function returnOfferTx(
   tx: Db,
@@ -106,22 +106,16 @@ export async function returnOfferTx(
     where: { id: input.companyId },
     select: { status: true },
   });
-  if (buyer.status === "ACTIVE" || buyer.status === "DISTRESSED") {
-    await tx.company.update({
-      where: { id: input.companyId },
-      data: { capital: { increment: input.amount } },
-    });
-    await refreshFairValue(tx, input.companyId);
-    return;
+  if (buyer.status !== "ACTIVE" && buyer.status !== "DISTRESSED") {
+    console.warn(
+      `[exchange] returnOfferTx credited non-trading buyer ${input.companyId} (${buyer.status}) for offer ${input.key}`
+    );
   }
-  await earnSovereignsTx(tx, {
-    userId: input.founderId,
-    amount: input.amount,
-    type: "COMPANY_WITHDRAW",
-    source: `ACQUIRE_RETURN:${input.companyId}`,
-    metadata: { companyId: input.companyId },
-    idempotencyKey: input.key,
+  await tx.company.update({
+    where: { id: input.companyId },
+    data: { capital: { increment: input.amount } },
   });
+  await refreshFairValue(tx, input.companyId);
 }
 
 /**

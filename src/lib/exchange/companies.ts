@@ -28,6 +28,7 @@ import { formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
+import { unwindCompanyMoneyTx } from "./unwind";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 import { publishNewsTx } from "./news";
 
@@ -417,6 +418,7 @@ export async function dissolveCompanyTx(
   if (company.creditDrawn > 0) {
     throw new ExchangeError("CONFLICT", "Repay the credit line before dissolving this company");
   }
+  await unwindCompanyMoneyTx(tx, company.id, Date.now());
   const live = await tx.contract.count({
     where: {
       OR: [
@@ -442,8 +444,12 @@ export async function dissolveCompanyTx(
   await returnBuyOrders(tx, company.id);
   await closeCompanyProposalsTx(tx, company.id, Date.now());
 
+  const { capital } = await tx.company.findUniqueOrThrow({
+    where: { id: company.id },
+    select: { capital: true },
+  });
   const { count } = await tx.company.updateMany({
-    where: { id: company.id, status: "ACTIVE", capital: company.capital },
+    where: { id: company.id, status: "ACTIVE", capital },
     data: {
       status: "DELISTED",
       capital: 0,
@@ -455,7 +461,7 @@ export async function dissolveCompanyTx(
   });
   if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
 
-  const split = splitProRata(toCents(company.capital), await holdersOf(tx, company.id));
+  const split = splitProRata(toCents(capital), await holdersOf(tx, company.id));
   const payouts = new Map(split.payouts.map((p) => [p.userId, p.cents]));
   payouts.set(input.userId, (payouts.get(input.userId) ?? 0) + split.remainderCents);
   for (const [userId, cents] of [...payouts].sort(([a], [b]) => (a < b ? -1 : 1))) {
