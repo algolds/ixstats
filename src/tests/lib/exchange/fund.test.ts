@@ -16,6 +16,7 @@ import {
   withdrawFromFund,
 } from "~/lib/exchange/fund";
 import { sendExchangeNotices } from "~/lib/exchange/notify";
+import { listShares, placeBuyOrder } from "~/lib/exchange/shares";
 import { getLeaderboards, getNationPage } from "~/lib/exchange/terminal";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
@@ -196,6 +197,58 @@ describe("what the fund may buy", () => {
         (n) => n.headline === "Caphiria Treasury bought 5 Urcea bonds"
       )
     ).toBe(true);
+  });
+
+  it("cancels its own share bid and returns the escrow, refusing non-owners and others' orders", async () => {
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 100, maxPricePerShare: 2 });
+    expect(fundCash()).toBe(4800);
+    const fundOrderId = fake.tables.shareBuyOrder!.find((o) => o.buyerUserId === FUND)!.id;
+    await expect(
+      fundTrade(fake.client, {
+        userId: "bob",
+        countryId: NA,
+        order: { kind: "shares-cancel-bid", orderId: fundOrderId },
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const { orderId: bobOrderId } = await placeBuyOrder(fake.client, {
+      userId: "bob",
+      companyId: "co1",
+      shares: 10,
+      maxPricePerShare: 2,
+      requestId: rid(),
+    });
+    await expect(trade({ kind: "shares-cancel-bid", orderId: bobOrderId! })).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await trade({ kind: "shares-cancel-bid", orderId: fundOrderId });
+    expect(fundCash()).toBe(5000);
+  });
+
+  it("cancels its own share listing and bond listing", async () => {
+    await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 100,
+      pricePerShare: 2,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 100, maxPricePerShare: 2 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 40, pricePerShare: 3 });
+    const shareListingId = fake.tables.shareListing!.find(
+      (l) => l.sellerUserId === FUND && l.status === "OPEN"
+    )!.id;
+    await trade({ kind: "shares-cancel-listing", listingId: shareListingId });
+    expect(
+      fake.tables.shareholding!.find((s) => s.companyId === "co2" && s.ownerUserId === FUND)?.shares
+    ).toBe(100);
+
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 20 });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 8, pricePerUnit: 102 });
+    expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(12);
+    const bondListingId = fake.tables.bondListing!.find((l) => l.sellerUserId === FUND)!.id;
+    await trade({ kind: "bond-cancel-listing", listingId: bondListingId });
+    expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(20);
   });
 });
 
