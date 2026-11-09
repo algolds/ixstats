@@ -12,6 +12,7 @@ import {
   getBondPage,
   getCompanyPage,
   getFrontPage,
+  getLeaderboards,
   getNationPage,
   getPortfolio,
   realmIndexSeries,
@@ -76,8 +77,8 @@ function setup(withCompany = true) {
             id: "h1",
             companyId: "co",
             fairValue: 1000,
-            recordedIxTime: now - 2 * DAY,
-            recordedAt: new Date(now - 2 * DAY),
+            recordedIxTime: now - 1.5 * DAY,
+            recordedAt: new Date(now - 1.5 * DAY),
           },
         ]
       : [],
@@ -130,6 +131,24 @@ describe("getFrontPage", () => {
     ]);
     expect(page.movers[0]!.changePct).toBeCloseTo(10, 5);
   });
+
+  it("ignores history rows older than 2 days when computing company moves", async () => {
+    setup();
+    const now = Date.now();
+    fake.tables.companyValueHistory = [
+      {
+        id: "h_old",
+        companyId: "co",
+        fairValue: 500,
+        recordedIxTime: now - 3 * DAY,
+        recordedAt: new Date(now - 3 * DAY),
+      },
+    ];
+    const page = await getFrontPage(fake.client, "default", now);
+    expect(page.movers).toEqual([]);
+    const companyPage = await getCompanyPage(fake.client, "co", null, now);
+    expect(companyPage?.changePct).toBeNull();
+  });
 });
 
 describe("getCompanyPage", () => {
@@ -140,6 +159,33 @@ describe("getCompanyPage", () => {
     const json = JSON.stringify(page);
     for (const leak of ["alice", "bob", "founderId", "ownerUserId", "@example.com"])
       expect(json).not.toContain(leak);
+  });
+
+  it("yields the 120 newest history rows in ascending order when a company has 300 rows", async () => {
+    setup();
+    const now = Date.now();
+    const rows = Array.from({ length: 300 }, (_, i) => ({
+      id: `h_${i}`,
+      companyId: "co",
+      fairValue: 1000 + i,
+      recordedIxTime: now - (300 - i) * 60_000,
+      recordedAt: new Date(now - (300 - i) * 60_000),
+    }));
+    const history = {
+      findMany: async (args: { orderBy?: { recordedAt: "asc" | "desc" }; take?: number }) => {
+        const dir = args.orderBy?.recordedAt === "desc" ? -1 : 1;
+        return [...rows]
+          .sort((a, b) => dir * (a.recordedAt.getTime() - b.recordedAt.getTime()))
+          .slice(0, args.take ?? rows.length);
+      },
+    };
+    const db = new Proxy(fake.client, {
+      get: (target, prop) => (prop === "companyValueHistory" ? history : target[prop]),
+    });
+    const page = await getCompanyPage(db, "co", null, now);
+    expect(page?.valueHistory).toHaveLength(120);
+    expect(page?.valueHistory[0]?.value).toBe(1180);
+    expect(page?.valueHistory.at(-1)?.value).toBe(1299);
   });
 });
 
@@ -252,5 +298,167 @@ describe("the realm index history", () => {
     });
     const page = await getFrontPage(db, "default");
     expect(page.index.series.at(-1)).toEqual({ t: 4001, value: 1250 });
+  });
+});
+
+describe("getLeaderboards", () => {
+  it("matches getPortfolio().totalValue per user across shares, bonds and sector units and excludes other realms' holders", async () => {
+    setup();
+    const now = Date.now();
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", email: "carol@example.com" });
+    fake.tables.exchangeWallet = [
+      { id: "w_alice", userId: "alice", sovereigns: 150, lifetimeEarned: 150, lifetimeSpent: 0 },
+      { id: "w_bob", userId: "bob", sovereigns: 300, lifetimeEarned: 300, lifetimeSpent: 0 },
+      { id: "w_carol", userId: "carol", sovereigns: 9000, lifetimeEarned: 9000, lifetimeSpent: 0 },
+    ];
+    fake.tables.country!.push({
+      id: "nb",
+      name: "Otherland",
+      realmId: "other",
+      ownerUserId: "carol",
+      currencyExchangeRate: null,
+    });
+    fake.tables.nationTreasury = [
+      { id: "t_na", countryId: "na", realmId: "default", balance: 500, creditRating: "AA" },
+      { id: "t_nb", countryId: "nb", realmId: "other", balance: 800, creditRating: "A" },
+    ];
+    fake.tables.company!.push({
+      id: "co_other",
+      founderId: "carol",
+      name: "Other Corp",
+      realmId: "other",
+      sectorKey: "services",
+      subIndustryKey: "software_media",
+      hqCountryId: "nb",
+      capital: 2000,
+      fairValue: 2400,
+      standing: 1,
+      contractsWonValue: 0,
+      decisionValue: 0,
+      sharesIssued: 1000,
+      sharesOutstanding: 1000,
+      creditDrawn: 0,
+      creditRating: "A",
+      lastTradePrice: 2.5,
+      lastTickNetIncome: 0,
+      status: "ACTIVE",
+      tradingOpen: true,
+    });
+    fake.tables.shareholding!.push({
+      id: "sh_c",
+      companyId: "co_other",
+      ownerUserId: "carol",
+      shares: 1000,
+      avgCost: 2,
+    });
+    fake.tables.nationBond = [
+      {
+        id: "b_def",
+        countryId: "na",
+        realmId: "default",
+        issuerUserId: "alice",
+        faceValue: 100,
+        unitsIssued: 50,
+        unitsSold: 10,
+        couponRate: 0.06,
+        termWeeks: 8,
+        weeksPaid: 1,
+        status: "OPEN",
+        lastTradePrice: 102.5,
+        issuedAt: new Date(now - 7 * DAY),
+      },
+      {
+        id: "b_other",
+        countryId: "nb",
+        realmId: "other",
+        issuerUserId: "carol",
+        faceValue: 100,
+        unitsIssued: 50,
+        unitsSold: 20,
+        couponRate: 0.08,
+        termWeeks: 10,
+        weeksPaid: 0,
+        status: "OPEN",
+        lastTradePrice: null,
+        issuedAt: new Date(now),
+      },
+    ];
+    fake.tables.bondListing = [
+      {
+        id: "bl_def",
+        bondId: "b_def",
+        sellerUserId: "alice",
+        units: 2,
+        unitsListed: 2,
+        pricePerUnit: 101.25,
+        status: "OPEN",
+      },
+    ];
+    fake.tables.bondHolding = [
+      { id: "bh_b", bondId: "b_def", ownerUserId: "bob", units: 4, avgCost: 100 },
+      { id: "bh_c", bondId: "b_other", ownerUserId: "carol", units: 10, avgCost: 100 },
+    ];
+    fake.tables.sectorIndex = [
+      {
+        id: "si_def",
+        realmId: "default",
+        sectorKey: "industry",
+        label: "Industry",
+        value: 1200,
+        fundSovereigns: 375,
+        unitsOutstanding: 250,
+      },
+      {
+        id: "si_other",
+        realmId: "other",
+        sectorKey: "services",
+        label: "Services",
+        value: 1500,
+        fundSovereigns: 600,
+        unitsOutstanding: 300,
+      },
+    ];
+    fake.tables.sectorPosition = [
+      {
+        id: "sp_a",
+        ownerUserId: "alice",
+        realmId: "default",
+        sectorKey: "industry",
+        units: 40,
+        avgCost: 1,
+      },
+      {
+        id: "sp_b",
+        ownerUserId: "bob",
+        realmId: "default",
+        sectorKey: "industry",
+        units: 60,
+        avgCost: 1,
+      },
+      {
+        id: "sp_c",
+        ownerUserId: "carol",
+        realmId: "other",
+        sectorKey: "services",
+        units: 100,
+        avgCost: 1,
+      },
+    ];
+
+    const [boards, alicePortfolio, bobPortfolio, otherBoards, carolPortfolio] = await Promise.all([
+      getLeaderboards(fake.client, "default", now),
+      getPortfolio(fake.client, "alice", "default", now),
+      getPortfolio(fake.client, "bob", "default", now),
+      getLeaderboards(fake.client, "other", now),
+      getPortfolio(fake.client, "carol", "other", now),
+    ]);
+
+    const expectedDefault = [alicePortfolio.totalValue, bobPortfolio.totalValue].sort(
+      (a, b) => b - a
+    );
+    expect(boards.investors).toEqual(
+      expectedDefault.map((value, i) => ({ label: `Investor #${i + 1}`, value }))
+    );
+    expect(otherBoards.investors).toEqual([{ label: "Investor #1", value: carolPortfolio.totalValue }]);
   });
 });

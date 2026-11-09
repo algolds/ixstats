@@ -136,7 +136,11 @@ async function realmOf(db: Db, realmId: string): Promise<{ id: string; name: str
 
 async function companyMoves(db: Db, companies: readonly Company[], nowMs: number) {
   const history = await db.companyValueHistory.findMany({
-    where: { companyId: { in: companies.map((c) => c.id) } },
+    where: {
+      companyId: { in: companies.map((c) => c.id) },
+      recordedAt: { gte: new Date(nowMs - 2 * DAY_MS) },
+    },
+    orderBy: { recordedAt: "asc" },
     select: { companyId: true, fairValue: true, recordedAt: true },
   });
   return new Map(
@@ -478,6 +482,8 @@ export async function getCompanyPage(
     await Promise.all([
       db.companyValueHistory.findMany({
         where: { companyId },
+        orderBy: { recordedAt: "desc" },
+        take: 120,
         select: { fairValue: true, recordedAt: true },
       }),
       shareholdersOf(db, company),
@@ -535,8 +541,7 @@ export async function getCompanyPage(
     changePct: moves.get(company.id) ?? null,
     metrics: computeCompanyMetrics({ ...company, trailing30dDividends }),
     valueHistory: [...history]
-      .sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())
-      .slice(-120)
+      .reverse()
       .map((h) => ({ t: h.recordedAt.getTime(), value: h.fairValue })),
     hq: hq ? { id: hq.id, name: hq.name } : null,
     shareholders,
@@ -663,48 +668,49 @@ export async function getStory(db: Db, newsId: string): Promise<NewsItem | null>
 // ---------------------------------------------------------------------------------------------------------------
 // Portfolio
 
-async function shareHoldingsOf(db: Db, userId: string, realmId: string) {
-  const rows = await db.shareholding.findMany({
-    where: { ownerUserId: userId, shares: { gt: 0 } },
-  });
-  const companies = await db.company.findMany({
-    where: { id: { in: rows.map((r) => r.companyId) }, realmId },
-  });
-  return companies.map((c) => {
-    const shares = rows.find((r) => r.companyId === c.id)!.shares;
-    return {
-      companyId: c.id,
-      name: c.name,
-      shares,
-      price: companyPrice(c),
-      value: round2(shares * companyPrice(c)),
-    };
-  });
-}
-
-async function bondHoldingsOf(db: Db, userId: string, realmId: string, nowMs: number) {
-  const rows = await db.bondHolding.findMany({ where: { ownerUserId: userId, units: { gt: 0 } } });
-  const bonds = await db.nationBond.findMany({
-    where: { id: { in: rows.map((r) => r.bondId) }, realmId },
-  });
-  const views = await bondViews(db, bonds, nowMs);
-  return views.map((v) => {
-    const units = rows.find((r) => r.bondId === v.bondId)!.units;
-    return {
-      bondId: v.bondId,
-      name: `${v.nation} ${v.termWeeks}-week bond`,
-      units,
-      price: v.price,
-      value: round2(units * v.price),
-    };
+function valueShareHoldings(
+  rows: readonly { companyId: string; shares: number }[],
+  companies: readonly Company[]
+) {
+  return companies.flatMap((c) => {
+    const row = rows.find((r) => r.companyId === c.id);
+    if (!row) return [];
+    const price = companyPrice(c);
+    return [
+      {
+        companyId: c.id,
+        name: c.name,
+        shares: row.shares,
+        price,
+        value: round2(row.shares * price),
+      },
+    ];
   });
 }
 
-async function fundHoldingsOf(db: Db, userId: string, realmId: string) {
-  const [positions, indices] = await Promise.all([
-    db.sectorPosition.findMany({ where: { ownerUserId: userId, realmId, units: { gt: 0 } } }),
-    db.sectorIndex.findMany({ where: { realmId } }),
-  ]);
+function valueBondHoldings(
+  rows: readonly { bondId: string; units: number }[],
+  views: readonly BondView[]
+) {
+  return views.flatMap((v) => {
+    const row = rows.find((r) => r.bondId === v.bondId);
+    if (!row) return [];
+    return [
+      {
+        bondId: v.bondId,
+        name: `${v.nation} ${v.termWeeks}-week bond`,
+        units: row.units,
+        price: v.price,
+        value: round2(row.units * v.price),
+      },
+    ];
+  });
+}
+
+function valueFundHoldings(
+  positions: readonly { sectorKey: string; units: number }[],
+  indices: readonly { sectorKey: string; fundSovereigns: number; unitsOutstanding: number }[]
+) {
   return positions.map((p) => {
     const row = indices.find((i) => i.sectorKey === p.sectorKey);
     const price = row ? unitPrice(row) : 1;
@@ -716,6 +722,39 @@ async function fundHoldingsOf(db: Db, userId: string, realmId: string) {
       value: round2(p.units * price),
     };
   });
+}
+
+function portfolioTotalValue(
+  walletBalance: number,
+  holdings: ReadonlyArray<{ value: number }>
+): number {
+  return round2(walletBalance + holdings.reduce((s, h) => s + h.value, 0));
+}
+
+async function shareHoldingsOf(db: Db, userId: string, realmId: string) {
+  const rows = await db.shareholding.findMany({
+    where: { ownerUserId: userId, shares: { gt: 0 } },
+  });
+  const companies = await db.company.findMany({
+    where: { id: { in: rows.map((r) => r.companyId) }, realmId },
+  });
+  return valueShareHoldings(rows, companies);
+}
+
+async function bondHoldingsOf(db: Db, userId: string, realmId: string, nowMs: number) {
+  const rows = await db.bondHolding.findMany({ where: { ownerUserId: userId, units: { gt: 0 } } });
+  const bonds = await db.nationBond.findMany({
+    where: { id: { in: rows.map((r) => r.bondId) }, realmId },
+  });
+  return valueBondHoldings(rows, await bondViews(db, bonds, nowMs));
+}
+
+async function fundHoldingsOf(db: Db, userId: string, realmId: string) {
+  const [positions, indices] = await Promise.all([
+    db.sectorPosition.findMany({ where: { ownerUserId: userId, realmId, units: { gt: 0 } } }),
+    db.sectorIndex.findMany({ where: { realmId } }),
+  ]);
+  return valueFundHoldings(positions, indices);
 }
 
 async function votesOwedOf(db: Db, userId: string, companyIds: readonly string[]) {
@@ -816,7 +855,6 @@ export async function getPortfolio(
     shares.map((s) => s.companyId)
   );
   const balance = wallet?.sovereigns ?? 0;
-  const held = [...shares, ...bonds, ...funds].reduce((s, h) => s + h.value, 0);
   return {
     wallet: balance,
     shares,
@@ -825,7 +863,7 @@ export async function getPortfolio(
     orders,
     watchlist,
     votesOwed,
-    totalValue: round2(balance + held),
+    totalValue: portfolioTotalValue(balance, [...shares, ...bonds, ...funds]),
   };
 }
 export type Portfolio = Awaited<ReturnType<typeof getPortfolio>>;
@@ -835,26 +873,57 @@ export type Portfolio = Awaited<ReturnType<typeof getPortfolio>>;
 
 // ponytail: computed live over the realm's holders; add a snapshot table when investor count makes this slow.
 export async function getLeaderboards(db: Db, realmId: string, nowMs: number = Date.now()) {
-  const [companies, treasuries, holders] = await Promise.all([
-    db.company.findMany({ where: { realmId, status: { in: LIVE } } }),
+  const [allCompanies, treasuries, bonds, indices, sectorPositions] = await Promise.all([
+    db.company.findMany({ where: { realmId } }),
     db.nationTreasury.findMany({ where: { realmId } }),
-    db.shareholding.findMany({ where: { shares: { gt: 0 } }, select: { ownerUserId: true } }),
+    db.nationBond.findMany({ where: { realmId } }),
+    db.sectorIndex.findMany({ where: { realmId } }),
+    db.sectorPosition.findMany({
+      where: { realmId, units: { gt: 0 } },
+      select: { ownerUserId: true, sectorKey: true, units: true },
+    }),
   ]);
-  const nations = await db.country.findMany({
-    where: { id: { in: treasuries.map((t) => t.countryId) } },
-    select: { id: true, name: true },
-  });
-  const bondHolders = await db.bondHolding.findMany({
-    where: { units: { gt: 0 } },
-    select: { ownerUserId: true },
-  });
+  const [nations, shareHoldings, bondHoldings, pricedBonds] = await Promise.all([
+    db.country.findMany({
+      where: { id: { in: treasuries.map((t) => t.countryId) } },
+      select: { id: true, name: true },
+    }),
+    db.shareholding.findMany({
+      where: { companyId: { in: allCompanies.map((c) => c.id) }, shares: { gt: 0 } },
+      select: { companyId: true, ownerUserId: true, shares: true },
+    }),
+    db.bondHolding.findMany({
+      where: { bondId: { in: bonds.map((b) => b.id) }, units: { gt: 0 } },
+      select: { bondId: true, ownerUserId: true, units: true },
+    }),
+    bondViews(db, bonds, nowMs),
+  ]);
   // Nations' wealth funds are not investors.
-  const userIds = [...new Set([...holders, ...bondHolders].map((h) => h.ownerUserId))].filter(
-    (u) => !isFundUser(u)
+  const userIds = [
+    ...new Set([...shareHoldings, ...bondHoldings].map((h) => h.ownerUserId)),
+  ].filter((u) => !isFundUser(u));
+  const wallets = await db.exchangeWallet.findMany({
+    where: { userId: { in: userIds } },
+    select: { userId: true, sovereigns: true },
+  });
+  const walletByUser = new Map(wallets.map((w) => [w.userId, w.sovereigns]));
+  const values = userIds.map((u) =>
+    portfolioTotalValue(walletByUser.get(u) ?? 0, [
+      ...valueShareHoldings(
+        shareHoldings.filter((h) => h.ownerUserId === u),
+        allCompanies
+      ),
+      ...valueBondHoldings(
+        bondHoldings.filter((h) => h.ownerUserId === u),
+        pricedBonds
+      ),
+      ...valueFundHoldings(
+        sectorPositions.filter((p) => p.ownerUserId === u),
+        indices
+      ),
+    ])
   );
-  const values = await Promise.all(
-    userIds.map(async (u) => (await getPortfolio(db, u, realmId, nowMs)).totalValue)
-  );
+  const companies = allCompanies.filter((c) => LIVE.includes(c.status));
   return {
     companies: companies
       .map((c) => ({
