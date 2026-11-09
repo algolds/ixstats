@@ -141,3 +141,73 @@ it("places stress after the initial consonant cluster when calling kokoro-fastap
     })
   );
 });
+
+describe("admin overrides and error sanitization", () => {
+  beforeEach(() => {
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      ...SAVED,
+      { key: "onoma.kokoro.apiKey", value: "saved-secret-key" },
+    ]);
+  });
+
+  it("refuses an override URL pointing to a private or loopback IP with 400", async () => {
+    for (const url of [
+      "http://127.0.0.1:8080",
+      "http://10.0.0.1:8080",
+      "http://172.16.0.1:8080",
+      "http://192.168.1.1:8080",
+      "http://169.254.169.254",
+      "http://localhost:8080",
+      "http://service.internal",
+      "http://[::1]:8080",
+    ]) {
+      const response = await post(JSON.stringify({ text: "Imperia", baseUrl: url }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "That engine address isn't allowed" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not send the saved Authorization header when an override URL is provided without an apiKey", async () => {
+    const response = await post(
+      JSON.stringify({
+        text: "Imperia",
+        baseUrl: "https://external-tts.example.com",
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBeUndefined();
+  });
+
+  it("does not echo upstream body text when the upstream service returns 500", async () => {
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => "INTERNAL_SECRET_TRACEBACK_TOKEN_XYZ",
+    });
+
+    const response = await post(JSON.stringify({ text: "Imperia" }));
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    expect(body).toEqual({ error: "The speech engine returned an error" });
+    expect(JSON.stringify(body)).not.toContain("INTERNAL_SECRET_TRACEBACK_TOKEN_XYZ");
+    errSpy.mockRestore();
+  });
+
+  it("refuses a 5,001-character text input with 400", async () => {
+    const response = await post(JSON.stringify({ text: "a".repeat(5001) }));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses more than 60 sentences with 400", async () => {
+    const response = await post(JSON.stringify({ text: "Word. ".repeat(61) }));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
