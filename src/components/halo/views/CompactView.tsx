@@ -68,18 +68,17 @@ function CompactViewComponent({
   const lastSeenToastRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (toastQueue.length === 0) return;
-    const latest = toastQueue[0];
+    const latest = toastQueue.find((t) => t.priority !== "low");
     if (!latest || latest.id === lastSeenToastRef.current) return;
-    if (latest.priority === "low") {
-      lastSeenToastRef.current = latest.id;
-      return;
-    }
     lastSeenToastRef.current = latest.id;
     setPeekText(latest.title);
+  }, [toastQueue]);
+
+  useEffect(() => {
+    if (peekText === null) return;
     const timer = setTimeout(() => setPeekText(null), 2500);
     return () => clearTimeout(timer);
-  }, [toastQueue]);
+  }, [peekText]);
 
   // Notification counts
 
