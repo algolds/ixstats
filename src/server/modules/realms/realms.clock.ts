@@ -26,6 +26,7 @@ import { DEFAULT_REALM_ID, realmSlugWhere } from "~/lib/realms/realm-ids";
 import { invalidateRealmClock, ixnayClock, storedRealmClock } from "~/server/shared/realm-time";
 import { canModerateRealm, isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import { updateRealmSettings } from "./realm-settings";
 import { withRealmClock } from "./realms.settings";
 
 type ClockDb = Pick<PrismaClient, "realm" | "country">;
@@ -44,13 +45,11 @@ async function storedSettings(db: ClockDb, realmId: string): Promise<Prisma.Json
 async function saveClock(
   db: ClockDb,
   realmId: string,
-  settings: Prisma.JsonValue | null,
   clock: RealmClock
 ): Promise<{ clock: RealmClock }> {
-  await db.realm.update({
-    where: { id: realmId },
-    data: { settings: withRealmClock(settings, clock) },
-  });
+  await updateRealmSettings(db, realmId, (settings) =>
+    withRealmClock(settings as Prisma.JsonValue, clock)
+  );
   invalidateRealmClock(realmId);
   return { clock };
 }
@@ -73,7 +72,7 @@ export async function startRealmClock(
     era: input.era,
     multiplier: input.multiplier,
   });
-  return saveClock(db, realm.id, settings, clock);
+  return saveClock(db, realm.id, clock);
 }
 
 function applySpeed(clock: RealmClock, multiplier: number, staff: boolean, now: number) {
@@ -89,7 +88,7 @@ async function requireClock(db: ClockDb, realmId: string) {
   const settings = await storedSettings(db, realmId);
   const clock = storedRealmClock(settings);
   if (!clock) throw new RealmRegionError("BAD_REQUEST", "This realm has no clock: set one first");
-  return { settings, clock };
+  return { clock };
 }
 
 /**
@@ -102,14 +101,14 @@ export async function updateRealmClock(
   input: { slug: string; multiplier?: number; era?: string; months?: RealmMonth[] | null }
 ): Promise<{ clock: RealmClock }> {
   const realm = await requireRealmStaff(db, actor, input.slug, "founder");
-  const { settings, clock: current } = await requireClock(db, realm.id);
+  const { clock: current } = await requireClock(db, realm.id);
   const now = Date.now();
   let clock = current;
   if (input.multiplier !== undefined && input.multiplier !== current.multiplier)
     clock = applySpeed(clock, input.multiplier, isSiteAdmin(actor), now);
   if (input.era !== undefined) clock = { ...clock, era: input.era.trim() };
   if (input.months !== undefined) clock = withCalendar(clock, input.months, now);
-  return saveClock(db, realm.id, settings, clock);
+  return saveClock(db, realm.id, clock);
 }
 
 function checkJumpLength(days: number, max: number) {
@@ -147,13 +146,13 @@ export async function jumpRealmClock(
     if (!staff) throw new RealmRegionError("FORBIDDEN", "Only site staff move Ixnay's clock");
     return jumpIxnay(db, input.days);
   }
-  const { settings, clock } = await requireClock(db, realm.id);
+  const { clock } = await requireClock(db, realm.id);
   const now = Date.now();
   checkJumpLength(input.days, maxJumpDays(realmCalendarMs(clock, now), clock.months));
   const next = nextJumpAt(clock);
   if (!staff && now < next)
     throw new RealmRegionError("BAD_REQUEST", `The date can jump again on ${utcDay(next)}`);
-  return saveClock(db, realm.id, settings, withJump(clock, input.days, now));
+  return saveClock(db, realm.id, withJump(clock, input.days, now));
 }
 
 /** Where a context's realm is found: by id, by slug, by a country's realm, or the viewer's active nation's. */

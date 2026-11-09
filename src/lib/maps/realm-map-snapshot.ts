@@ -13,6 +13,7 @@
 import { gunzipSync, gzipSync } from "node:zlib";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { rasterVersionDir, rasterVersionExists } from "~/server/modules/maps/realm-rasters.storage";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import { isPostGISAvailable } from "./geo-validation";
 import { RELIEF_LAYER_ID, withRasterLayer } from "./raster-tiles";
 import {
@@ -228,24 +229,27 @@ async function restoreRealmState(
 ): Promise<void> {
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm) return;
-  const layers = parseRealmMapSettings(realm.settings).rasterLayers ?? [];
   const relief = await reliefWithTiles(realmId, state.relief);
-  const restored = relief
-    ? withRasterLayer(layers, relief)
-    : layers.filter((layer) => layer.id !== RELIEF_LAYER_ID);
-  await db.realm.update({
-    where: { id: realmId },
-    data: {
+  await updateRealmSettings(
+    db,
+    realmId,
+    (settings) => {
+      const layers = parseRealmMapSettings(settings).rasterLayers ?? [];
+      const restored = relief
+        ? withRasterLayer(layers, relief)
+        : layers.filter((layer) => layer.id !== RELIEF_LAYER_ID);
+      return withRealmMapSettings(settings, {
+        rasterLayers: restored.length > 0 ? restored : null,
+      });
+    },
+    {
       seed: state.seed,
       generationParams:
         state.generationParams === null
           ? Prisma.DbNull
           : (state.generationParams as Prisma.InputJsonValue),
-      settings: withRealmMapSettings(realm.settings, {
-        rasterLayers: restored.length > 0 ? restored : null,
-      }) as Prisma.InputJsonValue,
-    },
-  });
+    }
+  );
 }
 
 /** The ids among `ids` a player holds or has a claim row for: deleting those would erase the player's claim. */

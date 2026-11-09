@@ -3,7 +3,7 @@
  * map viewer needs, and the "Recompute areas" action. Edits go through `realmMapAccess` (site admins, the founder
  * and officers with the Map power, in their own realm; Ixnay stays with site admins).
  */
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 import type { Geometry } from "geojson";
 import { DEFAULT_REALM_ID, isUnpublishedStatus } from "~/lib/realms/realm-ids";
 import {
@@ -18,6 +18,7 @@ import { isPostGISAvailable } from "~/lib/maps/geo-validation";
 import type { RealmActor } from "./realms.access";
 import { realmMapAccess } from "./realms.map-access";
 import { RealmRegionError } from "./realms.region";
+import { updateRealmSettings } from "./realm-settings";
 import { settingsAttribution } from "./realms.source-sync";
 
 const SQ_KM_TO_SQ_MI = 0.386102;
@@ -118,11 +119,9 @@ export async function updateRealmMapSettings(
       "This realm has no settings row to store map settings in"
     );
   }
-  const settings = withRealmMapSettings(realm.settings, changes);
-  await db.realm.update({
-    where: { id: realmId },
-    data: { settings: settings as Prisma.InputJsonValue },
-  });
+  const settings = await updateRealmSettings(db, realmId, (current) =>
+    withRealmMapSettings(current, changes)
+  );
   return parseRealmMapSettings(settings);
 }
 
