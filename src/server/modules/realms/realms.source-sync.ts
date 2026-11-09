@@ -33,6 +33,7 @@ import {
   withRealmWikiSettings,
   type RealmWikiSettings,
 } from "~/lib/realms/realm-wiki-settings";
+import { updateRealmSettings } from "./realm-settings";
 import {
   geometryHash,
   infoboxNeedsRead,
@@ -309,10 +310,9 @@ async function fillRealmWikiFromPreset(
 ): Promise<boolean> {
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm || realmWikiSettings(realm.settings)) return false;
-  await db.realm.update({
-    where: { id: realmId },
-    data: { settings: withRealmWikiSettings(realm.settings, wiki) },
-  });
+  await updateRealmSettings(db, realmId, (settings) =>
+    withRealmWikiSettings(settings as Prisma.JsonValue, wiki)
+  );
   return true;
 }
 

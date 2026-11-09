@@ -16,6 +16,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import type { EconomicTier } from "~/types/ixstats";
 import { isSiteAdmin, type RealmActor } from "./realms.access";
 import { RealmRegionError } from "./realms.region";
+import { updateRealmSettings } from "./realm-settings";
 import { hasNationDefaults, realmNationDefaults, withNationDefaults } from "./realms.settings";
 
 type NationDefaultsDb = Pick<PrismaClient, "realm" | "country" | "adminAuditLog" | "$transaction">;
@@ -108,11 +109,12 @@ export async function saveNationDefaults(
 ) {
   await db.$transaction(async (tx) => {
     const realm = await loadRealm(tx, actor, input.realmId);
-    await tx.realm.update({
-      where: { id: realm.id },
-      data: { settings: withNationDefaults(realm.settings, input.table) },
+    let previous: NationGrowthTable | null = null;
+    await updateRealmSettings(tx, realm.id, (settings) => {
+      const json = settings as Prisma.JsonValue;
+      previous = hasNationDefaults(json) ? realmNationDefaults(json) : null;
+      return withNationDefaults(json, input.table);
     });
-    const previous = hasNationDefaults(realm.settings) ? realmNationDefaults(realm.settings) : null;
     await audit(tx, actor, realm, NATION_DEFAULTS_SAVED_ACTION, { previous, next: input.table });
   });
   return { success: true, custom: input.table !== null };

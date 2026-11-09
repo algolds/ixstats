@@ -26,6 +26,7 @@ import {
   withRealmMapSettings,
   type ClimateKey,
 } from "~/lib/maps/realm-map-settings";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import { writePipelineLayers } from "./map-import.pipeline";
 import { artText, type ArtResolver } from "./realm-map-pipeline.art";
 import {
@@ -220,14 +221,9 @@ async function write(
     ...written.rejected.map((r) => `rejected ${r.layerType}/${r.key}: ${r.reason}`),
   ];
   if (key && keyChanged) {
-    await ctx.db.realm.update({
-      where: { id: ctx.realm.id },
-      data: {
-        settings: withRealmMapSettings(await currentSettings(ctx), {
-          climateKey: key,
-        }) as Prisma.InputJsonValue,
-      },
-    });
+    await updateRealmSettings(ctx.db, ctx.realm.id, (current) =>
+      withRealmMapSettings(current, { climateKey: key })
+    );
     lines.push(`climate key: ${key.system}, ${key.zones.length} zones`);
   }
   const areas = await measureRealmAreas(ctx);

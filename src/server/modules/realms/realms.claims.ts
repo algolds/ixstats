@@ -929,9 +929,11 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
             ],
           },
         };
+    // ponytail: capped at 500; add cursor paging when a realm nears it
     return db.realmClaim.findMany({
       where: { status, ...scope },
-      orderBy: { createdAt: "asc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 500,
       include: {
         realm: { select: { id: true, name: true, slug: true } },
         country: { select: { id: true, name: true, slug: true, flag: true, wikiPageTitle: true } },

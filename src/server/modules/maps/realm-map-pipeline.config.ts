@@ -23,6 +23,7 @@ import { parseRealmMapSettings } from "~/lib/maps/realm-map-settings";
 import { SOURCE_PRESETS, sourcePreset } from "~/lib/realms/sources/presets";
 import type { RealmActor } from "~/server/modules/realms/realms.access";
 import { realmMapAccess } from "~/server/modules/realms/realms.map-access";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import { loadSourceSyncConfig } from "~/server/modules/realms/realms.source-sync";
 import {
   cancelMapImportJob,
@@ -138,10 +139,9 @@ export async function getMapPipeline(db: PipelineDb, actor: RealmActor, realmId:
 }
 
 async function store(db: PipelineDb, realm: EditableRealm, pipeline: RealmMapPipeline | null) {
-  await db.realm.update({
-    where: { id: realm.id },
-    data: { settings: withRealmMapPipeline(realm.settings, pipeline) as Prisma.InputJsonValue },
-  });
+  await updateRealmSettings(db, realm.id, (settings) =>
+    withRealmMapPipeline(settings, pipeline)
+  );
 }
 
 /** Save the realm's pipeline (validated by the caller's schema; null removes it). Uploads must still exist. */

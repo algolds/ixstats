@@ -1,4 +1,5 @@
 export { realmSettings, withMaxNationsPerUser } from "./realms.settings";
+export { updateRealmSettings } from "./realm-settings";
 export {
   capReachedMessage,
   NATION_TIER_CAPS,

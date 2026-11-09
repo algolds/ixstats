@@ -19,10 +19,11 @@ const KILL_GRACE_MS = MINUTE;
 const TAIL_CHARS = 4096;
 const CLI_ARGS = ["scripts/audit/wikios-proof.ts", "run", "--profile", "recurring"];
 /**
- * IxStates as start-production.sh serves it. The profile reads PORT and BASE_PATH, and the runner's env files can
- * carry a development PORT (.env says 3000) and no BASE_PATH, which would point the proof at the wrong server.
+ * IxStates as start-production.sh serves it. The profile reads PORT and BASE_PATH; the runner's env files can carry
+ * a development PORT (.env says 3000), and the cron must run with the web process's BASE_PATH (defaulting to
+ * /projects/ixstates when unset, while BASE_PATH="" stays empty).
  */
-const IXSTATES_ENV = { PORT: "3550", BASE_PATH: "/projects/ixstates" };
+const IXSTATES_ENV = { PORT: "3550", BASE_PATH: process.env.BASE_PATH ?? "/projects/ixstates" };
 
 interface WikiosProofResult {
   passed: true;
@@ -74,7 +75,11 @@ function runCli(): Promise<CliExit> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, CLI_ARGS, {
       cwd: process.cwd(),
-      env: { ...process.env, ...IXSTATES_ENV },
+      env: {
+        ...process.env,
+        ...IXSTATES_ENV,
+        BASE_PATH: process.env.BASE_PATH ?? IXSTATES_ENV.BASE_PATH,
+      },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let output = "";

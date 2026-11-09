@@ -380,10 +380,12 @@ describe("reviewClaim", () => {
 });
 
 describe("listClaims", () => {
-  it("identifies claimants by approved wiki names and verified sister-wiki accounts", async () => {
+  it("identifies claimants by approved wiki names and verified sister-wiki accounts and bounds the list", async () => {
     const { db, claims } = setup();
     await claims.listClaims(admin, "pending");
-    const { include } = db.realmClaim.findMany.mock.calls[0][0];
+    const { include, take, orderBy } = db.realmClaim.findMany.mock.calls[0][0];
+    expect(take).toBe(500);
+    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
     expect(include.user.select).toEqual({
       id: true,
       clerkUserId: true,

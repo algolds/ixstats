@@ -19,6 +19,7 @@ import {
   listBuilderRealms,
   listMyNations,
   realmSettings,
+  updateRealmSettings,
   withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
@@ -136,10 +137,13 @@ async function updateRealm(
 
   const realm = await db.realm.findUnique({ where: { id }, select: { settings: true } });
   if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-  return db.realm.update({
-    where: { id },
-    data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
-  });
+  const settings = await updateRealmSettings(
+    db,
+    id,
+    (current) => withMaxNationsPerUser(current as Prisma.JsonValue, maxNationsPerUser),
+    data
+  );
+  return { ...realm, ...data, settings };
 }
 
 export const realmsRouter = createTRPCRouter({
@@ -264,6 +268,7 @@ export const realmsRouter = createTRPCRouter({
     const nation = { id: true, name: true, realmId: true, realm: { select: { name: true } } };
     const users = await ctx.db.user.findMany({
       orderBy: { updatedAt: "desc" },
+      take: 1000,
       select: {
         id: true,
         clerkUserId: true,
