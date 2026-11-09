@@ -70,6 +70,8 @@ const fundOrder = z.discriminatedUnion("kind", [
     shares: z.number().int().min(1).max(1_000_000),
     pricePerShare: sharePrice,
   }),
+  z.object({ kind: z.literal("shares-cancel-bid"), orderId: id }),
+  z.object({ kind: z.literal("shares-cancel-listing"), listingId: id }),
   z.object({ kind: z.literal("bond-buy"), bondId: id, units }),
   z.object({
     kind: z.literal("bond-sell"),
@@ -81,6 +83,7 @@ const fundOrder = z.discriminatedUnion("kind", [
       .max(BOND_FACE * 10)
       .multipleOf(0.01),
   }),
+  z.object({ kind: z.literal("bond-cancel-listing"), listingId: id }),
   z.object({
     kind: z.literal("fund-buy"),
     sectorKey: z.enum(SECTOR_KEYS),

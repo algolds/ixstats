@@ -10,14 +10,14 @@
 import type { PrismaClient } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { formatSovereigns, round2 } from "./amounts";
-import { buyBondListing, buyBondPrimary, listBondUnits } from "./bonds";
+import { buyBondListing, buyBondPrimary, cancelBondListing, listBondUnits } from "./bonds";
 import type { SectorKey } from "./companies";
 import { fundUserIdOf } from "./fund-ids";
 import { assertExchangeOpen, lockWallet, requireCountryOwner, type Db } from "./guards";
 import { assertNotOwnersCompany } from "./lending";
 import { publishNewsTx } from "./news";
 import { buySectorUnits, sellSectorUnits, SECTOR_LABELS } from "./sectors";
-import { listShares, placeBuyOrder } from "./shares";
+import { cancelBuyOrder, cancelListing, listShares, placeBuyOrder } from "./shares";
 import { getPortfolio, type Portfolio } from "./terminal";
 import { creditTreasuryTx, debitTreasuryTx, getOrCreateTreasury, lockTreasuryTx } from "./treasury";
 
@@ -160,8 +160,11 @@ export async function withdrawFromFund(
 export type FundOrder =
   | { kind: "shares-buy"; companyId: string; shares: number; maxPricePerShare: number }
   | { kind: "shares-sell"; companyId: string; shares: number; pricePerShare: number }
+  | { kind: "shares-cancel-bid"; orderId: string }
+  | { kind: "shares-cancel-listing"; listingId: string }
   | { kind: "bond-buy"; bondId: string; units: number }
   | { kind: "bond-sell"; bondId: string; units: number; pricePerUnit: number }
+  | { kind: "bond-cancel-listing"; listingId: string }
   | { kind: "fund-buy"; sectorKey: SectorKey; amount: number }
   | { kind: "fund-sell"; sectorKey: SectorKey; fraction: number };
 
@@ -250,6 +253,10 @@ async function executeOrder(
         shares: order.shares,
         pricePerShare: order.pricePerShare,
       });
+    case "shares-cancel-bid":
+      return cancelBuyOrder(db, { userId, orderId: order.orderId });
+    case "shares-cancel-listing":
+      return cancelListing(db, { userId, listingId: order.listingId });
     case "bond-buy": {
       const bond = await db.nationBond.findUnique({
         where: { id: order.bondId },
@@ -271,6 +278,8 @@ async function executeOrder(
         units: order.units,
         pricePerUnit: order.pricePerUnit,
       });
+    case "bond-cancel-listing":
+      return cancelBondListing(db, { userId, listingId: order.listingId });
     case "fund-buy":
       return buySectorUnits(db, {
         userId,
@@ -292,6 +301,13 @@ async function executeOrder(
 
 async function orderHeadline(db: Db, nation: string, order: FundOrder): Promise<string> {
   const who = `${nation} Treasury`;
+  if (
+    order.kind === "shares-cancel-bid" ||
+    order.kind === "shares-cancel-listing" ||
+    order.kind === "bond-cancel-listing"
+  ) {
+    return `${who} withdraws an order`;
+  }
   if (order.kind === "bond-buy" || order.kind === "bond-sell") {
     const bond = await db.nationBond.findUnique({
       where: { id: order.bondId },

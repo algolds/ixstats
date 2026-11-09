@@ -203,6 +203,12 @@ describe("issueBond", () => {
     await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
   });
 
+  it("counts unsold units against the cap, so unsold issues can't be stacked", async () => {
+    await issue(500);
+    await issue(500); // 100,000 issued, none sold: exactly the cap
+    await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
+  });
+
   it("refuses to issue during a default ban", async () => {
     treasury().bondBanUntil = new Date(Date.now() + WEEK_MS);
     await expect(issue()).rejects.toMatchObject({ code: "CONFLICT" });
@@ -246,6 +252,41 @@ describe("buyBondPrimary", () => {
       reason: { code: "LIMIT_REACHED" },
     });
     expect(bond(id).unitsSold).toBe(10);
+  });
+});
+
+describe("a nation's insiders", () => {
+  it("can't buy the nation's bonds from the treasury, owner or acting as the nation", async () => {
+    const id = await issue();
+    await expect(
+      buyBondPrimary(fake.client, { userId: "alice", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    fake.tables.user!.find((u) => u.id === "carol")!.countryId = "na";
+    await expect(
+      buyBondPrimary(fake.client, { userId: "carol", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId: rid() });
+    expect(holding("bob")).toBe(10);
+    expect(holding("alice")).toBe(0);
+    expect(sov("alice")).toBe(200_000);
+  });
+
+  it("can't buy them from another player's listing either", async () => {
+    const id = await issue();
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 50, requestId: rid() });
+    const { listingId } = await listBondUnits(fake.client, {
+      userId: "bob",
+      bondId: id,
+      units: 30,
+      pricePerUnit: 100,
+      requestId: rid(),
+    });
+    await expect(
+      buyBondListing(fake.client, { userId: "alice", listingId, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondListing(fake.client, { userId: "carol", listingId, units: 10, requestId: rid() });
+    expect(holding("carol")).toBe(10);
+    expect(holding("alice")).toBe(0);
   });
 });
 

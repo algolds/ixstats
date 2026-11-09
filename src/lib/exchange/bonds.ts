@@ -17,6 +17,7 @@ import {
 } from "~/lib/vault/exchange-service";
 import { formatSovereigns, round2 } from "./amounts";
 import { lockParties } from "./fills";
+import { fundUserIdOf } from "./fund-ids";
 import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { macroOfCountry } from "./tariffs";
 import { alertWatchers, publishNewsTx, type PublishedHeadline } from "./news";
@@ -145,17 +146,28 @@ function assertTradable(bond: NationBond): void {
   if (bond.status !== "OPEN") throw new ExchangeError("CONFLICT", "This bond no longer trades");
 }
 
+/** A nation's owner, anyone acting as the nation, and its wealth fund can't buy the nation's own bonds. */
+async function assertNotNationInsider(tx: Db, countryId: string, userId: string): Promise<void> {
+  const owns = await requireCountryOwner(tx, countryId, userId)
+    .then(() => true)
+    .catch(() => false);
+  if (userId === fundUserIdOf(countryId) || owns) {
+    throw new ExchangeError("FORBIDDEN", "A nation's owner can't buy its own bonds");
+  }
+}
+
 async function nationNameOf(tx: Db, countryId: string): Promise<string> {
   const country = await tx.country.findUnique({ where: { id: countryId }, select: { name: true } });
   return country?.name ?? "A nation";
 }
 
-async function outstandingPrincipalOf(tx: Db, countryId: string): Promise<number> {
+/** Open bond principal for `countryId`, counting either sold units (rating coverage) or all issued units (cap). */
+async function openPrincipalOf(tx: Db, countryId: string, field: "unitsSold" | "unitsIssued") {
   const bonds = await tx.nationBond.findMany({
     where: { countryId, status: "OPEN" },
-    select: { unitsSold: true, faceValue: true },
+    select: { unitsSold: true, unitsIssued: true, faceValue: true },
   });
-  return round2(bonds.reduce((s, b) => s + b.unitsSold * b.faceValue, 0));
+  return round2(bonds.reduce((s, b) => s + b[field] * b.faceValue, 0));
 }
 
 /** Recompute and store a nation's rating. Returns it. */
@@ -169,7 +181,7 @@ export async function refreshNationRatingTx(
   const macro = await macroOfCountry(tx, countryId);
   const rating = nationRatingFor({
     balance: treasury.balance,
-    outstandingPrincipal: await outstandingPrincipalOf(tx, countryId),
+    outstandingPrincipal: await openPrincipalOf(tx, countryId, "unitsSold"),
     growth: macro?.growth ?? null,
     governmentEfficiency: macro?.governmentEfficiency ?? 0.5,
     banned: !!treasury.bondBanUntil && treasury.bondBanUntil.getTime() > nowMs,
@@ -268,10 +280,8 @@ export async function issueBond(
       }
       const cfg = await getExchangeConfig(tx);
       const principal = input.units * BOND_FACE;
-      if (
-        (await outstandingPrincipalOf(tx, country.id)) + principal >
-        OUTSTANDING_CAP_MULTIPLE * cfg.treasuryCap
-      ) {
+      const issued = await openPrincipalOf(tx, country.id, "unitsIssued");
+      if (issued + principal > OUTSTANDING_CAP_MULTIPLE * cfg.treasuryCap) {
         throw new ExchangeError(
           "LIMIT_REACHED",
           "That would take the nation's bonds past their cap"
@@ -333,18 +343,13 @@ export async function buyBondPrimary(
   return db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     const bond = await lockedBond(tx, input.bondId);
-    if (await alreadyPaid(tx, key)) {
-      return {
-        units: input.units,
-        paid: round2(input.units * bond.faceValue),
-        alreadyApplied: true,
-      };
-    }
+    const paid = round2(input.units * bond.faceValue);
+    if (await alreadyPaid(tx, key)) return { units: input.units, paid, alreadyApplied: true };
+    await assertNotNationInsider(tx, bond.countryId, input.userId);
     assertTradable(bond);
     if (input.units > bond.unitsIssued - bond.unitsSold) {
       throw new ExchangeError("LIMIT_REACHED", "There aren't that many units left on sale");
     }
-    const paid = round2(input.units * bond.faceValue);
     await transferToTreasuryTx(tx, {
       from: { kind: "WALLET", userId: input.userId },
       countryId: bond.countryId,
@@ -443,6 +448,7 @@ export async function buyBondListing(
     const listing = await tx.bondListing.findUniqueOrThrow({ where: { id: input.listingId } });
     const paid = round2(input.units * listing.pricePerUnit);
     if (await alreadyPaid(tx, key)) return { units: input.units, paid, alreadyApplied: true };
+    await assertNotNationInsider(tx, bond.countryId, input.userId);
     assertTradable(bond);
     if (listing.status !== "OPEN") throw new ExchangeError("CONFLICT", "That listing is closed");
     if (listing.sellerUserId === input.userId)
