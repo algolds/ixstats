@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -129,7 +129,7 @@ function HeroMapStage({
   );
   const hoveredFlagUrl = matchedCountry?.flagUrl ?? fallbackFlagUrl;
 
-  const handleCountryHover = useCallback((next: EmbedPoliticalFeature | null) => {
+  const handleCountryHover = (next: EmbedPoliticalFeature | null) => {
     setHoveredCountry((prev) => {
       if (!prev && !next) return prev;
       if (
@@ -143,28 +143,25 @@ function HeroMapStage({
       }
       return next;
     });
-  }, []);
+  };
 
-  const handleCountryClick = useCallback(
-    (country: EmbedPoliticalFeature) => {
-      if (country.countryId) {
-        const match =
-          nations.find((n) => n.id === country.countryId) ??
-          realmCountries?.find((c) => c.id === country.countryId);
-        const slugOrId = match?.slug || country.countryId;
-        router.push(`/countries/${encodeURIComponent(slugOrId)}`);
-        return;
-      }
-      const params = new URLSearchParams();
-      if (realm?.slug) params.set("realm", realm.slug);
-      params.set("name", country.displayName);
-      params.set("lat", country.centroidLat.toFixed(2));
-      params.set("lng", country.centroidLng.toFixed(2));
-      params.set("zoom", "4");
-      router.push(`/maps?${params.toString()}`);
-    },
-    [nations, realm?.slug, realmCountries, router]
-  );
+  const handleCountryClick = (country: EmbedPoliticalFeature) => {
+    if (country.countryId) {
+      const match =
+        nations.find((n) => n.id === country.countryId) ??
+        realmCountries?.find((c) => c.id === country.countryId);
+      const slugOrId = match?.slug || country.countryId;
+      router.push(`/countries/${encodeURIComponent(slugOrId)}`);
+      return;
+    }
+    const params = new URLSearchParams();
+    if (realm?.slug) params.set("realm", realm.slug);
+    params.set("name", country.displayName);
+    params.set("lat", country.centroidLat.toFixed(2));
+    params.set("lng", country.centroidLng.toFixed(2));
+    params.set("zoom", "4");
+    router.push(`/maps?${params.toString()}`);
+  };
 
   return (
     <div

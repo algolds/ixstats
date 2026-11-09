@@ -66,11 +66,11 @@ function ExecutiveAgendaComponent({
     { countryId: countryId ?? "", status: "active" },
     { enabled: !!countryId, staleTime: 60_000 }
   );
-  const treasuryData = api.exchange?.getTreasury?.useQuery(
+  const treasuryData = api.exchange.getTreasury.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 60_000 }
   );
-  const corporateData = api.exchange?.getRealmCorporateSummary?.useQuery(
+  const corporateData = api.exchange.getRealmCorporateSummary.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 60_000 }
   );
@@ -82,7 +82,7 @@ function ExecutiveAgendaComponent({
     const rawIntents = Array.isArray(intentTree.data)
       ? intentTree.data
       : (intentTree.data?.allIntents ?? []);
-    const tendersWithBidsCount = (corporateData?.data?.openTenders ?? []).filter(
+    const tendersWithBidsCount = (corporateData.data?.openTenders ?? []).filter(
       (t) => t.status === "OPEN" && t.bidCount > 0
     ).length;
     return deriveAgendaItems({
@@ -90,11 +90,11 @@ function ExecutiveAgendaComponent({
       intents: rawIntents as AgendaSourceIntent[],
       elections: (elections.data ?? []) as AgendaSourceElection[],
       corporate:
-        treasuryData?.data || corporateData?.data
+        treasuryData.data || corporateData.data
           ? {
-              treasuryBalance: treasuryData?.data?.balance ?? 0,
-              treasuryCap: treasuryData?.data?.cap ?? 0,
-              distressedCount: corporateData?.data?.totals.distressedCount ?? 0,
+              treasuryBalance: treasuryData.data?.balance ?? 0,
+              treasuryCap: treasuryData.data?.cap ?? 0,
+              distressedCount: corporateData.data?.totals.distressedCount ?? 0,
               tendersWithBidsCount,
             }
           : undefined,
@@ -106,8 +106,8 @@ function ExecutiveAgendaComponent({
     intentTree.data,
     issuesData.data,
     elections.data,
-    treasuryData?.data,
-    corporateData?.data,
+    treasuryData.data,
+    corporateData.data,
     nowIxTime,
     clock,
   ]);

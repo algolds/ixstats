@@ -154,9 +154,9 @@ function FoundCompanyForm({ overview, onDone }: { overview: Overview; onDone: ()
         "Could not import from WikiOS",
         err instanceof Error ? err.message : "WikiOS article not found"
       );
-    } finally {
-      setFetchingWiki(false);
     }
+    // After, not in a finally: the catch never rethrows, and the React Compiler skips finally.
+    setFetchingWiki(false);
   };
 
   return (
