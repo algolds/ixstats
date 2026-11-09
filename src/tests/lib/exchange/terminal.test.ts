@@ -77,8 +77,8 @@ function setup(withCompany = true) {
             id: "h1",
             companyId: "co",
             fairValue: 1000,
-            recordedIxTime: now - 2 * DAY,
-            recordedAt: new Date(now - 2 * DAY),
+            recordedIxTime: now - 1.5 * DAY,
+            recordedAt: new Date(now - 1.5 * DAY),
           },
         ]
       : [],
@@ -131,6 +131,24 @@ describe("getFrontPage", () => {
     ]);
     expect(page.movers[0]!.changePct).toBeCloseTo(10, 5);
   });
+
+  it("ignores history rows older than 2 days when computing company moves", async () => {
+    setup();
+    const now = Date.now();
+    fake.tables.companyValueHistory = [
+      {
+        id: "h_old",
+        companyId: "co",
+        fairValue: 500,
+        recordedIxTime: now - 3 * DAY,
+        recordedAt: new Date(now - 3 * DAY),
+      },
+    ];
+    const page = await getFrontPage(fake.client, "default", now);
+    expect(page.movers).toEqual([]);
+    const companyPage = await getCompanyPage(fake.client, "co", null, now);
+    expect(companyPage?.changePct).toBeNull();
+  });
 });
 
 describe("getCompanyPage", () => {
@@ -141,6 +159,33 @@ describe("getCompanyPage", () => {
     const json = JSON.stringify(page);
     for (const leak of ["alice", "bob", "founderId", "ownerUserId", "@example.com"])
       expect(json).not.toContain(leak);
+  });
+
+  it("yields the 120 newest history rows in ascending order when a company has 300 rows", async () => {
+    setup();
+    const now = Date.now();
+    const rows = Array.from({ length: 300 }, (_, i) => ({
+      id: `h_${i}`,
+      companyId: "co",
+      fairValue: 1000 + i,
+      recordedIxTime: now - (300 - i) * 60_000,
+      recordedAt: new Date(now - (300 - i) * 60_000),
+    }));
+    const history = {
+      findMany: async (args: { orderBy?: { recordedAt: "asc" | "desc" }; take?: number }) => {
+        const dir = args.orderBy?.recordedAt === "desc" ? -1 : 1;
+        return [...rows]
+          .sort((a, b) => dir * (a.recordedAt.getTime() - b.recordedAt.getTime()))
+          .slice(0, args.take ?? rows.length);
+      },
+    };
+    const db = new Proxy(fake.client, {
+      get: (target, prop) => (prop === "companyValueHistory" ? history : target[prop]),
+    });
+    const page = await getCompanyPage(db, "co", null, now);
+    expect(page?.valueHistory).toHaveLength(120);
+    expect(page?.valueHistory[0]?.value).toBe(1180);
+    expect(page?.valueHistory.at(-1)?.value).toBe(1299);
   });
 });
 

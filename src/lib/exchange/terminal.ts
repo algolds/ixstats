@@ -136,7 +136,11 @@ async function realmOf(db: Db, realmId: string): Promise<{ id: string; name: str
 
 async function companyMoves(db: Db, companies: readonly Company[], nowMs: number) {
   const history = await db.companyValueHistory.findMany({
-    where: { companyId: { in: companies.map((c) => c.id) } },
+    where: {
+      companyId: { in: companies.map((c) => c.id) },
+      recordedAt: { gte: new Date(nowMs - 2 * DAY_MS) },
+    },
+    orderBy: { recordedAt: "asc" },
     select: { companyId: true, fairValue: true, recordedAt: true },
   });
   return new Map(
@@ -478,6 +482,8 @@ export async function getCompanyPage(
     await Promise.all([
       db.companyValueHistory.findMany({
         where: { companyId },
+        orderBy: { recordedAt: "desc" },
+        take: 120,
         select: { fairValue: true, recordedAt: true },
       }),
       shareholdersOf(db, company),
@@ -535,8 +541,7 @@ export async function getCompanyPage(
     changePct: moves.get(company.id) ?? null,
     metrics: computeCompanyMetrics({ ...company, trailing30dDividends }),
     valueHistory: [...history]
-      .sort((a, b) => a.recordedAt.getTime() - b.recordedAt.getTime())
-      .slice(-120)
+      .reverse()
       .map((h) => ({ t: h.recordedAt.getTime(), value: h.fairValue })),
     hq: hq ? { id: hq.id, name: hq.name } : null,
     shareholders,
