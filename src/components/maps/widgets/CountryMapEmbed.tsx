@@ -15,6 +15,7 @@ import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import {
   fitEmbedToCountry,
   geometryBounds,
+  getEmbedFitSettled,
 } from "~/components/maps/widgets/embed-map-layers";
 import { toCarrierLngLat } from "~/lib/maps/flat-projection";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
@@ -91,8 +92,10 @@ export function CountryMapEmbed({
 
   // ponytail: refits on every inset change, so a resize resets the user's pan
   useEffect(() => {
-    if (mapReady && mapRef.current) {
-      fitEmbedToCountry(mapRef.current, state, boundsPadding, insetRight);
+    const map = mapRef.current;
+    if (mapReady && map && fitEmbedToCountry(map, state, boundsPadding, insetRight)) {
+      const onFitSettled = getEmbedFitSettled(map, state);
+      map.once("idle", () => onFitSettled?.());
     }
   }, [mapReady, insetRight]);
   useEffect(() => {

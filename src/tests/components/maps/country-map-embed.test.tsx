@@ -76,4 +76,23 @@ describe("CountryMapEmbed focus", () => {
       expect.objectContaining({ padding: 40 })
     );
   });
+
+  it("re-baselines city reveal on idle after an insetRight refit", () => {
+    const onFitSettled = jest.fn();
+    mockState.onFitSettled = onFitSettled;
+    const { rerender } = render(<CountryMapEmbed countryId="c1" insetRight={0} />);
+    once.mockClear();
+
+    rerender(<CountryMapEmbed countryId="c1" insetRight={240} />);
+    expect(fitBounds).toHaveBeenLastCalledWith(
+      [toCarrierLngLat(10, 40), toCarrierLngLat(20, 44)],
+      expect.objectContaining({
+        padding: { top: 40, bottom: 40, left: 40, right: 280 },
+      })
+    );
+    expect(once).toHaveBeenCalledWith("idle", expect.any(Function));
+    const idleCallback = once.mock.calls[0]?.[1] as (() => void) | undefined;
+    idleCallback?.();
+    expect(onFitSettled).toHaveBeenCalledTimes(1);
+  });
 });
