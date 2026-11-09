@@ -3,21 +3,36 @@
  * its wallet. The fund trades through the ordinary engine (order book, bonds, sector funds) as that user, so dividends,
  * coupons and sales land in its wallet. The owner moves ₷ between the treasury and the fund. Guardrails:
  * - the fund may hold at most half of treasury plus fund (checked on deposit, holdings at cost);
- * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company.
- * The guard checks run before the trade in a separate read; the engine owns its own transaction, so a race can only
- * make a later check stricter.
+ * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company;
+ * - it sells within ±20% of fair value (shares) or face value (bonds), and never fills with its nation's insiders.
+ * Guards and execution run under a per-nation lease (`withJobLock`), so concurrent fund orders can't both pass the
+ * stake cap.
  */
 import type { PrismaClient } from "@prisma/client";
+import { withJobLock } from "~/lib/system/job-lock";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { formatSovereigns, round2 } from "./amounts";
-import { buyBondListing, buyBondPrimary, cancelBondListing, listBondUnits } from "./bonds";
+import {
+  BOND_FACE,
+  buyBondListing,
+  buyBondPrimary,
+  cancelBondListing,
+  listBondUnits,
+} from "./bonds";
 import type { SectorKey } from "./companies";
 import { fundUserIdOf } from "./fund-ids";
+import { isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, lockWallet, requireCountryOwner, type Db } from "./guards";
 import { assertNotOwnersCompany } from "./lending";
 import { publishNewsTx } from "./news";
 import { buySectorUnits, sellSectorUnits, SECTOR_LABELS } from "./sectors";
-import { cancelBuyOrder, cancelListing, listShares, placeBuyOrder } from "./shares";
+import {
+  cancelBuyOrder,
+  cancelListing,
+  listShares,
+  placeBuyOrder,
+  primaryPricePerShare,
+} from "./shares";
 import { getPortfolio, type Portfolio } from "./terminal";
 import { creditTreasuryTx, debitTreasuryTx, getOrCreateTreasury, lockTreasuryTx } from "./treasury";
 
@@ -27,6 +42,8 @@ export { FUND_USER_PREFIX, fundUserIdOf, isFundUser } from "./fund-ids";
 export const FUND_SHARE_CAP = 0.5;
 /** The fund may own at most this share of any company. */
 export const STAKE_CAP = 0.25;
+/** The fund must sell within ±20% of fair value (shares) or face value (bonds). */
+export const FUND_PRICE_BAND = 0.2;
 
 /** The nation's fund account, created once (user, wallet, and the treasury's pointer to it). */
 export async function ensureFundUser(db: Db, countryId: string): Promise<string> {
@@ -199,6 +216,17 @@ async function assertStakeRoom(
   }
 }
 
+function assertSellBand(price: number, fair: number): void {
+  const low = round2((1 - FUND_PRICE_BAND) * fair);
+  const high = round2((1 + FUND_PRICE_BAND) * fair);
+  if (!Number.isFinite(price) || price < low || price > high) {
+    throw new ExchangeError(
+      "LIMIT_REACHED",
+      `The wealth fund sells within 20% of fair value: ${formatSovereigns(low)}–${formatSovereigns(high)}`
+    );
+  }
+}
+
 /** The guardrails for one order (spec §11a). */
 async function guardOrder(
   db: Db,
@@ -210,6 +238,17 @@ async function guardOrder(
     await assertNotOwnersCompany(db, countryId, order.companyId);
     await assertStakeRoom(db, fundUserId, order.companyId, order.shares);
   }
+  if (order.kind === "shares-sell") {
+    const company = await db.company.findUnique({
+      where: { id: order.companyId },
+      select: { fairValue: true, sharesOutstanding: true },
+    });
+    if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
+    assertSellBand(
+      order.pricePerShare,
+      primaryPricePerShare(company.fairValue, company.sharesOutstanding)
+    );
+  }
   if (order.kind === "bond-buy") {
     const bond = await db.nationBond.findUnique({
       where: { id: order.bondId },
@@ -219,14 +258,22 @@ async function guardOrder(
       throw new ExchangeError("FORBIDDEN", "The wealth fund can't buy its own nation's bonds");
     }
   }
+  if (order.kind === "bond-sell") {
+    assertSellBand(order.pricePerUnit, BOND_FACE);
+  }
 }
 
-async function cheapestListing(db: Db, bondId: string): Promise<string | null> {
+async function cheapestListing(db: Db, bondId: string, fundUserId: string): Promise<string | null> {
   const listings = await db.bondListing.findMany({
     where: { bondId, status: "OPEN" },
-    select: { id: true, pricePerUnit: true },
+    select: { id: true, pricePerUnit: true, sellerUserId: true },
   });
-  return [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)[0]?.id ?? null;
+  for (const listing of [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)) {
+    if (!(await isFundInsiderPair(db, fundUserId, listing.sellerUserId))) {
+      return listing.id;
+    }
+  }
+  return null;
 }
 
 async function executeOrder(
@@ -258,6 +305,17 @@ async function executeOrder(
     case "shares-cancel-listing":
       return cancelListing(db, { userId, listingId: order.listingId });
     case "bond-buy": {
+      const [paidPrimary, paidTake] = await Promise.all([
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-buy:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-take:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+      ]);
+      if (paidPrimary || paidTake) return { units: order.units, paid: 0, alreadyApplied: true };
       const bond = await db.nationBond.findUnique({
         where: { id: order.bondId },
         select: { unitsIssued: true, unitsSold: true },
@@ -265,7 +323,7 @@ async function executeOrder(
       if (bond && bond.unitsIssued - bond.unitsSold > 0) {
         return buyBondPrimary(db, { userId, requestId, bondId: order.bondId, units: order.units });
       }
-      const listingId = await cheapestListing(db, order.bondId);
+      const listingId = await cheapestListing(db, order.bondId, userId);
       if (!listingId)
         throw new ExchangeError("LIMIT_REACHED", "No units of that bond are for sale");
       return buyBondListing(db, { userId, requestId, listingId, units: order.units });
@@ -339,22 +397,32 @@ export async function fundTrade(
   i: { userId: string; countryId: string; order: FundOrder; requestId: string }
 ): Promise<{ ok: true }> {
   const country = await requireCountryOwner(db, i.countryId, i.userId);
-  const fundUserId = await ensureFundUser(db, country.id);
-  await guardOrder(db, country.id, fundUserId, i.order);
-  await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
-  const headline = await orderHeadline(db, country.name, i.order);
-  await db.$transaction((tx) =>
-    publishNewsTx(tx, {
-      realmId: country.realmId,
-      kind: "trade",
-      prominence: "ACTIVITY",
-      sourceKind: "NATION",
-      sourceId: country.id,
-      headline,
-      countryId: country.id,
-      key: `news:fund:${country.id}:${i.requestId}`,
-    })
+  const locked = await withJobLock(
+    db,
+    `exchange-fund:${country.id}`,
+    async () => {
+      const fundUserId = await ensureFundUser(db, country.id);
+      await guardOrder(db, country.id, fundUserId, i.order);
+      await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
+      const headline = await orderHeadline(db, country.name, i.order);
+      await db.$transaction((tx) =>
+        publishNewsTx(tx, {
+          realmId: country.realmId,
+          kind: "trade",
+          prominence: "ACTIVITY",
+          sourceKind: "NATION",
+          sourceId: country.id,
+          headline,
+          countryId: country.id,
+          key: `news:fund:${country.id}:${i.requestId}`,
+        })
+      );
+    },
+    { timeoutMs: 60_000 }
   );
+  if (!locked.ran) {
+    throw new ExchangeError("CONFLICT", "The wealth fund is busy; try again");
+  }
   return { ok: true };
 }
 

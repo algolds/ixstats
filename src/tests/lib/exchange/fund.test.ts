@@ -6,8 +6,16 @@
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(async () => "n1") },
 }));
+jest.mock("~/lib/system/job-lock", () => ({
+  withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
+    ran: true,
+    result: await fn(),
+  })),
+}));
 
 import { notificationAPI } from "~/lib/notifications/api";
+import { withJobLock } from "~/lib/system/job-lock";
+import { buyBondListing, buyBondPrimary, listBondUnits } from "~/lib/exchange/bonds";
 import {
   FUND_USER_PREFIX,
   depositToFund,
@@ -16,7 +24,7 @@ import {
   withdrawFromFund,
 } from "~/lib/exchange/fund";
 import { sendExchangeNotices } from "~/lib/exchange/notify";
-import { listShares, placeBuyOrder } from "~/lib/exchange/shares";
+import { buyShares, cancelListing, listShares, placeBuyOrder } from "~/lib/exchange/shares";
 import { getLeaderboards, getNationPage } from "~/lib/exchange/terminal";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
@@ -234,7 +242,7 @@ describe("what the fund may buy", () => {
       requestId: rid(),
     });
     await trade({ kind: "shares-buy", companyId: "co2", shares: 100, maxPricePerShare: 2 });
-    await trade({ kind: "shares-sell", companyId: "co2", shares: 40, pricePerShare: 3 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 40, pricePerShare: 1.1 });
     const shareListingId = fake.tables.shareListing!.find(
       (l) => l.sellerUserId === FUND && l.status === "OPEN"
     )!.id;
@@ -249,6 +257,246 @@ describe("what the fund may buy", () => {
     const bondListingId = fake.tables.bondListing!.find((l) => l.sellerUserId === FUND)!.id;
     await trade({ kind: "bond-cancel-listing", listingId: bondListingId });
     expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(20);
+  });
+
+  it("refuses explicit takes by the nation's owner on a fund share or bond listing", async () => {
+    await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 50,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 50, maxPricePerShare: 1 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 20, pricePerShare: 1 });
+    const shareListingId = fake.tables.shareListing!.find(
+      (l) => l.sellerUserId === FUND && l.status === "OPEN"
+    )!.id;
+    await expect(
+      buyShares(fake.client, {
+        userId: "alice",
+        listingId: shareListingId,
+        shares: 10,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 10 });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 5, pricePerUnit: 100 });
+    const bondListingId = fake.tables.bondListing!.find((l) => l.sellerUserId === FUND)!.id;
+    await expect(
+      buyBondListing(fake.client, {
+        userId: "alice",
+        listingId: bondListingId,
+        units: 2,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("skips insider pairs when crossing the share book, filling third-party orders at worse prices", async () => {
+    // Give alice 20 shares of co2 so she can post a cheaper ask than bob's.
+    fake.tables.shareholding!.push({
+      id: "sh_alice_co2",
+      companyId: "co2",
+      ownerUserId: "alice",
+      shares: 20,
+      avgCost: 1,
+    });
+    const aliceAsk = await listShares(fake.client, {
+      userId: "alice",
+      companyId: "co2",
+      shares: 20,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    const bobAsk = await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 15,
+      pricePerShare: 2,
+      requestId: rid(),
+    });
+    const res = await placeBuyOrder(fake.client, {
+      userId: FUND,
+      companyId: "co2",
+      shares: 20,
+      maxPricePerShare: 3,
+      requestId: rid(),
+    });
+    expect(res).toMatchObject({ sharesBought: 15, sharesResting: 5 });
+    expect(fake.tables.shareListing!.find((l) => l.id === aliceAsk.listing.id)).toMatchObject({
+      shares: 20,
+      status: "OPEN",
+    });
+    expect(fake.tables.shareListing!.find((l) => l.id === bobAsk.listing.id)).toMatchObject({
+      shares: 0,
+      status: "FILLED",
+    });
+
+    // Reverse direction: fund ask skips alice's higher bid and fills bob's lower bid.
+    await cancelListing(fake.client, { userId: "alice", listingId: aliceAsk.listing.id });
+    await placeBuyOrder(fake.client, {
+      userId: "alice",
+      companyId: "co2",
+      shares: 10,
+      maxPricePerShare: 1.2,
+      requestId: rid(),
+    });
+    await placeBuyOrder(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 10,
+      maxPricePerShare: 1.1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 15, pricePerShare: 1 });
+    expect(
+      fake.tables.shareBuyOrder!.find((o) => o.buyerUserId === "alice" && o.companyId === "co2")
+    ).toMatchObject({ shares: 10, status: "OPEN" });
+    expect(
+      fake.tables.shareBuyOrder!.find((o) => o.buyerUserId === "bob" && o.companyId === "co2")
+    ).toMatchObject({ shares: 0, status: "FILLED" });
+  });
+
+  it("skips the owner's cheapest bond listing on fund bond-buy, or throws LIMIT_REACHED if none remain", async () => {
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: null });
+    fake.tables.exchangeWallet!.push({
+      id: "w_carol",
+      userId: "carol",
+      sovereigns: 50_000,
+      lifetimeEarned: 50_000,
+      lifetimeSpent: 0,
+    });
+    // Sell out b_nb primary issue (50 to alice, 50 to carol).
+    await buyBondPrimary(fake.client, {
+      userId: "alice",
+      bondId: "b_nb",
+      units: 50,
+      requestId: rid(),
+    });
+    await buyBondPrimary(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 50,
+      requestId: rid(),
+    });
+    const { listingId: aliceListing } = await listBondUnits(fake.client, {
+      userId: "alice",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 95,
+      requestId: rid(),
+    });
+    await expect(trade({ kind: "bond-buy", bondId: "b_nb", units: 5 })).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+    });
+
+    const { listingId: carolListing } = await listBondUnits(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 105,
+      requestId: rid(),
+    });
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 5 });
+    expect(fake.tables.bondListing!.find((l) => l.id === aliceListing)?.units).toBe(10);
+    expect(fake.tables.bondListing!.find((l) => l.id === carolListing)?.units).toBe(5);
+  });
+
+  it("refuses fund share or bond listings outside ±20% of fair or face value and allows inside", async () => {
+    await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 50,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 50, maxPricePerShare: 1 });
+    // co2 fairValue = 1000, sharesOutstanding = 1000 → fair = ₷1 (band ₷0.8–₷1.2).
+    await expect(
+      trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 0.79 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷0.8–₷1.2",
+    });
+    await expect(
+      trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 1.21 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷0.8–₷1.2",
+    });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 0.8 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 1.2 });
+
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 10 });
+    await expect(
+      trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 79.99 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷80–₷120",
+    });
+    await expect(
+      trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 120.01 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷80–₷120",
+    });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 80 });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 120 });
+  });
+
+  it("buys nothing the second time when a fund bond-buy is retried after the primary issue sold out", async () => {
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: null });
+    fake.tables.exchangeWallet!.push({
+      id: "w_carol",
+      userId: "carol",
+      sovereigns: 50_000,
+      lifetimeEarned: 50_000,
+      lifetimeSpent: 0,
+    });
+    const requestId = rid();
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId,
+    });
+    expect(fundCash()).toBe(4500);
+
+    // Carol buys the remaining 95 primary units and lists 10 on the secondary market.
+    await buyBondPrimary(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 95,
+      requestId: rid(),
+    });
+    const { listingId } = await listBondUnits(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 100,
+      requestId: rid(),
+    });
+
+    // Retry with the same requestId: primary is now sold out, but it must not take the secondary listing.
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId,
+    });
+    expect(fundCash()).toBe(4500);
+    expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(5);
+    expect(fake.tables.bondListing!.find((l) => l.id === listingId)?.units).toBe(10);
+  });
+
+  it("rejects with CONFLICT when the per-nation fund lease is already held", async () => {
+    jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
+    await expect(trade({ kind: "bond-buy", bondId: "b_nb", units: 5 })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The wealth fund is busy; try again",
+    });
   });
 });
 

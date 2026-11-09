@@ -250,10 +250,14 @@ about (company, bond, nation, tender), and the market move it caused.
   - The fund account is left out of leaderboards and notifications. Its holdings are public on the nation page.
 - **What the fund may not buy:**
   - its own nation's bonds;
-  - a company the owner founded or holds shares in;
+  - a company the nation's insiders (`ownerUserId` or `User.countryId`) founded, hold shares in, or have listed;
   - more than 25% of any company, counting its holdings, listed shares and open buy orders.
-- **No self-dealing in tenders either.** A nation's treasury also won't award its tenders to a company the owner
-  founded or holds shares in.
+- **What the fund may not sell or fill (owner ruling 2026-11-09):**
+  - share or bond listings outside ±20% of fair value (shares: fair value per share; bonds: face value);
+  - any fill between the fund and its own nation's insiders (`ownerUserId` or `User.countryId`), refused on explicit takes and skipped when crossing the order book or choosing the cheapest bond listing;
+  - concurrent fund orders for the same nation are serialized under a per-nation lease (`exchange-fund:<countryId>`) so racing orders can't both pass the stake cap.
+- **No self-dealing in tenders either.** A nation's treasury also won't award its tenders to a company the nation's
+  insiders founded, hold shares in, or have listed.
 - A nation's owner (or anyone acting as the nation) may not buy its bonds, primary or secondary (owner ruling 2026-11-09).
 - **Lending is exempt (owner, 2026-11-07).** Companies live in their founder's own nation, so a strict rule would leave
   almost no company able to borrow. Credit lines stay open to the owner's own companies, because the terms are published

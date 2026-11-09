@@ -18,6 +18,7 @@ import {
 import { formatSovereigns, round2 } from "./amounts";
 import { lockParties } from "./fills";
 import { fundUserIdOf } from "./fund-ids";
+import { assertNotFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { macroOfCountry } from "./tariffs";
 import { alertWatchers, publishNewsTx, type PublishedHeadline } from "./news";
@@ -243,11 +244,8 @@ export interface IssueBondInput {
 function validateIssue(input: IssueBondInput): void {
   assertInt(input.units, BOND_UNITS_MIN, BOND_UNITS_MAX, "Units");
   assertInt(input.termWeeks, TERM_WEEKS_MIN, TERM_WEEKS_MAX, "The term in weeks");
-  if (
-    !Number.isFinite(input.couponRate) ||
-    input.couponRate < COUPON_MIN ||
-    input.couponRate > COUPON_MAX
-  ) {
+  const r = input.couponRate;
+  if (!Number.isFinite(r) || r < COUPON_MIN || r > COUPON_MAX) {
     throw new ExchangeError("INVALID_AMOUNT", "The coupon must be from 0.5% to 25%");
   }
 }
@@ -449,6 +447,7 @@ export async function buyBondListing(
     const paid = round2(input.units * listing.pricePerUnit);
     if (await alreadyPaid(tx, key)) return { units: input.units, paid, alreadyApplied: true };
     await assertNotNationInsider(tx, bond.countryId, input.userId);
+    await assertNotFundInsiderPair(tx, input.userId, listing.sellerUserId);
     assertTradable(bond);
     if (listing.status !== "OPEN") throw new ExchangeError("CONFLICT", "That listing is closed");
     if (listing.sellerUserId === input.userId)
