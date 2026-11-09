@@ -1,29 +1,33 @@
+import { withBasePath } from "~/lib/base-path";
+
 /**
  * The refraction behind Facet's Lens layer (`FacetMaterial layer="lens"`, utility `facet-lens`).
  *
  * A displacement map bends the backdrop along each edge (red runs left to right, green top to
- * bottom) while a blurred mid-grey card leaves the middle clear. The map is stretched to the lens,
+ * bottom) while a blurred mid-grey card leaves the middle clear. It is a PNG, decoded once, rather
+ * than an SVG the browser rasterises (with its blur) for every lens. The map is stretched to the lens,
  * so the edge band follows its shape. Dispersion: glass bends short wavelengths more, so red, green
  * and blue are displaced by their own scales and added back, and colour fringes grow toward the rim.
  * Scales are fractions of the lens (`primitiveUnits="objectBoundingBox"`), so any size refracts alike.
  */
 
-const LENS_MAP = `data:image/svg+xml,${encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">' +
-    '<defs><linearGradient id="r" x2="1"><stop stop-color="#000"/><stop offset="1" stop-color="#f00"/></linearGradient>' +
-    '<linearGradient id="g" x2="0" y2="1"><stop stop-color="#000"/><stop offset="1" stop-color="#0f0"/></linearGradient>' +
-    '<filter id="b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter></defs>' +
-    '<rect width="100" height="100" fill="url(#r)"/>' +
-    '<rect width="100" height="100" fill="url(#g)" style="mix-blend-mode:screen"/>' +
-    '<rect x="8" y="12" width="84" height="76" rx="18" fill="#808080" filter="url(#b)"/></svg>'
-)}`;
+/** The displacement map, rendered from its SVG source by `scripts/design/render-lens-map.mjs`. */
+const LENS_MAP = withBasePath("/images/facet-lens-map.png");
 
-/** Red bends least, blue most; the spread is the dispersion. Negative scales pull the rim inward. */
+/**
+ * Red bends least, blue most; the spread is the dispersion. Negative scales pull the rim inward.
+ * Each channel keeps a third of the alpha, so the three add back to the backdrop's own alpha; at full
+ * alpha each, a translucent backdrop (inside a masked or filtered ancestor) summed past opaque while
+ * its colour stayed a fraction, and the lens went grey. `LENS_RESTORE` scales the colour back up.
+ */
 const LENS_CHANNELS = [
-  { channel: "r", scale: -0.055, matrix: "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" },
-  { channel: "g", scale: -0.07, matrix: "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" },
-  { channel: "b", scale: -0.09, matrix: "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" },
+  { channel: "r", scale: -0.055, matrix: "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.3333 0" },
+  { channel: "g", scale: -0.07, matrix: "0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 0.3333 0" },
+  { channel: "b", scale: -0.09, matrix: "0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 0.3334 0" },
 ] as const;
+
+/** The summed colour is a third of each channel (each came in at a third of the alpha). */
+const LENS_RESTORE = "3 0 0 0 0  0 3 0 0 0  0 0 3 0 0  0 0 0 1 0";
 
 /** The one filter every lens points at (`backdrop-filter: url(#facet-lens)` in layers.css). */
 export const LENS_FILTER_ID = "facet-lens";
@@ -73,7 +77,8 @@ export function LensFilter() {
           />,
         ])}
         <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="rg" />
-        <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" />
+        <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" result="rgb" />
+        <feColorMatrix in="rgb" type="matrix" values={LENS_RESTORE} />
       </filter>
     </svg>
   );

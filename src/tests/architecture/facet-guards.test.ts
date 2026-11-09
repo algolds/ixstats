@@ -421,7 +421,7 @@ describe("Facet layers", () => {
 
   it("the lens refracts through the one shared filter and goes solid when asked", () => {
     const lens = utility("facet-lens");
-    expect(lens).toMatch(/backdrop-filter: url\(#facet-lens\);/);
+    expect(lens).toMatch(/backdrop-filter: var\(--lens-refraction, url\(#facet-lens\)\)/);
     expect(lens).toMatch(/@variant transparency-reduced \{[^}]*backdrop-filter: none;/);
     expect(lens).toMatch(/@variant contrast-more \{[^}]*backdrop-filter: none;/);
   });

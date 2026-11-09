@@ -16,6 +16,19 @@ import { WikiPane } from "./WikiPane";
  *   - 4-col sticky discovery rail: MyCountry Builder kickstarter and Wiki (on phones the
  *     Builder moves above the feed)
  */
+/**
+ * Publishes the rail's height as --rail-h, so a rail taller than the screen sticks by its bottom
+ * edge instead of hiding it (see the aside's `top`).
+ */
+function trackRailHeight(el: HTMLElement | null) {
+  if (!el) return;
+  const observer = new ResizeObserver(() =>
+    el.style.setProperty("--rail-h", `${el.offsetHeight}px`)
+  );
+  observer.observe(el);
+  return () => observer.disconnect();
+}
+
 export function FrontPage() {
   const query = api.frontPage.get.useQuery();
   const data = query.data;
@@ -30,32 +43,29 @@ export function FrontPage() {
         isLoading={query.isLoading}
       />
 
-      <div className="grid items-start gap-5 lg:grid-cols-12">
-        {/* On phones the rail falls below a long feed, so the one sign-up action comes first. */}
-        <div className="lg:hidden">
-          <BuilderPane />
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-5 lg:col-span-8">
-          <LensSurface>
-            <FrontPageFeed />
-          </LensSurface>
-        </div>
-
-        {/* Pinned under the top bar; a rail taller than the window scrolls inside itself, so it is
-            never cut off and never sits low on a tall window. */}
-        <aside
-          aria-label="World discovery and activity"
-          className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-(--shell-top-offset) lg:col-span-4 lg:max-h-[calc(100dvh-var(--shell-top-offset)-1.25rem)] lg:[scrollbar-width:thin] lg:overflow-y-auto lg:overscroll-contain"
-        >
-          <div className="hidden lg:contents">
+      <LensSurface>
+        <div className="grid items-start gap-5 lg:grid-cols-12">
+          {/* On phones the rail falls below a long feed, so the one sign-up action comes first. */}
+          <div className="lg:hidden">
             <BuilderPane />
           </div>
-          <LensSurface>
+
+          <div className="facet-lens-flat flex min-w-0 flex-col gap-5 lg:col-span-8">
+            <FrontPageFeed />
+          </div>
+
+          <aside
+            ref={trackRailHeight}
+            aria-label="World discovery and activity"
+            className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-[min(var(--shell-top-offset),calc(100dvh-var(--rail-h,0px)-1.25rem))] lg:col-span-4"
+          >
+            <div className="hidden lg:contents">
+              <BuilderPane />
+            </div>
             <WikiPane />
-          </LensSurface>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      </LensSurface>
     </div>
   );
 }

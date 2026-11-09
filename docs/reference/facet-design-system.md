@@ -118,6 +118,7 @@ Rules:
 - Reduce Transparency makes Pane, Chrome and Overlay opaque. Increase Contrast strengthens hairlines and labels. Both themes are supported.
 - Do not write `backdrop-blur-*`, glass fills or elevation outside `layers.css`.
 - A Lens is a choice for a surface, made by the owner: the brand hero over a decorative backdrop (a monogram such as `facet-monogram`, art, a map), and the front page's content panes (owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass. Elsewhere content stays on a Pane until the owner extends it.
+- Front page rail cards each sit over a faint repeating monogram texture (`MonogramBackdrop`, `--monogram-strength` 6% against the hero's 11%) so their rims have something to bend.
 - A Lens samples what is painted beneath it inside its nearest ancestor with opacity, a filter or a mask. Keep it outside those: to fade it with its content, give the Lens the same animation as a sibling rather than nesting it.
 - The refraction needs Chromium (`url()` filters on backdrops). Elsewhere a Lens is a plain frosted pane, so the design must hold without the bend. Reduce Transparency and Increase Contrast make it solid.
 
@@ -278,7 +279,7 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
   - Text size: `--text-scale`, 0.9 to 1.3. Use the text styles so it applies.
   - Density: `compact:` variant. Control heights are `--control-height-sm|md|lg`; use them, not fixed heights.
   - Sound off: `data-sound="off"`.
-- Scroll-linked depth for a top-of-page hero, in CSS (`interaction.css`), off under Reduce Motion: `scroll-recede` fades, shrinks and slows the hero's content over the first 320px of scroll; `scroll-parallax` makes its backdrop trail the page by 96px over the same range. Pointer parallax on such a backdrop uses `springSmooth` on mouse pointers only, and is off under Reduce Motion.
+- A top-of-page hero leaves by `scroll-dissolve` (`interaction.css`, owner ruling 2026-11-08): it scrolls 1:1 with the page, nothing collapses, and each line dissolves as it reaches a band fixed just under Halo (Apple's scroll edge effect). Free scroll, no snapping, no scroll parallax. Pointer parallax on such a backdrop uses `springSmooth` on mouse pointers only, and is off under Reduce Motion.
 - Targets are at least 44px on coarse pointers (`hitSlop`). Focus is a 2px tint outline (`focusRing`).
 
 ## 9. Copy

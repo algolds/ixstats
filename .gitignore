@@ -236,6 +236,7 @@ scripts/onoma/raw/
 !/public/images/wikios-*
 !/public/images/ix-monogram-*.svg
 !/public/images/ixstates-wordmark.svg
+!/public/images/facet-lens-map.png
 
 # --------------------------------------------------------------------------------
 # Kokoro TTS Service local caches

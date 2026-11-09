@@ -7,6 +7,7 @@ import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountr
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { HelpIcon } from "~/components/ui/help-icon";
+import { MonogramBackdrop } from "./Pane";
 
 const BUILDER_PATHS = [
   {
@@ -24,12 +25,12 @@ const BUILDER_PATHS = [
 ] as const;
 
 /**
- * Primary MyCountry Builder card in the right rail scoped to `data-app="mycountry"` gold:
+ * Primary MyCountry Builder card in the right rail, a Lens over the MyCountry monogram in gold:
  * recessed emblem + title + help tooltip, a full-width gold Start CTA, then borderless quick-start rows.
  */
 export function BuilderPane() {
   return (
-    <div data-app="mycountry" className="contents">
+    <MonogramBackdrop app="mycountry">
       <Card padding="md">
         <div className="flex min-w-0 items-center gap-3">
           <span className="facet-recess rounded-control flex size-12 shrink-0 items-center justify-center">
@@ -93,6 +94,6 @@ export function BuilderPane() {
           ))}
         </ul>
       </Card>
-    </div>
+    </MonogramBackdrop>
   );
 }

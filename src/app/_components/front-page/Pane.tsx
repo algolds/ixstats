@@ -7,7 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/com
 import type { ContentType } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
+import { withBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils/cn";
+import type { CSSProperties } from "react";
 
 interface PaneProps {
   title: React.ReactNode;
@@ -63,6 +65,45 @@ export function Pane({
       </CardHeader>
       <CardContent className="flex-1 px-0">{children}</CardContent>
     </Card>
+  );
+}
+
+const MONOGRAM_APPS = ["wiki", "mycountry", "maps", "realms"] as const;
+
+/**
+ * The whole monogram (every app's layer in one mask, unioned) as an even texture in the card's own
+ * tint: a smaller tile and about half the hero's strength, so it reads as grain, not a pattern.
+ */
+const MONOGRAM_TEXTURE = {
+  "--monogram-strength": "6%",
+  maskImage: MONOGRAM_APPS.map(
+    (app) => `url("${withBasePath(`/images/ix-monogram-${app}.svg`)}")`
+  ).join(", "),
+  maskSize: "210px 105px",
+  maskRepeat: "repeat",
+} as CSSProperties;
+
+/**
+ * Scopes a rail card to its app and lays the monogram texture exactly under it, so the Lens rim has
+ * something to bend (over the flat canvas a lens shows no refraction). It stays inside the card's
+ * box: a mark peeking past the edge reads as a stray, not as glass.
+ */
+export function MonogramBackdrop({
+  app,
+  children,
+}: {
+  app: "mycountry" | "wiki";
+  children: React.ReactNode;
+}) {
+  return (
+    <div data-app={app} className="relative">
+      <div
+        aria-hidden
+        className="facet-monogram rounded-card pointer-events-none absolute inset-0 print:hidden"
+        style={MONOGRAM_TEXTURE}
+      />
+      {children}
+    </div>
   );
 }
 

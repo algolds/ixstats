@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +8,6 @@ import {
   Compass,
   Crown,
   Globe,
-  Group as Users,
   Map as MapIcon,
   NavArrowRight,
   TriangleFlag,
@@ -17,21 +16,19 @@ import {
   CoordinatesMapEmbed,
   type EmbedPoliticalFeature,
 } from "~/components/maps/widgets/CoordinatesMapEmbed";
-import { motion, useMotionValue, useSpring, useTransform, type MotionValue } from "motion/react";
-import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
-import { springSmooth } from "~/lib/design/motion";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
 import { FacetMaterial } from "~/components/ui/facet";
 import { Badge } from "~/components/ui/badge";
 import { Button, hitSlop } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { SignInButton } from "~/context/auth-context";
 import { useFlag } from "~/hooks/useUnifiedFlags";
-import { assetUrl, withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
+import { flatWorldCoverZoom } from "~/lib/maps/flat-projection";
 import { formatCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { PlatformTopBar } from "./PlatformTopBar";
 
 type FrontPageData = RouterOutputs["frontPage"]["get"];
 export type FeaturedRealmItem = NonNullable<FrontPageData["featured"]>;
@@ -43,202 +40,72 @@ const SNAPSHOT_CELL =
 const ICON_TINT =
   "transition-colors duration-fast group-hover:text-label group-focus-visible:text-label";
 
-function useIdleWorldZoom(box: React.RefObject<HTMLDivElement | null>): number | null {
-  const [zoom, setZoom] = useState<number | null>(null);
-  useEffect(() => {
-    const fit = () => {
-      const w = Math.max(box.current?.clientWidth ?? 512, 256);
-      const h = Math.max(box.current?.clientHeight ?? 320, 200);
-      setZoom(Math.log2(Math.max(w, h) / 512));
-    };
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(fit, { timeout: 2000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(fit, 200);
-    return () => clearTimeout(id);
-  }, [box]);
-  return zoom;
+interface MapStageFit {
+  zoom: number | null;
+  insetRight: number;
+}
+
+/** Pixels of the map's right side under the realm panel: from md up it floats there; stacked, none. */
+function coveredRight(map: HTMLElement | null, panel: HTMLElement | null): number {
+  if (!map || !panel) return 0;
+  const m = map.getBoundingClientRect();
+  const p = panel.getBoundingClientRect();
+  const overlaps = p.top < m.bottom && p.bottom > m.top && p.left < m.right && p.right > m.left;
+  return overlaps ? Math.round(m.right - p.left) : 0;
 }
 
 /**
- * The monogram's layers, each a tile in its app's tint: the emblem and the W in the Wiki navy. `depth`
- * is how far a layer drifts from the pointer, in px at the hero's edge: the emblems sit deeper than the
- * app marks, so the pattern separates into two planes as the mouse moves.
+ * Fits the world to the part of the map the realm panel leaves uncovered (once, when the page is
+ * idle), then keeps the covered width current as either box resizes.
  */
-const MONOGRAM_LAYERS = (
-  [
-    ["wiki", 8],
-    ["mycountry", 16],
-    ["maps", 16],
-    ["realms", 16],
-  ] as const
-).map(([app, depth]) => ({
-  app,
-  depth,
-  style: {
-    "--monogram": `url("${withBasePath(`/images/ix-monogram-${app}.svg`)}")`,
-  } as CSSProperties,
-}));
-
-/** The emblem, painted in the Wiki tint through a mask so it holds contrast in both themes. */
-const EMBLEM_STYLE = {
-  maskImage: `url("${withBasePath("/images/ix-logo.svg?v=2")}")`,
-  maskSize: "contain",
-  maskRepeat: "no-repeat",
-} satisfies CSSProperties;
-
-function MonogramLayer({
-  app,
-  depth,
-  style,
-  px,
-  py,
-}: (typeof MONOGRAM_LAYERS)[number] & { px: MotionValue<number>; py: MotionValue<number> }) {
-  const x = useTransform(px, (v) => v * -depth);
-  const y = useTransform(py, (v) => v * -depth);
-  return (
-    <motion.div
-      data-app={app}
-      className="facet-monogram absolute -inset-6"
-      style={{ ...style, x, y }}
-    />
-  );
-}
-
-const WORDMARK_STYLE = {
-  maskImage: `url("${withBasePath("/images/ixstates-wordmark.svg")}")`,
-  maskSize: "contain",
-  maskRepeat: "no-repeat",
-} satisfies CSSProperties;
-
-function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }) {
-  const reduceMotion = useFacetReducedMotion();
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const px = useSpring(pointerX, springSmooth);
-  const py = useSpring(pointerY, springSmooth);
-
-  // The pointer's place in the hero, -1 to 1 on each axis; mouse only (touch has no hover to follow).
-  const followPointer = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "mouse" || reduceMotion) return;
-    const box = event.currentTarget.getBoundingClientRect();
-    pointerX.set(((event.clientX - box.left) / box.width) * 2 - 1);
-    pointerY.set(((event.clientY - box.top) / box.height) * 2 - 1);
-  };
-  const recentre = () => {
-    pointerX.set(0);
-    pointerY.set(0);
-  };
-
-  const platformStats = [
-    {
-      href: "/realms",
-      icon: Globe,
-      tone: "text-blue",
-      label: "realms",
-      value: facts ? facts.realms.toLocaleString() : "–",
-    },
-    {
-      href: "/countries",
-      icon: Crown,
-      tone: "text-yellow",
-      label: "nations",
-      value: facts ? facts.nations.toLocaleString() : "–",
-    },
-    {
-      href: "/thinkpages",
-      icon: Users,
-      tone: "text-teal",
-      label: "players",
-      value: facts ? facts.players.toLocaleString() : "–",
-    },
-  ] as const;
-
-  return (
-    <div
-      className="border-separator relative overflow-hidden border-b px-4 py-8 text-center md:py-10"
-      onPointerMove={followPointer}
-      onPointerLeave={recentre}
-    >
-      <div
-        aria-hidden
-        className="scroll-parallax pointer-events-none absolute inset-x-0 -top-24 bottom-0 print:hidden"
-      >
-        {MONOGRAM_LAYERS.map((layer) => (
-          <MonogramLayer key={layer.app} {...layer} px={px} py={py} />
-        ))}
-      </div>
-      <FacetMaterial
-        layer="lens"
-        aria-hidden
-        className="scroll-recede pointer-events-none absolute inset-x-3 inset-y-4 mx-auto max-w-[640px] rounded-[32px] md:inset-y-5 print:hidden"
-      />
-      <div className="scroll-recede relative flex flex-col items-center">
-        <span aria-hidden data-app="wiki" className="bg-tint block size-16" style={EMBLEM_STYLE} />
-        {/* The wordmark asset (Schibsted Grotesk 800, hand-spaced, outlined) painted in the label ink
-            through a mask, so it follows the theme. Sized in em off text-display: 74 of its 100-unit
-            em tall, so it scales with the user's text size like the title it replaces. */}
-        <h1 className="text-display mt-4 leading-none">
-          <span className="sr-only">IxStates</span>
-          <span
-            aria-hidden
-            className="bg-label block aspect-[417/74] h-[0.74em]"
-            style={WORDMARK_STYLE}
-          />
-        </h1>
-        <p className="text-title-3 text-label-secondary mt-2 font-normal">
-          The operating system for worldbuilding
-        </p>
-        <div
-          aria-label="Platform totals"
-          className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1"
-        >
-          {platformStats.map(({ href, icon: Icon, tone, label, value }) => (
-            <Link
-              key={label}
-              href={href}
-              className={cn(
-                "text-footnote text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm duration-fast relative inline-flex items-center gap-1.5 tabular-nums transition-colors focus-visible:outline-2",
-                hitSlop
-              )}
-            >
-              <Icon aria-hidden className={cn(tone, "size-3.5 shrink-0")} />
-              <span className="text-label font-medium">{value}</span>
-              <span>{label}</span>
-            </Link>
-          ))}
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-          {/* ponytail: Clerk's sign-in-or-up flow; the email decides which, so one button covers both */}
-          <SignInButton mode="modal" withSignUp>
-            <Button size="lg" className="rounded-full">
-              <span>Sign in</span>
-              <NavArrowRight aria-hidden />
-            </Button>
-          </SignInButton>
-          <Button variant="secondary" size="lg" className="rounded-full" asChild>
-            <Link href="/realms">Explore realms</Link>
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+function useMapStageFit(
+  box: React.RefObject<HTMLDivElement | null>,
+  panel: React.RefObject<HTMLElement | null>
+): MapStageFit {
+  const [fit, setFit] = useState<MapStageFit>({ zoom: null, insetRight: 0 });
+  useEffect(() => {
+    const fitWorld = () => {
+      const insetRight = coveredRight(box.current, panel.current);
+      const w = Math.max((box.current?.clientWidth ?? 512) - insetRight, 256);
+      const h = Math.max(box.current?.clientHeight ?? 320, 200);
+      setFit({ zoom: flatWorldCoverZoom(w, h), insetRight });
+    };
+    const observer = new ResizeObserver(() => {
+      const insetRight = coveredRight(box.current, panel.current);
+      setFit((prev) => (prev.insetRight === insetRight ? prev : { ...prev, insetRight }));
+    });
+    for (const el of [box.current, panel.current]) if (el) observer.observe(el);
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(fitWorld, { timeout: 2000 });
+      return () => {
+        window.cancelIdleCallback(id);
+        observer.disconnect();
+      };
+    }
+    const id = setTimeout(fitWorld, 200);
+    return () => {
+      clearTimeout(id);
+      observer.disconnect();
+    };
+  }, [box, panel]);
+  return fit;
 }
 
 function HeroMapStage({
   realm,
   nations,
+  panel,
   className,
 }: {
   realm: FeaturedRealmItem | undefined;
   nations: FrontPageData["nations"];
+  /** The realm panel floating over the map's right side. */
+  panel: React.RefObject<HTMLElement | null>;
   className?: string;
 }) {
   const router = useRouter();
   const box = useRef<HTMLDivElement>(null);
-  const zoom = useIdleWorldZoom(box);
+  const { zoom, insetRight } = useMapStageFit(box, panel);
   const [hoveredCountry, setHoveredCountry] = useState<EmbedPoliticalFeature | null>(null);
 
   const { data: realmCountries } = api.countries.getSelectList.useQuery(
@@ -319,6 +186,7 @@ function HeroMapStage({
           zoom={zoom}
           marker={false}
           options="height=100%"
+          insetRight={insetRight}
           className="absolute inset-0 rounded-none border-0"
           onCountryHover={handleCountryHover}
           onCountryClick={handleCountryClick}
@@ -449,6 +317,7 @@ export function FrontPageHero({
   facts: FrontPageData["facts"] | undefined;
   isLoading?: boolean;
 }) {
+  const realmPanel = useRef<HTMLDivElement>(null);
   const topNations = nations.slice(0, 4);
   const topGdpSum = nations.reduce((sum, n) => sum + (n.currentTotalGdp || 0), 0);
 
@@ -481,15 +350,23 @@ export function FrontPageHero({
   ] as const;
 
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="scroll-dissolve relative overflow-hidden">
       <PlatformTopBar facts={facts} />
 
+      {/* From md up the map fills the row and the realm panel floats over its right side in the
+          same grid cell, so the Lens has the map under it to show through and bend. Phones stack. */}
       <div className="relative grid gap-3 p-3 md:grid-cols-5">
-        <HeroMapStage realm={realm} nations={nations} className="md:col-span-3" />
+        <HeroMapStage
+          realm={realm}
+          nations={nations}
+          panel={realmPanel}
+          className="md:col-span-5 md:col-start-1 md:row-start-1"
+        />
 
         <FacetMaterial
+          ref={realmPanel}
           layer="lens"
-          className="rounded-row flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2"
+          className="facet-lens-frosted rounded-row flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2 md:col-start-4 md:row-start-1 md:m-3 md:h-auto"
         >
           <div className="flex items-start justify-between gap-2">
             <RealmHeroIdentity realm={realm} />

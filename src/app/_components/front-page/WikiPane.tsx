@@ -3,23 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookStack, NavArrowRight, OpenBook, Search, Shuffle } from "iconoir-react";
+import { NavArrowRight, Search, Shuffle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { HelpIcon } from "~/components/ui/help-icon";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { timeAgo } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { Pane, PaneBody } from "./Pane";
+import { MonogramBackdrop, Pane, PaneBody } from "./Pane";
 
 const EDITS_SHOWN = 4;
-
-type SpotlightTab = "featured" | "almanac";
-
-const SPOTLIGHT_OPTIONS = [
-  { value: "featured" as const, label: "Featured article", icon: <OpenBook /> },
-  { value: "almanac" as const, label: "Daily almanac", icon: <BookStack /> },
-] as const;
 
 const articlePath = (title: string) => `/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
@@ -36,18 +28,16 @@ function readAuthorName(
  * The WikiOS discovery pane in the right rail, scoped to `data-app="wiki"`:
  * - WikiOS logomark + help tooltip
  * - Inline encyclopedia search bar + Random article jump
- * - Expanded Featured Article / Daily Almanac spotlight well
+ * - The featured article (the daily almanac only when there is none)
  * - Recent article edits stream
  */
 export function WikiPane() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<SpotlightTab>("featured");
 
   const query = api.wikios.getMainPage.useQuery();
   const featured = query.data?.featured ?? null;
   const almanac = query.data?.almanac ?? null;
-  const hasBothSpotlights = Boolean(featured && almanac);
 
   const almanacSpotlight = almanac
     ? {
@@ -71,10 +61,7 @@ export function WikiPane() {
       }
     : null;
 
-  const activeSpotlight =
-    activeTab === "almanac" && almanacSpotlight
-      ? almanacSpotlight
-      : (featuredSpotlight ?? almanacSpotlight);
+  const activeSpotlight = featuredSpotlight ?? almanacSpotlight;
 
   const { data: authorInfo } = api.wikios.getArticleAuthors.useQuery(
     { title: activeSpotlight?.title ?? "" },
@@ -104,7 +91,7 @@ export function WikiPane() {
   };
 
   return (
-    <div data-app="wiki" className="contents">
+    <MonogramBackdrop app="wiki">
       <Pane
         icon={<WikiOSLogomark className="text-tint size-4" />}
         title={
@@ -153,20 +140,6 @@ export function WikiPane() {
           what="the wiki"
           empty={!activeSpotlight && edits.length === 0 ? "Nothing on the wiki yet." : null}
         >
-          {hasBothSpotlights && (
-            <div className="mb-2">
-              <SegmentedControl
-                aria-label="Wiki spotlight"
-                size="sm"
-                fullWidth
-                asTabs
-                options={SPOTLIGHT_OPTIONS}
-                value={activeTab}
-                onValueChange={setActiveTab}
-              />
-            </div>
-          )}
-
           {activeSpotlight && (
             <div className="border-separator rounded-row border p-3">
               <Link
@@ -178,11 +151,9 @@ export function WikiPane() {
                     <img src={activeSpotlight.image} alt="" className="h-32 w-full object-cover" />
                   </span>
                 )}
-                {!hasBothSpotlights && (
-                  <span className="text-caption text-tint-ink mb-0.5 block font-medium">
-                    {activeSpotlight.kicker}
-                  </span>
-                )}
+                <span className="text-caption text-tint-ink mb-0.5 block font-medium">
+                  {activeSpotlight.kicker}
+                </span>
                 <span className="text-headline text-label block group-hover:underline">
                   {activeSpotlight.title}
                 </span>
@@ -222,6 +193,6 @@ export function WikiPane() {
           )}
         </PaneBody>
       </Pane>
-    </div>
+    </MonogramBackdrop>
   );
 }
