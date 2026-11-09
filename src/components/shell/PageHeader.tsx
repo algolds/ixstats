@@ -53,11 +53,6 @@ export interface PageHeaderProps {
    */
   backdrop?: React.ReactNode;
   /**
-   * Whether the backdrop actually shows art (default true). A header whose art is missing or failed
-   * keeps the backdrop layout, so nothing shifts, but drops the Lens behind the title.
-   */
-  backdropVisible?: boolean;
-  /**
    * For pages that already pad their content (the forum): pulls the header out by its own inner
    * gutter, so the title and toolbar actions line up with the page's content edge instead of
    * sitting a gutter further in. It does not apply to the `backdrop` variant, whose gutter is
@@ -114,7 +109,6 @@ export function PageHeader({
   leading,
   actions,
   backdrop,
-  backdropVisible = true,
   bleed,
   className,
 }: PageHeaderProps) {
@@ -122,6 +116,16 @@ export function PageHeader({
   const titleRef = React.useRef<HTMLHeadingElement>(null);
   const collapsed = useCollapsed(toolbarRef, titleRef);
   const hasToolbarContent = Boolean(back) || Boolean(actions);
+  const titleBlock = (
+    <>
+      <h1 ref={titleRef} className="text-large-title text-label">
+        {title}
+      </h1>
+      {subtitle != null && subtitle !== false && (
+        <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+      )}
+    </>
+  );
 
   return (
     <header
@@ -224,34 +228,18 @@ export function PageHeader({
         )}
       >
         {leading}
-        {backdrop != null && backdropVisible ? (
+        {/* A page has a backdrop or not, so the wrapper never swaps and the observed <h1> never
+            remounts. The Lens is sized to the text, so long names are covered too. */}
+        {backdrop != null ? (
           <FacetMaterial
             layer="lens"
             data-slot="page-header-plate"
             className="facet-lens-frosted rounded-card flex min-w-0 flex-col gap-1 px-4 py-3"
           >
-            <h1 ref={titleRef} className="text-large-title text-label">
-              {title}
-            </h1>
-            {subtitle != null && subtitle !== false && (
-              <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
-            )}
+            {titleBlock}
           </FacetMaterial>
         ) : (
-          <div
-            data-slot={backdrop != null ? "page-header-plate" : undefined}
-            className={cn(
-              "flex min-w-0 flex-col gap-1",
-              backdrop != null && "rounded-card px-4 py-3"
-            )}
-          >
-            <h1 ref={titleRef} className="text-large-title text-label">
-              {title}
-            </h1>
-            {subtitle != null && subtitle !== false && (
-              <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
-            )}
-          </div>
+          <div className="flex min-w-0 flex-col gap-1">{titleBlock}</div>
         )}
       </div>
     </header>

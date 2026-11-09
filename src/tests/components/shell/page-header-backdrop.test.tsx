@@ -22,13 +22,9 @@ describe("PageHeader backdrop plate", () => {
     expect(plate).toHaveClass("facet-lens-frosted");
   });
 
-  it("drops the lens when the art is missing", () => {
-    const { container } = render(
-      <PageHeader title="Caphiria" backdrop={<div />} backdropVisible={false} />
-    );
-    const plate = container.querySelector('[data-slot="page-header-plate"]');
-    expect(plate).not.toBeNull();
-    expect(plate).not.toHaveAttribute("data-layer");
-  });
-});
+  it("keeps a plain title with no lens when the page has no backdrop", () => {
+    const { container } = render(<PageHeader title="Caphiria" />);
+    expect(container.querySelector('[data-slot="page-header-plate"]')).toBeNull();
+    expect(container.querySelector('[data-layer="lens"]')).toBeNull();
+  });});
 
