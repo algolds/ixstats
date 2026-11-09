@@ -268,6 +268,7 @@ export const realmsRouter = createTRPCRouter({
     const nation = { id: true, name: true, realmId: true, realm: { select: { name: true } } };
     const users = await ctx.db.user.findMany({
       orderBy: { updatedAt: "desc" },
+      take: 1000,
       select: {
         id: true,
         clerkUserId: true,

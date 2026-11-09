@@ -694,3 +694,47 @@ describe("realms.mapGeo", () => {
     expect(getRealmMapGeo).toHaveBeenCalledWith(expect.anything(), "r1");
   });
 });
+
+describe("realms list bounds", () => {
+  const adminViewer = {
+    id: "u_admin",
+    clerkUserId: "clerk_admin",
+    role: { name: "admin", level: 10 },
+  };
+
+  it("caps listClaims at 500 rows ordered newest first", async () => {
+    const db = createMockPrisma();
+    db.realmClaim.findMany.mockResolvedValue([]);
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId: adminViewer.clerkUserId },
+      user: adminViewer,
+    });
+    await realmsRouter.createCaller(ctx as never).listClaims({ status: "pending" });
+
+    expect(db.realmClaim.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 500,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      })
+    );
+  });
+
+  it("caps adminListUsers at 1000 rows", async () => {
+    const db = createMockPrisma();
+    db.user.findMany.mockResolvedValue([]);
+    const ctx = createMockRouterContext({
+      db,
+      auth: { userId: adminViewer.clerkUserId },
+      user: adminViewer,
+    });
+    await realmsRouter.createCaller(ctx as never).adminListUsers();
+
+    expect(db.user.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 1000,
+        orderBy: { updatedAt: "desc" },
+      })
+    );
+  });
+});
