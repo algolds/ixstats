@@ -33,6 +33,8 @@ function resolverSnapshot() {
   };
 }
 
+const MAX_REQUESTED_COUNTRIES = 50;
+
 const NO_PROGRESS = { current: 0, total: 0, percentage: 0 };
 
 function statsResponse() {
@@ -70,6 +72,12 @@ async function flagsResponse(countryParam: string | null) {
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
+  if (requested.length > MAX_REQUESTED_COUNTRIES) {
+    return NextResponse.json(
+      { success: false, error: `At most ${MAX_REQUESTED_COUNTRIES} countries per request` },
+      { status: 400 }
+    );
+  }
   const countryNames = requested.length > 0 ? requested : await allCountryNames();
 
   const resolved = await serverFlagResolver.resolveBatch(countryNames);
@@ -93,8 +101,11 @@ export async function GET(request: NextRequest) {
         return statsResponse();
       case "status":
         return statusResponse();
-      case "flags":
+      case "flags": {
+        const denied = await requireAdminSession();
+        if (denied instanceof NextResponse) return denied;
         return await flagsResponse(searchParams.get("countries"));
+      }
       default:
         return invalidAction("?action=stats, ?action=status, or ?action=flags");
     }
