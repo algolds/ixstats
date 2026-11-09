@@ -118,6 +118,7 @@ export function createWorldRunner(
     const relief = previewRelief(world.cells);
     const cells = ownBuffer(world.cells);
     const rgba = ownBuffer(relief.rgba);
+    const flat = ownBuffer(relief.flat.rgba);
     post(
       {
         type: "result",
@@ -136,9 +137,14 @@ export function createWorldRunner(
         restartedAt: world.restartedAt,
         generationMs: world.stats.generationTimeMs,
         cells,
-        relief: { width: relief.width, height: relief.height, rgba },
+        relief: {
+          width: relief.width,
+          height: relief.height,
+          rgba,
+          flat: { width: relief.flat.width, height: relief.flat.height, rgba: flat },
+        },
       },
-      [cells, rgba]
+      [cells, rgba, flat]
     );
   };
 
@@ -162,16 +168,17 @@ export function createWorldRunner(
     }
     switch (request.type) {
       case "diagnostic": {
-        const { rgba, ...image } = diagnosticOf(world, request.kind);
+        const { rgba, flat, ...image } = diagnosticOf(world, request.kind);
         const copy = ownBuffer(rgba);
+        const flatCopy = ownBuffer(flat.rgba);
         post(
           {
             type: "diagnostic-result",
             requestId,
             world: world.id,
-            image: { ...image, rgba: copy },
+            image: { ...image, rgba: copy, flat: { ...flat, rgba: flatCopy } },
           },
-          [copy]
+          [copy, flatCopy]
         );
         return;
       }

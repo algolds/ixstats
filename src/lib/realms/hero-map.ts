@@ -3,7 +3,9 @@
  * SVG face, and where a nation on it leads.
  */
 
-/** MapLibre draws the Web Mercator world 512px wide at zoom 0. */
+import { toCarrierLat } from "~/lib/maps/flat-projection";
+
+/** MapLibre draws the world 512px wide at zoom 0. */
 const TILE_SIZE = 512;
 
 /** What a nation is on a realm's map: open to claim, held by a player, NPC scenery nobody can claim, or a region with no country. */
@@ -21,9 +23,6 @@ export interface HeroNationLink {
   status: NationStatus;
 }
 
-const mercatorY = (lat: number) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
-const latitudeOf = (y: number) => ((2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180) / Math.PI;
-
 /**
  * The centre and zoom that make `bounds` ([west, south, east, north]) cover a `width` x `height` box with
  * `pad` of each span as margin, cropping the overflowing side: the same framing as the SVG face's
@@ -37,11 +36,12 @@ export function coverView(
 ): { center: [number, number]; zoom: number } {
   const [west, south, east, north] = bounds;
   const spanX = ((east - west) / 360) * (1 + 2 * pad);
-  const spanY = ((mercatorY(north) - mercatorY(south)) / (2 * Math.PI)) * (1 + 2 * pad);
+  // Plate Carrée, like the face: latitude is linear, on the same scale as longitude
+  const spanY = ((north - south) / 360) * (1 + 2 * pad);
   const zoomX = Math.log2(width / (TILE_SIZE * Math.max(spanX, 1e-6)));
   const zoomY = Math.log2(height / (TILE_SIZE * Math.max(spanY, 1e-6)));
   return {
-    center: [(west + east) / 2, latitudeOf((mercatorY(south) + mercatorY(north)) / 2)],
+    center: [(west + east) / 2, toCarrierLat((south + north) / 2)],
     zoom: Math.max(0, Math.max(zoomX, zoomY)),
   };
 }

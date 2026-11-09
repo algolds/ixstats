@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db } from "~/server/db";
 import { buildTile } from "~/server/modules/maps/tile-render";
-import { isTileCoord, isTiledLayer } from "~/lib/maps/decorative-tiles";
+import { isTileCoord, parseTileLayerKey, tileLayerKey } from "~/lib/maps/decorative-tiles";
 import { parseMapVersion } from "~/lib/maps/map-version";
 import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 import {
@@ -62,8 +62,10 @@ interface TileParams {
 export async function GET(_request: NextRequest, { params }: { params: Promise<TileParams> }) {
   const { realm, version, format, layer, z, x, y } = await params;
   const [zn, xn, yn, mapVersion] = [digits(z), digits(x), digits(y), parseMapVersion(version)];
+  // `<layer>.flat` asks for the layer's Plate Carrée tile (flat maps)
+  const key = parseTileLayerKey(layer);
   if (
-    !isTiledLayer(layer) ||
+    !key ||
     !isTileCoord(zn, xn, yn) ||
     mapVersion === null ||
     Number.isNaN(formatNumber(format))
@@ -73,10 +75,13 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<T
   try {
     const target = await resolveTileRealm(realm);
     if (!target) return notFound();
-    const tile = await getTile([target.id, mapVersion, layer, zn, xn, yn], {
-      render: () => buildTile(db, target.id, layer, zn, xn, yn),
-      currentVersion: () => currentMapVersion(target.id),
-    });
+    const tile = await getTile(
+      [target.id, mapVersion, tileLayerKey(key.layer, key.flat), zn, xn, yn],
+      {
+        render: () => buildTile(db, target.id, key.layer, zn, xn, yn, key.flat),
+        currentVersion: () => currentMapVersion(target.id),
+      }
+    );
     if (!tile) return notFound();
     const cacheable = tile.cacheable && formatNumber(format) === TILE_FORMAT_VERSION;
     const cacheControl = tileCacheControl(target, realm === target.id, cacheable);

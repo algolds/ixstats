@@ -216,6 +216,17 @@ nations work per realm. The detailed doc is [realm-maps.md](realm-maps.md): the 
 [editing and viewing a realm's map](realm-maps.md#8-editing-and-viewing-a-realms-map) (§8: who edits, map settings,
 planet radius, viewer, realm labels, Auto-Match, what is not done yet).
 
+### Flat maps: Plate Carrée (2026-11-08)
+
+MapLibre 6 draws only Web Mercator and the globe. Mercator swells areas toward the poles and cuts everything past ±85.05°, so flat maps are drawn in Plate Carrée (equirectangular), the projection realm art is made in, through a "carrier" latitude (`src/lib/maps/flat-projection.ts`): each point goes to MapLibre at `atan(sinh φ)`, which Mercator draws at y = φ. Longitude is untouched, so world copies, the antimeridian and tile columns work as before; the poles land at ±66.51° in carrier terms and nothing is lost.
+
+- Data and camera targets go in through `toCarrierGeoJSON` / `toCarrierLngLat`; pointer and camera reads come back through `fromCarrier`. `clampFlatCenterLat` (via MapLibre's `transformConstrain`) keeps the view from passing a pole, and `flatWorldCoverZoom` fits the 2:1 world to a box.
+- Converted: `CoordinatesMapEmbed` (wiki coordinates and the front-page hero), the country map embed (`embed-map-layers.ts`), `MapPickerModal`, WikiOS `MapCoordsModal`, and the realm hero map with its SVG face (`realms.map-face.ts` projects with `+proj=eqc` on the Mercator sphere; the ±75° band stays as framing).
+- `/maps` flat mode (Settings → Projection → Flat, or <kbd>P</kbd>; `ProjectionMode` "mercator" underneath) and World Studio's Flat switch go through the flat-map adapter (`src/lib/maps/flat-map-adapter.ts`), installed on each map at creation (`map-engine.ts`, `useStudioMap`). While flat it converts at the map's own API, so callers keep true coordinates: `project`/`unproject` (and with them every event's `lngLat`, markers and popups), `getCenter`/`getBounds`, `jumpTo`/`easeTo`/`flyTo`/`fitBounds`/`cameraForBounds`, GeoJSON `addSource`/`setData`, queried features' geometry (lazily), and image corners (`addSource`, `updateImage`). Only the outermost call converts (MapLibre nests `jumpTo` in `easeTo`). Switching re-pushes every GeoJSON source's last true data, keeps the view in place and tells `onFlatModeChange` listeners. Not converted: `updateData` diffs, blob-URL data (World Studio's draft converts its own layer JSON), tile sources.
+- Tiles for flat maps: vector tiles at the layer key `<layer>.flat` (`/api/map-tiles/…/rivers.flat/z/x/y`; `ST_Transform` to `+proj=eqc` on the same tile envelope, cached in the version folder beside the Mercator ones); raster art at `?projection=flat`, composed on first ask from the version's Mercator tiles (each row reads the Mercator row at its latitude) and kept in its `flat/` folder. Raster art past ±85.05° stays blank, because the Mercator pyramid ends there; a flat pyramid built from the source image would fill it. The realm base image is pinned at ±90° when flat.
+- World Studio's relief and diagnostics carry their equirectangular image beside the Mercator one (`flat` on the worker's relief and diagnostic payloads); the draft shows it pinned at the poles when flat. deck.gl's transport overlay steps aside in flat mode; the MapLibre route lines stay.
+- Still Mercator: the map editor (every edit writes geometry, so converting it is its own job) and `/maps` dynamic mode once zoomed in.
+
 ## Realm Map Import Engine
 
 A realm's political map from a file: a flat-colour **PNG/JPEG/WebP**, an **SVG** with a shape or group per nation, or

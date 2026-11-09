@@ -31,6 +31,10 @@ export function realWorld(over: Partial<WorldGenerateRequest> = {}): WorldGenRes
     restartedAt,
     generationMs,
     cells: new Float32Array(cells),
-    relief: { ...relief, rgba: new Uint8ClampedArray(relief.rgba) },
+    relief: {
+      ...relief,
+      rgba: new Uint8ClampedArray(relief.rgba),
+      flat: { ...relief.flat, rgba: new Uint8ClampedArray(relief.flat.rgba) },
+    },
   };
 }

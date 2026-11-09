@@ -43,6 +43,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
 import { RoleEditorDialog, type EditableRole } from "./RoleEditorDialog";
 
+/** Which dialog is open, and the role it acts on (none for invite or a new role). */
+interface PanelDialog {
+  open: "none" | "invite" | "editor" | "delete";
+  role: EditableRole | null;
+}
+
 function getLevelBadgeClass(level: number): string {
   if (level === 0) return "border-red/30 bg-red/10 text-footnote text-red";
   if (level <= 10) return "border-teal/30 bg-teal/10 text-footnote text-teal";
@@ -57,11 +63,9 @@ export function UserRolesPanel() {
   const notify = useNotify();
   const ability = useAbility();
 
-  // Dialog states
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [roleEditorOpen, setRoleEditorOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<EditableRole | null>(null);
-  const [roleToDelete, setRoleToDelete] = useState<EditableRole | null>(null);
+  // One dialog at a time; the role outlives a close so the closing dialog keeps its content
+  const [dialog, setDialog] = useState<PanelDialog>({ open: "none", role: null });
+  const closeDialog = () => setDialog((d) => ({ ...d, open: "none" }));
 
   // Search & Filter states
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
@@ -102,7 +106,7 @@ export function UserRolesPanel() {
   const deleteRoleMutation = api.roles.deleteRole.useMutation({
     onSuccess: () => {
       notify.success("Role Deleted", "The role has been removed.");
-      setRoleToDelete(null);
+      closeDialog();
       void refetchRoles();
     },
     onError: (error) => {
@@ -113,7 +117,7 @@ export function UserRolesPanel() {
   const inviteUserMutation = api.admin.inviteUserToBypassWaitlist.useMutation({
     onSuccess: (result) => {
       notify.success("Success", result.message || "Invitation sent successfully");
-      setShowInviteDialog(false);
+      closeDialog();
       setInviteForm({
         emailAddress: "",
         reservedNationName: "",
@@ -144,13 +148,11 @@ export function UserRolesPanel() {
   };
 
   const handleOpenCreateRole = () => {
-    setEditingRole(null);
-    setRoleEditorOpen(true);
+    setDialog({ open: "editor", role: null });
   };
 
   const handleOpenEditRole = (role: EditableRole) => {
-    setEditingRole(role);
-    setRoleEditorOpen(true);
+    setDialog({ open: "editor", role });
   };
 
   const filteredRoles = roles?.filter((r) => {
@@ -231,7 +233,12 @@ export function UserRolesPanel() {
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Create Role
                   </Button>
-                  <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                  <Dialog
+                    open={dialog.open === "invite"}
+                    onOpenChange={(open) =>
+                      open ? setDialog((d) => ({ ...d, open: "invite" })) : closeDialog()
+                    }
+                  >
                     <DialogTrigger asChild>
                       <Button variant="outline" size="sm">
                         <Mail className="mr-1.5 h-3.5 w-3.5" />
@@ -286,11 +293,7 @@ export function UserRolesPanel() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowInviteDialog(false)}
-                        >
+                        <Button variant="outline" size="sm" onClick={closeDialog}>
                           Cancel
                         </Button>
                         <Button
@@ -345,14 +348,17 @@ export function UserRolesPanel() {
                         <span className="text-label text-caption font-semibold">
                           {role.displayName}
                         </span>
-                        <code className="text-label-secondary text-footnote rounded bg-fill-3 px-1.5 py-0.5 font-mono">
+                        <code className="text-label-secondary text-footnote bg-fill-3 rounded px-1.5 py-0.5 font-mono">
                           {role.name}
                         </code>
                         <Badge variant="outline" className={getLevelBadgeClass(role.level)}>
                           Level {role.level}
                         </Badge>
                         {role.isSystem && (
-                          <Badge variant="outline" className="border-teal/30 bg-teal/10 text-footnote text-teal">
+                          <Badge
+                            variant="outline"
+                            className="border-teal/30 bg-teal/10 text-footnote text-teal"
+                          >
                             System
                           </Badge>
                         )}
@@ -379,13 +385,13 @@ export function UserRolesPanel() {
                               <Badge
                                 key={perm.id}
                                 variant="outline"
-                                className="text-label-secondary font-mono text-[11px] py-0 px-1.5"
+                                className="text-label-secondary text-caption px-1.5 py-0 font-mono"
                               >
                                 {perm.name}
                               </Badge>
                             ))}
                             {role.permissions.length > 6 && (
-                              <Badge variant="outline" className="text-[11px] py-0 px-1.5">
+                              <Badge variant="outline" className="text-caption px-1.5 py-0">
                                 +{role.permissions.length - 6} more
                               </Badge>
                             )}
@@ -394,7 +400,7 @@ export function UserRolesPanel() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Can I="manage" a="Role">
                         <Button
                           variant="outline"
@@ -421,14 +427,17 @@ export function UserRolesPanel() {
                             size="sm"
                             className="text-destructive hover:bg-destructive/10 h-8 gap-1.5"
                             onClick={() =>
-                              setRoleToDelete({
-                                id: role.id,
-                                name: role.name,
-                                displayName: role.displayName,
-                                description: role.description,
-                                level: role.level,
-                                isSystem: role.isSystem,
-                                permissions: role.permissions,
+                              setDialog({
+                                open: "delete",
+                                role: {
+                                  id: role.id,
+                                  name: role.name,
+                                  displayName: role.displayName,
+                                  description: role.description,
+                                  level: role.level,
+                                  isSystem: role.isSystem,
+                                  permissions: role.permissions,
+                                },
                               })
                             }
                           >
@@ -498,7 +507,9 @@ export function UserRolesPanel() {
                 </div>
               ) : !filteredUsers || filteredUsers.length === 0 ? (
                 <Card className="p-8 text-center">
-                  <p className="text-label-secondary text-footnote">No accounts match the criteria.</p>
+                  <p className="text-label-secondary text-footnote">
+                    No accounts match the criteria.
+                  </p>
                 </Card>
               ) : (
                 filteredUsers.map((user) => (
@@ -508,7 +519,9 @@ export function UserRolesPanel() {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-label text-caption font-mono">{user.clerkUserId}</span>
+                        <span className="text-label text-caption font-mono">
+                          {user.clerkUserId}
+                        </span>
                         {user.role ? (
                           <Badge variant="outline" className={getLevelBadgeClass(user.role.level)}>
                             {user.role.displayName}
@@ -526,9 +539,7 @@ export function UserRolesPanel() {
                               : "text-footnote"
                           }
                         >
-                          {user.membershipTier === "mycountry_premium"
-                            ? "Premium"
-                            : "Basic"}
+                          {user.membershipTier === "mycountry_premium" ? "Premium" : "Basic"}
                         </Badge>
                       </div>
                       <span className="text-label-secondary text-footnote mt-0.5 block">
@@ -651,27 +662,34 @@ export function UserRolesPanel() {
 
       {/* Role Editor Dialog */}
       <RoleEditorDialog
-        open={roleEditorOpen}
-        onOpenChange={setRoleEditorOpen}
-        role={editingRole}
+        open={dialog.open === "editor"}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+        role={dialog.role}
         onSuccess={() => void refetchRoles()}
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={Boolean(roleToDelete)} onOpenChange={(open) => !open && setRoleToDelete(null)}>
+      <Dialog
+        open={dialog.open === "delete"}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Role</DialogTitle>
           </DialogHeader>
           <p className="text-label-secondary text-footnote py-2">
-            Are you sure you want to delete role &ldquo;{roleToDelete?.displayName}&rdquo;? This
+            Are you sure you want to delete role &ldquo;{dialog.role?.displayName}&rdquo;? This
             action cannot be undone. Roles assigned to active users cannot be deleted.
           </p>
           <DialogFooter>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setRoleToDelete(null)}
+              onClick={closeDialog}
               disabled={deleteRoleMutation.isPending}
             >
               Cancel
@@ -680,8 +698,8 @@ export function UserRolesPanel() {
               variant="destructive"
               size="sm"
               onClick={() => {
-                if (roleToDelete) {
-                  deleteRoleMutation.mutate({ roleId: roleToDelete.id });
+                if (dialog.role) {
+                  deleteRoleMutation.mutate({ roleId: dialog.role.id });
                 }
               }}
               disabled={deleteRoleMutation.isPending}

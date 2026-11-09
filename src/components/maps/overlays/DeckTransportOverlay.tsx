@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useMemo, useCallback } from "react";
+import { isFlatMap } from "~/lib/maps/flat-map-adapter";
 import type { Map as MapLibreMap, IControl as MapLibreControl } from "maplibre-gl";
 import type { Layer } from "@deck.gl/core";
 import { MapboxOverlay, type MapboxOverlayProps } from "@deck.gl/mapbox";
@@ -51,6 +52,8 @@ export interface DeckTransportOverlayProps {
  * an interpolate expression until a surface locks it flat. A style with no projection yet is plain.
  */
 function hasPlainProjection(map: MapLibreMap): boolean {
+  // Flat mode is Mercator underneath, but its data is in Plate Carrée coordinates deck.gl doesn't know
+  if (isFlatMap(map)) return false;
   const type = map.getProjection()?.type;
   return type === undefined || type === "globe" || type === "mercator";
 }

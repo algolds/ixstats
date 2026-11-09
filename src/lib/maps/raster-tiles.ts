@@ -109,6 +109,9 @@ type LayerRef = Pick<RealmRasterLayer, "id" | "version">;
 const layerPath = (realmId: string, layer: LayerRef) =>
   `/api/map-rasters/${encodeURIComponent(realmId)}/${layer.id}/${layer.version}`;
 
+/** Appended to a raster tile URL for its flat (Plate Carrée) tile, composed from the Mercator ones. */
+export const FLAT_RASTER_QUERY = "?projection=flat";
+
 /** The layer's tile URL template (app-relative), versioned so a rebuilt image is never served stale. */
 export function rasterTilePath(realmId: string, layer: LayerRef): string {
   return `${layerPath(realmId, layer)}/{z}/{x}/{y}`;

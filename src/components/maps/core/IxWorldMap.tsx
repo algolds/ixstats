@@ -262,6 +262,7 @@ const IxWorldMap = memo(
       baseImageUrl,
       rasterRealmId,
       rasterLayers,
+      flat: projectionMode === "mercator",
     });
 
     useWorldMapOverlayFeatures({

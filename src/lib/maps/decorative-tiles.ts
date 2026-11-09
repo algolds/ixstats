@@ -11,6 +11,21 @@ export type TiledLayer = (typeof TILED_LAYERS)[number];
 export const isTiledLayer = (t: string): t is TiledLayer =>
   (TILED_LAYERS as readonly string[]).includes(t);
 
+/** A layer as its tile URL and the tile cache name it: the layer, or its flat (Plate Carrée) tiles. */
+export type TileLayerKey = TiledLayer | `${TiledLayer}.flat`;
+
+const FLAT_SUFFIX = ".flat";
+
+export const tileLayerKey = (layer: TiledLayer, flat: boolean): TileLayerKey =>
+  flat ? `${layer}${FLAT_SUFFIX}` : layer;
+
+/** A URL's layer segment as the layer and whether it asks for flat tiles; null when it names no layer. */
+export function parseTileLayerKey(key: string): { layer: TiledLayer; flat: boolean } | null {
+  const flat = key.endsWith(FLAT_SUFFIX);
+  const layer = flat ? key.slice(0, -FLAT_SUFFIX.length) : key;
+  return isTiledLayer(layer) ? { layer, flat } : null;
+}
+
 /** The deepest zoom the tiles are served at; MapLibre overzooms past it. */
 export const MAX_TILE_ZOOM = 6;
 
@@ -28,9 +43,14 @@ export interface TileSource {
 }
 
 /** Absolute tile URL template (MapLibre fetches tiles from its worker, where relative URLs don't resolve). It names
- * the realm, its map version and this build's tile format, so a changed map or renderer is a new URL. */
-export function tileUrlTemplate({ realmId, version }: TileSource, layer: TiledLayer): string {
-  const path = `/api/map-tiles/${encodeURIComponent(realmId)}/${version}/f${TILE_FORMAT_VERSION}/${layer}`;
+ * the realm, its map version and this build's tile format, so a changed map or renderer is a new URL; `flat` asks for
+ * Plate Carrée tiles (flat-projection.ts). */
+export function tileUrlTemplate(
+  { realmId, version }: TileSource,
+  layer: TiledLayer,
+  flat = false
+): string {
+  const path = `/api/map-tiles/${encodeURIComponent(realmId)}/${version}/f${TILE_FORMAT_VERSION}/${tileLayerKey(layer, flat)}`;
   return `${window.location.origin}${withBasePath(path)}/{z}/{x}/{y}`;
 }
 

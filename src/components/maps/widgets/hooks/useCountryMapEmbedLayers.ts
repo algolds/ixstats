@@ -3,6 +3,7 @@
 import { useEffect, useCallback } from "react";
 import { buildBaseStyle } from "~/lib/maps/map-config";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
+import { toCarrierLngLat } from "~/lib/maps/flat-projection";
 import { populateEmbedMap, type EmbedLayerOptions } from "../embed-map-layers";
 
 interface UseCountryMapEmbedLayersProps extends Partial<EmbedLayerOptions> {
@@ -30,9 +31,10 @@ export function useCountryMapEmbedLayers({
     async (isCancelled: () => boolean) => {
       if (!state.containerRef.current || !state.geometry) return;
 
-      const initialCenter: [number, number] = state.centroid
-        ? [state.centroid.lng, state.centroid.lat]
-        : [10, 5];
+      // Flat in Plate Carrée, drawn through Mercator (flat-projection.ts); the layers convert their own data
+      const initialCenter = state.centroid
+        ? toCarrierLngLat(state.centroid.lng, state.centroid.lat)
+        : toCarrierLngLat(10, 5);
 
       const maplibregl = await loadMaplibre();
       if (isCancelled() || !state.containerRef.current) return;

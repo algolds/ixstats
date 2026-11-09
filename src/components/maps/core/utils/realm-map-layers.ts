@@ -30,6 +30,17 @@ export const BASE_IMAGE_COORDINATES: [
   [-180, -85],
 ];
 
+/** In flat mode (Plate Carrée) the same image is exact pinned at the poles; the flat-map adapter converts these. */
+export const FLAT_BASE_IMAGE_COORDINATES: typeof BASE_IMAGE_COORDINATES = [
+  [-180, 90],
+  [180, 90],
+  [180, -90],
+  [-180, -90],
+];
+
+/** The corners each base image was last given, so a switch to or from flat moves them. */
+const imageCorners = new WeakMap<ImageSource, typeof BASE_IMAGE_COORDINATES>();
+
 /** The first data layer in the style (the map's own fills and lines), which the base image goes under. */
 function firstDataLayerId(map: MapLibreMap): string | undefined {
   return map
@@ -45,21 +56,24 @@ function firstDataLayerId(map: MapLibreMap): string | undefined {
  * Show `url` as the realm's base image (null removes it). Its credit is the realm's credit line, shown with the
  * map's attribution (bottom right) whether or not the art is on.
  */
-export function syncBaseImage(map: MapLibreMap, url: string | null): void {
+export function syncBaseImage(map: MapLibreMap, url: string | null, flat = false): void {
   const source = map.getSource(BASE_IMAGE_SOURCE_ID) as ImageSource | undefined;
   if (!url) {
     if (map.getLayer(BASE_IMAGE_LAYER_ID)) map.removeLayer(BASE_IMAGE_LAYER_ID);
     if (source) map.removeSource(BASE_IMAGE_SOURCE_ID);
     return;
   }
-  if (source && (source as unknown as { url?: string }).url !== url) {
-    source.updateImage({ url, coordinates: BASE_IMAGE_COORDINATES });
+  const coordinates = flat ? FLAT_BASE_IMAGE_COORDINATES : BASE_IMAGE_COORDINATES;
+  if (
+    source &&
+    ((source as unknown as { url?: string }).url !== url ||
+      imageCorners.get(source) !== coordinates)
+  ) {
+    source.updateImage({ url, coordinates });
+    imageCorners.set(source, coordinates);
   } else if (!source) {
-    map.addSource(BASE_IMAGE_SOURCE_ID, {
-      type: "image",
-      url,
-      coordinates: BASE_IMAGE_COORDINATES,
-    });
+    map.addSource(BASE_IMAGE_SOURCE_ID, { type: "image", url, coordinates });
+    imageCorners.set(map.getSource(BASE_IMAGE_SOURCE_ID) as ImageSource, coordinates);
   }
   if (!map.getLayer(BASE_IMAGE_LAYER_ID)) {
     map.addLayer(

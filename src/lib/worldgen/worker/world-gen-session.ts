@@ -147,7 +147,11 @@ export class WorldGenSession {
   /** A diagnostic layer of the world in view, drawn (or recalled) by the worker: no regeneration. */
   diagnostic(kind: DiagnosticKind): Promise<DiagnosticResult> {
     return this.query("diagnostic-result", (q) => ({ type: "diagnostic", kind, ...q })).then(
-      ({ image }) => ({ ...image, rgba: new Uint8ClampedArray(image.rgba) })
+      ({ image }) => ({
+        ...image,
+        rgba: new Uint8ClampedArray(image.rgba),
+        flat: { ...image.flat, rgba: new Uint8ClampedArray(image.flat.rgba) },
+      })
     );
   }
 
@@ -293,6 +297,7 @@ export class WorldGenSession {
           width: message.relief.width,
           height: message.relief.height,
           rgba: new Uint8ClampedArray(message.relief.rgba),
+          flat: { ...message.relief.flat, rgba: new Uint8ClampedArray(message.relief.flat.rgba) },
         },
       },
     });

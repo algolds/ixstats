@@ -268,13 +268,13 @@ describe("GET /api/map-tiles/<realm>/<version>/<format>/<layer>/<z>/<x>/<y>", ()
     const again = await run("default", "3", "lakes", "0", "0", "0");
     expect(await body(again)).toEqual(new Uint8Array([1, 2, 3]));
     expect(again.headers.get("cache-control")).toBe(IMMUTABLE);
-    expect(buildTile.mock.calls).toEqual([[expect.anything(), "default", "lakes", 0, 0, 0]]);
+    expect(buildTile.mock.calls).toEqual([[expect.anything(), "default", "lakes", 0, 0, 0, false]]);
 
     // Another realm, by id and by slug: one render of its own
     const byId = await run("r_eurth", "2", "lakes", "0", "0", "0");
     const bySlug = await run("eurth", "2", "lakes", "0", "0", "0");
     expect([byId.status, bySlug.status]).toEqual([200, 200]);
-    expect(buildTile).toHaveBeenLastCalledWith(expect.anything(), "r_eurth", "lakes", 0, 0, 0);
+    expect(buildTile).toHaveBeenLastCalledWith(expect.anything(), "r_eurth", "lakes", 0, 0, 0, false);
     expect(buildTile).toHaveBeenCalledTimes(2);
   });
 

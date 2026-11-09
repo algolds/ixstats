@@ -3,7 +3,7 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import type { MapLayerData } from "../IxWorldMap";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import type { RealmRasterLayer } from "~/lib/maps/realm-map-settings";
-import { rasterTilePath } from "~/lib/maps/raster-tiles";
+import { FLAT_RASTER_QUERY, rasterTilePath } from "~/lib/maps/raster-tiles";
 import { withBasePath } from "~/lib/base-path";
 import { syncBaseImage, syncRasterLayers } from "../utils/realm-map-layers";
 
@@ -18,6 +18,8 @@ interface UseRealmMapLayersProps {
   rasterRealmId?: string | null;
   /** The realm's raster art switched on, in drawing order. */
   rasterLayers?: readonly RealmRasterLayer[];
+  /** The map is in flat mode (Plate Carrée): flat raster tiles, and the base image pinned at the poles. */
+  flat?: boolean;
 }
 
 const NO_RASTERS: readonly RealmRasterLayer[] = [];
@@ -34,25 +36,26 @@ export function useRealmMapLayers({
   baseImageUrl = null,
   rasterRealmId = null,
   rasterLayers = NO_RASTERS,
+  flat = false,
 }: UseRealmMapLayersProps) {
   useEffect(() => {
     if (!map || !isLoaded) return;
     try {
-      syncBaseImage(map, baseImageUrl);
+      syncBaseImage(map, baseImageUrl, flat);
     } catch (err) {
       console.warn("[useRealmMapLayers] base image:", err);
     }
-  }, [map, isLoaded, baseImageUrl, theme, layers]);
+  }, [map, isLoaded, baseImageUrl, theme, layers, flat]);
 
   useEffect(() => {
     if (!map || !isLoaded) return;
     // Absolute: MapLibre fetches tiles from its worker, where relative URLs don't resolve
     const urlFor = (layer: RealmRasterLayer) =>
-      `${window.location.origin}${withBasePath(rasterTilePath(rasterRealmId ?? "", layer))}`;
+      `${window.location.origin}${withBasePath(rasterTilePath(rasterRealmId ?? "", layer))}${flat ? FLAT_RASTER_QUERY : ""}`;
     try {
       syncRasterLayers(map, rasterRealmId ? rasterLayers : NO_RASTERS, urlFor);
     } catch (err) {
       console.warn("[useRealmMapLayers] raster art:", err);
     }
-  }, [map, isLoaded, rasterRealmId, rasterLayers, theme, layers]);
+  }, [map, isLoaded, rasterRealmId, rasterLayers, theme, layers, flat]);
 }

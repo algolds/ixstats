@@ -12,6 +12,8 @@ import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import type { BaseModalProps } from "./types";
 import { TemplateModalShell } from "./TemplateModalShell";
+import type { FeatureCollection } from "geojson";
+import { fromCarrier, toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
 type MapCoordsTab = "coords" | "mapembed";
@@ -88,11 +90,11 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
     // Update map coordinates
     if (mapRef.current) {
-      mapRef.current.flyTo({ center: [markerLng, markerLat], zoom: 8 });
+      mapRef.current.flyTo({ center: toCarrierLngLat(markerLng, markerLat), zoom: 8 });
 
       // Move marker
       if (markerRef.current) {
-        markerRef.current.setLngLat([markerLng, markerLat]);
+        markerRef.current.setLngLat(toCarrierLngLat(markerLng, markerLat));
       }
     }
   };
@@ -115,7 +117,8 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       }
 
       const baseStyle = buildBaseStyle() as any;
-      delete baseStyle.projection; // Enforce Mercator projection
+      // Flat: Plate Carrée drawn through Mercator (flat-projection.ts); data goes in converted, clicks come back true
+      delete baseStyle.projection;
 
       const mapCenterLat = parseFloat(lat) || (centroid ? centroid.lat : 0);
       const mapCenterLng = parseFloat(lng) || (centroid ? centroid.lng : 0);
@@ -123,7 +126,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
         style: baseStyle,
-        center: [mapCenterLng, mapCenterLat],
+        center: toCarrierLngLat(mapCenterLng, mapCenterLat),
         zoom: centroid ? 5 : 2,
         attributionControl: false,
       });
@@ -134,14 +137,17 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         if (isCancelled()) return;
         // 1. Overlay world bounds and gray out non-owned countries
         if (worldPolitical && worldPolitical.features && viewerCountryId) {
-          const otherCountries = {
+          const otherCountries: FeatureCollection = {
             type: "FeatureCollection",
             features: worldPolitical.features.filter(
               (f) => f.properties?._countryId !== viewerCountryId
             ),
           };
 
-          map.addSource("other-countries", { type: "geojson", data: otherCountries as any });
+          map.addSource("other-countries", {
+            type: "geojson",
+            data: toCarrierGeoJSON(otherCountries),
+          });
           map.addLayer({
             id: "other-countries-fill",
             type: "fill",
@@ -156,13 +162,16 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         // 2. Active Country borders
         if (geometry && viewerCountryId) {
           const activeColor = fillColor || (featureId ? getCountryColor(featureId) : "#6366f1");
-          const activeGeo = {
+          const activeGeo: FeatureCollection = {
             type: "FeatureCollection",
 
             features: [{ type: "Feature", properties: {}, geometry: geometry as any }],
           };
 
-          map.addSource("active-country", { type: "geojson", data: activeGeo as any });
+          map.addSource("active-country", {
+            type: "geojson",
+            data: toCarrierGeoJSON(activeGeo),
+          });
           map.addLayer({
             id: "active-country-stroke",
             type: "line",
@@ -175,7 +184,7 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
 
           // 3. Subdivisions
           if (subdivisions && subdivisions.length > 0) {
-            const subGeo = {
+            const subGeo: FeatureCollection = {
               type: "FeatureCollection",
               features: subdivisions
 
@@ -189,7 +198,10 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
                 })),
             };
 
-            map.addSource("active-subdivisions", { type: "geojson", data: subGeo as any });
+            map.addSource("active-subdivisions", {
+              type: "geojson",
+              data: toCarrierGeoJSON(subGeo),
+            });
             map.addLayer({
               id: "active-subdivisions-stroke",
               type: "line",
@@ -207,31 +219,27 @@ export function MapCoordsModal({ isOpen, onClose, onInsert }: BaseModalProps) {
         // 4. Fit bounds of owned country
         if (bbox) {
           map.fitBounds(
-            [
-              [bbox.minLng, bbox.minLat],
-              [bbox.maxLng, bbox.maxLat],
-            ],
+            [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
             { padding: 20, maxZoom: 8, duration: 0 }
           );
         }
 
         // 5. Place Marker at starting coordinates
         const startMarker = new maplibregl.Marker({ color: "#f43f5e" })
-          .setLngLat([mapCenterLng, mapCenterLat])
+          .setLngLat(toCarrierLngLat(mapCenterLng, mapCenterLat))
           .addTo(map);
         markerRef.current = startMarker;
 
         // Click listener to grab coordinates
 
         map.on("click", (e: any) => {
-          const clickedLng = e.lngLat.lng;
-          const clickedLat = e.lngLat.lat;
+          const { lng: clickedLng, lat: clickedLat } = fromCarrier(e.lngLat);
 
           setLat(clickedLat.toFixed(5));
           setLng(clickedLng.toFixed(5));
 
           if (markerRef.current) {
-            markerRef.current.setLngLat([clickedLng, clickedLat]);
+            markerRef.current.setLngLat(toCarrierLngLat(clickedLng, clickedLat));
           }
         });
 

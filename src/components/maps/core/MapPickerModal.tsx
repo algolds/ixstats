@@ -5,7 +5,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useEffect, useRef, useCallback, useState } from "react";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
-import type { Feature, Geometry } from "geojson";
+import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { MapPin, WarningTriangle as AlertTriangle, CheckCircle } from "iconoir-react";
 import { useCountryMapEmbed } from "~/hooks/useCountryMapEmbed";
 import { buildBaseStyle, getCountryColor } from "~/lib/maps/map-config";
@@ -15,8 +15,13 @@ import { booleanPointInPolygon } from "@turf/boolean-point-in-polygon";
 import { point } from "@turf/helpers";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { addGeoLayers } from "~/components/maps/shared/geo-layers";
+import { fromCarrier, toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 
 type EmbedData = ReturnType<typeof useCountryMapEmbed>;
+
+/** Features for a source, in Plate Carrée as the flat picker draws them (flat-projection.ts). */
+const flat = (features: Feature[]): FeatureCollection =>
+  toCarrierGeoJSON({ type: "FeatureCollection", features });
 
 /** Draw the picked country (plus greyed neighbours and subdivision outlines) and fit to its bounds. */
 function drawCountryLayers(
@@ -28,7 +33,7 @@ function drawCountryLayers(
     addGeoLayers(
       map,
       "source-world-political",
-      worldPolitical.features.filter((f) => f.properties?._countryId !== countryId),
+      flat(worldPolitical.features.filter((f) => f.properties?._countryId !== countryId)),
       [
         {
           id: "world-political-fill",
@@ -48,7 +53,9 @@ function drawCountryLayers(
   addGeoLayers(
     map,
     "source-country",
-    [{ type: "Feature", properties: { _fillColor: countryColor }, geometry: geometry as Geometry }],
+    flat([
+      { type: "Feature", properties: { _fillColor: countryColor }, geometry: geometry as Geometry },
+    ]),
     [
       {
         id: "country-fill",
@@ -67,13 +74,15 @@ function drawCountryLayers(
     addGeoLayers(
       map,
       "source-subdivisions",
-      subdivisions
-        .filter((s) => s.geometry)
-        .map((s): Feature => ({
-          type: "Feature",
-          properties: { name: s.name },
-          geometry: s.geometry as Geometry,
-        })),
+      flat(
+        subdivisions
+          .filter((s) => s.geometry)
+          .map((s): Feature => ({
+            type: "Feature",
+            properties: { name: s.name },
+            geometry: s.geometry as Geometry,
+          }))
+      ),
       [
         {
           id: "subdivision-stroke",
@@ -91,10 +100,7 @@ function drawCountryLayers(
 
   if (bbox) {
     map.fitBounds(
-      [
-        [bbox.minLng, bbox.minLat],
-        [bbox.maxLng, bbox.maxLat],
-      ],
+      [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
       { padding: 30, maxZoom: 10, duration: 0 }
     );
   }
@@ -203,7 +209,8 @@ export function MapPickerModal({
       mapRef.current?.remove();
 
       const baseStyle = buildBaseStyle() as any;
-      delete baseStyle.projection; // Ensure flat Mercator projection for local picking
+      // Flat for local picking: Plate Carrée drawn through Mercator; picks convert back to true coordinates
+      delete baseStyle.projection;
 
       const initialCoords = selectedCoordsRef.current;
       const { centroid } = embedData;
@@ -213,18 +220,17 @@ export function MapPickerModal({
       const map = new maplibregl.Map({
         container: containerRef.current,
         style: baseStyle,
-        center: initialCenter,
+        center: toCarrierLngLat(...initialCenter),
         zoom: initialCoords ? 6 : 4,
         attributionControl: false,
       });
       mapRef.current = map;
 
       const placeMarker = (coords: [number, number]) => {
-        if (markerRef.current) markerRef.current.setLngLat(coords);
+        const at = toCarrierLngLat(...coords);
+        if (markerRef.current) markerRef.current.setLngLat(at);
         else
-          markerRef.current = new maplibregl.Marker({ color: "#ef4444" })
-            .setLngLat(coords)
-            .addTo(map);
+          markerRef.current = new maplibregl.Marker({ color: "#ef4444" }).setLngLat(at).addTo(map);
       };
 
       map.on("load", () => {
@@ -233,7 +239,8 @@ export function MapPickerModal({
         if (initialCoords) placeMarker(initialCoords);
 
         map.on("click", (e) => {
-          const clicked: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+          const { lng, lat } = fromCarrier(e.lngLat);
+          const clicked: [number, number] = [lng, lat];
           setSelectedCoords(clicked);
           placeMarker(clicked);
         });

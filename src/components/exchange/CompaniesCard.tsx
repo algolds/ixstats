@@ -1,5 +1,6 @@
 "use client";
 
+import { assetUrl } from "~/lib/base-path";
 import { useState } from "react";
 import Link from "next/link";
 import { BookStack, Building, RefreshDouble, WarningTriangle } from "iconoir-react";
@@ -63,7 +64,7 @@ function WikiLoreBanner({
         <div className="flex items-center gap-2">
           {wikiData?.logoUrl && (
             <img
-              src={wikiData.logoUrl}
+              src={assetUrl(wikiData.logoUrl) ?? undefined}
               alt={`${wikiData.pageTitle} logo`}
               className="border-separator bg-surface-1 size-7 rounded border object-contain p-0.5"
             />
@@ -362,7 +363,7 @@ function CompanyRow({
         <div className="flex min-w-0 items-center gap-2.5">
           {wikiData?.logoUrl && (
             <img
-              src={wikiData.logoUrl}
+              src={assetUrl(wikiData.logoUrl) ?? undefined}
               alt={`${company.name} logo`}
               className="border-separator bg-surface-1 size-8 shrink-0 rounded border object-contain p-0.5"
             />

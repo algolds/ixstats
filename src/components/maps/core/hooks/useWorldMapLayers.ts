@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { setFlatMode } from "~/lib/maps/flat-map-adapter";
 import type { ExpressionSpecification, Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import type { MapLayerData } from "../IxWorldMap";
@@ -389,6 +390,8 @@ export function useWorldMapLayers({
   useEffect(() => {
     if (!map || !isLoaded) return;
     applySmoothProjection(map, projectionMode);
+    // "mercator" is the flat mode: Plate Carrée drawn through Mercator (flat-map-adapter.ts)
+    void setFlatMode(map, projectionMode === "mercator");
   }, [map, projectionMode, isLoaded]);
 
   useEffect(() => {
@@ -476,5 +479,5 @@ export function useWorldMapLayers({
     artMode,
   ]);
 
-  useDecorativeTiles(map, isLoaded, tileSource);
+  useDecorativeTiles(map, isLoaded, tileSource, projectionMode === "mercator");
 }

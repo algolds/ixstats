@@ -85,7 +85,7 @@ export interface StudioContextValue {
   // The map
   /** The Studio's own map, null until its style has loaded */
   map: MapLibreMap | null;
-  /** The map's projection: the globe (the default) or flat Mercator */
+  /** The map's projection: the globe (the default) or flat (Plate Carrée, flat-map-adapter.ts) */
   projection: StudioProjection;
   setProjection: (projection: StudioProjection) => void;
   /** Layer switches by draft layer; a missing key means shown */

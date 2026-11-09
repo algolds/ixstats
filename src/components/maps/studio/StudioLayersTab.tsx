@@ -61,7 +61,7 @@ export function StudioLayersTab() {
         <p className="text-label-secondary text-caption">
           {projection === "globe"
             ? "Land near the poles keeps its true shape. The globe turns flat as you zoom in."
-            : "The flat map stretches land near the poles."}
+            : "The flat map shows the whole world, poles included, in the projection realm art is drawn in. East and west stretch toward the poles."}
         </p>
       </section>
 

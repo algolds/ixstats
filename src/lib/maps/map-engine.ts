@@ -24,6 +24,7 @@
  */
 
 import { buildBaseStyle, type ProjectionMode } from "./map-config";
+import { applyFlatMode } from "./flat-map-adapter";
 import type { MapTheme } from "~/lib/map-styles/registry";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 
@@ -147,6 +148,8 @@ function ensureRole(role: MapRole, opts: AcquireOpts): RoleState {
       attributionControl: false,
       dragRotate: false,
     });
+    // Installed now (off) so every source is tracked before the world surface may switch to flat
+    applyFlatMode(map, false, maplibregl);
     st!.map = map;
     st!.theme = theme;
     st!.projectionMode = proj;

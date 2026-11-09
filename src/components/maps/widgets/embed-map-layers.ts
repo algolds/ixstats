@@ -2,6 +2,7 @@ import type { FilterSpecification, Map as MapLibreMap, MapLayerMouseEvent } from
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
+import { toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 import type { useCountryMapEmbedState } from "./hooks/useCountryMapEmbedState";
 
 type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
@@ -69,10 +70,9 @@ function removeEmbedLayers(map: MapLibreMap) {
   for (const id of EMBED_SOURCE_IDS) if (map.getSource(id)) map.removeSource(id);
 }
 
-const collection = (features: Feature[]): FeatureCollection => ({
-  type: "FeatureCollection",
-  features,
-});
+/** A source's features, in Plate Carrée as the flat embed draws them (flat-projection.ts). */
+const collection = (features: Feature[]): FeatureCollection =>
+  toCarrierGeoJSON({ type: "FeatureCollection", features });
 
 const featureProps = (e: MapLayerMouseEvent) => e.features?.[0]?.properties;
 
@@ -460,10 +460,7 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
   const bbox = fitBbox(o.state);
   if (bbox) {
     map.fitBounds(
-      [
-        [bbox.minLng, bbox.minLat],
-        [bbox.maxLng, bbox.maxLat],
-      ],
+      [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
       { padding: o.boundsPadding, maxZoom: 10, duration: 0 }
     );
     map.once("idle", () => onFitSettled?.());

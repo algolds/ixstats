@@ -15,6 +15,7 @@ import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig"
 import { SharedElement } from "~/components/ui/view-transition";
 import { getMapGlyphsUrl, assetUrl } from "~/lib/base-path";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
+import { clampFlatCenterLat, toCarrierGeoJSON } from "~/lib/maps/flat-projection";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { NPC_FILL, coverView, heroNationHref, heroNationStatus } from "~/lib/realms/hero-map";
@@ -116,11 +117,12 @@ function heroStyle(geo: HeroGeo, colours: MapColours, labelZoom: number): StyleS
     sources: {
       land: {
         type: "geojson",
-        data: geo.land ?? { type: "FeatureCollection", features: [] },
+        // Plate Carrée, like the SVG face (flat-projection.ts)
+        data: geo.land ? toCarrierGeoJSON(geo.land) : { type: "FeatureCollection", features: [] },
       },
       nations: {
         type: "geojson",
-        data: { type: "FeatureCollection", features: geo.nations },
+        data: toCarrierGeoJSON({ type: "FeatureCollection", features: geo.nations }),
         promoteId: "key",
       },
     },
@@ -294,6 +296,14 @@ async function mountHeroMap(opts: MountOptions): Promise<MapLibreMap | null> {
     container: opts.box,
     style: heroStyle(opts.geo, colours, Math.min(view.zoom + 1.5, MAX_ZOOM)),
     center: view.center,
+    // Never past a pole
+    transformConstrain: (center, z) => ({
+      center: new maplibregl.LngLat(
+        center.lng,
+        clampFlatCenterLat(center.lat, z, opts.box.clientHeight)
+      ),
+      zoom: z,
+    }),
     zoom: view.zoom,
     minZoom: Math.max(0, view.zoom - 1),
     maxZoom: Math.max(MAX_ZOOM, view.zoom + 2),
