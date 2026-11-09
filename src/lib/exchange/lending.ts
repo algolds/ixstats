@@ -69,21 +69,38 @@ export async function setLendingTerms(
   });
 }
 
-/** Companies the nation's owner founded or holds any shares in. */
+/** Companies the nation's insiders (`ownerUserId` or `User.countryId`) founded, hold shares in, or have listed. */
 export async function ownerCompanyIds(db: Db, countryId: string): Promise<Set<string>> {
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: { ownerUserId: true },
-  });
-  if (!country?.ownerUserId) return new Set();
-  const [founded, held] = await Promise.all([
-    db.company.findMany({ where: { founderId: country.ownerUserId }, select: { id: true } }),
+  const [country, acting] = await Promise.all([
+    db.country.findUnique({
+      where: { id: countryId },
+      select: { ownerUserId: true },
+    }),
+    db.user.findMany({
+      where: { countryId },
+      select: { id: true },
+    }),
+  ]);
+  const insiders = [
+    ...new Set([...(country?.ownerUserId ? [country.ownerUserId] : []), ...acting.map((u) => u.id)]),
+  ];
+  if (insiders.length === 0) return new Set();
+  const [founded, held, listed] = await Promise.all([
+    db.company.findMany({ where: { founderId: { in: insiders } }, select: { id: true } }),
     db.shareholding.findMany({
-      where: { ownerUserId: country.ownerUserId, shares: { gt: 0 } },
+      where: { ownerUserId: { in: insiders }, shares: { gt: 0 } },
+      select: { companyId: true },
+    }),
+    db.shareListing.findMany({
+      where: { sellerUserId: { in: insiders }, status: "OPEN" },
       select: { companyId: true },
     }),
   ]);
-  return new Set([...founded.map((c) => c.id), ...held.map((h) => h.companyId)]);
+  return new Set([
+    ...founded.map((c) => c.id),
+    ...held.map((h) => h.companyId),
+    ...listed.map((l) => l.companyId),
+  ]);
 }
 
 export async function assertNotOwnersCompany(

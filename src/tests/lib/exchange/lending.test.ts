@@ -25,7 +25,7 @@ jest.mock("~/lib/exchange/macro", () => ({
 
 import { awardContract } from "~/lib/exchange/contracts";
 import { borrowCredit } from "~/lib/exchange/credit";
-import { setLendingTerms } from "~/lib/exchange/lending";
+import { ownerCompanyIds, setLendingTerms } from "~/lib/exchange/lending";
 import { listRealmNations } from "~/lib/exchange/queries";
 import { runCompanyOperations } from "~/lib/exchange/operations";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -174,6 +174,66 @@ describe("no self-dealing", () => {
     ).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+  });
+
+  it("includes companies where the owner listed every share, and companies founded by acting users", async () => {
+    setup("alice");
+    // Company X: founded by bob, alice listed all her shares (0 in shareholding, 50 in open shareListing).
+    fake.tables.company!.push({
+      id: "co_x",
+      name: "Bob X",
+      realmId: REALM,
+      founderId: "bob",
+      sectorKey: "services",
+      subIndustryKey: "software_media",
+      hqCountryId: NATION,
+      capital: 1000,
+      standing: 0,
+      decisionValue: 0,
+      creditDrawn: 0,
+      creditRating: "A",
+      contractsWonValue: 0,
+      lastTickNetIncome: 0,
+      status: "ACTIVE",
+    });
+    fake.tables.shareholding = [
+      { id: "sh_x", companyId: "co_x", ownerUserId: "alice", shares: 0, avgCost: 1 },
+    ];
+    fake.tables.shareListing = [
+      {
+        id: "sl_x",
+        companyId: "co_x",
+        sellerUserId: "alice",
+        shares: 50,
+        sharesListed: 50,
+        pricePerShare: 2,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+    ];
+    // Company Y: founded by carol, whose user.countryId is NATION.
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: NATION });
+    fake.tables.company!.push({
+      id: "co_y",
+      name: "Carol Y",
+      realmId: REALM,
+      founderId: "carol",
+      sectorKey: "services",
+      subIndustryKey: "software_media",
+      hqCountryId: NATION,
+      capital: 1000,
+      standing: 0,
+      decisionValue: 0,
+      creditDrawn: 0,
+      creditRating: "A",
+      contractsWonValue: 0,
+      lastTickNetIncome: 0,
+      status: "ACTIVE",
+    });
+
+    const ids = await ownerCompanyIds(fake.client, NATION);
+    expect(ids.has("co_x")).toBe(true);
+    expect(ids.has("co_y")).toBe(true);
   });
 });
 
