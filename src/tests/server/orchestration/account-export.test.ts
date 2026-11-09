@@ -5,6 +5,7 @@
  * messages or other users' ids.
  */
 import { buildAccountExport } from "~/server/orchestration/account-export";
+import { addMember, addNation, addPersona, addRealm, forumDb } from "~/tests/helpers/forum-world";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 
 const CLERK = "user_clerk1";
@@ -199,7 +200,235 @@ describe("buildAccountExport", () => {
     expect(out.account).toMatchObject({ email: "alex@example.com" });
     expect(out.nations).toEqual([]);
     expect(out.trades).toEqual([]);
+    expect(out.stashes).toEqual([]);
+    expect(out.comments).toEqual([]);
+    expect(out.polls).toEqual({ created: [], votes: [] });
+    expect(out.predictions).toEqual([]);
+    expect(out.blurbs).toEqual([]);
+    expect(out.documents).toEqual([]);
+    expect(out.loreTeams).toEqual([]);
     expect(db.forumPost.findMany).not.toHaveBeenCalled();
     expect(db.cardOwnership.findMany).not.toHaveBeenCalled();
+  });
+
+  it("exports stashes, comments, polls, predictions, blurbs, documents and lore teams of the caller only", async () => {
+    const mem = forumDb();
+    const alice = await addMember(mem, "alice", { handle: "alice_h" });
+    const bob = await addMember(mem, "bob", { handle: "bob_h" });
+    await addRealm(mem, { id: "eurth", name: "Eurth", ownerClerkId: alice.clerkUserId });
+    await addNation(mem, "n1", "eurth", "alice");
+    await addNation(mem, "n2", "eurth", "bob");
+    await addPersona(mem, "p-alice", alice, "n1", "Alice P");
+    await addPersona(mem, "p-bob", bob, "n2", "Bob P");
+
+    await mem.stash.create({
+      data: {
+        id: "st-alice",
+        userId: alice.clerkUserId,
+        name: "Saved",
+        items: {
+          create: {
+            id: "si-alice",
+            pageTitle: "Eurth",
+            pageSlug: "eurth",
+            annotations: {
+              create: {
+                id: "sa-alice",
+                anchorSelector: "p",
+                anchorOffset: 0,
+                focusSelector: "p",
+                focusOffset: 3,
+                selectedText: "quote",
+              },
+            },
+          },
+        },
+      },
+    });
+    await mem.stash.create({ data: { id: "st-bob", userId: bob.clerkUserId, name: "Bob Stash" } });
+
+    await mem.wikiDiscussionThread.create({
+      data: { id: "wdt-1", articleTitle: "Eurth", title: "Borders", createdBy: bob.id },
+    });
+    await mem.wikiDiscussionComment.create({
+      data: { id: "wdc-alice", threadId: "wdt-1", userId: alice.id, content: "Alice comment" },
+    });
+    await mem.wikiDiscussionComment.create({
+      data: { id: "wdc-bob", threadId: "wdt-1", userId: bob.id, content: "Bob comment" },
+    });
+
+    await mem.poll.create({
+      data: {
+        id: "poll-alice",
+        question: "Alice poll?",
+        options: { create: [{ id: "opt-a1", label: "Yes" }] },
+      },
+    });
+    await mem.thinkpagesPost.create({
+      data: {
+        id: "post-alice",
+        accountId: "p-alice",
+        content: "Poll post",
+        ixTimeTimestamp: new Date(0),
+        pollId: "poll-alice",
+      },
+    });
+    await mem.poll.create({
+      data: {
+        id: "poll-bob",
+        question: "Bob poll?",
+        options: { create: [{ id: "opt-b1", label: "No" }] },
+      },
+    });
+    await mem.thinkpagesPost.create({
+      data: {
+        id: "post-bob",
+        accountId: "p-bob",
+        content: "Bob poll post",
+        ixTimeTimestamp: new Date(0),
+        pollId: "poll-bob",
+      },
+    });
+    await mem.pollVote.create({
+      data: { id: "pv-alice", pollId: "poll-bob", optionId: "opt-b1", userId: alice.clerkUserId },
+    });
+    await mem.pollVote.create({
+      data: { id: "pv-bob", pollId: "poll-alice", optionId: "opt-a1", userId: bob.clerkUserId },
+    });
+
+    await mem.sportLeague.create({
+      data: {
+        id: "lg-1",
+        name: "League",
+        sportPreset: "soccer",
+        archetype: "league",
+        teamCount: 2,
+        createdByUserId: bob.id,
+      },
+    });
+    await mem.sportTeam.create({ data: { id: "tm-1", leagueId: "lg-1", name: "Home" } });
+    await mem.sportTeam.create({ data: { id: "tm-2", leagueId: "lg-1", name: "Away" } });
+    await mem.sportSeason.create({
+      data: { id: "sn-1", leagueId: "lg-1", seasonNumber: 1, startIxTime: 0 },
+    });
+    await mem.sportMatch.create({
+      data: {
+        id: "mt-1",
+        seasonId: "sn-1",
+        matchDay: 1,
+        homeTeamId: "tm-1",
+        awayTeamId: "tm-2",
+        scheduledIxTime: 0,
+      },
+    });
+    await mem.sportPrediction.create({
+      data: {
+        id: "sp-alice",
+        matchId: "mt-1",
+        seasonId: "sn-1",
+        userId: alice.clerkUserId,
+        outcome: "home",
+        stake: 10,
+        createdIxTime: 0,
+      },
+    });
+    await mem.sportPrediction.create({
+      data: {
+        id: "sp-bob",
+        matchId: "mt-1",
+        seasonId: "sn-1",
+        userId: bob.clerkUserId,
+        outcome: "away",
+        stake: 20,
+        createdIxTime: 0,
+      },
+    });
+
+    await mem.blurbPrompt.create({
+      data: {
+        id: "bp-1",
+        title: "Prompt 1",
+        question: "What happened?",
+        slug: "prompt-1",
+        createdBy: bob.id,
+      },
+    });
+    await mem.blurbResponse.create({
+      data: {
+        id: "br-alice",
+        promptId: "bp-1",
+        userId: alice.id,
+        countryId: "n1",
+        content: "Alice blurb",
+      },
+    });
+    await mem.blurbResponse.create({
+      data: {
+        id: "br-bob",
+        promptId: "bp-1",
+        userId: bob.id,
+        countryId: "n2",
+        content: "Bob blurb",
+      },
+    });
+
+    await mem.thinktankGroup.create({
+      data: { id: "tt-1", name: "Group", createdBy: bob.clerkUserId },
+    });
+    await mem.collaborativeDoc.create({
+      data: {
+        id: "doc-owned",
+        groupId: "tt-1",
+        title: "Owned Doc",
+        content: "Owned body",
+        createdBy: alice.clerkUserId,
+        lastEditBy: bob.clerkUserId,
+      },
+    });
+    await mem.collaborativeDoc.create({
+      data: {
+        id: "doc-edited",
+        groupId: "tt-1",
+        title: "Edited Doc",
+        content: "Edited body",
+        createdBy: bob.clerkUserId,
+        lastEditBy: alice.clerkUserId,
+      },
+    });
+    await mem.collaborativeDoc.create({
+      data: {
+        id: "doc-bob",
+        groupId: "tt-1",
+        title: "Bob Doc",
+        content: "Bob body",
+        createdBy: bob.clerkUserId,
+        lastEditBy: bob.clerkUserId,
+      },
+    });
+
+    await mem.countryLoreAuthor.create({
+      data: { id: "cla-alice", countryId: "n2", userId: alice.id, addedById: bob.id },
+    });
+    await mem.countryLoreAuthor.create({
+      data: { id: "cla-bob", countryId: "n1", userId: bob.id, addedById: alice.id },
+    });
+
+    const out = await buildAccountExport(mem as never, alice.clerkUserId, identity);
+
+    expect(out.stashes.map((s) => s.id)).toEqual(["st-alice"]);
+    expect(out.stashes[0]?.items[0]?.annotations[0]?.selectedText).toBe("quote");
+    expect(out.comments.map((c) => c.id)).toEqual(["wdc-alice"]);
+    expect(out.polls.created.map((p) => p.id)).toEqual(["poll-alice"]);
+    expect(out.polls.votes.map((v) => v.id)).toEqual(["pv-alice"]);
+    expect(out.predictions.map((p) => p.id)).toEqual(["sp-alice"]);
+    expect(out.blurbs.map((b) => b.id)).toEqual(["br-alice"]);
+    expect(out.documents.map((d) => [d.id, d.title, d.content])).toEqual([
+      ["doc-owned", "Owned Doc", "Owned body"],
+      ["doc-edited", "Edited Doc", "Edited body"],
+    ]);
+    expect(out.documents[0]).not.toHaveProperty("createdBy");
+    expect(out.documents[0]).not.toHaveProperty("lastEditBy");
+    expect(out.loreTeams.map((l) => [l.id, l.countryId])).toEqual([["cla-alice", "n2"]]);
+    expect(out.loreTeams[0]).not.toHaveProperty("addedById");
   });
 });

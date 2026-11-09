@@ -46,6 +46,10 @@ export async function releaseNationsForErasure(
     where: { userId: user.id, status: "pending" },
     data: { status: "withdrawn" },
   });
+  await db.realmClaim.updateMany({
+    where: { userId: user.id },
+    data: { permissionNote: null },
+  });
   // Map summaries (cachedStaticProcedure, 1h) would keep showing the nations as claimed.
   if (nations.length > 0) await invalidateCache(["countries."]).catch(() => undefined);
   return { released: nations.length, claimsWithdrawn };
