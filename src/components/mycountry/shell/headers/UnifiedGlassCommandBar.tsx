@@ -15,7 +15,7 @@ import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbon
 import { stripHtml } from "~/lib/utils/sanitize-html";
 import { NationDateLine } from "~/components/realms/NationDateLine";
 import { EditMorphButton } from "./EditMorphButton";
-import { FlagBanner } from "./FlagBanner";
+import { FlagBanner, MonogramBanner } from "./FlagBanner";
 
 /** Ghost actions over the flag get the title plate's strength, with an opaque hover and press. */
 const ACTION_PLATE = cn(
@@ -78,11 +78,12 @@ export function UnifiedGlassCommandBar({
       }
     : null;
   const flagUrl = assetUrl(country?.flagUrl || country?.flag);
-  // The flag whose image failed to load; a different flag is tried afresh. The plates behind the
-  // title and the action pills exist only to sit over the art, so they follow whether it shows.
+  // The flag whose image failed to load; a different flag is tried afresh. When the flag is
+  // missing or fails, the gold MyCountry monogram fills the backdrop so the title Lens always has
+  // art behind it; the action pill plates only sit over the flag.
   const [failedFlag, setFailedFlag] = useState<string | null>(null);
   const bannerShowing = Boolean(flagUrl) && failedFlag !== flagUrl;
-  // Pills only over the visible art: not in the compact bar (its own chrome is the backdrop there).
+  // Pills only over the visible flag: not over the quiet monogram or in the compact bar.
   const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
 
   return (
@@ -92,9 +93,13 @@ export function UnifiedGlassCommandBar({
       leading={<FlagTile src={flagUrl ?? null} name={name} />}
       // Always present, so the header's padding never jumps when the flag arrives late or fails.
       backdrop={
-        <FlagBanner src={bannerShowing ? flagUrl : null} onError={() => setFailedFlag(flagUrl)} />
+        bannerShowing ? (
+          <FlagBanner src={flagUrl} onError={() => setFailedFlag(flagUrl)} />
+        ) : (
+          <MonogramBanner />
+        )
       }
-      backdropVisible={bannerShowing}
+      backdropVisible={country != null}
       subtitle={
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

@@ -29,6 +29,7 @@ import { NavArrowLeft } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 
 export interface PageHeaderProps {
   /** The page title (rendered as the page's `<h1>`). */
@@ -47,13 +48,13 @@ export interface PageHeaderProps {
   /**
    * Decorative art behind the expanded header. It is clipped to the header's rounded box, fades out
    * once the header collapses, and never reaches the compact toolbar. Readability is the header's
-   * job, not the art's: the title block sits on a plate (`BACKDROP_PLATE`), and trailing actions
-   * that need one apply the same classes.
+   * job, not the art's: the title block sits on a frosted Lens (`FacetMaterial layer="lens"` with
+   * `facet-lens-frosted`), and trailing actions that need a plate over the art apply `BACKDROP_PLATE`.
    */
   backdrop?: React.ReactNode;
   /**
    * Whether the backdrop actually shows art (default true). A header whose art is missing or failed
-   * keeps the backdrop layout, so nothing shifts, but drops the plate behind the title.
+   * keeps the backdrop layout, so nothing shifts, but drops the Lens behind the title.
    */
   backdropVisible?: boolean;
   /**
@@ -67,9 +68,10 @@ export interface PageHeaderProps {
 }
 
 /**
- * The page background role at 90% behind text over backdrop art, opaque under Reduce Transparency
- * and Increase Contrast. At 90% the worst case (a pure black flag pixel in light mode, pure white
- * in dark) leaves label-secondary at 5.5:1 (light) and 6:1 (dark), over the 4.5:1 AA bar.
+ * The page background role at 90% behind toolbar action pills over backdrop art, opaque under
+ * Reduce Transparency and Increase Contrast (a toolbar is Chrome, so pills use a flat plate rather
+ * than a Lens). At 90% the worst case (a pure black flag pixel in light mode, pure white in dark)
+ * leaves label-secondary at 5.5:1 (light) and 6:1 (dark), over the 4.5:1 AA bar.
  */
 export const BACKDROP_PLATE =
   "bg-grouped/90 transparency-reduced:bg-grouped contrast-more:bg-grouped";
@@ -222,21 +224,35 @@ export function PageHeader({
         )}
       >
         {leading}
-        <div
-          data-slot={backdrop != null ? "page-header-plate" : undefined}
-          className={cn(
-            "flex min-w-0 flex-col gap-1",
-            // Sized to the text, so long names are covered too.
-            backdrop != null && cn("rounded-card px-4 py-3", backdropVisible && BACKDROP_PLATE)
-          )}
-        >
-          <h1 ref={titleRef} className="text-large-title text-label">
-            {title}
-          </h1>
-          {subtitle != null && subtitle !== false && (
-            <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
-          )}
-        </div>
+        {backdrop != null && backdropVisible ? (
+          <FacetMaterial
+            layer="lens"
+            data-slot="page-header-plate"
+            className="facet-lens-frosted rounded-card flex min-w-0 flex-col gap-1 px-4 py-3"
+          >
+            <h1 ref={titleRef} className="text-large-title text-label">
+              {title}
+            </h1>
+            {subtitle != null && subtitle !== false && (
+              <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+            )}
+          </FacetMaterial>
+        ) : (
+          <div
+            data-slot={backdrop != null ? "page-header-plate" : undefined}
+            className={cn(
+              "flex min-w-0 flex-col gap-1",
+              backdrop != null && "rounded-card px-4 py-3"
+            )}
+          >
+            <h1 ref={titleRef} className="text-large-title text-label">
+              {title}
+            </h1>
+            {subtitle != null && subtitle !== false && (
+              <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
