@@ -8,6 +8,7 @@ import { formatBig, formatPercent, formatRate } from "~/app/countries/[slug]/_ut
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FlagImage } from "~/components/ui/facet/identity/FlagImage";
 import { assetUrl } from "~/lib/base-path";
 import { formatRealmDate } from "~/lib/realms/realm-clock";
 import { electionDisplayName } from "~/lib/realms/realm-year";
@@ -415,30 +416,9 @@ export function StateBlock({ layer, onMore }: BlockProps) {
   );
 }
 
-function FlagAvatar({ src, name }: { src: string | null; name: string }) {
-  const resolved = assetUrl(src);
-  const [failed, setFailed] = useState<string | null>(null);
-  if (!resolved || failed === resolved) {
-    return (
-      <span
-        aria-hidden
-        className="bg-fill-3 text-caption text-label-secondary flex h-5 w-7 shrink-0 items-center justify-center rounded-xs font-medium"
-      >
-        {name.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    // oxlint-disable-next-line nextjs/no-img-element -- remote flag thumbnail
-    <img
-      src={resolved}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(resolved)}
-      className="border-separator h-5 w-7 shrink-0 rounded-xs border object-cover"
-    />
-  );
-}
+const FLAG_AVATAR_CLASS = "border-separator h-5 w-7 shrink-0 rounded-xs border object-cover";
+const FLAG_AVATAR_MONOGRAM_CLASS =
+  "bg-fill-3 text-caption text-label-secondary flex h-5 w-7 shrink-0 items-center justify-center rounded-xs font-medium";
 
 export function ForeignBlock({ layer, onMore }: BlockProps) {
   const m = diplomaticMatrix(layer.world);
@@ -482,7 +462,12 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                     <li key={r.id} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="flex min-w-0 items-center gap-2">
-                          <FlagAvatar src={r.flagUrl} name={r.name} />
+                          <FlagImage
+                            src={r.flagUrl}
+                            name={r.name}
+                            className={FLAG_AVATAR_CLASS}
+                            monogramClassName={FLAG_AVATAR_MONOGRAM_CLASS}
+                          />
                           <span className="text-footnote text-label truncate font-medium">
                             {r.name}
                           </span>
@@ -514,7 +499,12 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
               {embassyLinks.map((emb) => {
                 const content = (
                   <>
-                    <FlagAvatar src={emb.flagUrl} name={emb.countryName} />
+                    <FlagImage
+                      src={emb.flagUrl}
+                      name={emb.countryName}
+                      className={FLAG_AVATAR_CLASS}
+                      monogramClassName={FLAG_AVATAR_MONOGRAM_CLASS}
+                    />
                     <span className="text-caption text-label truncate font-medium">
                       {emb.countryName}
                     </span>
