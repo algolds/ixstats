@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { rateLimiter, globalCache } from "~/lib/cache";
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/auth";
+import { isAdminClerkUser } from "~/server/shared/admin-access";
 import crypto from "crypto";
 import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
 import { ipaToKokoroPhonemes, anglicizeForSpeech } from "~/lib/onoma/kokoro-phonemes";
@@ -73,7 +73,6 @@ export function mergeMp3Buffers(buffers: Buffer[]): Buffer {
   return Buffer.concat(buffers);
 }
 
-const ADMIN_ROLES = ["admin", "owner", "staff"];
 const BETA_ROLES = ["beta_tester", "beta-tester", "beta"];
 const CACHE_OPTS = { ttl: 30 * 24 * 60 * 60, tier: "standard" } as const;
 const PROSODY_SUFFIX: Record<string, string> = {
@@ -81,8 +80,6 @@ const PROSODY_SUFFIX: Record<string, string> = {
   inquisitive: "?",
   mysterious: "...",
 };
-
-type RoleClaims = { role?: unknown } | undefined;
 
 const json = (error: string, status: number, extra?: Record<string, unknown>) =>
   NextResponse.json({ error, ...extra }, { status });
@@ -107,32 +104,18 @@ function readCached(raw: string | undefined | null): { data: string; ct: string 
   return { data: raw, ct: "audio/mpeg" };
 }
 
-/** System owners, admins/staff and beta testers may use the narrator. */
-async function resolveAccess(userId: string, sessionClaims: object | undefined) {
-  const claims = sessionClaims as
-    { metadata?: RoleClaims; publicMetadata?: RoleClaims } | undefined;
-  const clerkRole = claims?.metadata?.role || claims?.publicMetadata?.role;
-  const role = typeof clerkRole === "string" ? clerkRole : "";
-  let isAdmin = isSystemOwner(userId) || ADMIN_ROLES.includes(role);
-  let hasAccess = isAdmin || BETA_ROLES.includes(role);
+/** System owners, admins/staff and beta testers may use the narrator. Admin = the database role. */
+async function resolveAccess(userId: string) {
+  const isAdmin = await isAdminClerkUser(userId);
+  if (isAdmin) return { isAdmin, hasAccess: true };
 
-  if (!isAdmin) {
-    const dbUser = await db.user.findUnique({
-      where: { clerkUserId: userId },
-      include: { role: true },
-    });
-    if (dbUser) {
-      const roleName = dbUser.role?.name || "";
-      const roleLevel = dbUser.role?.level ?? 999;
-      if (ADMIN_ROLES.includes(roleName) || roleLevel <= 20) {
-        isAdmin = true;
-        hasAccess = true;
-      } else if (BETA_ROLES.includes(roleName) || roleLevel === 90) {
-        hasAccess = true;
-      }
-    }
-  }
-  return { isAdmin, hasAccess };
+  const dbUser = await db.user.findUnique({
+    where: { clerkUserId: userId },
+    include: { role: true },
+  });
+  const roleName = dbUser?.role?.name || "";
+  const roleLevel = dbUser?.role?.level ?? 999;
+  return { isAdmin, hasAccess: BETA_ROLES.includes(roleName) || roleLevel === 90 };
 }
 
 interface TtsConfig {
@@ -422,7 +405,7 @@ async function handleTts(request: NextRequest) {
     const limit = await rateLimiter.check(userId, "onoma-tts");
     if (!limit.success) return json("Rate limit exceeded", 429);
 
-    const { isAdmin, hasAccess } = await resolveAccess(userId, session.sessionClaims);
+    const { isAdmin, hasAccess } = await resolveAccess(userId);
     if (!hasAccess) {
       return json(
         "Narrator feature is currently restricted to system owners, administrators, and beta testers.",
