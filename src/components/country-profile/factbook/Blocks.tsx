@@ -116,8 +116,10 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
 }
 
 function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ id: string; pinned: boolean } | null>(null);
+  const selectedId = selection?.id ?? null;
   const active = shares.regions.find((r) => r.id === selectedId) ?? null;
+  const clearUnpinned = () => setSelection((curr) => (curr?.pinned ? curr : null));
 
   return (
     <Card padding="sm" className="flex flex-col gap-2">
@@ -127,18 +129,26 @@ function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
           {`${shares.topShare.toFixed(1)}% top ${shares.regions.length}`}
         </span>
       </div>
-      <div className="rounded-control-sm flex h-3 gap-0.5 overflow-hidden">
+      <div
+        className="rounded-control-sm flex h-3 gap-0.5 overflow-hidden"
+        onMouseLeave={clearUnpinned}
+        onBlur={clearUnpinned}
+      >
         {shares.regions.map((r, i) => {
           const isSelected = r.id === selectedId;
+          const preview = () =>
+            setSelection((curr) =>
+              curr?.pinned && curr.id === r.id ? curr : { id: r.id, pinned: false }
+            );
           return (
             <button
               key={r.id}
               type="button"
               aria-label={r.name}
               aria-pressed={isSelected}
-              onClick={() => setSelectedId((curr) => (curr === r.id ? null : r.id))}
-              onMouseEnter={() => setSelectedId(r.id)}
-              onFocus={() => setSelectedId(r.id)}
+              onClick={() => setSelection({ id: r.id, pinned: true })}
+              onMouseEnter={preview}
+              onFocus={preview}
               style={{ width: `${Math.max(r.share, 6)}%` }}
               className={cn(
                 SHARE_FILLS[i],
