@@ -267,7 +267,7 @@ describe("bond prices", () => {
         },
       ];
       fake.tables.nationTreasury = [
-        { id: "t", countryId: "na", realmId: "default", balance: 0, creditRating: "A" },
+        { id: "t", countryId: "na", realmId: "default", balance: 0n, creditRating: "A" },
       ];
       return (await getBondPage(fake.client, "b1", null))?.bond.price;
     };
@@ -319,8 +319,8 @@ describe("getLeaderboards", () => {
       currencyExchangeRate: null,
     });
     fake.tables.nationTreasury = [
-      { id: "t_na", countryId: "na", realmId: "default", balance: 500, creditRating: "AA" },
-      { id: "t_nb", countryId: "nb", realmId: "other", balance: 800, creditRating: "A" },
+      { id: "t_na", countryId: "na", realmId: "default", balance: 500_00n, creditRating: "AA" },
+      { id: "t_nb", countryId: "nb", realmId: "other", balance: 800_00n, creditRating: "A" },
     ];
     fake.tables.company!.push({
       id: "co_other",

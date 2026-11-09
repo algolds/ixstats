@@ -76,8 +76,8 @@ function setup(balance = 10_000) {
       { id: "nb", name: "Urcea", realmId: "default", ownerUserId: "bob" },
     ],
     nationTreasury: [
-      { id: "t_na", countryId: NA, realmId: "default", balance },
-      { id: "t_nb", countryId: "nb", realmId: "default", balance: 5000 },
+      { id: "t_na", countryId: NA, realmId: "default", balance: BigInt(Math.round(balance * 100)) },
+      { id: "t_nb", countryId: "nb", realmId: "default", balance: 5000_00n },
     ],
     company: [company("co1", "alice"), company("co2", "bob")],
     shareholding: [
@@ -139,7 +139,7 @@ describe("the fund account", () => {
 describe("deposit and withdraw", () => {
   it("moves ₷ from the treasury into the fund and back", async () => {
     await deposit(1000);
-    expect(treasury().balance).toBe(9000);
+    expect(treasury().balance).toBe(9000_00n);
     expect(fundCash()).toBe(1000);
     await withdrawFromFund(fake.client, {
       userId: "alice",
@@ -147,14 +147,14 @@ describe("deposit and withdraw", () => {
       amount: 400,
       requestId: rid(),
     });
-    expect(treasury().balance).toBe(9400);
+    expect(treasury().balance).toBe(9400_00n);
     expect(fundCash()).toBe(600);
   });
 
   it("refuses a deposit that takes the fund past half, moving nothing", async () => {
     await deposit(4000);
     await expect(deposit(1001)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
-    expect(treasury().balance).toBe(6000);
+    expect(treasury().balance).toBe(6000_00n);
     expect(fundCash()).toBe(4000);
   });
 

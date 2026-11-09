@@ -42,7 +42,14 @@ function setup(treasuryBalance = 50_000) {
       lifetimeSpent: 0n,
     })),
     country: [{ id: "na", name: "Caphiria", realmId: "default", ownerUserId: "alice" }],
-    nationTreasury: [{ id: "t_na", countryId: "na", realmId: "default", balance: treasuryBalance }],
+    nationTreasury: [
+      {
+        id: "t_na",
+        countryId: "na",
+        realmId: "default",
+        balance: BigInt(Math.round(treasuryBalance * 100)),
+      },
+    ],
     systemConfig: [],
   });
 }
@@ -223,7 +230,7 @@ describe("buyBondPrimary", () => {
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
     expect(sov("bob")).toBe(200_000 - 10 * BOND_FACE);
-    expect(treasury().balance).toBe(50_000 + 10 * BOND_FACE);
+    expect(treasury().balance).toBe(BigInt((50_000 + 10 * BOND_FACE) * 100));
     expect(bond(id).unitsSold).toBe(10);
     expect(holding("bob")).toBe(10);
     expect(news("bond_bought")[0]!.headline).toBe("A private investor bought 10 Caphiria bonds");
@@ -339,7 +346,7 @@ describe("runBondPayments", () => {
       units: 400,
       requestId: rid(),
     });
-    treasury().balance = 50;
+    treasury().balance = 50_00n;
     const before = { bob: sov("bob"), carol: sov("carol") };
     const now = bond(id).issuedAt.getTime() + WEEK_MS;
 

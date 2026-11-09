@@ -223,10 +223,10 @@ describe("an approved acquisition", () => {
     await castVote(fake.client, { userId: "bob", proposalId: offer.id, support: true });
 
     expect(fake.tables.nationTreasury).toEqual([
-      expect.objectContaining({ countryId: "nation_a", balance: 5000 }),
+      expect.objectContaining({ countryId: "nation_a", balance: 5000_00n }),
     ]);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "TAX", amount: 5000 }),
+      expect.objectContaining({ type: "TAX", amount: 5000_00n }),
     ]);
     // 25,000 ₷ left for the holders: alice 8,325 and bob 16,675.
     expect(sov("alice")).toBe(5000 + 8325);

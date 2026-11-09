@@ -937,7 +937,7 @@ export async function getLeaderboards(db: Db, realmId: string, nowMs: number = D
       .map((t) => ({
         id: t.countryId,
         name: nations.find((n) => n.id === t.countryId)?.name ?? "A nation",
-        balance: t.balance,
+        balance: fromCents(centsOf(t.balance)),
         rating: ratingOf(t.creditRating),
       }))
       .sort((a, b) => b.balance - a.balance)

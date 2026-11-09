@@ -19,11 +19,11 @@
 
 import type { Company, Prisma } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
-import { formatSovereigns } from "./amounts";
+import { centsOf, formatSovereigns, fromCents, toCents } from "./amounts";
 import { refreshFairValue, returnListedShares } from "./companies";
 import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
-import { fromCents, holdersOf, splitProRata, toCents, type Holder } from "./ownership";
+import { holdersOf, splitProRata, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
 import { debitTreasuryTx, transferToTreasuryTx } from "./treasury";
@@ -160,7 +160,7 @@ async function plantRecoveryCents(
     where: { countryId: hq },
     select: { balance: true },
   });
-  const available = Math.max(0, Math.floor((treasury?.balance ?? 0) * 100));
+  const available = Math.max(0, treasury ? centsOf(treasury.balance) : 0);
   return Math.min(Math.round(decisionValue * PLANT_RECOVERY_RATE * 100), available);
 }
 

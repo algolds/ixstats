@@ -556,8 +556,8 @@ describe("capital gains tax on secondary sales", () => {
     await buyShares(fake.client, { userId: "bob", listingId: id, shares: 300, requestId: rid() });
     // Gross 900; gain over the average cost of 1 is 600; tax at 20% is 120.
     expect(sov("alice")).toBe(5780);
-    expect(treasury()).toMatchObject({ balance: 120, lifetimeTaxEarned: 120 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()).toMatchObject({ balance: 120_00n, lifetimeTaxEarned: 120_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });
 
   it("owes nothing when the sale is below average cost", async () => {
@@ -574,8 +574,8 @@ describe("capital gains tax on secondary sales", () => {
     const before = totalCents();
     await bid("bob", 300, 3);
     expect(sov("alice")).toBe(5780);
-    expect(treasury()).toMatchObject({ balance: 120, lifetimeTaxEarned: 120 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()).toMatchObject({ balance: 120_00n, lifetimeTaxEarned: 120_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });
 
   it("doesn't tax a primary issue, even with an HQ nation", async () => {
@@ -639,8 +639,8 @@ describe("dividend credit cap and withholding", () => {
     expect(sov("alice")).toBe(5054);
     expect(sov("bob")).toBe(5036);
     expect(company().capital).toBe(900);
-    expect(treasury()).toMatchObject({ balance: 10, lifetimeTaxEarned: 10 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()).toMatchObject({ balance: 10_00n, lifetimeTaxEarned: 10_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
 
     const again = await declareDividend(fake.client, {
       userId: "alice",
@@ -649,7 +649,7 @@ describe("dividend credit cap and withholding", () => {
       requestId,
     });
     expect(again.alreadyApplied).toBe(true);
-    expect(treasury()!.balance).toBe(10);
+    expect(treasury()!.balance).toBe(10_00n);
     expect(company().capital).toBe(900);
   });
 
@@ -669,8 +669,8 @@ describe("dividend credit cap and withholding", () => {
     expect(cents(sov("bob"))).toBe(500031);
     expect(cents(sov("carol"))).toBe(500031);
     expect(cents(company().capital)).toBe(99901);
-    expect(cents(treasury()!.balance as number)).toBe(6);
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()!.balance).toBe(6n);
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });
 });
 

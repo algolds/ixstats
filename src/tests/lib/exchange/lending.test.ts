@@ -77,7 +77,7 @@ function setup(owner: string, companyOver: Record<string, number | string> = {})
         ...companyOver,
       },
     ],
-    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000 }],
+    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000_00n }],
     systemConfig: [],
   });
 }
@@ -101,16 +101,16 @@ describe("setLendingTerms", () => {
       spread: 0.03,
       cap: 100_000,
     });
-    expect(treasury()).toMatchObject({ lendingSpread: 0.03, companyCreditCap: 100_000 });
+    expect(treasury()).toMatchObject({ lendingSpread: 0.03, companyCreditCap: 100_000_00n });
   });
 });
 
 describe("terms on credit lines", () => {
   it("caps each company's line at the treasury's cap", async () => {
     setup("bob");
-    treasury().companyCreditCap = 100;
+    treasury().companyCreditCap = 100_00n;
     await expect(borrow(150)).rejects.toThrow(/past its limit/);
-    expect(treasury().balance).toBe(10_000);
+    expect(treasury().balance).toBe(10_000_00n);
   });
 
   it("charges the extra spread in the tick's interest", async () => {
@@ -120,7 +120,7 @@ describe("terms on credit lines", () => {
       await runCompanyOperations(fake.client, Date.now());
       return (fake.tables.nationTreasuryEntry ?? [])
         .filter((e) => e.type === "INTEREST")
-        .reduce((s, e) => s + e.amount, 0);
+        .reduce((s, e) => s + Number(e.amount) / 100, 0);
     };
     const base = await interestAt(0);
     const raised = await interestAt(0.03);
@@ -135,7 +135,7 @@ describe("no self-dealing", () => {
     treasury().lendingSpread = 0.02;
     const result = await borrow(500);
     expect(result.rate).toBeCloseTo(0.13, 10); // 5% + B spread 6% + 2%
-    expect(treasury().balance).toBe(9_500);
+    expect(treasury().balance).toBe(9_500_00n);
   });
 
   it("won't award the owner's tender to the owner's company", async () => {
@@ -241,7 +241,7 @@ describe("the terms reach the company controls", () => {
   it("lists each realm nation with its lending terms (defaults when it has no treasury)", async () => {
     setup("bob");
     treasury().lendingSpread = 0.03;
-    treasury().companyCreditCap = 50_000;
+    treasury().companyCreditCap = 50_000_00n;
     fake.tables.country!.push({
       id: "nation_b",
       name: "Urcea",

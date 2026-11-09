@@ -7,9 +7,9 @@
 
 import type { NationTreasury, Prisma } from "@prisma/client";
 import { refreshFairValue } from "./companies";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, dbCents, formatSovereigns, fromCents, round2, toCents } from "./amounts";
 import type { Db } from "./guards";
-import { fromCents, lockCompany, toCents } from "./ownership";
+import { lockCompany } from "./ownership";
 import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchange-service";
 
 export type TreasuryInflowType =
@@ -183,8 +183,8 @@ interface LedgerMove {
 async function writeEntry(
   tx: Db,
   countryId: string,
-  amount: number,
-  balanceAfter: number,
+  amount: bigint,
+  balanceAfter: bigint,
   move: LedgerMove
 ): Promise<void> {
   await tx.nationTreasuryEntry.create({
@@ -208,20 +208,20 @@ async function creditTreasury(
   move: LedgerMove,
   extra: Prisma.NationTreasuryUpdateManyMutationInput = {}
 ): Promise<number> {
-  const amount = fromCents(cents);
+  const delta = dbCents(cents);
   const data: Prisma.NationTreasuryUpdateManyMutationInput = {
     ...extra,
-    balance: { increment: amount },
+    balance: { increment: delta },
   };
   const counter = INFLOW_COUNTERS[move.type];
-  if (counter) data[counter] = { increment: amount };
+  if (counter) data[counter] = { increment: delta };
   const row = await tx.nationTreasury.update({
     where: { id: t.id },
     data,
     select: { balance: true },
   });
-  await writeEntry(tx, t.countryId, amount, row.balance, move);
-  return amount;
+  await writeEntry(tx, t.countryId, delta, row.balance, move);
+  return fromCents(cents);
 }
 
 /**
@@ -234,17 +234,18 @@ async function debitTreasury(
   cents: number,
   move: LedgerMove
 ): Promise<number> {
+  const delta = dbCents(cents);
   const amount = fromCents(cents);
   const { count } = await tx.nationTreasury.updateMany({
-    where: { id: t.id, balance: { gte: amount } },
-    data: { balance: { decrement: amount }, lifetimeSpent: { increment: amount } },
+    where: { id: t.id, balance: { gte: delta } },
+    data: { balance: { decrement: delta }, lifetimeSpent: { increment: delta } },
   });
-  if (count !== 1) throw insufficient("The treasury", t.balance, amount);
+  if (count !== 1) throw insufficient("The treasury", fromCents(centsOf(t.balance)), amount);
   const after = await tx.nationTreasury.findUniqueOrThrow({
     where: { id: t.id },
     select: { balance: true },
   });
-  await writeEntry(tx, t.countryId, -amount, after.balance, move);
+  await writeEntry(tx, t.countryId, dbCents(-cents), after.balance, move);
   return amount;
 }
 
@@ -307,7 +308,7 @@ function treasuryKey(key: string): string {
 export async function mintStipendTx(tx: Db, input: StipendMintInput): Promise<number> {
   const t = await lockTreasuryFor(tx, input.countryId, input.realmId);
   if (await alreadyApplied(tx, input.key)) return 0;
-  const room = Math.max(0, toCents(input.cap) - toCents(t.balance));
+  const room = Math.max(0, toCents(input.cap) - centsOf(t.balance));
   const cents = Math.min(toCents(input.amount), room);
   if (!(cents > 0)) return 0;
   return creditTreasury(
@@ -394,14 +395,18 @@ export async function treasurySummary(
     }),
   ]);
   return {
-    balance: row?.balance ?? 0,
+    balance: row ? fromCents(centsOf(row.balance)) : 0,
     cap,
-    lifetimeStipend: row?.lifetimeStipend ?? 0,
-    lifetimeTaxEarned: row?.lifetimeTaxEarned ?? 0,
-    lifetimeTariffEarned: row?.lifetimeTariffEarned ?? 0,
-    lifetimeInterestEarned: row?.lifetimeInterestEarned ?? 0,
-    lifetimeSpent: row?.lifetimeSpent ?? 0,
+    lifetimeStipend: row ? fromCents(centsOf(row.lifetimeStipend)) : 0,
+    lifetimeTaxEarned: row ? fromCents(centsOf(row.lifetimeTaxEarned)) : 0,
+    lifetimeTariffEarned: row ? fromCents(centsOf(row.lifetimeTariffEarned)) : 0,
+    lifetimeInterestEarned: row ? fromCents(centsOf(row.lifetimeInterestEarned)) : 0,
+    lifetimeSpent: row ? fromCents(centsOf(row.lifetimeSpent)) : 0,
     lastStipendIxTime: row?.lastStipendIxTime ?? null,
-    recent,
+    recent: recent.map((r) => ({
+      ...r,
+      amount: fromCents(centsOf(r.amount)),
+      balanceAfter: fromCents(centsOf(r.balanceAfter)),
+    })),
   };
 }

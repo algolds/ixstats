@@ -59,7 +59,7 @@ function setup(overrides: Row = {}) {
       lifetimeSpent: 0n,
     })),
     country: [{ id: NATION, realmId: REALM, economicTier: "Developed" }],
-    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 5000 }],
+    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 5000_00n }],
     company: [
       {
         id: "co1",
@@ -95,7 +95,7 @@ function setup(overrides: Row = {}) {
 
 const co = () => fake.tables.company!.find((c) => c.id === "co1")!;
 const treasuryBalance = () =>
-  fake.tables.nationTreasury!.find((t) => t.countryId === NATION)!.balance as number;
+  Number(fake.tables.nationTreasury!.find((t) => t.countryId === NATION)!.balance) / 100;
 const walletCents = (userId: string) =>
   Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns);
 const run = (nowMs: number) => runCompanyOperations(fake.client, nowMs);
@@ -169,7 +169,7 @@ describe("72-hour bankruptcy", () => {
     ).toEqual([["bankruptcy", "HEADLINE"]]);
     expect(treasuryBalance()).toBeCloseTo(4866.67, 2);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "SPEND", amount: -133.33, source: "PLANT_RECOVERY:co1" }),
+      expect.objectContaining({ type: "SPEND", amount: -133_33n, source: "PLANT_RECOVERY:co1" }),
     ]);
   });
 
@@ -199,7 +199,7 @@ describe("72-hour bankruptcy", () => {
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 133.33, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "INTEREST", amount: 133_33n, source: "LIQUIDATION:co1" }),
       ])
     );
   });
@@ -259,7 +259,7 @@ describe("72-hour bankruptcy", () => {
     // Lender takes 500.04 (500 principal + 0.04 tick interest) first; holders split 583.29 (58,329 cents) 500:300:200.
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 500.04, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "INTEREST", amount: 500_04n, source: "LIQUIDATION:co1" }),
       ])
     );
     const paid = [walletCents("alice"), walletCents("bob"), walletCents("carol")];

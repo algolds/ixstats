@@ -87,7 +87,7 @@ function setup(companies: Row[], extra: Record<string, Row[]> = {}): void {
 
 const co = (id: string) => fake.tables.company!.find((c) => c.id === id)!;
 const treasury = () => fake.tables.nationTreasury?.find((t) => t.countryId === NATION);
-const treasuryBalance = () => treasury()?.balance ?? 0;
+const treasuryBalance = () => (treasury() ? Number(treasury()!.balance) / 100 : 0);
 const run = (nowMs = T0) => runCompanyOperations(fake.client, nowMs);
 const notices = () => jest.mocked(notifyExchange).mock.calls.flatMap(([list]) => list);
 
@@ -104,7 +104,7 @@ describe("tick operating P&L", () => {
     });
     expect(treasuryBalance()).toBe(50);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "TAX", amount: 50, countryId: NATION }),
+      expect.objectContaining({ type: "TAX", amount: 50_00n, countryId: NATION }),
     ]);
   });
 
@@ -207,7 +207,7 @@ describe("Central Bank credit line", () => {
 
   beforeEach(() => {
     setup([company("co1", { capital: 0 })], {
-      nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000 }],
+      nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000_00n }],
     });
   });
 

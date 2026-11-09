@@ -132,7 +132,7 @@ describe("Exchange financial & state invariants", () => {
       user: [{ id: "alice", clerkUserId: "c_alice" }],
       exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 5000_00n }],
       country: [{ id: "nation_a", realmId: "default", economicTier: "Developed" }],
-      nationTreasury: [{ id: "t_a", countryId: "nation_a", realmId: "default", balance: 50_000 }],
+      nationTreasury: [{ id: "t_a", countryId: "nation_a", realmId: "default", balance: 50_000_00n }],
       company: [
         {
           id: "co1",

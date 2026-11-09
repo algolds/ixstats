@@ -380,12 +380,12 @@ model NationTreasury {
   id                     String   @id @default(cuid())
   countryId              String   @unique
   realmId                String   @default("default")
-  balance                Float    @default(0)
-  lifetimeStipend        Float    @default(0)
-  lifetimeTaxEarned      Float    @default(0)
-  lifetimeTariffEarned   Float    @default(0)
-  lifetimeInterestEarned Float    @default(0)
-  lifetimeSpent          Float    @default(0)
+  balance                BigInt   @default(0)
+  lifetimeStipend        BigInt   @default(0)
+  lifetimeTaxEarned      BigInt   @default(0)
+  lifetimeTariffEarned   BigInt   @default(0)
+  lifetimeInterestEarned BigInt   @default(0)
+  lifetimeSpent          BigInt   @default(0)
   corporateGdpShift      Float    @default(0)
   lastStipendIxTime      Float?
   /// The nation's credit rating (AAA..D), recomputed after bond moves and on each market tick.
@@ -397,7 +397,7 @@ model NationTreasury {
   /// Added to the rating spread on domestic credit lines (lending.ts), -0.02..0.10.
   lendingSpread          Float     @default(0)
   /// The most any one domestic company may borrow from this treasury.
-  companyCreditCap       Float     @default(250000)
+  companyCreditCap       BigInt    @default(25000000)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @default(now()) @updatedAt
 
@@ -412,8 +412,8 @@ model NationTreasuryEntry {
   id             String   @id @default(cuid())
   countryId      String
   type           String
-  amount         Float
-  balanceAfter   Float
+  amount         BigInt
+  balanceAfter   BigInt
   source         String
   metadata       Json?
   ixTime         Float

@@ -56,7 +56,7 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
 const inTx = <T>(fn: (tx: Db) => Promise<T>): Promise<T> => fake.client.$transaction(fn);
 
 const treasury = () => fake.tables.nationTreasury?.find((t) => t.countryId === NATION);
-const balance = () => treasury()?.balance ?? 0;
+const balance = () => (treasury() ? Number(treasury()!.balance) / 100 : 0);
 const entries = () => fake.tables.nationTreasuryEntry ?? [];
 const company = () => fake.tables.company!.find((c) => c.id === "co1")!;
 const walletSov = () =>
@@ -110,7 +110,7 @@ describe("getOrCreateTreasury", () => {
     await inTx((tx) => getOrCreateTreasury(tx, NATION, REALM));
     const again = await inTx((tx) => getOrCreateTreasury(tx, NATION, REALM));
     expect(fake.tables.nationTreasury).toHaveLength(1);
-    expect(again).toMatchObject({ countryId: NATION, realmId: REALM, balance: 0 });
+    expect(again).toMatchObject({ countryId: NATION, realmId: REALM, balance: 0n });
   });
 });
 
@@ -122,7 +122,7 @@ describe("mintStipendTx", () => {
     expect(await mint(600, "stipend:2")).toBe(400);
     expect(await mint(50, "stipend:3", 2000)).toBe(0);
     expect(balance()).toBe(CAP);
-    expect(treasury()).toMatchObject({ lifetimeStipend: CAP, lastStipendIxTime: 1000 });
+    expect(treasury()).toMatchObject({ lifetimeStipend: 1000_00n, lastStipendIxTime: 1000 });
     expect(entries()).toHaveLength(2);
   });
 
@@ -131,8 +131,8 @@ describe("mintStipendTx", () => {
     expect(entries()[0]).toMatchObject({
       countryId: NATION,
       type: "STIPEND",
-      amount: 62.5,
-      balanceAfter: 62.5,
+      amount: 62_50n,
+      balanceAfter: 62_50n,
       ixTime: 42,
       idempotencyKey: "stipend:nation_a:1",
     });
@@ -159,11 +159,11 @@ describe("transferToTreasuryTx", () => {
     expect(await companyTax(120, "tax:co1:1")).toBe(120);
     expect(company().capital).toBe(380);
     expect(balance()).toBe(120);
-    expect(treasury()).toMatchObject({ lifetimeTaxEarned: 120 });
+    expect(treasury()).toMatchObject({ lifetimeTaxEarned: 120_00n });
     expect(entries()[0]).toMatchObject({
       type: "TAX",
-      amount: 120,
-      balanceAfter: 120,
+      amount: 120_00n,
+      balanceAfter: 120_00n,
       idempotencyKey: "tax:co1:1:treasury",
     });
   });
@@ -266,7 +266,7 @@ describe("creditTreasuryTx", () => {
     expect(await refund()).toBe(40);
     expect(await refund()).toBe(0);
     expect(balance()).toBe(40);
-    expect(entries()[0]).toMatchObject({ type: "B2G_REFUND", amount: 40 });
+    expect(entries()[0]).toMatchObject({ type: "B2G_REFUND", amount: 40_00n });
   });
 });
 
@@ -302,8 +302,8 @@ describe("debitTreasuryTx", () => {
     await mint(100, "stipend:spend");
     expect(await debit(40, "escrow:2")).toBe(40);
     expect(balance()).toBe(60);
-    expect(treasury()).toMatchObject({ lifetimeSpent: 40 });
-    expect(entries()[1]).toMatchObject({ type: "B2G_ESCROW", amount: -40, balanceAfter: 60 });
+    expect(treasury()).toMatchObject({ lifetimeSpent: 40_00n });
+    expect(entries()[1]).toMatchObject({ type: "B2G_ESCROW", amount: -40_00n, balanceAfter: 60_00n });
   });
 });
 

@@ -50,7 +50,7 @@ function setup(config: Record<string, string> = {}) {
       lifetimeSpent: 0n,
     })),
     country: [{ id: "ruritania", name: "Ruritania", ownerUserId: "alice", realmId: "default" }],
-    nationTreasury: [{ id: "t_ruritania", countryId: "ruritania", realmId: "default", balance: 0 }],
+    nationTreasury: [{ id: "t_ruritania", countryId: "ruritania", realmId: "default", balance: 0n }],
     systemConfig: Object.entries({ exchange_charter_fee: "100", ...config }).map(
       ([key, value]) => ({ key, value })
     ),
@@ -61,24 +61,27 @@ const sov = (userId: string) =>
   Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const company = (id: string) => fake.tables.company!.find((c) => c.id === id)!;
 const contract = (id: string) => fake.tables.contract!.find((c) => c.id === id)!;
-const treasuryBalance = (countryId = "ruritania") =>
-  fake.tables.nationTreasury?.find((t) => t.countryId === countryId)?.balance ?? 0;
+const treasuryBalance = (countryId = "ruritania") => {
+  const b = fake.tables.nationTreasury?.find((t) => t.countryId === countryId)?.balance;
+  return b !== undefined ? Number(b) / 100 : 0;
+};
 const setTreasury = (balance: number, countryId = "ruritania") => {
+  const b = BigInt(Math.round(balance * 100));
   const row = fake.tables.nationTreasury!.find((t) => t.countryId === countryId);
-  if (row) row.balance = balance;
+  if (row) row.balance = b;
   else
     fake.tables.nationTreasury!.push({
       id: `t_${countryId}`,
       countryId,
       realmId: "default",
-      balance,
+      balance: b,
     });
 };
 const totalMoney = () =>
   fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0) +
   (fake.tables.company ?? []).reduce((s, c) => s + c.capital, 0) +
   (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0) +
-  (fake.tables.nationTreasury ?? []).reduce((s, t) => s + t.balance, 0);
+  (fake.tables.nationTreasury ?? []).reduce((s, t) => s + Number(t.balance) / 100, 0);
 
 async function found(
   userId: string,
@@ -252,7 +255,7 @@ describe("treasury-funded tenders", () => {
     expect(k).toMatchObject({ fundedBy: "TREASURY", escrow: 400 });
     expect(treasuryBalance()).toBe(600);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "B2G_ESCROW", amount: -400 }),
+      expect.objectContaining({ type: "B2G_ESCROW", amount: -400_00n }),
     ]);
 
     await expect(tender(700, "alice", "TREASURY")).rejects.toMatchObject({
@@ -282,7 +285,7 @@ describe("treasury-funded tenders", () => {
     expect(treasuryBalance()).toBe(700);
     expect(totalMoney()).toBe(before);
     expect(fake.tables.nationTreasuryEntry).toEqual(
-      expect.arrayContaining([expect.objectContaining({ type: "B2G_REFUND", amount: 100 })])
+      expect.arrayContaining([expect.objectContaining({ type: "B2G_REFUND", amount: 100_00n })])
     );
 
     const other = await tender(200, "alice", "TREASURY");
@@ -493,7 +496,7 @@ describe("cross-border tariffs and trade agreements", () => {
     expect(contract(contractId)).toMatchObject({ tariffRate: 0.1, tariffPaid: 40 });
     expect(totalMoney()).toBe(before);
     expect(fake.tables.nationTreasuryEntry).toEqual(
-      expect.arrayContaining([expect.objectContaining({ type: "TARIFF", amount: 40 })])
+      expect.arrayContaining([expect.objectContaining({ type: "TARIFF", amount: 40_00n })])
     );
   });
 

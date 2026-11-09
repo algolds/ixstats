@@ -442,7 +442,7 @@ describe("company decisions", () => {
     company().hqCountryId = "nation_a";
   };
   const treasuryOf = (countryId: string) =>
-    fake.tables.nationTreasury?.find((t) => t.countryId === countryId)?.balance ?? 0;
+    Number(fake.tables.nationTreasury?.find((t) => t.countryId === countryId)?.balance ?? 0n) / 100;
 
   it("an efficiency RND adds 1.15 times the spend to plant and one point of standing", async () => {
     await submitDecision(fake.client, {
@@ -572,7 +572,7 @@ describe("company decisions", () => {
     expect(treasuryOf("nation_a")).toBe(250);
     expect(company().capital + treasuryOf("nation_a")).toBe(19_750);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "LOBBY", amount: 250, countryId: "nation_a" }),
+      expect.objectContaining({ type: "LOBBY", amount: 250_00n, countryId: "nation_a" }),
     ]);
   });
 

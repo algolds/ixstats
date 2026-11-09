@@ -117,7 +117,8 @@ export async function depositToFund(
     await lockWallet(tx, fundUserId);
     const treasury = await lockTreasuryTx(tx, country.id, country.realmId);
     const invested = await investedAtCost(tx, fundUserId);
-    if (invested + i.amount > FUND_SHARE_CAP * (treasury.balance + invested) + 1e-9) {
+    const treasuryBalance = fromCents(centsOf(treasury.balance));
+    if (invested + i.amount > FUND_SHARE_CAP * (treasuryBalance + invested) + 1e-9) {
       throw new ExchangeError(
         "LIMIT_REACHED",
         `The wealth fund may hold at most half of the treasury and fund together`
@@ -447,6 +448,7 @@ export async function fundSummary(db: Db, countryId: string): Promise<FundSummar
     getPortfolio(db, treasury.fundUserId, treasury.realmId),
   ]);
   // invested + room = FUND_SHARE_CAP × (balance − room + invested + room)  →  room = cap×(balance+invested) − invested
-  const room = Math.max(0, round2(FUND_SHARE_CAP * (treasury.balance + invested) - invested));
+  const balance = fromCents(centsOf(treasury.balance));
+  const room = Math.max(0, round2(FUND_SHARE_CAP * (balance + invested) - invested));
   return { countryId, cash: portfolio.wallet, invested, room, portfolio };
 }

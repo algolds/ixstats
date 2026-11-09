@@ -79,7 +79,7 @@ describe("runExchangeMarketTick", () => {
     const second = await runExchangeMarketTick(fake.client);
     expect(second.stipendsMinted).toBe(0);
     expect(fake.tables.nationTreasury).toEqual([
-      expect.objectContaining({ countryId: NATION, balance: 112.5 }),
+      expect.objectContaining({ countryId: NATION, balance: 112_50n }),
     ]);
     expect((fake.tables.nationTreasuryEntry ?? []).filter((e) => e.type === "TAX")).toHaveLength(1);
     expect(fake.tables.company![0]!.capital).toBe(capital);

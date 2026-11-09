@@ -15,7 +15,7 @@ import {
   isUniqueViolation,
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, formatSovereigns, fromCents, round2 } from "./amounts";
 import { lockParties } from "./fills";
 import { fundUserIdOf } from "./fund-ids";
 import { assertNotFundInsiderPair } from "./fund-insiders";
@@ -181,7 +181,7 @@ export async function refreshNationRatingTx(
   const treasury = await getOrCreateTreasury(tx, countryId, realmId);
   const macro = await macroOfCountry(tx, countryId);
   const rating = nationRatingFor({
-    balance: treasury.balance,
+    balance: fromCents(centsOf(treasury.balance)),
     outstandingPrincipal: await openPrincipalOf(tx, countryId, "unitsSold"),
     growth: macro?.growth ?? null,
     governmentEfficiency: macro?.governmentEfficiency ?? 0.5,
@@ -628,7 +628,7 @@ async function payWeekTx(tx: Db, ctx: WeekContext): Promise<WeekOutcome> {
   const total = [...owed.values()].reduce((s, c) => s + c, 0);
   await lockParties(tx, [...owed.keys()]);
   const treasury = await lockTreasuryTx(tx, bond.countryId, bond.realmId);
-  const balanceCents = Math.floor(treasury.balance * 100);
+  const balanceCents = Math.max(0, centsOf(treasury.balance));
   if (total > balanceCents) {
     await defaultTx(tx, { ...ctx, bond }, owed, balanceCents, total);
     return "defaulted";

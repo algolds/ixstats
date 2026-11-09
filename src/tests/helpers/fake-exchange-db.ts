@@ -97,19 +97,19 @@ const DEFAULTS: Record<string, () => Row> = {
   sectorPosition: () => ({ realmId: "default", units: 0, avgCost: 0 }),
   nationTreasury: () => ({
     realmId: "default",
-    balance: 0,
-    lifetimeStipend: 0,
-    lifetimeTaxEarned: 0,
-    lifetimeTariffEarned: 0,
-    lifetimeInterestEarned: 0,
-    lifetimeSpent: 0,
+    balance: 0n,
+    lifetimeStipend: 0n,
+    lifetimeTaxEarned: 0n,
+    lifetimeTariffEarned: 0n,
+    lifetimeInterestEarned: 0n,
+    lifetimeSpent: 0n,
     corporateGdpShift: 0,
     lastStipendIxTime: null,
     creditRating: "A",
     bondBanUntil: null,
     fundUserId: null,
     lendingSpread: 0,
-    companyCreditCap: 250000,
+    companyCreditCap: 25_000_000n,
   }),
   nationBond: () => ({
     realmId: "default",
@@ -265,7 +265,9 @@ export interface FakeDb {
 
 export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
   const tables: Record<string, Row[]> = {};
-  for (const [m, rows] of Object.entries(seed)) tables[m] = rows.map((r) => ({ ...r }));
+  for (const [m, rows] of Object.entries(seed)) {
+    tables[m] = rows.map((r) => ({ ...(DEFAULTS[m]?.() ?? {}), ...r }));
+  }
   const table = (m: string) => (tables[m] ??= []);
   const locks = new Map<string, Promise<void>>();
 
