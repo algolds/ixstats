@@ -23,7 +23,7 @@ import {
   isUniqueViolation,
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
-import { requireOwnedCompany } from "./companies";
+import { assertNoVoteNeeded, requireOwnedCompany } from "./companies";
 import { assertNotFundInsiderPair, isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
@@ -71,6 +71,7 @@ export interface IssueSharesInput {
   companyId: string;
   shares: number;
   requestId: string;
+  viaVote?: boolean;
 }
 
 function assertWholeShares(shares: number): void {
@@ -138,6 +139,7 @@ export async function issueSharesTx(
 
   await requireOwnedCompany(tx, input.companyId, input.userId);
   const company = await requireTradable(tx, input.companyId);
+  if (!input.viaVote) await assertNoVoteNeeded(tx, company);
   const open = await tx.shareListing.count({
     where: { companyId: company.id, status: "OPEN", sellerUserId: null },
   });

@@ -219,6 +219,7 @@ async function executeTx(
       const { notices } = await dissolveCompanyTx(tx, {
         userId: proposal.proposerUserId,
         companyId: proposal.companyId,
+        viaVote: true,
       });
       return notices;
     }
@@ -229,6 +230,7 @@ async function executeTx(
         companyId: proposal.companyId,
         shares,
         requestId: `proposal:${proposal.id}`,
+        viaVote: true,
       });
       return issued.notices;
     }
