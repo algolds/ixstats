@@ -10,7 +10,13 @@
 import type { PrismaClient } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { formatSovereigns, round2 } from "./amounts";
-import { buyBondListing, buyBondPrimary, cancelBondListing, listBondUnits } from "./bonds";
+import {
+  BOND_FACE,
+  buyBondListing,
+  buyBondPrimary,
+  cancelBondListing,
+  listBondUnits,
+} from "./bonds";
 import type { SectorKey } from "./companies";
 import { fundUserIdOf } from "./fund-ids";
 import { isFundInsiderPair } from "./fund-insiders";
@@ -18,7 +24,13 @@ import { assertExchangeOpen, lockWallet, requireCountryOwner, type Db } from "./
 import { assertNotOwnersCompany } from "./lending";
 import { publishNewsTx } from "./news";
 import { buySectorUnits, sellSectorUnits, SECTOR_LABELS } from "./sectors";
-import { cancelBuyOrder, cancelListing, listShares, placeBuyOrder } from "./shares";
+import {
+  cancelBuyOrder,
+  cancelListing,
+  listShares,
+  placeBuyOrder,
+  primaryPricePerShare,
+} from "./shares";
 import { getPortfolio, type Portfolio } from "./terminal";
 import { creditTreasuryTx, debitTreasuryTx, getOrCreateTreasury, lockTreasuryTx } from "./treasury";
 
@@ -28,6 +40,8 @@ export { FUND_USER_PREFIX, fundUserIdOf, isFundUser } from "./fund-ids";
 export const FUND_SHARE_CAP = 0.5;
 /** The fund may own at most this share of any company. */
 export const STAKE_CAP = 0.25;
+/** The fund must sell within ±20% of fair value (shares) or face value (bonds). */
+export const FUND_PRICE_BAND = 0.2;
 
 /** The nation's fund account, created once (user, wallet, and the treasury's pointer to it). */
 export async function ensureFundUser(db: Db, countryId: string): Promise<string> {
@@ -200,6 +214,17 @@ async function assertStakeRoom(
   }
 }
 
+function assertSellBand(price: number, fair: number): void {
+  const low = round2((1 - FUND_PRICE_BAND) * fair);
+  const high = round2((1 + FUND_PRICE_BAND) * fair);
+  if (!Number.isFinite(price) || price < low || price > high) {
+    throw new ExchangeError(
+      "LIMIT_REACHED",
+      `The wealth fund sells within 20% of fair value: ${formatSovereigns(low)}–${formatSovereigns(high)}`
+    );
+  }
+}
+
 /** The guardrails for one order (spec §11a). */
 async function guardOrder(
   db: Db,
@@ -211,6 +236,17 @@ async function guardOrder(
     await assertNotOwnersCompany(db, countryId, order.companyId);
     await assertStakeRoom(db, fundUserId, order.companyId, order.shares);
   }
+  if (order.kind === "shares-sell") {
+    const company = await db.company.findUnique({
+      where: { id: order.companyId },
+      select: { fairValue: true, sharesOutstanding: true },
+    });
+    if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
+    assertSellBand(
+      order.pricePerShare,
+      primaryPricePerShare(company.fairValue, company.sharesOutstanding)
+    );
+  }
   if (order.kind === "bond-buy") {
     const bond = await db.nationBond.findUnique({
       where: { id: order.bondId },
@@ -219,6 +255,9 @@ async function guardOrder(
     if (bond?.countryId === countryId) {
       throw new ExchangeError("FORBIDDEN", "The wealth fund can't buy its own nation's bonds");
     }
+  }
+  if (order.kind === "bond-sell") {
+    assertSellBand(order.pricePerUnit, BOND_FACE);
   }
 }
 

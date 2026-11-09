@@ -235,7 +235,7 @@ describe("what the fund may buy", () => {
       requestId: rid(),
     });
     await trade({ kind: "shares-buy", companyId: "co2", shares: 100, maxPricePerShare: 2 });
-    await trade({ kind: "shares-sell", companyId: "co2", shares: 40, pricePerShare: 3 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 40, pricePerShare: 1.1 });
     const shareListingId = fake.tables.shareListing!.find(
       (l) => l.sellerUserId === FUND && l.status === "OPEN"
     )!.id;
@@ -395,6 +395,48 @@ describe("what the fund may buy", () => {
     await trade({ kind: "bond-buy", bondId: "b_nb", units: 5 });
     expect(fake.tables.bondListing!.find((l) => l.id === aliceListing)?.units).toBe(10);
     expect(fake.tables.bondListing!.find((l) => l.id === carolListing)?.units).toBe(5);
+  });
+
+  it("refuses fund share or bond listings outside ±20% of fair or face value and allows inside", async () => {
+    await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 50,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 50, maxPricePerShare: 1 });
+    // co2 fairValue = 1000, sharesOutstanding = 1000 → fair = ₷1 (band ₷0.8–₷1.2).
+    await expect(
+      trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 0.79 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷0.8–₷1.2",
+    });
+    await expect(
+      trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 1.21 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷0.8–₷1.2",
+    });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 0.8 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 10, pricePerShare: 1.2 });
+
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 10 });
+    await expect(
+      trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 79.99 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷80–₷120",
+    });
+    await expect(
+      trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 120.01 })
+    ).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+      message: "The wealth fund sells within 20% of fair value: ₷80–₷120",
+    });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 80 });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 120 });
   });
 });
 
