@@ -9,8 +9,21 @@ jest.mock("~/lib/exchange/notify", () => ({
   notifyExchange: jest.fn(),
   sendExchangeNotices: jest.fn(),
 }));
+jest.mock("~/lib/exchange/guards", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/exchange/guards"),
+}));
+jest.mock("~/lib/exchange/treasury", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/exchange/treasury"),
+}));
+jest.mock("~/lib/vault/exchange-service", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/vault/exchange-service"),
+}));
 
 import { dissolveCompany, dissolveCompanyTx } from "~/lib/exchange/companies";
+import * as guards from "~/lib/exchange/guards";
 import type { Db } from "~/lib/exchange/guards";
 import { declareDividend } from "~/lib/exchange/dividends";
 import { notifyExchange } from "~/lib/exchange/notify";
@@ -22,9 +35,13 @@ import {
   getOrderBook,
   issueShares,
   listShares,
+  matchCompanyOrders,
   placeBuyOrder,
+  returnBuyOrders,
   setShareTrading,
 } from "~/lib/exchange/shares";
+import * as treasuryModule from "~/lib/exchange/treasury";
+import * as exchangeService from "~/lib/vault/exchange-service";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
@@ -654,5 +671,152 @@ describe("dividend credit cap and withholding", () => {
     expect(cents(company().capital)).toBe(99901);
     expect(cents(treasury()!.balance as number)).toBe(6);
     expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+  });
+});
+
+describe("lock ordering in matching and buy-order refunds", () => {
+  it("locks all crossing party wallets in sorted order before the first capital-gains treasury lock", async () => {
+    setup({ alice: 500, bob: 300, carol: 200 });
+    setHq(20);
+    // Carol's ask (price 2) ranks ahead of Alice's ask (price 3), so without pre-locking
+    // Carol and Dave would lock first, then the HQ treasury, and only then Alice and Bob.
+    fake.tables.shareListing = [
+      {
+        id: "ask_carol",
+        companyId: "co",
+        sellerUserId: "carol",
+        shares: 10,
+        sharesListed: 10,
+        pricePerShare: 2,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "ask_alice",
+        companyId: "co",
+        sellerUserId: "alice",
+        shares: 10,
+        sharesListed: 10,
+        pricePerShare: 3,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+    ];
+    fake.tables.shareBuyOrder = [
+      {
+        id: "bid_dave",
+        companyId: "co",
+        buyerUserId: "dave",
+        shares: 10,
+        sharesOrdered: 10,
+        maxPricePerShare: 4,
+        escrow: 40,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "bid_bob",
+        companyId: "co",
+        buyerUserId: "bob",
+        shares: 10,
+        sharesOrdered: 10,
+        maxPricePerShare: 3,
+        escrow: 30,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+    ];
+
+    const walletLocksBeforeTreasury: string[] = [];
+    let treasuryLocked = false;
+    const walletSpy = jest.spyOn(guards, "lockWallet").mockImplementation(async (tx, userId) => {
+      if (!treasuryLocked) walletLocksBeforeTreasury.push(userId);
+      return exchangeService.lockWallet(tx, userId);
+    });
+    const origTransfer = treasuryModule.transferToTreasuryTx;
+    const treasurySpy = jest
+      .spyOn(treasuryModule, "transferToTreasuryTx")
+      .mockImplementation(async (tx, input) => {
+        treasuryLocked = true;
+        return origTransfer(tx, input);
+      });
+
+    try {
+      await fake.client.$transaction((tx: Db) => matchCompanyOrders(tx, "co"));
+    } finally {
+      walletSpy.mockRestore();
+      treasurySpy.mockRestore();
+    }
+
+    expect(treasuryLocked).toBe(true);
+    expect(walletLocksBeforeTreasury).toEqual(["alice", "bob", "carol", "dave"]);
+  });
+
+  it("returnBuyOrders refunds open bids in sorted buyerUserId order", async () => {
+    setup({ alice: 1000 });
+    fake.tables.shareBuyOrder = [
+      {
+        id: "b_dave",
+        companyId: "co",
+        buyerUserId: "dave",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 2,
+        escrow: 10,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "b_bob",
+        companyId: "co",
+        buyerUserId: "bob",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 2,
+        escrow: 10,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+      {
+        id: "b_carol",
+        companyId: "co",
+        buyerUserId: "carol",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 2,
+        escrow: 10,
+        status: "OPEN",
+        createdIxTime: 3,
+      },
+      {
+        id: "b_alice",
+        companyId: "co",
+        buyerUserId: "alice",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 2,
+        escrow: 10,
+        status: "OPEN",
+        createdIxTime: 4,
+      },
+    ];
+
+    const refundedUsers: string[] = [];
+    const origEarn = exchangeService.earnSovereignsTx;
+    const earnSpy = jest
+      .spyOn(exchangeService, "earnSovereignsTx")
+      .mockImplementation(async (tx, input) => {
+        refundedUsers.push(input.userId);
+        return origEarn(tx, input);
+      });
+
+    try {
+      const refunded = await fake.client.$transaction((tx: Db) => returnBuyOrders(tx, "co"));
+      expect(refunded).toBe(40);
+    } finally {
+      earnSpy.mockRestore();
+    }
+
+    expect(refundedUsers).toEqual(["alice", "bob", "carol", "dave"]);
   });
 });

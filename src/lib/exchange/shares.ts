@@ -30,15 +30,17 @@ import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import {
   askRank,
-  bidRank,
   consumeAsk,
   consumeBid,
   creditHolding,
+  crossingBids,
+  crossingParties,
   fillBuyerAgainstAsk,
   lockParties,
   paySale,
   pushSaleNotice,
   recordTrade,
+  refundRank,
   takeFills,
   boughtNotice,
 } from "./fills";
@@ -381,26 +383,14 @@ async function matchAsk(
   tx: Db,
   company: Company,
   ask: ShareListing,
-  notices: ExchangeNotice[]
+  notices: ExchangeNotice[],
+  partiesLocked = false
 ): Promise<void> {
-  const candidates = (
-    await tx.shareBuyOrder.findMany({ where: { companyId: company.id, status: "OPEN" } })
-  )
-    .filter(
-      (b) =>
-        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
-        b.buyerUserId !== ask.sellerUserId
-    )
-    .sort(bidRank);
-  const bids: ShareBuyOrder[] = [];
-  for (const b of candidates) {
-    if (!(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))) {
-      bids.push(b);
-    }
-  }
-  const fills = takeFills(bids, ask.shares);
+  const fills = takeFills(await crossingBids(tx, ask), ask.shares);
   if (fills.length === 0) return;
-  await lockParties(tx, [ask.sellerUserId, ...fills.map((f) => f.order.buyerUserId)]);
+  if (!partiesLocked) {
+    await lockParties(tx, [ask.sellerUserId, ...fills.map((f) => f.order.buyerUserId)]);
+  }
 
   let left = ask.shares;
   for (const { order: bid, shares } of fills) {
@@ -437,8 +427,9 @@ export async function matchCompanyOrders(tx: Db, companyId: string): Promise<Exc
   const company = await tx.company.findUnique({ where: { id: companyId } });
   if (!company || company.status !== "ACTIVE" || !company.tradingOpen) return notices;
   const asks = await tx.shareListing.findMany({ where: { companyId, status: "OPEN" } });
+  await lockParties(tx, await crossingParties(tx, companyId, asks));
   for (const ask of asks.sort(askRank)) {
-    await matchAsk(tx, company, ask, notices);
+    await matchAsk(tx, company, ask, notices, true);
   }
   return notices;
 }
@@ -613,7 +604,7 @@ async function closeBuyOrder(tx: Db, order: ShareBuyOrder): Promise<boolean> {
 export async function returnBuyOrders(tx: Db, companyId: string): Promise<number> {
   const open = await tx.shareBuyOrder.findMany({ where: { companyId, status: "OPEN" } });
   let refunded = 0;
-  for (const order of open) {
+  for (const order of open.sort(refundRank)) {
     if (await closeBuyOrder(tx, order)) refunded += order.escrow;
   }
   return refunded;

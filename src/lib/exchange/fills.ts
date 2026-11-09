@@ -9,6 +9,7 @@ import type { Company, ShareBuyOrder, ShareListing } from "@prisma/client";
 import { LATEST_GROWTH_SELECT } from "~/lib/economy/effective-growth";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
 import { refreshFairValue } from "./companies";
+import { isFundInsiderPair } from "./fund-insiders";
 import { lockWallet, type Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, toCents } from "./ownership";
@@ -69,6 +70,70 @@ export function bidRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
   return (
     toCents(b.maxPricePerShare) - toCents(a.maxPricePerShare) || a.createdIxTime - b.createdIxTime
   );
+}
+
+/** Order buy-order refunds by buyer user-id (then order id) so wallet locks match dissolution/liquidation order. */
+export function refundRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
+  if (a.buyerUserId !== b.buyerUserId) return a.buyerUserId < b.buyerUserId ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** Open bids on `ask.companyId` that cross `ask` and are not self-trades or wealth-fund insider pairs, highest first. */
+export async function crossingBids(tx: Db, ask: ShareListing): Promise<ShareBuyOrder[]> {
+  const candidates = (
+    await tx.shareBuyOrder.findMany({ where: { companyId: ask.companyId, status: "OPEN" } })
+  )
+    .filter(
+      (b) =>
+        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
+        b.buyerUserId !== ask.sellerUserId
+    )
+    .sort(bidRank);
+  const bids: ShareBuyOrder[] = [];
+  for (const b of candidates) {
+    if (!(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))) {
+      bids.push(b);
+    }
+  }
+  return bids;
+}
+
+/**
+ * Every seller and buyer across the asks and bids that will cross for a company, so `matchCompanyOrders`
+ * can lock all party wallets in user-id order before the first fill's capital-gains tax locks the treasury.
+ */
+export async function crossingParties(
+  tx: Db,
+  companyId: string,
+  asks: readonly ShareListing[]
+): Promise<Array<string | null>> {
+  const bids = await tx.shareBuyOrder.findMany({ where: { companyId, status: "OPEN" } });
+  const remaining = new Map(bids.map((b) => [b.id, b.shares]));
+  const sortedBids = [...bids].sort(bidRank);
+  const parties: Array<string | null> = [];
+  for (const ask of [...asks].sort(askRank)) {
+    const eligible: ShareBuyOrder[] = [];
+    for (const b of sortedBids) {
+      const left = remaining.get(b.id) ?? 0;
+      if (
+        left > 0 &&
+        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
+        b.buyerUserId !== ask.sellerUserId &&
+        !(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))
+      ) {
+        eligible.push({ ...b, shares: left });
+      }
+    }
+    const fills = takeFills(eligible, ask.shares);
+    if (fills.length > 0) {
+      parties.push(ask.sellerUserId);
+      for (const f of fills) {
+        parties.push(f.order.buyerUserId);
+        remaining.set(f.order.id, (remaining.get(f.order.id) ?? 0) - f.shares);
+      }
+    }
+  }
+  return parties;
 }
 
 /**
