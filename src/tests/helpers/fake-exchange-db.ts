@@ -39,7 +39,7 @@ const UNIQUE: Record<string, string[][]> = {
 };
 
 const DEFAULTS: Record<string, () => Row> = {
-  exchangeWallet: () => ({ sovereigns: 0, lifetimeEarned: 0, lifetimeSpent: 0 }),
+  exchangeWallet: () => ({ sovereigns: 0n, lifetimeEarned: 0n, lifetimeSpent: 0n }),
   company: () => ({
     realmId: "default",
     hqCountryId: null,
@@ -225,12 +225,30 @@ function matches(row: Row, where: Row = {}): boolean {
   return true;
 }
 
+function isBigIntOp(cur: unknown, v: Row): boolean {
+  return (
+    typeof cur === "bigint" || typeof v.increment === "bigint" || typeof v.decrement === "bigint"
+  );
+}
+
 function applyData(row: Row, data: Row) {
   for (const [k, v] of Object.entries(data)) {
     if (isPlainObject(v) && ("increment" in v || "decrement" in v)) {
-      row[k] = (row[k] ?? 0) + (v.increment ?? 0) - (v.decrement ?? 0);
+      if (isBigIntOp(row[k], v)) {
+        row[k] = BigInt(row[k] ?? 0n) + BigInt(v.increment ?? 0n) - BigInt(v.decrement ?? 0n);
+      } else {
+        row[k] = (row[k] ?? 0) + (v.increment ?? 0) - (v.decrement ?? 0);
+      }
     } else if (v !== undefined) row[k] = v;
   }
+}
+
+function sumField(rows: Row[], f: string): number | bigint | null {
+  if (!rows.length) return null;
+  if (rows.some((r) => typeof r[f] === "bigint")) {
+    return rows.reduce((s, r) => s + BigInt(r[f] ?? 0n), 0n);
+  }
+  return rows.reduce((s, r) => s + (r[f] ?? 0), 0);
 }
 
 let idSeq = 0;
@@ -305,7 +323,12 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
       record(() => {
         for (const [k, v] of Object.entries(data)) {
           if (isPlainObject(v) && ("increment" in v || "decrement" in v)) {
-            row[k] -= (v.increment ?? 0) - (v.decrement ?? 0);
+            if (isBigIntOp(row[k], v)) {
+              row[k] =
+                BigInt(row[k] ?? 0n) - BigInt(v.increment ?? 0n) + BigInt(v.decrement ?? 0n);
+            } else {
+              row[k] -= (v.increment ?? 0) - (v.decrement ?? 0);
+            }
           } else if (v !== undefined) row[k] = before[k];
         }
       });
@@ -398,7 +421,7 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
         const rows = table(model).filter((r) => matches(r, args.where));
         const _sum: Row = {};
         for (const f of Object.keys(args._sum ?? {})) {
-          _sum[f] = rows.length ? rows.reduce((s, r) => s + (r[f] ?? 0), 0) : null;
+          _sum[f] = sumField(rows, f);
         }
         return { _sum };
       },
@@ -415,7 +438,7 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
           for (const b of args.by as string[]) out[b] = g[0]![b];
           out._sum = {};
           for (const f of Object.keys(args._sum ?? {})) {
-            out._sum[f] = g.reduce((s, r) => s + (r[f] ?? 0), 0);
+            out._sum[f] = sumField(g, f) ?? 0;
           }
           return out;
         });

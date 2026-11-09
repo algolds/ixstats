@@ -75,9 +75,9 @@ function setup(companies: Row[], extra: Record<string, Row[]> = {}): void {
     exchangeWallet: ["alice", "bob", "carol"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 0,
-      lifetimeEarned: 0,
-      lifetimeSpent: 0,
+      sovereigns: 0n,
+      lifetimeEarned: 0n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: NATION, realmId: REALM, economicTier: "Developed" }],
     company: companies,

@@ -54,9 +54,9 @@ function setup(overrides: Row = {}) {
     exchangeWallet: ["alice", "bob", "carol"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 0,
-      lifetimeEarned: 0,
-      lifetimeSpent: 0,
+      sovereigns: 0n,
+      lifetimeEarned: 0n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: NATION, realmId: REALM, economicTier: "Developed" }],
     nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 5000 }],
@@ -97,7 +97,7 @@ const co = () => fake.tables.company!.find((c) => c.id === "co1")!;
 const treasuryBalance = () =>
   fake.tables.nationTreasury!.find((t) => t.countryId === NATION)!.balance as number;
 const walletCents = (userId: string) =>
-  cents(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number);
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns);
 const run = (nowMs: number) => runCompanyOperations(fake.client, nowMs);
 
 describe("distressDecision", () => {

@@ -61,9 +61,9 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
     exchangeWallet: USERS.map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: wallets,
-      lifetimeEarned: wallets,
-      lifetimeSpent: 0,
+      sovereigns: BigInt(Math.round(wallets * 100)),
+      lifetimeEarned: BigInt(Math.round(wallets * 100)),
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -94,7 +94,7 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const cents = (n: number) => Math.round(n * 100);
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const holding = (userId: string) =>
@@ -102,7 +102,7 @@ const holding = (userId: string) =>
 const listing = (id: string) => fake.tables.shareListing!.find((l) => l.id === id)!;
 /** Every ₷ in wallets and company capital, in cents. */
 const totalCents = () =>
-  fake.tables.exchangeWallet!.reduce((s, w) => s + cents(w.sovereigns), 0) +
+  fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns), 0) +
   fake.tables.company!.reduce((s, c) => s + cents(c.capital), 0);
 const totalShares = () =>
   (fake.tables.shareholding ?? []).reduce((s, h) => s + h.shares, 0) +

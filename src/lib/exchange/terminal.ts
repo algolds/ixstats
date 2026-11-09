@@ -6,7 +6,7 @@
 import type { Company, NationBond } from "@prisma/client";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
-import { round2 } from "./amounts";
+import { centsOf, fromCents, round2 } from "./amounts";
 import { bondPriceOf, modelBondPrice, weeksLeftOf } from "./bonds";
 import type { SectorKey } from "./companies";
 import type { Db } from "./guards";
@@ -854,7 +854,7 @@ export async function getPortfolio(
     userId,
     shares.map((s) => s.companyId)
   );
-  const balance = wallet?.sovereigns ?? 0;
+  const balance = wallet ? fromCents(centsOf(wallet.sovereigns)) : 0;
   return {
     wallet: balance,
     shares,
@@ -906,7 +906,7 @@ export async function getLeaderboards(db: Db, realmId: string, nowMs: number = D
     where: { userId: { in: userIds } },
     select: { userId: true, sovereigns: true },
   });
-  const walletByUser = new Map(wallets.map((w) => [w.userId, w.sovereigns]));
+  const walletByUser = new Map(wallets.map((w) => [w.userId, fromCents(centsOf(w.sovereigns))]));
   const values = userIds.map((u) =>
     portfolioTotalValue(walletByUser.get(u) ?? 0, [
       ...valueShareHoldings(

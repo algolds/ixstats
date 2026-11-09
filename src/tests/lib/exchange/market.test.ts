@@ -43,7 +43,7 @@ function setup() {
   fake = createFakeExchangeDb({
     user: [{ id: "alice", clerkUserId: "c_alice" }],
     exchangeWallet: [
-      { id: "w_alice", userId: "alice", sovereigns: 0, lifetimeEarned: 0, lifetimeSpent: 0 },
+      { id: "w_alice", userId: "alice", sovereigns: 0n, lifetimeEarned: 0n, lifetimeSpent: 0n },
     ],
     country: [{ id: NATION, realmId: "default", economicTier: "Developed" }],
     company: [

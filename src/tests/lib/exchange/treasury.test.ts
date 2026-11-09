@@ -34,9 +34,9 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
       {
         id: "w_alice",
         userId: "alice",
-        sovereigns: walletSovereigns,
-        lifetimeEarned: walletSovereigns,
-        lifetimeSpent: 0,
+        sovereigns: BigInt(Math.round(walletSovereigns * 100)),
+        lifetimeEarned: BigInt(Math.round(walletSovereigns * 100)),
+        lifetimeSpent: 0n,
       },
     ],
     company: [
@@ -59,7 +59,8 @@ const treasury = () => fake.tables.nationTreasury?.find((t) => t.countryId === N
 const balance = () => treasury()?.balance ?? 0;
 const entries = () => fake.tables.nationTreasuryEntry ?? [];
 const company = () => fake.tables.company!.find((c) => c.id === "co1")!;
-const walletSov = () => fake.tables.exchangeWallet!.find((w) => w.userId === "alice")!.sovereigns;
+const walletSov = () =>
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === "alice")!.sovereigns) / 100;
 
 const mint = (amount: number, key: string, ixTime = 1000) =>
   inTx((tx) =>
@@ -211,8 +212,8 @@ describe("transferToTreasuryTx", () => {
     expect(balance()).toBe(300);
     expect(fake.tables.exchangeTransaction).toEqual([
       expect.objectContaining({
-        sovereigns: -300,
-        balanceAfter: 4700,
+        sovereigns: -300_00n,
+        balanceAfter: 4700_00n,
         type: "TREASURY_PAYMENT",
         idempotencyKey: "lobby:1",
       }),

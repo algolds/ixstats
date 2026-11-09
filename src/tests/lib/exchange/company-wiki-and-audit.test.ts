@@ -130,7 +130,7 @@ describe("Exchange financial & state invariants", () => {
   it("does not inflate fairValue when borrowing from or repaying a Central Bank credit line", async () => {
     const fake = createFakeExchangeDb({
       user: [{ id: "alice", clerkUserId: "c_alice" }],
-      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 5000 }],
+      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 5000_00n }],
       country: [{ id: "nation_a", realmId: "default", economicTier: "Developed" }],
       nationTreasury: [{ id: "t_a", countryId: "nation_a", realmId: "default", balance: 50_000 }],
       company: [
@@ -192,7 +192,7 @@ describe("Exchange financial & state invariants", () => {
   it("counts DISTRESSED companies toward activeCompanyCap when chartering", async () => {
     const fake = createFakeExchangeDb({
       user: [{ id: "alice", clerkUserId: "c_alice" }],
-      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 50_000 }],
+      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 50_000_00n }],
       systemConfig: [{ key: "exchange_active_company_cap", value: "2" }],
       company: [
         {
@@ -231,8 +231,8 @@ describe("Exchange financial & state invariants", () => {
         { id: "bob", clerkUserId: "c_bob" },
       ],
       exchangeWallet: [
-        { id: "w_alice", userId: "alice", sovereigns: 10_000 },
-        { id: "w_bob", userId: "bob", sovereigns: 10_000 },
+        { id: "w_alice", userId: "alice", sovereigns: 10_000_00n },
+        { id: "w_bob", userId: "bob", sovereigns: 10_000_00n },
       ],
       company: [
         {

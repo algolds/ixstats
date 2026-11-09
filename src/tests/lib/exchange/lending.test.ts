@@ -44,9 +44,9 @@ function setup(owner: string, companyOver: Record<string, number | string> = {})
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [
       {

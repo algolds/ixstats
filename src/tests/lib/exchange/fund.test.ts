@@ -67,9 +67,9 @@ function setup(balance = 10_000) {
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [
       { id: NA, name: "Caphiria", realmId: "default", ownerUserId: "alice" },
@@ -119,7 +119,8 @@ function setup(balance = 10_000) {
 }
 
 const treasury = (id = NA) => fake.tables.nationTreasury!.find((t) => t.countryId === id)!;
-const fundCash = () => fake.tables.exchangeWallet!.find((w) => w.userId === FUND)?.sovereigns ?? 0;
+const fundCash = () =>
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === FUND)?.sovereigns ?? 0n) / 100;
 const deposit = (amount: number) =>
   depositToFund(fake.client, { userId: "alice", countryId: NA, amount, requestId: rid() });
 
@@ -364,9 +365,9 @@ describe("what the fund may buy", () => {
     fake.tables.exchangeWallet!.push({
       id: "w_carol",
       userId: "carol",
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     });
     // Sell out b_nb primary issue (50 to alice, 50 to carol).
     await buyBondPrimary(fake.client, {
@@ -451,9 +452,9 @@ describe("what the fund may buy", () => {
     fake.tables.exchangeWallet!.push({
       id: "w_carol",
       userId: "carol",
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     });
     const requestId = rid();
     await fundTrade(fake.client, {

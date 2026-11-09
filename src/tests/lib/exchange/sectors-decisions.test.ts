@@ -38,9 +38,9 @@ function setup() {
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -63,12 +63,12 @@ function setup() {
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const index = (key: string) => fake.tables.sectorIndex!.find((i) => i.sectorKey === key)!;
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const fundCents = () =>
   (fake.tables.sectorIndex ?? []).reduce((s, i) => s + cents(i.fundSovereigns), 0);
-const walletCents = () => fake.tables.exchangeWallet!.reduce((s, w) => s + cents(w.sovereigns), 0);
+const walletCents = () => fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns), 0);
 /** Push this user's sector-buy ledger rows back past the 24-hour hold. */
 function ageBuys(userId: string) {
   for (const t of fake.tables.exchangeTransaction ?? []) {

@@ -32,9 +32,9 @@ function setup() {
     exchangeWallet: ["alice", "bob", "carol"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -74,7 +74,7 @@ function setup() {
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const row = (id: string) => fake.tables.company!.find((c) => c.id === id)!;
 const proposals = () => fake.tables.companyProposal ?? [];
 const later = () => Date.now() + 2 * DAY_MS;

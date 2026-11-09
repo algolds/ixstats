@@ -24,7 +24,7 @@ import {
 } from "~/lib/vault/exchange-service";
 import { assertExchangeOpen, lockWallet, round2, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./amounts";
+import { centsOf, formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
@@ -373,7 +373,9 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
         where: { idempotencyKey: key },
         select: { balanceAfter: true },
       });
-      if (applied) return { newBalance: applied.balanceAfter, alreadyApplied: true };
+      if (applied) {
+        return { newBalance: fromCents(centsOf(applied.balanceAfter)), alreadyApplied: true };
+      }
       if (company.creditDrawn > 0) {
         throw new ExchangeError("CONFLICT", "Repay the credit line before withdrawing");
       }

@@ -19,9 +19,9 @@
 model ExchangeWallet {
   id             String                @id @default(cuid())
   userId         String                @unique
-  sovereigns     Float                 @default(0)
-  lifetimeEarned Float                 @default(0)
-  lifetimeSpent  Float                 @default(0)
+  sovereigns     BigInt                @default(0)
+  lifetimeEarned BigInt                @default(0)
+  lifetimeSpent  BigInt                @default(0)
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @default(now()) @updatedAt
   user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -38,8 +38,8 @@ model ExchangeWallet {
 model ExchangeTransaction {
   id             String         @id @default(cuid())
   walletId       String
-  sovereigns     Float
-  balanceAfter   Float
+  sovereigns     BigInt
+  balanceAfter   BigInt
   type           String
   source         String
   metadata       Json?

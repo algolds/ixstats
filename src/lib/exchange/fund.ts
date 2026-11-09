@@ -11,7 +11,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { withJobLock } from "~/lib/system/job-lock";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, formatSovereigns, fromCents, round2 } from "./amounts";
 import {
   BOND_FACE,
   buyBondListing,
@@ -55,7 +55,7 @@ export async function ensureFundUser(db: Db, countryId: string): Promise<string>
   if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
   await db.user.createMany({ data: [{ id, clerkUserId: `system:${id}` }], skipDuplicates: true });
   await db.exchangeWallet.createMany({
-    data: [{ userId: id, sovereigns: 0 }],
+    data: [{ userId: id, sovereigns: 0n }],
     skipDuplicates: true,
   });
   const treasury = await getOrCreateTreasury(db, countryId, country.realmId);
@@ -93,7 +93,7 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
     ...funds.map((f) => f.units * f.avgCost),
   ];
   return round2(
-    (wallet?.sovereigns ?? 0) +
+    (wallet ? fromCents(centsOf(wallet.sovereigns)) : 0) +
       orders.reduce((s, o) => s + o.escrow, 0) +
       held.reduce((s, v) => s + v, 0)
   );

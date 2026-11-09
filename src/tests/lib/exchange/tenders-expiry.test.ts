@@ -45,9 +45,9 @@ function setup(config: Record<string, string> = {}) {
     exchangeWallet: ["alice", "bob", "carol"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: "ruritania", name: "Ruritania", ownerUserId: "alice", realmId: "default" }],
     nationTreasury: [{ id: "t_ruritania", countryId: "ruritania", realmId: "default", balance: 0 }],
@@ -58,7 +58,7 @@ function setup(config: Record<string, string> = {}) {
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const company = (id: string) => fake.tables.company!.find((c) => c.id === id)!;
 const contract = (id: string) => fake.tables.contract!.find((c) => c.id === id)!;
 const treasuryBalance = (countryId = "ruritania") =>
@@ -75,7 +75,7 @@ const setTreasury = (balance: number, countryId = "ruritania") => {
     });
 };
 const totalMoney = () =>
-  fake.tables.exchangeWallet!.reduce((s, w) => s + w.sovereigns, 0) +
+  fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0) +
   (fake.tables.company ?? []).reduce((s, c) => s + c.capital, 0) +
   (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0) +
   (fake.tables.nationTreasury ?? []).reduce((s, t) => s + t.balance, 0);

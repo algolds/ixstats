@@ -27,6 +27,7 @@ import { assertNoVoteNeeded, requireOwnedCompany } from "./companies";
 import { assertNotFundInsiderPair, isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
+import { centsOf } from "./amounts";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import {
   askRank,
@@ -331,7 +332,13 @@ export async function buyShares(
       await lockCompany(tx, found.companyId);
       await lockParties(tx, [input.userId, found.sellerUserId]);
       const applied = await tx.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
-      if (applied) return { shares: input.shares, cost: -applied.sovereigns, alreadyApplied: true };
+      if (applied) {
+        return {
+          shares: input.shares,
+          cost: fromCents(-centsOf(applied.sovereigns)),
+          alreadyApplied: true,
+        };
+      }
 
       const listing = await tx.shareListing.findUnique({ where: { id: input.listingId } });
       if (!listing || listing.status !== "OPEN") {
@@ -369,7 +376,13 @@ export async function buyShares(
   } catch (error) {
     if (isUniqueViolation(error)) {
       const applied = await db.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
-      if (applied) return { shares: input.shares, cost: -applied.sovereigns, alreadyApplied: true };
+      if (applied) {
+        return {
+          shares: input.shares,
+          cost: fromCents(-centsOf(applied.sovereigns)),
+          alreadyApplied: true,
+        };
+      }
     }
     throw error;
   }

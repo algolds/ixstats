@@ -33,7 +33,7 @@ function setup(withCompany = true) {
       email: `${id}@example.com`,
     })),
     exchangeWallet: [
-      { id: "w_bob", userId: "bob", sovereigns: 300, lifetimeEarned: 300, lifetimeSpent: 0 },
+      { id: "w_bob", userId: "bob", sovereigns: 300_00n, lifetimeEarned: 300_00n, lifetimeSpent: 0n },
     ],
     country: [
       {
@@ -307,9 +307,9 @@ describe("getLeaderboards", () => {
     const now = Date.now();
     fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", email: "carol@example.com" });
     fake.tables.exchangeWallet = [
-      { id: "w_alice", userId: "alice", sovereigns: 150, lifetimeEarned: 150, lifetimeSpent: 0 },
-      { id: "w_bob", userId: "bob", sovereigns: 300, lifetimeEarned: 300, lifetimeSpent: 0 },
-      { id: "w_carol", userId: "carol", sovereigns: 9000, lifetimeEarned: 9000, lifetimeSpent: 0 },
+      { id: "w_alice", userId: "alice", sovereigns: 150_00n, lifetimeEarned: 150_00n, lifetimeSpent: 0n },
+      { id: "w_bob", userId: "bob", sovereigns: 300_00n, lifetimeEarned: 300_00n, lifetimeSpent: 0n },
+      { id: "w_carol", userId: "carol", sovereigns: 9000_00n, lifetimeEarned: 9000_00n, lifetimeSpent: 0n },
     ];
     fake.tables.country!.push({
       id: "nb",

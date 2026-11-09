@@ -37,9 +37,9 @@ function setup(treasuryBalance = 50_000) {
     exchangeWallet: USERS.map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 200_000,
-      lifetimeEarned: 200_000,
-      lifetimeSpent: 0,
+      sovereigns: 200_000_00n,
+      lifetimeEarned: 200_000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: "na", name: "Caphiria", realmId: "default", ownerUserId: "alice" }],
     nationTreasury: [{ id: "t_na", countryId: "na", realmId: "default", balance: treasuryBalance }],
@@ -48,7 +48,7 @@ function setup(treasuryBalance = 50_000) {
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const treasury = () => fake.tables.nationTreasury!.find((t) => t.countryId === "na")!;
 const bond = (id: string) => fake.tables.nationBond!.find((b) => b.id === id)!;
 const holding = (userId: string) =>

@@ -33,7 +33,7 @@ import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, lockWallet, type Db } from "./guards";
 import { countryMacroOf } from "./macro";
 import { OPERATING_TICK_MS } from "./operations";
-import { fromCents, toCents } from "./ownership";
+import { centsOf, fromCents, toCents } from "./amounts";
 
 export const SECTOR_LABELS: Record<SectorKey, string> = {
   agriculture: "Agriculture",
@@ -368,7 +368,11 @@ async function appliedTrade(db: Db, key: string): Promise<FundTradeResult | null
   const row = await db.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
   if (!row) return null;
   const meta = (row.metadata ?? {}) as { units?: number };
-  return { units: meta.units ?? 0, sovereigns: Math.abs(row.sovereigns), alreadyApplied: true };
+  return {
+    units: meta.units ?? 0,
+    sovereigns: fromCents(Math.abs(centsOf(row.sovereigns))),
+    alreadyApplied: true,
+  };
 }
 
 async function keyed(
