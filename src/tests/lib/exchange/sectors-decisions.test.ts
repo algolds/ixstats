@@ -163,7 +163,7 @@ describe("sector funds", () => {
     const before = walletCents() + fundCents();
     await computeSectorIndices(fake.client); // base run
     company().capital = 200_000;
-    await computeSectorIndices(fake.client); // industry +5%
+    await computeSectorIndices(fake.client, Date.now() + DAY_MS); // industry +5%
     expect(index("industry").fundSovereigns).toBeGreaterThan(1000);
     expect(index("services").fundSovereigns).toBeLessThan(1000);
     expect(walletCents() + fundCents()).toBe(before);
@@ -273,7 +273,7 @@ describe("realm-scoped sectors", () => {
     });
     await computeSectorIndices(fake.client); // base run
     fake.tables.company!.find((c) => c.id === "co_alpha")!.capital = 200_000;
-    await computeSectorIndices(fake.client);
+    await computeSectorIndices(fake.client, Date.now() + DAY_MS);
     expect(rowOf("alpha", "industry").value).toBe(1050);
     expect(rowOf("default", "industry").value).toBe(1000);
   });
@@ -647,5 +647,29 @@ describe("company decisions", () => {
     expect(company().capital).toBe(19_500);
     await resolveDueDecisions(fake.client, later());
     expect(company()).toMatchObject({ sectorKey: "services", subIndustryKey: "finance_insurance" });
+  });
+
+  it("(c) a queued EXPAND resolved while the company is DISTRESSED leaves appliedIxTime null and retries once ACTIVE", async () => {
+    const { decision } = await submitDecision(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      type: "EXPAND",
+      amount: 1000,
+      requestId: rid(),
+    });
+    expect(company().capital).toBe(19_000);
+
+    company().status = "DISTRESSED";
+    const t1 = later();
+    expect(await resolveDueDecisions(fake.client, t1)).toBe(0);
+    const rowAfterDistressed = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
+    expect(rowAfterDistressed.appliedIxTime).toBeNull();
+    expect(company().decisionValue).toBe(0);
+
+    company().status = "ACTIVE";
+    expect(await resolveDueDecisions(fake.client, t1 + DAY_MS)).toBe(1);
+    const rowAfterActive = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
+    expect(rowAfterActive.appliedIxTime).toBe(t1 + DAY_MS);
+    expect(company().decisionValue).toBe(1000);
   });
 });

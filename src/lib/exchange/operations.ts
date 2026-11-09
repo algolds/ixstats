@@ -29,7 +29,7 @@ import { lendingTermsFor, type LendingTerms } from "./lending";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const TICKS_PER_DAY = 4;
-const OPERATING_TICK_MS = DAY_MS / TICKS_PER_DAY;
+export const OPERATING_TICK_MS = DAY_MS / TICKS_PER_DAY;
 const CAPITAL_BASE_CAP = 50_000;
 const CAPITAL_BASE_WEIGHT = 0.5;
 const STANDING_BASE_WEIGHT = 250;

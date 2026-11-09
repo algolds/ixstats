@@ -23,11 +23,12 @@ import { formatSovereigns } from "./amounts";
 import { refreshFairValue, returnListedShares } from "./companies";
 import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
-import { fromCents, holdersOf, splitProRata, type Holder } from "./ownership";
+import { fromCents, holdersOf, splitProRata, toCents, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
 import { debitTreasuryTx, transferToTreasuryTx } from "./treasury";
 import { publishNewsTx } from "./news";
+import { unwindCompanyMoneyTx } from "./unwind";
 
 const HOUR_MS = 60 * 60 * 1000;
 export const DISTRESS_GRACE_MS = 72 * HOUR_MS;
@@ -242,9 +243,10 @@ async function liquidateTx(tx: Db, input: LifecycleInput, notices: ExchangeNotic
   await returnBuyOrders(tx, c.id);
   await closeCompanyProposalsTx(tx, c.id, input.nowMs);
 
+  const unwound = await unwindCompanyMoneyTx(tx, c.id, input.nowMs);
   const recovered = await recoverPlantTx(tx, input, key);
-  let cash = input.cashCents + recovered;
-  if (recovered > 0) await setCapitalTx(tx, c.id, cash);
+  let cash = input.cashCents + toCents(unwound) + recovered;
+  if (unwound > 0 || recovered > 0) await setCapitalTx(tx, c.id, cash);
 
   const repaid = await repayLenderTx(tx, input, cash, key);
   cash -= repaid;

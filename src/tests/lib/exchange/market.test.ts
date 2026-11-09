@@ -6,6 +6,12 @@ jest.mock("~/lib/exchange/notify", () => ({
   notifyExchange: jest.fn(),
   sendExchangeNotices: jest.fn(),
 }));
+jest.mock("~/lib/system/job-lock", () => ({
+  withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
+    ran: true,
+    result: await fn(),
+  })),
+}));
 jest.mock("~/lib/exchange/macro", () => ({
   ...jest.requireActual("~/lib/exchange/macro"),
   countryMacroOf: () => ({
@@ -22,8 +28,10 @@ jest.mock("~/lib/exchange/macro", () => ({
   }),
 }));
 import { runExchangeMarketTick } from "~/lib/exchange/market";
+import { withJobLock } from "~/lib/system/job-lock";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
+import { exchangeAdminRouter } from "~/server/api/routers/exchange/admin";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
 
 const NATION = "nation_a";
@@ -84,5 +92,69 @@ describe("runExchangeMarketTick", () => {
     expect(fake.tables.exchangeNationSnapshot).toEqual([
       expect.objectContaining({ countryId: NATION }),
     ]);
+  });
+
+  it("(d) running runExchangeMarketTick twice within one operating tick leaves sector index values and fundSovereigns as after the first run", async () => {
+    fake.tables.company![0]!.capital = 200_000;
+    fake.tables.sectorIndex = [
+      {
+        id: "idx_services",
+        realmId: "default",
+        sectorKey: "services",
+        name: "Services",
+        value: 1000,
+        dmModifier: 0,
+        fundSovereigns: 1000,
+        totalUnits: 1000,
+        computedIxTime: null,
+      },
+    ];
+    fake.tables.sectorPosition = [
+      {
+        id: "pos_alice",
+        userId: "alice",
+        realmId: "default",
+        sectorKey: "services",
+        units: 1000,
+        costBasis: 1000,
+      },
+    ];
+    await runExchangeMarketTick(fake.client);
+    const afterFirst = fake.tables.sectorIndex!.map((s) => ({
+      sectorKey: s.sectorKey,
+      value: s.value,
+      fundSovereigns: s.fundSovereigns,
+    }));
+    await runExchangeMarketTick(fake.client);
+    const afterSecond = fake.tables.sectorIndex!.map((s) => ({
+      sectorKey: s.sectorKey,
+      value: s.value,
+      fundSovereigns: s.fundSovereigns,
+    }));
+    expect(afterSecond).toEqual(afterFirst);
+  });
+
+  it("adminRunMarketTick uses the exchange-market job lock and rejects with CONFLICT when already running", async () => {
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    const spy = jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
+    const caller = exchangeAdminRouter.createCaller({
+      db: fake.client,
+      auth: { userId: "c_alice" } as never,
+      user: { id: "alice", clerkUserId: "c_alice", role: { name: "admin", level: 0 } } as never,
+      headers: new Headers(),
+    });
+    await expect(caller.adminRunMarketTick()).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The market tick is already running",
+    });
+    expect(spy).toHaveBeenCalledWith(
+      expect.anything(),
+      "exchange-market",
+      expect.any(Function),
+      { timeoutMs: 30 * 60_000 }
+    );
+    warnSpy.mockRestore();
+    errSpy.mockRestore();
   });
 });

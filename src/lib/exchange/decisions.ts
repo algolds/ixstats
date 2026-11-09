@@ -412,12 +412,12 @@ async function applyDueDecision(
   nowMs: number,
   notices: ExchangeNotice[]
 ): Promise<boolean> {
-  const { count } = await tx.companyDecision.updateMany({
-    where: { id: decision.id, appliedIxTime: null },
-    data: { appliedIxTime: nowMs },
-  });
-  if (count !== 1) return false;
   if (decision.type === "ACQUIRE") {
+    const { count } = await tx.companyDecision.updateMany({
+      where: { id: decision.id, appliedIxTime: null },
+      data: { appliedIxTime: nowMs },
+    });
+    if (count !== 1) return false;
     await resolveAcquireDecision(tx, decision, nowMs, notices);
     return true;
   }
@@ -425,6 +425,12 @@ async function applyDueDecision(
     where: { id: decision.companyId },
     select: { id: true, name: true, founderId: true, status: true, hqCountryId: true },
   });
+  if (company?.status === "DISTRESSED") return false;
+  const { count } = await tx.companyDecision.updateMany({
+    where: { id: decision.id, appliedIxTime: null },
+    data: { appliedIxTime: nowMs },
+  });
+  if (count !== 1) return false;
   if (!company || company.status !== "ACTIVE") return true;
   const settled = await settle(tx, company, decision, nowMs);
   if (!settled) return true;

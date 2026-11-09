@@ -19,10 +19,12 @@ import {
   cancelContract,
   completeContract,
   createContract,
+  DAY_MS,
   disputeContract,
   placeBid,
   resolveDispute,
 } from "~/lib/exchange/contracts";
+import { expireLapsedContracts } from "~/lib/exchange/expiry";
 import type { Db } from "~/lib/exchange/guards";
 import { ensureSectorIndices } from "~/lib/exchange/sectors";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -220,18 +222,29 @@ describe("companies", () => {
     expect(company(id).capital).toBe(300);
   });
 
-  it("won't dissolve with a live contract, then returns capital once settled", async () => {
-    const { aliceCo, contractId } = await openContractWithBid();
+  it("won't dissolve with an awarded contract, and unwinds an open contract on dissolve", async () => {
+    const { aliceCo, contractId, bidId } = await openContractWithBid();
+    await awardContract(fake.client, { userId: "alice", contractId, bidId });
     await expect(
       dissolveCompany(fake.client, { userId: "alice", companyId: aliceCo })
     ).rejects.toMatchObject({
       code: "CONFLICT",
     });
-    await cancelContract(fake.client, { userId: "alice", contractId });
+    await completeContract(fake.client, { userId: "alice", contractId });
+    // Create another OPEN contract; dissolving unwinds its escrow back into capital and pays out all 700.
+    await createContract(fake.client, {
+      userId: "alice",
+      issuerCompanyId: aliceCo,
+      title: "Second job",
+      sectorKey: "industry",
+      value: 200,
+      biddingDays: 7,
+      requestId: rid(),
+    });
     const before = sov("alice");
     const r = await dissolveCompany(fake.client, { userId: "alice", companyId: aliceCo });
-    expect(r.returned).toBe(1000);
-    expect(sov("alice")).toBe(before + 1000);
+    expect(r.returned).toBe(700);
+    expect(sov("alice")).toBe(before + 700);
     expect(company(aliceCo)).toMatchObject({ status: "DELISTED", capital: 0 });
   });
 
@@ -524,7 +537,7 @@ describe("contract state machine", () => {
     });
   });
 
-  it("refunds contract escrow to founder wallet if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
+  it("keeps contract escrow on the company record if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
     const { aliceCo, bobCo, contractId, bidId } = await openContractWithBid();
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
 
@@ -534,7 +547,7 @@ describe("contract state machine", () => {
       completeContract(fake.client, { userId: "alice", contractId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
-    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund lands in alice's wallet.
+    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund stays on company capital, not founder wallet.
     await disputeContract(fake.client, {
       userId: "alice",
       contractId,
@@ -543,12 +556,31 @@ describe("contract state machine", () => {
     company(aliceCo).status = "BANKRUPT";
     company(aliceCo).capital = 0;
     const aliceWalletBefore = sov("alice");
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     await resolveDispute(fake.client, {
       contractId,
       outcome: "REFUND_ISSUER",
-      note: "Refund to founder wallet",
+      note: "Refund to company record",
     });
-    expect(sov("alice")).toBe(aliceWalletBefore + 300);
-    expect(company(aliceCo).capital).toBe(0);
+    warnSpy.mockRestore();
+    expect(sov("alice")).toBe(aliceWalletBefore);
+    expect(company(aliceCo).capital).toBe(300);
+  });
+
+  it("(a) a BANKRUPT company's issued OPEN contract cancelled or expired does not raise the founder's wallet", async () => {
+    const { aliceCo, contractId } = await openContractWithBid();
+    company(aliceCo).status = "BANKRUPT";
+    company(aliceCo).capital = 0;
+    const aliceWalletBefore = sov("alice");
+
+    await expect(
+      cancelContract(fake.client, { userId: "alice", contractId })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(sov("alice")).toBe(aliceWalletBefore);
+
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expireLapsedContracts(fake.client, Date.now() + 11 * DAY_MS);
+    warnSpy.mockRestore();
+    expect(sov("alice")).toBe(aliceWalletBefore);
   });
 });

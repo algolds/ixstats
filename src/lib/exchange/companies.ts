@@ -28,6 +28,7 @@ import { formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
+import { unwindCompanyMoneyTx } from "./unwind";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 import { publishNewsTx } from "./news";
 
@@ -99,6 +100,23 @@ export async function requireOwnedCompany(
     throw new ExchangeError("CONFLICT", "This company is no longer active");
   }
   return company;
+}
+
+export async function assertNoVoteNeeded(
+  tx: Db,
+  company: { id: string; founderId: string; sharesOutstanding: number }
+): Promise<void> {
+  if (company.sharesOutstanding <= 0) return;
+  const holders = await holdersOf(tx, company.id);
+  const outside = holders
+    .filter((h) => h.userId !== company.founderId)
+    .reduce((sum, h) => sum + h.shares, 0);
+  if (outside / company.sharesOutstanding >= 0.1) {
+    throw new ExchangeError(
+      "CONFLICT",
+      "Outside shareholders own 10% or more: open a shareholder vote to do this"
+    );
+  }
 }
 
 export interface FoundCompanyInput {
@@ -408,15 +426,17 @@ export interface DissolveResult {
  */
 export async function dissolveCompanyTx(
   tx: Db,
-  input: { userId: string; companyId: string }
+  input: { userId: string; companyId: string; viaVote?: boolean }
 ): Promise<DissolveResult> {
   const notices: ExchangeNotice[] = [];
   await assertExchangeOpen(tx);
   await lockCompany(tx, input.companyId);
   const company = await requireOwnedCompany(tx, input.companyId, input.userId);
+  if (!input.viaVote) await assertNoVoteNeeded(tx, company);
   if (company.creditDrawn > 0) {
     throw new ExchangeError("CONFLICT", "Repay the credit line before dissolving this company");
   }
+  await unwindCompanyMoneyTx(tx, company.id, Date.now());
   const live = await tx.contract.count({
     where: {
       OR: [
@@ -442,8 +462,12 @@ export async function dissolveCompanyTx(
   await returnBuyOrders(tx, company.id);
   await closeCompanyProposalsTx(tx, company.id, Date.now());
 
+  const { capital } = await tx.company.findUniqueOrThrow({
+    where: { id: company.id },
+    select: { capital: true },
+  });
   const { count } = await tx.company.updateMany({
-    where: { id: company.id, status: "ACTIVE", capital: company.capital },
+    where: { id: company.id, status: "ACTIVE", capital },
     data: {
       status: "DELISTED",
       capital: 0,
@@ -455,7 +479,7 @@ export async function dissolveCompanyTx(
   });
   if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
 
-  const split = splitProRata(toCents(company.capital), await holdersOf(tx, company.id));
+  const split = splitProRata(toCents(capital), await holdersOf(tx, company.id));
   const payouts = new Map(split.payouts.map((p) => [p.userId, p.cents]));
   payouts.set(input.userId, (payouts.get(input.userId) ?? 0) + split.remainderCents);
   for (const [userId, cents] of [...payouts].sort(([a], [b]) => (a < b ? -1 : 1))) {

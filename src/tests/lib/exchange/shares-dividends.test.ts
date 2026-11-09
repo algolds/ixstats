@@ -10,7 +10,8 @@ jest.mock("~/lib/exchange/notify", () => ({
   sendExchangeNotices: jest.fn(),
 }));
 
-import { dissolveCompany } from "~/lib/exchange/companies";
+import { dissolveCompany, dissolveCompanyTx } from "~/lib/exchange/companies";
+import type { Db } from "~/lib/exchange/guards";
 import { declareDividend } from "~/lib/exchange/dividends";
 import { notifyExchange } from "~/lib/exchange/notify";
 import { splitProRata } from "~/lib/exchange/ownership";
@@ -267,7 +268,7 @@ describe("dividends", () => {
   // Regression: withdrawals refused while new shares were on sale at a price set from the capital, but a dividend
   // didn't, so the founder could take the capital out through a dividend while the issue still sold at that price
   it("is refused while a primary issue is on sale, and paid once it is cancelled", async () => {
-    setup({ alice: 900, bob: 100 });
+    setup({ alice: 950, bob: 50 });
     const issued = await issueShares(fake.client, {
       userId: "alice",
       companyId: "co",
@@ -302,7 +303,7 @@ describe("dividends", () => {
 });
 
 describe("dissolving a company with outside shareholders", () => {
-  it("cancels listings and pays the capital out pro rata, founder taking the remainder", async () => {
+  it("refuses a direct dissolve when outside holders own >= 10%, and via a vote cancels listings and pays capital pro rata", async () => {
     setup({ alice: 334, bob: 333, carol: 333 });
     await listShares(fake.client, {
       userId: "carol",
@@ -311,8 +312,13 @@ describe("dissolving a company with outside shareholders", () => {
       pricePerShare: 1,
       requestId: rid(),
     });
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: "co" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
     const before = totalCents();
-    const r = await dissolveCompany(fake.client, { userId: "alice", companyId: "co" });
+    const r = await fake.client.$transaction((tx: Db) =>
+      dissolveCompanyTx(tx, { userId: "alice", companyId: "co", viaVote: true })
+    );
     expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
     // 100,000 cents: bob and carol 33,300 each, alice 33,400.
     expect(sov("bob")).toBe(5333);

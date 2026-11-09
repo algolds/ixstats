@@ -7,6 +7,8 @@ jest.mock("~/lib/exchange/notify", () => ({
   sendExchangeNotices: jest.fn(),
 }));
 import { castVote, finalizeProposalsTx, openProposal, outcomeOf } from "~/lib/exchange/governance";
+import { dissolveCompany } from "~/lib/exchange/companies";
+import { issueShares } from "~/lib/exchange/shares";
 import { DAY_MS } from "~/lib/exchange/contracts";
 import type { Db } from "~/lib/exchange/guards";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -272,5 +274,36 @@ describe("expiry", () => {
     await expect(
       castVote(fake.client, { userId: "bob", proposalId: proposal.id, support: true })
     ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("(b) a founder with 5% and an outside holder with >= 10% calling dissolveCompany or issueShares -> CONFLICT, while a sole founder succeeds directly", async () => {
+    fake.tables.shareholding = [
+      { companyId: "co", ownerUserId: "alice", shares: 50, avgCost: 1 },
+      { companyId: "co", ownerUserId: "bob", shares: 100, avgCost: 1 },
+      { companyId: "co", ownerUserId: "carol", shares: 850, avgCost: 1 },
+    ];
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: "co" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      issueShares(fake.client, {
+        userId: "alice",
+        companyId: "co",
+        shares: 100,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    soleOwner();
+    const issued = await issueShares(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      shares: 100,
+      requestId: rid(),
+    });
+    expect(issued.listing).toMatchObject({ shares: 100, status: "OPEN" });
+    const dissolved = await dissolveCompany(fake.client, { userId: "alice", companyId: "co" });
+    expect(dissolved.returned).toBe(20_000);
+    expect(company().status).toBe("DELISTED");
   });
 });

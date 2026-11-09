@@ -203,6 +203,69 @@ describe("72-hour bankruptcy", () => {
       ])
     );
   });
+
+  it("unwinds open contracts, buyer ACQUIRE offers, and pending decisions into the waterfall (lender first, then holders pro rata)", async () => {
+    setup({ creditDrawn: 500 });
+    fake.tables.contract = [
+      {
+        id: "ct_open",
+        realmId: REALM,
+        type: "B2B",
+        issuerCompanyId: "co1",
+        issuerUserId: "alice",
+        fundedBy: "COMPANY",
+        status: "OPEN",
+        budget: 400,
+        escrow: 400,
+        deadlineIxTime: T0 + 100 * HOUR_MS,
+      },
+    ];
+    fake.tables.companyProposal = [
+      {
+        id: "prop_acq",
+        companyId: "target_co",
+        type: "ACQUIRE_OFFER",
+        status: "OPEN",
+        proposerUserId: "alice",
+        payload: { buyerCompanyId: "co1", offerAmount: 300 },
+        sharesFor: 0,
+        sharesAgainst: 0,
+        totalEligibleShares: 1000,
+        expiresIxTime: T0 + 100 * HOUR_MS,
+      },
+    ];
+    fake.tables.companyDecision = [
+      {
+        id: "dec_lobby",
+        companyId: "co1",
+        type: "LOBBY",
+        payload: { requestId: "r_lobby", cost: 500, target: "sector" },
+        effect: null,
+        submittedIxTime: T0,
+        appliedIxTime: null,
+      },
+    ];
+
+    await run(T0 + 72 * HOUR_MS);
+
+    expect(fake.tables.contract![0]).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(fake.tables.companyProposal![0]).toMatchObject({ status: "EXPIRED" });
+    expect(fake.tables.companyDecision![0]).toMatchObject({
+      appliedIxTime: T0 + 72 * HOUR_MS,
+      effect: { refunded: 250 },
+    });
+    expect(co()).toMatchObject({ status: "BANKRUPT", capital: 0, creditDrawn: 0 });
+    // Unwound 400 + 300 + 250 = 950, plus 133.33 plant recovery = 1083.33.
+    // Lender takes 500.04 (500 principal + 0.04 tick interest) first; holders split 583.29 (58,329 cents) 500:300:200.
+    expect(fake.tables.nationTreasuryEntry).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "INTEREST", amount: 500.04, source: "LIQUIDATION:co1" }),
+      ])
+    );
+    const paid = [walletCents("alice"), walletCents("bob"), walletCents("carol")];
+    expect(paid).toEqual([29_166, 17_498, 11_665]);
+    expect(paid.reduce((sum, c) => sum + c, 0)).toBe(cents(583.29));
+  });
 });
 
 describe("the news feed", () => {
