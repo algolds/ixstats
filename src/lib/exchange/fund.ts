@@ -13,6 +13,7 @@ import { formatSovereigns, round2 } from "./amounts";
 import { buyBondListing, buyBondPrimary, cancelBondListing, listBondUnits } from "./bonds";
 import type { SectorKey } from "./companies";
 import { fundUserIdOf } from "./fund-ids";
+import { isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, lockWallet, requireCountryOwner, type Db } from "./guards";
 import { assertNotOwnersCompany } from "./lending";
 import { publishNewsTx } from "./news";
@@ -221,12 +222,17 @@ async function guardOrder(
   }
 }
 
-async function cheapestListing(db: Db, bondId: string): Promise<string | null> {
+async function cheapestListing(db: Db, bondId: string, fundUserId: string): Promise<string | null> {
   const listings = await db.bondListing.findMany({
     where: { bondId, status: "OPEN" },
-    select: { id: true, pricePerUnit: true },
+    select: { id: true, pricePerUnit: true, sellerUserId: true },
   });
-  return [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)[0]?.id ?? null;
+  for (const listing of [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)) {
+    if (!(await isFundInsiderPair(db, fundUserId, listing.sellerUserId))) {
+      return listing.id;
+    }
+  }
+  return null;
 }
 
 async function executeOrder(
@@ -265,7 +271,7 @@ async function executeOrder(
       if (bond && bond.unitsIssued - bond.unitsSold > 0) {
         return buyBondPrimary(db, { userId, requestId, bondId: order.bondId, units: order.units });
       }
-      const listingId = await cheapestListing(db, order.bondId);
+      const listingId = await cheapestListing(db, order.bondId, userId);
       if (!listingId)
         throw new ExchangeError("LIMIT_REACHED", "No units of that bond are for sale");
       return buyBondListing(db, { userId, requestId, listingId, units: order.units });

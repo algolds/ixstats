@@ -8,6 +8,7 @@ jest.mock("~/lib/notifications/api", () => ({
 }));
 
 import { notificationAPI } from "~/lib/notifications/api";
+import { buyBondListing, buyBondPrimary, listBondUnits } from "~/lib/exchange/bonds";
 import {
   FUND_USER_PREFIX,
   depositToFund,
@@ -16,7 +17,7 @@ import {
   withdrawFromFund,
 } from "~/lib/exchange/fund";
 import { sendExchangeNotices } from "~/lib/exchange/notify";
-import { listShares, placeBuyOrder } from "~/lib/exchange/shares";
+import { buyShares, cancelListing, listShares, placeBuyOrder } from "~/lib/exchange/shares";
 import { getLeaderboards, getNationPage } from "~/lib/exchange/terminal";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
@@ -249,6 +250,151 @@ describe("what the fund may buy", () => {
     const bondListingId = fake.tables.bondListing!.find((l) => l.sellerUserId === FUND)!.id;
     await trade({ kind: "bond-cancel-listing", listingId: bondListingId });
     expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(20);
+  });
+
+  it("refuses explicit takes by the nation's owner on a fund share or bond listing", async () => {
+    await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 50,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-buy", companyId: "co2", shares: 50, maxPricePerShare: 1 });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 20, pricePerShare: 1 });
+    const shareListingId = fake.tables.shareListing!.find(
+      (l) => l.sellerUserId === FUND && l.status === "OPEN"
+    )!.id;
+    await expect(
+      buyShares(fake.client, {
+        userId: "alice",
+        listingId: shareListingId,
+        shares: 10,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 10 });
+    await trade({ kind: "bond-sell", bondId: "b_nb", units: 5, pricePerUnit: 100 });
+    const bondListingId = fake.tables.bondListing!.find((l) => l.sellerUserId === FUND)!.id;
+    await expect(
+      buyBondListing(fake.client, {
+        userId: "alice",
+        listingId: bondListingId,
+        units: 2,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("skips insider pairs when crossing the share book, filling third-party orders at worse prices", async () => {
+    // Give alice 20 shares of co2 so she can post a cheaper ask than bob's.
+    fake.tables.shareholding!.push({
+      id: "sh_alice_co2",
+      companyId: "co2",
+      ownerUserId: "alice",
+      shares: 20,
+      avgCost: 1,
+    });
+    const aliceAsk = await listShares(fake.client, {
+      userId: "alice",
+      companyId: "co2",
+      shares: 20,
+      pricePerShare: 1,
+      requestId: rid(),
+    });
+    const bobAsk = await listShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 15,
+      pricePerShare: 2,
+      requestId: rid(),
+    });
+    const res = await placeBuyOrder(fake.client, {
+      userId: FUND,
+      companyId: "co2",
+      shares: 20,
+      maxPricePerShare: 3,
+      requestId: rid(),
+    });
+    expect(res).toMatchObject({ sharesBought: 15, sharesResting: 5 });
+    expect(fake.tables.shareListing!.find((l) => l.id === aliceAsk.listing.id)).toMatchObject({
+      shares: 20,
+      status: "OPEN",
+    });
+    expect(fake.tables.shareListing!.find((l) => l.id === bobAsk.listing.id)).toMatchObject({
+      shares: 0,
+      status: "FILLED",
+    });
+
+    // Reverse direction: fund ask skips alice's higher bid and fills bob's lower bid.
+    await cancelListing(fake.client, { userId: "alice", listingId: aliceAsk.listing.id });
+    await placeBuyOrder(fake.client, {
+      userId: "alice",
+      companyId: "co2",
+      shares: 10,
+      maxPricePerShare: 1.2,
+      requestId: rid(),
+    });
+    await placeBuyOrder(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 10,
+      maxPricePerShare: 1.1,
+      requestId: rid(),
+    });
+    await trade({ kind: "shares-sell", companyId: "co2", shares: 15, pricePerShare: 1 });
+    expect(
+      fake.tables.shareBuyOrder!.find((o) => o.buyerUserId === "alice" && o.companyId === "co2")
+    ).toMatchObject({ shares: 10, status: "OPEN" });
+    expect(
+      fake.tables.shareBuyOrder!.find((o) => o.buyerUserId === "bob" && o.companyId === "co2")
+    ).toMatchObject({ shares: 0, status: "FILLED" });
+  });
+
+  it("skips the owner's cheapest bond listing on fund bond-buy, or throws LIMIT_REACHED if none remain", async () => {
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: null });
+    fake.tables.exchangeWallet!.push({
+      id: "w_carol",
+      userId: "carol",
+      sovereigns: 50_000,
+      lifetimeEarned: 50_000,
+      lifetimeSpent: 0,
+    });
+    // Sell out b_nb primary issue (50 to alice, 50 to carol).
+    await buyBondPrimary(fake.client, {
+      userId: "alice",
+      bondId: "b_nb",
+      units: 50,
+      requestId: rid(),
+    });
+    await buyBondPrimary(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 50,
+      requestId: rid(),
+    });
+    const { listingId: aliceListing } = await listBondUnits(fake.client, {
+      userId: "alice",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 95,
+      requestId: rid(),
+    });
+    await expect(trade({ kind: "bond-buy", bondId: "b_nb", units: 5 })).rejects.toMatchObject({
+      code: "LIMIT_REACHED",
+    });
+
+    const { listingId: carolListing } = await listBondUnits(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 105,
+      requestId: rid(),
+    });
+    await trade({ kind: "bond-buy", bondId: "b_nb", units: 5 });
+    expect(fake.tables.bondListing!.find((l) => l.id === aliceListing)?.units).toBe(10);
+    expect(fake.tables.bondListing!.find((l) => l.id === carolListing)?.units).toBe(5);
   });
 });
 

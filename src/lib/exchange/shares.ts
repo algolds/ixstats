@@ -24,6 +24,7 @@ import {
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
 import { requireOwnedCompany } from "./companies";
+import { assertNotFundInsiderPair, isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, lockCompany, toCents } from "./ownership";
@@ -336,6 +337,7 @@ export async function buyShares(
       if (listing.sellerUserId === input.userId) {
         throw new ExchangeError("FORBIDDEN", "You can't buy your own listing");
       }
+      await assertNotFundInsiderPair(tx, input.userId, listing.sellerUserId);
       if (input.shares > listing.shares) {
         throw new ExchangeError("CONFLICT", `Only ${listing.shares} shares are left`);
       }
@@ -379,7 +381,7 @@ async function matchAsk(
   ask: ShareListing,
   notices: ExchangeNotice[]
 ): Promise<void> {
-  const bids = (
+  const candidates = (
     await tx.shareBuyOrder.findMany({ where: { companyId: company.id, status: "OPEN" } })
   )
     .filter(
@@ -388,6 +390,12 @@ async function matchAsk(
         b.buyerUserId !== ask.sellerUserId
     )
     .sort(bidRank);
+  const bids: ShareBuyOrder[] = [];
+  for (const b of candidates) {
+    if (!(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))) {
+      bids.push(b);
+    }
+  }
   const fills = takeFills(bids, ask.shares);
   if (fills.length === 0) return;
   await lockParties(tx, [ask.sellerUserId, ...fills.map((f) => f.order.buyerUserId)]);
@@ -465,7 +473,13 @@ async function crossingAsks(tx: Db, input: PlaceBuyOrderInput): Promise<ShareLis
   if (asks.some((a) => a.sellerUserId === input.userId)) {
     throw new ExchangeError("FORBIDDEN", "Your own listing is at or below that price");
   }
-  return asks;
+  const eligible: ShareListing[] = [];
+  for (const a of asks) {
+    if (!(await isFundInsiderPair(tx, input.userId, a.sellerUserId))) {
+      eligible.push(a);
+    }
+  }
+  return eligible;
 }
 
 /** Only a bid that rests becomes an open order, so only a resting bid counts against the limit. */
