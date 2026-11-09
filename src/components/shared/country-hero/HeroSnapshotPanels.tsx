@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { Coins, Group as Users, Activity, Heart, ScaleFrameEnlarge as Scale } from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { cn, formatCompactNumber } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { HealthRing } from "~/components/ui/health-ring";
 
@@ -129,7 +129,8 @@ function HeroSnapshotPanelsComponent({
   const stability = recorded?.politicalStability || "—";
 
   const { population, currentTotalGdp, gdpPerCapita } = data.stats;
-  const pop = population ? Math.round(population).toLocaleString() : "—";
+  // Compact, like GDP beside it: the full count truncates in the floating Lens panel.
+  const pop = population ? formatCompactNumber(population) : "—";
   const gdp = currentTotalGdp
     ? `$${(currentTotalGdp / 1e12).toFixed(2)}T`
     : gdpPerCapita
