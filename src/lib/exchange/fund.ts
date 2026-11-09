@@ -3,11 +3,13 @@
  * its wallet. The fund trades through the ordinary engine (order book, bonds, sector funds) as that user, so dividends,
  * coupons and sales land in its wallet. The owner moves ₷ between the treasury and the fund. Guardrails:
  * - the fund may hold at most half of treasury plus fund (checked on deposit, holdings at cost);
- * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company.
- * The guard checks run before the trade in a separate read; the engine owns its own transaction, so a race can only
- * make a later check stricter.
+ * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company;
+ * - it sells within ±20% of fair value (shares) or face value (bonds), and never fills with its nation's insiders.
+ * Guards and execution run under a per-nation lease (`withJobLock`), so concurrent fund orders can't both pass the
+ * stake cap.
  */
 import type { PrismaClient } from "@prisma/client";
+import { withJobLock } from "~/lib/system/job-lock";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { formatSovereigns, round2 } from "./amounts";
 import {
@@ -303,6 +305,17 @@ async function executeOrder(
     case "shares-cancel-listing":
       return cancelListing(db, { userId, listingId: order.listingId });
     case "bond-buy": {
+      const [paidPrimary, paidTake] = await Promise.all([
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-buy:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-take:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+      ]);
+      if (paidPrimary || paidTake) return { units: order.units, paid: 0, alreadyApplied: true };
       const bond = await db.nationBond.findUnique({
         where: { id: order.bondId },
         select: { unitsIssued: true, unitsSold: true },
@@ -384,22 +397,32 @@ export async function fundTrade(
   i: { userId: string; countryId: string; order: FundOrder; requestId: string }
 ): Promise<{ ok: true }> {
   const country = await requireCountryOwner(db, i.countryId, i.userId);
-  const fundUserId = await ensureFundUser(db, country.id);
-  await guardOrder(db, country.id, fundUserId, i.order);
-  await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
-  const headline = await orderHeadline(db, country.name, i.order);
-  await db.$transaction((tx) =>
-    publishNewsTx(tx, {
-      realmId: country.realmId,
-      kind: "trade",
-      prominence: "ACTIVITY",
-      sourceKind: "NATION",
-      sourceId: country.id,
-      headline,
-      countryId: country.id,
-      key: `news:fund:${country.id}:${i.requestId}`,
-    })
+  const locked = await withJobLock(
+    db,
+    `exchange-fund:${country.id}`,
+    async () => {
+      const fundUserId = await ensureFundUser(db, country.id);
+      await guardOrder(db, country.id, fundUserId, i.order);
+      await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
+      const headline = await orderHeadline(db, country.name, i.order);
+      await db.$transaction((tx) =>
+        publishNewsTx(tx, {
+          realmId: country.realmId,
+          kind: "trade",
+          prominence: "ACTIVITY",
+          sourceKind: "NATION",
+          sourceId: country.id,
+          headline,
+          countryId: country.id,
+          key: `news:fund:${country.id}:${i.requestId}`,
+        })
+      );
+    },
+    { timeoutMs: 60_000 }
   );
+  if (!locked.ran) {
+    throw new ExchangeError("CONFLICT", "The wealth fund is busy; try again");
+  }
   return { ok: true };
 }
 

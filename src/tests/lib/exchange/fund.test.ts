@@ -6,8 +6,15 @@
 jest.mock("~/lib/notifications/api", () => ({
   notificationAPI: { create: jest.fn(async () => "n1") },
 }));
+jest.mock("~/lib/system/job-lock", () => ({
+  withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
+    ran: true,
+    result: await fn(),
+  })),
+}));
 
 import { notificationAPI } from "~/lib/notifications/api";
+import { withJobLock } from "~/lib/system/job-lock";
 import { buyBondListing, buyBondPrimary, listBondUnits } from "~/lib/exchange/bonds";
 import {
   FUND_USER_PREFIX,
@@ -437,6 +444,59 @@ describe("what the fund may buy", () => {
     });
     await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 80 });
     await trade({ kind: "bond-sell", bondId: "b_nb", units: 2, pricePerUnit: 120 });
+  });
+
+  it("buys nothing the second time when a fund bond-buy is retried after the primary issue sold out", async () => {
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: null });
+    fake.tables.exchangeWallet!.push({
+      id: "w_carol",
+      userId: "carol",
+      sovereigns: 50_000,
+      lifetimeEarned: 50_000,
+      lifetimeSpent: 0,
+    });
+    const requestId = rid();
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId,
+    });
+    expect(fundCash()).toBe(4500);
+
+    // Carol buys the remaining 95 primary units and lists 10 on the secondary market.
+    await buyBondPrimary(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 95,
+      requestId: rid(),
+    });
+    const { listingId } = await listBondUnits(fake.client, {
+      userId: "carol",
+      bondId: "b_nb",
+      units: 10,
+      pricePerUnit: 100,
+      requestId: rid(),
+    });
+
+    // Retry with the same requestId: primary is now sold out, but it must not take the secondary listing.
+    await fundTrade(fake.client, {
+      userId: "alice",
+      countryId: NA,
+      order: { kind: "bond-buy", bondId: "b_nb", units: 5 },
+      requestId,
+    });
+    expect(fundCash()).toBe(4500);
+    expect(fake.tables.bondHolding!.find((b) => b.ownerUserId === FUND)?.units).toBe(5);
+    expect(fake.tables.bondListing!.find((l) => l.id === listingId)?.units).toBe(10);
+  });
+
+  it("rejects with CONFLICT when the per-nation fund lease is already held", async () => {
+    jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
+    await expect(trade({ kind: "bond-buy", bondId: "b_nb", units: 5 })).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The wealth fund is busy; try again",
+    });
   });
 });
 
