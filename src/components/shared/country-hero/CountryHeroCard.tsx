@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils/cn";
 import { Card } from "~/components/ui/card";
+import { FacetMaterial } from "~/components/ui/facet";
 import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
+import { usePanelInset } from "~/hooks/usePanelInset";
 import { createVitalityRingsFromCountry } from "~/components/mycountry/primitives";
 import { VitalityBreakdownModal } from "~/components/mycountry/shared/modals/VitalityBreakdownModal";
 import { GdpDetailsModal } from "~/components/mycountry/shared/modals/metric-details/GdpDetailsModal";
@@ -36,8 +38,8 @@ interface CountryHeroCardProps {
   countryName: string;
   /** The flag behind the card as a watermark. */
   flagUrl: string | null;
-  /** The wide leading slot: the live map on the dashboard, the cover photo on the country page. */
-  media: React.ReactNode;
+  /** The wide media stage (the live map on the dashboard, the cover photo or map on the country page); receives the width covered by the floating panel. */
+  media: (ctx: { insetRight: number }) => React.ReactNode;
   /** The country's identity at the top of the panel. */
   identity: React.ReactNode;
   /** One action beside the identity (the dashboard's MyCountry button). */
@@ -59,10 +61,11 @@ interface CountryHeroCardProps {
 }
 
 /**
- * CountryHeroCard — the country hero shared by the dashboard and the country page: a wide media
- * slot beside an identity panel whose figures (population, GDP, standing, approval, stability)
- * open their detail sheets, with the vitality rings in the panel or in a footer row. Every figure
- * and sheet reads public data, so visitors get the same card as the owner.
+ * CountryHeroCard — the country hero shared by the dashboard and the country page: a full-width
+ * media stage (map or cover photo) with the identity panel floating over its right side on a
+ * frosted Lens, whose figures (population, GDP, standing, approval, stability) open their detail
+ * sheets, with the vitality rings in the panel or in a footer row. Every figure and sheet reads
+ * public data, so visitors get the same card as the owner.
  */
 export function CountryHeroCard({
   countryId,
@@ -79,6 +82,9 @@ export function CountryHeroCard({
   frameless = false,
 }: CountryHeroCardProps) {
   const [activeModal, setActiveModal] = useState<HeroModal | null>(null);
+  const mediaBox = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const insetRight = usePanelInset(mediaBox, panel);
   const { data: activity } = api.countries.getActivityRingsData.useQuery(
     { countryId },
     { enabled: !!countryId, staleTime: 60_000 }
@@ -96,11 +102,18 @@ export function CountryHeroCard({
       {topBar && <div className="relative flex justify-end px-2 pt-1">{topBar}</div>}
 
       <div className={cn("relative grid gap-3 p-3 md:grid-cols-5", topBar && "pt-1")}>
-        <div className="border-separator rounded-row relative h-[220px] overflow-hidden border md:col-span-3 md:h-full md:min-h-[240px]">
-          {media}
+        <div
+          ref={mediaBox}
+          className="border-separator rounded-row relative h-[220px] overflow-hidden border md:col-span-5 md:col-start-1 md:row-start-1 md:h-full md:min-h-[280px]"
+        >
+          {media({ insetRight })}
         </div>
 
-        <div className="bg-surface-secondary rounded-row shadow-card relative flex h-full flex-col gap-3 overflow-hidden p-3 md:col-span-2">
+        <FacetMaterial
+          ref={panel}
+          layer="lens"
+          className="facet-lens-frosted rounded-row flex h-full flex-col gap-3 overflow-hidden p-3 md:col-span-2 md:col-start-4 md:row-start-1 md:m-3 md:h-auto"
+        >
           <div className="flex items-start justify-between gap-2">
             {identity}
             {action}
@@ -113,7 +126,7 @@ export function CountryHeroCard({
               onOpenModal={setActiveModal}
             />
           </div>
-        </div>
+        </FacetMaterial>
       </div>
 
       {footer && (

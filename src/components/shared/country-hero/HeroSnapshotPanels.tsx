@@ -183,8 +183,8 @@ function HeroSnapshotPanelsComponent({
   ] as const;
 
   return (
-    <div className="bg-surface rounded-row border-separator flex h-full flex-col overflow-hidden border">
-      <div className="divide-separator bg-surface-secondary grid grid-cols-3 divide-x p-2">
+    <div className="rounded-row border-separator flex h-full flex-col overflow-hidden border">
+      <div className="divide-separator grid grid-cols-3 divide-x p-2">
         {headline.map(
           ({ modal, title, icon: Icon, tone, label, labelClass, value, valueClass }) => (
             <button
@@ -217,7 +217,7 @@ function HeroSnapshotPanelsComponent({
         </div>
       )}
 
-      <dl className="border-separator divide-separator bg-surface-secondary grid grid-cols-2 divide-x border-t py-2">
+      <dl className="border-separator divide-separator grid grid-cols-2 divide-x border-t py-2">
         {executive.map(([Icon, tone, label, value]) => (
           <div key={label} className="flex min-w-0 items-center justify-center gap-1 px-1">
             <Icon aria-hidden className={cn(tone, "size-3.5 shrink-0")} />

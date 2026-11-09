@@ -95,7 +95,14 @@ export function ProfileHero({
       countryName={identity.name}
       flagUrl={identity.flagUrl}
       stats={stats}
-      media={<CoverMedia cover={cover} countryId={countryId} onExpand={onExpandMap} />}
+      media={({ insetRight }) => (
+        <CoverMedia
+          cover={cover}
+          countryId={countryId}
+          insetRight={insetRight}
+          onExpand={onExpandMap}
+        />
+      )}
       identity={<ProfileIdentity {...identity} />}
       action={action}
       footer={footer}

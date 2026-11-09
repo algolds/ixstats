@@ -132,10 +132,12 @@ export function CoverOptions({
 export function CoverMedia({
   cover,
   countryId,
+  insetRight,
   onExpand,
 }: {
   cover: HeroCover | null;
   countryId: string;
+  insetRight?: number;
   onExpand?: () => void;
 }) {
   const [failed, setFailed] = useState<string | null>(null);
@@ -159,6 +161,7 @@ export function CoverMedia({
           showSubdivisions={true}
           interactive={true}
           boundsPadding={30}
+          insetRight={insetRight}
         />
       )}
       {onExpand && (

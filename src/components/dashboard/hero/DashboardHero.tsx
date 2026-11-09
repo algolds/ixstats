@@ -141,7 +141,7 @@ function DashboardHeroComponent({
           <ChevronUp />
         </Button>
       }
-      media={
+      media={({ insetRight }) => (
         <CountryMapEmbed
           countryId={countryId}
           height="h-full"
@@ -150,8 +150,9 @@ function DashboardHeroComponent({
           showSubdivisions={true}
           interactive={true}
           boundsPadding={30}
+          insetRight={insetRight}
         />
-      }
+      )}
       identity={<HeroIdentity stats={stats} profileSlug={profileSlug} flagUrl={flagUrl} />}
       action={
         // MyCountry gold scope for the tinted button.

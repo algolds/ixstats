@@ -108,7 +108,7 @@ Components that provide each layer:
 - Pane: `Card`. Well: a `Card` nested inside a `Card`, or `variant="well"`.
 - Chrome: `FacetMaterial layer="chrome"` (sidebar, tab bar, toolbars, map controls, Halo).
 - Overlay: `Dialog`, `AlertDialog`, `Sheet`, `Popover`, `HoverCard`, `Select`, `Tooltip`, toasts, and `FacetMaterial layer="overlay"`.
-- Lens: `FacetMaterial layer="lens"`, `Card variant="lens"`, or any top-level `Card` inside `LensSurface` (nested Cards stay wells; `SurfaceReset` makes overlays panes again). Every lens points at one shared filter, `#facet-lens` (`LensFilter`, rendered once in the root layout), whose units are the lens's own box. The physics are fixed: the edge band, the strength and the dispersion (red bends least, blue most) are one material everywhere. The front page is the reference: the hero, the featured realm, the feed and the Wiki pane.
+- Lens: `FacetMaterial layer="lens"`, `Card variant="lens"`, or any top-level `Card` inside `LensSurface` (nested Cards stay wells; `SurfaceReset` makes overlays panes again). Every lens points at one shared filter, `#facet-lens` (`LensFilter`, rendered once in the root layout), whose units are the lens's own box. The physics are fixed: the edge band, the strength and the dispersion (red bends least, blue most) are one material everywhere. The front page is the reference: the hero, the featured realm, the feed and the Wiki pane; the dashboard and country-profile hero panels use the same frosted Lens over their map or cover.
 
 Rules:
 
@@ -117,7 +117,7 @@ Rules:
 - Layer utilities paint only. They never set position, z-index, radius, margin or letter-spacing; the component owns those.
 - Reduce Transparency makes Pane, Chrome and Overlay opaque. Increase Contrast strengthens hairlines and labels. Both themes are supported.
 - Do not write `backdrop-blur-*`, glass fills or elevation outside `layers.css`.
-- A Lens is a choice for a surface, made by the owner: the brand hero over a decorative backdrop (a monogram such as `facet-monogram`, art, a map), and the front page's content panes (owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass. Elsewhere content stays on a Pane until the owner extends it.
+- A Lens is a choice for a surface, made by the owner: the brand hero over a decorative backdrop (a monogram such as `facet-monogram`, art, a map), the dashboard and country-profile hero panels, and the front page's content panes (owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass. Elsewhere content stays on a Pane until the owner extends it.
 - Front page rail cards each sit over a faint repeating monogram texture (`MonogramBackdrop`, `--monogram-strength` 6% against the hero's 11%) so their rims have something to bend.
 - A Lens samples what is painted beneath it inside its nearest ancestor with opacity, a filter or a mask. Keep it outside those: to fade it with its content, give the Lens the same animation as a sibling rather than nesting it.
 - The refraction needs Chromium (`url()` filters on backdrops). Elsewhere a Lens is a plain frosted pane, so the design must hold without the bend. Reduce Transparency and Increase Contrast make it solid.
