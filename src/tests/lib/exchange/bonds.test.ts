@@ -203,6 +203,12 @@ describe("issueBond", () => {
     await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
   });
 
+  it("counts unsold units against the cap, so unsold issues can't be stacked", async () => {
+    await issue(500);
+    await issue(500); // 100,000 issued, none sold: exactly the cap
+    await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
+  });
+
   it("refuses to issue during a default ban", async () => {
     treasury().bondBanUntil = new Date(Date.now() + WEEK_MS);
     await expect(issue()).rejects.toMatchObject({ code: "CONFLICT" });

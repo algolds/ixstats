@@ -158,6 +158,15 @@ async function outstandingPrincipalOf(tx: Db, countryId: string): Promise<number
   return round2(bonds.reduce((s, b) => s + b.unitsSold * b.faceValue, 0));
 }
 
+/** Principal of every open issue, sold or not: an unsold bond still counts against the issuing cap. */
+async function issuedPrincipalOf(tx: Db, countryId: string): Promise<number> {
+  const bonds = await tx.nationBond.findMany({
+    where: { countryId, status: "OPEN" },
+    select: { unitsIssued: true, faceValue: true },
+  });
+  return round2(bonds.reduce((s, b) => s + b.unitsIssued * b.faceValue, 0));
+}
+
 /** Recompute and store a nation's rating. Returns it. */
 export async function refreshNationRatingTx(
   tx: Db,
@@ -269,7 +278,7 @@ export async function issueBond(
       const cfg = await getExchangeConfig(tx);
       const principal = input.units * BOND_FACE;
       if (
-        (await outstandingPrincipalOf(tx, country.id)) + principal >
+        (await issuedPrincipalOf(tx, country.id)) + principal >
         OUTSTANDING_CAP_MULTIPLE * cfg.treasuryCap
       ) {
         throw new ExchangeError(
