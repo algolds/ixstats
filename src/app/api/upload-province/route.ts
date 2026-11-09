@@ -8,7 +8,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { isSystemOwner } from "~/lib/auth";
+import { rateLimiter } from "~/lib/cache";
+import { isAdminClerkUser } from "~/server/shared/admin-access";
 import { db } from "~/server/db";
 import { createHash } from "crypto";
 import { extractSvgMetadata } from "~/lib/flags/svg-parser";
@@ -35,6 +36,16 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.userId) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+
+    // Rate limit uploads: each one stores up to 20MB in Postgres
+    const rateLimitResult = await rateLimiter.check(session.userId, "file_upload");
+    if (!rateLimitResult.success) {
+      const retryAfter = Math.ceil((rateLimitResult.resetAt.getTime() - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: "Rate limit exceeded. Please try again later.", retryAfter },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
     }
 
     // Refuse an oversize body by its Content-Length before formData() buffers it
@@ -68,23 +79,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify country ownership (unless system owner or admin)
-    if (!isSystemOwner(session.userId)) {
-      const role = (session.sessionClaims?.metadata as any)?.role;
-      const isAdmin = ["admin", "owner", "staff"].includes(role as string);
+    const isAdmin = await isAdminClerkUser(session.userId);
+    if (!isAdmin) {
+      // Check if user owns this country via User.countryId
+      const userProfile = await db.user.findUnique({
+        where: { clerkUserId: session.userId },
+        select: { countryId: true },
+      });
 
-      if (!isAdmin) {
-        // Check if user owns this country via User.countryId
-        const userProfile = await db.user.findUnique({
-          where: { clerkUserId: session.userId },
-          select: { countryId: true },
-        });
-
-        if (!userProfile) {
-          return NextResponse.json({ error: "User profile not found" }, { status: 404 });
-        }
-        if (userProfile.countryId !== countryId) {
-          return NextResponse.json({ error: "You do not own this country" }, { status: 403 });
-        }
+      if (!userProfile) {
+        return NextResponse.json({ error: "User profile not found" }, { status: 404 });
+      }
+      if (userProfile.countryId !== countryId) {
+        return NextResponse.json({ error: "You do not own this country" }, { status: 403 });
       }
     }
 

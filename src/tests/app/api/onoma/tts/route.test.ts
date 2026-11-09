@@ -12,14 +12,14 @@ jest.mock("~/lib/cache", () => ({
   rateLimiter: { check: jest.fn() },
   globalCache: { get: jest.fn(), set: jest.fn() },
 }));
-jest.mock("~/lib/auth", () => ({ isSystemOwner: jest.fn(() => true) }));
+jest.mock("~/server/shared/admin-access", () => ({ isAdminClerkUser: jest.fn(async () => true) }));
 
 import { NextRequest } from "next/server";
 import { GET, POST } from "~/app/api/onoma/tts/route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { globalCache, rateLimiter } from "~/lib/cache";
-import { isSystemOwner } from "~/lib/auth";
+import { isAdminClerkUser } from "~/server/shared/admin-access";
 
 // Clerk's auth() is typed as a function with a `protect` helper, not a jest mock.
 const mockAuth = auth as unknown as jest.Mock;
@@ -48,7 +48,7 @@ afterAll(() => {
 });
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(isSystemOwner).mockReturnValue(true);
+  jest.mocked(isAdminClerkUser).mockResolvedValue(true);
   mockAuth.mockResolvedValue({ userId: "user_123", sessionClaims: {} });
   (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
   (db.systemConfig.findMany as jest.Mock).mockResolvedValue(SAVED);
@@ -84,7 +84,7 @@ it("answers a POST body of JSON null with 400, not a gateway error", async () =>
 });
 
 describe("a signed-in player who is not staff", () => {
-  beforeEach(() => jest.mocked(isSystemOwner).mockReturnValue(false));
+  beforeEach(() => jest.mocked(isAdminClerkUser).mockResolvedValue(false));
 
   it("is refused the narrator unless a beta tester, and no voice service is called", async () => {
     const response = await GET(new NextRequest("http://localhost/api/onoma/tts?text=test"));
