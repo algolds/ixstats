@@ -1,25 +1,33 @@
 import { Progress } from "~/components/ui/progress";
 import { RingGrid, type HeroRing } from "~/components/shared/country-hero/HeroSnapshotPanels";
-import { standingHighlights, type ConditionPillar, type DnaAxis } from "./derive";
+import {
+  standingHighlights,
+  type ConditionPillar,
+  type DnaAxis,
+  type NationalFact,
+} from "./derive";
 import { rankLabel } from "./labels";
 
 /**
  * StandingBand — Country DNA, the hero's footer row: the vitality rings (each opens the vitality
- * breakdown), the strongest and weakest World Census ranks as chips, and the 0–100 condition
- * readings as meters. Renders nothing with no rings, ranks or readings.
+ * breakdown), the strongest and weakest World Census ranks as chips over the national facts
+ * (geography and symbols), and the 0–100 condition readings as meters. Renders nothing with no
+ * rings, ranks, facts or readings.
  */
 export function StandingBand({
   axes,
+  facts,
   pillars,
   rings,
   onOpenRings,
 }: {
   axes: readonly DnaAxis[];
+  facts: readonly NationalFact[];
   pillars: readonly ConditionPillar[];
   rings: readonly HeroRing[];
   onOpenRings: () => void;
 }) {
-  if (axes.length === 0 && pillars.length === 0 && rings.length === 0) return null;
+  if (axes.length + facts.length + pillars.length + rings.length === 0) return null;
   const { strengths, weaknesses } = standingHighlights(axes);
 
   return (
@@ -50,6 +58,18 @@ export function StandingBand({
               </li>
             ))}
           </ul>
+        )}
+        {facts.length > 0 && (
+          <dl className="text-footnote grid grid-cols-[6rem_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+            {facts.map((f) => (
+              <div key={f.key} className="contents">
+                <dt className="text-label-secondary">{f.label}</dt>
+                <dd className="text-label truncate" title={f.value}>
+                  {f.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         )}
       </div>
       {pillars.length > 0 && (

@@ -1,6 +1,7 @@
 /** The country overview's derivations: standing chips, region shares, the founding headline and relation nodes. */
 import {
   earliestFounding,
+  nationalFacts,
   regionShares,
   relationNodes,
   standingHighlights,
@@ -113,5 +114,41 @@ describe("relationNodes", () => {
       embassies: [],
     });
     expect(nodes.map((n) => n.name)).toEqual(["Urcea", "Maresteyn"]);
+  });
+});
+
+describe("nationalFacts", () => {
+  const empty = {
+    identity: { motto: null, anthem: null, currency: null },
+    land: { areaSqKm: null, profile: null },
+    vitals: { landArea: null },
+  };
+
+  it("lists land area, climate, currency, anthem and motto in that order, from plain text", () => {
+    const facts = nationalFacts({
+      identity: { motto: "<i>Per aspera</i>", anthem: "Hymn of Dawn", currency: "Aureus" },
+      land: { areaSqKm: 1_240_000, profile: { dominantClimate: "Mediterranean" } },
+      vitals: { landArea: 9 },
+    });
+    expect(facts.map((f) => [f.label, f.value])).toEqual([
+      ["Land area", "1.2M km²"],
+      ["Climate", "Mediterranean"],
+      ["Currency", "Aureus"],
+      ["Anthem", "Hymn of Dawn"],
+      ["Motto", "\u201cPer aspera\u201d"],
+    ]);
+  });
+
+  it("falls back to the census land area and drops missing or placeholder values", () => {
+    const facts = nationalFacts({
+      ...empty,
+      identity: { motto: "n/a", anthem: "\u2014", currency: " " },
+      vitals: { landArea: 5000 },
+    });
+    expect(facts.map((f) => f.label)).toEqual(["Land area"]);
+  });
+
+  it("returns nothing for a country with none of them", () => {
+    expect(nationalFacts(empty)).toEqual([]);
   });
 });

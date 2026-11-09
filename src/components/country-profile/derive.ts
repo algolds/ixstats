@@ -9,8 +9,9 @@ import type {
   ProfileVitals,
   ProfileWorld,
 } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { formatPercent } from "~/app/countries/[slug]/_utils/profileLayer";
+import { formatBig, formatPercent } from "~/app/countries/[slug]/_utils/profileLayer";
 import type { BadgeVariant } from "~/components/ui/badge";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 import { relationshipBadge } from "./labels";
 
 export interface DnaAxis {
@@ -111,6 +112,44 @@ export function conditionPillars(v: ProfileVitals): ConditionPillar[] {
 
 function clamp(n: number): number {
   return Math.max(0, Math.min(100, n));
+}
+
+export interface NationalFact {
+  key: string;
+  label: string;
+  value: string;
+}
+
+/** Wiki infobox filler that means "nothing on record". */
+const PLACEHOLDER = /^(?:test|none|n\/a|null|undefined|-|—)$/i;
+
+/** Plain text from a wiki or owner field, or null when it is empty or filler. */
+function plainText(value: string | null | undefined): string | null {
+  const text = value ? stripHtml(value).trim() : "";
+  return text && !PLACEHOLDER.test(text) ? text : null;
+}
+
+/**
+ * The country's geography and symbols for the Country DNA row: land area (the map's, else the
+ * census figure), climate, currency, anthem and motto. Capital, region and flag are in the hero
+ * already, so they are not repeated. Facts without a value are left out.
+ */
+export function nationalFacts(input: {
+  identity: Pick<ProfileIdentity, "motto" | "anthem" | "currency">;
+  land: { areaSqKm: number | null; profile: { dominantClimate?: string | null } | null };
+  vitals: Pick<ProfileVitals, "landArea">;
+}): NationalFact[] {
+  const { identity, land, vitals } = input;
+  const area = land.areaSqKm ?? vitals.landArea;
+  const motto = plainText(identity.motto);
+  const facts: [string, string, string | null][] = [
+    ["area", "Land area", area != null ? `${formatBig(area)} km²` : null],
+    ["climate", "Climate", plainText(land.profile?.dominantClimate)],
+    ["currency", "Currency", plainText(identity.currency)],
+    ["anthem", "Anthem", plainText(identity.anthem)],
+    ["motto", "Motto", motto && `“${motto}”`],
+  ];
+  return facts.flatMap(([key, label, value]) => (value ? [{ key, label, value }] : []));
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { conditionPillars, toDnaAxes } from "./derive";
+import { conditionPillars, nationalFacts, toDnaAxes } from "./derive";
 import type { HeroCover } from "./HeroMedia";
 import { ProfileHero } from "./ProfileHero";
 import { StandingBand } from "./StandingBand";
@@ -49,6 +49,7 @@ export function ProfileFace({
       footer={({ rings, openVitality }) => (
         <StandingBand
           axes={toDnaAxes(world.rankings)}
+          facts={nationalFacts(layer)}
           pillars={conditionPillars(vitals).filter((p) => !PANEL_READINGS.has(p.key))}
           rings={rings}
           onOpenRings={openVitality}
