@@ -12,7 +12,10 @@ import { useEffect } from "react";
 import { useReducedMotion } from "motion/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
-import { geometryBounds } from "~/components/maps/widgets/embed-map-layers";
+import {
+  fitEmbedToCountry,
+  geometryBounds,
+} from "~/components/maps/widgets/embed-map-layers";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
@@ -35,6 +38,8 @@ interface CountryMapEmbedProps {
   /** Fired when a city/subdivision feature is clicked. Enables click-to-manage. */
   onFeatureClick?: (feature: CountryMapFeature) => void;
   boundsPadding?: number;
+  /** Pixels of the map's right side covered by a floating panel. */
+  insetRight?: number;
   highlightCountryIds?: string[];
   highlightCountryNames?: string[];
   /** Fly the map to one subdivision (fit its bounds) or one point, once the map is ready. */
@@ -56,6 +61,7 @@ export function CountryMapEmbed({
   onNeighborClick,
   onFeatureClick,
   boundsPadding = 40,
+  insetRight,
   highlightCountryIds,
   highlightCountryNames,
   focus,
@@ -81,6 +87,13 @@ export function CountryMapEmbed({
 
   const reduceMotion = useReducedMotion();
   const { mapRef, mapReady, subdivisions } = state;
+
+  // ponytail: refits on every inset change, so a resize resets the user's pan
+  useEffect(() => {
+    if (mapReady && mapRef.current) {
+      fitEmbedToCountry(mapRef.current, state, boundsPadding, insetRight);
+    }
+  }, [mapReady, insetRight]);
   useEffect(() => {
     const map = mapRef.current;
     if (!focus || !map || !mapReady) return;

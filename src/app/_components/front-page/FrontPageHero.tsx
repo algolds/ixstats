@@ -25,6 +25,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { useFlag } from "~/hooks/useUnifiedFlags";
 import { assetUrl } from "~/lib/base-path";
 import { flatWorldCoverZoom } from "~/lib/maps/flat-projection";
+import { coveredRight } from "~/lib/maps/panel-inset";
 import { formatCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -45,15 +46,6 @@ interface MapStageFit {
   insetRight: number;
 }
 
-/** Pixels of the map's right side under the realm panel: from md up it floats there; stacked, none. */
-function coveredRight(map: HTMLElement | null, panel: HTMLElement | null): number {
-  if (!map || !panel) return 0;
-  const m = map.getBoundingClientRect();
-  const p = panel.getBoundingClientRect();
-  const overlaps = p.top < m.bottom && p.bottom > m.top && p.left < m.right && p.right > m.left;
-  return overlaps ? Math.round(m.right - p.left) : 0;
-}
-
 /**
  * Fits the world to the part of the map the realm panel leaves uncovered (once, when the page is
  * idle), then keeps the covered width current as either box resizes.
@@ -64,14 +56,19 @@ function useMapStageFit(
 ): MapStageFit {
   const [fit, setFit] = useState<MapStageFit>({ zoom: null, insetRight: 0 });
   useEffect(() => {
+    const measureInset = () =>
+      coveredRight(
+        box.current?.getBoundingClientRect() ?? null,
+        panel.current?.getBoundingClientRect() ?? null
+      );
     const fitWorld = () => {
-      const insetRight = coveredRight(box.current, panel.current);
+      const insetRight = measureInset();
       const w = Math.max((box.current?.clientWidth ?? 512) - insetRight, 256);
       const h = Math.max(box.current?.clientHeight ?? 320, 200);
       setFit({ zoom: flatWorldCoverZoom(w, h), insetRight });
     };
     const observer = new ResizeObserver(() => {
-      const insetRight = coveredRight(box.current, panel.current);
+      const insetRight = measureInset();
       setFit((prev) => (prev.insetRight === insetRight ? prev : { ...prev, insetRight }));
     });
     for (const el of [box.current, panel.current]) if (el) observer.observe(el);

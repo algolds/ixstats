@@ -447,6 +447,31 @@ function fitBbox(state: EmbedState): Bbox | null {
   return bbox;
 }
 
+/** Fits the country bbox, adding `insetRight` to the right padding when a panel floats over the map. */
+export function fitEmbedToCountry(
+  map: MapLibreMap,
+  state: EmbedState,
+  padding: number,
+  insetRight?: number
+): boolean {
+  const bbox = fitBbox(state);
+  if (!bbox) return false;
+  map.fitBounds(
+    [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
+    {
+      padding: {
+        top: padding,
+        bottom: padding,
+        left: padding,
+        right: padding + (insetRight ?? 0),
+      },
+      maxZoom: 10,
+      duration: 0,
+    }
+  );
+  return true;
+}
+
 /** Draw the embed's own layers onto a freshly loaded map and wire up its interactions. */
 export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
   hideWorldLayers(map);
@@ -457,12 +482,7 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
   addCountry(map, o);
   const onFitSettled = addCities(map, o);
 
-  const bbox = fitBbox(o.state);
-  if (bbox) {
-    map.fitBounds(
-      [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
-      { padding: o.boundsPadding, maxZoom: 10, duration: 0 }
-    );
+  if (fitEmbedToCountry(map, o.state, o.boundsPadding)) {
     map.once("idle", () => onFitSettled?.());
   }
 
