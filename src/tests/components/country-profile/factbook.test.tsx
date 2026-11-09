@@ -277,7 +277,10 @@ describe("FactbookTab", () => {
     // Economy block renders the historical GDP sparkline and interactive region segments.
     expect(screen.getByRole("img", { name: /GDP trend/i })).toBeInTheDocument();
     const regionBtn = screen.getByRole("button", { name: /Province of Aurelia/i });
+    fireEvent.mouseEnter(regionBtn);
+    fireEvent.focus(regionBtn);
     fireEvent.click(regionBtn);
+    fireEvent.mouseLeave(regionBtn.parentElement!);
     expect(screen.getByText(/Province of Aurelia · 210\.0M/i)).toBeInTheDocument();
 
     // State block renders the legislature seat composition and cabinet ministries.

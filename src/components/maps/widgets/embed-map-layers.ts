@@ -5,7 +5,18 @@ import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
 import { toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 import type { useCountryMapEmbedState } from "./hooks/useCountryMapEmbedState";
 
-type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
+type EmbedState = ReturnType<typeof useCountryMapEmbedState> & {
+  onFitSettled?: () => void;
+};
+
+const fitSettledByMap = new WeakMap<MapLibreMap, () => void>();
+
+export function getEmbedFitSettled(
+  map: MapLibreMap,
+  state?: EmbedState
+): (() => void) | undefined {
+  return state?.onFitSettled ?? fitSettledByMap.get(map);
+}
 
 export interface EmbedLayerOptions {
   state: EmbedState;
@@ -473,7 +484,10 @@ export function fitEmbedToCountry(
 }
 
 /** Draw the embed's own layers onto a freshly loaded map and wire up its interactions. */
-export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
+export function populateEmbedMap(
+  map: MapLibreMap,
+  o: EmbedLayerOptions
+): (() => void) | undefined {
   hideWorldLayers(map);
   removeEmbedLayers(map);
 
@@ -481,6 +495,9 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
   addSubdivisions(map, o);
   addCountry(map, o);
   const onFitSettled = addCities(map, o);
+  o.state.onFitSettled = onFitSettled;
+  if (onFitSettled) fitSettledByMap.set(map, onFitSettled);
+  else fitSettledByMap.delete(map);
 
   if (fitEmbedToCountry(map, o.state, o.boundsPadding)) {
     map.once("idle", () => onFitSettled?.());
@@ -500,6 +517,7 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
       if (id) onFeatureClick({ kind: "subdivision", id: String(id) });
     });
   }
+  return onFitSettled;
 }
 
 type Nested = number | readonly Nested[];

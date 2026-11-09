@@ -2,7 +2,8 @@
  * Markets: companies, bonds and funds, filtered by `?kind=` and `?q=`, each row linking its page, with a watch star
  * that asks a signed-out visitor to sign in.
  */
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { keepPreviousData } from "@tanstack/react-query";
 import type { MarketRow } from "~/lib/exchange/terminal";
 
 const mockReplace = jest.fn();
@@ -10,6 +11,7 @@ let mockParams = new URLSearchParams("kind=bonds");
 let mockSignedIn = false;
 let mockRows: MarketRow[] = [];
 const mockMarkets = jest.fn();
+const mockMarketsOpts = jest.fn();
 const mockSetModifier = jest.fn();
 let mockCanManage = false;
 
@@ -42,8 +44,9 @@ jest.mock("~/trpc/react", () => ({
         useMutation: () => ({ mutate: mockSetModifier, isPending: false }),
       },
       markets: {
-        useQuery: (input: unknown) => {
+        useQuery: (input: unknown, opts?: unknown) => {
           mockMarkets(input);
+          mockMarketsOpts(opts);
           return { data: mockRows, isLoading: false };
         },
       },
@@ -58,6 +61,7 @@ import { WatchStar } from "~/components/exchange/terminal/WatchStar";
 beforeEach(() => {
   mockReplace.mockReset();
   mockMarkets.mockReset();
+  mockMarketsOpts.mockReset();
   mockSetModifier.mockReset();
   mockCanManage = false;
 });
@@ -131,14 +135,29 @@ describe("MarketsPage", () => {
     expect(screen.getByRole("button", { name: "Trade" })).toBeInTheDocument();
   });
 
-  it("writes the search into the address", () => {
-    mockParams = new URLSearchParams("kind=companies");
-    mockRows = [];
-    render(<MarketsPage realmId="default" />);
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "steel" } });
-    expect(mockReplace).toHaveBeenLastCalledWith("/exchange/markets?kind=companies&q=steel", {
-      scroll: false,
-    });
+  it("debounces search input by 250 ms before writing to the address and keeps previous data", () => {
+    jest.useFakeTimers();
+    try {
+      mockParams = new URLSearchParams("kind=companies");
+      mockRows = [];
+      render(<MarketsPage realmId="default" />);
+      expect(mockMarketsOpts).toHaveBeenCalledWith(
+        expect.objectContaining({ placeholderData: keepPreviousData })
+      );
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "st" } });
+      fireEvent.change(screen.getByRole("searchbox"), { target: { value: "steel" } });
+      expect(mockReplace).not.toHaveBeenCalled();
+
+      act(() => {
+        jest.advanceTimersByTime(250);
+      });
+      expect(mockReplace).toHaveBeenCalledTimes(1);
+      expect(mockReplace).toHaveBeenLastCalledWith("/exchange/markets?kind=companies&q=steel", {
+        scroll: false,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });
 

@@ -16,6 +16,7 @@ jest.mock("~/trpc/react", () => {
 });
 
 import { CountryHeroCard } from "~/components/shared/country-hero/CountryHeroCard";
+import { HeroSnapshotPanels } from "~/components/shared/country-hero/HeroSnapshotPanels";
 import { stubResizeObserver } from "~/tests/helpers/resize-observer";
 
 beforeAll(stubResizeObserver);
@@ -90,5 +91,31 @@ describe("CountryHeroCard lens layout", () => {
     );
     expect(container.querySelector('[data-slot="card"]')).toBeNull();
     expect(container.querySelector('[data-layer="lens"]')).not.toBeNull();
+  });
+
+  it("formats hero GDP with compact currency scaling instead of $0.xxT", () => {
+    const { rerender } = render(
+      <HeroSnapshotPanels
+        data={{ stats: { population: 10_000_000, currentTotalGdp: 4.8e11, gdpPerCapita: 48_000 } }}
+        onOpenModal={jest.fn()}
+      />
+    );
+    expect(screen.getByText("$480.0B")).toBeInTheDocument();
+
+    rerender(
+      <HeroSnapshotPanels
+        data={{ stats: { population: 10_000_000, currentTotalGdp: 3e9, gdpPerCapita: 300 } }}
+        onOpenModal={jest.fn()}
+      />
+    );
+    expect(screen.getByText("$3.0B")).toBeInTheDocument();
+
+    rerender(
+      <HeroSnapshotPanels
+        data={{ stats: { population: 10_000_000, currentTotalGdp: 1.2e12, gdpPerCapita: 120_000 } }}
+        onOpenModal={jest.fn()}
+      />
+    );
+    expect(screen.getByText("$1.2T")).toBeInTheDocument();
   });
 });
