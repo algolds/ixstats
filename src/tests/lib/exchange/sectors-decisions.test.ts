@@ -648,4 +648,28 @@ describe("company decisions", () => {
     await resolveDueDecisions(fake.client, later());
     expect(company()).toMatchObject({ sectorKey: "services", subIndustryKey: "finance_insurance" });
   });
+
+  it("(c) a queued EXPAND resolved while the company is DISTRESSED leaves appliedIxTime null and retries once ACTIVE", async () => {
+    const { decision } = await submitDecision(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      type: "EXPAND",
+      amount: 1000,
+      requestId: rid(),
+    });
+    expect(company().capital).toBe(19_000);
+
+    company().status = "DISTRESSED";
+    const t1 = later();
+    expect(await resolveDueDecisions(fake.client, t1)).toBe(0);
+    const rowAfterDistressed = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
+    expect(rowAfterDistressed.appliedIxTime).toBeNull();
+    expect(company().decisionValue).toBe(0);
+
+    company().status = "ACTIVE";
+    expect(await resolveDueDecisions(fake.client, t1 + DAY_MS)).toBe(1);
+    const rowAfterActive = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
+    expect(rowAfterActive.appliedIxTime).toBe(t1 + DAY_MS);
+    expect(company().decisionValue).toBe(1000);
+  });
 });
