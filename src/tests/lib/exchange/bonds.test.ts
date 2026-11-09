@@ -255,6 +255,41 @@ describe("buyBondPrimary", () => {
   });
 });
 
+describe("a nation's insiders", () => {
+  it("can't buy the nation's bonds from the treasury, owner or acting as the nation", async () => {
+    const id = await issue();
+    await expect(
+      buyBondPrimary(fake.client, { userId: "alice", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    fake.tables.user!.find((u) => u.id === "carol")!.countryId = "na";
+    await expect(
+      buyBondPrimary(fake.client, { userId: "carol", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId: rid() });
+    expect(holding("bob")).toBe(10);
+    expect(holding("alice")).toBe(0);
+    expect(sov("alice")).toBe(200_000);
+  });
+
+  it("can't buy them from another player's listing either", async () => {
+    const id = await issue();
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 50, requestId: rid() });
+    const { listingId } = await listBondUnits(fake.client, {
+      userId: "bob",
+      bondId: id,
+      units: 30,
+      pricePerUnit: 100,
+      requestId: rid(),
+    });
+    await expect(
+      buyBondListing(fake.client, { userId: "alice", listingId, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondListing(fake.client, { userId: "carol", listingId, units: 10, requestId: rid() });
+    expect(holding("carol")).toBe(10);
+    expect(holding("alice")).toBe(0);
+  });
+});
+
 describe("listings", () => {
   it("escrows units, sells them at the listed price and returns the rest on cancel", async () => {
     const id = await issue();

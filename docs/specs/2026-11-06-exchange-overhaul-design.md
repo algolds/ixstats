@@ -254,6 +254,7 @@ about (company, bond, nation, tender), and the market move it caused.
   - more than 25% of any company, counting its holdings, listed shares and open buy orders.
 - **No self-dealing in tenders either.** A nation's treasury also won't award its tenders to a company the owner
   founded or holds shares in.
+- A nation's owner (or anyone acting as the nation) may not buy its bonds, primary or secondary (owner ruling 2026-11-09).
 - **Lending is exempt (owner, 2026-11-07).** Companies live in their founder's own nation, so a strict rule would leave
   almost no company able to borrow. Credit lines stay open to the owner's own companies, because the terms are published
   and the same for every domestic company. The rule covers the discretionary moves only: wealth-fund buys and tender
