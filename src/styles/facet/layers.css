@@ -219,7 +219,7 @@
 }
 
 @utility facet-lens-frosted {
-  --lens-frost: 72%;
+  --lens-frost: var(--lens-frosted-fill);
   --lens-diffuse: blur(12px) saturate(150%);
   --color-label-secondary: var(--color-label-vibrant-secondary);
 }

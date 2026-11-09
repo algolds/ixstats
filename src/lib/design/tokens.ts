@@ -286,6 +286,7 @@ export const ACCENT_FILL = { light: 0.14, dark: 0.18 } as const satisfies Record
  * Facet layer glass. `paneFill`: the surface over the canvas. `paneWash`: the tint at the pane's
  * strongest stop. `canvasWash`: the tint in the page background. `wellTint`: tint mixed into the
  * solid well. `chromeFill` / `overlayFill`: floating glass over arbitrary content.
+ * `lensFrostedFill`: the frosted Lens over art.
  */
 export const GLASS = {
   light: {
@@ -294,6 +295,7 @@ export const GLASS = {
     canvasWash: 0.07,
     wellTint: 0.06,
     chromeFill: 0.8,
+    lensFrostedFill: 0.8,
     overlayFill: 0.9,
   },
   dark: {
@@ -302,6 +304,7 @@ export const GLASS = {
     canvasWash: 0.1,
     wellTint: 0.08,
     chromeFill: 0.8,
+    lensFrostedFill: 0.8,
     overlayFill: 0.9,
   },
 } as const satisfies Record<Appearance, Record<string, number>>;

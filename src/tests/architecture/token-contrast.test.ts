@@ -463,6 +463,7 @@ describe("identity tokens: CSS matches src/lib/design/tokens.ts", () => {
     expect(decl(b, "--canvas-wash")).toBe(pct(g.canvasWash));
     expect(decl(b, "--well-tint")).toBe(pct(g.wellTint));
     expect(decl(b, "--chrome-fill")).toBe(pct(g.chromeFill));
+    expect(decl(b, "--lens-frosted-fill")).toBe(pct(g.lensFrostedFill));
     expect(decl(b, "--overlay-fill")).toBe(pct(g.overlayFill));
   });
 
@@ -589,6 +590,17 @@ describe("identity: contrast", () => {
           const ratio = contrast(role(appearance, label, more), fill);
           expect({ more, label, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
         }
+      }
+    });
+
+    it("frosted lens: label and vibrant secondary stay ≥ 4.5:1 on the frosted fill over any backdrop", () => {
+      // Text over art (the MyCountry flag, the hero map). The blur averages detail but not a flat
+      // black or white field, so the worst backdrop applies, as for chrome.
+      const backdrop = appearance === "light" ? "#000000" : "#ffffff";
+      const fill = mix(role(appearance, "surface"), backdrop, GLASS[appearance].lensFrostedFill);
+      for (const label of ["label", "label-vibrant-secondary"]) {
+        const ratio = contrast(role(appearance, label), fill);
+        expect({ label, ok: ratio >= AA_TEXT, ratio }).toMatchObject({ ok: true });
       }
     });
 

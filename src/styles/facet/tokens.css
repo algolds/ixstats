@@ -688,6 +688,7 @@
     --canvas-wash: 7%;
     --well-tint: 6%;
     --chrome-fill: 80%;
+    --lens-frosted-fill: 80%;
     --overlay-fill: 90%;
     --chrome-blur: 20px;
     --overlay-blur: 28px;
@@ -719,6 +720,7 @@
     --canvas-wash: 10%;
     --well-tint: 8%;
     --chrome-fill: 80%;
+    --lens-frosted-fill: 80%;
     --overlay-fill: 90%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
     --primary-mono: #e4e4e7;
