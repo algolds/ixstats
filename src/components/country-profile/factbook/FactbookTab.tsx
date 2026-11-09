@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
+import { LensSurface, SurfaceReset } from "~/components/ui/card";
 import { withBasePath } from "~/lib/base-path";
 import {
   countrySheetHref,
@@ -12,7 +13,9 @@ import {
   type EconomySegment,
 } from "~/lib/country/country-routes";
 import { EconomyBlock, ForeignBlock, StateBlock } from "./Blocks";
+import { FactbookMediaGallery } from "./FactbookMediaGallery";
 import { FactbookSheets } from "./FactbookSheets";
+import { NationalBackdrop } from "./NationalBackdrop";
 
 /** The open sheet, and whether this visit pushed it (so closing it can step back). */
 type OpenSheet = { sheet: CountrySheet; segment: EconomySegment; pushed: boolean } | null;
@@ -24,9 +27,10 @@ function sheetAt(search: string): OpenSheet {
 }
 
 /**
- * FactbookTab — the country at a glance: Economy & people, State and Foreign affairs as three
- * snapshot blocks, each opening its full detail in a sheet. The open sheet lives in the address
- * (`?sheet=`, `&segment=labor`), so it can be shared, and back closes it.
+ * FactbookTab — the country at a glance on the Facet Lens over the national watermark backdrop:
+ * Economy & people, State and Foreign affairs as three rich bento blocks, each opening its full
+ * detail in a sheet. The open sheet lives in the address (`?sheet=`, `&segment=labor`), so it can
+ * be shared, and back closes it. Geography and symbols live in the hero's Country DNA row.
  */
 export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
   const params = useSearchParams();
@@ -74,11 +78,18 @@ export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-3">
-        <EconomyBlock layer={layer} onMore={() => show("economy")} />
-        <StateBlock layer={layer} onMore={() => show("state")} />
-        <ForeignBlock layer={layer} onMore={() => show("foreign")} />
-      </div>
+      <NationalBackdrop>
+        <SurfaceReset>
+          <LensSurface>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <EconomyBlock layer={layer} onMore={() => show("economy")} />
+              <StateBlock layer={layer} onMore={() => show("state")} />
+              <ForeignBlock layer={layer} onMore={() => show("foreign")} />
+            </div>
+            <FactbookMediaGallery layer={layer} />
+          </LensSurface>
+        </SurfaceReset>
+      </NationalBackdrop>
       <FactbookSheets layer={layer} open={open} onClose={close} onSegment={setSegment} />
     </>
   );

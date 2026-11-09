@@ -11,6 +11,7 @@ import type { TocEntry } from "~/lib/wiki-os/transformers/html-transformer";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { Button } from "~/components/ui/button";
 import { scrollToHeading } from "~/components/wiki-os/reader/ArticleToc";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 
 interface StickyTocProps {
   entries: TocEntry[];
@@ -250,7 +251,7 @@ export function StickyToc({ entries, contentRef, onNavigate }: StickyTocProps) {
             className={`wikios-sticky-toc-item ${activeId === item.id ? "wikios-sticky-toc-item--active" : ""}`}
             style={{ paddingLeft: `${(item.level - 2) * 12 + 12}px` }}
           >
-            <span className="wikios-sticky-toc-text">{item.text}</span>
+            <span className="wikios-sticky-toc-text">{stripHtml(item.text)}</span>
           </a>
         ))}
       </div>

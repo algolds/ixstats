@@ -26,12 +26,14 @@ import type { CountryWithEconomicData } from "~/components/mycountry/shared/prim
 import { formatCensusValue } from "~/lib/format/census";
 import {
   buildChronicle,
+  buildProfileMedia,
   countOwnerDirectives,
   realNumber,
   splitCanonFeed,
   yearlySeries,
   type ChronicleEntry,
   type FoundingEvent,
+  type ProfileMedia,
   type PublicDirective,
   type PublicIssueOutcome,
 } from "../_utils/profileLayer";
@@ -123,6 +125,8 @@ export interface CountryProfileLayer {
   state: ProfileState;
   world: ProfileWorld;
   chronicle: ChronicleEntry[];
+  /** Rich media (section cover photos, illustrated wiki spotlights, IxVault cards). */
+  media?: ProfileMedia;
   /** Null unless the signed-in viewer owns this country. */
   owner: ProfileOwnerLayer | null;
   /** The country's realm clock: every in-world date on the profile reads in its calendar. */
@@ -246,6 +250,14 @@ function toLand(bundle: GeoBundle | undefined, isLoading: boolean) {
 }
 
 type Loose = Record<string, any>;
+
+/** The most populous city's name (the capital included; the cover rules skip it when it is). */
+function largestCityName(cities: readonly { name: string; population: number | null }[]) {
+  const [top] = cities
+    .filter((c) => c.population != null)
+    .sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
+  return top?.name ?? null;
+}
 type Output<R extends keyof RouterOutputs, P extends keyof RouterOutputs[R]> = NonNullable<
   RouterOutputs[R][P]
 >;
@@ -468,7 +480,10 @@ export function useCountryProfileLayer({
   // issues) and readable signed out.
   const byCountry = { countryId };
   const geo = api.countryGeo.getCountryGeoBundle.useQuery(byCountry, { enabled, ...MAP });
-  const record = api.countries.getPublicRecord.useQuery(byCountry, { enabled, ...STATIC });
+  const record = api.countries.getPublicRecord.useQuery(
+    { countryId, countryName: articleTitle || undefined },
+    { enabled, ...STATIC }
+  );
   const canon = api.mycountry.getCanonFeed.useQuery(
     { countryId, limit: 40 },
     { enabled, ...STATIC }
@@ -493,6 +508,19 @@ export function useCountryProfileLayer({
   const intents = api.intent.getTree.useQuery(byCountry, ownerOnly);
   const pending = api.nationalIssues.getPendingCount.useQuery(byCountry, ownerOnly);
 
+  // The Factbook covers' candidate articles, which need the map's capital and largest city and
+  // the government's legislature, so they wait for those two reads.
+  const land = useMemo(() => toLand(geo.data, geo.isLoading), [geo.data, geo.isLoading]);
+  const covers = api.countries.getCoverArticles.useQuery(
+    {
+      countryName: articleTitle,
+      capital: land.capital?.name ?? null,
+      largestCity: largestCityName(land.cities),
+      legislature: str((government.data as Loose | null | undefined)?.legislatureName),
+    },
+    { enabled: articleTitle.length >= 2 && !geo.isLoading && !government.isLoading, ...WIKI }
+  );
+
   return useMemo<CountryProfileLayer | null>(() => {
     if (!c) return null;
     const infobox = wikiProfile.data?.infobox ?? null;
@@ -500,7 +528,6 @@ export function useCountryProfileLayer({
 
     const founding = infoboxFounding(infobox);
 
-    const land = toLand(geo.data, geo.isLoading);
     const directives: PublicDirective[] = record.data?.directives ?? [];
     const issueOutcomes: PublicIssueOutcome[] = record.data?.issueOutcomes ?? [];
     const { decisions, diplomacy } = splitCanonFeed(canon.data, (ms) => clockTimeAt(clock, ms));
@@ -539,6 +566,7 @@ export function useCountryProfileLayer({
         decisions,
         diplomacy,
       }),
+      media: buildProfileMedia(record.data?.media, identity.name, covers.data),
       owner: buildOwner(isOwner, intents.data?.allIntents, pending.data),
       clock,
     };
@@ -550,8 +578,8 @@ export function useCountryProfileLayer({
     clock,
     wikiSource,
     wikiProfile.data,
-    geo.data,
-    geo.isLoading,
+    land,
+    covers.data,
     record.data,
     record.isLoading,
     intents.data,

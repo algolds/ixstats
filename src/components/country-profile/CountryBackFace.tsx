@@ -4,20 +4,24 @@ import Link from "next/link";
 import { Check, EditPencil, Crown } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import type { ProfileOwnerLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
+import type { ProfileMedia } from "~/app/countries/[slug]/_utils/profileLayer";
+import { FactbookImages } from "./FactbookImages";
 import { CoverOptions, type HeroCover } from "./HeroMedia";
 import { LoreTeam } from "./LoreTeam";
 import { OwnerLayer } from "./OwnerLayer";
 
 /**
  * CountryBackFace — the back of the country document's face, the owner's side (turned to with
- * Manage, like the passport's Edit): the private owner strip, the cover choice, the lore team,
- * MyCountry and the editor.
+ * Manage, like the passport's Edit): the private owner strip, the cover choice, the Factbook
+ * images, the lore team, MyCountry and the editor.
  */
 export function CountryBackFace({
   countryId,
   shown,
   name,
   cover,
+  factbookCovers,
+  hasMap,
   owner,
   onDone,
 }: {
@@ -26,6 +30,10 @@ export function CountryBackFace({
   shown: boolean;
   name: string;
   cover: HeroCover | null;
+  /** The Factbook blocks' current covers, beside the owner's pins. */
+  factbookCovers: ProfileMedia["sectionCovers"];
+  /** The country has map geometry (imageless blocks fall back to its map). */
+  hasMap: boolean;
   owner: ProfileOwnerLayer | null;
   onDone: () => void;
 }) {
@@ -54,6 +62,12 @@ export function CountryBackFace({
       </div>
       <OwnerLayer owner={owner} />
       {cover?.onChange && <CoverOptions cover={{ ...cover, onChange: cover.onChange }} />}
+      <FactbookImages
+        countryId={countryId}
+        covers={factbookCovers}
+        hasMap={hasMap}
+        active={shown}
+      />
       <LoreTeam countryId={countryId} active={shown} />
     </section>
   );

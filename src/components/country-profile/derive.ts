@@ -129,23 +129,51 @@ function plainText(value: string | null | undefined): string | null {
   return text && !PLACEHOLDER.test(text) ? text : null;
 }
 
+/** The most populous city, unless it is the capital (by the map's flag or the infobox's name). */
+function largestCity(
+  cities: readonly { name: string; population: number | null; isCapital: boolean }[],
+  capital: string | null
+): string | null {
+  const [top] = cities
+    .filter((c) => c.population != null)
+    .sort((a, b) => (b.population ?? 0) - (a.population ?? 0));
+  const name = top && !top.isCapital ? plainText(top.name) : null;
+  if (!name || top?.population == null || name.toLowerCase() === capital?.toLowerCase())
+    return null;
+  return `${name} · ${formatBig(top.population)}`;
+}
+
+/** Quotes and brackets the wiki already put around a motto, so it is not wrapped twice. */
+const MOTTO_WRAP = /^[\s("“”'‘’]+|[\s)"“”'‘’]+$/g;
+
 /**
- * The country's geography and symbols for the Country DNA row: land area (the map's, else the
- * census figure), climate, currency, anthem and motto. Capital, region and flag are in the hero
- * already, so they are not repeated. Facts without a value are left out.
+ * The country's geography and symbols for the Country DNA facts strip: land area (the map's, else
+ * the census figure), climate, currency, largest city, languages, demonym, anthem and motto.
+ * Capital, region and flag are in the hero already, so they are not repeated. Facts without a
+ * value are left out.
  */
 export function nationalFacts(input: {
-  identity: Pick<ProfileIdentity, "motto" | "anthem" | "currency">;
-  land: { areaSqKm: number | null; profile: { dominantClimate?: string | null } | null };
+  identity: Pick<
+    ProfileIdentity,
+    "motto" | "anthem" | "currency" | "demonym" | "languages" | "capital"
+  >;
+  land: {
+    areaSqKm: number | null;
+    profile: { dominantClimate?: string | null } | null;
+    cities: readonly { name: string; population: number | null; isCapital: boolean }[];
+  };
   vitals: Pick<ProfileVitals, "landArea">;
 }): NationalFact[] {
   const { identity, land, vitals } = input;
   const area = land.areaSqKm ?? vitals.landArea;
-  const motto = plainText(identity.motto);
+  const motto = plainText(identity.motto)?.replace(MOTTO_WRAP, "") || null;
   const facts: [string, string, string | null][] = [
     ["area", "Land area", area != null ? `${formatBig(area)} km²` : null],
     ["climate", "Climate", plainText(land.profile?.dominantClimate)],
     ["currency", "Currency", plainText(identity.currency)],
+    ["city", "Largest city", largestCity(land.cities, plainText(identity.capital))],
+    ["languages", "Languages", plainText(identity.languages)],
+    ["demonym", "Demonym", plainText(identity.demonym)],
     ["anthem", "Anthem", plainText(identity.anthem)],
     ["motto", "Motto", motto && `“${motto}”`],
   ];

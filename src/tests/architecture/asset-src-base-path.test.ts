@@ -38,6 +38,7 @@ const RESOLVING_TAGS = new Set([
   "FlagBanner",
   "FlagWatermark",
   "FlagDot",
+  "FlagAvatar",
   "AvatarImage",
   "TeamCrest",
   "PillImage",

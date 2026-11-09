@@ -118,31 +118,82 @@ describe("relationNodes", () => {
 });
 
 describe("nationalFacts", () => {
+  const city = (name: string, population: number | null, isCapital = false) => ({
+    name,
+    population,
+    isCapital,
+  });
   const empty = {
-    identity: { motto: null, anthem: null, currency: null },
-    land: { areaSqKm: null, profile: null },
+    identity: {
+      motto: null,
+      anthem: null,
+      currency: null,
+      demonym: null,
+      languages: null,
+      capital: null,
+    },
+    land: { areaSqKm: null, profile: null, cities: [] },
     vitals: { landArea: null },
   };
 
-  it("lists land area, climate, currency, anthem and motto in that order, from plain text", () => {
+  it("lists the facts in strip order, from plain text", () => {
     const facts = nationalFacts({
-      identity: { motto: "<i>Per aspera</i>", anthem: "Hymn of Dawn", currency: "Aureus" },
-      land: { areaSqKm: 1_240_000, profile: { dominantClimate: "Mediterranean" } },
+      identity: {
+        motto: "<i>Per aspera</i>",
+        anthem: "Hymn of Dawn",
+        currency: "Aureus",
+        demonym: "Caphirian",
+        languages: "Latin, Caphiric",
+        capital: "Venceia",
+      },
+      land: {
+        areaSqKm: 1_240_000,
+        profile: { dominantClimate: "Mediterranean" },
+        cities: [city("Venceia", 4_000_000, true), city("Aurelia", 6_200_000), city("Nova", null)],
+      },
       vitals: { landArea: 9 },
     });
     expect(facts.map((f) => [f.label, f.value])).toEqual([
       ["Land area", "1.2M km²"],
       ["Climate", "Mediterranean"],
       ["Currency", "Aureus"],
+      ["Largest city", "Aurelia · 6.2M"],
+      ["Languages", "Latin, Caphiric"],
+      ["Demonym", "Caphirian"],
       ["Anthem", "Hymn of Dawn"],
       ["Motto", "\u201cPer aspera\u201d"],
     ]);
   });
 
+  it("leaves out the largest city when the infobox names it the capital", () => {
+    const facts = nationalFacts({
+      ...empty,
+      identity: { ...empty.identity, capital: "Urceopolis" },
+      land: { ...empty.land, cities: [city("Urceopolis", 32_500_000)] },
+    });
+    expect(facts).toEqual([]);
+  });
+
+  it("does not double-wrap a motto the wiki already brackets or quotes", () => {
+    const facts = nationalFacts({
+      ...empty,
+      identity: { ...empty.identity, motto: '("For the greater glory of God")' },
+    });
+    expect(facts.map((f) => f.value)).toEqual(["\u201cFor the greater glory of God\u201d"]);
+  });
+
+  it("leaves out the largest city when it is the capital", () => {
+    const facts = nationalFacts({
+      ...empty,
+      land: { ...empty.land, cities: [city("Venceia", 4_000_000, true), city("Aurelia", 1_000)] },
+    });
+    expect(facts.map((f) => f.label)).toEqual([]);
+  });
+
   it("falls back to the census land area and drops missing or placeholder values", () => {
     const facts = nationalFacts({
       ...empty,
-      identity: { motto: "n/a", anthem: "\u2014", currency: " " },
+      identity: { ...empty.identity, motto: "n/a", anthem: "\u2014", currency: " " },
       vitals: { landArea: 5000 },
     });
     expect(facts.map((f) => f.label)).toEqual(["Land area"]);
