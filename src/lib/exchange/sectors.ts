@@ -32,6 +32,7 @@ import { INDEX_BASE, SECTOR_KEYS, type SectorKey } from "./companies";
 import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, lockWallet, type Db } from "./guards";
 import { countryMacroOf } from "./macro";
+import { OPERATING_TICK_MS } from "./operations";
 import { fromCents, toCents } from "./ownership";
 
 export const SECTOR_LABELS: Record<SectorKey, string> = {
@@ -237,6 +238,16 @@ async function computeRealmSectorIndices(
     const rows = await tx.sectorIndex.findMany({
       where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } },
     });
+    const tick = Math.floor(nowMs / OPERATING_TICK_MS);
+    if (
+      rows.some(
+        (row) =>
+          row.computedIxTime !== null &&
+          Math.floor(row.computedIxTime / OPERATING_TICK_MS) === tick
+      )
+    ) {
+      return [];
+    }
     const next = rows.map((row) => {
       const key = row.sectorKey as SectorKey;
       const a = activity[key] ?? 0;
