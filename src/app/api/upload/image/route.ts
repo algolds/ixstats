@@ -18,6 +18,7 @@ import crypto from "crypto";
 import { rateLimiter } from "~/lib/cache";
 import { uploadsDir as getUploadsDir, UPLOADS_URL_PREFIX } from "~/server/shared/upload-storage";
 import { registerUploadedAsset } from "~/server/shared/uploaded-assets";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { sanitizeSvg } from "~/lib/media/svg-sanitize";
 import { sniffFile } from "~/lib/wiki-os/core/file-sniff";
 
@@ -170,24 +171,7 @@ export async function POST(request: NextRequest) {
       uploadedAt: Date.now(),
     });
   } catch (error) {
-    const formData = await request.formData().catch(() => new FormData());
-    const file = formData.get("file") as File | null;
-
-    console.error("[ImageUpload] Error:", error);
-    console.error("[ImageUpload] Error details:", {
-      fileName: file?.name,
-      fileSize: file?.size,
-      fileType: file?.type,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    return internalErrorResponse("ImageUpload", error);
   }
 }
 
