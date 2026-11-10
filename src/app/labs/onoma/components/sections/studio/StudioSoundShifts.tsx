@@ -36,6 +36,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { useNameBank } from "~/hooks/useNameBank";
 import { cn } from "~/lib/utils";
 import LoanwordsSection from "../LoanwordsSection";
+import { SoundShiftSymbolBar } from "./SoundShiftSymbolBar";
 import { CorpusSelector } from "../../shared/CorpusSelector";
 import { resolveCorpusWords } from "~/lib/onoma/data-bridge";
 import { Input } from "~/components/ui/input";
@@ -44,23 +45,6 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button } from "~/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Checkbox } from "~/components/ui/checkbox";
-
-const QUICK_SYMBOLS = [
-  { label: "#_ (Initial)", value: "#_" },
-  { label: "_# (Final)", value: "_#" },
-  { label: "V_V (Intervocalic)", value: "V_V" },
-  { label: "_[ei] (Front Vowels)", value: "_[ei]" },
-  { label: "θ", value: "θ" },
-  { label: "ʃ", value: "ʃ" },
-  { label: "tʃ", value: "tʃ" },
-  { label: "dʒ", value: "dʒ" },
-  { label: "ʒ", value: "ʒ" },
-  { label: "č", value: "č" },
-  { label: "ž", value: "ž" },
-  { label: "š", value: "š" },
-  { label: "ʰ", value: "ʰ" },
-  { label: "∅ (Delete)", value: "" },
-];
 
 interface StudioSoundShiftsProps {
   studioWords?: string[];
@@ -337,20 +321,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                 </Button>
               </div>
 
-              <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-2 border p-3">
-                <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
-                {QUICK_SYMBOLS.map((sym) => (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    key={sym.label}
-                    onClick={() => handleInsertSymbol(sym.value)}
-                    className="h-7 px-2 font-mono"
-                  >
-                    {sym.label}
-                  </Button>
-                ))}
-              </div>
+              <SoundShiftSymbolBar onInsert={handleInsertSymbol} />
 
               <div className="space-y-4">
                 {epochs.map((epoch, epochIdx) => (
