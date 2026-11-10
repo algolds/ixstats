@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Coins, Journal } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -29,8 +30,13 @@ const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 
 function CancelBondListingButton({ listingId }: { listingId: string }) {
   const utils = api.useUtils();
+  const notify = useNotify();
   const cancel = api.exchange.cancelBondListing.useMutation({
-    onSuccess: () => void utils.exchange.invalidate(),
+    onSuccess: () => {
+      void utils.exchange.bondPage.invalidate();
+      void utils.exchange.portfolio.invalidate();
+    },
+    onError: (e) => notify.error("Could not cancel the listing", e.message),
   });
   return (
     <Button
