@@ -386,10 +386,7 @@ async function loadConfig() {
 }
 
 /** Engine overrides (the admin panel's unsaved values) are honoured for admins only. */
-async function applyAdminOverrides(
-  config: TtsConfig,
-  body: TtsBody
-): Promise<NextResponse | null> {
+async function applyAdminOverrides(config: TtsConfig, body: TtsBody): Promise<NextResponse | null> {
   const savedBaseUrl = config.baseUrl;
   const savedFastApiUrl = config.fastApiUrl;
 

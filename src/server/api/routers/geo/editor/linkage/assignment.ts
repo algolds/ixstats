@@ -148,7 +148,10 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         displayName: z.string().trim().max(200).optional(),
         countryId: z.string().nullable().optional(),
         properties: z
-          .record(z.string().max(64), z.union([propertyLeaf, z.record(z.string().max(64), propertyLeaf)]))
+          .record(
+            z.string().max(64),
+            z.union([propertyLeaf, z.record(z.string().max(64), propertyLeaf)])
+          )
           .refine((p) => Object.keys(p).length <= 50, "At most 50 properties")
           .refine((p) => JSON.stringify(p).length <= 20_000, "Properties are too large")
           .optional(),
