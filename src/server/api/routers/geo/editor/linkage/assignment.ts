@@ -17,6 +17,10 @@ import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { assertFound, requirePoliticalLayer } from "../../core/shared";
 
+const propertyScalar = z.union([z.string().max(2000), z.number(), z.boolean(), z.null()]);
+/** A property value: a scalar or a list of scalars (map imports write `sourceKeys: string[]`). */
+const propertyLeaf = z.union([propertyScalar, z.array(propertyScalar).max(200)]);
+
 function regionError(error: Error): never {
   if (error instanceof RealmRegionError)
     throw new TRPCError({ code: error.code, message: error.message });
@@ -144,10 +148,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         displayName: z.string().trim().max(200).optional(),
         countryId: z.string().nullable().optional(),
         properties: z
-          .record(
-            z.string().max(64),
-            z.union([z.string().max(2000), z.number(), z.boolean(), z.null()])
-          )
+          .record(z.string().max(64), z.union([propertyLeaf, z.record(z.string().max(64), propertyLeaf)]))
           .refine((p) => Object.keys(p).length <= 50, "At most 50 properties")
           .refine((p) => JSON.stringify(p).length <= 20_000, "Properties are too large")
           .optional(),
