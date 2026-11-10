@@ -94,7 +94,7 @@ export function CountryMapEmbed({
   useEffect(() => {
     const map = mapRef.current;
     if (mapReady && map && fitEmbedToCountry(map, state, boundsPadding, insetRight)) {
-      const onFitSettled = getEmbedFitSettled(map, state);
+      const onFitSettled = getEmbedFitSettled(map);
       map.once("idle", () => onFitSettled?.());
     }
   }, [mapReady, insetRight]);
