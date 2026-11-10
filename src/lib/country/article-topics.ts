@@ -14,7 +14,6 @@ export type ArticleTopic =
 export function cleanSummary(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const stripped = stripHtml(raw.replace(/\{\{[^{}]*\}\}/g, ""))
-    .replace(/\{\{[^{}]*\}\}/g, "")
     .replace(/\[\[(?:[^\]|]+\|)?([^\]]+)\]\]/g, "$1")
     .replace(/'{2,}/g, "")
     .replace(/\s+/g, " ")

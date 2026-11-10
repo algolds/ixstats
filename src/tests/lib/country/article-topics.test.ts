@@ -6,6 +6,8 @@ describe("classifyArticleTopic", () => {
     expect(classifyArticleTopic("Economy of Urcea")).toBe("economy");
     expect(classifyArticleTopic("Military of X")).toBe("defense");
     expect(classifyArticleTopic("Politics of X")).toBe("state");
+    expect(classifyArticleTopic("Ministers of X")).toBe("state");
+    expect(classifyArticleTopic("Ministry of X")).toBe("state");
     expect(classifyArticleTopic("Demographics of X")).toBe("society");
     expect(classifyArticleTopic("Culture of X")).toBe("culture");
     expect(classifyArticleTopic("Foreign relations of X")).toBe("diplomacy");
