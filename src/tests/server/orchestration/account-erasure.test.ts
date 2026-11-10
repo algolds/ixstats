@@ -313,6 +313,7 @@ async function seedMiscRows(aliceClerk: string): Promise<void> {
         editType: "city",
         operation: "create",
         proposedData: { name: `city-${uid}` },
+        status: "pending",
       },
     });
     await db.loreCardRequest.create({
@@ -540,6 +541,88 @@ describe("eraseAccount", () => {
       ["bob", "PENDING", null],
       ["bob", "GENERATED", "admin-bob"],
     ]);
+  });
+
+  it("rejects the user's pending map edit requests, keeps reviewed ones' status, and leaves other users' alone", async () => {
+    await db.mapEditRequest.create({
+      data: {
+        id: "mer-done",
+        countryId: "n2",
+        userId: "alice",
+        editType: "city",
+        operation: "create",
+        proposedData: { name: "done" },
+        status: "approved",
+      },
+    });
+    await eraseAccount(db, "alice", deps, NOW);
+    const rows = await db.mapEditRequest.findMany({});
+    expect(rows.map((r) => [r.userId, r.status, r.proposedData])).toEqual([
+      ["alice", "rejected", {}],
+      ["alice-clerk", "rejected", {}],
+      ["bob", "pending", { name: "city-bob" }],
+      ["alice", "approved", {}],
+    ]);
+  });
+
+  it("credits map features and uploads to nobody, and drops moderator seats, custom government types and dispute reasons", async () => {
+    const city = { countryId: "n2", name: "C", type: "town", coordinates: [0, 0] };
+    await db.city.create({ data: { ...city, id: "city-a", submittedBy: "alice-clerk" } });
+    await db.city.create({ data: { ...city, id: "city-b", submittedBy: "bob-clerk" } });
+    await db.peak.create({
+      data: {
+        id: "peak-a",
+        countryId: "n2",
+        name: "P",
+        coordinates: [0, 0],
+        elevation: 1,
+        submittedBy: "alice",
+      },
+    });
+    await db.uploadedAsset.create({
+      data: {
+        id: "ua-a",
+        source: "forum",
+        url: "/u/a.png",
+        filePath: "a.png",
+        title: "a",
+        mimeType: "image/png",
+        sizeBytes: 1,
+        uploaderClerkId: "alice-clerk",
+      },
+    });
+    await db.forumCategoryModerator.create({
+      data: { categoryId: "cat-rules", userId: "alice", grantedBy: "bob" },
+    });
+    await db.forumCategoryModerator.create({
+      data: { categoryId: "cat-rules", userId: "bob", grantedBy: "bob" },
+    });
+    await db.customGovernmentType.create({ data: { userId: "alice", customTypeName: "Moot" } });
+    await db.contract.create({
+      data: {
+        id: "k1",
+        type: "SUPPLY",
+        title: "T",
+        sectorKey: "energy",
+        value: 1n,
+        endIxTime: 1,
+        createdIxTime: 0,
+        disputedByUserId: "alice",
+        disputeReason: "They cheated",
+      },
+    });
+    await eraseAccount(db, "alice", deps, NOW);
+    expect((await db.city.findMany({})).map((r) => [r.id, r.submittedBy])).toEqual([
+      ["city-a", "erased:alice"],
+      ["city-b", "bob-clerk"],
+    ]);
+    expect((await db.peak.findMany({})).map((r) => r.submittedBy)).toEqual(["erased:alice"]);
+    expect((await db.uploadedAsset.findMany({})).map((r) => r.uploaderClerkId)).toEqual([null]);
+    expect((await db.forumCategoryModerator.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect(await db.customGovernmentType.findMany({})).toEqual([]);
+    expect((await db.contract.findMany({})).map((r) => [r.disputedByUserId, r.disputeReason])).toEqual(
+      [["alice", null]]
+    );
   });
 
   it("renames personal personas and retires nation personas without renaming them", async () => {

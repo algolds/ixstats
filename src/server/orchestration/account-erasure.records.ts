@@ -144,8 +144,21 @@ async function eraseReactions(tx: Tx, ids: ErasureIds): Promise<void> {
 }
 
 /**
- * Preferences, watches, mutes, alert thresholds, editor sessions, lore team memberships, poll votes and forum
- * reactions are deleted; proposals and requests keep their review rows with free-text fields cleared.
+ * Map edit requests: a pending one is rejected (a moderator must not approve an emptied proposal), and every one of
+ * the user's loses its proposal. Reviewed ones keep their status and review rows.
+ */
+async function eraseMapEditRequests(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { userId: both(ids) };
+  await tx.mapEditRequest.updateMany({
+    where: { ...where, status: "pending" },
+    data: { status: "rejected", reviewNote: "Withdrawn: the requester closed their account." },
+  });
+  await tx.mapEditRequest.updateMany({ where, data: { proposedData: {} } });
+}
+
+/**
+ * Preferences, watches, mutes, alert thresholds, editor sessions, lore team and forum moderator memberships, the
+ * user's own custom government type names, poll votes and forum reactions are deleted; proposals and requests keep their review rows with free-text fields cleared.
  */
 async function eraseMiscRows(tx: Tx, ids: ErasureIds): Promise<void> {
   const where = { userId: both(ids) };
@@ -157,8 +170,14 @@ async function eraseMiscRows(tx: Tx, ids: ErasureIds): Promise<void> {
   await tx.cardNotificationMute.deleteMany({ where });
   await tx.exchangeWatch.deleteMany({ where });
   await tx.countryLoreAuthor.deleteMany({ where });
+  await tx.forumCategoryModerator.deleteMany({ where });
+  await tx.customGovernmentType.deleteMany({ where });
   await tx.cardCategorySuggestion.updateMany({ where, data: { note: null } });
-  await tx.mapEditRequest.updateMany({ where, data: { proposedData: {} } });
+  await eraseMapEditRequests(tx, ids);
+  await tx.contract.updateMany({
+    where: { disputedByUserId: both(ids) },
+    data: { disputeReason: null },
+  });
   await tx.loreCardRequest.deleteMany({ where: { userId: both(ids), status: "PENDING" } });
   await tx.loreCardRequest.updateMany({ where, data: { adminNotes: null } });
 }
@@ -255,6 +274,27 @@ async function anonymiseContributions(tx: Tx, ids: ErasureIds): Promise<void> {
   await tx.activityFeed.updateMany({ where: { userId: both(ids) }, data: { userId: null } });
 }
 
+/**
+ * Map features the user submitted stay (the realm's shared map, Privacy 5.2(2)-(3)), credited to nobody; uploaded
+ * images stay in the posts that use them, with no uploader.
+ */
+async function anonymiseMapSubmissions(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { submittedBy: both(ids) };
+  const data = { submittedBy: ids.sentinel };
+  await tx.subdivision.updateMany({ where, data });
+  await tx.city.updateMany({ where, data });
+  await tx.pointOfInterest.updateMany({ where, data });
+  await tx.storyPin.updateMany({ where, data });
+  await tx.mapLabel.updateMany({ where, data });
+  await tx.peak.updateMany({ where, data });
+  await tx.namedRiver.updateMany({ where, data });
+  await tx.namedLake.updateMany({ where, data });
+  await tx.uploadedAsset.updateMany({
+    where: { uploaderClerkId: both(ids) },
+    data: { uploaderClerkId: null },
+  });
+}
+
 export async function anonymiseRecords(
   tx: Tx,
   ids: ErasureIds,
@@ -263,6 +303,7 @@ export async function anonymiseRecords(
   await anonymisePersonas(tx, ids, personas);
   await anonymiseForum(tx, ids);
   await anonymiseContributions(tx, ids);
+  await anonymiseMapSubmissions(tx, ids);
 }
 
 /**
