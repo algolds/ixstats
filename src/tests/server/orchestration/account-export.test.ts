@@ -431,7 +431,9 @@ describe("buildAccountExport", () => {
     expect(out.polls.votes.map((v) => v.id)).toEqual(["pv-alice"]);
     expect(out.predictions.map((p) => p.id)).toEqual(["sp-alice"]);
     expect(out.blurbs.map((b) => b.id)).toEqual(["br-alice"]);
-    expect(out.documents.map((d) => [d.id, d.title, "content" in d ? d.content : undefined])).toEqual([
+    expect(
+      out.documents.map((d) => [d.id, d.title, "content" in d ? d.content : undefined])
+    ).toEqual([
       ["doc-owned", "Owned Doc", "Owned body"],
       ["doc-edited", "Edited Doc", undefined],
     ]);

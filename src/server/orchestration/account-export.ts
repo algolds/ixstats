@@ -420,7 +420,11 @@ const POLL_SELECT = {
 async function pollsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
   const ids = [clerkUserId, user.id];
   const [created, onYourNations, votes] = await Promise.all([
-    db.poll.findMany({ where: { OR: createdPollWhere(ids) }, select: POLL_SELECT, orderBy: { createdAt: "asc" } }),
+    db.poll.findMany({
+      where: { OR: createdPollWhere(ids) },
+      select: POLL_SELECT,
+      orderBy: { createdAt: "asc" },
+    }),
     db.poll.findMany({
       where: { country: { ownerUserId: user.id }, NOT: { OR: createdPollWhere(ids) } },
       select: POLL_SELECT,
