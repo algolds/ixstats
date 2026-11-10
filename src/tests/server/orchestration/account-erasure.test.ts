@@ -496,6 +496,16 @@ describe("eraseAccount", () => {
     expect((await db.generationFavorite.findMany({})).map((f) => f.userId)).toEqual(["bob"]);
   });
 
+  it("recounts the reactions of every post the user reacted to, leaving other users' reactions in", async () => {
+    await db.forumPost.update({ where: { id: "fp-a" }, data: { reactionCounts: { like: 2 } } });
+    await db.forumPost.update({ where: { id: "fp-b" }, data: { reactionCounts: { like: 1 } } });
+    await eraseAccount(db, "alice", deps, NOW);
+    expect((await db.forumPost.findUnique({ where: { id: "fp-a" } }))?.reactionCounts).toEqual({
+      like: 1,
+    });
+    expect((await db.forumPost.findUnique({ where: { id: "fp-b" } }))?.reactionCounts).toEqual({});
+  });
+
   it("erases watches, votes, reactions, sessions, thresholds and lore authors under either id, and nulls proposal free text", async () => {
     await eraseAccount(db, "alice", deps, NOW);
     expect((await db.mapEditorSession.findMany({})).map((r) => r.userId)).toEqual(["bob"]);

@@ -9,6 +9,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { FORMER_MEMBER, formerUsername } from "~/lib/account/deletion";
+import { recountReactions } from "~/server/modules/thinkpages-forum/reactions";
 
 type Tx = Prisma.TransactionClient;
 
@@ -130,6 +131,18 @@ async function erasePrivateRows(tx: Tx, ids: ErasureIds): Promise<void> {
   await eraseGenerationHistory(tx, ids);
 }
 
+/** The user's forum reactions go and every post they reacted to is recounted, so `reactionCounts` stops including them. */
+async function eraseReactions(tx: Tx, ids: ErasureIds): Promise<void> {
+  const reacted = await tx.forumPostReaction.findMany({
+    where: { userId: both(ids) },
+    select: { postId: true },
+  });
+  await tx.forumPostReaction.deleteMany({ where: { userId: both(ids) } });
+  for (const postId of new Set(reacted.map((r) => r.postId))) {
+    await recountReactions(tx, postId);
+  }
+}
+
 /**
  * Preferences, watches, mutes, alert thresholds, editor sessions, lore team memberships, poll votes and forum
  * reactions are deleted; proposals and requests keep their review rows with free-text fields cleared.
@@ -138,7 +151,7 @@ async function eraseMiscRows(tx: Tx, ids: ErasureIds): Promise<void> {
   const where = { userId: both(ids) };
   await tx.mapEditorSession.deleteMany({ where });
   await tx.pollVote.deleteMany({ where });
-  await tx.forumPostReaction.deleteMany({ where });
+  await eraseReactions(tx, ids);
   await tx.intelligenceAlertThreshold.deleteMany({ where });
   await tx.cardWatchlist.deleteMany({ where });
   await tx.cardNotificationMute.deleteMany({ where });
