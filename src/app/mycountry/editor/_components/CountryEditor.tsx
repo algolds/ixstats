@@ -5,20 +5,23 @@ import { City, Community, Language, WhiteFlag } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { FlagBanner, MonogramBanner } from "~/components/mycountry/shell/headers/FlagBanner";
 import { Button } from "~/components/ui/button";
+import { LensSurface } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { cn } from "~/lib/utils/cn";
 import {
   EDITOR_SECTION_TITLES,
   staleMessage,
   type EditorSectionId,
 } from "~/lib/mycountry/editor-fields";
 import type { EditorAnchor } from "~/lib/mycountry/routes";
-import { EditorProvider, type EditorState } from "./editor-context";
+import { EditorProvider, useEditor, type EditorState } from "./editor-context";
 import { governmentFormOf, identityValuesOf, withSection } from "./editor-state";
 import { ElsewhereSection } from "./ElsewhereSection";
 import { FiguresSection } from "./FiguresSection";
@@ -211,12 +214,22 @@ function jumpTo(id: string) {
   window.history.replaceState(window.history.state, "", `#${id}`);
 }
 
-function EditorNav({ groups }: { groups: EditorGroup[] }) {
+function EditorNav({
+  groups,
+  activeId,
+  onSelect,
+}: {
+  groups: EditorGroup[];
+  activeId: string;
+  onSelect: (id: string) => void;
+}) {
+  const { dirty } = useEditor();
+  const dirtyIds = new Set(dirty.map((item) => item.id));
   return (
     <nav
       aria-label="Editor sections"
       // One scrolling row on small screens; the grouped column from lg up.
-      className="flex gap-1 overflow-x-auto lg:sticky lg:top-24 lg:flex-col lg:gap-4 lg:self-start lg:overflow-visible"
+      className="flex gap-1 overflow-x-auto lg:sticky lg:top-20 lg:flex-col lg:gap-4 lg:self-start lg:overflow-visible"
     >
       {groups.map((group) => (
         <div
@@ -232,20 +245,37 @@ function EditorNav({ groups }: { groups: EditorGroup[] }) {
             {group.label}
           </p>
           <ul className="flex gap-1 lg:flex-col">
-            {group.sections.map((s) => (
-              <li key={s.id}>
-                <a
-                  href={`#${s.id}`}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    jumpTo(s.id);
-                  }}
-                  className="rounded-control text-footnote text-label-secondary hover:bg-fill-4 hover:text-label flex min-h-11 items-center px-3 whitespace-nowrap lg:min-h-0 lg:py-1"
-                >
-                  {s.label}
-                </a>
-              </li>
-            ))}
+            {group.sections.map((s) => {
+              const isCurrent = activeId === s.id;
+              const isDirty = dirtyIds.has(s.id);
+              return (
+                <li key={s.id}>
+                  <a
+                    href={`#${s.id}`}
+                    aria-current={isCurrent ? "location" : undefined}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onSelect(s.id);
+                    }}
+                    className={cn(
+                      "rounded-control text-footnote flex min-h-11 items-center justify-between gap-2 px-3 whitespace-nowrap lg:min-h-0 lg:py-1.5",
+                      isCurrent
+                        ? "bg-fill-3 text-label font-medium"
+                        : "text-label-secondary hover:bg-fill-4 hover:text-label"
+                    )}
+                  >
+                    <span>{s.label}</span>
+                    {isDirty && (
+                      <span
+                        aria-hidden
+                        title="Unsaved changes"
+                        className="bg-tint size-1.5 shrink-0 rounded-full"
+                      />
+                    )}
+                  </a>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
@@ -315,6 +345,7 @@ export function CountryEditor({ countryId }: { countryId: string }) {
   const [state, setState] = useState<EditorState | null>(null);
   const [reloads, setReloads] = useState<SectionReloads>({});
   const [conflicts, setConflicts] = useState<EditorSectionId[]>([]);
+  const [activeId, setActiveId] = useState<string>("name");
 
   useEffect(() => {
     if (query.data && !state) setState(query.data);
@@ -336,7 +367,9 @@ export function CountryEditor({ countryId }: { countryId: string }) {
   const loaded = !!state;
   useEffect(() => {
     if (loaded && window.location.hash) {
-      document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
+      const hashId = decodeURIComponent(window.location.hash.slice(1));
+      setActiveId(hashId);
+      document.getElementById(hashId)?.scrollIntoView();
     }
   }, [loaded]);
 
@@ -359,6 +392,12 @@ export function CountryEditor({ countryId }: { countryId: string }) {
   if (!state) return <EditorSkeleton />;
 
   const groups = editorGroups(state, reloads);
+  const flagUrl = normalizeFlagUrl(state.flag);
+
+  const handleJump = (id: string) => {
+    setActiveId(id);
+    jumpTo(id);
+  };
 
   // Takes the latest values for the sections in conflict only, and remounts just those.
   const reloadConflicts = async () => {
@@ -383,50 +422,56 @@ export function CountryEditor({ countryId }: { countryId: string }) {
       onConflict={markConflict}
       onSaved={applySaved}
     >
-      <div className={EDITOR_COLUMN}>
-        <PageHeader
-          title={state.name}
-          leading={
-            <UnifiedCountryFlag
-              countryName={state.name}
-              flagUrl={normalizeFlagUrl(state.flag)}
-              size="xl"
-              showTooltip={false}
-              border
-            />
-          }
-          subtitle="Identity, government and size. Each section saves on its own."
-        />
+      <LensSurface>
+        <div className={`${EDITOR_COLUMN} facet-lens-flat`}>
+          <PageHeader
+            title={state.name}
+            bleed
+            className="group/hero"
+            backdrop={flagUrl ? <FlagBanner src={flagUrl} /> : <MonogramBanner />}
+            leading={
+              <UnifiedCountryFlag
+                countryName={state.name}
+                flagUrl={flagUrl}
+                size="xl"
+                showTooltip={false}
+                border
+              />
+            }
+            subtitle="Identity, government and size. Each section saves on its own."
+          />
 
-        {conflicts.length > 0 && (
-          <ConflictSignal conflicts={conflicts} onReload={() => void reloadConflicts()} />
-        )}
+          {conflicts.length > 0 && (
+            <ConflictSignal conflicts={conflicts} onReload={() => void reloadConflicts()} />
+          )}
 
-        <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-          <EditorNav groups={groups} />
-          <div className="flex min-w-0 flex-col gap-6">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                id={group.id}
-                role="group"
-                aria-label={group.label}
-                className="flex scroll-mt-24 flex-col gap-6"
-              >
-                {group.sections.map((s) => (
-                  <Fragment key={s.id}>{s.node}</Fragment>
-                ))}
-              </div>
-            ))}
+          <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
+            <EditorNav groups={groups} activeId={activeId} onSelect={handleJump} />
+            <div className="flex min-w-0 flex-col gap-6">
+              {groups.map((group) => (
+                <div
+                  key={group.id}
+                  id={group.id}
+                  role="group"
+                  aria-label={group.label}
+                  className="flex scroll-mt-24 flex-col gap-6"
+                >
+                  {group.sections.map((s) => (
+                    <Fragment key={s.id}>{s.node}</Fragment>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </LensSurface>
       <BuilderHalo
         label={state.name}
         sections={groups.flatMap((group) =>
           group.sections.map((s) => ({ id: s.id, label: s.label }))
         )}
-        onJump={jumpTo}
+        currentId={activeId}
+        onJump={handleJump}
       />
       <LeaveGuard />
     </EditorProvider>

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { StatsReport } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { SectionTitle } from "./brand";
 
 // ponytail: mirrors DM_MODIFIER_MIN/MAX in lib/exchange/sectors.ts (a server module); the router enforces them
 const MIN = -0.5;
@@ -28,7 +30,7 @@ export function SectorLevers({ realmId }: { realmId: string }) {
   return (
     <Card content="input" padding="lg" className="space-y-3">
       <div>
-        <h2 className="text-headline text-label">Sector levers</h2>
+        <SectionTitle icon={<StatsReport />}>Sector levers</SectionTitle>
         <p className="text-footnote text-label-secondary">
           Steer a sector&apos;s demand in this realm, from {MIN} to {MAX}. 0 is neutral.
         </p>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Wallet } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -10,7 +11,14 @@ import { Label } from "~/components/ui/label";
 import { bondHref, companyHref } from "~/lib/exchange/routes";
 import type { Portfolio } from "~/lib/exchange/terminal";
 import { useRequestId } from "../shared";
-import { Figure, Pill, SectionTitle, formatSovereignFigure } from "./brand";
+import {
+  DATA_ROW_ITEM,
+  DATA_ROW_LINK,
+  Figure,
+  Pill,
+  SectionTitle,
+  formatSovereignFigure,
+} from "./brand";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 
@@ -39,17 +47,20 @@ export function FundHoldings({ portfolio }: { portfolio: Portfolio }) {
   if (rows.length === 0)
     return <p className="text-footnote text-label-secondary">No holdings yet.</p>;
   return (
-    <ul className="text-footnote divide-separator divide-y">
+    <ul className="divide-separator divide-y">
       {rows.map((r) => (
-        <li key={r.key} className="flex justify-between gap-3 py-1.5">
+        <li key={r.key}>
           {r.href ? (
-            <Link href={r.href} className="hover:text-tint truncate">
-              {r.label}
+            <Link href={r.href} data-row className={DATA_ROW_LINK}>
+              <span className="truncate">{r.label}</span>
+              <span className="tabular-nums">{sov(r.value)}</span>
             </Link>
           ) : (
-            <span className="truncate">{r.label}</span>
+            <div data-row className={DATA_ROW_ITEM}>
+              <span className="truncate">{r.label}</span>
+              <span className="tabular-nums">{sov(r.value)}</span>
+            </div>
           )}
-          <span className="tabular-nums">{sov(r.value)}</span>
         </li>
       ))}
     </ul>
@@ -77,20 +88,20 @@ export function TreasuryFund({ countryId }: { countryId: string }) {
   const error = deposit.error?.message ?? withdraw.error?.message;
   return (
     <Card content="input" padding="md" className="space-y-3">
-      <SectionTitle>Wealth fund</SectionTitle>
-      <div className="grid grid-cols-3 gap-3">
-        <div>
+      <SectionTitle icon={<Wallet />}>Wealth fund</SectionTitle>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Card variant="well" padding="sm">
           <p className="text-caption text-label-secondary">Cash</p>
           <Figure value={sov(s?.cash ?? 0)} />
-        </div>
-        <div>
+        </Card>
+        <Card variant="well" padding="sm">
           <p className="text-caption text-label-secondary">Invested at cost</p>
           <Figure value={sov(s?.invested ?? 0)} />
-        </div>
-        <div>
+        </Card>
+        <Card variant="well" padding="sm">
           <p className="text-caption text-label-secondary">Room to add</p>
-          <Figure value={s ? sov(s.room) : "·"} />
-        </div>
+          <Figure value={s ? sov(s.room) : "–"} />
+        </Card>
       </div>
       <p className="text-footnote text-label-secondary">
         The fund may hold at most half of the treasury and fund together, at most 25% of any
@@ -108,6 +119,7 @@ export function TreasuryFund({ countryId }: { countryId: string }) {
           />
         </div>
         <Pill
+          tone="plain"
           disabled={!valid || deposit.isPending}
           onClick={() => deposit.mutate({ countryId, amount, requestId }, done)}
         >

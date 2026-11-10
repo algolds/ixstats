@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { NavArrowLeft } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Checkbox } from "~/components/ui/checkbox";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Input } from "~/components/ui/input";
@@ -84,29 +85,37 @@ export function ImportReview({
     );
   }
   return (
-    <fieldset className="flex flex-col gap-1">
-      <legend className="text-subhead text-label-secondary pb-2">
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-subhead text-label-secondary pb-1">
         Found on {nation.title}. Untick anything you do not want.
       </legend>
-      <ul className="flex flex-col">
-        {fields.map((id) => {
-          const inputId = `founding-import-${id}`;
-          return (
-            <li
-              key={id}
-              className="border-separator flex min-h-11 items-center gap-3 border-b py-2"
-            >
-              <Checkbox id={inputId} checked={keep.has(id)} onCheckedChange={() => onToggle(id)} />
-              <Label htmlFor={inputId} className="text-body flex min-w-0 flex-1 flex-col gap-0.5">
-                <span>{IMPORT_FIELD_LABELS[id]}</span>
-                <span className="text-footnote text-label-secondary font-normal break-words">
-                  {fieldValue(nation, id)}
-                </span>
-              </Label>
-            </li>
-          );
-        })}
-      </ul>
+      <Card variant="well" padding="sm">
+        <ul className="divide-separator flex flex-col divide-y">
+          {fields.map((id) => {
+            const inputId = `founding-import-${id}`;
+            return (
+              <li key={id}>
+                <label
+                  htmlFor={inputId}
+                  className="rounded-row hover:bg-fill-4 flex min-h-11 cursor-pointer items-center gap-3 px-2.5 py-2"
+                >
+                  <Checkbox
+                    id={inputId}
+                    checked={keep.has(id)}
+                    onCheckedChange={() => onToggle(id)}
+                  />
+                  <span className="text-body flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="text-label font-medium">{IMPORT_FIELD_LABELS[id]}</span>
+                    <span className="text-footnote text-label-secondary font-normal break-words">
+                      {fieldValue(nation, id)}
+                    </span>
+                  </span>
+                </label>
+              </li>
+            );
+          })}
+        </ul>
+      </Card>
     </fieldset>
   );
 }

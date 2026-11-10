@@ -60,31 +60,25 @@ export function GlobalBuilderLoading({
     <div
       role="status"
       aria-label={message}
-      className={cn("flex min-h-screen w-full flex-col pt-(--shell-top-offset)", className)}
+      className={cn("mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6", className)}
     >
-      <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8">
-        <Card className="rounded-card flex items-center justify-between gap-3 p-3">
-          <Skeleton className="h-8 w-24" />
-          <div className="hidden gap-2 sm:flex">
-            {Array.from({ length: 5 }, (_, i) => (
-              <Skeleton key={i} className="h-7 w-20 rounded-full" />
-            ))}
-          </div>
-          <Skeleton className="h-8 w-28" />
-        </Card>
-        <Card className="rounded-card space-y-6 p-6 sm:p-8">
-          <Skeleton className="h-6 w-56" />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {Array.from({ length: 4 }, (_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            ))}
-          </div>
-          <LoadingLabel message={message} size="md" />
-        </Card>
+      <div className="flex flex-col">
+        <div className="h-14" />
+        <div className="pt-2 pb-4">
+          <Skeleton className="h-9 w-56" />
+        </div>
       </div>
+      <Skeleton className="rounded-card h-12" />
+      <Card padding="lg" className="flex flex-col gap-4">
+        <Skeleton className="h-7 w-64" />
+        <div className="grid grid-cols-2 gap-2">
+          <Skeleton className="rounded-row h-36" />
+          <Skeleton className="rounded-row h-36" />
+          <Skeleton className="rounded-row h-36" />
+          <Skeleton className="rounded-row h-36" />
+        </div>
+        <LoadingLabel message={message} size="md" />
+      </Card>
     </div>
   );
 }

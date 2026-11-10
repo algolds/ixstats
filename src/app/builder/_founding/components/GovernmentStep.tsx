@@ -31,6 +31,7 @@ import {
   type FoundingDraft,
 } from "../lib/founding-draft";
 import { PolicyPresetPicker } from "~/components/shared/government/PolicyPresetPicker";
+import { cn } from "~/lib/utils/cn";
 import { StepCard } from "./StepCard";
 
 /** "Centralized Power Structure" → "Centralized power structure"; acronyms keep their capitals. */
@@ -137,12 +138,19 @@ export const GovernmentStep = forwardRef<HTMLDivElement, GovernmentStepProps>(
 
         <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-5">
           <CollapsibleTrigger asChild>
-            <Button type="button" variant="ghost" className="group self-start">
-              Customise institutions
-              <NavArrowDown
-                aria-hidden
-                className="ease-out-facet transition-transform duration-150 group-data-[state=open]:rotate-180"
-              />
+            <Button
+              type="button"
+              variant="ghost"
+              className="bg-fill-4/60 hover:bg-fill-4 rounded-row group min-h-11 w-full justify-between px-3"
+            >
+              <span>Customise institutions</span>
+              <span className="text-label-secondary text-footnote flex items-center gap-2 tabular-nums">
+                {chosen.length} chosen{government.components ? " · Customised" : ""}
+                <NavArrowDown
+                  aria-hidden
+                  className="ease-out-facet transition-transform duration-150 group-data-[state=open]:rotate-180"
+                />
+              </span>
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-6">
@@ -214,37 +222,64 @@ export const GovernmentStep = forwardRef<HTMLDivElement, GovernmentStepProps>(
                   Use the {form?.name.toLowerCase() ?? "form"}&apos;s set
                 </Button>
               )}
-              {PICKER_GROUPS.map(({ group, components }) => (
-                <div key={group} className="flex flex-col gap-1">
-                  <h4 className="text-subhead text-label-secondary">{group}</h4>
-                  <ul className="flex flex-col">
-                    {components.map((type) => {
-                      const checked = chosen.includes(type);
-                      const id = `founding-component-${type}`;
-                      return (
-                        <li key={type} className="flex items-start gap-3 py-2">
-                          <Checkbox
-                            id={id}
-                            checked={checked}
-                            disabled={!checked && atCap}
-                            onCheckedChange={() => onToggleComponent(type)}
-                            aria-describedby={`${id}-effect`}
-                            className="mt-1"
+              <div className="flex flex-col gap-2">
+                {PICKER_GROUPS.map(({ group, components }) => {
+                  const groupChosen = components.filter((type) => chosen.includes(type)).length;
+                  return (
+                    <Collapsible key={group} defaultOpen={groupChosen > 0}>
+                      <CollapsibleTrigger className="group/trigger rounded-row hover:bg-fill-4 focus-visible:outline-tint flex min-h-11 w-full items-center justify-between gap-3 px-3 py-2 text-left outline-none focus-visible:outline-2">
+                        <span className="text-headline text-label">{group}</span>
+                        <span className="text-label-secondary text-footnote flex items-center gap-2 tabular-nums">
+                          {groupChosen > 0 ? `${groupChosen} chosen` : "None chosen"}
+                          <NavArrowDown
+                            aria-hidden
+                            className="duration-fast ease-out-facet size-4 transition-transform group-data-[state=open]/trigger:rotate-180"
                           />
-                          <div className="flex min-w-0 flex-col gap-0.5">
-                            <Label htmlFor={id} className="text-body">
-                              {componentName(type)}
-                            </Label>
-                            <p id={`${id}-effect`} className="text-footnote text-label-secondary">
-                              {getComponentEffect(type)}
-                            </p>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              ))}
+                        </span>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <ul className="flex flex-col gap-1 py-1">
+                          {components.map((type) => {
+                            const checked = chosen.includes(type);
+                            const id = `founding-component-${type}`;
+                            return (
+                              <li key={type}>
+                                <label
+                                  htmlFor={id}
+                                  className={cn(
+                                    "rounded-row hover:bg-fill-4 flex min-h-11 cursor-pointer items-start gap-3 px-3 py-2",
+                                    !checked && atCap && "cursor-not-allowed opacity-60"
+                                  )}
+                                >
+                                  <Checkbox
+                                    id={id}
+                                    checked={checked}
+                                    disabled={!checked && atCap}
+                                    onCheckedChange={() => onToggleComponent(type)}
+                                    aria-describedby={`${id}-effect`}
+                                    className="mt-0.5"
+                                  />
+                                  <span className="flex min-w-0 flex-col gap-0.5">
+                                    <span className="text-body text-label">
+                                      {componentName(type)}
+                                    </span>
+                                    <span
+                                      id={`${id}-effect`}
+                                      className="text-footnote text-label-secondary"
+                                    >
+                                      {getComponentEffect(type)}
+                                    </span>
+                                  </span>
+                                </label>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  );
+                })}
+              </div>
             </section>
           </CollapsibleContent>
         </Collapsible>

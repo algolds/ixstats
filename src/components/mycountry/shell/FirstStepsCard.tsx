@@ -69,17 +69,28 @@ export function FirstStepsCard({ countryId }: { countryId: string }) {
   if (!shouldShowFirstSteps(data)) return null;
 
   const doneCount = data.items.filter((item) => item.done).length;
+  const progressPercent =
+    data.items.length > 0 ? Math.round((doneCount / data.items.length) * 100) : 0;
 
   return (
     <Card role="region" aria-labelledby={TITLE_ID} padding="md">
       <CardHeader className="flex-row items-start justify-between gap-3 px-0 pb-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <CardTitle id={TITLE_ID} icon={<TaskList />} role="heading" aria-level={2}>
             First steps
           </CardTitle>
           <CardDescription className="mt-1 tabular-nums">
             {doneCount} of {data.items.length} done
           </CardDescription>
+          <div
+            aria-hidden
+            className="bg-fill-3 mt-2 h-1.5 w-full max-w-xs overflow-hidden rounded-full"
+          >
+            <div
+              className="bg-tint duration-fast ease-out-facet h-full rounded-full transition-[width]"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
         </div>
         <Button
           type="button"

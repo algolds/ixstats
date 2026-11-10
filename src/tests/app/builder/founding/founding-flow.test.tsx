@@ -203,6 +203,21 @@ describe("founding flow", () => {
     expect(mockCreate).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
+  it("renders on Facet Lens surfaces and confirms before starting over", async () => {
+    serve(named("identity"), "step=identity");
+    const { container } = render(<FoundingFlowView />);
+    expect(container.querySelector('[data-slot="page-header-plate"][data-layer="lens"]')).not.toBeNull();
+    expect(container.querySelector('[data-slot="card"][data-variant="lens"]')).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+    const dialog = screen.getByRole("alertdialog");
+    expect(dialog).toHaveTextContent("Start over?");
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Start over" }));
+    });
+    expect(mockClear).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenLastCalledWith("/builder?step=start", { scroll: false });
+  });
 });
 
 function namedDraft(): FoundingDraft {

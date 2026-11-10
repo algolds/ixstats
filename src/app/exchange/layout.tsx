@@ -10,7 +10,7 @@ export default function ExchangeLayout({ children }: { children: ReactNode }) {
   return (
     <div data-app="exchange" className="contents">
       <PortalTintSync />
-      <div className="container mx-auto px-4 py-4 sm:py-6 md:py-8">
+      <div className="container mx-auto max-w-7xl space-y-5 px-4 pt-(--shell-page-top) pb-6 sm:px-6 md:pb-8">
         {/* The router reads ?realm= and friends, which needs a Suspense boundary. */}
         <Suspense fallback={null}>
           <ExchangeRouter />

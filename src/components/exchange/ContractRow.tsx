@@ -7,6 +7,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { Signal } from "~/components/ui/signal";
 import { CompanySelect, StatusBadge, formatSovereigns, parseAmount, sectorLabel } from "./shared";
 
 type Contract = RouterOutputs["exchange"]["listContracts"][number];
@@ -95,6 +96,7 @@ function BidForm({
         </div>
         <Button
           size="sm"
+          variant="secondary"
           disabled={actions.placeBid.isPending || !companyId || Number.isNaN(amount)}
           onClick={() => actions.placeBid.mutate({ contractId: contract.id, companyId, amount })}
         >
@@ -202,6 +204,7 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
                   {isOpen && (
                     <Button
                       size="xs"
+                      variant="secondary"
                       disabled={actions.award.isPending}
                       onClick={() =>
                         actions.award.mutate({ contractId: contract.id, bidId: b.id })
@@ -276,9 +279,9 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
       )}
 
       {status === "DISPUTED" && (
-        <p className="text-footnote text-warning-ink">
-          Disputed: {contract.disputeReason}. An admin will decide; escrow is held until then.
-        </p>
+        <Signal tone="warning" title="Contract disputed">
+          {contract.disputeReason}. An admin will decide; escrow is held until then.
+        </Signal>
       )}
       {contract.resolutionNote && (
         <p className="text-footnote text-label-secondary">Admin note: {contract.resolutionNote}</p>

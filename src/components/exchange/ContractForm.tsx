@@ -43,7 +43,7 @@ export function ContractForm({
   onDone,
 }: ContractFormProps) {
   const notify = useNotify();
-  const [kindState, setKindState] = useState({
+  const [form, setForm] = useState({
     kind: (
       companies.length > 0
         ? "company"
@@ -54,17 +54,27 @@ export function ContractForm({
             : "company"
     ) as IssuerKind,
     fundedBy: "TREASURY" as TenderFunding,
+    companyId: companies[0]?.id ?? "",
+    countryId: nations[0]?.id ?? "",
+    title: "",
+    description: "",
+    sector: "services" as Sector,
+    rawValue: "",
+    rawDays: "7",
   });
-  const [companyId, setCompanyId] = useState(companies[0]?.id ?? "");
-  const [countryId, setCountryId] = useState(nations[0]?.id ?? "");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [sector, setSector] = useState<Sector>("services");
-  const [rawValue, setRawValue] = useState("");
-  const [rawDays, setRawDays] = useState("7");
   const [requestId, rotate] = useRequestId();
 
-  const { kind, fundedBy } = kindState;
+  const {
+    kind,
+    fundedBy,
+    companyId,
+    countryId,
+    title,
+    description,
+    sector,
+    rawValue,
+    rawDays,
+  } = form;
   const value = parseAmount(rawValue);
   const days = parseAmount(rawDays);
   const company = companies.find((c) => c.id === companyId);
@@ -76,9 +86,7 @@ export function ContractForm({
   const handlers = {
     onSuccess: () => {
       notify.success("Contract posted", "Bids are open");
-      setTitle("");
-      setDescription("");
-      setRawValue("");
+      setForm((prev) => ({ ...prev, title: "", description: "", rawValue: "" }));
       rotate();
       onDone();
     },
@@ -138,7 +146,7 @@ export function ContractForm({
         aria-label="Issued by"
         size="sm"
         value={kind}
-        onValueChange={(v) => setKindState({ ...kindState, kind: v as IssuerKind })}
+        onValueChange={(v) => setForm({ ...form, kind: v as IssuerKind })}
         options={issuerOptions}
       />
 
@@ -149,7 +157,7 @@ export function ContractForm({
               id="exchange-contract-company"
               companies={companies}
               value={companyId}
-              onChange={setCompanyId}
+              onChange={(id) => setForm({ ...form, companyId: id })}
             />
           </Field>
         )}
@@ -159,12 +167,16 @@ export function ContractForm({
               id="exchange-contract-nation"
               companies={nations}
               value={countryId}
-              onChange={setCountryId}
+              onChange={(id) => setForm({ ...form, countryId: id })}
             />
           </Field>
         )}
         <Field id="exchange-contract-sector" label="Sector">
-          <SectorSelect id="exchange-contract-sector" value={sector} onChange={setSector} />
+          <SectorSelect
+            id="exchange-contract-sector"
+            value={sector}
+            onChange={(s) => setForm({ ...form, sector: s })}
+          />
         </Field>
       </div>
 
@@ -174,7 +186,7 @@ export function ContractForm({
             aria-label="Tender funding source"
             size="sm"
             value={fundedBy}
-            onValueChange={(v) => setKindState({ ...kindState, fundedBy: v as TenderFunding })}
+            onValueChange={(v) => setForm({ ...form, fundedBy: v as TenderFunding })}
             options={[
               { value: "TREASURY", label: "Nation treasury" },
               { value: "WALLET", label: "Personal wallet" },
@@ -195,7 +207,7 @@ export function ContractForm({
           id="exchange-contract-title"
           value={title}
           maxLength={120}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
           placeholder="Supply 40 tonnes of grain to the capital"
         />
       </Field>
@@ -205,7 +217,7 @@ export function ContractForm({
           value={description}
           maxLength={2000}
           rows={3}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
           placeholder="What counts as delivered, and by when"
         />
       </Field>
@@ -215,7 +227,7 @@ export function ContractForm({
             id="exchange-contract-value"
             inputMode="numeric"
             value={rawValue}
-            onChange={(e) => setRawValue(e.target.value.replace(/[^0-9]/g, ""))}
+            onChange={(e) => setForm({ ...form, rawValue: e.target.value.replace(/[^0-9]/g, "") })}
             placeholder="500"
           />
         </Field>
@@ -224,7 +236,7 @@ export function ContractForm({
             id="exchange-contract-days"
             inputMode="numeric"
             value={rawDays}
-            onChange={(e) => setRawDays(e.target.value.replace(/[^0-9]/g, ""))}
+            onChange={(e) => setForm({ ...form, rawDays: e.target.value.replace(/[^0-9]/g, "") })}
           />
         </Field>
       </div>

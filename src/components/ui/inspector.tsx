@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
-import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils/cn";
 
 const INSPECTOR_QUERY = "(min-width: 1280px)";
@@ -90,8 +90,10 @@ export function Inspector({
       </aside>
       {!wide && (
         <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent>
-            <SheetTitle>{title}</SheetTitle>
+          <SheetContent className="flex flex-col gap-4 overflow-y-auto">
+            <SheetHeader className="text-left">
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
             {children}
           </SheetContent>
         </Sheet>

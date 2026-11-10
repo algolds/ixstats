@@ -34,7 +34,7 @@ import { SUB_INDUSTRIES } from "~/lib/exchange/taxonomy";
 import { cn } from "~/lib/utils";
 import { SheetSection } from "./SheetSection";
 import { STATUS_TEXT } from "./rails/shared";
-import { EXCHANGE_PATHS } from "~/lib/exchange/routes";
+import { EXCHANGE_PATHS, companyHref } from "~/lib/exchange/routes";
 
 const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -94,6 +94,10 @@ const ENTRY_TYPE_LABELS: Record<string, string> = {
   B2G_ESCROW: "Treasury tender escrow",
   B2G_REFUND: "Cancelled tender refund",
   SPEND: "Treasury expenditure",
+  BOND_SALE: "Sovereign bond issue",
+  BOND_COUPON: "Bond coupon payment",
+  BOND_PRINCIPAL: "Bond principal repayment",
+  FUND_RETURN: "Wealth fund transfer",
 };
 
 function entryTypeLabel(type: string): string {
@@ -447,7 +451,12 @@ export function CorporationsTreasuryConsole({
               <Card key={c.id} className="rounded-row space-y-2 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-label text-footnote truncate font-semibold">{c.name}</p>
+                    <Link
+                      href={companyHref(c.id)}
+                      className="text-label text-footnote hover:text-tint block truncate font-semibold"
+                    >
+                      {c.name}
+                    </Link>
                     <p className="text-label-secondary text-footnote">
                       {subIndustryLabelOf(c.subIndustryKey, c.sectorKey)}
                     </p>

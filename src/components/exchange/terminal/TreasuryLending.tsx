@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { StatsReport } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
@@ -27,7 +28,7 @@ export function TreasuryLending({
     Number.isFinite(s) && s >= -0.02 && s <= 0.1 && Number.isFinite(c) && c >= 0 && c <= 250_000;
   return (
     <Card content="input" padding="md" className="space-y-3">
-      <SectionTitle>Lending terms</SectionTitle>
+      <SectionTitle icon={<StatsReport />}>Lending terms</SectionTitle>
       <p className="text-footnote text-label-secondary">
         Every company based in your nation borrows on these terms, your own included: your interest
         rate plus its rating spread, plus the extra spread below.
@@ -56,6 +57,7 @@ export function TreasuryLending({
       </div>
       {save.error && <p className="text-footnote text-destructive">{save.error.message}</p>}
       <Pill
+        tone="plain"
         disabled={!valid || save.isPending}
         onClick={() =>
           save.mutate(

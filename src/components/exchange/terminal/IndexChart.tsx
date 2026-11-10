@@ -20,13 +20,42 @@ export function pointsIn(series: readonly SeriesPoint[], range: Range): SeriesPo
   return series.filter((p) => last - p.t <= RANGE_MS[range]);
 }
 
+/** A custom Facet overlay tooltip for Recharts so dark/light themes and glass elevation hold. */
+function ChartTooltip({
+  active,
+  payload,
+  label,
+  valuePrefix = "",
+}: {
+  active?: boolean;
+  payload?: ReadonlyArray<{ value?: number }>;
+  label?: number | string;
+  valuePrefix?: string;
+}) {
+  const point = payload?.[0]?.value;
+  if (!active || typeof point !== "number") return null;
+  const timeLabel =
+    typeof label === "number" ? new Date(label).toLocaleString() : String(label ?? "");
+  return (
+    <div className="facet-overlay rounded-control px-3 py-2 text-footnote tabular-nums">
+      <p className="text-caption text-label-secondary">{timeLabel}</p>
+      <p className="text-callout text-label font-semibold">
+        {valuePrefix}
+        {point.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      </p>
+    </div>
+  );
+}
+
 /** A line in the Exchange tint, with no grid: the price or index over time. */
 export function IndexChart({
   series,
   height = 180,
+  valuePrefix = "",
 }: {
   series: readonly SeriesPoint[];
   height?: number;
+  valuePrefix?: string;
 }) {
   if (series.length < 2) {
     return (
@@ -41,19 +70,15 @@ export function IndexChart({
         <LineChart data={series} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
           <XAxis dataKey="t" hide />
           <YAxis domain={["auto", "auto"]} hide />
-          <Tooltip
-            labelFormatter={(t) => (typeof t === "number" ? new Date(t).toLocaleString() : t)}
-            formatter={(v) => [
-              typeof v === "number" ? v.toLocaleString("en-US", { maximumFractionDigits: 2 }) : v,
-              "Value",
-            ]}
-          />
+          <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} />} />
           <Line
             type="monotone"
             dataKey="value"
             stroke="var(--tint)"
             strokeWidth={2.5}
             dot={false}
+            activeDot={{ r: 4, fill: "var(--tint)", strokeWidth: 0 }}
+            isAnimationActive={false}
           />
         </LineChart>
       </ResponsiveContainer>

@@ -26,7 +26,7 @@ export interface BuilderHaloProps {
 function BuilderHaloLabel({ label }: { label: string }) {
   return (
     <span className="flex max-w-[180px] min-w-0 items-center gap-2 select-none" title={label}>
-      <span className="bg-yellow h-1.5 w-1.5 shrink-0 rounded-full" aria-hidden />
+      <span className="bg-tint h-1.5 w-1.5 shrink-0 rounded-full" aria-hidden />
       <span className="text-label text-caption min-w-0 truncate font-semibold whitespace-nowrap">
         {label}
       </span>
@@ -49,7 +49,7 @@ export function BuilderHalo({ label, sections, currentId = null, onJump }: Build
       priority: 20,
       center: <BuilderHaloLabel label={label} />,
       expandedViews: { sections: JumpToSectionView },
-      accentColor: "var(--color-yellow)",
+      accentColor: "var(--tint)",
       stickyLabel: label,
       context: {
         sections: JSON.parse(sectionsKey) as BuilderHaloSection[],

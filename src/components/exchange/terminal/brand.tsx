@@ -1,14 +1,44 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { Button, type ButtonProps } from "~/components/ui/button";
 import { CardTitle } from "~/components/ui/card";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { cn } from "~/lib/utils";
 
 /**
- * The Exchange brand (docs/systems/exchange-brand-guide.md): the wordmark, figures, change labels and pills. Built on
- * the Facet primitives; the Exchange tint comes from its `data-app="exchange"` scope.
+ * The Exchange brand (docs/systems/exchange-brand-guide.md): the wordmark, icon wells, figures, change labels and pills.
+ * Built on the Facet primitives; the Exchange tint comes from its `data-app="exchange"` scope.
  */
+
+const WELL_SIZES = {
+  sm: "size-7 [&_svg]:size-3.5 text-caption font-bold",
+  md: "size-9 [&_svg]:size-4 text-footnote font-bold",
+  lg: "size-12 [&_svg]:size-6 text-title-3 font-bold",
+} as const;
+
+/** A tinted decorative icon or ticker tile on the Exchange tint fill with a subtle dots texture (matches Vault's IconWell). */
+export function ExchangeIconWell({
+  className,
+  children,
+  size = "sm",
+  ...props
+}: ComponentProps<"span"> & { size?: keyof typeof WELL_SIZES }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "bg-tint-fill text-tint rounded-row relative flex shrink-0 items-center justify-center overflow-hidden tabular-nums select-none",
+        WELL_SIZES[size],
+        className
+      )}
+      {...props}
+    >
+      <TextureOverlay texture="dots" className="[--facet-texture-color:var(--tint)]" />
+      <span className="relative flex items-center justify-center">{children}</span>
+    </span>
+  );
+}
 
 export function ExchangeWordmark({ className }: { className?: string }) {
   return (
@@ -118,3 +148,44 @@ export function ageLabel(date: Date | string, nowMs: number = Date.now()): strin
   if (minutes < 60 * 24) return `${Math.floor(minutes / 60)}h`;
   return `${Math.floor(minutes / (60 * 24))}d`;
 }
+
+const PROPOSAL_TYPE_LABELS: Record<string, string> = {
+  ISSUE_SHARES: "Issue new shares",
+  DISSOLVE: "Dissolve company",
+  ACQUIRE_OFFER: "Acquisition buyout",
+};
+
+export function proposalTypeLabel(type: string): string {
+  return PROPOSAL_TYPE_LABELS[type] ?? type.replace(/_/g, " ").toLowerCase();
+}
+
+const DECISION_TYPE_LABELS: Record<string, string> = {
+  EXPAND: "Plant expansion",
+  ENTER_SECTOR: "Sector pivot",
+  RND: "Research & development",
+  LOBBY: "Policy lobbying",
+  PRICE: "Pricing update",
+  ACQUIRE: "Acquisition offer",
+};
+
+export function decisionTypeLabel(type: string): string {
+  return DECISION_TYPE_LABELS[type] ?? type.replace(/_/g, " ").toLowerCase();
+}
+
+const BOND_STATUS_LABELS: Record<string, string> = {
+  OPEN: "Open",
+  MATURED: "Matured",
+  DEFAULTED: "Defaulted",
+};
+
+export function bondStatusLabel(status: string): string {
+  return BOND_STATUS_LABELS[status] ?? status.toLowerCase();
+}
+
+/** Interactive row link classes for data lists (36px desktop, 44px coarse pointer, fill-4 hover, fill-3 active). */
+export const DATA_ROW_LINK =
+  "text-callout hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint rounded-control -mx-2 flex min-h-9 items-center justify-between gap-3 px-2 py-1.5 transition-colors duration-fast ease-out-facet focus-visible:outline-2 pointer-coarse:min-h-11";
+
+/** Static or composite row classes inside a data list. */
+export const DATA_ROW_ITEM =
+  "text-callout flex min-h-9 items-center justify-between gap-3 py-1.5 pointer-coarse:min-h-11";

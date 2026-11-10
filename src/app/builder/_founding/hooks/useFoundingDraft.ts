@@ -123,6 +123,18 @@ export function useFoundingDraft() {
     }
   }, [clearDraft]);
 
+  /** Clears the draft and starts fresh without locking out subsequent edits. */
+  const reset = useCallback(async () => {
+    setEdited(emptyFoundingDraft());
+    setStatus("idle");
+    clearLocalDraft();
+    try {
+      await clearDraft();
+    } catch {
+      // The next edit overwrites it.
+    }
+  }, [clearDraft]);
+
   return {
     draft,
     /** True when the flow resumed a draft saved earlier. */
@@ -131,5 +143,6 @@ export function useFoundingDraft() {
     update,
     retry,
     discard,
+    reset,
   };
 }

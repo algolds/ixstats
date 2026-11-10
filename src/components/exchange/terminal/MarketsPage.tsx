@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData } from "@tanstack/react-query";
+import { Building, Coins, StatsReport } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -17,7 +19,7 @@ import {
   type MarketKind,
 } from "~/lib/exchange/routes";
 import type { MarketRow } from "~/lib/exchange/terminal";
-import { ChangeLabel, Figure, formatSovereignFigure } from "./brand";
+import { ChangeLabel, ExchangeIconWell, Figure, formatSovereignFigure } from "./brand";
 import { TradeButton } from "./TradeSheet";
 import { SectorLevers } from "./SectorLevers";
 import { useRealmOverview, useTreasuryActor } from "./useTreasuryActor";
@@ -26,6 +28,11 @@ const KIND_LABELS: Record<MarketKind, string> = {
   companies: "Companies",
   bonds: "Bonds",
   funds: "Funds",
+};
+const KIND_ICONS: Record<MarketKind, React.ReactNode> = {
+  companies: <Building />,
+  bonds: <Coins />,
+  funds: <StatsReport />,
 };
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
@@ -64,41 +71,66 @@ function MarketRowItem({
   treasury?: { countryId: string; name: string };
 }) {
   const href = hrefOf(row);
+  const wellContent =
+    row.kind === "companies" ? (
+      <Building />
+    ) : row.kind === "bonds" ? (
+      <Coins />
+    ) : (
+      <StatsReport />
+    );
   const name = (
-    <span className="min-w-0">
-      <span className="text-body text-label block truncate font-semibold">
-        {row.kind === "companies" && (
-          <span className="text-tint mr-2 tabular-nums">{row.ticker}</span>
-        )}
-        {row.name}
+    <span className="flex min-w-0 items-center gap-3">
+      <ExchangeIconWell size="md">{wellContent}</ExchangeIconWell>
+      <span className="min-w-0">
+        <span className="text-body text-label block truncate font-semibold">
+          {row.kind === "companies" && (
+            <span className="text-tint mr-2 tabular-nums">{row.ticker}</span>
+          )}
+          {row.name}
+        </span>
+        <span className="text-footnote text-label-secondary block truncate">{row.subtitle}</span>
       </span>
-      <span className="text-footnote text-label-secondary block truncate">{row.subtitle}</span>
     </span>
   );
   return (
-    <li className="flex items-center gap-3 py-3">
+    <li>
       {href ? (
-        <Link href={href} className="hover:text-tint min-w-0 flex-1">
-          {name}
+        <Link
+          href={href}
+          data-row
+          className="hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint rounded-control duration-fast ease-out-facet -mx-2 flex items-center gap-3 px-2 py-2.5 transition-colors focus-visible:outline-2 pointer-coarse:min-h-11"
+        >
+          <span className="min-w-0 flex-1">{name}</span>
+          <span className="flex flex-col items-end">
+            <Figure value={`₷${formatSovereignFigure(row.price)}`} />
+            <RowDetail row={row} />
+          </span>
         </Link>
       ) : (
-        <div className="min-w-0 flex-1">{name}</div>
-      )}
-      <div className="flex flex-col items-end">
-        <Figure value={`₷${formatSovereignFigure(row.price)}`} />
-        <RowDetail row={row} />
-      </div>
-      {row.kind === "funds" && (
-        <TradeButton
-          treasury={treasury}
-          instrument={{
-            kind: "fund",
-            sectorKey: row.sectorKey,
-            realmId,
-            name: row.name,
-            price: row.price,
-          }}
-        />
+        <div
+          data-row
+          className="flex items-center gap-3 py-2.5 pointer-coarse:min-h-11"
+        >
+          <div className="min-w-0 flex-1">{name}</div>
+          <div className="flex flex-col items-end">
+            <Figure value={`₷${formatSovereignFigure(row.price)}`} />
+            <RowDetail row={row} />
+          </div>
+          {row.kind === "funds" && (
+            <TradeButton
+              tone="plain"
+              treasury={treasury}
+              instrument={{
+                kind: "fund",
+                sectorKey: row.sectorKey,
+                realmId,
+                name: row.name,
+                price: row.price,
+              }}
+            />
+          )}
+        </div>
       )}
     </li>
   );
@@ -133,16 +165,20 @@ export function MarketsPage({ realmId }: { realmId: string }) {
   return (
     <div className="space-y-4">
       <Card content="data" padding="lg" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
           <SegmentedControl
             size="sm"
             aria-label="Instruments"
             value={kind}
             onValueChange={(k) => update("kind", k)}
-            options={MARKET_KINDS.map((k) => ({ value: k, label: KIND_LABELS[k] }))}
+            options={MARKET_KINDS.map((k) => ({
+              value: k,
+              label: KIND_LABELS[k],
+              icon: KIND_ICONS[k],
+            }))}
           />
           <SearchField
-            className="w-full sm:w-64"
+            className="w-full sm:w-72"
             placeholder={`Search ${KIND_LABELS[kind].toLowerCase()}`}
             value={draft}
             autoFocus={params.get("focus") === "search"}
@@ -152,7 +188,21 @@ export function MarketsPage({ realmId }: { realmId: string }) {
         {markets.isLoading ? (
           <Skeleton className="h-48 w-full" />
         ) : (markets.data ?? []).length === 0 ? (
-          <p className="text-footnote text-label-secondary">Nothing listed here yet.</p>
+          <div className="flex items-center justify-between gap-3 py-4">
+            <p className="text-footnote text-label-secondary">Nothing listed here yet.</p>
+            {(draft || query) && (
+              <Button
+                size="xs"
+                variant="ghost"
+                onClick={() => {
+                  setDraft("");
+                  update("q", "");
+                }}
+              >
+                Clear search
+              </Button>
+            )}
+          </div>
         ) : (
           <ul className="divide-separator divide-y">
             {(markets.data ?? []).map((row) => (

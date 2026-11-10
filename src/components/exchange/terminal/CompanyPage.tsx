@@ -2,37 +2,59 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { BookStack, NavArrowDown, NavArrowRight } from "iconoir-react";
+import {
+  Activity,
+  BookStack,
+  Building,
+  CheckSquare,
+  Group,
+  Journal,
+  NavArrowRight,
+  Page,
+  StatsReport,
+} from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { EntityHeader } from "~/components/ui/entity-header";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { nationHref } from "~/lib/exchange/routes";
 import { assetUrl } from "~/lib/base-path";
 import type { CompanyPage as CompanyPageData } from "~/lib/exchange/terminal";
+import { cn } from "~/lib/utils";
 import { CreditRatingBadge, StatusBadge, readCompanyWikiData } from "../shared";
-import { ChangeLabel, Figure, SectionTitle, formatSovereignFigure } from "./brand";
-import { IndexChart } from "./IndexChart";
+import {
+  ChangeLabel,
+  DATA_ROW_ITEM,
+  ExchangeIconWell,
+  Figure,
+  SectionTitle,
+  decisionTypeLabel,
+  formatSovereignFigure,
+  proposalTypeLabel,
+} from "./brand";
+import { IndexChart, RANGES, pointsIn, type Range } from "./IndexChart";
 import { NewsList } from "./NewsList";
 import { TradeButton } from "./TradeSheet";
 import { WatchStar } from "./WatchStar";
 import { useTreasuryActor } from "./useTreasuryActor";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
-const ratio = (n: number | null, digits = 2) => (n === null ? "·" : n.toFixed(digits));
-const share = (n: number | null) => (n === null ? "·" : `${(n * 100).toFixed(2)}%`);
+const ratio = (n: number | null, digits = 2) => (n === null ? "–" : n.toFixed(digits));
+const share = (n: number | null) => (n === null ? "–" : `${(n * 100).toFixed(2)}%`);
 
 function Facts({ rows }: { rows: [string, string][] }) {
   return (
-    <dl className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3">
+    <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       {rows.map(([label, value]) => (
-        <div key={label}>
+        <Card key={label} variant="well" padding="sm">
           <dt className="text-caption text-label-secondary">{label}</dt>
           <dd className="text-body font-semibold tabular-nums">{value}</dd>
-        </div>
+        </Card>
       ))}
     </dl>
   );
@@ -73,13 +95,13 @@ function Governance({ data }: { data: CompanyPageData }) {
   if (data.proposals.length === 0) return null;
   return (
     <Card content="data" padding="md" className="space-y-2">
-      <SectionTitle>Shareholder votes</SectionTitle>
+      <SectionTitle icon={<CheckSquare />}>Shareholder votes</SectionTitle>
       <ul className="divide-separator divide-y">
         {data.proposals.map((p) => (
-          <li key={p.id} className="text-footnote flex flex-wrap items-center gap-2 py-2">
-            <span className="flex-1">{p.type.replace(/_/g, " ").toLowerCase()}</span>
-            <Badge variant="secondary">{p.status.toLowerCase()}</Badge>
-            <span className="text-label-secondary tabular-nums">
+          <li key={p.id} data-row className="text-callout flex flex-wrap items-center gap-2 py-2">
+            <span className="flex-1">{proposalTypeLabel(p.type)}</span>
+            <StatusBadge status={p.status} />
+            <span className="text-footnote text-label-secondary tabular-nums">
               {p.sharesFor} for · {p.sharesAgainst} against
             </span>
             {open.includes(p) && data.viewer.shares > 0 && (
@@ -121,7 +143,11 @@ function Header({ data }: { data: CompanyPageData }) {
             alt=""
             className="rounded-control size-14 object-contain"
           />
-        ) : undefined
+        ) : (
+          <ExchangeIconWell size="lg">
+            <Building />
+          </ExchangeIconWell>
+        )
       }
       name={c.name}
       description={`${c.subIndustryLabel} · ${c.sectorLabel}`}
@@ -177,6 +203,7 @@ function Lore({ data }: { data: CompanyPageData }) {
 export function CompanyPage({ companyId }: { companyId: string }) {
   const { data, isLoading, error } = api.exchange.companyPage.useQuery({ companyId });
   const [advanced, setAdvanced] = useState(false);
+  const [range, setRange] = useState<Range>("1M");
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (!data)
     return (
@@ -192,18 +219,37 @@ export function CompanyPage({ companyId }: { companyId: string }) {
       <Header data={data} />
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <Card content="visualization" padding="lg" className="space-y-2">
-            <Figure size="hero" value={sov(data.price)} />
-            {data.changePct !== null && (
-              <p className="text-footnote">
-                <ChangeLabel pct={data.changePct} />{" "}
-                <span className="text-label-secondary">over a day</span>
-              </p>
-            )}
-            <IndexChart series={data.valueHistory} />
+          <Card content="visualization" className="relative overflow-hidden">
+            <TextureOverlay
+              texture="chevron"
+              opacity={0.025}
+              className="[--facet-texture-color:var(--tint)]"
+            />
+            <div className="relative space-y-4 p-5 md:p-6">
+              <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                <div>
+                  <Figure size="hero" value={sov(data.price)} />
+                  {data.changePct !== null && (
+                    <p className="text-footnote">
+                      <ChangeLabel pct={data.changePct} />{" "}
+                      <span className="text-label-secondary">over a day</span>
+                    </p>
+                  )}
+                </div>
+                <SegmentedControl
+                  size="sm"
+                  aria-label="Price history range"
+                  value={range}
+                  onValueChange={setRange}
+                  options={RANGES.map((r) => ({ value: r, label: r }))}
+                  className="w-full sm:w-auto"
+                />
+              </div>
+              <IndexChart series={pointsIn(data.valueHistory, range)} valuePrefix="₷" />
+            </div>
           </Card>
           <Card content="data" padding="md" className="space-y-3">
-            <SectionTitle>Key figures</SectionTitle>
+            <SectionTitle icon={<StatsReport />}>Key figures</SectionTitle>
             <Facts
               rows={[
                 ["Market cap", sov(m.marketCap)],
@@ -216,7 +262,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
             />
           </Card>
           <Card content="data" padding="md" className="space-y-3">
-            <SectionTitle>Last tick</SectionTitle>
+            <SectionTitle icon={<Activity />}>Last tick</SectionTitle>
             <Facts
               rows={[
                 ["Revenue", sov(c.lastTickRevenue)],
@@ -234,7 +280,13 @@ export function CompanyPage({ companyId }: { companyId: string }) {
               onClick={() => setAdvanced(!advanced)}
               aria-expanded={advanced}
             >
-              {advanced ? <NavArrowDown aria-hidden /> : <NavArrowRight aria-hidden />}
+              <NavArrowRight
+                className={cn(
+                  "transition-transform duration-fast ease-out-facet",
+                  advanced && "rotate-90"
+                )}
+                aria-hidden
+              />
               Advanced: order book
             </Button>
             {advanced && <OrderBook book={data.orderBook} />}
@@ -242,10 +294,10 @@ export function CompanyPage({ companyId }: { companyId: string }) {
         </div>
         <div className="space-y-4">
           <Card content="data" padding="md" className="space-y-2">
-            <SectionTitle>Shareholders</SectionTitle>
-            <ul className="text-footnote divide-separator divide-y">
+            <SectionTitle icon={<Group />}>Shareholders</SectionTitle>
+            <ul className="divide-separator divide-y">
               {data.shareholders.map((s, i) => (
-                <li key={i} className="flex justify-between py-1.5">
+                <li key={i} data-row className={DATA_ROW_ITEM}>
                   <span>{s.label}</span>
                   <span className="tabular-nums">{(s.stake * 100).toFixed(1)}%</span>
                 </li>
@@ -253,30 +305,30 @@ export function CompanyPage({ companyId }: { companyId: string }) {
             </ul>
           </Card>
           <Card content="data" padding="md" className="space-y-2">
-            <SectionTitle>Filings</SectionTitle>
+            <SectionTitle icon={<Page />}>Filings</SectionTitle>
             {data.dividends.length + data.decisions.length === 0 ? (
               <p className="text-footnote text-label-secondary">No filings yet.</p>
             ) : (
-              <ul className="text-footnote divide-separator divide-y">
+              <ul className="divide-separator divide-y">
                 {data.dividends.map((d) => (
-                  <li key={d.id} className="flex justify-between py-1.5">
+                  <li key={d.id} data-row className={DATA_ROW_ITEM}>
                     <span>Dividend</span>
                     <span className="tabular-nums">{sov(d.amount)}</span>
                   </li>
                 ))}
                 {data.decisions.map((d) => (
-                  <li key={d.id} className="flex justify-between py-1.5">
-                    <span>{d.type.toLowerCase()}</span>
-                    <span className="text-label-secondary">
-                      {d.appliedIxTime ? "done" : "pending"}
-                    </span>
+                  <li key={d.id} data-row className={DATA_ROW_ITEM}>
+                    <span>{decisionTypeLabel(d.type)}</span>
+                    <Badge variant={d.appliedIxTime ? "success" : "secondary"}>
+                      {d.appliedIxTime ? "Applied" : "Pending"}
+                    </Badge>
                   </li>
                 ))}
               </ul>
             )}
           </Card>
-          <Card content="feed" padding="md" className="space-y-2">
-            <SectionTitle>News</SectionTitle>
+          <Card padding="md" className="space-y-2">
+            <SectionTitle icon={<Journal />}>News</SectionTitle>
             <NewsList items={data.news} emphasis="compact" empty="No news yet." />
           </Card>
           <Lore data={data} />

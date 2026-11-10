@@ -3,11 +3,18 @@
 import { useState } from "react";
 import { Page } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
 import { Card, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Pill } from "./terminal/brand";
 import { ContractForm } from "./ContractForm";
 import { ContractRow } from "./ContractRow";
 
@@ -38,38 +45,48 @@ export function ContractsCard({
     <Card padding="lg" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CardTitle icon={<Page />}>Contracts</CardTitle>
-        <SegmentedControl
-          aria-label="Contracts"
-          size="sm"
-          value={scope}
-          onValueChange={(v) => setScope(v as Scope)}
-          options={[
-            { value: "open", label: "Open" },
-            { value: "mine", label: "Mine" },
-          ]}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <SegmentedControl
+            aria-label="Contracts"
+            size="sm"
+            value={scope}
+            onValueChange={(v) => setScope(v as Scope)}
+            options={[
+              { value: "open", label: "Open" },
+              { value: "mine", label: "Mine" },
+            ]}
+          />
+          {overview.isOpen && (
+            <Pill onClick={() => setPosting(true)}>Post a contract or tender</Pill>
+          )}
+        </div>
       </div>
 
       {overview.isOpen && (
-        <div className="space-y-3">
-          <Button size="sm" variant="secondary" onClick={() => setPosting((p) => !p)}>
-            {posting ? "Close" : "Post a contract or tender"}
-          </Button>
-          {posting && (
-            <ContractForm
-              realmId={overview.realmId}
-              companies={activeCompanies}
-              nations={realmNations.length > 0 ? realmNations : overview.nations}
-              walletBalance={overview.wallet.sovereigns}
-              canManageRealm={overview.canManageRealm}
-              onDone={() => {
-                setPosting(false);
-                setScope("mine");
-                refresh();
-              }}
-            />
-          )}
-        </div>
+        <Sheet open={posting} onOpenChange={setPosting}>
+          <SheetContent className="overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Post a contract or tender</SheetTitle>
+              <SheetDescription>
+                Escrow work from a company, nation treasury, or realm faucet for bids.
+              </SheetDescription>
+            </SheetHeader>
+            <div className="p-4">
+              <ContractForm
+                realmId={overview.realmId}
+                companies={activeCompanies}
+                nations={realmNations.length > 0 ? realmNations : overview.nations}
+                walletBalance={overview.wallet.sovereigns}
+                canManageRealm={overview.canManageRealm}
+                onDone={() => {
+                  setPosting(false);
+                  setScope("mine");
+                  refresh();
+                }}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
 
       {contracts.isLoading ? (

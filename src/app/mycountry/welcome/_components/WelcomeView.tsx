@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { WhiteFlag } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, LensSurface } from "~/components/ui/card";
 import { EntityHeader } from "~/components/ui/entity-header";
 import { Skeleton } from "~/components/ui/skeleton";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
-import { MYCOUNTRY_PATH } from "~/lib/mycountry/routes";
+import { MYCOUNTRY_EDITOR_PATH, MYCOUNTRY_PATH } from "~/lib/mycountry/routes";
 import { formatCompactNumber } from "~/lib/utils/format-utils";
 import type { RouterOutputs } from "~/trpc/react";
 
@@ -34,39 +34,46 @@ export const WELCOME_COLUMN = "mx-auto flex w-full max-w-3xl flex-col gap-6 px-4
 export function WelcomeView({ nation }: { nation: WelcomeNation }) {
   const facts = welcomeFacts(nation);
   return (
-    <div className={WELCOME_COLUMN}>
-      <EntityHeader
-        className="pt-(--shell-top-offset)"
-        art={
-          <UnifiedCountryFlag
-            countryName={nation.name}
-            flagUrl={normalizeFlagUrl(nation.flag)}
-            size="xl"
-            showTooltip={false}
-            border
-          />
-        }
-        name={nation.name}
-        facts={facts ? <span className="tabular-nums">{facts}</span> : undefined}
-      />
+    <LensSurface>
+      <div className={`${WELCOME_COLUMN} facet-lens-flat`}>
+        <EntityHeader
+          className="pt-(--shell-top-offset)"
+          art={
+            <UnifiedCountryFlag
+              countryName={nation.name}
+              flagUrl={normalizeFlagUrl(nation.flag)}
+              size="xl"
+              showTooltip={false}
+              border
+            />
+          }
+          name={nation.name}
+          facts={facts ? <span className="tabular-nums">{facts}</span> : undefined}
+        />
 
-      <Card padding="lg">
-        <CardHeader className="px-0 pb-3">
-          <CardTitle icon={<WhiteFlag />} role="heading" aria-level={2}>
-            {nation.name} is founded
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-6 px-0">
-          <p className="text-body text-label-secondary max-w-[70ch]">
-            {nation.name} is now your active nation. Set its budget, taxes and cabinet in MyCountry.
-            You can change its identity and government any time in the editor.
-          </p>
-          <Button asChild size="lg" className="w-full sm:w-auto sm:self-start">
-            <Link href={MYCOUNTRY_PATH}>Open MyCountry</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
+        <Card padding="lg">
+          <CardHeader className="px-0 pb-3">
+            <CardTitle icon={<WhiteFlag />} role="heading" aria-level={2}>
+              {nation.name} is founded
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6 px-0">
+            <p className="text-body text-label-secondary max-w-[70ch]">
+              {nation.name} is now your active nation. Set its budget, taxes and cabinet in
+              MyCountry. You can change its identity and government any time in the editor.
+            </p>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <Link href={MYCOUNTRY_PATH}>Open MyCountry</Link>
+              </Button>
+              <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto">
+                <Link href={MYCOUNTRY_EDITOR_PATH}>Open country editor</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </LensSurface>
   );
 }
 

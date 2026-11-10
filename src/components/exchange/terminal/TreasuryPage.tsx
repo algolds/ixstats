@@ -3,19 +3,30 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
+import { Coins, Crown, Page } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
-import { bondHref, nationHref } from "~/lib/exchange/routes";
-import { useRequestId } from "../shared";
-import { Figure, Pill, SectionTitle, formatSovereignFigure } from "./brand";
+import { Stat } from "~/components/ui/stat";
+import { TextureOverlay } from "~/components/ui/texture-overlay";
+import { EXCHANGE_PATHS, bondHref, nationHref } from "~/lib/exchange/routes";
+import { CreditRatingBadge, useRequestId } from "../shared";
+import {
+  DATA_ROW_LINK,
+  ExchangeIconWell,
+  Figure,
+  Pill,
+  SectionTitle,
+  bondStatusLabel,
+  formatSovereignFigure,
+} from "./brand";
 import { SignInPrompt } from "./SignInPrompt";
 import { TreasuryFund } from "./TreasuryFund";
 import { TreasuryLending } from "./TreasuryLending";
-import { EXCHANGE_PATHS } from "~/lib/exchange/routes";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 const FACE = 100;
@@ -77,7 +88,7 @@ function IssueBondForm({ countryId }: { countryId: string }) {
     );
   return (
     <Card content="input" padding="md" className="space-y-3">
-      <SectionTitle>Issue bonds</SectionTitle>
+      <SectionTitle icon={<Coins />}>Issue bonds</SectionTitle>
       <div className="grid gap-3 sm:grid-cols-3">
         <Field
           id="bond-units"
@@ -126,48 +137,73 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
     return <EmptyState title="Treasury" message="The Treasury is for a nation's owner." />;
   return (
     <div className="space-y-4">
-      <Card content="data" padding="lg" className="space-y-1">
-        <p className="text-footnote text-label-secondary">
-          <Link href={nationHref(nation.id)} className="hover:text-tint">
-            {nation.name}
-          </Link>{" "}
-          treasury
-        </p>
-        <Figure size="hero" value={sov(page.data?.treasury.balance ?? 0)} />
-        <p className="text-footnote text-label-secondary">
-          Cap {sov(page.data?.treasury.cap ?? 0)} · rating {page.data?.rating ?? "·"}
-        </p>
+      <Card content="data" padding="lg" className="relative space-y-4 overflow-hidden">
+        <TextureOverlay
+          texture="chevron"
+          opacity={0.025}
+          className="[--facet-texture-color:var(--tint)]"
+        />
+        <div className="relative flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ExchangeIconWell size="sm">
+                <Crown />
+              </ExchangeIconWell>
+              <p className="text-footnote text-label-secondary font-medium">
+                <Link href={nationHref(nation.id)} className="hover:text-tint transition-colors">
+                  {nation.name}
+                </Link>{" "}
+                treasury
+              </p>
+              {page.data?.rating && <CreditRatingBadge rating={page.data.rating} />}
+            </div>
+            <Figure size="hero" value={sov(page.data?.treasury.balance ?? 0)} />
+            <p className="text-footnote text-label-secondary">
+              Cap {sov(page.data?.treasury.cap ?? 0)} · rating {page.data?.rating ?? "–"}
+            </p>
+          </div>
+          <Button asChild variant="secondary" size="sm">
+            <Link href={EXCHANGE_PATHS.tenders}>Post a tender</Link>
+          </Button>
+        </div>
         {page.data && (
-          <p className="text-footnote text-label-secondary">
-            Earned so far: stipend {sov(page.data.treasury.lifetimeStipend)}, tax{" "}
-            {sov(page.data.treasury.lifetimeTaxEarned)}, tariffs{" "}
-            {sov(page.data.treasury.lifetimeTariffEarned)}, interest{" "}
-            {sov(page.data.treasury.lifetimeInterestEarned)}.{" "}
-            <Link href={EXCHANGE_PATHS.tenders} className="text-tint">
-              Post a tender
-            </Link>
-          </p>
+          <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="bg-surface-secondary rounded-row p-3">
+              <Stat size="sm" label="Stipend earned" value={sov(page.data.treasury.lifetimeStipend)} />
+            </div>
+            <div className="bg-surface-secondary rounded-row p-3">
+              <Stat size="sm" label="Tax collected" value={sov(page.data.treasury.lifetimeTaxEarned)} />
+            </div>
+            <div className="bg-surface-secondary rounded-row p-3">
+              <Stat size="sm" label="Tariffs earned" value={sov(page.data.treasury.lifetimeTariffEarned)} />
+            </div>
+            <div className="bg-surface-secondary rounded-row p-3">
+              <Stat size="sm" label="Interest earned" value={sov(page.data.treasury.lifetimeInterestEarned)} />
+            </div>
+          </div>
         )}
       </Card>
       <TreasuryFund countryId={nation.id} />
       <IssueBondForm countryId={nation.id} />
-      <Card content="data" padding="md" className="space-y-2">
-        <SectionTitle>Your bonds</SectionTitle>
+      <Card content="data" padding="md" className="space-y-2.5">
+        <SectionTitle icon={<Page />}>Your bonds</SectionTitle>
         {(page.data?.bonds ?? []).length === 0 ? (
-          <p className="text-footnote text-label-secondary">No bonds issued yet.</p>
+          <p className="text-footnote text-label-secondary py-2">No bonds issued yet.</p>
         ) : (
-          <ul className="text-footnote divide-separator divide-y">
+          <ul className="divide-separator divide-y">
             {page.data!.bonds.map((b) => (
               <li key={b.bondId}>
-                <Link
-                  href={bondHref(b.bondId)}
-                  className="hover:text-tint flex justify-between py-1.5"
-                >
-                  <span>
-                    {b.termWeeks}-week · {(b.couponRate * 100).toFixed(2)}% ·{" "}
-                    {b.status.toLowerCase()}
+                <Link href={bondHref(b.bondId)} data-row className={DATA_ROW_LINK}>
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <ExchangeIconWell size="sm">
+                      <Coins />
+                    </ExchangeIconWell>
+                    <span className="truncate font-medium">
+                      {b.termWeeks}-week · {(b.couponRate * 100).toFixed(2)}% ·{" "}
+                      {bondStatusLabel(b.status)}
+                    </span>
                   </span>
-                  <span className="tabular-nums">
+                  <span className="font-semibold tabular-nums">
                     {b.unitsSold} of {b.unitsIssued} sold
                   </span>
                 </Link>

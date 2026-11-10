@@ -130,6 +130,7 @@ export const IdentityStep = forwardRef<HTMLDivElement, IdentityStepProps>(functi
   headingRef
 ) {
   const [nameField, ...restEssentials] = ESSENTIALS;
+  const moreFilled = MORE_DETAIL_FIELD_IDS.filter((id) => identity[id].trim()).length;
   return (
     <StepCard
       ref={headingRef}
@@ -166,12 +167,19 @@ export const IdentityStep = forwardRef<HTMLDivElement, IdentityStepProps>(functi
 
       <Collapsible open={moreOpen} onOpenChange={onMoreOpenChange} className="flex flex-col gap-4">
         <CollapsibleTrigger asChild>
-          <Button type="button" variant="ghost" className="group self-start">
-            More details
-            <NavArrowDown
-              aria-hidden
-              className="ease-out-facet transition-transform duration-150 group-data-[state=open]:rotate-180"
-            />
+          <Button
+            type="button"
+            variant="ghost"
+            className="bg-fill-4/60 hover:bg-fill-4 rounded-row group min-h-11 w-full justify-between px-3"
+          >
+            <span>More details</span>
+            <span className="text-label-secondary text-footnote flex items-center gap-2 tabular-nums">
+              {moreFilled > 0 ? `${moreFilled} filled in` : "Optional"}
+              <NavArrowDown
+                aria-hidden
+                className="ease-out-facet transition-transform duration-150 group-data-[state=open]:rotate-180"
+              />
+            </span>
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="flex flex-col gap-5">
@@ -185,7 +193,16 @@ export const IdentityStep = forwardRef<HTMLDivElement, IdentityStepProps>(functi
                 field={field}
                 value={identity[field.id]}
                 error={errors[field.id]}
-                onChange={(value) => onChange(field.id, value)}
+                onChange={(value) =>
+                  onChange(
+                    field.id,
+                    field.id === "isoCode"
+                      ? value.toUpperCase()
+                      : field.id === "internetTLD"
+                        ? value.toLowerCase()
+                        : value
+                  )
+                }
               />
             ))}
           </div>

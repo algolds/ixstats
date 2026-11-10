@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Undo } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { PageHeader } from "~/components/shell/PageHeader";
+import { BACKDROP_PLATE, PageHeader } from "~/components/shell/PageHeader";
+import { FlagBanner, MonogramBanner } from "~/components/mycountry/shell/headers/FlagBanner";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -15,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { Card, LensSurface } from "~/components/ui/card";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { Inspector } from "~/components/ui/inspector";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -24,6 +26,7 @@ import { AuthenticationGuard } from "~/components/mycountry/shared/primitives";
 import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { MYCOUNTRY_WELCOME_PATH } from "~/lib/mycountry/routes";
+import { cn } from "~/lib/utils/cn";
 import { getArchetypeOption } from "./lib/founding-archetypes";
 import {
   EMPTY_IDENTITY,
@@ -108,7 +111,7 @@ export function FoundingFlowView() {
     staleTime: 60_000,
     retry: 1,
   });
-  const { draft, resumed, status, update, retry, discard } = useFoundingDraft();
+  const { draft, resumed, status, update, retry, discard, reset } = useFoundingDraft();
   const { summary, stale } = useFoundingPreview(draft);
   const { mutateAsync: createCountry, isPending: founding } =
     api.countries.createCountry.useMutation();
@@ -118,7 +121,7 @@ export function FoundingFlowView() {
   const [nationOpen, setNationOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(() => searchParams.get("import") === "1");
   const [pendingStart, setPendingStart] = useState<{ key: string | null } | null>(null);
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<"found" | "reset" | null>(null);
   const [foundError, setFoundError] = useState<FoundingError | null>(null);
   const headingRef = useRef<HTMLDivElement>(null);
   const shownStep = useRef<FoundingStepId | null>(null);
@@ -270,7 +273,7 @@ export function FoundingFlowView() {
         return;
       case "review":
         setFoundError(null);
-        setConfirmOpen(true);
+        setConfirmDialog("found");
         return;
     }
   };
@@ -290,9 +293,19 @@ export function FoundingFlowView() {
       router.push(MYCOUNTRY_WELCOME_PATH);
       void utils.invalidate();
     } catch (error) {
-      setConfirmOpen(false);
+      setConfirmDialog(null);
       setFoundError(describeFoundingError(error, chooseRealm));
     }
+  };
+
+  const handleResetDraft = async () => {
+    setConfirmDialog(null);
+    setAttempted({});
+    setFoundError(null);
+    setMoreOpen(false);
+    await reset();
+    const firstStep = steps[0] ?? "start";
+    router.replace(stepHref(firstStep), { scroll: false });
   };
 
   const editFromReview = (target: FoundingStepId) => {
@@ -305,7 +318,7 @@ export function FoundingFlowView() {
   if (!draft || !step) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6">
-        <PageHeader title="Found a nation" />
+        <PageHeader title="Found a nation" bleed backdrop={<MonogramBanner />} />
         <FoundingSkeleton />
       </div>
     );
@@ -318,30 +331,54 @@ export function FoundingFlowView() {
     ? (getArchetypeOption(pendingStart.key)?.display.displayName ?? "a blank start")
     : "";
   const nationName = draft.identity.name.trim();
+  const flagUrl = draft.identity.flagUrl.trim() || null;
+  const canReset =
+    resumed || draft.start.applied || Boolean(nationName) || Boolean(draft.imported);
   const primaryLabel =
     step === "review" ? "Found nation" : draft.returnToReview ? "Back to review" : "Continue";
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6">
-      <PageHeader
-        title="Found a nation"
-        subtitle={realmName ? `Founding in ${realmName}` : undefined}
-      />
-      <BuilderHalo
-        label="Found a nation"
-        sections={steps.map((id) => ({ id, label: FOUNDING_STEP_LABELS[id] }))}
-        currentId={step}
-        onJump={(id) => goTo(id as FoundingStepId)}
-      />
-      <FacetMaterial layer="chrome" className="px-3 py-2">
-        <StepIndicator
-          aria-label="Founding steps"
-          steps={steps.map((id) => ({ id, label: FOUNDING_STEP_LABELS[id] }))}
-          current={index}
-          onStepClick={(target) => goTo(steps[target]!)}
-          compactOnPhones
+    <LensSurface>
+      <div className="facet-lens-flat mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6">
+        <PageHeader
+          title="Found a nation"
+          bleed
+          className="group/hero"
+          backdrop={flagUrl ? <FlagBanner src={flagUrl} /> : <MonogramBanner />}
+          subtitle={realmName ? `Founding in ${realmName}` : undefined}
+          actions={({ collapsed }) =>
+            canReset ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "text-label-secondary",
+                  flagUrl && !collapsed && `${BACKDROP_PLATE} rounded-full`
+                )}
+                onClick={() => setConfirmDialog("reset")}
+              >
+                <Undo aria-hidden />
+                <span>Start over</span>
+              </Button>
+            ) : null
+          }
         />
-      </FacetMaterial>
+        <BuilderHalo
+          label="Found a nation"
+          sections={steps.map((id) => ({ id, label: FOUNDING_STEP_LABELS[id] }))}
+          currentId={step}
+          onJump={(id) => goTo(id as FoundingStepId)}
+        />
+        <FacetMaterial layer="chrome" className="rounded-card px-3 py-2">
+          <StepIndicator
+            aria-label="Founding steps"
+            steps={steps.map((id) => ({ id, label: FOUNDING_STEP_LABELS[id] }))}
+            current={index}
+            onStepClick={(target) => goTo(steps[target]!)}
+            compactOnPhones
+          />
+        </FacetMaterial>
 
       {step === "realm" && (
         <RealmStep
@@ -532,7 +569,10 @@ export function FoundingFlowView() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={confirmOpen} onOpenChange={(open) => !founding && setConfirmOpen(open)}>
+      <AlertDialog
+        open={confirmDialog === "found"}
+        onOpenChange={(open) => !founding && !open && setConfirmDialog(null)}
+      >
         <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Found {nationName}?</AlertDialogTitle>
@@ -549,7 +589,32 @@ export function FoundingFlowView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+
+      <AlertDialog
+        open={confirmDialog === "reset"}
+        onOpenChange={(open) => !open && setConfirmDialog(null)}
+      >
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Start over?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This clears your current draft so you can start building from scratch.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep draft</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void handleResetDraft()}
+            >
+              Start over
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      </div>
+    </LensSurface>
   );
 }
 

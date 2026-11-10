@@ -109,4 +109,40 @@ describe("TradeSheet", () => {
     expect(screen.getByText("Sign in to trade")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm" })).toBeNull();
   });
+
+  it("preserves entered amount and side when toggling Trade as", () => {
+    render(
+      <TradeSheet
+        instrument={share}
+        treasury={{ countryId: "x1", name: "Caphiria" }}
+        open
+        onOpenChange={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Sell" }));
+    fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "25" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Caphiria Treasury" }));
+    expect(screen.getByLabelText("Amount")).toHaveValue("25");
+    expect(screen.getByRole("radio", { name: "Sell" })).toBeChecked();
+  });
+
+  it("disables buying when a bond has no primary or secondary units available", () => {
+    render(
+      <TradeSheet
+        instrument={{
+          kind: "bond",
+          bondId: "b1",
+          name: "Urcea 5-week bond",
+          price: 100,
+          faceValue: 100,
+          unitsLeft: 0,
+          cheapestListing: null,
+        }}
+        open
+        onOpenChange={() => undefined}
+      />
+    );
+    expect(screen.getByText("No units available to buy right now")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+  });
 });

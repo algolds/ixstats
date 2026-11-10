@@ -49,18 +49,30 @@ type Run = (side: Side, amount: number, requestId: string, onSuccess: () => void
 interface FormProps {
   unit: { buy: string; sell: string };
   estimate: (side: Side, amount: number) => string;
+  canSubmit?: (side: Side) => boolean;
+  unavailableReason?: (side: Side) => string | null;
   run: Run;
   pending: boolean;
   error: string | null;
 }
 
 /** Side and amount in, one request id per attempt: kept on a retry, replaced after a success. */
-function TradeForm({ unit, estimate, run, pending, error }: FormProps) {
+function TradeForm({
+  unit,
+  estimate,
+  canSubmit,
+  unavailableReason,
+  run,
+  pending,
+  error,
+}: FormProps) {
   const [side, setSide] = useState<Side>("buy");
   const [raw, setRaw] = useState("");
   const [requestId, rotate] = useRequestId();
   const amount = Number(raw);
-  const valid = Number.isFinite(amount) && amount > 0;
+  const allowed = canSubmit ? canSubmit(side) : true;
+  const blockedMessage = unavailableReason?.(side) ?? null;
+  const valid = allowed && Number.isFinite(amount) && amount > 0;
   const submit = () =>
     run(side, amount, requestId, () => {
       rotate();
@@ -84,11 +96,12 @@ function TradeForm({ unit, estimate, run, pending, error }: FormProps) {
           id="trade-amount"
           inputMode="decimal"
           value={raw}
+          disabled={!allowed}
           onChange={(e) => setRaw(e.target.value)}
           placeholder={unit[side]}
         />
-        <p className="text-footnote text-label-secondary">
-          {valid ? estimate(side, amount) : unit[side]}
+        <p className="text-footnote text-label-secondary tabular-nums">
+          {blockedMessage ? blockedMessage : valid ? estimate(side, amount) : unit[side]}
         </p>
       </div>
       {error && <p className="text-footnote text-destructive">{error}</p>}
@@ -182,6 +195,7 @@ function BondTrade({
   const primary = api.exchange.buyBondPrimary.useMutation({ onSuccess: done });
   const take = api.exchange.buyBondListing.useMutation({ onSuccess: done });
   const list = api.exchange.listBondUnits.useMutation({ onSuccess: done });
+  const canBuy = i.unitsLeft > 0 || i.cheapestListing !== null;
   const buyAt = i.unitsLeft > 0 ? i.faceValue : (i.cheapestListing?.pricePerUnit ?? i.price);
   const ownRun: Run = (side, units, requestId, onSuccess) => {
     if (side === "sell") {
@@ -210,6 +224,10 @@ function BondTrade({
   return (
     <TradeForm
       unit={{ buy: "Units to buy", sell: "Units to list for sale" }}
+      canSubmit={(side) => side === "sell" || canBuy}
+      unavailableReason={(side) =>
+        side === "buy" && !canBuy ? "No units available to buy right now" : null
+      }
       estimate={(side, n) =>
         side === "buy"
           ? `${n} units at ₷${formatSovereignFigure(buyAt)}: ₷${formatSovereignFigure(n * buyAt)}`
@@ -318,11 +336,11 @@ export function TradeSheet({
               </div>
             )}
             {instrument.kind === "share" ? (
-              <ShareTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+              <ShareTrade i={instrument} fundCountryId={fundCountryId} />
             ) : instrument.kind === "bond" ? (
-              <BondTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+              <BondTrade i={instrument} fundCountryId={fundCountryId} />
             ) : (
-              <FundTrade key={actor} i={instrument} fundCountryId={fundCountryId} />
+              <FundTrade i={instrument} fundCountryId={fundCountryId} />
             )}
           </>
         )}
@@ -335,16 +353,20 @@ export function TradeSheet({
 export function TradeButton({
   instrument,
   label = "Trade",
+  tone = "tint",
   treasury,
 }: {
   instrument: TradeInstrument;
   label?: string;
+  tone?: "tint" | "plain";
   treasury?: { countryId: string; name: string };
 }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Pill onClick={() => setOpen(true)}>{label}</Pill>
+      <Pill tone={tone} onClick={() => setOpen(true)}>
+        {label}
+      </Pill>
       <TradeSheet instrument={instrument} open={open} onOpenChange={setOpen} treasury={treasury} />
     </>
   );

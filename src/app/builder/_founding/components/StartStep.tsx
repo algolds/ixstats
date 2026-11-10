@@ -6,6 +6,7 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Signal } from "~/components/ui/signal";
 import {
   ARCHETYPE_OPTIONS,
   archetypeFacts,
@@ -52,10 +53,13 @@ export const StartStep = forwardRef<HTMLDivElement, StartStepProps>(function Sta
       description="Each kind sets a starting size, wealth and government. You can change all of them in the next steps."
     >
       {importedTitle && (
-        <p className="text-callout text-label-secondary">
-          Imported from {importedTitle}.{" "}
-          {suggested ? "The closest match is marked Suggested." : "Choose the closest match."}
-        </p>
+        <Signal tone="info" title={`Imported from ${importedTitle}`}>
+          <p>
+            {suggested
+              ? "The closest match is marked Suggested."
+              : "Choose the closest match."}
+          </p>
+        </Signal>
       )}
       <div className="flex flex-col gap-3">
         <SegmentedControl
@@ -74,12 +78,12 @@ export const StartStep = forwardRef<HTMLDivElement, StartStepProps>(function Sta
           className="grid grid-cols-2 gap-2 lg:grid-cols-3"
         >
           {shown.map((option) => (
-            <div key={option.key} className="flex min-w-0 flex-col gap-1">
+            <div key={option.key} className="relative flex min-w-0 flex-col">
               <RadioCard
                 value={option.key}
                 title={option.display.displayName}
                 description={option.display.pitch}
-                className="flex-1"
+                className="flex-1 pb-10"
               >
                 <span className="text-footnote text-label-tertiary mt-1 block">
                   {option.display.inspiration}
@@ -98,8 +102,8 @@ export const StartStep = forwardRef<HTMLDivElement, StartStepProps>(function Sta
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
-                className="self-start"
+                size="xs"
+                className="text-label-secondary hover:text-label z-raised absolute bottom-2 left-3"
                 aria-label={`Details: ${option.display.displayName}`}
                 onClick={() => setDetails(option)}
               >

@@ -1,9 +1,8 @@
 "use client";
 
-import { assetUrl } from "~/lib/base-path";
 import { useState } from "react";
 import Link from "next/link";
-import { BookStack, Building, RefreshDouble, WarningTriangle } from "iconoir-react";
+import { BookStack, Building, RefreshDouble } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
@@ -11,278 +10,35 @@ import { Button } from "~/components/ui/button";
 import { Card, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
+import { Label } from "~/components/ui/label";
+import { Signal } from "~/components/ui/signal";
 import { Stat } from "~/components/ui/stat";
+import { Switch } from "~/components/ui/switch";
+import { assetUrl } from "~/lib/base-path";
+import { companyHref } from "~/lib/exchange/routes";
 import { CompanyControls } from "./CompanyControls";
+import { FoundCompanySheet, WikiLoreBanner } from "./FoundCompanySheet";
+import { Pill } from "./terminal/brand";
 import {
   CreditRatingBadge,
-  Field,
-  SectorSelect,
   StatusBadge,
-  SubIndustrySelect,
   distressHoursLeft,
   formatSovereigns,
   parseAmount,
   readCompanyWikiData,
   sectorLabel,
-  subIndustriesOf,
   subIndustryLabel,
   useRequestId,
-  type CompanyWikiData,
-  type Sector,
-  type SubIndustryKey,
 } from "./shared";
 
 type Overview = RouterOutputs["exchange"]["getOverview"];
 type Company = Overview["companies"][number];
-type WikiPreview = RouterOutputs["exchange"]["previewWikiCompany"];
 
 const LOBBY_LABELS: Record<string, string> = {
   sector: "Sector boost",
   b2g: "Tender boost",
   tax_relief: "Tax relief",
 };
-
-function WikiLoreBanner({
-  wikiData,
-  wikiSlug,
-}: {
-  wikiData: CompanyWikiData | null;
-  wikiSlug?: string | null;
-}) {
-  const slug = wikiData?.wikiSlug ?? wikiSlug ?? null;
-  if (!slug && !wikiData) return null;
-  return (
-    <div className="border-separator bg-fill-4 rounded-control space-y-1.5 border p-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          {wikiData?.logoUrl && (
-            <img
-              src={assetUrl(wikiData.logoUrl) ?? undefined}
-              alt={`${wikiData.pageTitle} logo`}
-              className="border-separator bg-surface-1 size-7 rounded border object-contain p-0.5"
-            />
-          )}
-          <div>
-            {slug && (
-              <Link
-                href={`/wiki/${encodeURIComponent(slug)}`}
-                className="text-caption text-accent inline-flex items-center gap-1 font-medium hover:underline"
-              >
-                <BookStack className="size-3.5" aria-hidden />
-                WikiOS: {slug.replace(/_/g, " ")}
-              </Link>
-            )}
-            {wikiData?.motto && (
-              <p className="text-caption text-label-secondary italic">“{wikiData.motto}”</p>
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {wikiData?.foundedText && (
-            <Badge variant="outline">Founded: {wikiData.foundedText}</Badge>
-          )}
-          {wikiData?.keyPeople && <Badge variant="outline">Leadership: {wikiData.keyPeople}</Badge>}
-          {wikiData?.products && <Badge variant="outline">Products: {wikiData.products}</Badge>}
-        </div>
-      </div>
-      {wikiData?.summary && (
-        <p className="text-caption text-label-secondary line-clamp-2">{wikiData.summary}</p>
-      )}
-    </div>
-  );
-}
-
-function FoundCompanyForm({ overview, onDone }: { overview: Overview; onDone: () => void }) {
-  const notify = useNotify();
-  const utils = api.useUtils();
-  const [form, setForm] = useState({
-    name: "",
-    sector: "services" as Sector,
-    subIndustryKey: "finance_insurance" as SubIndustryKey,
-    hqCountryId: overview.nations.find((n) => n.realmId === overview.realmId)?.id ?? "none",
-    wikiInput: "",
-  });
-  const [wikiPreview, setWikiPreview] = useState<WikiPreview | null>(null);
-  const [fetchingWiki, setFetchingWiki] = useState(false);
-  const [requestId, rotate] = useRequestId();
-  const found = api.exchange.foundCompany.useMutation({
-    onSuccess: ({ company }) => {
-      notify.success("Company chartered", `${company.name} is open for business`);
-      setForm((prev) => ({ ...prev, name: "", wikiInput: "" }));
-      setWikiPreview(null);
-      rotate();
-      onDone();
-    },
-    onError: (e) => notify.error("Could not charter the company", e.message),
-  });
-  const active = overview.companies.filter(
-    (c) => c.status === "ACTIVE" || c.status === "DISTRESSED"
-  ).length;
-  const atCap = active >= overview.companyRules.activeCompanyCap;
-
-  const handleImportWiki = async () => {
-    const title = form.wikiInput.trim() || form.name.trim();
-    if (!title) return;
-    setFetchingWiki(true);
-    try {
-      const preview = await utils.exchange.previewWikiCompany.fetch({
-        wikiTitle: title,
-        realmId: overview.realmId,
-      });
-      setWikiPreview(preview);
-      setForm((prev) => ({
-        ...prev,
-        name: preview.companyName.slice(0, 60),
-        sector: preview.sectorKey as Sector,
-        subIndustryKey: preview.subIndustryKey,
-        hqCountryId: preview.hqCountryId ?? prev.hqCountryId,
-        wikiInput: preview.wikiSlug,
-      }));
-      notify.success(
-        "Imported from WikiOS",
-        `Loaded ${preview.pageTitle} (${subIndustryLabel(preview.subIndustryKey)})`
-      );
-    } catch (err) {
-      notify.error(
-        "Could not import from WikiOS",
-        err instanceof Error ? err.message : "WikiOS article not found"
-      );
-    }
-    // After, not in a finally: the catch never rethrows, and the React Compiler skips finally.
-    setFetchingWiki(false);
-  };
-
-  return (
-    <form
-      className="border-separator space-y-3 border-t pt-4"
-      onSubmit={(e) => {
-        e.preventDefault();
-        found.mutate({
-          name: form.name,
-          sectorKey: form.sector,
-          subIndustryKey: form.subIndustryKey,
-          hqCountryId: form.hqCountryId === "none" ? null : form.hqCountryId,
-          wikiSlug: wikiPreview?.wikiSlug ?? (form.wikiInput.trim() || null),
-          realmId: overview.realmId,
-          requestId,
-        });
-      }}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-footnote text-label font-medium">Charter a company</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="w-52 sm:w-64">
-            <Input
-              aria-label="WikiOS article title or URL"
-              value={form.wikiInput}
-              onChange={(e) => setForm({ ...form, wikiInput: e.target.value })}
-              placeholder="WikiOS page (e.g. Vanguard Aerospace)"
-            />
-          </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="secondary"
-            disabled={fetchingWiki || (!form.wikiInput.trim() && !form.name.trim())}
-            onClick={() => void handleImportWiki()}
-          >
-            <BookStack className="mr-1.5 size-3.5" aria-hidden />
-            {fetchingWiki ? "Importing..." : "Sync from WikiOS"}
-          </Button>
-          {wikiPreview && (
-            <Button
-              type="button"
-              size="xs"
-              variant="ghost"
-              onClick={() => {
-                setWikiPreview(null);
-                setForm((prev) => ({ ...prev, wikiInput: "" }));
-              }}
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {wikiPreview && (
-        <WikiLoreBanner wikiData={wikiPreview.wikiData} wikiSlug={wikiPreview.wikiSlug} />
-      )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field id="exchange-company-name" label="Company name">
-          <Input
-            id="exchange-company-name"
-            value={form.name}
-            maxLength={60}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Northgate Holdings"
-          />
-        </Field>
-        <Field id="exchange-company-sector" label="Sector">
-          <SectorSelect
-            id="exchange-company-sector"
-            value={form.sector}
-            onChange={(sector) =>
-              setForm({
-                ...form,
-                sector,
-                subIndustryKey: (subIndustriesOf(sector)[0]?.key ??
-                  form.subIndustryKey) as SubIndustryKey,
-              })
-            }
-          />
-        </Field>
-        <Field id="exchange-company-subindustry" label="Sub-industry">
-          <SubIndustrySelect
-            id="exchange-company-subindustry"
-            sectorKey={form.sector}
-            value={form.subIndustryKey}
-            onChange={(subIndustryKey) => setForm({ ...form, subIndustryKey })}
-          />
-        </Field>
-        <Field id="exchange-company-hq" label="Domicile nation (optional)">
-          <Select
-            value={form.hqCountryId}
-            onValueChange={(hqCountryId) => setForm({ ...form, hqCountryId })}
-          >
-            <SelectTrigger id="exchange-company-hq" size="sm" aria-label="Domicile nation">
-              <SelectValue placeholder="Unincorporated" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Unincorporated (no domicile)</SelectItem>
-              {overview.realmNations.map((n) => (
-                <SelectItem key={n.id} value={n.id}>
-                  {n.name} ({n.economicTier})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="submit"
-          size="sm"
-          disabled={found.isPending || atCap || form.name.trim().length < 3}
-        >
-          {found.isPending
-            ? "Chartering..."
-            : `Charter for ${formatSovereigns(overview.companyRules.charterFee)}`}
-        </Button>
-        <span className="text-caption text-label-secondary tabular-nums">
-          {active} of {overview.companyRules.activeCompanyCap} active companies
-        </span>
-      </div>
-    </form>
-  );
-}
 
 function CompanyRow({
   company,
@@ -365,12 +121,17 @@ function CompanyRow({
             <img
               src={assetUrl(wikiData.logoUrl) ?? undefined}
               alt={`${company.name} logo`}
-              className="border-separator bg-surface-1 size-8 shrink-0 rounded border object-contain p-0.5"
+              className="border-separator bg-surface-secondary size-8 shrink-0 rounded border object-contain p-0.5"
             />
           )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-body text-label truncate font-medium">{company.name}</p>
+              <Link
+                href={companyHref(company.id)}
+                className="text-body text-label hover:text-tint truncate font-medium"
+              >
+                {company.name}
+              </Link>
               {onSelect && (
                 <Button size="xs" variant="ghost" onClick={() => onSelect(company.id)}>
                   Inspect
@@ -416,7 +177,7 @@ function CompanyRow({
       )}
 
       {operating && rowState.showWikiSync && (
-        <div className="border-separator bg-fill-4 rounded-control flex flex-wrap items-center gap-2 border p-2.5">
+        <Card variant="well" padding="sm" className="flex flex-wrap items-center gap-3">
           <div className="min-w-48 flex-1">
             <Input
               aria-label={`WikiOS page title for ${company.name}`}
@@ -425,14 +186,18 @@ function CompanyRow({
               placeholder="WikiOS article title (e.g. Vanguard Aerospace)"
             />
           </div>
-          <label className="text-caption text-label-secondary flex items-center gap-1.5 select-none">
-            <input
-              type="checkbox"
+          <div className="flex items-center gap-2">
+            <Switch
+              id={`wiki-taxonomy-${company.id}`}
               checked={rowState.applyTaxonomyAndHq}
-              onChange={(e) => setRowState({ ...rowState, applyTaxonomyAndHq: e.target.checked })}
+              onCheckedChange={(checked) =>
+                setRowState({ ...rowState, applyTaxonomyAndHq: checked })
+              }
             />
-            Also update sector &amp; HQ from infobox
-          </label>
+            <Label htmlFor={`wiki-taxonomy-${company.id}`} className="text-caption">
+              Update sector &amp; HQ from infobox
+            </Label>
+          </div>
           <Button
             size="sm"
             variant="secondary"
@@ -448,17 +213,14 @@ function CompanyRow({
             <BookStack className="mr-1.5 size-3.5" aria-hidden />
             {syncWiki.isPending ? "Syncing..." : "Pull WikiOS Data"}
           </Button>
-        </div>
+        </Card>
       )}
 
       {distressed && (
-        <div className="border-separator bg-fill-3 rounded-control flex items-start gap-2 border p-3">
-          <WarningTriangle className="text-warning-ink mt-0.5 size-4 shrink-0" aria-hidden />
-          <p className="text-caption text-warning-ink tabular-nums">
-            Distress alert: {hoursLeft}h remaining before forced liquidation (72h window). Repay
-            your Central Bank credit line or restore capital to cure.
-          </p>
-        </div>
+        <Signal tone="warning" title={`Distress alert: ${hoursLeft}h remaining`}>
+          Repay your Central Bank credit line or restore capital before forced liquidation (72h
+          window).
+        </Signal>
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -468,7 +230,7 @@ function CompanyRow({
         <Stat size="sm" label="Credit drawn" value={formatSovereigns(company.creditDrawn)} />
       </div>
 
-      <div className="border-separator rounded-control bg-fill-4 grid grid-cols-2 gap-2 border p-2.5 sm:grid-cols-4">
+      <Card variant="well" padding="sm" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Revenue</span>
           <span className="text-label font-medium">
@@ -498,7 +260,7 @@ function CompanyRow({
             {formatSovereigns(company.lastTickNetIncome)}
           </span>
         </div>
-      </div>
+      </Card>
 
       {operating && (
         <div className="flex flex-wrap items-end gap-2">
@@ -564,7 +326,7 @@ function CompanyRow({
   );
 }
 
-/** The player's companies and the charter form. */
+/** The player's companies and the charter sheet trigger. */
 export function CompaniesCard({
   overview,
   directoryCompanies = [],
@@ -576,12 +338,18 @@ export function CompaniesCard({
   onSelectCompany?: (companyId: string) => void;
   onChanged: () => void;
 }) {
+  const [chartering, setChartering] = useState(false);
   const myIds = new Set(overview.companies.map((c) => c.id));
   const acquireTargets = directoryCompanies.filter((c) => !myIds.has(c.id));
 
   return (
     <Card padding="lg" className="space-y-4">
-      <CardTitle icon={<Building />}>Companies</CardTitle>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CardTitle icon={<Building />}>Companies</CardTitle>
+        {overview.isOpen && (
+          <Pill onClick={() => setChartering(true)}>Charter a company</Pill>
+        )}
+      </div>
       {overview.companies.length === 0 ? (
         <EmptyState
           compact
@@ -603,7 +371,14 @@ export function CompaniesCard({
           ))}
         </div>
       )}
-      {overview.isOpen && <FoundCompanyForm overview={overview} onDone={onChanged} />}
+      {overview.isOpen && (
+        <FoundCompanySheet
+          open={chartering}
+          onOpenChange={setChartering}
+          overview={overview}
+          onDone={onChanged}
+        />
+      )}
     </Card>
   );
 }

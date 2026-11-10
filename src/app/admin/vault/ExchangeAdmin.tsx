@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Activity, Coins, Settings, WarningTriangle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
@@ -114,7 +115,7 @@ function MarketTickSection() {
         </Button>
       </div>
       {tick.data && (
-        <div className="border-separator bg-fill-4 rounded-control grid grid-cols-2 gap-3 border p-3 sm:grid-cols-4">
+        <Card variant="well" padding="sm" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="text-caption tabular-nums">
             <span className="text-label-secondary block">Stipends minted</span>
             <span className="text-label font-medium">
@@ -133,7 +134,7 @@ function MarketTickSection() {
             <span className="text-label-secondary block">Companies refreshed</span>
             <span className="text-label font-medium">{tick.data.companiesRefreshed}</span>
           </div>
-        </div>
+        </Card>
       )}
     </div>
   );
@@ -240,7 +241,7 @@ function DisputeRow({
   });
   const ready = note.trim().length >= 3 && !resolve.isPending;
   return (
-    <div className="border-separator rounded-control space-y-2 border p-4">
+    <Card variant="well" padding="md" className="space-y-2">
       <p className="text-body text-label font-medium">{dispute.title}</p>
       <p className="text-footnote text-label-secondary tabular-nums">
         Issued by {dispute.issuerCompany?.name ?? "a nation (government tender)"}. Escrow ₷
@@ -271,7 +272,7 @@ function DisputeRow({
           Refund the issuer
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -350,7 +351,7 @@ export function ExchangeAdmin() {
     <div className="space-y-6">
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="text-label text-title-3">Exchange config</CardTitle>
+          <CardTitle icon={<Settings />}>Exchange config</CardTitle>
         </CardHeader>
         <CardContent>
           <ConfigForm />
@@ -358,7 +359,7 @@ export function ExchangeAdmin() {
       </Card>
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="text-label text-title-3">Market tick and sector DM lever</CardTitle>
+          <CardTitle icon={<Activity />}>Market tick and sector DM lever</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <MarketTickSection />
@@ -367,7 +368,7 @@ export function ExchangeAdmin() {
       </Card>
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="text-label text-title-3">Disputed contracts</CardTitle>
+          <CardTitle icon={<WarningTriangle />}>Disputed contracts</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {disputes.isLoading ? (
@@ -383,7 +384,7 @@ export function ExchangeAdmin() {
       </Card>
       <Card className="flex flex-col gap-6 py-6">
         <CardHeader>
-          <CardTitle className="text-label text-title-3">Adjust a Sovereign balance</CardTitle>
+          <CardTitle icon={<Coins />}>Adjust a Sovereign balance</CardTitle>
         </CardHeader>
         <CardContent>
           <AdjustForm />

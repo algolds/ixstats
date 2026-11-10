@@ -3,6 +3,7 @@
 import { forwardRef, type ReactNode } from "react";
 import { CheckCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EntityHeader } from "~/components/ui/entity-header";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Signal } from "~/components/ui/signal";
@@ -98,22 +99,23 @@ export const ReviewStep = forwardRef<HTMLDivElement, ReviewStepProps>(function R
 
   return (
     <div className="flex flex-col gap-4">
-      <EntityHeader
-        headingLevel={2}
-        art={
-          flag ? (
-            <img
-              src={assetUrl(flag) ?? undefined}
-              referrerPolicy="no-referrer"
-              alt={`Flag of ${name}`}
-              className="border-separator rounded-control-sm h-12 w-20 border object-cover"
-            />
-          ) : undefined
-        }
-        name={name}
-        facts={facts}
-        className="px-2"
-      />
+      <Card padding="md">
+        <EntityHeader
+          headingLevel={2}
+          art={
+            flag ? (
+              <img
+                src={assetUrl(flag) ?? undefined}
+                referrerPolicy="no-referrer"
+                alt={`Flag of ${name}`}
+                className="border-separator rounded-control-sm h-12 w-20 border object-cover"
+              />
+            ) : undefined
+          }
+          name={name}
+          facts={facts}
+        />
+      </Card>
       {error && (
         <Signal tone="destructive" title={error.title}>
           <p>{error.body}</p>
@@ -164,7 +166,22 @@ export const ReviewStep = forwardRef<HTMLDivElement, ReviewStepProps>(function R
             onEdit={onEdit}
             rows={[
               { title: "Name", value: orDash(name) },
-              { title: "Flag", value: flag ? "Chosen" : "None yet" },
+              {
+                title: "Flag",
+                value: flag ? (
+                  <span className="inline-flex items-center gap-2">
+                    <img
+                      src={assetUrl(flag) ?? undefined}
+                      referrerPolicy="no-referrer"
+                      alt=""
+                      className="border-separator rounded-control-sm h-4 w-6 border object-cover"
+                    />
+                    <span>Chosen</span>
+                  </span>
+                ) : (
+                  "None yet"
+                ),
+              },
               { title: "Capital city", value: orDash(identity.capitalCity) },
               { title: "Official language", value: orDash(identity.officialLanguages) },
               { title: "Currency", value: orDash(identity.currency) },
