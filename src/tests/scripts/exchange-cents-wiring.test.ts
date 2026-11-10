@@ -33,6 +33,18 @@ describe("the integer-cents migration", () => {
     }
   });
 
+  it.each(["start-development.sh", "scripts/deploy-production.sh"])(
+    "runs in %s before the first db push",
+    (path) => {
+      const script = readFileSync(path, "utf8");
+      const centsAt = script.indexOf(`prisma db execute --schema prisma/schema --file ${CENTS_FILE}`);
+      const pushAt = script.indexOf("bun run db:push:force");
+      expect(centsAt).toBeGreaterThan(-1);
+      expect(pushAt).toBeGreaterThan(-1);
+      expect(centsAt).toBeLessThan(pushAt);
+    }
+  );
+
   it("multiplies by 100 on every retype", () => {
     const retypes = [...sql.matchAll(/ALTER COLUMN "(\w+)" TYPE bigint USING ([^,;]+)/g)];
     expect(retypes.length).toBeGreaterThan(0);

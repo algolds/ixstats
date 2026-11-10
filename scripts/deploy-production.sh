@@ -285,6 +285,9 @@ else
     # Exchange Phase 3 (docs/specs/2026-11-01-exchange-phase-3-design.md): realm-scoped companies, sectors and contracts,
     # nation treasuries, share buy order book and shareholder governance. Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261107120000_exchange_phase3/migration.sql || exit 1
+    # Exchange integer cents (plan 446): every ₷ amount column becomes bigint cents, ×100. BEFORE the push, which would
+    # retype the same columns with a plain cast (every amount 1/100 of its value). Does nothing once converted.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261109120000_exchange_integer_cents/migration.sql || exit 1
 
     # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
     # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
