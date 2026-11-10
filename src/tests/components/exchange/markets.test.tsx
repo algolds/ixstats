@@ -161,6 +161,55 @@ describe("MarketsPage", () => {
   });
 });
 
+describe("search draft", () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it("starts from the address", () => {
+    mockParams = new URLSearchParams("kind=companies&q=steel");
+    mockRows = [];
+    render(<MarketsPage realmId="default" />);
+    expect(screen.getByRole("searchbox")).toHaveValue("steel");
+  });
+
+  it("does not write an old query back after the address changes", () => {
+    mockParams = new URLSearchParams("kind=companies");
+    mockRows = [];
+    const { rerender } = render(<MarketsPage realmId="default" />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "steel" } });
+    act(() => {
+      jest.advanceTimersByTime(250);
+    });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+    expect(mockReplace).toHaveBeenLastCalledWith("/exchange/markets?kind=companies&q=steel", {
+      scroll: false,
+    });
+
+    mockParams = new URLSearchParams("kind=companies");
+    rerender(<MarketsPage realmId="default" />);
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    expect(mockReplace).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the new kind when it changes right after typing", () => {
+    mockParams = new URLSearchParams("kind=companies");
+    mockRows = [];
+    const { rerender } = render(<MarketsPage realmId="default" />);
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "steel" } });
+    mockParams = new URLSearchParams("kind=bonds");
+    rerender(<MarketsPage realmId="default" />);
+    act(() => {
+      jest.advanceTimersByTime(250);
+    });
+    expect(mockReplace).toHaveBeenLastCalledWith("/exchange/markets?kind=bonds&q=steel", {
+      scroll: false,
+    });
+  });
+});
+
 describe("WatchStar", () => {
   it("asks a signed-out visitor to sign in", () => {
     mockSignedIn = false;
