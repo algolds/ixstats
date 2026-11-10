@@ -197,7 +197,7 @@ describe("no self-dealing", () => {
       status: "ACTIVE",
     });
     fake.tables.shareholding = [
-      { id: "sh_x", companyId: "co_x", ownerUserId: "alice", shares: 0, avgCost: 1 },
+      { id: "sh_x", companyId: "co_x", ownerUserId: "alice", shares: 0, avgCost: 100n },
     ];
     fake.tables.shareListing = [
       {
@@ -206,7 +206,7 @@ describe("no self-dealing", () => {
         sellerUserId: "alice",
         shares: 50,
         sharesListed: 50,
-        pricePerShare: 2,
+        pricePerShare: 200n,
         status: "OPEN",
         createdIxTime: 1,
       },

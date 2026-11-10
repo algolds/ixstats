@@ -84,8 +84,8 @@ function setup(withCompany = true) {
       : [],
     shareholding: withCompany
       ? [
-          { id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 700, avgCost: 1 },
-          { id: "sh_b", companyId: "co", ownerUserId: "bob", shares: 300, avgCost: 1 },
+          { id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 700, avgCost: 100n },
+          { id: "sh_b", companyId: "co", ownerUserId: "bob", shares: 300, avgCost: 100n },
         ]
       : [],
     systemConfig: [],
@@ -349,7 +349,7 @@ describe("getLeaderboards", () => {
       companyId: "co_other",
       ownerUserId: "carol",
       shares: 1000,
-      avgCost: 2,
+      avgCost: 200n,
     });
     fake.tables.nationBond = [
       {

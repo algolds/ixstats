@@ -138,7 +138,7 @@ model ShareIssuance {
   id           String   @id @default(cuid())
   companyId    String
   shares       Int
-  pricePerShare Float
+  pricePerShare BigInt
   issuedIxTime Float
   createdAt    DateTime @default(now())
   company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -157,7 +157,7 @@ model ShareListing {
   sellerUserId   String?
   shares         Int
   sharesListed   Int
-  pricePerShare  Float
+  pricePerShare  BigInt
   status         String   @default("OPEN")
   createdIxTime  Float
   idempotencyKey String?  @unique
@@ -177,8 +177,8 @@ model CompanyDividend {
   id               String   @id @default(cuid())
   companyId        String
   declaredByUserId String
-  declared         Float
-  amount           Float
+  declared         BigInt
+  amount           BigInt
   shareCount       Int
   holderCount      Int
   ixTime           Float
@@ -196,7 +196,7 @@ model Shareholding {
   companyId   String
   ownerUserId String
   shares      Int      @default(0)
-  avgCost     Float    @default(0)
+  avgCost     BigInt   @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -433,8 +433,8 @@ model ShareBuyOrder {
   buyerUserId      String
   shares           Int
   sharesOrdered    Int
-  maxPricePerShare Float
-  escrow           Float
+  maxPricePerShare BigInt
+  escrow           BigInt
   status           String   @default("OPEN")
   createdIxTime    Float
   idempotencyKey   String?  @unique

@@ -66,8 +66,8 @@ function setup() {
       },
     ],
     shareholding: [
-      { companyId: "co", ownerUserId: "alice", shares: 333, avgCost: 1 },
-      { companyId: "co", ownerUserId: "bob", shares: 667, avgCost: 1 },
+      { companyId: "co", ownerUserId: "alice", shares: 333, avgCost: 100n },
+      { companyId: "co", ownerUserId: "bob", shares: 667, avgCost: 100n },
     ],
     systemConfig: [],
   });
@@ -207,7 +207,7 @@ describe("an approved acquisition", () => {
 
   it("absorbs the target into the buyer when the buyer's founder holds every share", async () => {
     fake.tables.shareholding = [
-      { companyId: "co", ownerUserId: "carol", shares: 1000, avgCost: 1 },
+      { companyId: "co", ownerUserId: "carol", shares: 1000, avgCost: 100n },
     ];
     await offerAndResolve(10_000);
     expect(row("co")).toMatchObject({ status: "DELISTED", capital: 0n });

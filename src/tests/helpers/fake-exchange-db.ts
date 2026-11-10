@@ -82,7 +82,7 @@ const DEFAULTS: Record<string, () => Row> = {
     closedIxTime: null,
   }),
   contractBid: () => ({ outcome: null, standingDelta: 0 }),
-  shareholding: () => ({ shares: 0, avgCost: 0 }),
+  shareholding: () => ({ shares: 0, avgCost: 0n }),
   shareListing: () => ({ status: "OPEN", sellerUserId: null, idempotencyKey: null }),
   sectorIndex: () => ({
     realmId: "default",
@@ -133,7 +133,7 @@ const DEFAULTS: Record<string, () => Row> = {
     contractId: null,
     movePct: null,
   }),
-  shareBuyOrder: () => ({ status: "OPEN", escrow: 0, idempotencyKey: null }),
+  shareBuyOrder: () => ({ status: "OPEN", escrow: 0n, idempotencyKey: null }),
   companyDecision: () => ({ payload: null, effect: null, appliedIxTime: null }),
   myVault: () => ({
     credits: 0,

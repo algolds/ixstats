@@ -88,13 +88,13 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
   ]);
   // ponytail: listed shares and units drop out of the cost basis while listed; count them if the cap needs to be exact.
   const held = [
-    ...shares.map((s) => s.shares * s.avgCost),
+    ...shares.map((s) => s.shares * fromCents(centsOf(s.avgCost))),
     ...bonds.map((b) => b.units * b.avgCost),
     ...funds.map((f) => f.units * f.avgCost),
   ];
   return round2(
     (wallet ? fromCents(centsOf(wallet.sovereigns)) : 0) +
-      orders.reduce((s, o) => s + o.escrow, 0) +
+      orders.reduce((s, o) => s + fromCents(centsOf(o.escrow)), 0) +
       held.reduce((s, v) => s + v, 0)
   );
 }

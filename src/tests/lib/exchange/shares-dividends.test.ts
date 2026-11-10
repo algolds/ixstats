@@ -87,7 +87,7 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
       companyId: "co",
       ownerUserId,
       shares,
-      avgCost: 1,
+      avgCost: 100n,
     })),
     systemConfig: [],
   });
@@ -412,7 +412,7 @@ describe("bids", () => {
     expect(orders()[0]).toMatchObject({
       shares: 50,
       sharesOrdered: 50,
-      escrow: 200,
+      escrow: 200_00n,
       status: "OPEN",
     });
 
@@ -426,9 +426,9 @@ describe("bids", () => {
     expect(sov("alice")).toBe(5120);
     expect(holding("bob")).toBe(30);
     expect(holding("alice")).toBe(970);
-    expect(orders()[0]).toMatchObject({ shares: 20, escrow: 80, status: "OPEN" });
+    expect(orders()[0]).toMatchObject({ shares: 20, escrow: 80_00n, status: "OPEN" });
     expect(company().lastTradePrice).toBe(4_00n);
-    expect(totalCents() + cents(orders()[0]!.escrow as number)).toBe(before);
+    expect(totalCents() + Number(orders()[0]!.escrow)).toBe(before);
     expect(totalShares()).toBe(1000);
   });
 
@@ -448,7 +448,7 @@ describe("bids", () => {
       refunded: 80,
     });
     expect(sov("bob")).toBe(4880);
-    expect(orders()[0]).toMatchObject({ status: "CANCELLED", shares: 0, escrow: 0 });
+    expect(orders()[0]).toMatchObject({ status: "CANCELLED", shares: 0, escrow: 0n });
     await expect(
       cancelBuyOrder(fake.client, { userId: "bob", orderId: bidId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -687,7 +687,7 @@ describe("lock ordering in matching and buy-order refunds", () => {
         sellerUserId: "carol",
         shares: 10,
         sharesListed: 10,
-        pricePerShare: 2,
+        pricePerShare: 200n,
         status: "OPEN",
         createdIxTime: 1,
       },
@@ -697,7 +697,7 @@ describe("lock ordering in matching and buy-order refunds", () => {
         sellerUserId: "alice",
         shares: 10,
         sharesListed: 10,
-        pricePerShare: 3,
+        pricePerShare: 300n,
         status: "OPEN",
         createdIxTime: 2,
       },
@@ -709,8 +709,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "dave",
         shares: 10,
         sharesOrdered: 10,
-        maxPricePerShare: 4,
-        escrow: 40,
+        maxPricePerShare: 400n,
+        escrow: 40_00n,
         status: "OPEN",
         createdIxTime: 1,
       },
@@ -720,8 +720,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "bob",
         shares: 10,
         sharesOrdered: 10,
-        maxPricePerShare: 3,
-        escrow: 30,
+        maxPricePerShare: 300n,
+        escrow: 30_00n,
         status: "OPEN",
         createdIxTime: 2,
       },
@@ -761,8 +761,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "dave",
         shares: 5,
         sharesOrdered: 5,
-        maxPricePerShare: 2,
-        escrow: 10,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
         status: "OPEN",
         createdIxTime: 1,
       },
@@ -772,8 +772,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "bob",
         shares: 5,
         sharesOrdered: 5,
-        maxPricePerShare: 2,
-        escrow: 10,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
         status: "OPEN",
         createdIxTime: 2,
       },
@@ -783,8 +783,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "carol",
         shares: 5,
         sharesOrdered: 5,
-        maxPricePerShare: 2,
-        escrow: 10,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
         status: "OPEN",
         createdIxTime: 3,
       },
@@ -794,8 +794,8 @@ describe("lock ordering in matching and buy-order refunds", () => {
         buyerUserId: "alice",
         shares: 5,
         sharesOrdered: 5,
-        maxPricePerShare: 2,
-        escrow: 10,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
         status: "OPEN",
         createdIxTime: 4,
       },

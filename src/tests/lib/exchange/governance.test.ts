@@ -51,9 +51,9 @@ function setup() {
       },
     ],
     shareholding: [
-      { companyId: "co", ownerUserId: "alice", shares: 400, avgCost: 1 },
-      { companyId: "co", ownerUserId: "bob", shares: 350, avgCost: 1 },
-      { companyId: "co", ownerUserId: "carol", shares: 250, avgCost: 1 },
+      { companyId: "co", ownerUserId: "alice", shares: 400, avgCost: 100n },
+      { companyId: "co", ownerUserId: "bob", shares: 350, avgCost: 100n },
+      { companyId: "co", ownerUserId: "carol", shares: 250, avgCost: 100n },
     ],
     systemConfig: [],
   });
@@ -64,7 +64,7 @@ const sov = (userId: string) =>
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const proposals = () => fake.tables.companyProposal ?? [];
 const soleOwner = () => {
-  fake.tables.shareholding = [{ companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 1 }];
+  fake.tables.shareholding = [{ companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 100n }];
 };
 
 beforeEach(setup);
@@ -240,7 +240,7 @@ describe("voting", () => {
       companyId: "co",
       ownerUserId: "dave",
       shares: 200,
-      avgCost: 1,
+      avgCost: 100n,
     });
 
     const { proposal } = await castVote(fake.client, {
@@ -278,9 +278,9 @@ describe("expiry", () => {
 
   it("(b) a founder with 5% and an outside holder with >= 10% calling dissolveCompany or issueShares -> CONFLICT, while a sole founder succeeds directly", async () => {
     fake.tables.shareholding = [
-      { companyId: "co", ownerUserId: "alice", shares: 50, avgCost: 1 },
-      { companyId: "co", ownerUserId: "bob", shares: 100, avgCost: 1 },
-      { companyId: "co", ownerUserId: "carol", shares: 850, avgCost: 1 },
+      { companyId: "co", ownerUserId: "alice", shares: 50, avgCost: 100n },
+      { companyId: "co", ownerUserId: "bob", shares: 100, avgCost: 100n },
+      { companyId: "co", ownerUserId: "carol", shares: 850, avgCost: 100n },
     ];
     await expect(
       dissolveCompany(fake.client, { userId: "alice", companyId: "co" })

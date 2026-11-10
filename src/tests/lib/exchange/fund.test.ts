@@ -81,8 +81,8 @@ function setup(balance = 10_000) {
     ],
     company: [company("co1", "alice"), company("co2", "bob")],
     shareholding: [
-      { id: "sh1", companyId: "co1", ownerUserId: "alice", shares: 1000, avgCost: 1 },
-      { id: "sh2", companyId: "co2", ownerUserId: "bob", shares: 1000, avgCost: 1 },
+      { id: "sh1", companyId: "co1", ownerUserId: "alice", shares: 1000, avgCost: 100n },
+      { id: "sh2", companyId: "co2", ownerUserId: "bob", shares: 1000, avgCost: 100n },
     ],
     nationBond: [
       {
@@ -302,7 +302,7 @@ describe("what the fund may buy", () => {
       companyId: "co2",
       ownerUserId: "alice",
       shares: 20,
-      avgCost: 1,
+      avgCost: 100n,
     });
     const aliceAsk = await listShares(fake.client, {
       userId: "alice",

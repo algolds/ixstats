@@ -440,7 +440,7 @@ async function companyFilings(db: Db, companyId: string) {
     dividends: [...dividends]
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, 20)
-      .map((d) => ({ id: d.id, amount: d.amount, createdAt: d.createdAt })),
+      .map((d) => ({ id: d.id, amount: fromCents(centsOf(d.amount)), createdAt: d.createdAt })),
     decisions: [...decisions]
       .sort((a, b) => b.submittedIxTime - a.submittedIxTime)
       .slice(0, 20)
@@ -840,7 +840,17 @@ async function openOrdersOf(db: Db, userId: string) {
       select: { id: true, bondId: true, units: true, pricePerUnit: true },
     }),
   ]);
-  return { buyOrders, shareListings, bondListings };
+  return {
+    buyOrders: buyOrders.map((o) => ({
+      ...o,
+      maxPricePerShare: fromCents(centsOf(o.maxPricePerShare)),
+    })),
+    shareListings: shareListings.map((l) => ({
+      ...l,
+      pricePerShare: fromCents(centsOf(l.pricePerShare)),
+    })),
+    bondListings,
+  };
 }
 
 export async function getPortfolio(

@@ -84,4 +84,24 @@ ALTER TABLE "exchange_companies"
 ALTER TABLE "exchange_company_value_history"
   ALTER COLUMN "fairValue" TYPE bigint USING round("fairValue" * 100)::bigint;
 
+-- Phase B Group 3: ShareIssuance, ShareListing, CompanyDividend, Shareholding, ShareBuyOrder
+ALTER TABLE "exchange_share_issuances"
+  ALTER COLUMN "pricePerShare" TYPE bigint USING round("pricePerShare" * 100)::bigint;
+
+ALTER TABLE "exchange_share_listings"
+  ALTER COLUMN "pricePerShare" TYPE bigint USING round("pricePerShare" * 100)::bigint;
+
+ALTER TABLE "exchange_company_dividends"
+  ALTER COLUMN "declared" TYPE bigint USING round("declared" * 100)::bigint,
+  ALTER COLUMN "amount" TYPE bigint USING round("amount" * 100)::bigint;
+
+ALTER TABLE "exchange_shareholdings"
+  ALTER COLUMN "avgCost" DROP DEFAULT,
+  ALTER COLUMN "avgCost" TYPE bigint USING round("avgCost" * 100)::bigint,
+  ALTER COLUMN "avgCost" SET DEFAULT 0;
+
+ALTER TABLE "exchange_share_buy_orders"
+  ALTER COLUMN "maxPricePerShare" TYPE bigint USING round("maxPricePerShare" * 100)::bigint,
+  ALTER COLUMN "escrow" TYPE bigint USING round("escrow" * 100)::bigint;
+
 COMMIT;

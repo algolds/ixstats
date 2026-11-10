@@ -288,7 +288,7 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
       }
 
       const now = Date.now();
-      const pricePerShare = fromCents(Math.round(toCents(cfg.charterFee) / FOUNDER_SHARES));
+      const pricePerShareCents = dbCents(Math.round(toCents(cfg.charterFee) / FOUNDER_SHARES));
       const company = await tx.company.create({
         data: {
           founderId: input.userId,
@@ -305,14 +305,19 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         },
       });
       await tx.shareIssuance.create({
-        data: { companyId: company.id, shares: FOUNDER_SHARES, pricePerShare, issuedIxTime: now },
+        data: {
+          companyId: company.id,
+          shares: FOUNDER_SHARES,
+          pricePerShare: pricePerShareCents,
+          issuedIxTime: now,
+        },
       });
       await tx.shareholding.create({
         data: {
           companyId: company.id,
           ownerUserId: input.userId,
           shares: FOUNDER_SHARES,
-          avgCost: pricePerShare,
+          avgCost: pricePerShareCents,
         },
       });
       await refreshFairValue(tx, company.id);

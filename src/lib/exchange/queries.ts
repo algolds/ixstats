@@ -146,8 +146,8 @@ export async function listMyBuyOrders(db: Db, userId: string, realmId: string) {
     sectorKey: o.company.sectorKey,
     shares: o.shares,
     sharesOrdered: o.sharesOrdered,
-    maxPricePerShare: o.maxPricePerShare,
-    escrow: o.escrow,
+    maxPricePerShare: fromCents(centsOf(o.maxPricePerShare)),
+    escrow: fromCents(centsOf(o.escrow)),
     createdAt: o.createdAt,
   }));
 }
@@ -194,7 +194,7 @@ export async function listMyHoldings(db: Db, userId: string, realmId: string) {
         founded: c.founderId === userId,
         shares: h.shares,
         listed,
-        avgCost: h.avgCost,
+        avgCost: fromCents(centsOf(h.avgCost)),
         stake: c.sharesOutstanding > 0 ? owned / c.sharesOutstanding : 0,
         fairValue:
           c.sharesOutstanding > 0 ? round2((fairValue * owned) / c.sharesOutstanding) : 0,
@@ -235,7 +235,7 @@ export async function listShareMarket(db: Db, userId: string, realmId: string = 
     mine: l.sellerUserId === userId || (l.sellerUserId === null && l.company.founderId === userId),
     shares: l.shares,
     sharesListed: l.sharesListed,
-    pricePerShare: l.pricePerShare,
+    pricePerShare: fromCents(centsOf(l.pricePerShare)),
     fairPricePerShare:
       l.company.sharesOutstanding > 0
         ? round2(fromCents(centsOf(l.company.fairValue)) / l.company.sharesOutstanding)

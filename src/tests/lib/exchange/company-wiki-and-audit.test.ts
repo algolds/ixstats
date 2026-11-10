@@ -249,8 +249,8 @@ describe("Exchange financial & state invariants", () => {
         },
       ],
       shareholding: [
-        { id: "sh_alice", companyId: "co1", ownerUserId: "alice", shares: 500, avgCost: 10 },
-        { id: "sh_bob", companyId: "co1", ownerUserId: "bob", shares: 500, avgCost: 10 },
+        { id: "sh_alice", companyId: "co1", ownerUserId: "alice", shares: 500, avgCost: 10_00n },
+        { id: "sh_bob", companyId: "co1", ownerUserId: "bob", shares: 500, avgCost: 10_00n },
       ],
     });
 
@@ -282,7 +282,7 @@ describe("Exchange financial & state invariants", () => {
     await cancelListing(fake.client, { userId: "alice", listingId: aliceListing.id });
     const aliceHolding = fake.tables.shareholding!.find((h) => h.ownerUserId === "alice")!;
     expect(aliceHolding.shares).toBe(600);
-    expect(aliceHolding.avgCost).toBeCloseTo(11.67, 2);
+    expect(aliceHolding.avgCost).toBe(11_67n);
   });
 });
 

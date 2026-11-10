@@ -62,13 +62,13 @@ export async function lockParties(tx: Db, userIds: ReadonlyArray<string | null>)
 
 /** Price-time priority for asks: cheapest first, then oldest. */
 export function askRank(a: ShareListing, b: ShareListing): number {
-  return toCents(a.pricePerShare) - toCents(b.pricePerShare) || a.createdIxTime - b.createdIxTime;
+  return centsOf(a.pricePerShare) - centsOf(b.pricePerShare) || a.createdIxTime - b.createdIxTime;
 }
 
 /** Price-time priority for bids: highest limit first, then oldest. */
 export function bidRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
   return (
-    toCents(b.maxPricePerShare) - toCents(a.maxPricePerShare) || a.createdIxTime - b.createdIxTime
+    centsOf(b.maxPricePerShare) - centsOf(a.maxPricePerShare) || a.createdIxTime - b.createdIxTime
   );
 }
 
@@ -85,7 +85,7 @@ export async function crossingBids(tx: Db, ask: ShareListing): Promise<ShareBuyO
   )
     .filter(
       (b) =>
-        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
+        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
         b.buyerUserId !== ask.sellerUserId
     )
     .sort(bidRank);
@@ -117,7 +117,7 @@ export async function crossingParties(
       const left = remaining.get(b.id) ?? 0;
       if (
         left > 0 &&
-        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
+        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
         b.buyerUserId !== ask.sellerUserId &&
         !(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))
       ) {
@@ -181,7 +181,7 @@ export async function consumeBid(tx: Db, bid: ShareBuyOrder, shares: number): Pr
     where: { id: bid.id, status: "OPEN", shares: bid.shares },
     data: {
       shares: left,
-      escrow: fromCents(toCents(bid.maxPricePerShare) * left),
+      escrow: dbCents(centsOf(bid.maxPricePerShare) * left),
       status: left === 0 ? "FILLED" : "OPEN",
     },
   });
@@ -203,7 +203,10 @@ async function capGainsTax(
     where: { companyId_ownerUserId: { companyId: company.id, ownerUserId: seller } },
     select: { avgCost: true },
   });
-  const gainCents = Math.max(0, (priceCents - toCents(holding?.avgCost ?? 0)) * shares);
+  const gainCents = Math.max(
+    0,
+    (priceCents - (holding ? centsOf(holding.avgCost) : 0)) * shares
+  );
   const cents = ratedCents(gainCents, rate);
   return cents > 0 ? { countryId: company.hqCountryId, cents } : null;
 }
@@ -308,6 +311,7 @@ export async function creditHolding(
   shares: number,
   cost: number
 ): Promise<void> {
+  const costCents = toCents(cost);
   const holding = await tx.shareholding.findUnique({
     where: { companyId_ownerUserId: { companyId, ownerUserId: userId } },
   });
@@ -317,7 +321,7 @@ export async function creditHolding(
         companyId,
         ownerUserId: userId,
         shares,
-        avgCost: Math.round((cost / shares) * 100) / 100,
+        avgCost: dbCents(Math.round(costCents / shares)),
       },
     });
     return;
@@ -329,10 +333,10 @@ export async function creditHolding(
   const escrowedShares = openListings.reduce((sum, l) => sum + l.shares, 0);
   const existingOwned = holding.shares + escrowedShares;
   const total = existingOwned + shares;
-  const avgCost = Math.round(((existingOwned * holding.avgCost + cost) / total) * 100) / 100;
+  const avgCostCents = Math.round((existingOwned * centsOf(holding.avgCost) + costCents) / total);
   await tx.shareholding.update({
     where: { id: holding.id },
-    data: { shares: { increment: shares }, avgCost },
+    data: { shares: { increment: shares }, avgCost: dbCents(avgCostCents) },
   });
 }
 
@@ -379,17 +383,18 @@ export async function fillBuyerAgainstAsk(
   shares: number,
   key: string
 ): Promise<number> {
+  const askPrice = fromCents(centsOf(ask.pricePerShare));
   await consumeAsk(tx, ask, shares);
   const net = await paySale(tx, company, {
     seller: ask.sellerUserId,
     shares,
-    price: ask.pricePerShare,
+    price: askPrice,
     key,
     metadata: {
       listingId: ask.id,
       companyId: company.id,
       shares,
-      pricePerShare: ask.pricePerShare,
+      pricePerShare: askPrice,
     },
   });
   await creditHolding(
@@ -397,8 +402,8 @@ export async function fillBuyerAgainstAsk(
     company.id,
     buyer,
     shares,
-    fromCents(toCents(ask.pricePerShare) * shares)
+    fromCents(centsOf(ask.pricePerShare) * shares)
   );
-  await recordTrade(tx, company.id, ask.pricePerShare, shares, key);
+  await recordTrade(tx, company.id, askPrice, shares, key);
   return net;
 }

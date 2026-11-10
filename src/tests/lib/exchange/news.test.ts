@@ -51,7 +51,7 @@ function setup() {
         lastTradePrice: 500_00n,
       },
     ],
-    shareholding: [{ id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 1 }],
+    shareholding: [{ id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 100n }],
     systemConfig: [],
   });
 }

@@ -43,7 +43,9 @@ export interface DividendResult {
 
 async function findDeclared(db: Db, key: string): Promise<DividendResult | null> {
   const row = await db.companyDividend.findUnique({ where: { idempotencyKey: key } });
-  return row ? { paid: row.amount, holderCount: row.holderCount, alreadyApplied: true } : null;
+  return row
+    ? { paid: fromCents(centsOf(row.amount)), holderCount: row.holderCount, alreadyApplied: true }
+    : null;
 }
 
 function assertWithinCreditCap(
@@ -118,8 +120,8 @@ export async function declareDividend(
         data: {
           companyId: company.id,
           declaredByUserId: input.userId,
-          declared: input.amount,
-          amount: paid,
+          declared: dbCents(toCents(input.amount)),
+          amount: dbCents(split.paidCents),
           shareCount: holders.reduce((s, h) => s + h.shares, 0),
           holderCount: payouts.length,
           ixTime: Date.now(),
@@ -184,10 +186,11 @@ export async function declareDividend(
 
 /** A company's recent dividends, newest first. */
 export async function listDividends(db: Db, companyId: string) {
-  return db.companyDividend.findMany({
+  const rows = await db.companyDividend.findMany({
     where: { companyId },
     orderBy: { createdAt: "desc" },
     take: 20,
     select: { id: true, amount: true, shareCount: true, holderCount: true, createdAt: true },
   });
+  return rows.map((r) => ({ ...r, amount: fromCents(centsOf(r.amount)) }));
 }
