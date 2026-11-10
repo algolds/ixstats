@@ -39,6 +39,23 @@ async function lockPost(tx: Pick<PrismaClient, "$executeRaw">, postId: string): 
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`forum-reaction:${postId}`}))`;
 }
 
+/** Recounts a post's reactions from the rows and stores them in `reactionCounts`; returns the new counts. */
+export async function recountReactions(
+  tx: Pick<PrismaClient, "forumPostReaction" | "forumPost">,
+  postId: string
+): Promise<ReactionCounts> {
+  const groups = await tx.forumPostReaction.groupBy({
+    by: ["type"],
+    where: { postId },
+    _count: { _all: true },
+  });
+  const counts = countsFromGroups(
+    groups.map((group) => ({ type: group.type, count: group._count._all }))
+  );
+  await tx.forumPost.update({ where: { id: postId }, data: { reactionCounts: counts } });
+  return counts;
+}
+
 /** Changes the member's row for `postId` to `type` (null clears it) and recounts the post. `type` is already valid. */
 async function writeReaction(
   db: ReactionsDb,
@@ -63,15 +80,7 @@ async function writeReaction(
       } else if (existing.type !== type) {
         await tx.forumPostReaction.update({ where: { id: existing.id }, data: { type } });
       }
-      const groups = await tx.forumPostReaction.groupBy({
-        by: ["type"],
-        where: { postId },
-        _count: { _all: true },
-      });
-      const counts = countsFromGroups(
-        groups.map((group) => ({ type: group.type, count: group._count._all }))
-      );
-      await tx.forumPost.update({ where: { id: postId }, data: { reactionCounts: counts } });
+      const counts = await recountReactions(tx, postId);
       return { counts, mine: type, created, board };
     });
   } catch (error) {

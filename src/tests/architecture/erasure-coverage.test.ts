@@ -2,7 +2,9 @@
 /**
  * Schema guard for Privacy 5.2 account erasure: every Prisma model with a user-identifying String column must
  * either be swept by the erasure modules (`account-erasure.records.ts`, `account-erasure.market.ts`,
- * `realms.erasure.ts`, `realms.transfer.ts`) or be listed in `KEPT` with the reason its rows stay.
+ * `realms.erasure.ts`, `realms.transfer.ts`) or be listed in `KEPT` with the reason its rows stay. "Swept" means the
+ * sources call `tx.<delegate>.` or `db.<delegate>.`; a comment or a type name does not count. A call is the guard's
+ * evidence, not proof of what it does: the erasure tests assert the behaviour.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -17,14 +19,65 @@ const ERASURE_FILES = [
   "src/server/modules/realms/realms.transfer.ts",
 ];
 
-const USER_COLUMN_RE =
-  /^\s*(userId|clerkUserId|ownerUserId|authorUserId|authorId|createdBy|createdById|voterId|ownerId|sellerId|buyerId|bidderId|initiatorId|recipientId|reporterId|targetUserId|followerClerkUserId|formerOwnerUserId|founderId|uploaderId)\s+String\??\b/;
+/** A `String`/`String?` schema field: its name is captured. */
+const STRING_FIELD_RE = /^\s*(\w+)\s+String\??\b/;
+
+/** User-identifying column names that do not end in a known suffix. */
+const USER_COLUMN_NAMES = new Set([
+  "userId",
+  "clerkUserId",
+  "createdBy",
+  "createdById",
+  "submittedBy",
+  "requestedBy",
+  "uploadedBy",
+  "proposedBy",
+  "authorId",
+  "ownerId",
+  "founderId",
+  "voterId",
+  "sellerId",
+  "buyerId",
+  "bidderId",
+  "initiatorId",
+  "recipientId",
+  "reporterId",
+  "uploaderId",
+]);
+
+/** Compound names: `buyerUserId`, `fromUserId`, `uploaderClerkId`, `followerClerkUserId`, `authorUserId`, ... */
+const USER_COLUMN_SUFFIX_RE = /(UserId|ClerkId|ClerkUserId)$/;
+
+/**
+ * Staff-action columns: the reviewer, moderator or resolver of someone else's record, not the user it is about.
+ * They match the patterns above only by accident (`reviewedByUserId`), so they are excluded by name.
+ */
+const STAFF_ACTION_COLUMNS = new Set([
+  "reviewedBy",
+  "reviewedById",
+  "reviewedByUserId",
+  "moderatorId",
+  "moderatorUserId",
+  "resolvedBy",
+  "resolvedById",
+  "resolvedByUserId",
+  "decidedBy",
+  "decidedById",
+  "decidedByUserId",
+  "approvedBy",
+  "approvedById",
+  "approvedByUserId",
+  "closedBy",
+  "closedByUserId",
+]);
+
+const isUserColumn = (name: string) =>
+  !STAFF_ACTION_COLUMNS.has(name) && (USER_COLUMN_NAMES.has(name) || USER_COLUMN_SUFFIX_RE.test(name));
 
 /** Models whose rows are intentionally kept on the tombstoned User (or hold non-user entity ids). */
 const KEPT: Record<string, string> = {
   // Moderation and safety records kept under Privacy 5.2(5)
   RealmBoardBan: "Realm board ban record (createdBy is the issuing moderator); kept under Privacy 5.2(5).",
-  ForumCategoryModerator: "Staff forum category moderator assignment.",
   ForumReport: "Forum moderation report (reporterId); kept under Privacy 5.2(5).",
   ForumWarning: "Forum moderation warning; kept under Privacy 5.2(5).",
   ForumBan: "Forum moderation ban; kept under Privacy 5.2(5).",
@@ -72,7 +125,6 @@ const KEPT: Record<string, string> = {
   CabinetMeeting: "Nation cabinet meeting record; part of the nation's Shared Record (Privacy 5.2(3)).",
   Policy: "Nation policy record; part of the nation's Shared Record (Privacy 5.2(3)).",
   ActivitySchedule: "Nation schedule record; part of the nation's Shared Record (Privacy 5.2(3)).",
-  CustomGovernmentType: "Reusable government type definition.",
   HeraldryAchievement: "Heraldic achievement (ownerId is the owning country/entity id, not a user).",
   DiplomaticScenario: "Shared diplomatic scenario template (createdBy).",
   ForeignPolicyAction: "Country-to-country diplomatic action (initiatorId is a country id).",
@@ -86,9 +138,43 @@ const KEPT: Record<string, string> = {
   MapImport: "Admin/realm map import job record (createdBy).",
   SportTeam: "Sports league team record; part of league simulation history.",
   SportPrediction: "Sports match prediction record; part of settled prediction history.",
+
+  // Exchange: financial and governance records on the tombstoned User id; none holds personal free text.
+  // Open orders and listings are NOT cancelled by erasure (only the cards market is, in account-erasure.market.ts):
+  // each keeps its escrow or shares on the tombstoned User id until it fills, is cancelled by staff, or its
+  // company dissolves (returnBuyOrders). Cancelling them on erasure is a follow-up, not a decision to keep them.
+  ShareListing: "Exchange share listing (sellerUserId); open ones stay on the tombstoned User id until filled or cancelled, financial record.",
+  ShareBuyOrder: "Exchange share buy order (buyerUserId); open ones keep their escrow on the tombstoned User id until filled or the company dissolves.",
+  BondListing: "Exchange bond listing (sellerUserId); financial ledger row on the tombstoned User id, no personal text.",
+  NationBond: "Exchange nation bond (issuerUserId); financial instrument other players hold, issuer id is the tombstoned User id.",
+  CompanyDividend: "Exchange dividend payout ledger (declaredByUserId); financial ledger, rows reference the tombstoned User id, no personal text.",
+  CompanyProposal: "Exchange governance proposal (proposerUserId); its payload is structured action data, and holders' votes already count it.",
+  CompanyVote: "Exchange share-weighted vote already folded into the proposal's sharesFor/sharesAgainst; deleting the row would not undo the tally and would let an open proposal be re-voted. Holds only the tombstoned User id.",
+  NationTreasury: "Nation treasury; fundUserId is the nation fund's synthetic account id (fundUserIdOf), not a person.",
+
+  // Card ledgers, rights-holder takedowns and staff-run jobs
+  CardTransferEvent: "Card copy transfer ledger (fromUserId, toUserId); rows reference the tombstoned User id, no personal text.",
+  CardTakedown: "Rights-holder takedown case (requestedBy); a legal record kept under Privacy 5.2(5) like moderation cases.",
+  CardImportJob: "Staff-run card import job (requestedBy is the staff member who started it); operational log, no user content.",
+
+  // Maps, realms and sports: staff jobs, a shared record, dead ids and non-user ids
+  MapImportJob: "Realm staff map import job (requestedBy is the staff member who ran it); operational log, map data belongs to the realm.",
+  SvgUpload: "Staff map layer SVG upload (uploadedBy is the admin who ran it); operational record of the shared map.",
+  RealmEmbassy: "Realm-to-realm embassy (proposedBy, respondedBy); part of the realms' Shared Record (Privacy 5.2(3)), and the Clerk id no longer resolves once the User row is tombstoned.",
+  NationMaterialHold: "Hold on a released nation's material (formerOwnerUserId); written by releaseNationsForErasure with purgeAfter now, purged at once by the material cron.",
+  AllianceAction: "Alliance action (proposedBy is a country id, not a user).",
+  SportLeague: "Sports league (createdByUserId); part of the shared league simulation history, like SportTeam.",
+  SportTransferBid: "Sports transfer bid (bidderUserId); part of the settled league transfer history, no personal text.",
 };
 
 const delegateOf = (model: string) => model[0]!.toLowerCase() + model.slice(1);
+
+/**
+ * A model is covered only by a real call on the transaction or client (`tx.<delegate>.`, or `db.<delegate>.` in the
+ * modules that take the client, such as the market and realm steps), never by a comment or a bare mention.
+ */
+const isSwept = (source: string, model: string) =>
+  new RegExp(`\\b(?:tx|db)\\.${delegateOf(model)}\\.`).test(source);
 
 function userLinkedModels(): Array<{ model: string; file: string; fields: string[] }> {
   const out: Array<{ model: string; file: string; fields: string[] }> = [];
@@ -99,8 +185,8 @@ function userLinkedModels(): Array<{ model: string; file: string; fields: string
       const body = match[2]!;
       const fields = body
         .split("\n")
-        .map((line) => line.match(USER_COLUMN_RE)?.[1])
-        .filter((f): f is string => Boolean(f));
+        .map((line) => line.match(STRING_FIELD_RE)?.[1])
+        .filter((f): f is string => f !== undefined && isUserColumn(f));
       if (fields.length > 0) out.push({ model, file, fields });
     }
   }
@@ -114,7 +200,7 @@ describe("account erasure schema coverage", () => {
   it("covers every user-linked Prisma model in the erasure modules or the explicit KEPT map", () => {
     const unhandled = models
       .filter(({ model }) => {
-        const coveredInCode = new RegExp(`\\b${delegateOf(model)}\\b`).test(erasureSource);
+        const coveredInCode = isSwept(erasureSource, model);
         const keptReason = KEPT[model];
         return !coveredInCode && (!keptReason || keptReason.trim().length === 0);
       })
@@ -126,9 +212,7 @@ describe("account erasure schema coverage", () => {
   it("keeps no stale or already-erased models in KEPT", () => {
     const modelNames = new Set(models.map((m) => m.model));
     const unknown = Object.keys(KEPT).filter((model) => !modelNames.has(model));
-    const redundant = Object.keys(KEPT).filter((model) =>
-      new RegExp(`\\b${delegateOf(model)}\\b`).test(erasureSource)
-    );
+    const redundant = Object.keys(KEPT).filter((model) => isSwept(erasureSource, model));
     expect(unknown).toEqual([]);
     expect(redundant).toEqual([]);
   });

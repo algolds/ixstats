@@ -6,7 +6,8 @@
  * their ThinkPages posts, forum threads and posts, the ThinkShare and ThinkTank messages they sent,
  * Onoma work, cards, trades, realm claims, Vault, stashes, wiki discussion comments, polls, sports
  * predictions, blurb responses, collaborative documents, lore team memberships, achievements and
- * preferences.
+ * preferences. Polls on nations the user owns that nothing ties to them are listed apart as
+ * `pollsOnYourNations`, and a collaborative document they only last edited is listed without its text.
  *
  * Never in it: link tokens and verification codes, other users' messages, and other users' ids
  * (a trade names the user's side, not the other party; a realm claim leaves out its reviewer and
@@ -391,30 +392,42 @@ function commentsSection(db: PrismaClient, user: AccountRow, clerkUserId: string
   });
 }
 
+/** A poll the user is tied to through their own post or activity entry: the only ways a poll names its creator. */
+const createdPollWhere = (ids: string[]) => [
+  { thinkpagesPosts: { some: { account: { clerkUserId: { in: ids } } } } },
+  { activityFeeds: { some: { userId: { in: ids } } } },
+];
+
+const POLL_SELECT = {
+  id: true,
+  question: true,
+  description: true,
+  pollType: true,
+  multiple: true,
+  isActive: true,
+  endDate: true,
+  countryId: true,
+  realmId: true,
+  createdAt: true,
+  options: { select: { id: true, label: true, description: true } },
+} as const;
+
+/**
+ * `created`: polls attached to the user's own posts or activity entries. `pollsOnYourNations`: the other polls on
+ * nations they currently own; `Poll` has no creator column, so a previous owner or an admin may have made them.
+ * `votes`: the user's own votes.
+ */
 async function pollsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
   const ids = [clerkUserId, user.id];
-  const [created, votes] = await Promise.all([
+  const [created, onYourNations, votes] = await Promise.all([
     db.poll.findMany({
-      where: {
-        OR: [
-          { thinkpagesPosts: { some: { account: { clerkUserId: { in: ids } } } } },
-          { activityFeeds: { some: { userId: { in: ids } } } },
-          { country: { ownerUserId: user.id } },
-        ],
-      },
-      select: {
-        id: true,
-        question: true,
-        description: true,
-        pollType: true,
-        multiple: true,
-        isActive: true,
-        endDate: true,
-        countryId: true,
-        realmId: true,
-        createdAt: true,
-        options: { select: { id: true, label: true, description: true } },
-      },
+      where: { OR: createdPollWhere(ids) },
+      select: POLL_SELECT,
+      orderBy: { createdAt: "asc" },
+    }),
+    db.poll.findMany({
+      where: { country: { ownerUserId: user.id }, NOT: { OR: createdPollWhere(ids) } },
+      select: POLL_SELECT,
       orderBy: { createdAt: "asc" },
     }),
     db.pollVote.findMany({
@@ -430,7 +443,7 @@ async function pollsSection(db: PrismaClient, user: AccountRow, clerkUserId: str
       orderBy: { createdAt: "asc" },
     }),
   ]);
-  return { created, votes };
+  return { created, pollsOnYourNations: onYourNations, votes };
 }
 
 function predictionsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
@@ -471,9 +484,13 @@ function blurbsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) 
   });
 }
 
-function documentsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+/**
+ * Documents the user created, in full; documents they only last edited as id, title and update time, since the text
+ * is another member's.
+ */
+async function documentsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
   const ids = [clerkUserId, user.id];
-  return db.collaborativeDoc.findMany({
+  const docs = await db.collaborativeDoc.findMany({
     where: { OR: [{ createdBy: { in: ids } }, { lastEditBy: { in: ids } }] },
     select: {
       id: true,
@@ -482,11 +499,15 @@ function documentsSection(db: PrismaClient, user: AccountRow, clerkUserId: strin
       content: true,
       version: true,
       isPublic: true,
+      createdBy: true,
       createdAt: true,
       updatedAt: true,
     },
     orderBy: { createdAt: "asc" },
   });
+  return docs.map(({ createdBy, ...doc }) =>
+    ids.includes(createdBy) ? doc : { id: doc.id, title: doc.title, updatedAt: doc.updatedAt }
+  );
 }
 
 function loreTeamsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
@@ -584,7 +605,7 @@ function emptyContent(): Awaited<ReturnType<typeof accountContent>> {
     vault: null,
     stashes: [],
     comments: [],
-    polls: { created: [], votes: [] },
+    polls: { created: [], pollsOnYourNations: [], votes: [] },
     predictions: [],
     blurbs: [],
     documents: [],
