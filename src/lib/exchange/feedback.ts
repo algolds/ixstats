@@ -116,7 +116,9 @@ async function corporateScoresOf(db: PrismaClient, nowMs: number): Promise<Map<s
   for (const c of companies) {
     add(c.hqCountryId, fromCents(centsOf(c.decisionValue) + centsOf(c.capital)));
   }
-  for (const t of tenders) add(t.winnerCompanyId ? hqOf.get(t.winnerCompanyId) : null, t.value);
+  for (const t of tenders) {
+    add(t.winnerCompanyId ? hqOf.get(t.winnerCompanyId) : null, fromCents(centsOf(t.value)));
+  }
   return scores;
 }
 

@@ -11,7 +11,7 @@
  */
 
 import type { Prisma } from "@prisma/client";
-import { dbCents, fromCents, toCents } from "./amounts";
+import { centsOf, dbCents, fromCents, toCents } from "./amounts";
 import { acquirePayloadOf, returnOfferTx } from "./acquisition";
 import { refundIssuer } from "./contract-settlement";
 import type { Db } from "./guards";
@@ -42,21 +42,22 @@ export async function unwindCompanyMoneyTx(
   for (const contract of openContracts) {
     const { count } = await tx.contract.updateMany({
       where: { id: contract.id, status: "OPEN" },
-      data: { status: "CANCELLED", escrow: 0, closedIxTime: nowMs },
+      data: { status: "CANCELLED", escrow: 0n, closedIxTime: nowMs },
     });
     if (count !== 1) continue;
     await tx.contractBid.updateMany({
       where: { contractId: contract.id },
       data: { outcome: "LOST" },
     });
-    if (contract.escrow > 0) {
-      await refundIssuer(tx, contract, contract.escrow, "close");
+    const escrowCents = centsOf(contract.escrow);
+    if (escrowCents > 0) {
+      await refundIssuer(tx, contract, fromCents(escrowCents), "close");
       if (
         contract.fundedBy !== "FAUCET" &&
         contract.fundedBy !== "TREASURY" &&
         contract.fundedBy !== "WALLET"
       ) {
-        returnedCents += toCents(contract.escrow);
+        returnedCents += escrowCents;
       }
     }
   }

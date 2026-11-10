@@ -119,4 +119,17 @@ ALTER TABLE "exchange_bond_holdings"
 ALTER TABLE "exchange_bond_listings"
   ALTER COLUMN "pricePerUnit" TYPE bigint USING round("pricePerUnit" * 100)::bigint;
 
+-- Phase B Group 5: Contract & ContractBid
+ALTER TABLE "exchange_contracts"
+  ALTER COLUMN "value" TYPE bigint USING round("value" * 100)::bigint,
+  ALTER COLUMN "escrow" DROP DEFAULT,
+  ALTER COLUMN "escrow" TYPE bigint USING round("escrow" * 100)::bigint,
+  ALTER COLUMN "escrow" SET DEFAULT 0,
+  ALTER COLUMN "tariffPaid" DROP DEFAULT,
+  ALTER COLUMN "tariffPaid" TYPE bigint USING round("tariffPaid" * 100)::bigint,
+  ALTER COLUMN "tariffPaid" SET DEFAULT 0;
+
+ALTER TABLE "exchange_contract_bids"
+  ALTER COLUMN "amount" TYPE bigint USING round("amount" * 100)::bigint;
+
 COMMIT;

@@ -205,7 +205,7 @@ export async function measureSectorActivity(
   for (const c of companies) {
     add(c.sectorKey, fromCents(centsOf(c.capital)) + 100 * Math.max(0, c.standing));
   }
-  for (const k of contracts) add(k.sectorKey, k.value);
+  for (const k of contracts) add(k.sectorKey, fromCents(centsOf(k.value)));
   return activity;
 }
 

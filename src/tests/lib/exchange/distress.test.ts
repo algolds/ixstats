@@ -216,7 +216,7 @@ describe("72-hour bankruptcy", () => {
         fundedBy: "COMPANY",
         status: "OPEN",
         budget: 400,
-        escrow: 400,
+        escrow: 400_00n,
         deadlineIxTime: T0 + 100 * HOUR_MS,
       },
     ];
@@ -248,7 +248,7 @@ describe("72-hour bankruptcy", () => {
 
     await run(T0 + 72 * HOUR_MS);
 
-    expect(fake.tables.contract![0]).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(fake.tables.contract![0]).toMatchObject({ status: "CANCELLED", escrow: 0n });
     expect(fake.tables.companyProposal![0]).toMatchObject({ status: "EXPIRED" });
     expect(fake.tables.companyDecision![0]).toMatchObject({
       appliedIxTime: T0 + 72 * HOUR_MS,

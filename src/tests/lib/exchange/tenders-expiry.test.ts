@@ -80,7 +80,7 @@ const setTreasury = (balance: number, countryId = "ruritania") => {
 const totalMoney = () =>
   fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0) +
   (fake.tables.company ?? []).reduce((s, c) => s + Number(c.capital) / 100, 0) +
-  (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0) +
+  (fake.tables.contract ?? []).reduce((s, c) => s + Number(c.escrow) / 100, 0) +
   (fake.tables.nationTreasury ?? []).reduce((s, t) => s + Number(t.balance) / 100, 0);
 
 async function found(
@@ -141,7 +141,7 @@ describe("government tenders", () => {
     const id = await tender(400);
     expect(sov("alice")).toBe(4600);
     expect(contract(id)).toMatchObject({
-      escrow: 400,
+      escrow: 400_00n,
       issuerCountryId: "ruritania",
       issuerCompanyId: null,
     });
@@ -183,7 +183,7 @@ describe("government tenders", () => {
       [1, 2].map(() => cancelContract(fake.client, { userId: "alice", contractId: id }))
     );
     expect(sov("alice")).toBe(5000);
-    expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0n });
   });
 
   it("a live B2G lobbying buff adds a point of standing to a tender win", async () => {
@@ -292,7 +292,7 @@ describe("treasury-funded tenders", () => {
     expect(treasuryBalance()).toBe(500);
     await cancelContract(fake.client, { userId: "alice", contractId: other });
     expect(treasuryBalance()).toBe(700);
-    expect(contract(other)).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(contract(other)).toMatchObject({ status: "CANCELLED", escrow: 0n });
   });
 
   it("a cancel of a treasury tender refunds the treasury once", async () => {
@@ -493,7 +493,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(company(winner).capital).toBe(360_00n);
     expect(treasuryBalance("ruritania")).toBe(40);
-    expect(contract(contractId)).toMatchObject({ tariffRate: 0.1, tariffPaid: 40 });
+    expect(contract(contractId)).toMatchObject({ tariffRate: 0.1, tariffPaid: 40_00n });
     expect(totalMoney()).toBe(before);
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([expect.objectContaining({ type: "TARIFF", amount: 40_00n })])
@@ -506,7 +506,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(treasuryBalance("ruritania")).toBe(100);
     expect(company(winner).capital).toBe(300_00n);
-    expect(contract(contractId)).toMatchObject({ tariffRate: 0.25, tariffPaid: 100 });
+    expect(contract(contractId)).toMatchObject({ tariffRate: 0.25, tariffPaid: 100_00n });
   });
 
   it("a contract won inside the issuing nation pays no tariff", async () => {
@@ -515,7 +515,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(company(winner).capital).toBe(400_00n);
     expect(treasuryBalance("ruritania")).toBe(0);
-    expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0 });
+    expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0n });
   });
 
   it("an enacted free-trade agreement between the two nations makes the tariff zero", async () => {
@@ -533,7 +533,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(company(winner).capital).toBe(400_00n);
     expect(treasuryBalance("ruritania")).toBe(0);
-    expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0 });
+    expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0n });
   });
 
   it("a lifted free-trade agreement no longer exempts the award", async () => {
@@ -550,7 +550,7 @@ describe("cross-border tariffs and trade agreements", () => {
     const { winner, contractId } = await awardedB2B(400);
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(company(winner).capital).toBe(360_00n);
-    expect(contract(contractId)).toMatchObject({ tariffPaid: 40 });
+    expect(contract(contractId)).toMatchObject({ tariffPaid: 40_00n });
   });
 
   it("a government tender won abroad pays the tender nation's tariff from the payout", async () => {
@@ -569,7 +569,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await completeContract(fake.client, { userId: "alice", contractId: id });
     expect(company(bobCo).capital).toBe(270_00n);
     expect(treasuryBalance("ruritania")).toBe(730);
-    expect(contract(id)).toMatchObject({ tariffRate: 0.1, tariffPaid: 30 });
+    expect(contract(id)).toMatchObject({ tariffRate: 0.1, tariffPaid: 30_00n });
     expect(totalMoney()).toBe(before);
   });
 });
@@ -607,7 +607,7 @@ describe("expireLapsedContracts", () => {
     expect(runs.reduce((s, r) => s + r.expired, 0)).toBe(2);
     expect(sov("alice")).toBe(5000 - 100 - 1000 + 0); // tender refunded; charter and deposit stay
     expect(company(co).capital).toBe(1000_00n);
-    expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0n });
     expect(fake.tables.contractBid![0].outcome).toBe("LOST");
     expect(totalMoney()).toBe(before);
 
@@ -628,8 +628,8 @@ describe("expireLapsedContracts", () => {
 
     const result = await expireLapsedContracts(fake.client, late);
     expect(result.expired).toBe(2);
-    expect(contract(treasuryId)).toMatchObject({ status: "CANCELLED", escrow: 0 });
-    expect(contract(f.id as string)).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(contract(treasuryId)).toMatchObject({ status: "CANCELLED", escrow: 0n });
+    expect(contract(f.id as string)).toMatchObject({ status: "CANCELLED", escrow: 0n });
     expect(treasuryBalance()).toBe(1000);
     expect(totalMoney()).toBe(before - 300);
     expect(sov("alice")).toBe(5000);
@@ -646,7 +646,7 @@ describe("expireLapsedContracts", () => {
     });
     await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
     await expireLapsedContracts(fake.client, (contract(id).endIxTime as number) + days(365));
-    expect(contract(id)).toMatchObject({ status: "AWARDED", escrow: 400 });
+    expect(contract(id)).toMatchObject({ status: "AWARDED", escrow: 400_00n });
   });
 
   it("runs on real time: bidding closes after real days and expiry follows the real grace", async () => {

@@ -313,7 +313,7 @@ model Contract {
   type        String
   title       String
   sectorKey   String
-  value       Float
+  value       BigInt
   status      String        @default("OPEN")
   winnerCompanyId String?
   endIxTime   Float
@@ -323,7 +323,7 @@ model Contract {
   issuerCompanyId  String?
   issuerUserId     String?
   description      String?
-  escrow           Float    @default(0)
+  escrow           BigInt   @default(0)
   awardedBidId     String?
   disputeReason    String?
   disputedByUserId String?
@@ -342,7 +342,7 @@ model Contract {
   linkedIssueId     String?
   /// Cross-border tariff charged on the award, and the amount actually paid into the treasury.
   tariffRate       Float    @default(0)
-  tariffPaid       Float    @default(0)
+  tariffPaid       BigInt   @default(0)
   issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
   @@index([issuerCompanyId])
@@ -361,7 +361,7 @@ model ContractBid {
   id           String   @id @default(cuid())
   contractId   String
   companyId    String
-  amount       Float
+  amount       BigInt
   outcome      String?
   standingDelta Float    @default(0)
   createdIxTime Float

@@ -69,7 +69,7 @@ const contract = (id: string) => fake.tables.contract!.find((c) => c.id === id)!
 function totalMoney() {
   const wallets = fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0);
   const capital = (fake.tables.company ?? []).reduce((s, c) => s + Number(c.capital) / 100, 0);
-  const escrow = (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0);
+  const escrow = (fake.tables.contract ?? []).reduce((s, c) => s + Number(c.escrow) / 100, 0);
   return wallets + capital + escrow;
 }
 
@@ -419,7 +419,7 @@ describe("companies", () => {
 describe("contract state machine", () => {
   it("escrows the value from the issuer's capital", async () => {
     const { aliceCo, contractId } = await openContractWithBid();
-    expect(contract(contractId)).toMatchObject({ status: "OPEN", escrow: 400 });
+    expect(contract(contractId)).toMatchObject({ status: "OPEN", escrow: 400_00n });
     expect(company(aliceCo).capital).toBe(600_00n);
   });
   it("won't let the issuer bid on its own contract", async () => {
@@ -439,7 +439,7 @@ describe("contract state machine", () => {
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
     expect(contract(contractId)).toMatchObject({
       status: "AWARDED",
-      escrow: 300,
+      escrow: 300_00n,
       winnerCompanyId: bobCo,
     });
     expect(company(aliceCo).capital).toBe(700_00n); // 100 refunded on award
@@ -457,7 +457,7 @@ describe("contract state machine", () => {
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(company(bobCo)).toMatchObject({ capital: 300_00n, contractsWonValue: 300_00n, standing: 1 });
-    expect(contract(contractId)).toMatchObject({ status: "COMPLETED", escrow: 0 });
+    expect(contract(contractId)).toMatchObject({ status: "COMPLETED", escrow: 0n });
     expect(totalMoney()).toBe(before);
     const kinds = (fake.tables.exchangeNewsItem ?? [])
       .filter((n) => n.contractId === contractId)

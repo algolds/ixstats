@@ -70,7 +70,9 @@ const DEFAULTS: Record<string, () => Row> = {
   contract: () => ({
     status: "OPEN",
     winnerCompanyId: null,
-    escrow: 0,
+    escrow: 0n,
+    tariffRate: 0,
+    tariffPaid: 0n,
     awardedBidId: null,
     issuerCompanyId: null,
     issuerUserId: null,

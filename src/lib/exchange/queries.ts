@@ -70,8 +70,10 @@ export async function listRealmSectorSummary(db: Db, realmId: string, nowMs: num
       value: row?.value ?? INDEX_BASE,
       macroWeight: row?.macroWeight ?? 0,
       companyCount: companies.filter((c) => c.sectorKey === sectorKey).length,
-      volume30d: round2(
-        contracts.filter((k) => k.sectorKey === sectorKey).reduce((s, k) => s + k.value, 0)
+      volume30d: fromCents(
+        contracts
+          .filter((k) => k.sectorKey === sectorKey)
+          .reduce((s, k) => s + centsOf(k.value), 0)
       ),
     };
   });
@@ -79,7 +81,7 @@ export async function listRealmSectorSummary(db: Db, realmId: string, nowMs: num
     realmId,
     sectors,
     companyCount: companies.length,
-    volume30d: round2(contracts.reduce((s, k) => s + k.value, 0)),
+    volume30d: fromCents(contracts.reduce((s, k) => s + centsOf(k.value), 0)),
   };
 }
 
@@ -313,8 +315,8 @@ export async function listContracts(
       title: c.title,
       description: c.description,
       sectorKey: c.sectorKey,
-      value: c.value,
-      escrow: c.escrow,
+      value: fromCents(centsOf(c.value)),
+      escrow: fromCents(centsOf(c.escrow)),
       status: c.status,
       issuerCountryId: c.issuerCountryId,
       linkedDirectiveId: c.linkedDirectiveId,
@@ -338,7 +340,7 @@ export async function listContracts(
       bidCount: c.bids.length,
       bids: visibleBids.map((b) => ({
         id: b.id,
-        amount: b.amount,
+        amount: fromCents(centsOf(b.amount)),
         outcome: b.outcome,
         company: b.company,
         mine: myIds.includes(b.companyId),
@@ -350,10 +352,16 @@ export async function listContracts(
 
 /** Admin: contracts waiting for a dispute decision, oldest first. */
 export async function listDisputes(db: Db) {
-  return db.contract.findMany({
+  const rows = await db.contract.findMany({
     where: { status: "DISPUTED" },
     orderBy: { updatedAt: "asc" },
     take: 100,
     include: { issuerCompany: { select: { id: true, name: true } } },
   });
+  return rows.map((c) => ({
+    ...c,
+    value: fromCents(centsOf(c.value)),
+    escrow: fromCents(centsOf(c.escrow)),
+    tariffPaid: fromCents(centsOf(c.tariffPaid)),
+  }));
 }
