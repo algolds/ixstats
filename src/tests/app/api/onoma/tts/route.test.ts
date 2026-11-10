@@ -14,6 +14,7 @@ jest.mock("~/lib/cache", () => ({
 }));
 jest.mock("~/server/shared/admin-access", () => ({ isAdminClerkUser: jest.fn(async () => true) }));
 
+import { promises as dns } from "dns";
 import { NextRequest } from "next/server";
 import { GET, POST } from "~/app/api/onoma/tts/route";
 import { auth } from "@clerk/nextjs/server";
@@ -24,6 +25,7 @@ import { isAdminClerkUser } from "~/server/shared/admin-access";
 // Clerk's auth() is typed as a function with a `protect` helper, not a jest mock.
 const mockAuth = auth as unknown as jest.Mock;
 const fetchMock = jest.fn();
+const lookupSpy = jest.spyOn(dns, "lookup");
 const originalFetch = global.fetch;
 
 const SAVED = [
@@ -48,6 +50,7 @@ afterAll(() => {
 });
 beforeEach(() => {
   jest.clearAllMocks();
+  lookupSpy.mockResolvedValue([{ address: "93.184.216.34", family: 4 }] as never);
   jest.mocked(isAdminClerkUser).mockResolvedValue(true);
   mockAuth.mockResolvedValue({ userId: "user_123", sessionClaims: {} });
   (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
@@ -166,6 +169,49 @@ describe("admin overrides and error sanitization", () => {
       expect(await response.json()).toEqual({ error: "That engine address isn't allowed" });
     }
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses carrier-grade NAT and IPv4-mapped IPv6 literals with 400", async () => {
+    for (const url of ["http://100.64.1.1:8080", "http://[::ffff:10.0.0.5]:8080"]) {
+      const response = await post(JSON.stringify({ text: "Imperia", baseUrl: url }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "That engine address isn't allowed" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a public hostname that resolves to a private address, without calling the engine", async () => {
+    lookupSpy.mockResolvedValue([
+      { address: "93.184.216.34", family: 4 },
+      { address: "10.0.0.5", family: 4 },
+    ] as never);
+    const response = await post(
+      JSON.stringify({ text: "Imperia", baseUrl: "https://rebind.example.com" })
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "That engine address isn't allowed" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a hostname that does not resolve", async () => {
+    lookupSpy.mockRejectedValue(new Error("ENOTFOUND"));
+    const response = await post(
+      JSON.stringify({ text: "Imperia", baseUrl: "https://nowhere.example.com" })
+    );
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses redirects from an override URL, and follows them for the saved engine", async () => {
+    await post(JSON.stringify({ text: "Imperia", baseUrl: "https://external-tts.example.com" }));
+    expect(lookupSpy).toHaveBeenCalledWith("external-tts.example.com", { all: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].redirect).toBe("error");
+
+    fetchMock.mockClear();
+    await post(JSON.stringify({ text: "Imperia two" }));
+    expect(fetchMock).toHaveBeenCalled();
+    expect((fetchMock.mock.calls[0] as [string, RequestInit])[1].redirect).toBe("follow");
   });
 
   it("does not send the saved Authorization header when an override URL is provided without an apiKey", async () => {

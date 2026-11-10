@@ -4,6 +4,7 @@ import { rateLimiter, globalCache } from "~/lib/cache";
 import { db } from "~/server/db";
 import { isAdminClerkUser } from "~/server/shared/admin-access";
 import crypto from "crypto";
+import { promises as dns } from "dns";
 import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
 import { ipaToKokoroPhonemes, anglicizeForSpeech } from "~/lib/onoma/kokoro-phonemes";
 
@@ -107,6 +108,17 @@ function parseHostname(rawUrl: string): { protocol: string; host: string } | nul
   }
 }
 
+/** The IPv4 address inside an IPv4-mapped IPv6 host (`::ffff:a.b.c.d` or its hex form `::ffff:ab:cd`), else null. */
+function mappedIpv4(host: string): string | null {
+  const dotted = /^(?:0{0,4}:){0,5}:?ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i.exec(host);
+  if (dotted) return dotted[1] ?? null;
+  const hex = /^(?:0{0,4}:){0,5}:?ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(host);
+  if (!hex) return null;
+  const hi = parseInt(hex[1] ?? "0", 16);
+  const lo = parseInt(hex[2] ?? "0", 16);
+  return `${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`;
+}
+
 function isPrivateOrReservedHost(host: string): boolean {
   if (
     host === "localhost" ||
@@ -120,6 +132,8 @@ function isPrivateOrReservedHost(host: string): boolean {
     return true;
   }
   if (host.includes(":")) {
+    const mapped = mappedIpv4(host);
+    if (mapped) return isPrivateOrReservedHost(mapped);
     return /^f[cd][0-9a-f]{0,2}:|^fe[89ab][0-9a-f]?:|^::ffff:|^0+:0+:0+:0+:0+:0+:0+:[01]$/i.test(
       host
     );
@@ -132,18 +146,30 @@ function isPrivateOrReservedHost(host: string): boolean {
     a === 0 ||
     a === 10 ||
     a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
     (a === 172 && b >= 16 && b <= 31) ||
     (a === 192 && b === 168) ||
     (a === 169 && b === 254)
   );
 }
 
-function isAllowedOverrideUrl(rawUrl: string, savedUrl: string): boolean {
+/** True when the host, or any address it resolves to, is private or reserved (a lookup failure counts as refused). */
+async function resolvesToPrivateAddress(host: string): Promise<boolean> {
+  if (isPrivateOrReservedHost(host)) return true;
+  try {
+    const addresses = await dns.lookup(host, { all: true });
+    return addresses.length === 0 || addresses.some((a) => isPrivateOrReservedHost(a.address));
+  } catch {
+    return true;
+  }
+}
+
+async function isAllowedOverrideUrl(rawUrl: string, savedUrl: string): Promise<boolean> {
   const parsed = parseHostname(rawUrl);
   if (!parsed || (parsed.protocol !== "http:" && parsed.protocol !== "https:")) return false;
   const saved = parseHostname(savedUrl);
   if (saved && parsed.host === saved.host) return true;
-  return !isPrivateOrReservedHost(parsed.host);
+  return !(await resolvesToPrivateAddress(parsed.host));
 }
 
 /** Read a cached {d, ct} wrapper, falling back to legacy plain-base64 entries. */
@@ -243,7 +269,8 @@ function resolveKokoroPhonemes(p: TtsParams): string {
 async function synthesizeFastApi(
   p: TtsParams,
   fastApiUrl: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  redirect: RequestRedirect
 ): Promise<{ buf: Buffer; ct: string } | null> {
   const phonemes = resolveKokoroPhonemes(p);
   if (!phonemes) return null;
@@ -253,6 +280,7 @@ async function synthesizeFastApi(
       method: "POST",
       headers,
       body: JSON.stringify({ phonemes, voice: p.voice }),
+      redirect,
       signal: AbortSignal.timeout(60000),
     });
     if (!res.ok) return null;
@@ -274,7 +302,8 @@ async function synthesizeWeb(
   sentence: string,
   config: TtsConfig,
   baseUrl: string,
-  headers: Record<string, string>
+  headers: Record<string, string>,
+  redirect: RequestRedirect
 ): Promise<{ buf: Buffer; ct: string } | NextResponse> {
   if (!baseUrl) return json("Kokoro natural voice service fallback is not configured", 503);
 
@@ -298,6 +327,7 @@ async function synthesizeWeb(
       response_format: "mp3",
       speed: p.speed,
     }),
+    redirect,
     signal: AbortSignal.timeout(60000),
   });
 
@@ -346,11 +376,20 @@ async function loadConfig() {
     stripStress: false,
     prosody: "neutral",
   };
-  return { config, defaults, voiceMap, savedBaseUrl: config.baseUrl };
+  return {
+    config,
+    defaults,
+    voiceMap,
+    savedBaseUrl: config.baseUrl,
+    savedFastApiUrl: config.fastApiUrl,
+  };
 }
 
 /** Engine overrides (the admin panel's unsaved values) are honoured for admins only. */
-function applyAdminOverrides(config: TtsConfig, body: TtsBody): NextResponse | null {
+async function applyAdminOverrides(
+  config: TtsConfig,
+  body: TtsBody
+): Promise<NextResponse | null> {
   const savedBaseUrl = config.baseUrl;
   const savedFastApiUrl = config.fastApiUrl;
 
@@ -359,7 +398,7 @@ function applyAdminOverrides(config: TtsConfig, body: TtsBody): NextResponse | n
   if (body.fastApiUrl !== undefined && body.fastApiUrl !== null && body.fastApiUrl !== "") {
     if (
       typeof body.fastApiUrl !== "string" ||
-      !isAllowedOverrideUrl(body.fastApiUrl, savedFastApiUrl)
+      !(await isAllowedOverrideUrl(body.fastApiUrl, savedFastApiUrl))
     ) {
       return json(DISALLOWED_ADDRESS_ERROR, 400);
     }
@@ -367,7 +406,10 @@ function applyAdminOverrides(config: TtsConfig, body: TtsBody): NextResponse | n
   }
 
   if (body.baseUrl !== undefined && body.baseUrl !== null && body.baseUrl !== "") {
-    if (typeof body.baseUrl !== "string" || !isAllowedOverrideUrl(body.baseUrl, savedBaseUrl)) {
+    if (
+      typeof body.baseUrl !== "string" ||
+      !(await isAllowedOverrideUrl(body.baseUrl, savedBaseUrl))
+    ) {
       return json(DISALLOWED_ADDRESS_ERROR, 400);
     }
     config.baseUrl = body.baseUrl.trim();
@@ -396,6 +438,8 @@ interface SegmentContext {
   headers: Record<string, string>;
   keyFor: (prefix: string, text: string) => string;
   useCache: boolean;
+  /** "error" when the engine address came from the request (an override), so a redirect can't leave the checked host. */
+  redirect: RequestRedirect;
 }
 
 const readCache = async (key: string, enabled: boolean) =>
@@ -403,7 +447,7 @@ const readCache = async (key: string, enabled: boolean) =>
 
 /** Synthesizes (or loads from cache) every sentence; returns an error response on failure. */
 async function synthesizeSentences(sentences: string[], ctx: SegmentContext) {
-  const { p, config, baseUrl, fastApiUrl, headers, keyFor, useCache } = ctx;
+  const { p, config, baseUrl, fastApiUrl, headers, keyFor, useCache, redirect } = ctx;
   const useFastApi = config.engine === "kokoro-fastapi" && !!p.ipa && !!fastApiUrl;
   const buffers: Buffer[] = [];
   let isWav = useFastApi;
@@ -419,8 +463,8 @@ async function synthesizeSentences(sentences: string[], ctx: SegmentContext) {
     }
 
     const segment =
-      (useFastApi && (await synthesizeFastApi(p, fastApiUrl, headers))) ||
-      (await synthesizeWeb(p, sentence, config, baseUrl, headers));
+      (useFastApi && (await synthesizeFastApi(p, fastApiUrl, headers, redirect))) ||
+      (await synthesizeWeb(p, sentence, config, baseUrl, headers, redirect));
     if (segment instanceof NextResponse) return segment;
 
     isWav = segment.ct.includes("wav");
@@ -438,7 +482,7 @@ async function synthesizeSentences(sentences: string[], ctx: SegmentContext) {
 
 /** Parses and validates the request into synthesis parameters; returns an error response when invalid. */
 async function prepareRequest(request: NextRequest, isAdmin: boolean) {
-  const { config, defaults, voiceMap, savedBaseUrl } = await loadConfig();
+  const { config, defaults, voiceMap, savedBaseUrl, savedFastApiUrl } = await loadConfig();
 
   let p: TtsParams;
   if (request.method === "POST") {
@@ -451,7 +495,7 @@ async function prepareRequest(request: NextRequest, isAdmin: boolean) {
     }
     p = paramsFromBody(body, defaults);
     if (isAdmin) {
-      const overrideError = applyAdminOverrides(config, body);
+      const overrideError = await applyAdminOverrides(config, body);
       if (overrideError) return overrideError;
     }
   } else {
@@ -479,7 +523,19 @@ async function prepareRequest(request: NextRequest, isAdmin: boolean) {
     isAdmin &&
     (request.headers.get("x-test-override") === "true" || config.baseUrl !== savedBaseUrl);
 
-  return { p, config, baseUrl, fastApiUrl, useCache: !isTestingOverrides };
+  const overrideActive =
+    request.method === "POST" &&
+    isAdmin &&
+    (baseUrl !== withHttp(savedBaseUrl.trim()) || fastApiUrl !== withHttp(savedFastApiUrl.trim()));
+
+  return {
+    p,
+    config,
+    baseUrl,
+    fastApiUrl,
+    useCache: !isTestingOverrides,
+    redirect: overrideActive ? ("error" as const) : ("follow" as const),
+  };
 }
 
 async function handleTts(request: NextRequest) {
@@ -501,7 +557,7 @@ async function handleTts(request: NextRequest) {
 
     const prepared = await prepareRequest(request, isAdmin);
     if (prepared instanceof NextResponse) return prepared;
-    const { p, config, baseUrl, fastApiUrl, useCache } = prepared;
+    const { p, config, baseUrl, fastApiUrl, useCache, redirect } = prepared;
 
     const resolvedPhonemes = resolveKokoroPhonemes(p);
     const keyFor = (prefix: string, text: string) =>
@@ -534,6 +590,7 @@ async function handleTts(request: NextRequest) {
       headers,
       keyFor,
       useCache,
+      redirect,
     });
     if (result instanceof NextResponse) return result;
 
