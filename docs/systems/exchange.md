@@ -106,6 +106,18 @@ All Exchange `₷` money columns in `prisma/schema/exchange.prisma` are stored a
 
 ### Operator Runbook
 
+The conversion SQL (`prisma/migrations/20261109120000_exchange_integer_cents/migration.sql`) is **idempotent**: it
+converts only while `exchange_wallets.sovereigns` is still `double precision`, and does nothing once converted. It must
+run before `db push`, which would retype the same columns with a plain cast and no ×100 (every amount 1/100 of its
+value). `scripts/deploy-production.sh`, `start-development.sh` (dev startup) and `scripts/refresh-local-db.sh` all run
+it before their push, so dev startup converts a local database too.
+
+`scripts/deploy-production.sh` also does steps 4 to 6 below on its own: when the conversion is pending it prints a
+banner and `pm2 stop`s `ixstats-web`, `ixstats-cron` and `ixstats-ws` before the deploy SQL, and starts them again after
+the PM2 reload, on the new build. A deploy that fails after the stop leaves them stopped (the old code must not run
+against cents): fix the cause and run the deploy again. The market tick (`runExchangeMarketTick`) skips itself while the
+Exchange is closed. A manual run follows the steps in order.
+
 1. **Close the Exchange (maintenance mode):**
    `assertExchangeOpen` (`src/lib/exchange/guards.ts`) checks `getVaultConfig(db)` for `vault_isMaintenanceMode` (`cfg.isMaintenanceMode`) and `vault_isExchangeEnabled` (`cfg.isExchangeEnabled`). Close the Exchange before running the migration:
    ```sql
@@ -151,16 +163,26 @@ All Exchange `₷` money columns in `prisma/schema/exchange.prisma` are stored a
       OR "tariffPaid" * 100 <> round("tariffPaid" * 100);
    ```
 
-4. **Apply the SQL migration in one transaction:**
+4. **Stop the writers:** the old code writes ₷ floats, which PostgreSQL silently casts into the bigint columns as if
+   they were cents. Stop web, cron and websockets before the SQL:
+   ```bash
+   pm2 stop ixstats-web ixstats-cron ixstats-ws
+   ```
+
+5. **Apply the SQL migration (one transaction; a re-run does nothing):**
    ```bash
    docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
      < prisma/migrations/20261109120000_exchange_integer_cents/migration.sql
    ```
 
-5. **Deploy the new application build:**
-   Deploy the updated server and regenerate Prisma client (`bun run db:generate`).
+6. **Deploy the new application build, then start the writers:**
+   Deploy the updated server and regenerate Prisma client (`bun run db:generate`), then start the stopped processes on
+   the new build (a reload may leave a stopped process stopped):
+   ```bash
+   pm2 start ixstats-web ixstats-cron ixstats-ws --update-env
+   ```
 
-6. **Re-open the Exchange:**
+7. **Re-open the Exchange:**
    ```sql
    UPDATE "system_config" SET "value" = 'true', "updatedAt" = NOW()
    WHERE "key" = 'vault_isExchangeEnabled';

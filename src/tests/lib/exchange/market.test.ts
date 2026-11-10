@@ -37,10 +37,18 @@ import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange
 const NATION = "nation_a";
 let fake: FakeDb;
 
-function setup() {
+/** A tick on an open Exchange: fails the test if it was skipped. */
+async function openTick(client: FakeDb["client"]) {
+  const result = await runExchangeMarketTick(client);
+  if (result.skipped) throw new Error(`tick skipped: ${result.reason}`);
+  return result;
+}
+
+function setup(config: Record<string, string> = {}) {
   invalidateExchangeConfigCache();
   invalidateVaultConfigCache();
   fake = createFakeExchangeDb({
+    systemConfig: Object.entries(config).map(([key, value]) => ({ key, value })),
     user: [{ id: "alice", clerkUserId: "c_alice" }],
     exchangeWallet: [
       { id: "w_alice", userId: "alice", sovereigns: 0n, lifetimeEarned: 0n, lifetimeSpent: 0n },
@@ -72,11 +80,11 @@ describe("runExchangeMarketTick", () => {
   beforeEach(() => setup());
 
   it("mints the nation's stipend once for the tick, however often the tick runs", async () => {
-    const first = await runExchangeMarketTick(fake.client);
+    const first = await openTick(fake.client);
     expect(first.stipendsMinted).toBe(62.5);
     const capital = fake.tables.company![0]!.capital;
 
-    const second = await runExchangeMarketTick(fake.client);
+    const second = await openTick(fake.client);
     expect(second.stipendsMinted).toBe(0);
     expect(fake.tables.nationTreasury).toEqual([
       expect.objectContaining({ countryId: NATION, balance: 112_50n }),
@@ -86,12 +94,37 @@ describe("runExchangeMarketTick", () => {
   });
 
   it("runs bond payments and policy headlines and reports both", async () => {
-    const result = await runExchangeMarketTick(fake.client);
+    const result = await openTick(fake.client);
     expect(result.bonds).toEqual({ couponsPaid: 0, matured: 0, defaulted: 0 });
     expect(result.policyHeadlines).toBe(0);
     expect(fake.tables.exchangeNationSnapshot).toEqual([
       expect.objectContaining({ countryId: NATION }),
     ]);
+  });
+
+  it("skips the whole tick while the Exchange is switched off, and moves nothing", async () => {
+    setup({ vault_isExchangeEnabled: "false" });
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    const before = structuredClone(fake.tables);
+
+    const result = await runExchangeMarketTick(fake.client);
+
+    expect(result).toEqual({ skipped: true, reason: "DISABLED" });
+    expect(fake.tables).toEqual(before);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    warnSpy.mockRestore();
+  });
+
+  it("skips the tick in vault maintenance mode", async () => {
+    setup({ vault_isMaintenanceMode: "true" });
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(await runExchangeMarketTick(fake.client)).toEqual({
+      skipped: true,
+      reason: "MAINTENANCE",
+    });
+    expect(fake.tables.nationTreasury ?? []).toHaveLength(0);
+    warnSpy.mockRestore();
   });
 
   it("(d) running runExchangeMarketTick twice within one operating tick leaves sector index values and fundSovereigns as after the first run", async () => {

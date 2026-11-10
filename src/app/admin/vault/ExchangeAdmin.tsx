@@ -94,6 +94,15 @@ function MarketTickSection() {
   const notify = useNotify();
   const tick = api.exchange.adminRunMarketTick.useMutation({
     onSuccess: (r) => {
+      if (r.skipped) {
+        notify.warning(
+          "Market tick skipped",
+          r.reason === "MAINTENANCE"
+            ? "The vault economy is in maintenance mode"
+            : "The Exchange is switched off"
+        );
+        return;
+      }
       notify.success(
         "Market tick completed",
         `Minted ₷${r.stipendsMinted.toLocaleString("en-US")} in stipends · refreshed ${r.companiesRefreshed} companies`
@@ -114,7 +123,7 @@ function MarketTickSection() {
           {tick.isPending ? "Running tick..." : "Run market tick now"}
         </Button>
       </div>
-      {tick.data && (
+      {tick.data && !tick.data.skipped && (
         <Card variant="well" padding="sm" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="text-caption tabular-nums">
             <span className="text-label-secondary block">Stipends minted</span>

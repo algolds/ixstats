@@ -45,6 +45,21 @@ describe("the integer-cents migration", () => {
     }
   );
 
+  it("stops web, cron and websockets in the deploy while it is pending, and starts them at the reload", () => {
+    const script = readFileSync("scripts/deploy-production.sh", "utf8");
+    const detectAt = script.indexOf('if [ "$CENTS_COLUMN_TYPE" = "double precision" ]; then');
+    const stopAt = script.indexOf("for app in ixstats-web ixstats-cron ixstats-ws; do");
+    const centsAt = script.indexOf(`--file ${CENTS_FILE}`);
+    const reloadAt = script.indexOf("pm2 startOrReload ecosystem.config.cjs");
+    const restartAt = script.indexOf("for app in ${CENTS_STOPPED_APPS:-}; do");
+    expect(detectAt).toBeGreaterThan(-1);
+    expect(detectAt).toBeLessThan(stopAt);
+    expect(stopAt).toBeLessThan(centsAt);
+    expect(reloadAt).toBeGreaterThan(centsAt);
+    expect(restartAt).toBeGreaterThan(reloadAt);
+    expect(script.slice(restartAt, restartAt + 400)).toContain('pm2 start "$app" --update-env');
+  });
+
   it("multiplies by 100 on every retype", () => {
     const retypes = [...sql.matchAll(/ALTER COLUMN "(\w+)" TYPE bigint USING ([^,;]+)/g)];
     expect(retypes.length).toBeGreaterThan(0);
