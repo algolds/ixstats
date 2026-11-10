@@ -65,13 +65,16 @@ function CompactViewComponent({
 
   const [peekText, setPeekText] = useState<string | null>(null);
   const toastQueue = useToastQueueStore((s) => s.queue);
-  const lastSeenToastRef = useRef<string | null>(null);
+  const seenToastIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
-    const latest = toastQueue.find((t) => t.priority !== "low");
-    if (!latest || latest.id === lastSeenToastRef.current) return;
-    lastSeenToastRef.current = latest.id;
-    setPeekText(latest.title);
+    // The queue is newest first: peek the newest toast not shown before, so dismissing it does not
+    // re-peek an older one still queued behind it.
+    const live = toastQueue.filter((t) => t.priority !== "low");
+    const seen = seenToastIdsRef.current;
+    const fresh = live.find((t) => !seen.has(t.id));
+    seenToastIdsRef.current = new Set(live.map((t) => t.id));
+    if (fresh) setPeekText(fresh.title);
   }, [toastQueue]);
 
   useEffect(() => {
