@@ -12,11 +12,10 @@ import {
   getBondPage,
   getCompanyPage,
   getFrontPage,
-  getLeaderboards,
   getNationPage,
-  getPortfolio,
   realmIndexSeries,
 } from "~/lib/exchange/terminal";
+import { getLeaderboards, getPortfolio } from "~/lib/exchange/terminal-valuation";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
 
