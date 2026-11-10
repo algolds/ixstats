@@ -33,6 +33,7 @@ import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { exchangeAdminRouter } from "~/server/api/routers/exchange/admin";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
+import { createMockCallerContext } from "~/tests/helpers/router-context";
 
 const NATION = "nation_a";
 let fake: FakeDb;
@@ -171,12 +172,13 @@ describe("runExchangeMarketTick", () => {
     const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
     const spy = jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
-    const caller = exchangeAdminRouter.createCaller({
-      db: fake.client,
-      auth: { userId: "c_alice" } as never,
-      user: { id: "alice", clerkUserId: "c_alice", role: { name: "admin", level: 0 } } as never,
-      headers: new Headers(),
-    });
+    const caller = exchangeAdminRouter.createCaller(
+      createMockCallerContext({
+        db: fake.client,
+        auth: { userId: "c_alice" },
+        user: { id: "alice", clerkUserId: "c_alice", role: { name: "admin", level: 0 } },
+      })
+    );
     await expect(caller.adminRunMarketTick()).rejects.toMatchObject({
       code: "CONFLICT",
       message: "The market tick is already running",
