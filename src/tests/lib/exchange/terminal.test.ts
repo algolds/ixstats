@@ -33,7 +33,7 @@ function setup(withCompany = true) {
       email: `${id}@example.com`,
     })),
     exchangeWallet: [
-      { id: "w_bob", userId: "bob", sovereigns: 300, lifetimeEarned: 300, lifetimeSpent: 0 },
+      { id: "w_bob", userId: "bob", sovereigns: 300_00n, lifetimeEarned: 300_00n, lifetimeSpent: 0n },
     ],
     country: [
       {
@@ -55,17 +55,17 @@ function setup(withCompany = true) {
             sectorKey: "industry",
             subIndustryKey: "heavy_manufacturing",
             hqCountryId: "na",
-            capital: 1000,
-            fairValue: 1100,
+            capital: 1000_00n,
+            fairValue: 1100_00n,
             standing: 1,
-            contractsWonValue: 0,
-            decisionValue: 0,
+            contractsWonValue: 0n,
+            decisionValue: 0n,
             sharesIssued: 1000,
             sharesOutstanding: 1000,
-            creditDrawn: 0,
+            creditDrawn: 0n,
             creditRating: "A",
             lastTradePrice: null,
-            lastTickNetIncome: 0,
+            lastTickNetIncome: 0n,
             status: "ACTIVE",
             tradingOpen: true,
           },
@@ -76,7 +76,7 @@ function setup(withCompany = true) {
           {
             id: "h1",
             companyId: "co",
-            fairValue: 1000,
+            fairValue: 1000_00n,
             recordedIxTime: now - 1.5 * DAY,
             recordedAt: new Date(now - 1.5 * DAY),
           },
@@ -84,8 +84,8 @@ function setup(withCompany = true) {
       : [],
     shareholding: withCompany
       ? [
-          { id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 700, avgCost: 1 },
-          { id: "sh_b", companyId: "co", ownerUserId: "bob", shares: 300, avgCost: 1 },
+          { id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 700, avgCost: 100n },
+          { id: "sh_b", companyId: "co", ownerUserId: "bob", shares: 300, avgCost: 100n },
         ]
       : [],
     systemConfig: [],
@@ -139,7 +139,7 @@ describe("getFrontPage", () => {
       {
         id: "h_old",
         companyId: "co",
-        fairValue: 500,
+        fairValue: 500_00n,
         recordedIxTime: now - 3 * DAY,
         recordedAt: new Date(now - 3 * DAY),
       },
@@ -167,7 +167,7 @@ describe("getCompanyPage", () => {
     const rows = Array.from({ length: 300 }, (_, i) => ({
       id: `h_${i}`,
       companyId: "co",
-      fairValue: 1000 + i,
+      fairValue: BigInt((1000 + i) * 100),
       recordedIxTime: now - (300 - i) * 60_000,
       recordedAt: new Date(now - (300 - i) * 60_000),
     }));
@@ -255,7 +255,7 @@ describe("bond prices", () => {
           countryId: "na",
           realmId: "default",
           issuerUserId: "alice",
-          faceValue: 100,
+          faceValue: 100_00n,
           unitsIssued: 100,
           unitsSold: 0,
           couponRate: 0.07,
@@ -267,7 +267,7 @@ describe("bond prices", () => {
         },
       ];
       fake.tables.nationTreasury = [
-        { id: "t", countryId: "na", realmId: "default", balance: 0, creditRating: "A" },
+        { id: "t", countryId: "na", realmId: "default", balance: 0n, creditRating: "A" },
       ];
       return (await getBondPage(fake.client, "b1", null))?.bond.price;
     };
@@ -307,9 +307,9 @@ describe("getLeaderboards", () => {
     const now = Date.now();
     fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", email: "carol@example.com" });
     fake.tables.exchangeWallet = [
-      { id: "w_alice", userId: "alice", sovereigns: 150, lifetimeEarned: 150, lifetimeSpent: 0 },
-      { id: "w_bob", userId: "bob", sovereigns: 300, lifetimeEarned: 300, lifetimeSpent: 0 },
-      { id: "w_carol", userId: "carol", sovereigns: 9000, lifetimeEarned: 9000, lifetimeSpent: 0 },
+      { id: "w_alice", userId: "alice", sovereigns: 150_00n, lifetimeEarned: 150_00n, lifetimeSpent: 0n },
+      { id: "w_bob", userId: "bob", sovereigns: 300_00n, lifetimeEarned: 300_00n, lifetimeSpent: 0n },
+      { id: "w_carol", userId: "carol", sovereigns: 9000_00n, lifetimeEarned: 9000_00n, lifetimeSpent: 0n },
     ];
     fake.tables.country!.push({
       id: "nb",
@@ -319,8 +319,8 @@ describe("getLeaderboards", () => {
       currencyExchangeRate: null,
     });
     fake.tables.nationTreasury = [
-      { id: "t_na", countryId: "na", realmId: "default", balance: 500, creditRating: "AA" },
-      { id: "t_nb", countryId: "nb", realmId: "other", balance: 800, creditRating: "A" },
+      { id: "t_na", countryId: "na", realmId: "default", balance: 500_00n, creditRating: "AA" },
+      { id: "t_nb", countryId: "nb", realmId: "other", balance: 800_00n, creditRating: "A" },
     ];
     fake.tables.company!.push({
       id: "co_other",
@@ -330,17 +330,17 @@ describe("getLeaderboards", () => {
       sectorKey: "services",
       subIndustryKey: "software_media",
       hqCountryId: "nb",
-      capital: 2000,
-      fairValue: 2400,
+      capital: 2000_00n,
+      fairValue: 2400_00n,
       standing: 1,
-      contractsWonValue: 0,
-      decisionValue: 0,
+      contractsWonValue: 0n,
+      decisionValue: 0n,
       sharesIssued: 1000,
       sharesOutstanding: 1000,
-      creditDrawn: 0,
+      creditDrawn: 0n,
       creditRating: "A",
-      lastTradePrice: 2.5,
-      lastTickNetIncome: 0,
+      lastTradePrice: 2_50n,
+      lastTickNetIncome: 0n,
       status: "ACTIVE",
       tradingOpen: true,
     });
@@ -349,7 +349,7 @@ describe("getLeaderboards", () => {
       companyId: "co_other",
       ownerUserId: "carol",
       shares: 1000,
-      avgCost: 2,
+      avgCost: 200n,
     });
     fake.tables.nationBond = [
       {
@@ -357,14 +357,14 @@ describe("getLeaderboards", () => {
         countryId: "na",
         realmId: "default",
         issuerUserId: "alice",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 50,
         unitsSold: 10,
         couponRate: 0.06,
         termWeeks: 8,
         weeksPaid: 1,
         status: "OPEN",
-        lastTradePrice: 102.5,
+        lastTradePrice: 102_50n,
         issuedAt: new Date(now - 7 * DAY),
       },
       {
@@ -372,7 +372,7 @@ describe("getLeaderboards", () => {
         countryId: "nb",
         realmId: "other",
         issuerUserId: "carol",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 50,
         unitsSold: 20,
         couponRate: 0.08,
@@ -390,13 +390,13 @@ describe("getLeaderboards", () => {
         sellerUserId: "alice",
         units: 2,
         unitsListed: 2,
-        pricePerUnit: 101.25,
+        pricePerUnit: 101_25n,
         status: "OPEN",
       },
     ];
     fake.tables.bondHolding = [
-      { id: "bh_b", bondId: "b_def", ownerUserId: "bob", units: 4, avgCost: 100 },
-      { id: "bh_c", bondId: "b_other", ownerUserId: "carol", units: 10, avgCost: 100 },
+      { id: "bh_b", bondId: "b_def", ownerUserId: "bob", units: 4, avgCost: 100_00n },
+      { id: "bh_c", bondId: "b_other", ownerUserId: "carol", units: 10, avgCost: 100_00n },
     ];
     fake.tables.sectorIndex = [
       {
@@ -405,7 +405,7 @@ describe("getLeaderboards", () => {
         sectorKey: "industry",
         label: "Industry",
         value: 1200,
-        fundSovereigns: 375,
+        fundSovereigns: 375_00n,
         unitsOutstanding: 250,
       },
       {
@@ -414,7 +414,7 @@ describe("getLeaderboards", () => {
         sectorKey: "services",
         label: "Services",
         value: 1500,
-        fundSovereigns: 600,
+        fundSovereigns: 600_00n,
         unitsOutstanding: 300,
       },
     ];
@@ -425,7 +425,7 @@ describe("getLeaderboards", () => {
         realmId: "default",
         sectorKey: "industry",
         units: 40,
-        avgCost: 1,
+        avgCost: 100n,
       },
       {
         id: "sp_b",
@@ -433,7 +433,7 @@ describe("getLeaderboards", () => {
         realmId: "default",
         sectorKey: "industry",
         units: 60,
-        avgCost: 1,
+        avgCost: 100n,
       },
       {
         id: "sp_c",
@@ -441,7 +441,7 @@ describe("getLeaderboards", () => {
         realmId: "other",
         sectorKey: "services",
         units: 100,
-        avgCost: 1,
+        avgCost: 100n,
       },
     ];
 

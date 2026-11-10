@@ -45,14 +45,14 @@ function company(id: string, founderId: string) {
     sectorKey: "industry",
     subIndustryKey: "heavy_manufacturing",
     hqCountryId: NA,
-    capital: 1000,
-    fairValue: 1000,
+    capital: 1000_00n,
+    fairValue: 1000_00n,
     standing: 0,
-    contractsWonValue: 0,
-    decisionValue: 0,
+    contractsWonValue: 0n,
+    decisionValue: 0n,
     sharesIssued: 1000,
     sharesOutstanding: 1000,
-    creditDrawn: 0,
+    creditDrawn: 0n,
     creditRating: "A",
     tradingOpen: true,
     status: "ACTIVE",
@@ -67,22 +67,22 @@ function setup(balance = 10_000) {
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [
       { id: NA, name: "Caphiria", realmId: "default", ownerUserId: "alice" },
       { id: "nb", name: "Urcea", realmId: "default", ownerUserId: "bob" },
     ],
     nationTreasury: [
-      { id: "t_na", countryId: NA, realmId: "default", balance },
-      { id: "t_nb", countryId: "nb", realmId: "default", balance: 5000 },
+      { id: "t_na", countryId: NA, realmId: "default", balance: BigInt(Math.round(balance * 100)) },
+      { id: "t_nb", countryId: "nb", realmId: "default", balance: 5000_00n },
     ],
     company: [company("co1", "alice"), company("co2", "bob")],
     shareholding: [
-      { id: "sh1", companyId: "co1", ownerUserId: "alice", shares: 1000, avgCost: 1 },
-      { id: "sh2", companyId: "co2", ownerUserId: "bob", shares: 1000, avgCost: 1 },
+      { id: "sh1", companyId: "co1", ownerUserId: "alice", shares: 1000, avgCost: 100n },
+      { id: "sh2", companyId: "co2", ownerUserId: "bob", shares: 1000, avgCost: 100n },
     ],
     nationBond: [
       {
@@ -90,7 +90,7 @@ function setup(balance = 10_000) {
         countryId: "nb",
         realmId: "default",
         issuerUserId: "bob",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 100,
         unitsSold: 0,
         couponRate: 0.05,
@@ -104,7 +104,7 @@ function setup(balance = 10_000) {
         countryId: NA,
         realmId: "default",
         issuerUserId: "alice",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 100,
         unitsSold: 0,
         couponRate: 0.05,
@@ -119,7 +119,8 @@ function setup(balance = 10_000) {
 }
 
 const treasury = (id = NA) => fake.tables.nationTreasury!.find((t) => t.countryId === id)!;
-const fundCash = () => fake.tables.exchangeWallet!.find((w) => w.userId === FUND)?.sovereigns ?? 0;
+const fundCash = () =>
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === FUND)?.sovereigns ?? 0n) / 100;
 const deposit = (amount: number) =>
   depositToFund(fake.client, { userId: "alice", countryId: NA, amount, requestId: rid() });
 
@@ -138,7 +139,7 @@ describe("the fund account", () => {
 describe("deposit and withdraw", () => {
   it("moves ₷ from the treasury into the fund and back", async () => {
     await deposit(1000);
-    expect(treasury().balance).toBe(9000);
+    expect(treasury().balance).toBe(9000_00n);
     expect(fundCash()).toBe(1000);
     await withdrawFromFund(fake.client, {
       userId: "alice",
@@ -146,14 +147,14 @@ describe("deposit and withdraw", () => {
       amount: 400,
       requestId: rid(),
     });
-    expect(treasury().balance).toBe(9400);
+    expect(treasury().balance).toBe(9400_00n);
     expect(fundCash()).toBe(600);
   });
 
   it("refuses a deposit that takes the fund past half, moving nothing", async () => {
     await deposit(4000);
     await expect(deposit(1001)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
-    expect(treasury().balance).toBe(6000);
+    expect(treasury().balance).toBe(6000_00n);
     expect(fundCash()).toBe(4000);
   });
 
@@ -301,7 +302,7 @@ describe("what the fund may buy", () => {
       companyId: "co2",
       ownerUserId: "alice",
       shares: 20,
-      avgCost: 1,
+      avgCost: 100n,
     });
     const aliceAsk = await listShares(fake.client, {
       userId: "alice",
@@ -364,9 +365,9 @@ describe("what the fund may buy", () => {
     fake.tables.exchangeWallet!.push({
       id: "w_carol",
       userId: "carol",
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     });
     // Sell out b_nb primary issue (50 to alice, 50 to carol).
     await buyBondPrimary(fake.client, {
@@ -451,9 +452,9 @@ describe("what the fund may buy", () => {
     fake.tables.exchangeWallet!.push({
       id: "w_carol",
       userId: "carol",
-      sovereigns: 50_000,
-      lifetimeEarned: 50_000,
-      lifetimeSpent: 0,
+      sovereigns: 50_000_00n,
+      lifetimeEarned: 50_000_00n,
+      lifetimeSpent: 0n,
     });
     const requestId = rid();
     await fundTrade(fake.client, {

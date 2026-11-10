@@ -11,7 +11,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { withJobLock } from "~/lib/system/job-lock";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, formatSovereigns, fromCents, round2 } from "./amounts";
 import {
   BOND_FACE,
   buyBondListing,
@@ -55,7 +55,7 @@ export async function ensureFundUser(db: Db, countryId: string): Promise<string>
   if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
   await db.user.createMany({ data: [{ id, clerkUserId: `system:${id}` }], skipDuplicates: true });
   await db.exchangeWallet.createMany({
-    data: [{ userId: id, sovereigns: 0 }],
+    data: [{ userId: id, sovereigns: 0n }],
     skipDuplicates: true,
   });
   const treasury = await getOrCreateTreasury(db, countryId, country.realmId);
@@ -88,13 +88,13 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
   ]);
   // ponytail: listed shares and units drop out of the cost basis while listed; count them if the cap needs to be exact.
   const held = [
-    ...shares.map((s) => s.shares * s.avgCost),
-    ...bonds.map((b) => b.units * b.avgCost),
-    ...funds.map((f) => f.units * f.avgCost),
+    ...shares.map((s) => s.shares * fromCents(centsOf(s.avgCost))),
+    ...bonds.map((b) => b.units * fromCents(centsOf(b.avgCost))),
+    ...funds.map((f) => f.units * fromCents(centsOf(f.avgCost))),
   ];
   return round2(
-    (wallet?.sovereigns ?? 0) +
-      orders.reduce((s, o) => s + o.escrow, 0) +
+    (wallet ? fromCents(centsOf(wallet.sovereigns)) : 0) +
+      orders.reduce((s, o) => s + fromCents(centsOf(o.escrow)), 0) +
       held.reduce((s, v) => s + v, 0)
   );
 }
@@ -117,7 +117,8 @@ export async function depositToFund(
     await lockWallet(tx, fundUserId);
     const treasury = await lockTreasuryTx(tx, country.id, country.realmId);
     const invested = await investedAtCost(tx, fundUserId);
-    if (invested + i.amount > FUND_SHARE_CAP * (treasury.balance + invested) + 1e-9) {
+    const treasuryBalance = fromCents(centsOf(treasury.balance));
+    if (invested + i.amount > FUND_SHARE_CAP * (treasuryBalance + invested) + 1e-9) {
       throw new ExchangeError(
         "LIMIT_REACHED",
         `The wealth fund may hold at most half of the treasury and fund together`
@@ -246,7 +247,7 @@ async function guardOrder(
     if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
     assertSellBand(
       order.pricePerShare,
-      primaryPricePerShare(company.fairValue, company.sharesOutstanding)
+      primaryPricePerShare(fromCents(centsOf(company.fairValue)), company.sharesOutstanding)
     );
   }
   if (order.kind === "bond-buy") {
@@ -268,7 +269,9 @@ async function cheapestListing(db: Db, bondId: string, fundUserId: string): Prom
     where: { bondId, status: "OPEN" },
     select: { id: true, pricePerUnit: true, sellerUserId: true },
   });
-  for (const listing of [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)) {
+  for (const listing of [...listings].sort(
+    (a, b) => centsOf(a.pricePerUnit) - centsOf(b.pricePerUnit)
+  )) {
     if (!(await isFundInsiderPair(db, fundUserId, listing.sellerUserId))) {
       return listing.id;
     }
@@ -447,6 +450,7 @@ export async function fundSummary(db: Db, countryId: string): Promise<FundSummar
     getPortfolio(db, treasury.fundUserId, treasury.realmId),
   ]);
   // invested + room = FUND_SHARE_CAP × (balance − room + invested + room)  →  room = cap×(balance+invested) − invested
-  const room = Math.max(0, round2(FUND_SHARE_CAP * (treasury.balance + invested) - invested));
+  const balance = fromCents(centsOf(treasury.balance));
+  const room = Math.max(0, round2(FUND_SHARE_CAP * (balance + invested) - invested));
   return { countryId, cash: portfolio.wallet, invested, room, portfolio };
 }

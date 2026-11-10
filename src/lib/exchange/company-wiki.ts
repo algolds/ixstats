@@ -15,7 +15,7 @@ import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { mediaWikiOrigin } from "~/lib/wiki-os/config";
 import { MediaAssetService } from "~/lib/wiki-os/core/media-asset-service";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
-import type { SectorKey } from "./companies";
+import { companyView, type SectorKey } from "./companies";
 import { assertExchangeOpen, type Db } from "./guards";
 import { SUB_INDUSTRIES, type SubIndustryKey } from "./taxonomy";
 
@@ -648,5 +648,5 @@ export async function syncCompanyFromWiki(
     },
   });
 
-  return { company: updated, preview };
+  return { company: companyView(updated), preview };
 }

@@ -11,9 +11,9 @@ import {
 } from "~/server/api/trpc";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
-import { round2 } from "~/lib/exchange/amounts";
+import { centsOf, fromCents, round2 } from "~/lib/exchange/amounts";
 import { requireCountryOwner } from "~/lib/exchange/guards";
-import { SECTOR_KEYS } from "~/lib/exchange/companies";
+import { companyView, SECTOR_KEYS } from "~/lib/exchange/companies";
 import {
   createFaucetTender,
   createGovernmentContract,
@@ -134,10 +134,13 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             : (macro?.corporateTaxRate ?? 0.2);
 
         const terms = await lendingTermsOf(ctx.db, input.countryId);
-        const enriched = companies.map((c) => ({
-          ...c,
-          creditLimit: round2(creditLimitFor(c, terms.cap)),
-        }));
+        const enriched = companies.map((raw) => {
+          const c = companyView(raw);
+          return {
+            ...c,
+            creditLimit: round2(creditLimitFor(c, terms.cap)),
+          };
+        });
 
         return {
           countryId: input.countryId,
@@ -164,7 +167,7 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             id: t.id,
             title: t.title,
             sectorKey: t.sectorKey,
-            value: t.value,
+            value: fromCents(centsOf(t.value)),
             fundedBy: t.fundedBy,
             status: t.status,
             endIxTime: t.endIxTime,
@@ -172,7 +175,9 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             linkedIssueId: t.linkedIssueId,
             bidCount: t.bids.length,
             lowestBid:
-              isOwner && t.bids.length > 0 ? Math.min(...t.bids.map((b) => b.amount)) : null,
+              isOwner && t.bids.length > 0
+                ? Math.min(...t.bids.map((b) => fromCents(centsOf(b.amount))))
+                : null,
           })),
         };
       })

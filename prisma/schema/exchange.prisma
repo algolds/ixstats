@@ -19,9 +19,9 @@
 model ExchangeWallet {
   id             String                @id @default(cuid())
   userId         String                @unique
-  sovereigns     Float                 @default(0)
-  lifetimeEarned Float                 @default(0)
-  lifetimeSpent  Float                 @default(0)
+  sovereigns     BigInt                @default(0)
+  lifetimeEarned BigInt                @default(0)
+  lifetimeSpent  BigInt                @default(0)
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @default(now()) @updatedAt
   user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -38,8 +38,8 @@ model ExchangeWallet {
 model ExchangeTransaction {
   id             String         @id @default(cuid())
   walletId       String
-  sovereigns     Float
-  balanceAfter   Float
+  sovereigns     BigInt
+  balanceAfter   BigInt
   type           String
   source         String
   metadata       Json?
@@ -64,27 +64,27 @@ model Company {
   sectorKey             String
   subIndustryKey        String                @default("software_media")
   hqCountryId           String?
-  capital               Float                 @default(0)
+  capital               BigInt                @default(0)
   standing              Float                 @default(0)
-  fairValue             Float                 @default(0)
+  fairValue             BigInt                @default(0)
   sharesIssued          Int                   @default(0)
   sharesOutstanding     Int                   @default(0)
-  contractsWonValue     Float                 @default(0)
+  contractsWonValue     BigInt                @default(0)
   /// Founder control: new listings and share purchases are allowed only while true.
   tradingOpen           Boolean               @default(false)
   /// Fair value added by applied EXPAND decisions (see CompanyDecision).
-  decisionValue         Float                 @default(0)
+  decisionValue         BigInt                @default(0)
   pricingStrategy       String                @default("balanced")
   lobbyBuffType         String?
   lobbyBuffUntilIxTime  Float?
-  creditDrawn           Float                 @default(0)
+  creditDrawn           BigInt                @default(0)
   creditRating          String                @default("A")
-  lastTradePrice        Float?
+  lastTradePrice        BigInt?
   lastTradeIxTime       Float?
-  lastTickRevenue       Float                 @default(0)
-  lastTickExpenses      Float                 @default(0)
-  lastTickTax           Float                 @default(0)
-  lastTickNetIncome     Float                 @default(0)
+  lastTickRevenue       BigInt                @default(0)
+  lastTickExpenses      BigInt                @default(0)
+  lastTickTax           BigInt                @default(0)
+  lastTickNetIncome     BigInt                @default(0)
   distressedSinceIxTime Float?
   wikiSlug              String?
   wikiData              Json?
@@ -122,7 +122,7 @@ model Company {
 model CompanyValueHistory {
   id            String   @id @default(cuid())
   companyId     String
-  fairValue     Float
+  fairValue     BigInt
   breakdown     Json?
   recordedIxTime Float
   recordedAt    DateTime @default(now())
@@ -138,7 +138,7 @@ model ShareIssuance {
   id           String   @id @default(cuid())
   companyId    String
   shares       Int
-  pricePerShare Float
+  pricePerShare BigInt
   issuedIxTime Float
   createdAt    DateTime @default(now())
   company      Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -157,7 +157,7 @@ model ShareListing {
   sellerUserId   String?
   shares         Int
   sharesListed   Int
-  pricePerShare  Float
+  pricePerShare  BigInt
   status         String   @default("OPEN")
   createdIxTime  Float
   idempotencyKey String?  @unique
@@ -177,8 +177,8 @@ model CompanyDividend {
   id               String   @id @default(cuid())
   companyId        String
   declaredByUserId String
-  declared         Float
-  amount           Float
+  declared         BigInt
+  amount           BigInt
   shareCount       Int
   holderCount      Int
   ixTime           Float
@@ -196,7 +196,7 @@ model Shareholding {
   companyId   String
   ownerUserId String
   shares      Int      @default(0)
-  avgCost     Float    @default(0)
+  avgCost     BigInt   @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
@@ -223,8 +223,8 @@ model SectorIndex {
   computedIxTime Float?
   /// The sector fund: ₷ held for SectorPosition holders and the units they own. Each index
   /// update rebalances the four funds by relative index performance; no ₷ is created.
-  fundSovereigns   Float @default(0)
-  unitsOutstanding Float @default(0)
+  fundSovereigns   BigInt @default(0)
+  unitsOutstanding Float  @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
@@ -254,7 +254,7 @@ model SectorPosition {
   realmId     String   @default("default")
   sectorKey   String
   units       Float    @default(0)
-  avgCost     Float    @default(0)
+  avgCost     BigInt   @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   owner       User     @relation("UserSectorPositions", fields: [ownerUserId], references: [id], onDelete: Cascade)
@@ -271,9 +271,9 @@ model ConversionLog {
   userId     String
   direction  String
   ixCredits  Float
-  sovereigns Float
+  sovereigns BigInt
   rate       Float
-  fee        Float
+  fee        BigInt
   ixTime     Float
   createdAt  DateTime @default(now())
   /// A retried conversion with the same key is applied once.
@@ -313,7 +313,7 @@ model Contract {
   type        String
   title       String
   sectorKey   String
-  value       Float
+  value       BigInt
   status      String        @default("OPEN")
   winnerCompanyId String?
   endIxTime   Float
@@ -323,7 +323,7 @@ model Contract {
   issuerCompanyId  String?
   issuerUserId     String?
   description      String?
-  escrow           Float    @default(0)
+  escrow           BigInt   @default(0)
   awardedBidId     String?
   disputeReason    String?
   disputedByUserId String?
@@ -342,7 +342,7 @@ model Contract {
   linkedIssueId     String?
   /// Cross-border tariff charged on the award, and the amount actually paid into the treasury.
   tariffRate       Float    @default(0)
-  tariffPaid       Float    @default(0)
+  tariffPaid       BigInt   @default(0)
   issuerCompany    Company? @relation("ContractIssuer", fields: [issuerCompanyId], references: [id], onDelete: SetNull)
 
   @@index([issuerCompanyId])
@@ -361,7 +361,7 @@ model ContractBid {
   id           String   @id @default(cuid())
   contractId   String
   companyId    String
-  amount       Float
+  amount       BigInt
   outcome      String?
   standingDelta Float    @default(0)
   createdIxTime Float
@@ -380,12 +380,12 @@ model NationTreasury {
   id                     String   @id @default(cuid())
   countryId              String   @unique
   realmId                String   @default("default")
-  balance                Float    @default(0)
-  lifetimeStipend        Float    @default(0)
-  lifetimeTaxEarned      Float    @default(0)
-  lifetimeTariffEarned   Float    @default(0)
-  lifetimeInterestEarned Float    @default(0)
-  lifetimeSpent          Float    @default(0)
+  balance                BigInt   @default(0)
+  lifetimeStipend        BigInt   @default(0)
+  lifetimeTaxEarned      BigInt   @default(0)
+  lifetimeTariffEarned   BigInt   @default(0)
+  lifetimeInterestEarned BigInt   @default(0)
+  lifetimeSpent          BigInt   @default(0)
   corporateGdpShift      Float    @default(0)
   lastStipendIxTime      Float?
   /// The nation's credit rating (AAA..D), recomputed after bond moves and on each market tick.
@@ -397,7 +397,7 @@ model NationTreasury {
   /// Added to the rating spread on domestic credit lines (lending.ts), -0.02..0.10.
   lendingSpread          Float     @default(0)
   /// The most any one domestic company may borrow from this treasury.
-  companyCreditCap       Float     @default(250000)
+  companyCreditCap       BigInt    @default(25000000)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @default(now()) @updatedAt
 
@@ -412,8 +412,8 @@ model NationTreasuryEntry {
   id             String   @id @default(cuid())
   countryId      String
   type           String
-  amount         Float
-  balanceAfter   Float
+  amount         BigInt
+  balanceAfter   BigInt
   source         String
   metadata       Json?
   ixTime         Float
@@ -433,8 +433,8 @@ model ShareBuyOrder {
   buyerUserId      String
   shares           Int
   sharesOrdered    Int
-  maxPricePerShare Float
-  escrow           Float
+  maxPricePerShare BigInt
+  escrow           BigInt
   status           String   @default("OPEN")
   createdIxTime    Float
   idempotencyKey   String?  @unique
@@ -493,14 +493,14 @@ model NationBond {
   countryId      String
   realmId        String        @default("default")
   issuerUserId   String
-  faceValue      Float         @default(100)
+  faceValue      BigInt        @default(10000)
   unitsIssued    Int
   unitsSold      Int           @default(0)
   couponRate     Float
   termWeeks      Int
   weeksPaid      Int           @default(0)
   status         String        @default("OPEN")
-  lastTradePrice Float?
+  lastTradePrice BigInt?
   issuedAt       DateTime      @default(now())
   idempotencyKey String?       @unique
   createdAt      DateTime      @default(now())
@@ -519,7 +519,7 @@ model BondHolding {
   bondId      String
   ownerUserId String
   units       Int        @default(0)
-  avgCost     Float      @default(0)
+  avgCost     BigInt     @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
   bond        NationBond @relation(fields: [bondId], references: [id], onDelete: Cascade)
@@ -536,7 +536,7 @@ model BondListing {
   sellerUserId   String
   units          Int
   unitsListed    Int
-  pricePerUnit   Float
+  pricePerUnit   BigInt
   status         String     @default("OPEN")
   idempotencyKey String?    @unique
   createdAt      DateTime   @default(now())

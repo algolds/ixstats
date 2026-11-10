@@ -25,7 +25,7 @@ import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { lockCompany } from "./ownership";
-import { formatSovereigns, round2 } from "./amounts";
+import { dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 import { macroOfCountry } from "./tariffs";
 import { transferToTreasuryTx } from "./treasury";
@@ -209,19 +209,20 @@ async function chargeCost(
   payload: DecisionPayload
 ): Promise<void> {
   const hq = type === "LOBBY" ? company.hqCountryId : null;
-  const toTreasury = hq ? round2(payload.cost / 2) : 0;
+  const costCents = toCents(payload.cost);
+  const toTreasuryCents = hq ? Math.round(costCents / 2) : 0;
   if (hq) {
     await transferToTreasuryTx(tx, {
       from: { kind: "COMPANY", companyId: company.id },
       countryId: hq,
       realmId: company.realmId,
-      amount: toTreasury,
+      amount: fromCents(toTreasuryCents),
       type: "LOBBY",
       source: `LOBBY:${company.id}`,
       key: `exchange:decision:${company.id}:${payload.requestId}`,
     });
   }
-  const burned = round2(payload.cost - toTreasury);
+  const burned = dbCents(costCents - toTreasuryCents);
   const { count } = await tx.company.updateMany({
     where: { id: company.id, status: "ACTIVE", capital: { gte: burned } },
     data: { capital: { decrement: burned } },
@@ -321,8 +322,10 @@ async function rndSettlement(
   payload: Partial<DecisionPayload>
 ): Promise<Settlement> {
   const amount = payload.amount ?? 0;
+  const amountCents = toCents(amount);
   if (payload.focus === "efficiency") {
-    const gain = round2(RND_EFFICIENCY_MULTIPLIER * amount);
+    const gainCents = Math.round(RND_EFFICIENCY_MULTIPLIER * amountCents);
+    const gain = fromCents(gainCents);
     return {
       effect: {
         focus: "efficiency",
@@ -330,7 +333,7 @@ async function rndSettlement(
         standingDelta: RND_EFFICIENCY_STANDING,
       },
       data: {
-        decisionValue: { increment: gain },
+        decisionValue: { increment: dbCents(gainCents) },
         standing: { increment: RND_EFFICIENCY_STANDING },
       },
       message: `Research added ${formatSovereigns(gain)} of productive plant.`,
@@ -339,7 +342,8 @@ async function rndSettlement(
   const roll = rollFor(decisionId);
   const efficiency = await efficiencyOf(tx, company.hqCountryId);
   const tier = breakthroughFor(roll, efficiency);
-  const gain = round2(tier.multiplier * amount);
+  const gainCents = Math.round(tier.multiplier * amountCents);
+  const gain = fromCents(gainCents);
   return {
     effect: {
       focus: "breakthrough",
@@ -350,7 +354,7 @@ async function rndSettlement(
       standingDelta: tier.standing,
     },
     data: {
-      decisionValue: { increment: gain },
+      decisionValue: { increment: dbCents(gainCents) },
       standing: { increment: tier.standing },
     },
     message: `Research broke through: ${formatSovereigns(gain)} of productive plant.`,
@@ -370,7 +374,7 @@ async function settle(
       const amount = payload.amount ?? 0;
       return {
         effect: { fairValue: amount },
-        data: { decisionValue: { increment: amount } },
+        data: { decisionValue: { increment: dbCents(toCents(amount)) } },
         message: `The expansion added ${formatSovereigns(amount)} to its fair value.`,
       };
     }

@@ -36,7 +36,7 @@ import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
 
-type Row = Record<string, string | number | boolean | null>;
+type Row = Record<string, string | number | bigint | boolean | null>;
 
 const REALM = "default";
 const NATION = "nation_a";
@@ -54,12 +54,12 @@ function setup(overrides: Row = {}) {
     exchangeWallet: ["alice", "bob", "carol"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 0,
-      lifetimeEarned: 0,
-      lifetimeSpent: 0,
+      sovereigns: 0n,
+      lifetimeEarned: 0n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: NATION, realmId: REALM, economicTier: "Developed" }],
-    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 5000 }],
+    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 5000_00n }],
     company: [
       {
         id: "co1",
@@ -69,13 +69,13 @@ function setup(overrides: Row = {}) {
         sectorKey: "services",
         subIndustryKey: "software_media",
         hqCountryId: NATION,
-        capital: 0,
+        capital: 0n,
         standing: 0,
-        decisionValue: 333.33,
-        creditDrawn: 0,
+        decisionValue: 333_33n,
+        creditDrawn: 0n,
         creditRating: "B",
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         tradingOpen: false,
@@ -95,9 +95,9 @@ function setup(overrides: Row = {}) {
 
 const co = () => fake.tables.company!.find((c) => c.id === "co1")!;
 const treasuryBalance = () =>
-  fake.tables.nationTreasury!.find((t) => t.countryId === NATION)!.balance as number;
+  Number(fake.tables.nationTreasury!.find((t) => t.countryId === NATION)!.balance) / 100;
 const walletCents = (userId: string) =>
-  cents(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number);
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns);
 const run = (nowMs: number) => runCompanyOperations(fake.client, nowMs);
 
 describe("distressDecision", () => {
@@ -147,7 +147,7 @@ describe("72-hour bankruptcy", () => {
 
   it("holds a distressed company for the full 72 hours", async () => {
     await run(T0 + 72 * HOUR_MS - 1);
-    expect(co()).toMatchObject({ status: "DISTRESSED", decisionValue: 333.33 });
+    expect(co()).toMatchObject({ status: "DISTRESSED", decisionValue: 333_33n });
     expect(treasuryBalance()).toBe(5000);
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
   });
@@ -156,9 +156,9 @@ describe("72-hour bankruptcy", () => {
     await run(T0 + 72 * HOUR_MS);
     expect(co()).toMatchObject({
       status: "BANKRUPT",
-      capital: 0,
-      creditDrawn: 0,
-      decisionValue: 0,
+      capital: 0n,
+      creditDrawn: 0n,
+      decisionValue: 0n,
       distressedSinceIxTime: null,
       tradingOpen: false,
     });
@@ -169,7 +169,7 @@ describe("72-hour bankruptcy", () => {
     ).toEqual([["bankruptcy", "HEADLINE"]]);
     expect(treasuryBalance()).toBeCloseTo(4866.67, 2);
     expect(fake.tables.nationTreasuryEntry).toEqual([
-      expect.objectContaining({ type: "SPEND", amount: -133.33, source: "PLANT_RECOVERY:co1" }),
+      expect.objectContaining({ type: "SPEND", amount: -133_33n, source: "PLANT_RECOVERY:co1" }),
     ]);
   });
 
@@ -193,19 +193,19 @@ describe("72-hour bankruptcy", () => {
   });
 
   it("pays the lender before the holders, and pays the holders nothing once the debt takes all", async () => {
-    setup({ creditDrawn: 1000 });
+    setup({ creditDrawn: 1000_00n });
     await run(T0 + 72 * HOUR_MS);
-    expect(co()).toMatchObject({ status: "BANKRUPT", creditDrawn: 0 });
+    expect(co()).toMatchObject({ status: "BANKRUPT", creditDrawn: 0n });
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 133.33, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "INTEREST", amount: 133_33n, source: "LIQUIDATION:co1" }),
       ])
     );
   });
 
   it("unwinds open contracts, buyer ACQUIRE offers, and pending decisions into the waterfall (lender first, then holders pro rata)", async () => {
-    setup({ creditDrawn: 500 });
+    setup({ creditDrawn: 500_00n });
     fake.tables.contract = [
       {
         id: "ct_open",
@@ -216,7 +216,7 @@ describe("72-hour bankruptcy", () => {
         fundedBy: "COMPANY",
         status: "OPEN",
         budget: 400,
-        escrow: 400,
+        escrow: 400_00n,
         deadlineIxTime: T0 + 100 * HOUR_MS,
       },
     ];
@@ -248,18 +248,18 @@ describe("72-hour bankruptcy", () => {
 
     await run(T0 + 72 * HOUR_MS);
 
-    expect(fake.tables.contract![0]).toMatchObject({ status: "CANCELLED", escrow: 0 });
+    expect(fake.tables.contract![0]).toMatchObject({ status: "CANCELLED", escrow: 0n });
     expect(fake.tables.companyProposal![0]).toMatchObject({ status: "EXPIRED" });
     expect(fake.tables.companyDecision![0]).toMatchObject({
       appliedIxTime: T0 + 72 * HOUR_MS,
       effect: { refunded: 250 },
     });
-    expect(co()).toMatchObject({ status: "BANKRUPT", capital: 0, creditDrawn: 0 });
+    expect(co()).toMatchObject({ status: "BANKRUPT", capital: 0n, creditDrawn: 0n });
     // Unwound 400 + 300 + 250 = 950, plus 133.33 plant recovery = 1083.33.
     // Lender takes 500.04 (500 principal + 0.04 tick interest) first; holders split 583.29 (58,329 cents) 500:300:200.
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 500.04, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "INTEREST", amount: 500_04n, source: "LIQUIDATION:co1" }),
       ])
     );
     const paid = [walletCents("alice"), walletCents("bob"), walletCents("carol")];

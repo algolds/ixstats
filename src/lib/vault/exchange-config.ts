@@ -13,6 +13,8 @@
  *   const cfg = await getExchangeConfig(db);
  */
 
+import { fromCents, toCents } from "~/lib/exchange/amounts";
+
 export interface ExchangeConfig {
   /** Sovereign cost to charter a new company (burned: a currency sink). */
   charterFee: number;
@@ -32,6 +34,15 @@ export interface ExchangeConfig {
   realmWeeklyFaucetCap: number;
   /** Most ₷ per market tick a realm may mint from operating revenue, shared pro rata by its companies. */
   realmOperatingBudget: number;
+}
+
+export interface ExchangeConfigWithCents extends ExchangeConfig {
+  charterFeeCents: number;
+  seedSovereignsCents: number;
+  treasuryDailyStipendCents: number;
+  treasuryCapCents: number;
+  realmWeeklyFaucetCapCents: number;
+  realmOperatingBudgetCents: number;
 }
 
 export const EXCHANGE_CONFIG_DEFAULTS: ExchangeConfig = {
@@ -87,12 +98,35 @@ interface SystemConfigReader {
   };
 }
 
-let cache: { value: ExchangeConfig; expires: number } | null = null;
+const MONEY_CONFIG_FIELDS = new Set<keyof ExchangeConfig>([
+  "charterFee",
+  "seedSovereigns",
+  "treasuryDailyStipend",
+  "treasuryCap",
+  "realmWeeklyFaucetCap",
+  "realmOperatingBudget",
+]);
+
+let cache: { value: ExchangeConfigWithCents; expires: number } | null = null;
 const CACHE_TTL_MS = 60_000;
 
 export function clampExchangeConfigValue(field: keyof ExchangeConfig, value: number): number {
   const [min, max] = EXCHANGE_CONFIG_BOUNDS[field];
-  return Math.min(max, Math.max(min, value));
+  const clamped = Math.min(max, Math.max(min, value));
+  return MONEY_CONFIG_FIELDS.has(field) ? fromCents(toCents(clamped)) : clamped;
+}
+
+/** Convert all ₷ fields of an ExchangeConfig into integer cents once on read. */
+export function toExchangeConfigCents(cfg: ExchangeConfig): ExchangeConfigWithCents {
+  return {
+    ...cfg,
+    charterFeeCents: toCents(cfg.charterFee),
+    seedSovereignsCents: toCents(cfg.seedSovereigns),
+    treasuryDailyStipendCents: toCents(cfg.treasuryDailyStipend),
+    treasuryCapCents: toCents(cfg.treasuryCap),
+    realmWeeklyFaucetCapCents: toCents(cfg.realmWeeklyFaucetCap),
+    realmOperatingBudgetCents: toCents(cfg.realmOperatingBudget),
+  };
 }
 
 /** Drop the cached config so the next read sees an admin save at once. */
@@ -101,7 +135,7 @@ export function invalidateExchangeConfigCache(): void {
 }
 
 /** Read the merged Exchange config (defaults overlaid with any SystemConfig rows, clamped). */
-export async function getExchangeConfig(db: SystemConfigReader): Promise<ExchangeConfig> {
+export async function getExchangeConfig(db: SystemConfigReader): Promise<ExchangeConfigWithCents> {
   const now = Date.now();
   if (cache && cache.expires > now) return cache.value;
 
@@ -120,6 +154,7 @@ export async function getExchangeConfig(db: SystemConfigReader): Promise<Exchang
     }
   }
 
-  cache = { value: merged, expires: now + CACHE_TTL_MS };
-  return merged;
+  const withCents = toExchangeConfigCents(merged);
+  cache = { value: withCents, expires: now + CACHE_TTL_MS };
+  return withCents;
 }

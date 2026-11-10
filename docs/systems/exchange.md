@@ -99,3 +99,98 @@ Realm moderators and site admins set each sector's `dmModifier` (−0.5 to 2) fr
 - **Prominence:** `HEADLINE` items fill Today in business, and `ACTIVITY` items fill the live feed. A large trade
   (≥ ₷5,000) is a headline.
 - **Alerts:** watchers of a headline's company, bond or nation are notified, linking the story.
+
+## Deploy: integer cents migration
+
+All Exchange `₷` money columns in `prisma/schema/exchange.prisma` are stored as `BigInt` (`bigint` in PostgreSQL) holding exact integer cents (`1 ₷ = 100 cents`). Domain math runs in integer cents via `toCents`, `fromCents`, `centsOf`, and `dbCents` (`src/lib/exchange/amounts.ts`); API inputs and outputs remain `₷` numbers with at most 2 decimals.
+
+### Operator Runbook
+
+1. **Close the Exchange (maintenance mode):**
+   `assertExchangeOpen` (`src/lib/exchange/guards.ts`) checks `getVaultConfig(db)` for `vault_isMaintenanceMode` (`cfg.isMaintenanceMode`) and `vault_isExchangeEnabled` (`cfg.isExchangeEnabled`). Close the Exchange before running the migration:
+   ```sql
+   INSERT INTO "system_config" ("id", "key", "value", "updatedAt")
+   VALUES ('cfg_exchange_enabled', 'vault_isExchangeEnabled', 'false', NOW())
+   ON CONFLICT ("key") DO UPDATE SET "value" = 'false', "updatedAt" = NOW();
+   ```
+   (Or toggle **Enable the Exchange** off in `/admin/vault` → **System config**.)
+
+2. **Back up the database:**
+   ```bash
+   docker exec ixstats-postgres pg_dump -U postgres -Fc ixstats > /tmp/ixstats-pre-exchange-cents-$(date +%Y%m%d%H%M%S).dump
+   ```
+
+3. **Run read-only pre-flight checks (inspect sub-cent drift prior to rounding):**
+   ```sql
+   SELECT 'exchange_wallets' AS tbl, count(*) AS subcent_rows
+   FROM "exchange_wallets"
+   WHERE "sovereigns" * 100 <> round("sovereigns" * 100)
+      OR "lifetimeEarned" * 100 <> round("lifetimeEarned" * 100)
+      OR "lifetimeSpent" * 100 <> round("lifetimeSpent" * 100)
+   UNION ALL
+   SELECT 'exchange_transactions', count(*)
+   FROM "exchange_transactions"
+   WHERE "sovereigns" * 100 <> round("sovereigns" * 100)
+      OR "balanceAfter" * 100 <> round("balanceAfter" * 100)
+   UNION ALL
+   SELECT 'exchange_nation_treasuries', count(*)
+   FROM "exchange_nation_treasuries"
+   WHERE "balance" * 100 <> round("balance" * 100)
+      OR "companyCreditCap" * 100 <> round("companyCreditCap" * 100)
+   UNION ALL
+   SELECT 'exchange_companies', count(*)
+   FROM "exchange_companies"
+   WHERE "capital" * 100 <> round("capital" * 100)
+      OR "fairValue" * 100 <> round("fairValue" * 100)
+      OR "creditDrawn" * 100 <> round("creditDrawn" * 100)
+   UNION ALL
+   SELECT 'exchange_contracts', count(*)
+   FROM "exchange_contracts"
+   WHERE "value" * 100 <> round("value" * 100)
+      OR "escrow" * 100 <> round("escrow" * 100)
+      OR "tariffPaid" * 100 <> round("tariffPaid" * 100);
+   ```
+
+4. **Apply the SQL migration in one transaction:**
+   ```bash
+   docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
+     < prisma/migrations/20261109120000_exchange_integer_cents/migration.sql
+   ```
+
+5. **Deploy the new application build:**
+   Deploy the updated server and regenerate Prisma client (`bun run db:generate`).
+
+6. **Re-open the Exchange:**
+   ```sql
+   UPDATE "system_config" SET "value" = 'true', "updatedAt" = NOW()
+   WHERE "key" = 'vault_isExchangeEnabled';
+   ```
+
+### Non-money `Float` columns in `prisma/schema/exchange.prisma`
+
+Every remaining `Float` column in `prisma/schema/exchange.prisma` is non-money and intentionally remains `Float`:
+
+- `ExchangeTransaction.ixTime` — real-time epoch timestamp (ms)
+- `Company.standing` — reputation score (`-10` to `+100`), not currency
+- `Company.lobbyBuffUntilIxTime`, `lastTradeIxTime`, `distressedSinceIxTime`, `createdIxTime` — real-time epoch timestamps (ms)
+- `CompanyValueHistory.recordedIxTime` — real-time epoch timestamp (ms)
+- `ShareIssuance.issuedIxTime` — real-time epoch timestamp (ms)
+- `ShareListing.createdIxTime` — real-time epoch timestamp (ms)
+- `CompanyDividend.ixTime` — real-time epoch timestamp (ms)
+- `SectorIndex.value`, `baseTotal`, `dmModifier`, `macroWeight` — dimensionless index level (base `1000`), activity baseline, DM multiplier (`-0.5` to `2.0`), and GDP share (`0` to `1`)
+- `SectorIndex.computedIxTime` — real-time epoch timestamp (ms)
+- `SectorIndex.unitsOutstanding` — fractional fund unit count
+- `SectorIndexHistory.value`, `recordedIxTime` — dimensionless index level and real-time epoch timestamp (ms)
+- `SectorPosition.units` — fractional fund unit count held by a user
+- `ConversionLog.ixCredits`, `rate`, `ixTime` — IxCredits amount (vault currency, out of scope), conversion rate, and real-time epoch timestamp (ms)
+- `CompanyDecision.submittedIxTime`, `appliedIxTime` — real-time epoch timestamps (ms)
+- `Contract.endIxTime`, `createdIxTime`, `closedIxTime` — real-time epoch timestamps (ms)
+- `Contract.tariffRate` — tariff fraction (`0` to `0.25`)
+- `ContractBid.standingDelta`, `createdIxTime` — standing delta points and real-time epoch timestamp (ms)
+- `NationTreasury.corporateGdpShift`, `lastStipendIxTime`, `lendingSpread` — GDP level fraction (`-0.05` to `+0.05`), real-time epoch timestamp (ms), and interest rate spread (`-0.02` to `+0.10`)
+- `NationTreasuryEntry.ixTime` — real-time epoch timestamp (ms)
+- `ShareBuyOrder.createdIxTime` — real-time epoch timestamp (ms)
+- `CompanyProposal.expiresIxTime`, `resolvedIxTime` — real-time epoch timestamps (ms)
+- `NationBond.couponRate` — annual coupon rate fraction (`0.005` to `0.25`)
+- `ExchangeNewsItem.movePct` — relative percentage move for headlines
+- `ExchangeNationSnapshot.corporateTaxRate`, `capGainsTaxRate`, `interestRate` — macroeconomic rate fractions

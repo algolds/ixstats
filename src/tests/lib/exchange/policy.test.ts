@@ -67,7 +67,7 @@ describe("runPolicyHeadlines", () => {
   beforeEach(() => {
     fake = createFakeExchangeDb({
       country: [{ id: "na", name: "Caphiria", realmId: "default", interestRates: 5 }],
-      nationTreasury: [{ id: "t_na", countryId: "na", realmId: "default", balance: 0 }],
+      nationTreasury: [{ id: "t_na", countryId: "na", realmId: "default", balance: 0n }],
     });
   });
 

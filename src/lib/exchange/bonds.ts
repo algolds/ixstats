@@ -15,7 +15,7 @@ import {
   isUniqueViolation,
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, dbCents, formatSovereigns, fromCents, round2, toCents } from "./amounts";
 import { lockParties } from "./fills";
 import { fundUserIdOf } from "./fund-ids";
 import { assertNotFundInsiderPair } from "./fund-insiders";
@@ -30,7 +30,8 @@ import {
   transferToTreasuryTx,
 } from "./treasury";
 
-export const BOND_FACE = 100;
+export const BOND_FACE_CENTS = 10_000;
+export const BOND_FACE = fromCents(BOND_FACE_CENTS);
 export const BOND_UNITS_MIN = 10;
 export const BOND_UNITS_MAX = 10_000;
 export const COUPON_MIN = 0.005;
@@ -103,11 +104,12 @@ export function modelBondPrice(i: ModelPriceInput): number {
 
 /** The price shown for a bond: the cheapest ask, else the last trade, else the model price. */
 export function bondPriceOf(
-  bond: { lastTradePrice: number | null },
+  bond: { lastTradePrice: bigint | null },
   bestAsk: number | null,
   model: number
 ): number {
-  return bestAsk ?? bond.lastTradePrice ?? model;
+  const lastPrice = bond.lastTradePrice !== null ? fromCents(centsOf(bond.lastTradePrice)) : null;
+  return bestAsk ?? lastPrice ?? model;
 }
 
 /** Weeks of a bond's term still to run at `nowMs`. */
@@ -125,8 +127,9 @@ export function weekOwedCents(
   bond: Pick<NationBond, "faceValue" | "couponRate">,
   final: boolean
 ) {
-  const coupon = Math.floor(units * bond.faceValue * bond.couponRate * (7 / 365) * 100);
-  return coupon + (final ? Math.round(units * bond.faceValue * 100) : 0);
+  const faceCents = centsOf(bond.faceValue);
+  const coupon = Math.floor(units * faceCents * bond.couponRate * (7 / 365));
+  return coupon + (final ? units * faceCents : 0);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -168,7 +171,7 @@ async function openPrincipalOf(tx: Db, countryId: string, field: "unitsSold" | "
     where: { countryId, status: "OPEN" },
     select: { unitsSold: true, unitsIssued: true, faceValue: true },
   });
-  return round2(bonds.reduce((s, b) => s + b[field] * b.faceValue, 0));
+  return fromCents(bonds.reduce((s, b) => s + b[field] * centsOf(b.faceValue), 0));
 }
 
 /** Recompute and store a nation's rating. Returns it. */
@@ -181,7 +184,7 @@ export async function refreshNationRatingTx(
   const treasury = await getOrCreateTreasury(tx, countryId, realmId);
   const macro = await macroOfCountry(tx, countryId);
   const rating = nationRatingFor({
-    balance: treasury.balance,
+    balance: fromCents(centsOf(treasury.balance)),
     outstandingPrincipal: await openPrincipalOf(tx, countryId, "unitsSold"),
     growth: macro?.growth ?? null,
     governmentEfficiency: macro?.governmentEfficiency ?? 0.5,
@@ -196,20 +199,23 @@ async function creditHoldingTx(
   bondId: string,
   userId: string,
   units: number,
-  cost: number
+  costCents: number
 ) {
   const existing = await tx.bondHolding.findUnique({
     where: { bondId_ownerUserId: { bondId, ownerUserId: userId } },
   });
   if (!existing) {
     await tx.bondHolding.create({
-      data: { bondId, ownerUserId: userId, units, avgCost: round2(cost / units) },
+      data: { bondId, ownerUserId: userId, units, avgCost: dbCents(Math.round(costCents / units)) },
     });
     return;
   }
   const total = existing.units + units;
-  const avgCost = round2((existing.avgCost * existing.units + cost) / total);
-  await tx.bondHolding.update({ where: { id: existing.id }, data: { units: total, avgCost } });
+  const avgCostCents = Math.round((centsOf(existing.avgCost) * existing.units + costCents) / total);
+  await tx.bondHolding.update({
+    where: { id: existing.id },
+    data: { units: total, avgCost: dbCents(avgCostCents) },
+  });
 }
 
 async function alreadyPaid(tx: Db, key: string): Promise<boolean> {
@@ -277,20 +283,17 @@ export async function issueBond(
         throw new ExchangeError("CONFLICT", "This nation can't issue bonds while it is in default");
       }
       const cfg = await getExchangeConfig(tx);
-      const principal = input.units * BOND_FACE;
+      const principal = fromCents(input.units * BOND_FACE_CENTS);
       const issued = await openPrincipalOf(tx, country.id, "unitsIssued");
       if (issued + principal > OUTSTANDING_CAP_MULTIPLE * cfg.treasuryCap) {
-        throw new ExchangeError(
-          "LIMIT_REACHED",
-          "That would take the nation's bonds past their cap"
-        );
+        throw new ExchangeError("LIMIT_REACHED", "That would take the nation's bonds past their cap");
       }
       const bond = await tx.nationBond.create({
         data: {
           countryId: country.id,
           realmId: country.realmId,
           issuerUserId: input.userId,
-          faceValue: BOND_FACE,
+          faceValue: dbCents(BOND_FACE_CENTS),
           unitsIssued: input.units,
           couponRate: input.couponRate,
           termWeeks: input.termWeeks,
@@ -341,7 +344,8 @@ export async function buyBondPrimary(
   return db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     const bond = await lockedBond(tx, input.bondId);
-    const paid = round2(input.units * bond.faceValue);
+    const paidCents = input.units * centsOf(bond.faceValue);
+    const paid = fromCents(paidCents);
     if (await alreadyPaid(tx, key)) return { units: input.units, paid, alreadyApplied: true };
     await assertNotNationInsider(tx, bond.countryId, input.userId);
     assertTradable(bond);
@@ -362,7 +366,7 @@ export async function buyBondPrimary(
       data: { unitsSold: { increment: input.units } },
     });
     await refreshNationRatingTx(tx, bond.countryId, bond.realmId, Date.now());
-    await creditHoldingTx(tx, bond.id, input.userId, input.units, paid);
+    await creditHoldingTx(tx, bond.id, input.userId, input.units, paidCents);
     await publishNewsTx(tx, {
       realmId: bond.realmId,
       kind: "bond_bought",
@@ -390,37 +394,32 @@ export async function listBondUnits(
   return db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     const bond = await lockedBond(tx, input.bondId);
-    const prior = await tx.bondListing.findUnique({
-      where: { idempotencyKey: key },
-      select: { id: true },
-    });
+    const prior = await tx.bondListing.findUnique({ where: { idempotencyKey: key }, select: { id: true } });
     if (prior) return { listingId: prior.id };
     assertTradable(bond);
     if (
       !Number.isFinite(input.pricePerUnit) ||
       input.pricePerUnit < 0.01 ||
-      input.pricePerUnit > bond.faceValue * LISTING_PRICE_CEILING_SHARE
+      input.pricePerUnit > fromCents(centsOf(bond.faceValue)) * LISTING_PRICE_CEILING_SHARE
     ) {
       throw new ExchangeError("INVALID_AMOUNT", "That price is out of range");
     }
     const open = await tx.bondListing.count({
       where: { bondId: bond.id, sellerUserId: input.userId, status: "OPEN" },
     });
-    if (open >= MAX_OPEN_BOND_LISTINGS)
-      throw new ExchangeError("LIMIT_REACHED", "Too many open listings");
+    if (open >= MAX_OPEN_BOND_LISTINGS) throw new ExchangeError("LIMIT_REACHED", "Too many open listings");
     const { count } = await tx.bondHolding.updateMany({
       where: { bondId: bond.id, ownerUserId: input.userId, units: { gte: input.units } },
       data: { units: { decrement: input.units } },
     });
-    if (count !== 1)
-      throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "You don't hold that many units");
+    if (count !== 1) throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "You don't hold that many units");
     const listing = await tx.bondListing.create({
       data: {
         bondId: bond.id,
         sellerUserId: input.userId,
         units: input.units,
         unitsListed: input.units,
-        pricePerUnit: round2(input.pricePerUnit),
+        pricePerUnit: dbCents(toCents(input.pricePerUnit)),
         idempotencyKey: key,
       },
     });
@@ -435,34 +434,25 @@ export async function buyBondListing(
 ): Promise<BondTradeResult> {
   assertInt(input.units, 1, BOND_UNITS_MAX, "Units");
   const key = `exchange:bond-take:${input.userId}:${input.requestId}`;
-  const found = await db.bondListing.findUnique({
-    where: { id: input.listingId },
-    select: { bondId: true },
-  });
+  const found = await db.bondListing.findUnique({ where: { id: input.listingId }, select: { bondId: true } });
   if (!found) throw new ExchangeError("NOT_FOUND", "Listing not found");
   return db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     const bond = await lockedBond(tx, found.bondId);
     const listing = await tx.bondListing.findUniqueOrThrow({ where: { id: input.listingId } });
-    const paid = round2(input.units * listing.pricePerUnit);
+    const priceCents = centsOf(listing.pricePerUnit);
+    const paidCents = input.units * priceCents;
+    const paid = fromCents(paidCents);
     if (await alreadyPaid(tx, key)) return { units: input.units, paid, alreadyApplied: true };
     await assertNotNationInsider(tx, bond.countryId, input.userId);
     await assertNotFundInsiderPair(tx, input.userId, listing.sellerUserId);
     assertTradable(bond);
     if (listing.status !== "OPEN") throw new ExchangeError("CONFLICT", "That listing is closed");
-    if (listing.sellerUserId === input.userId)
-      throw new ExchangeError("CONFLICT", "That's your own listing");
-    if (input.units > listing.units)
-      throw new ExchangeError("LIMIT_REACHED", "The listing doesn't have that many");
+    if (listing.sellerUserId === input.userId) throw new ExchangeError("CONFLICT", "That's your own listing");
+    if (input.units > listing.units) throw new ExchangeError("LIMIT_REACHED", "The listing doesn't have that many");
     await lockParties(tx, [input.userId, listing.sellerUserId]);
     const source = `BOND:${bond.id}`;
-    await spendSovereignsTx(tx, {
-      userId: input.userId,
-      amount: paid,
-      type: "BOND_BUY",
-      source,
-      idempotencyKey: key,
-    });
+    await spendSovereignsTx(tx, { userId: input.userId, amount: paid, type: "BOND_BUY", source, idempotencyKey: key });
     await earnSovereignsTx(tx, {
       userId: listing.sellerUserId,
       amount: paid,
@@ -475,7 +465,7 @@ export async function buyBondListing(
       where: { id: listing.id },
       data: { units: left, status: left === 0 ? "FILLED" : "OPEN" },
     });
-    await creditHoldingTx(tx, bond.id, input.userId, input.units, paid);
+    await creditHoldingTx(tx, bond.id, input.userId, input.units, paidCents);
     await tx.nationBond.update({
       where: { id: bond.id },
       data: { lastTradePrice: listing.pricePerUnit },
@@ -485,7 +475,7 @@ export async function buyBondListing(
       kind: "bond_bought",
       prominence: "ACTIVITY",
       sourceKind: "EXCHANGE",
-      headline: `A private investor bought ${input.units.toLocaleString("en-US")} ${await nationNameOf(tx, bond.countryId)} bonds at ${formatSovereigns(listing.pricePerUnit)}`,
+      headline: `A private investor bought ${input.units.toLocaleString("en-US")} ${await nationNameOf(tx, bond.countryId)} bonds at ${formatSovereigns(fromCents(priceCents))}`,
       bondId: bond.id,
       countryId: bond.countryId,
       key: `news:bond_bought:${key}`,
@@ -628,7 +618,7 @@ async function payWeekTx(tx: Db, ctx: WeekContext): Promise<WeekOutcome> {
   const total = [...owed.values()].reduce((s, c) => s + c, 0);
   await lockParties(tx, [...owed.keys()]);
   const treasury = await lockTreasuryTx(tx, bond.countryId, bond.realmId);
-  const balanceCents = Math.floor(treasury.balance * 100);
+  const balanceCents = Math.max(0, centsOf(treasury.balance));
   if (total > balanceCents) {
     await defaultTx(tx, { ...ctx, bond }, owed, balanceCents, total);
     return "defaulted";

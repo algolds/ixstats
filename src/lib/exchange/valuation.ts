@@ -2,7 +2,7 @@
  * The Exchange money math the UI shows and the server settles on: one copy, client-safe (no Prisma at runtime).
  * companies.ts, credit.ts and src/components/exchange/shared.tsx re-export these.
  */
-import { round2 } from "./amounts";
+import { fromCents, toCents } from "./amounts";
 import { CREDIT_RATINGS, borrowRateFor } from "./taxonomy";
 
 /** The index level every sector starts at (SectorIndex.value default). */
@@ -49,14 +49,27 @@ export function computeFairValue(
   sectorIndexValue: number = INDEX_BASE,
   weights: FairValueWeights = DEFAULT_WEIGHTS
 ): FairValueBreakdown {
-  const netCapital = Math.max(0, round2(c.capital - (c.creditDrawn ?? 0)));
-  const contracts = round2(0.25 * c.contractsWonValue);
-  const standing = round2(200 * weights.valuationStandingWeight * Math.max(0, c.standing));
+  const netCapitalCents = Math.max(0, toCents(c.capital) - toCents(c.creditDrawn ?? 0));
+  const contractsCents = Math.round(0.25 * toCents(c.contractsWonValue));
+  const standingCents = Math.round(
+    200_00 * weights.valuationStandingWeight * Math.max(0, c.standing)
+  );
   const rawFactor = 1 + weights.valuationSectorWeight * (sectorIndexValue / INDEX_BASE - 1);
   const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
-  const decisions = round2(weights.valuationDecisionWeight * (c.decisionValue ?? 0));
-  const fairValue = round2((netCapital + contracts + standing) * sectorFactor + decisions);
-  return { capital: netCapital, contracts, standing, sectorFactor, decisions, fairValue };
+  const decisionsCents = Math.round(
+    weights.valuationDecisionWeight * toCents(c.decisionValue ?? 0)
+  );
+  const fairValueCents = Math.round(
+    (netCapitalCents + contractsCents + standingCents) * sectorFactor + decisionsCents
+  );
+  return {
+    capital: fromCents(netCapitalCents),
+    contracts: fromCents(contractsCents),
+    standing: fromCents(standingCents),
+    sectorFactor,
+    decisions: fromCents(decisionsCents),
+    fairValue: fromCents(fairValueCents),
+  };
 }
 
 const CREDIT_LIMIT_CAP = 250_000;

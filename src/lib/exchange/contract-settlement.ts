@@ -7,10 +7,21 @@
 import type { Contract } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
 import { refreshFairValue } from "./companies";
-import { round2 } from "./amounts";
+import { centsOf, dbCents, fromCents, toCents } from "./amounts";
 import type { Db } from "./guards";
 import { tariffOn } from "./tariffs";
 import { creditTreasuryTx, transferToTreasuryTx } from "./treasury";
+
+export function contractView<
+  T extends { value: bigint | number; escrow: bigint | number; tariffPaid: bigint | number },
+>(row: T) {
+  return {
+    ...row,
+    value: fromCents(centsOf(row.value)),
+    escrow: fromCents(centsOf(row.escrow)),
+    tariffPaid: fromCents(centsOf(row.tariffPaid)),
+  };
+}
 
 interface Funded {
   id: string;
@@ -59,7 +70,7 @@ async function refundCompany(tx: Db, contract: Funded, amount: number, _step: st
   }
   await tx.company.update({
     where: { id: contract.issuerCompanyId },
-    data: { capital: { increment: amount } },
+    data: { capital: { increment: dbCents(toCents(amount)) } },
   });
   await refreshFairValue(tx, contract.issuerCompanyId);
 }
@@ -117,11 +128,12 @@ export async function payContractor(
   const delta = standingGainOf(contract, company, Date.now());
   const tariff = await tariffOn(tx, contract, company.hqCountryId, amount);
   const tariffPaid = tariff?.amount ?? 0;
+  const amountCents = toCents(amount);
   await tx.company.update({
     where: { id: companyId },
     data: {
-      capital: { increment: amount },
-      contractsWonValue: { increment: amount },
+      capital: { increment: dbCents(amountCents) },
+      contractsWonValue: { increment: dbCents(amountCents) },
       standing: { increment: delta },
     },
   });
@@ -138,7 +150,7 @@ export async function payContractor(
   }
   await tx.contract.update({
     where: { id: contract.id },
-    data: { tariffRate: tariff?.rate ?? 0, tariffPaid },
+    data: { tariffRate: tariff?.rate ?? 0, tariffPaid: dbCents(toCents(tariffPaid)) },
   });
   if (contract.awardedBidId) {
     await tx.contractBid.update({
@@ -147,5 +159,5 @@ export async function payContractor(
     });
   }
   await refreshFairValue(tx, companyId);
-  return { net: round2(amount - tariffPaid), tariffPaid };
+  return { net: fromCents(amountCents - toCents(tariffPaid)), tariffPaid };
 }

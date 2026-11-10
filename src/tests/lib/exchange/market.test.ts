@@ -43,7 +43,7 @@ function setup() {
   fake = createFakeExchangeDb({
     user: [{ id: "alice", clerkUserId: "c_alice" }],
     exchangeWallet: [
-      { id: "w_alice", userId: "alice", sovereigns: 0, lifetimeEarned: 0, lifetimeSpent: 0 },
+      { id: "w_alice", userId: "alice", sovereigns: 0n, lifetimeEarned: 0n, lifetimeSpent: 0n },
     ],
     country: [{ id: NATION, realmId: "default", economicTier: "Developed" }],
     company: [
@@ -56,12 +56,12 @@ function setup() {
         subIndustryKey: "software_media",
         hqCountryId: NATION,
         status: "ACTIVE",
-        decisionValue: 10_000,
-        capital: 0,
+        decisionValue: 10_000_00n,
+        capital: 0n,
         standing: 0,
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
-        creditDrawn: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
+        creditDrawn: 0n,
         creditRating: "B",
       },
     ],
@@ -79,7 +79,7 @@ describe("runExchangeMarketTick", () => {
     const second = await runExchangeMarketTick(fake.client);
     expect(second.stipendsMinted).toBe(0);
     expect(fake.tables.nationTreasury).toEqual([
-      expect.objectContaining({ countryId: NATION, balance: 112.5 }),
+      expect.objectContaining({ countryId: NATION, balance: 112_50n }),
     ]);
     expect((fake.tables.nationTreasuryEntry ?? []).filter((e) => e.type === "TAX")).toHaveLength(1);
     expect(fake.tables.company![0]!.capital).toBe(capital);
@@ -95,7 +95,7 @@ describe("runExchangeMarketTick", () => {
   });
 
   it("(d) running runExchangeMarketTick twice within one operating tick leaves sector index values and fundSovereigns as after the first run", async () => {
-    fake.tables.company![0]!.capital = 200_000;
+    fake.tables.company![0]!.capital = 200_000_00n;
     fake.tables.sectorIndex = [
       {
         id: "idx_services",
@@ -104,7 +104,7 @@ describe("runExchangeMarketTick", () => {
         name: "Services",
         value: 1000,
         dmModifier: 0,
-        fundSovereigns: 1000,
+        fundSovereigns: 1000_00n,
         totalUnits: 1000,
         computedIxTime: null,
       },

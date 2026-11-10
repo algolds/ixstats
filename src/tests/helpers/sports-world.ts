@@ -4,6 +4,7 @@
  * scenario's prefix, and `removeSportsWorld` deletes them again (Postgres only; a memory client is thrown away).
  */
 import type { PrismaClient } from "@prisma/client";
+import { centsOf, dbCents, fromCents, toCents } from "~/lib/exchange/amounts";
 import { createMockCallerContext, type MockCallerContext } from "~/tests/helpers/router-context";
 
 type Db = PrismaClient;
@@ -20,7 +21,7 @@ export async function addPerson(db: Db, id: string, sovereigns?: number): Promis
     select: { id: true, clerkUserId: true },
   });
   if (sovereigns !== undefined) {
-    await db.exchangeWallet.create({ data: { userId: id, sovereigns } });
+    await db.exchangeWallet.create({ data: { userId: id, sovereigns: dbCents(toCents(sovereigns)) } });
   }
   return user;
 }
@@ -121,16 +122,17 @@ export async function sovereignsOf(
     where: { userId: { in: [...ids] } },
     select: { userId: true, sovereigns: true },
   });
-  return Object.fromEntries(rows.map((r) => [r.userId, r.sovereigns]));
+  return Object.fromEntries(rows.map((r) => [r.userId, fromCents(centsOf(r.sovereigns))]));
 }
 
 /** A user's Sovereign ledger rows, oldest first. */
 export async function sovereignLedgerOf(db: Db, userId: string) {
-  return db.exchangeTransaction.findMany({
+  const rows = await db.exchangeTransaction.findMany({
     where: { wallet: { userId } },
     select: { sovereigns: true, type: true, source: true },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
   });
+  return rows.map((r) => ({ ...r, sovereigns: fromCents(centsOf(r.sovereigns)) }));
 }
 
 /** Deletes a Postgres scenario's rows, children first. Never needed for a memory client. */

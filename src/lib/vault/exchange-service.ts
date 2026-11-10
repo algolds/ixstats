@@ -23,6 +23,7 @@
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { ConflictError } from "~/lib/app-error";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "~/lib/exchange/amounts";
 import { getExchangeConfig } from "./exchange-config";
 
 /** Sovereign ledger transaction types (stored as String, matching VaultTransaction.type). */
@@ -128,10 +129,6 @@ function toJson(metadata?: Record<string, unknown>) {
   return metadata ? (JSON.parse(JSON.stringify(metadata)) as Prisma.InputJsonObject) : undefined;
 }
 
-function formatSovereigns(n: number): string {
-  return `₷${n.toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
-}
-
 /**
  * Get or create a user's Sovereign wallet (database User.id or Clerk id). A new wallet
  * gets the configured starter balance once: the insert skips duplicates, so of two
@@ -148,20 +145,21 @@ export async function getOrCreateWallet(userIdOrClerkId: string, db: Db) {
   if (existing) return existing;
 
   const cfg = await getExchangeConfig(db);
-  const seed = Math.max(0, cfg.seedSovereigns);
+  const seedCents = toCents(Math.max(0, cfg.seedSovereigns));
+  const seedDb = dbCents(seedCents);
 
   const { count } = await db.exchangeWallet.createMany({
-    data: [{ userId: user.id, sovereigns: seed, lifetimeEarned: seed, lifetimeSpent: 0 }],
+    data: [{ userId: user.id, sovereigns: seedDb, lifetimeEarned: seedDb, lifetimeSpent: 0n }],
     skipDuplicates: true,
   });
   const wallet = await db.exchangeWallet.findUniqueOrThrow({ where: { userId: user.id } });
 
-  if (count === 1 && seed > 0) {
+  if (count === 1 && seedCents > 0) {
     await db.exchangeTransaction.create({
       data: {
         walletId: wallet.id,
-        sovereigns: seed,
-        balanceAfter: seed,
+        sovereigns: seedDb,
+        balanceAfter: seedDb,
         type: "ADMIN_ADJUSTMENT",
         source: "WALLET_SEED",
         ixTime: Date.now(),
@@ -188,10 +186,15 @@ export async function lockWallet(tx: Db, userIdOrClerkId: string) {
   return wallet;
 }
 
-function assertAmount(amount: number): void {
+function assertAmountCents(amount: number): number {
   if (!Number.isFinite(amount) || !(amount > 0)) {
     throw new ExchangeError("INVALID_AMOUNT", "Amount must be positive");
   }
+  const cents = toCents(amount);
+  if (!(cents > 0)) {
+    throw new ExchangeError("INVALID_AMOUNT", "Amount must be positive");
+  }
+  return cents;
 }
 
 /**
@@ -200,15 +203,15 @@ function assertAmount(amount: number): void {
  * ledger row, instead of racing it; the unique index stays as the backstop.
  */
 async function beginMove(tx: Db, input: SovereignMoveInput) {
-  assertAmount(input.amount);
+  const amountCents = assertAmountCents(input.amount);
   const wallet = await getOrCreateWallet(input.userId, tx);
-  if (!input.idempotencyKey) return { wallet, applied: null };
+  if (!input.idempotencyKey) return { wallet, applied: null, amountCents };
   await lockWalletRow(tx, wallet.id);
   const applied = await tx.exchangeTransaction.findUnique({
     where: { idempotencyKey: input.idempotencyKey },
     select: { balanceAfter: true },
   });
-  return { wallet, applied };
+  return { wallet, applied, amountCents };
 }
 
 /**
@@ -219,21 +222,24 @@ export async function earnSovereignsTx(
   tx: Db,
   input: SovereignMoveInput
 ): Promise<SovereignMoveResult> {
-  const { wallet, applied } = await beginMove(tx, input);
-  if (applied) return { newBalance: applied.balanceAfter, alreadyApplied: true };
+  const { wallet, applied, amountCents } = await beginMove(tx, input);
+  if (applied) {
+    return { newBalance: fromCents(centsOf(applied.balanceAfter)), alreadyApplied: true };
+  }
 
+  const delta = dbCents(amountCents);
   const updated = await tx.exchangeWallet.update({
     where: { id: wallet.id },
     data: {
-      sovereigns: { increment: input.amount },
-      lifetimeEarned: { increment: input.amount },
+      sovereigns: { increment: delta },
+      lifetimeEarned: { increment: delta },
     },
     select: { sovereigns: true },
   });
   await tx.exchangeTransaction.create({
     data: {
       walletId: wallet.id,
-      sovereigns: input.amount,
+      sovereigns: delta,
       balanceAfter: updated.sovereigns,
       type: input.type,
       source: input.source,
@@ -242,7 +248,7 @@ export async function earnSovereignsTx(
       idempotencyKey: input.idempotencyKey ?? null,
     },
   });
-  return { newBalance: updated.sovereigns, alreadyApplied: false };
+  return { newBalance: fromCents(centsOf(updated.sovereigns)), alreadyApplied: false };
 }
 
 /**
@@ -255,25 +261,29 @@ export async function spendSovereignsTx(
   tx: Db,
   input: SovereignMoveInput
 ): Promise<SovereignMoveResult> {
-  const { wallet, applied } = await beginMove(tx, input);
-  if (applied) return { newBalance: applied.balanceAfter, alreadyApplied: true };
+  const { wallet, applied, amountCents } = await beginMove(tx, input);
+  if (applied) {
+    return { newBalance: fromCents(centsOf(applied.balanceAfter)), alreadyApplied: true };
+  }
 
+  const delta = dbCents(amountCents);
   const { count } = await tx.exchangeWallet.updateMany({
-    where: { id: wallet.id, sovereigns: { gte: input.amount } },
+    where: { id: wallet.id, sovereigns: { gte: delta } },
     data: {
-      sovereigns: { decrement: input.amount },
-      lifetimeSpent: { increment: input.amount },
+      sovereigns: { decrement: delta },
+      lifetimeSpent: { increment: delta },
     },
   });
   const after = await tx.exchangeWallet.findUnique({
     where: { id: wallet.id },
     select: { sovereigns: true },
   });
-  const balance = after?.sovereigns ?? 0;
+  const balanceCents = after ? centsOf(after.sovereigns) : 0;
+  const balance = fromCents(balanceCents);
   if (count !== 1) {
     throw new ExchangeError(
       "INSUFFICIENT_SOVEREIGNS",
-      `Insufficient Sovereigns. You have ${formatSovereigns(balance)} but need ${formatSovereigns(input.amount)}`,
+      `Insufficient Sovereigns. You have ${formatSovereigns(balance)} but need ${formatSovereigns(fromCents(amountCents))}`,
       balance
     );
   }
@@ -281,8 +291,8 @@ export async function spendSovereignsTx(
   await tx.exchangeTransaction.create({
     data: {
       walletId: wallet.id,
-      sovereigns: -input.amount,
-      balanceAfter: balance,
+      sovereigns: dbCents(-amountCents),
+      balanceAfter: dbCents(balanceCents),
       type: input.type,
       source: input.source,
       metadata: toJson(input.metadata),
@@ -303,9 +313,9 @@ class ExchangeService {
   async getBalance(userIdOrClerkId: string, db: Db) {
     const wallet = await getOrCreateWallet(userIdOrClerkId, db);
     return {
-      sovereigns: wallet.sovereigns,
-      lifetimeEarned: wallet.lifetimeEarned,
-      lifetimeSpent: wallet.lifetimeSpent,
+      sovereigns: fromCents(centsOf(wallet.sovereigns)),
+      lifetimeEarned: fromCents(centsOf(wallet.lifetimeEarned)),
+      lifetimeSpent: fromCents(centsOf(wallet.lifetimeSpent)),
     };
   }
 
@@ -386,7 +396,7 @@ class ExchangeService {
   /** Most recent ledger rows for a user's wallet. */
   async getTransactions(userIdOrClerkId: string, db: Db, limit = 20) {
     const wallet = await getOrCreateWallet(userIdOrClerkId, db);
-    return db.exchangeTransaction.findMany({
+    const rows = await db.exchangeTransaction.findMany({
       where: { walletId: wallet.id },
       orderBy: { createdAt: "desc" },
       take: Math.min(Math.max(limit, 1), 100),
@@ -399,6 +409,11 @@ class ExchangeService {
         createdAt: true,
       },
     });
+    return rows.map((r) => ({
+      ...r,
+      sovereigns: fromCents(centsOf(r.sovereigns)),
+      balanceAfter: fromCents(centsOf(r.balanceAfter)),
+    }));
   }
 }
 
