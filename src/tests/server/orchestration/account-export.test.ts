@@ -202,7 +202,7 @@ describe("buildAccountExport", () => {
     expect(out.trades).toEqual([]);
     expect(out.stashes).toEqual([]);
     expect(out.comments).toEqual([]);
-    expect(out.polls).toEqual({ created: [], votes: [] });
+    expect(out.polls).toEqual({ created: [], pollsOnYourNations: [], votes: [] });
     expect(out.predictions).toEqual([]);
     expect(out.blurbs).toEqual([]);
     expect(out.documents).toEqual([]);
@@ -271,6 +271,14 @@ describe("buildAccountExport", () => {
         content: "Poll post",
         ixTimeTimestamp: new Date(0),
         pollId: "poll-alice",
+      },
+    });
+    await mem.poll.create({
+      data: {
+        id: "poll-on-nation",
+        question: "Made by a previous owner?",
+        countryId: "n1",
+        options: { create: [{ id: "opt-n1", label: "Yes" }] },
       },
     });
     await mem.poll.create({
@@ -419,13 +427,16 @@ describe("buildAccountExport", () => {
     expect(out.stashes[0]?.items[0]?.annotations[0]?.selectedText).toBe("quote");
     expect(out.comments.map((c) => c.id)).toEqual(["wdc-alice"]);
     expect(out.polls.created.map((p) => p.id)).toEqual(["poll-alice"]);
+    expect(out.polls.pollsOnYourNations.map((p) => p.id)).toEqual(["poll-on-nation"]);
     expect(out.polls.votes.map((v) => v.id)).toEqual(["pv-alice"]);
     expect(out.predictions.map((p) => p.id)).toEqual(["sp-alice"]);
     expect(out.blurbs.map((b) => b.id)).toEqual(["br-alice"]);
-    expect(out.documents.map((d) => [d.id, d.title, d.content])).toEqual([
+    expect(out.documents.map((d) => [d.id, d.title, "content" in d ? d.content : undefined])).toEqual([
       ["doc-owned", "Owned Doc", "Owned body"],
-      ["doc-edited", "Edited Doc", "Edited body"],
+      ["doc-edited", "Edited Doc", undefined],
     ]);
+    expect(out.documents[1]).not.toHaveProperty("content");
+    expect(JSON.stringify(out.documents)).not.toContain("Edited body");
     expect(out.documents[0]).not.toHaveProperty("createdBy");
     expect(out.documents[0]).not.toHaveProperty("lastEditBy");
     expect(out.loreTeams.map((l) => [l.id, l.countryId])).toEqual([["cla-alice", "n2"]]);
