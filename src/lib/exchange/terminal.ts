@@ -718,7 +718,7 @@ function valueBondHoldings(
 
 function valueFundHoldings(
   positions: readonly { sectorKey: string; units: number }[],
-  indices: readonly { sectorKey: string; fundSovereigns: number; unitsOutstanding: number }[]
+  indices: readonly { sectorKey: string; fundSovereigns: bigint | number; unitsOutstanding: number }[]
 ) {
   return positions.map((p) => {
     const row = indices.find((i) => i.sectorKey === p.sectorKey);

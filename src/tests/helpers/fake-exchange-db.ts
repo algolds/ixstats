@@ -93,10 +93,10 @@ const DEFAULTS: Record<string, () => Row> = {
     dmModifier: 0,
     macroWeight: 0,
     computedIxTime: null,
-    fundSovereigns: 0,
+    fundSovereigns: 0n,
     unitsOutstanding: 0,
   }),
-  sectorPosition: () => ({ realmId: "default", units: 0, avgCost: 0 }),
+  sectorPosition: () => ({ realmId: "default", units: 0, avgCost: 0n }),
   nationTreasury: () => ({
     realmId: "default",
     balance: 0n,

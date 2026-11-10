@@ -132,4 +132,19 @@ ALTER TABLE "exchange_contracts"
 ALTER TABLE "exchange_contract_bids"
   ALTER COLUMN "amount" TYPE bigint USING round("amount" * 100)::bigint;
 
+-- Phase B Group 6: SectorIndex, SectorPosition, ConversionLog
+ALTER TABLE "exchange_sector_indices"
+  ALTER COLUMN "fundSovereigns" DROP DEFAULT,
+  ALTER COLUMN "fundSovereigns" TYPE bigint USING round("fundSovereigns" * 100)::bigint,
+  ALTER COLUMN "fundSovereigns" SET DEFAULT 0;
+
+ALTER TABLE "exchange_sector_positions"
+  ALTER COLUMN "avgCost" DROP DEFAULT,
+  ALTER COLUMN "avgCost" TYPE bigint USING round("avgCost" * 100)::bigint,
+  ALTER COLUMN "avgCost" SET DEFAULT 0;
+
+ALTER TABLE "exchange_conversion_logs"
+  ALTER COLUMN "sovereigns" TYPE bigint USING round("sovereigns" * 100)::bigint,
+  ALTER COLUMN "fee" TYPE bigint USING round("fee" * 100)::bigint;
+
 COMMIT;

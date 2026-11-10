@@ -7,7 +7,7 @@
 
 import type { NationTreasury, Prisma } from "@prisma/client";
 import { refreshFairValue } from "./companies";
-import { centsOf, dbCents, formatSovereigns, fromCents, round2, toCents } from "./amounts";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
 import type { Db } from "./guards";
 import { lockCompany } from "./ownership";
 import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchange-service";
@@ -112,7 +112,7 @@ export interface TreasurySummary {
 
 /** A nation's stipend for a tier. Unknown labels get the 1x base. */
 export function stipendFor(tier: string, baseStipend: number): number {
-  return round2(baseStipend * (TIER_MULTIPLIERS.get(tier) ?? 1));
+  return fromCents(toCents(baseStipend * (TIER_MULTIPLIERS.get(tier) ?? 1)));
 }
 
 /** Read the nation's treasury, creating it with zero balances if it does not exist yet. */

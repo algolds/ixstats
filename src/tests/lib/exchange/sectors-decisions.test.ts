@@ -28,7 +28,6 @@ import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange
 let fake: FakeDb;
 let seq = 0;
 const rid = () => `request-${++seq}`;
-const cents = (n: number) => Math.round(n * 100);
 
 function setup() {
   invalidateExchangeConfigCache();
@@ -67,7 +66,7 @@ const sov = (userId: string) =>
 const index = (key: string) => fake.tables.sectorIndex!.find((i) => i.sectorKey === key)!;
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const fundCents = () =>
-  (fake.tables.sectorIndex ?? []).reduce((s, i) => s + cents(i.fundSovereigns), 0);
+  (fake.tables.sectorIndex ?? []).reduce((s, i) => s + Number(i.fundSovereigns), 0);
 const walletCents = () => fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns), 0);
 /** Push this user's sector-buy ledger rows back past the 24-hour hold. */
 function ageBuys(userId: string) {
@@ -120,7 +119,7 @@ describe("sector funds", () => {
     });
     expect(r).toMatchObject({ units: 300, sovereigns: 300 });
     expect(sov("bob")).toBe(4700);
-    expect(index("services")).toMatchObject({ fundSovereigns: 300, unitsOutstanding: 300 });
+    expect(index("services")).toMatchObject({ fundSovereigns: 300_00n, unitsOutstanding: 300 });
 
     await expect(
       sellSectorUnits(fake.client, {
@@ -142,7 +141,7 @@ describe("sector funds", () => {
     });
     expect(sold.sovereigns).toBe(300);
     expect(sov("bob")).toBe(5000);
-    expect(index("services")).toMatchObject({ fundSovereigns: 0, unitsOutstanding: 0 });
+    expect(index("services")).toMatchObject({ fundSovereigns: 0n, unitsOutstanding: 0 });
   });
 
   it("rebalancing moves ₷ between fund holders and never creates any", async () => {
@@ -164,8 +163,8 @@ describe("sector funds", () => {
     await computeSectorIndices(fake.client); // base run
     company().capital = 200_000_00n;
     await computeSectorIndices(fake.client, Date.now() + DAY_MS); // industry +5%
-    expect(index("industry").fundSovereigns).toBeGreaterThan(1000);
-    expect(index("services").fundSovereigns).toBeLessThan(1000);
+    expect(Number(index("industry").fundSovereigns) / 100).toBeGreaterThan(1000);
+    expect(Number(index("services").fundSovereigns) / 100).toBeLessThan(1000);
     expect(walletCents() + fundCents()).toBe(before);
 
     ageBuys("alice");
@@ -219,7 +218,7 @@ describe("sector funds", () => {
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
     expect(sov("bob")).toBe(5000);
-    expect(index("agriculture").fundSovereigns).toBe(500);
+    expect(index("agriculture").fundSovereigns).toBe(500_00n);
   });
 
   it("a buy that would overdraw the wallet moves nothing", async () => {
@@ -233,7 +232,7 @@ describe("sector funds", () => {
       })
     ).rejects.toMatchObject({ code: "INSUFFICIENT_SOVEREIGNS" });
     expect(sov("bob")).toBe(5000);
-    expect(index("industry").fundSovereigns).toBe(0);
+    expect(index("industry").fundSovereigns).toBe(0n);
   });
 
   it("a retried buy (same requestId, even concurrent) is applied once", async () => {
@@ -251,7 +250,7 @@ describe("sector funds", () => {
     );
     expect(results.filter((r) => !r.alreadyApplied)).toHaveLength(1);
     expect(sov("bob")).toBe(4900);
-    expect(index("industry").fundSovereigns).toBe(100);
+    expect(index("industry").fundSovereigns).toBe(100_00n);
   });
 });
 

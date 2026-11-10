@@ -405,7 +405,7 @@ describe("getLeaderboards", () => {
         sectorKey: "industry",
         label: "Industry",
         value: 1200,
-        fundSovereigns: 375,
+        fundSovereigns: 375_00n,
         unitsOutstanding: 250,
       },
       {
@@ -414,7 +414,7 @@ describe("getLeaderboards", () => {
         sectorKey: "services",
         label: "Services",
         value: 1500,
-        fundSovereigns: 600,
+        fundSovereigns: 600_00n,
         unitsOutstanding: 300,
       },
     ];
@@ -425,7 +425,7 @@ describe("getLeaderboards", () => {
         realmId: "default",
         sectorKey: "industry",
         units: 40,
-        avgCost: 1,
+        avgCost: 100n,
       },
       {
         id: "sp_b",
@@ -433,7 +433,7 @@ describe("getLeaderboards", () => {
         realmId: "default",
         sectorKey: "industry",
         units: 60,
-        avgCost: 1,
+        avgCost: 100n,
       },
       {
         id: "sp_c",
@@ -441,7 +441,7 @@ describe("getLeaderboards", () => {
         realmId: "other",
         sectorKey: "services",
         units: 100,
-        avgCost: 1,
+        avgCost: 100n,
       },
     ];
 

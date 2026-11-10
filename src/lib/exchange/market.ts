@@ -13,7 +13,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
-import { round2 } from "./amounts";
+import { fromCents, toCents } from "./amounts";
 import { refreshFairValue } from "./companies";
 import { resolveDueDecisions } from "./decisions";
 import { expireLapsedContracts } from "./expiry";
@@ -51,11 +51,11 @@ async function stipendNationsOf(db: PrismaClient) {
 
 async function mintStipendsOf(db: PrismaClient, nowMs: number, tickKey: string): Promise<number> {
   const cfg = await getExchangeConfig(db);
-  let minted = 0;
+  let mintedCents = 0;
   for (const nation of await stipendNationsOf(db)) {
     const amount = stipendFor(nation.economicTier, cfg.treasuryDailyStipend / TICKS_PER_DAY);
     try {
-      minted += await db.$transaction((tx) =>
+      const minted = await db.$transaction((tx) =>
         mintStipendTx(tx, {
           countryId: nation.id,
           realmId: nation.realmId,
@@ -65,11 +65,12 @@ async function mintStipendsOf(db: PrismaClient, nowMs: number, tickKey: string):
           key: `exchange-stipend:${nation.id}:${tickKey}`,
         })
       );
+      mintedCents += toCents(minted);
     } catch (error) {
       console.error(`[Exchange] stipend for ${nation.id} failed:`, error);
     }
   }
-  return round2(minted);
+  return fromCents(mintedCents);
 }
 
 async function finalizeProposalsOf(db: PrismaClient, nowMs: number): Promise<number> {

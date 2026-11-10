@@ -198,7 +198,7 @@ describe("deleteLeague", () => {
         createdIxTime: 0,
       },
     });
-    await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 950 } });
+    await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 950_00n } });
     expect(await sovereignsOf(db as never, [mia.id, ben.id, cleo.id])).toEqual({
       [mia.id]: 900,
       [ben.id]: 800,
@@ -215,7 +215,7 @@ describe("deleteLeague", () => {
     });
     const keys = (
       await db.exchangeTransaction.findMany({
-        where: { sovereigns: { gt: 0 }, idempotencyKey: { not: null } },
+        where: { sovereigns: { gt: 0n }, idempotencyKey: { not: null } },
         select: { idempotencyKey: true },
       })
     ).map((r) => r.idempotencyKey);
@@ -259,7 +259,7 @@ describe("season reset and schedule regeneration", () => {
           createdIxTime: 0,
         },
       });
-      await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 925 } });
+      await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 925_00n } });
 
       await schedule(as(mia))[procedure]({ seasonId: season.id });
 

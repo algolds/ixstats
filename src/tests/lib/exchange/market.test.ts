@@ -104,7 +104,7 @@ describe("runExchangeMarketTick", () => {
         name: "Services",
         value: 1000,
         dmModifier: 0,
-        fundSovereigns: 1000,
+        fundSovereigns: 1000_00n,
         totalUnits: 1000,
         computedIxTime: null,
       },

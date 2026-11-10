@@ -90,7 +90,7 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
   const held = [
     ...shares.map((s) => s.shares * fromCents(centsOf(s.avgCost))),
     ...bonds.map((b) => b.units * fromCents(centsOf(b.avgCost))),
-    ...funds.map((f) => f.units * f.avgCost),
+    ...funds.map((f) => f.units * fromCents(centsOf(f.avgCost))),
   ];
   return round2(
     (wallet ? fromCents(centsOf(wallet.sovereigns)) : 0) +

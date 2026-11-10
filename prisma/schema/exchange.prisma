@@ -223,8 +223,8 @@ model SectorIndex {
   computedIxTime Float?
   /// The sector fund: ₷ held for SectorPosition holders and the units they own. Each index
   /// update rebalances the four funds by relative index performance; no ₷ is created.
-  fundSovereigns   Float @default(0)
-  unitsOutstanding Float @default(0)
+  fundSovereigns   BigInt @default(0)
+  unitsOutstanding Float  @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt
 
@@ -254,7 +254,7 @@ model SectorPosition {
   realmId     String   @default("default")
   sectorKey   String
   units       Float    @default(0)
-  avgCost     Float    @default(0)
+  avgCost     BigInt   @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   owner       User     @relation("UserSectorPositions", fields: [ownerUserId], references: [id], onDelete: Cascade)
@@ -271,9 +271,9 @@ model ConversionLog {
   userId     String
   direction  String
   ixCredits  Float
-  sovereigns Float
+  sovereigns BigInt
   rate       Float
-  fee        Float
+  fee        BigInt
   ixTime     Float
   createdAt  DateTime @default(now())
   /// A retried conversion with the same key is applied once.
