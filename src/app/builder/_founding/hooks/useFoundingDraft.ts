@@ -69,9 +69,13 @@ export function useFoundingDraft() {
 
   const [edited, setEdited] = useState<FoundingDraft | null>(null);
   const [status, setStatus] = useState<DraftSaveStatus>("idle");
+  // True after a reset: the loaded draft is gone, so nothing in this session is "resumed" any more.
+  const [wasReset, setWasReset] = useState(false);
   const draft = edited ?? loaded;
   // Set once the nation is founded: nothing may write the draft back after it is cleared.
   const discarded = useRef(false);
+  // The save on its way to the server, so a reset can wait for it instead of being overwritten by it.
+  const inFlight = useRef<Promise<unknown> | null>(null);
 
   const update = useCallback(
     (change: (current: FoundingDraft) => FoundingDraft) => {
@@ -91,7 +95,9 @@ export function useFoundingDraft() {
       if (discarded.current) return;
       setStatus("saving");
       try {
-        await saveDraft({ data: data as unknown as DraftJson });
+        const request = saveDraft({ data: data as unknown as DraftJson });
+        inFlight.current = request;
+        await request;
         setStatus((current) => (current === "saving" ? "saved" : current));
       } catch {
         setStatus((current) => (current === "saving" ? "error" : current));
@@ -126,9 +132,12 @@ export function useFoundingDraft() {
   /** Clears the draft and starts fresh without locking out subsequent edits. */
   const reset = useCallback(async () => {
     setEdited(emptyFoundingDraft());
+    setWasReset(true);
     setStatus("idle");
     clearLocalDraft();
     try {
+      // A save already sent would land after the clear and bring the old draft back.
+      await inFlight.current?.catch(() => undefined);
       await clearDraft();
     } catch {
       // The next edit overwrites it.
@@ -138,7 +147,7 @@ export function useFoundingDraft() {
   return {
     draft,
     /** True when the flow resumed a draft saved earlier. */
-    resumed: !!loaded && loaded.updatedAt > 0,
+    resumed: !wasReset && !!loaded && loaded.updatedAt > 0,
     status,
     update,
     retry,
