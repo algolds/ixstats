@@ -89,7 +89,7 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
   // ponytail: listed shares and units drop out of the cost basis while listed; count them if the cap needs to be exact.
   const held = [
     ...shares.map((s) => s.shares * fromCents(centsOf(s.avgCost))),
-    ...bonds.map((b) => b.units * b.avgCost),
+    ...bonds.map((b) => b.units * fromCents(centsOf(b.avgCost))),
     ...funds.map((f) => f.units * f.avgCost),
   ];
   return round2(
@@ -269,7 +269,9 @@ async function cheapestListing(db: Db, bondId: string, fundUserId: string): Prom
     where: { bondId, status: "OPEN" },
     select: { id: true, pricePerUnit: true, sellerUserId: true },
   });
-  for (const listing of [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)) {
+  for (const listing of [...listings].sort(
+    (a, b) => centsOf(a.pricePerUnit) - centsOf(b.pricePerUnit)
+  )) {
     if (!(await isFundInsiderPair(db, fundUserId, listing.sellerUserId))) {
       return listing.id;
     }

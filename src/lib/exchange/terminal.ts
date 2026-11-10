@@ -199,8 +199,9 @@ async function bondViews(db: Db, bonds: readonly NationBond[], nowMs: number): P
     const rating = ratingOf(treasuries.find((t) => t.countryId === b.countryId)?.creditRating);
     const weeksLeft = weeksLeftOf(b, nowMs);
     const baseRate = rateToFraction(nation?.interestRates) ?? 0.05;
+    const faceValue = fromCents(centsOf(b.faceValue));
     const model = modelBondPrice({
-      faceValue: b.faceValue,
+      faceValue,
       couponRate: b.couponRate,
       rating,
       baseRate,
@@ -209,10 +210,10 @@ async function bondViews(db: Db, bonds: readonly NationBond[], nowMs: number): P
     });
     const bestAsk = asks
       .filter((a) => a.bondId === b.id)
-      .reduce<number | null>(
-        (m, a) => (m === null ? a.pricePerUnit : Math.min(m, a.pricePerUnit)),
-        null
-      );
+      .reduce<number | null>((m, a) => {
+        const askPrice = fromCents(centsOf(a.pricePerUnit));
+        return m === null ? askPrice : Math.min(m, askPrice);
+      }, null);
     const price = bondPriceOf(b, bestAsk, model);
     return {
       bondId: b.id,
@@ -222,7 +223,7 @@ async function bondViews(db: Db, bonds: readonly NationBond[], nowMs: number): P
       termWeeks: b.termWeeks,
       weeksLeft,
       price,
-      yield: price > 0 ? (b.couponRate * b.faceValue) / price : 0,
+      yield: price > 0 ? (b.couponRate * faceValue) / price : 0,
       rating,
       status: b.status,
       unitsIssued: b.unitsIssued,
@@ -591,17 +592,17 @@ export async function getBondPage(
   return {
     bond: {
       ...view!,
-      faceValue: bond.faceValue,
+      faceValue: fromCents(centsOf(bond.faceValue)),
       weeksPaid: bond.weeksPaid,
       issuedAt: bond.issuedAt,
       realmId: bond.realmId,
     },
     listings: [...listings]
-      .sort((a, b) => a.pricePerUnit - b.pricePerUnit)
+      .sort((a, b) => centsOf(a.pricePerUnit) - centsOf(b.pricePerUnit))
       .map((l) => ({
         id: l.id,
         units: l.units,
-        pricePerUnit: l.pricePerUnit,
+        pricePerUnit: fromCents(centsOf(l.pricePerUnit)),
         mine: l.sellerUserId === viewerId,
       })),
     holderCount: holders,
@@ -849,7 +850,10 @@ async function openOrdersOf(db: Db, userId: string) {
       ...l,
       pricePerShare: fromCents(centsOf(l.pricePerShare)),
     })),
-    bondListings,
+    bondListings: bondListings.map((l) => ({
+      ...l,
+      pricePerUnit: fromCents(centsOf(l.pricePerUnit)),
+    })),
   };
 }
 

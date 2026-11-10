@@ -493,14 +493,14 @@ model NationBond {
   countryId      String
   realmId        String        @default("default")
   issuerUserId   String
-  faceValue      Float         @default(100)
+  faceValue      BigInt        @default(10000)
   unitsIssued    Int
   unitsSold      Int           @default(0)
   couponRate     Float
   termWeeks      Int
   weeksPaid      Int           @default(0)
   status         String        @default("OPEN")
-  lastTradePrice Float?
+  lastTradePrice BigInt?
   issuedAt       DateTime      @default(now())
   idempotencyKey String?       @unique
   createdAt      DateTime      @default(now())
@@ -519,7 +519,7 @@ model BondHolding {
   bondId      String
   ownerUserId String
   units       Int        @default(0)
-  avgCost     Float      @default(0)
+  avgCost     BigInt     @default(0)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @default(now()) @updatedAt
   bond        NationBond @relation(fields: [bondId], references: [id], onDelete: Cascade)
@@ -536,7 +536,7 @@ model BondListing {
   sellerUserId   String
   units          Int
   unitsListed    Int
-  pricePerUnit   Float
+  pricePerUnit   BigInt
   status         String     @default("OPEN")
   idempotencyKey String?    @unique
   createdAt      DateTime   @default(now())

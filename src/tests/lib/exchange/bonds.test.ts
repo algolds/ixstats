@@ -243,7 +243,7 @@ describe("buyBondPrimary", () => {
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId: rid() });
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 30, requestId: rid() });
     expect((fake.tables.bondHolding ?? []).filter((h) => h.ownerUserId === "bob")).toEqual([
-      expect.objectContaining({ units: 40, avgCost: 100 }),
+      expect.objectContaining({ units: 40, avgCost: 100_00n }),
     ]);
   });
 
@@ -313,7 +313,7 @@ describe("listings", () => {
     expect(holding("carol")).toBe(10);
     expect(sov("carol")).toBe(200_000 - 1040);
     expect(sov("bob")).toBe(200_000 - 5000 + 1040);
-    expect(bond(id).lastTradePrice).toBe(104);
+    expect(bond(id).lastTradePrice).toBe(104_00n);
     await cancelBondListing(fake.client, { userId: "bob", listingId });
     expect(holding("bob")).toBe(40);
   });

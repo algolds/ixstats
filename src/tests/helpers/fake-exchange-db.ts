@@ -113,7 +113,7 @@ const DEFAULTS: Record<string, () => Row> = {
   }),
   nationBond: () => ({
     realmId: "default",
-    faceValue: 100,
+    faceValue: 100_00n,
     unitsSold: 0,
     weeksPaid: 0,
     status: "OPEN",
@@ -121,7 +121,7 @@ const DEFAULTS: Record<string, () => Row> = {
     issuedAt: new Date(),
     idempotencyKey: null,
   }),
-  bondHolding: () => ({ units: 0, avgCost: 0 }),
+  bondHolding: () => ({ units: 0, avgCost: 0n }),
   bondListing: () => ({ status: "OPEN", idempotencyKey: null }),
   exchangeNewsItem: () => ({
     realmId: "default",

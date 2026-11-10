@@ -104,4 +104,19 @@ ALTER TABLE "exchange_share_buy_orders"
   ALTER COLUMN "maxPricePerShare" TYPE bigint USING round("maxPricePerShare" * 100)::bigint,
   ALTER COLUMN "escrow" TYPE bigint USING round("escrow" * 100)::bigint;
 
+-- Phase B Group 4: NationBond, BondHolding, BondListing
+ALTER TABLE "exchange_nation_bonds"
+  ALTER COLUMN "faceValue" DROP DEFAULT,
+  ALTER COLUMN "faceValue" TYPE bigint USING round("faceValue" * 100)::bigint,
+  ALTER COLUMN "faceValue" SET DEFAULT 10000,
+  ALTER COLUMN "lastTradePrice" TYPE bigint USING round("lastTradePrice" * 100)::bigint;
+
+ALTER TABLE "exchange_bond_holdings"
+  ALTER COLUMN "avgCost" DROP DEFAULT,
+  ALTER COLUMN "avgCost" TYPE bigint USING round("avgCost" * 100)::bigint,
+  ALTER COLUMN "avgCost" SET DEFAULT 0;
+
+ALTER TABLE "exchange_bond_listings"
+  ALTER COLUMN "pricePerUnit" TYPE bigint USING round("pricePerUnit" * 100)::bigint;
+
 COMMIT;

@@ -255,7 +255,7 @@ describe("bond prices", () => {
           countryId: "na",
           realmId: "default",
           issuerUserId: "alice",
-          faceValue: 100,
+          faceValue: 100_00n,
           unitsIssued: 100,
           unitsSold: 0,
           couponRate: 0.07,
@@ -357,14 +357,14 @@ describe("getLeaderboards", () => {
         countryId: "na",
         realmId: "default",
         issuerUserId: "alice",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 50,
         unitsSold: 10,
         couponRate: 0.06,
         termWeeks: 8,
         weeksPaid: 1,
         status: "OPEN",
-        lastTradePrice: 102.5,
+        lastTradePrice: 102_50n,
         issuedAt: new Date(now - 7 * DAY),
       },
       {
@@ -372,7 +372,7 @@ describe("getLeaderboards", () => {
         countryId: "nb",
         realmId: "other",
         issuerUserId: "carol",
-        faceValue: 100,
+        faceValue: 100_00n,
         unitsIssued: 50,
         unitsSold: 20,
         couponRate: 0.08,
@@ -390,13 +390,13 @@ describe("getLeaderboards", () => {
         sellerUserId: "alice",
         units: 2,
         unitsListed: 2,
-        pricePerUnit: 101.25,
+        pricePerUnit: 101_25n,
         status: "OPEN",
       },
     ];
     fake.tables.bondHolding = [
-      { id: "bh_b", bondId: "b_def", ownerUserId: "bob", units: 4, avgCost: 100 },
-      { id: "bh_c", bondId: "b_other", ownerUserId: "carol", units: 10, avgCost: 100 },
+      { id: "bh_b", bondId: "b_def", ownerUserId: "bob", units: 4, avgCost: 100_00n },
+      { id: "bh_c", bondId: "b_other", ownerUserId: "carol", units: 10, avgCost: 100_00n },
     ];
     fake.tables.sectorIndex = [
       {
