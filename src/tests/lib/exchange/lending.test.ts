@@ -25,7 +25,7 @@ jest.mock("~/lib/exchange/macro", () => ({
 
 import { awardContract } from "~/lib/exchange/contracts";
 import { borrowCredit } from "~/lib/exchange/credit";
-import { setLendingTerms } from "~/lib/exchange/lending";
+import { ownerCompanyIds, setLendingTerms } from "~/lib/exchange/lending";
 import { listRealmNations } from "~/lib/exchange/queries";
 import { runCompanyOperations } from "~/lib/exchange/operations";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -36,7 +36,7 @@ const REALM = "default";
 const NATION = "nation_a";
 let fake: FakeDb;
 
-function setup(owner: string, companyOver: Record<string, number | string> = {}) {
+function setup(owner: string, companyOver: Record<string, number | bigint | string> = {}) {
   invalidateExchangeConfigCache();
   invalidateVaultConfigCache();
   fake = createFakeExchangeDb({
@@ -44,9 +44,9 @@ function setup(owner: string, companyOver: Record<string, number | string> = {})
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [
       {
@@ -66,18 +66,18 @@ function setup(owner: string, companyOver: Record<string, number | string> = {})
         sectorKey: "services",
         subIndustryKey: "software_media",
         hqCountryId: NATION,
-        capital: 0,
+        capital: 0n,
         standing: 0,
-        decisionValue: 10_000,
-        creditDrawn: 0,
+        decisionValue: 10_000_00n,
+        creditDrawn: 0n,
         creditRating: "B",
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
         status: "ACTIVE",
         ...companyOver,
       },
     ],
-    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000 }],
+    nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000_00n }],
     systemConfig: [],
   });
 }
@@ -101,26 +101,26 @@ describe("setLendingTerms", () => {
       spread: 0.03,
       cap: 100_000,
     });
-    expect(treasury()).toMatchObject({ lendingSpread: 0.03, companyCreditCap: 100_000 });
+    expect(treasury()).toMatchObject({ lendingSpread: 0.03, companyCreditCap: 100_000_00n });
   });
 });
 
 describe("terms on credit lines", () => {
   it("caps each company's line at the treasury's cap", async () => {
     setup("bob");
-    treasury().companyCreditCap = 100;
+    treasury().companyCreditCap = 100_00n;
     await expect(borrow(150)).rejects.toThrow(/past its limit/);
-    expect(treasury().balance).toBe(10_000);
+    expect(treasury().balance).toBe(10_000_00n);
   });
 
   it("charges the extra spread in the tick's interest", async () => {
     const interestAt = async (spread: number) => {
-      setup("bob", { capital: 50_000, creditDrawn: 10_000 });
+      setup("bob", { capital: 50_000_00n, creditDrawn: 10_000_00n });
       treasury().lendingSpread = spread;
       await runCompanyOperations(fake.client, Date.now());
       return (fake.tables.nationTreasuryEntry ?? [])
         .filter((e) => e.type === "INTEREST")
-        .reduce((s, e) => s + e.amount, 0);
+        .reduce((s, e) => s + Number(e.amount) / 100, 0);
     };
     const base = await interestAt(0);
     const raised = await interestAt(0.03);
@@ -135,7 +135,7 @@ describe("no self-dealing", () => {
     treasury().lendingSpread = 0.02;
     const result = await borrow(500);
     expect(result.rate).toBeCloseTo(0.13, 10); // 5% + B spread 6% + 2%
-    expect(treasury().balance).toBe(9_500);
+    expect(treasury().balance).toBe(9_500_00n);
   });
 
   it("won't award the owner's tender to the owner's company", async () => {
@@ -147,14 +147,14 @@ describe("no self-dealing", () => {
         type: "B2G",
         title: "Bridge",
         sectorKey: "services",
-        value: 500,
+        value: 500_00n,
         status: "OPEN",
         endIxTime: Date.now() - 1000,
         createdIxTime: Date.now() - 10_000,
         issuerCountryId: NATION,
         issuerUserId: "alice",
         issuerCompanyId: null,
-        escrow: 500,
+        escrow: 500_00n,
         fundedBy: "TREASURY",
         winnerCompanyId: null,
       },
@@ -164,7 +164,7 @@ describe("no self-dealing", () => {
         id: "b1",
         contractId: "k1",
         companyId: "co1",
-        amount: 400,
+        amount: 400_00n,
         createdIxTime: 1,
         outcome: null,
       },
@@ -175,13 +175,73 @@ describe("no self-dealing", () => {
       code: "FORBIDDEN",
     });
   });
+
+  it("includes companies where the owner listed every share, and companies founded by acting users", async () => {
+    setup("alice");
+    // Company X: founded by bob, alice listed all her shares (0 in shareholding, 50 in open shareListing).
+    fake.tables.company!.push({
+      id: "co_x",
+      name: "Bob X",
+      realmId: REALM,
+      founderId: "bob",
+      sectorKey: "services",
+      subIndustryKey: "software_media",
+      hqCountryId: NATION,
+      capital: 1000_00n,
+      standing: 0,
+      decisionValue: 0n,
+      creditDrawn: 0n,
+      creditRating: "A",
+      contractsWonValue: 0n,
+      lastTickNetIncome: 0n,
+      status: "ACTIVE",
+    });
+    fake.tables.shareholding = [
+      { id: "sh_x", companyId: "co_x", ownerUserId: "alice", shares: 0, avgCost: 100n },
+    ];
+    fake.tables.shareListing = [
+      {
+        id: "sl_x",
+        companyId: "co_x",
+        sellerUserId: "alice",
+        shares: 50,
+        sharesListed: 50,
+        pricePerShare: 200n,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+    ];
+    // Company Y: founded by carol, whose user.countryId is NATION.
+    fake.tables.user!.push({ id: "carol", clerkUserId: "c_carol", countryId: NATION });
+    fake.tables.company!.push({
+      id: "co_y",
+      name: "Carol Y",
+      realmId: REALM,
+      founderId: "carol",
+      sectorKey: "services",
+      subIndustryKey: "software_media",
+      hqCountryId: NATION,
+      capital: 1000_00n,
+      standing: 0,
+      decisionValue: 0n,
+      creditDrawn: 0n,
+      creditRating: "A",
+      contractsWonValue: 0n,
+      lastTickNetIncome: 0n,
+      status: "ACTIVE",
+    });
+
+    const ids = await ownerCompanyIds(fake.client, NATION);
+    expect(ids.has("co_x")).toBe(true);
+    expect(ids.has("co_y")).toBe(true);
+  });
 });
 
 describe("the terms reach the company controls", () => {
   it("lists each realm nation with its lending terms (defaults when it has no treasury)", async () => {
     setup("bob");
     treasury().lendingSpread = 0.03;
-    treasury().companyCreditCap = 50_000;
+    treasury().companyCreditCap = 50_000_00n;
     fake.tables.country!.push({
       id: "nation_b",
       name: "Urcea",

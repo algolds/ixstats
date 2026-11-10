@@ -14,6 +14,7 @@
 
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { syncLevelEffects, type LevelTarget } from "~/lib/economy/storyteller-effects";
+import { centsOf, fromCents } from "./amounts";
 import { getOrCreateTreasury, stipendFor } from "./treasury";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -112,8 +113,12 @@ async function corporateScoresOf(db: PrismaClient, nowMs: number): Promise<Map<s
   const add = (countryId: string | null | undefined, value: number) => {
     if (countryId) scores.set(countryId, (scores.get(countryId) ?? 0) + value);
   };
-  for (const c of companies) add(c.hqCountryId, c.decisionValue + c.capital);
-  for (const t of tenders) add(t.winnerCompanyId ? hqOf.get(t.winnerCompanyId) : null, t.value);
+  for (const c of companies) {
+    add(c.hqCountryId, fromCents(centsOf(c.decisionValue) + centsOf(c.capital)));
+  }
+  for (const t of tenders) {
+    add(t.winnerCompanyId ? hqOf.get(t.winnerCompanyId) : null, fromCents(centsOf(t.value)));
+  }
   return scores;
 }
 

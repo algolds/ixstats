@@ -92,6 +92,26 @@ describe("runWikiosProof", () => {
     }
   });
 
+  it("keeps an empty BASE_PATH when BASE_PATH is set to empty string", async () => {
+    const saved = { PORT: process.env.PORT, BASE_PATH: process.env.BASE_PATH };
+    process.env.PORT = "3000";
+    process.env.BASE_PATH = "";
+    try {
+      const child = start();
+      const run = runWikiosProof();
+      child.stdout.emit("data", Buffer.from(`Proof written to ${DIR}\n`));
+      child.emit("close", 0, null);
+      await run;
+      const options = spawnMock.mock.calls[0]?.[2];
+      expect(options?.env).toEqual(expect.objectContaining({ PORT: "3550", BASE_PATH: "" }));
+    } finally {
+      for (const [key, value] of Object.entries(saved)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+  });
+
   it("a failing run throws with the failing checks and the directory", async () => {
     const child = start();
     const run = runWikiosProof();

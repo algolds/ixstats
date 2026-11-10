@@ -3,21 +3,36 @@
  * its wallet. The fund trades through the ordinary engine (order book, bonds, sector funds) as that user, so dividends,
  * coupons and sales land in its wallet. The owner moves ₷ between the treasury and the fund. Guardrails:
  * - the fund may hold at most half of treasury plus fund (checked on deposit, holdings at cost);
- * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company.
- * The guard checks run before the trade in a separate read; the engine owns its own transaction, so a race can only
- * make a later check stricter.
+ * - it may not buy its owner's companies, its own nation's bonds, or more than 25% of any company;
+ * - it sells within ±20% of fair value (shares) or face value (bonds), and never fills with its nation's insiders.
+ * Guards and execution run under a per-nation lease (`withJobLock`), so concurrent fund orders can't both pass the
+ * stake cap.
  */
 import type { PrismaClient } from "@prisma/client";
+import { withJobLock } from "~/lib/system/job-lock";
 import { ExchangeError, earnSovereignsTx, spendSovereignsTx } from "~/lib/vault/exchange-service";
-import { formatSovereigns, round2 } from "./amounts";
-import { buyBondListing, buyBondPrimary, listBondUnits } from "./bonds";
+import { centsOf, formatSovereigns, fromCents, round2 } from "./amounts";
+import {
+  BOND_FACE,
+  buyBondListing,
+  buyBondPrimary,
+  cancelBondListing,
+  listBondUnits,
+} from "./bonds";
 import type { SectorKey } from "./companies";
 import { fundUserIdOf } from "./fund-ids";
+import { isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, lockWallet, requireCountryOwner, type Db } from "./guards";
 import { assertNotOwnersCompany } from "./lending";
 import { publishNewsTx } from "./news";
 import { buySectorUnits, sellSectorUnits, SECTOR_LABELS } from "./sectors";
-import { listShares, placeBuyOrder } from "./shares";
+import {
+  cancelBuyOrder,
+  cancelListing,
+  listShares,
+  placeBuyOrder,
+  primaryPricePerShare,
+} from "./shares";
 import { getPortfolio, type Portfolio } from "./terminal";
 import { creditTreasuryTx, debitTreasuryTx, getOrCreateTreasury, lockTreasuryTx } from "./treasury";
 
@@ -27,6 +42,8 @@ export { FUND_USER_PREFIX, fundUserIdOf, isFundUser } from "./fund-ids";
 export const FUND_SHARE_CAP = 0.5;
 /** The fund may own at most this share of any company. */
 export const STAKE_CAP = 0.25;
+/** The fund must sell within ±20% of fair value (shares) or face value (bonds). */
+export const FUND_PRICE_BAND = 0.2;
 
 /** The nation's fund account, created once (user, wallet, and the treasury's pointer to it). */
 export async function ensureFundUser(db: Db, countryId: string): Promise<string> {
@@ -38,7 +55,7 @@ export async function ensureFundUser(db: Db, countryId: string): Promise<string>
   if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
   await db.user.createMany({ data: [{ id, clerkUserId: `system:${id}` }], skipDuplicates: true });
   await db.exchangeWallet.createMany({
-    data: [{ userId: id, sovereigns: 0 }],
+    data: [{ userId: id, sovereigns: 0n }],
     skipDuplicates: true,
   });
   const treasury = await getOrCreateTreasury(db, countryId, country.realmId);
@@ -71,13 +88,13 @@ async function investedAtCost(db: Db, fundUserId: string): Promise<number> {
   ]);
   // ponytail: listed shares and units drop out of the cost basis while listed; count them if the cap needs to be exact.
   const held = [
-    ...shares.map((s) => s.shares * s.avgCost),
-    ...bonds.map((b) => b.units * b.avgCost),
-    ...funds.map((f) => f.units * f.avgCost),
+    ...shares.map((s) => s.shares * fromCents(centsOf(s.avgCost))),
+    ...bonds.map((b) => b.units * fromCents(centsOf(b.avgCost))),
+    ...funds.map((f) => f.units * fromCents(centsOf(f.avgCost))),
   ];
   return round2(
-    (wallet?.sovereigns ?? 0) +
-      orders.reduce((s, o) => s + o.escrow, 0) +
+    (wallet ? fromCents(centsOf(wallet.sovereigns)) : 0) +
+      orders.reduce((s, o) => s + fromCents(centsOf(o.escrow)), 0) +
       held.reduce((s, v) => s + v, 0)
   );
 }
@@ -100,7 +117,8 @@ export async function depositToFund(
     await lockWallet(tx, fundUserId);
     const treasury = await lockTreasuryTx(tx, country.id, country.realmId);
     const invested = await investedAtCost(tx, fundUserId);
-    if (invested + i.amount > FUND_SHARE_CAP * (treasury.balance + invested) + 1e-9) {
+    const treasuryBalance = fromCents(centsOf(treasury.balance));
+    if (invested + i.amount > FUND_SHARE_CAP * (treasuryBalance + invested) + 1e-9) {
       throw new ExchangeError(
         "LIMIT_REACHED",
         `The wealth fund may hold at most half of the treasury and fund together`
@@ -160,8 +178,11 @@ export async function withdrawFromFund(
 export type FundOrder =
   | { kind: "shares-buy"; companyId: string; shares: number; maxPricePerShare: number }
   | { kind: "shares-sell"; companyId: string; shares: number; pricePerShare: number }
+  | { kind: "shares-cancel-bid"; orderId: string }
+  | { kind: "shares-cancel-listing"; listingId: string }
   | { kind: "bond-buy"; bondId: string; units: number }
   | { kind: "bond-sell"; bondId: string; units: number; pricePerUnit: number }
+  | { kind: "bond-cancel-listing"; listingId: string }
   | { kind: "fund-buy"; sectorKey: SectorKey; amount: number }
   | { kind: "fund-sell"; sectorKey: SectorKey; fraction: number };
 
@@ -196,6 +217,17 @@ async function assertStakeRoom(
   }
 }
 
+function assertSellBand(price: number, fair: number): void {
+  const low = round2((1 - FUND_PRICE_BAND) * fair);
+  const high = round2((1 + FUND_PRICE_BAND) * fair);
+  if (!Number.isFinite(price) || price < low || price > high) {
+    throw new ExchangeError(
+      "LIMIT_REACHED",
+      `The wealth fund sells within 20% of fair value: ${formatSovereigns(low)}–${formatSovereigns(high)}`
+    );
+  }
+}
+
 /** The guardrails for one order (spec §11a). */
 async function guardOrder(
   db: Db,
@@ -207,6 +239,17 @@ async function guardOrder(
     await assertNotOwnersCompany(db, countryId, order.companyId);
     await assertStakeRoom(db, fundUserId, order.companyId, order.shares);
   }
+  if (order.kind === "shares-sell") {
+    const company = await db.company.findUnique({
+      where: { id: order.companyId },
+      select: { fairValue: true, sharesOutstanding: true },
+    });
+    if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
+    assertSellBand(
+      order.pricePerShare,
+      primaryPricePerShare(fromCents(centsOf(company.fairValue)), company.sharesOutstanding)
+    );
+  }
   if (order.kind === "bond-buy") {
     const bond = await db.nationBond.findUnique({
       where: { id: order.bondId },
@@ -216,14 +259,24 @@ async function guardOrder(
       throw new ExchangeError("FORBIDDEN", "The wealth fund can't buy its own nation's bonds");
     }
   }
+  if (order.kind === "bond-sell") {
+    assertSellBand(order.pricePerUnit, BOND_FACE);
+  }
 }
 
-async function cheapestListing(db: Db, bondId: string): Promise<string | null> {
+async function cheapestListing(db: Db, bondId: string, fundUserId: string): Promise<string | null> {
   const listings = await db.bondListing.findMany({
     where: { bondId, status: "OPEN" },
-    select: { id: true, pricePerUnit: true },
+    select: { id: true, pricePerUnit: true, sellerUserId: true },
   });
-  return [...listings].sort((a, b) => a.pricePerUnit - b.pricePerUnit)[0]?.id ?? null;
+  for (const listing of [...listings].sort(
+    (a, b) => centsOf(a.pricePerUnit) - centsOf(b.pricePerUnit)
+  )) {
+    if (!(await isFundInsiderPair(db, fundUserId, listing.sellerUserId))) {
+      return listing.id;
+    }
+  }
+  return null;
 }
 
 async function executeOrder(
@@ -250,7 +303,22 @@ async function executeOrder(
         shares: order.shares,
         pricePerShare: order.pricePerShare,
       });
+    case "shares-cancel-bid":
+      return cancelBuyOrder(db, { userId, orderId: order.orderId });
+    case "shares-cancel-listing":
+      return cancelListing(db, { userId, listingId: order.listingId });
     case "bond-buy": {
+      const [paidPrimary, paidTake] = await Promise.all([
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-buy:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+        db.exchangeTransaction.findUnique({
+          where: { idempotencyKey: `exchange:bond-take:${userId}:${requestId}` },
+          select: { id: true },
+        }),
+      ]);
+      if (paidPrimary || paidTake) return { units: order.units, paid: 0, alreadyApplied: true };
       const bond = await db.nationBond.findUnique({
         where: { id: order.bondId },
         select: { unitsIssued: true, unitsSold: true },
@@ -258,7 +326,7 @@ async function executeOrder(
       if (bond && bond.unitsIssued - bond.unitsSold > 0) {
         return buyBondPrimary(db, { userId, requestId, bondId: order.bondId, units: order.units });
       }
-      const listingId = await cheapestListing(db, order.bondId);
+      const listingId = await cheapestListing(db, order.bondId, userId);
       if (!listingId)
         throw new ExchangeError("LIMIT_REACHED", "No units of that bond are for sale");
       return buyBondListing(db, { userId, requestId, listingId, units: order.units });
@@ -271,6 +339,8 @@ async function executeOrder(
         units: order.units,
         pricePerUnit: order.pricePerUnit,
       });
+    case "bond-cancel-listing":
+      return cancelBondListing(db, { userId, listingId: order.listingId });
     case "fund-buy":
       return buySectorUnits(db, {
         userId,
@@ -292,6 +362,13 @@ async function executeOrder(
 
 async function orderHeadline(db: Db, nation: string, order: FundOrder): Promise<string> {
   const who = `${nation} Treasury`;
+  if (
+    order.kind === "shares-cancel-bid" ||
+    order.kind === "shares-cancel-listing" ||
+    order.kind === "bond-cancel-listing"
+  ) {
+    return `${who} withdraws an order`;
+  }
   if (order.kind === "bond-buy" || order.kind === "bond-sell") {
     const bond = await db.nationBond.findUnique({
       where: { id: order.bondId },
@@ -323,22 +400,32 @@ export async function fundTrade(
   i: { userId: string; countryId: string; order: FundOrder; requestId: string }
 ): Promise<{ ok: true }> {
   const country = await requireCountryOwner(db, i.countryId, i.userId);
-  const fundUserId = await ensureFundUser(db, country.id);
-  await guardOrder(db, country.id, fundUserId, i.order);
-  await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
-  const headline = await orderHeadline(db, country.name, i.order);
-  await db.$transaction((tx) =>
-    publishNewsTx(tx, {
-      realmId: country.realmId,
-      kind: "trade",
-      prominence: "ACTIVITY",
-      sourceKind: "NATION",
-      sourceId: country.id,
-      headline,
-      countryId: country.id,
-      key: `news:fund:${country.id}:${i.requestId}`,
-    })
+  const locked = await withJobLock(
+    db,
+    `exchange-fund:${country.id}`,
+    async () => {
+      const fundUserId = await ensureFundUser(db, country.id);
+      await guardOrder(db, country.id, fundUserId, i.order);
+      await executeOrder(db, fundUserId, country.realmId, i.order, `fund:${i.requestId}`);
+      const headline = await orderHeadline(db, country.name, i.order);
+      await db.$transaction((tx) =>
+        publishNewsTx(tx, {
+          realmId: country.realmId,
+          kind: "trade",
+          prominence: "ACTIVITY",
+          sourceKind: "NATION",
+          sourceId: country.id,
+          headline,
+          countryId: country.id,
+          key: `news:fund:${country.id}:${i.requestId}`,
+        })
+      );
+    },
+    { timeoutMs: 60_000 }
   );
+  if (!locked.ran) {
+    throw new ExchangeError("CONFLICT", "The wealth fund is busy; try again");
+  }
   return { ok: true };
 }
 
@@ -363,6 +450,7 @@ export async function fundSummary(db: Db, countryId: string): Promise<FundSummar
     getPortfolio(db, treasury.fundUserId, treasury.realmId),
   ]);
   // invested + room = FUND_SHARE_CAP × (balance − room + invested + room)  →  room = cap×(balance+invested) − invested
-  const room = Math.max(0, round2(FUND_SHARE_CAP * (treasury.balance + invested) - invested));
+  const balance = fromCents(centsOf(treasury.balance));
+  const room = Math.max(0, round2(FUND_SHARE_CAP * (balance + invested) - invested));
   return { countryId, cash: portfolio.wallet, invested, room, portfolio };
 }

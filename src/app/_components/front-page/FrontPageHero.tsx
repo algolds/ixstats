@@ -123,11 +123,14 @@ function HeroMapStage({
       ))
     : undefined;
 
-  const { flagUrl: fallbackFlagUrl } = useFlag(
-    hoveredCountry && !matchedCountry?.flagUrl ? hoveredCountry.displayName : undefined,
+  const isClaimedHover = Boolean(matchedCountry?.id || hoveredCountry?.countryId);
+  const { flagUrl: fallbackFlagUrl, isPlaceholder } = useFlag(
+    hoveredCountry && isClaimedHover && !matchedCountry?.flagUrl
+      ? hoveredCountry.displayName
+      : undefined,
     realm?.slug
   );
-  const hoveredFlagUrl = matchedCountry?.flagUrl ?? fallbackFlagUrl;
+  const hoveredFlagUrl = matchedCountry?.flagUrl ?? (!isPlaceholder ? fallbackFlagUrl : null);
 
   const handleCountryHover = (next: EmbedPoliticalFeature | null) => {
     setHoveredCountry((prev) => {

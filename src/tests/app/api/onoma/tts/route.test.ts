@@ -12,14 +12,14 @@ jest.mock("~/lib/cache", () => ({
   rateLimiter: { check: jest.fn() },
   globalCache: { get: jest.fn(), set: jest.fn() },
 }));
-jest.mock("~/lib/auth", () => ({ isSystemOwner: jest.fn(() => true) }));
+jest.mock("~/server/shared/admin-access", () => ({ isAdminClerkUser: jest.fn(async () => true) }));
 
 import { NextRequest } from "next/server";
 import { GET, POST } from "~/app/api/onoma/tts/route";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "~/server/db";
 import { globalCache, rateLimiter } from "~/lib/cache";
-import { isSystemOwner } from "~/lib/auth";
+import { isAdminClerkUser } from "~/server/shared/admin-access";
 
 // Clerk's auth() is typed as a function with a `protect` helper, not a jest mock.
 const mockAuth = auth as unknown as jest.Mock;
@@ -48,7 +48,7 @@ afterAll(() => {
 });
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(isSystemOwner).mockReturnValue(true);
+  jest.mocked(isAdminClerkUser).mockResolvedValue(true);
   mockAuth.mockResolvedValue({ userId: "user_123", sessionClaims: {} });
   (rateLimiter.check as jest.Mock).mockResolvedValue({ success: true });
   (db.systemConfig.findMany as jest.Mock).mockResolvedValue(SAVED);
@@ -84,7 +84,7 @@ it("answers a POST body of JSON null with 400, not a gateway error", async () =>
 });
 
 describe("a signed-in player who is not staff", () => {
-  beforeEach(() => jest.mocked(isSystemOwner).mockReturnValue(false));
+  beforeEach(() => jest.mocked(isAdminClerkUser).mockResolvedValue(false));
 
   it("is refused the narrator unless a beta tester, and no voice service is called", async () => {
     const response = await GET(new NextRequest("http://localhost/api/onoma/tts?text=test"));
@@ -140,4 +140,74 @@ it("places stress after the initial consonant cluster when calling kokoro-fastap
       body: JSON.stringify({ phonemes: "dˈɛləpəs", voice: "af_heart" }),
     })
   );
+});
+
+describe("admin overrides and error sanitization", () => {
+  beforeEach(() => {
+    (db.systemConfig.findMany as jest.Mock).mockResolvedValue([
+      ...SAVED,
+      { key: "onoma.kokoro.apiKey", value: "saved-secret-key" },
+    ]);
+  });
+
+  it("refuses an override URL pointing to a private or loopback IP with 400", async () => {
+    for (const url of [
+      "http://127.0.0.1:8080",
+      "http://10.0.0.1:8080",
+      "http://172.16.0.1:8080",
+      "http://192.168.1.1:8080",
+      "http://169.254.169.254",
+      "http://localhost:8080",
+      "http://service.internal",
+      "http://[::1]:8080",
+    ]) {
+      const response = await post(JSON.stringify({ text: "Imperia", baseUrl: url }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: "That engine address isn't allowed" });
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not send the saved Authorization header when an override URL is provided without an apiKey", async () => {
+    const response = await post(
+      JSON.stringify({
+        text: "Imperia",
+        baseUrl: "https://external-tts.example.com",
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Authorization"]).toBeUndefined();
+  });
+
+  it("does not echo upstream body text when the upstream service returns 500", async () => {
+    const errSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      text: async () => "INTERNAL_SECRET_TRACEBACK_TOKEN_XYZ",
+    });
+
+    const response = await post(JSON.stringify({ text: "Imperia" }));
+    expect(response.status).toBe(502);
+    const body = await response.json();
+    expect(body).toEqual({ error: "The speech engine returned an error" });
+    expect(JSON.stringify(body)).not.toContain("INTERNAL_SECRET_TRACEBACK_TOKEN_XYZ");
+    errSpy.mockRestore();
+  });
+
+  it("refuses a 5,001-character text input with 400", async () => {
+    const response = await post(JSON.stringify({ text: "a".repeat(5001) }));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses more than 60 sentences with 400", async () => {
+    const response = await post(JSON.stringify({ text: "Word. ".repeat(61) }));
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

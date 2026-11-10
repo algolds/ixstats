@@ -23,7 +23,6 @@ const SRC = path.join(process.cwd(), "src");
 const RESOLVERS = new Set([
   "assetUrl",
   "withBasePath",
-  "resolveSrc",
   "proxyDiscordUrl",
   "proxyCardArtwork",
   "proxyNSImage",
@@ -34,11 +33,10 @@ const RESOLVERS = new Set([
 ]);
 /** Components that pass their `src` through `assetUrl`/`withBasePath` themselves. */
 const RESOLVING_TAGS = new Set([
+  "FlagImage",
   "FlagTile",
   "FlagBanner",
   "FlagWatermark",
-  "FlagDot",
-  "FlagAvatar",
   "AvatarImage",
   "TeamCrest",
   "PillImage",

@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   publicProcedure,
+  rateLimitedPublicProcedure,
   readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
@@ -40,7 +41,7 @@ import { publishLeagueStandings } from "~/server/orchestration/league-wiki-expor
 const CHARTER_TRANSACTION = { timeout: 30_000, maxWait: 10_000 };
 
 export const leaguesCrudRouter = createTRPCRouter({
-  getLeagues: publicProcedure
+  getLeagues: rateLimitedPublicProcedure
     .input(
       z.object({
         sport: z.string().optional(),
@@ -62,6 +63,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             _count: { select: { teams: true, seasons: true } },
           },
           orderBy: { createdAt: "desc" },
+          take: 200,
         });
 
         return leagues.map((l) => ({
@@ -467,11 +469,11 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  searchSportsEntities: publicProcedure
-    .input(z.object({ query: z.string() }))
+  searchSportsEntities: rateLimitedPublicProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(100) }))
     .query(async ({ ctx, input }) => {
       try {
-        const players = await (ctx.db as any).sportPlayer.findMany({
+        const players = await ctx.db.sportPlayer.findMany({
           where: {
             OR: [
               { firstName: { contains: input.query, mode: "insensitive" } },
@@ -479,23 +481,23 @@ export const leaguesCrudRouter = createTRPCRouter({
             ],
           },
           include: { team: true, transferListing: true },
-          take: 5,
+          take: 20,
         });
         const teams = await ctx.db.sportTeam.findMany({
           where: {
             name: { contains: input.query, mode: "insensitive" },
           },
           include: { league: true },
-          take: 5,
+          take: 20,
         });
         const leagues = await ctx.db.sportLeague.findMany({
           where: {
             name: { contains: input.query, mode: "insensitive" },
           },
-          take: 5,
+          take: 20,
         });
         return {
-          players: players.map((p: any) => ({
+          players: players.map((p) => ({
             id: p.id,
             name: `${p.firstName} ${p.lastName}`,
             position: p.position,
@@ -508,12 +510,12 @@ export const leaguesCrudRouter = createTRPCRouter({
                 }
               : null,
           })),
-          teams: teams.map((t: any) => ({
+          teams: teams.map((t) => ({
             id: t.id,
             name: t.name,
             leagueName: t.league.name,
           })),
-          leagues: leagues.map((l: any) => ({
+          leagues: leagues.map((l) => ({
             id: l.id,
             name: l.name,
             sportPreset: l.sportPreset,

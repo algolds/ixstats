@@ -6,8 +6,9 @@ import { Expand, Map as MapIcon, MediaImage, Sparks, WhiteFlag } from "iconoir-r
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FacetMaterial } from "~/components/ui/facet";
+import { FlagImage } from "~/components/ui/facet/identity/FlagImage";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
-import { withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
 import type { BannerMode } from "~/app/countries/[slug]/_types";
 
 const CountryMapEmbed = dynamic(
@@ -50,30 +51,18 @@ const COVER_OPTIONS: {
   { mode: "gradient", label: "Map", description: "The live territory map", icon: MapIcon },
 ];
 
-function resolveSrc(src: string | null | undefined): string | null {
-  if (!src) return null;
-  return /^(https?:|data:|blob:)/.test(src) ? src : withBasePath(src);
-}
-
 /** The flag as a bordered tile; the first letter of the name when there is no flag. */
 export function FlagTile({ src, name }: { src: string | null; name: string }) {
-  const [failed, setFailed] = useState(false);
-  const resolved = resolveSrc(src);
   return (
     <div className="bg-surface-secondary border-separator rounded-control-lg shadow-card relative flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden border sm:h-16 sm:w-24">
-      {resolved && !failed ? (
-        // oxlint-disable-next-line nextjs/no-img-element -- remote flag, fixed tile
-        <img
-          src={resolved}
-          alt={`Flag of ${name}`}
-          className="size-full object-cover"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <span aria-hidden className="text-title-2 text-label-secondary">
-          {name.charAt(0)}
-        </span>
-      )}
+      <FlagImage
+        src={src}
+        name={name}
+        alt={`Flag of ${name}`}
+        lazy={false}
+        className="size-full object-cover"
+        monogramClassName="text-title-2 text-label-secondary"
+      />
     </div>
   );
 }
@@ -141,7 +130,7 @@ export function CoverMedia({
   onExpand?: () => void;
 }) {
   const [failed, setFailed] = useState<string | null>(null);
-  const src = resolveSrc(cover?.url);
+  const src = assetUrl(cover?.url);
   return (
     <>
       {src && failed !== src ? (

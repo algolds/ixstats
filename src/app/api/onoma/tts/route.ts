@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { rateLimiter, globalCache } from "~/lib/cache";
 import { db } from "~/server/db";
-import { isSystemOwner } from "~/lib/auth";
+import { isAdminClerkUser } from "~/server/shared/admin-access";
 import crypto from "crypto";
 import { ipaToSpokenText } from "~/lib/onoma/branding-utils";
 import { ipaToKokoroPhonemes, anglicizeForSpeech } from "~/lib/onoma/kokoro-phonemes";
@@ -73,7 +73,6 @@ export function mergeMp3Buffers(buffers: Buffer[]): Buffer {
   return Buffer.concat(buffers);
 }
 
-const ADMIN_ROLES = ["admin", "owner", "staff"];
 const BETA_ROLES = ["beta_tester", "beta-tester", "beta"];
 const CACHE_OPTS = { ttl: 30 * 24 * 60 * 60, tier: "standard" } as const;
 const PROSODY_SUFFIX: Record<string, string> = {
@@ -82,10 +81,11 @@ const PROSODY_SUFFIX: Record<string, string> = {
   mysterious: "...",
 };
 
-type RoleClaims = { role?: unknown } | undefined;
+const MAX_TEXT_LENGTH = 5000;
+const MAX_SENTENCES = 60;
+const DISALLOWED_ADDRESS_ERROR = "That engine address isn't allowed";
 
-const json = (error: string, status: number, extra?: Record<string, unknown>) =>
-  NextResponse.json({ error, ...extra }, { status });
+const json = (error: string, status: number) => NextResponse.json({ error }, { status });
 
 const audioResponse = (buf: Buffer, contentType: string) =>
   new NextResponse(new Uint8Array(buf), {
@@ -94,6 +94,57 @@ const audioResponse = (buf: Buffer, contentType: string) =>
   });
 
 const withHttp = (url: string) => (url && !/^https?:\/\//i.test(url) ? `http://${url}` : url);
+
+function parseHostname(rawUrl: string): { protocol: string; host: string } | null {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return null;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed) && !/^https?:\/\//i.test(trimmed)) return null;
+  try {
+    const u = new URL(withHttp(trimmed));
+    return { protocol: u.protocol, host: u.hostname.toLowerCase().replace(/^\[|\]$/g, "") };
+  } catch {
+    return null;
+  }
+}
+
+function isPrivateOrReservedHost(host: string): boolean {
+  if (
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    host === "::" ||
+    host.endsWith(".localhost") ||
+    host.endsWith(".local") ||
+    host.endsWith(".internal")
+  ) {
+    return true;
+  }
+  if (host.includes(":")) {
+    return /^f[cd][0-9a-f]{0,2}:|^fe[89ab][0-9a-f]?:|^::ffff:|^0+:0+:0+:0+:0+:0+:0+:[01]$/i.test(
+      host
+    );
+  }
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return false;
+  const a = Number(m[1]);
+  const b = Number(m[2]);
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254)
+  );
+}
+
+function isAllowedOverrideUrl(rawUrl: string, savedUrl: string): boolean {
+  const parsed = parseHostname(rawUrl);
+  if (!parsed || (parsed.protocol !== "http:" && parsed.protocol !== "https:")) return false;
+  const saved = parseHostname(savedUrl);
+  if (saved && parsed.host === saved.host) return true;
+  return !isPrivateOrReservedHost(parsed.host);
+}
 
 /** Read a cached {d, ct} wrapper, falling back to legacy plain-base64 entries. */
 function readCached(raw: string | undefined | null): { data: string; ct: string } | null {
@@ -107,32 +158,18 @@ function readCached(raw: string | undefined | null): { data: string; ct: string 
   return { data: raw, ct: "audio/mpeg" };
 }
 
-/** System owners, admins/staff and beta testers may use the narrator. */
-async function resolveAccess(userId: string, sessionClaims: object | undefined) {
-  const claims = sessionClaims as
-    { metadata?: RoleClaims; publicMetadata?: RoleClaims } | undefined;
-  const clerkRole = claims?.metadata?.role || claims?.publicMetadata?.role;
-  const role = typeof clerkRole === "string" ? clerkRole : "";
-  let isAdmin = isSystemOwner(userId) || ADMIN_ROLES.includes(role);
-  let hasAccess = isAdmin || BETA_ROLES.includes(role);
+/** System owners, admins/staff and beta testers may use the narrator. Admin = the database role. */
+async function resolveAccess(userId: string) {
+  const isAdmin = await isAdminClerkUser(userId);
+  if (isAdmin) return { isAdmin, hasAccess: true };
 
-  if (!isAdmin) {
-    const dbUser = await db.user.findUnique({
-      where: { clerkUserId: userId },
-      include: { role: true },
-    });
-    if (dbUser) {
-      const roleName = dbUser.role?.name || "";
-      const roleLevel = dbUser.role?.level ?? 999;
-      if (ADMIN_ROLES.includes(roleName) || roleLevel <= 20) {
-        isAdmin = true;
-        hasAccess = true;
-      } else if (BETA_ROLES.includes(roleName) || roleLevel === 90) {
-        hasAccess = true;
-      }
-    }
-  }
-  return { isAdmin, hasAccess };
+  const dbUser = await db.user.findUnique({
+    where: { clerkUserId: userId },
+    include: { role: true },
+  });
+  const roleName = dbUser?.role?.name || "";
+  const roleLevel = dbUser?.role?.level ?? 999;
+  return { isAdmin, hasAccess: BETA_ROLES.includes(roleName) || roleLevel === 90 };
 }
 
 interface TtsConfig {
@@ -267,9 +304,7 @@ async function synthesizeWeb(
   if (!response.ok) {
     const errorText = await response.text();
     console.error(`[Kokoro TTS API Segment Error] status=${response.status}`, errorText);
-    return json(`Kokoro API returned error status ${response.status} for segment`, 502, {
-      details: errorText.substring(0, 200),
-    });
+    return json("The speech engine returned an error", 502);
   }
   return { buf: Buffer.from(await response.arrayBuffer()), ct: "audio/mpeg" };
 }
@@ -315,14 +350,42 @@ async function loadConfig() {
 }
 
 /** Engine overrides (the admin panel's unsaved values) are honoured for admins only. */
-function applyAdminOverrides(config: TtsConfig, body: TtsBody) {
+function applyAdminOverrides(config: TtsConfig, body: TtsBody): NextResponse | null {
+  const savedBaseUrl = config.baseUrl;
+  const savedFastApiUrl = config.fastApiUrl;
+
   if (body.engine) config.engine = body.engine === "kokoro-web" ? "kokoro-web" : "kokoro-fastapi";
-  if (body.fastApiUrl) config.fastApiUrl = body.fastApiUrl as string;
-  if (body.baseUrl) config.baseUrl = body.baseUrl as string;
-  // An empty key means "use the saved one" (the admin form never holds it).
-  if (body.apiKey) config.apiKey = body.apiKey as string;
+
+  if (body.fastApiUrl !== undefined && body.fastApiUrl !== null && body.fastApiUrl !== "") {
+    if (
+      typeof body.fastApiUrl !== "string" ||
+      !isAllowedOverrideUrl(body.fastApiUrl, savedFastApiUrl)
+    ) {
+      return json(DISALLOWED_ADDRESS_ERROR, 400);
+    }
+    config.fastApiUrl = body.fastApiUrl.trim();
+  }
+
+  if (body.baseUrl !== undefined && body.baseUrl !== null && body.baseUrl !== "") {
+    if (typeof body.baseUrl !== "string" || !isAllowedOverrideUrl(body.baseUrl, savedBaseUrl)) {
+      return json(DISALLOWED_ADDRESS_ERROR, 400);
+    }
+    config.baseUrl = body.baseUrl.trim();
+  }
+
+  const urlChanged =
+    withHttp(config.baseUrl.trim()) !== withHttp(savedBaseUrl.trim()) ||
+    withHttp(config.fastApiUrl.trim()) !== withHttp(savedFastApiUrl.trim());
+
+  if (typeof body.apiKey === "string" && body.apiKey.trim()) {
+    config.apiKey = body.apiKey.trim();
+  } else if (urlChanged) {
+    config.apiKey = "";
+  }
+
   // In test mode we bypass the "enabled" switch
   config.enabled = true;
+  return null;
 }
 
 interface SegmentContext {
@@ -387,12 +450,18 @@ async function prepareRequest(request: NextRequest, isAdmin: boolean) {
       return json("Invalid JSON body", 400);
     }
     p = paramsFromBody(body, defaults);
-    if (isAdmin) applyAdminOverrides(config, body);
+    if (isAdmin) {
+      const overrideError = applyAdminOverrides(config, body);
+      if (overrideError) return overrideError;
+    }
   } else {
     p = paramsFromQuery(new URL(request.url).searchParams, defaults);
   }
 
   if (!p.text) return json("Text parameter is required", 400);
+  if (p.text.length > MAX_TEXT_LENGTH) {
+    return json("Text exceeds maximum length of 5,000 characters", 400);
+  }
 
   // Apply the per-culture voice unless the client explicitly chose a voice.
   const primaryCulture = p.culture.split("+")[0].toLowerCase().trim();
@@ -422,7 +491,7 @@ async function handleTts(request: NextRequest) {
     const limit = await rateLimiter.check(userId, "onoma-tts");
     if (!limit.success) return json("Rate limit exceeded", 429);
 
-    const { isAdmin, hasAccess } = await resolveAccess(userId, session.sessionClaims);
+    const { isAdmin, hasAccess } = await resolveAccess(userId);
     if (!hasAccess) {
       return json(
         "Narrator feature is currently restricted to system owners, administrators, and beta testers.",
@@ -453,6 +522,9 @@ async function handleTts(request: NextRequest) {
 
     const sentences = splitIntoSentences(p.text);
     if (sentences.length === 0) return json("Text parameter contains no speakable content", 400);
+    if (sentences.length > MAX_SENTENCES) {
+      return json("Text contains too many sentences", 400);
+    }
 
     const result = await synthesizeSentences(sentences, {
       p,
@@ -480,14 +552,8 @@ async function handleTts(request: NextRequest) {
 
     return audioResponse(finalBuffer, contentType);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "";
-    console.warn(
-      "[Kokoro TTS Proxy Connection Failure/Timeout] falling back. Error:",
-      message || error
-    );
-    return json("Failed to connect to Kokoro natural voice service", 502, {
-      details: message || "Timeout or network failure",
-    });
+    console.error("[Kokoro TTS Proxy Connection Failure/Timeout]", error);
+    return json("The speech engine couldn't be reached", 502);
   }
 }
 

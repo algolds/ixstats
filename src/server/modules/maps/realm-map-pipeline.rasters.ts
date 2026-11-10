@@ -5,7 +5,6 @@
  * entry or tiles would change. On apply, a layer's versions other than the new one and the one it replaces are
  * removed. Raster layers the pipeline does not list are kept as they are.
  */
-import type { Prisma } from "@prisma/client";
 import { sameRasterLayer, withRasterLayer } from "~/lib/maps/raster-tiles";
 import type { PipelineRaster } from "~/lib/maps/realm-map-pipeline";
 import {
@@ -15,6 +14,7 @@ import {
   withRealmMapSettings,
   type RealmRasterLayer,
 } from "~/lib/maps/realm-map-settings";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import {
   buildRealmRaster,
   planRealmRaster,
@@ -103,13 +103,12 @@ async function build(ctx: StepContext, planned: PlannedRaster): Promise<string> 
 
 /** Record the built layers in the settings (other layers and settings kept), then drop stale versions. */
 async function record(ctx: StepContext, changed: readonly PlannedRaster[]): Promise<string[]> {
-  const settings = await currentSettings(ctx);
-  let layers = parseRealmMapSettings(settings).rasterLayers ?? [];
-  for (const planned of changed) layers = withRasterLayer(layers, planned.entry);
-  const rasterLayers = RealmMapSettingsSchema.shape.rasterLayers.parse(layers);
-  await ctx.db.realm.update({
-    where: { id: ctx.realm.id },
-    data: { settings: withRealmMapSettings(settings, { rasterLayers }) as Prisma.InputJsonValue },
+  let rasterLayers: RealmRasterLayer[] | undefined;
+  await updateRealmSettings(ctx.db, ctx.realm.id, (settings) => {
+    let layers = parseRealmMapSettings(settings).rasterLayers ?? [];
+    for (const planned of changed) layers = withRasterLayer(layers, planned.entry);
+    rasterLayers = RealmMapSettingsSchema.shape.rasterLayers.parse(layers);
+    return withRealmMapSettings(settings, { rasterLayers });
   });
   const lines = [`settings.map.rasterLayers: ${rasterLayers?.map((l) => l.id).join(", ")}`];
   for (const planned of changed) {

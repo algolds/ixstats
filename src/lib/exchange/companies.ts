@@ -22,12 +22,13 @@ import {
   isUniqueViolation,
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
-import { assertExchangeOpen, lockWallet, round2, type Db } from "./guards";
+import { assertExchangeOpen, lockWallet, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns } from "./amounts";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
+import { unwindCompanyMoneyTx } from "./unwind";
 import { subIndustriesOf, type SubIndustryKey } from "./taxonomy";
 import { publishNewsTx } from "./news";
 
@@ -47,6 +48,52 @@ export {
   type FairValueWeights,
 } from "./valuation";
 import { INDEX_BASE, computeFairValue } from "./valuation";
+
+export interface CompanyMoney {
+  capital: number;
+  fairValue: number;
+  contractsWonValue: number;
+  decisionValue: number;
+  creditDrawn: number;
+  lastTradePrice: number | null;
+  lastTickRevenue: number;
+  lastTickExpenses: number;
+  lastTickTax: number;
+  lastTickNetIncome: number;
+}
+
+/** Convert a Company row's BigInt cent fields to ₷ numbers for API and UI readers. */
+export function companyView<
+  T extends {
+    capital: bigint;
+    fairValue: bigint;
+    contractsWonValue: bigint;
+    decisionValue: bigint;
+    creditDrawn: bigint;
+    lastTradePrice?: bigint | null;
+    lastTickRevenue: bigint;
+    lastTickExpenses: bigint;
+    lastTickTax: bigint;
+    lastTickNetIncome: bigint;
+  },
+>(c: T): Omit<T, keyof CompanyMoney> & CompanyMoney {
+  return {
+    ...c,
+    capital: fromCents(centsOf(c.capital)),
+    fairValue: fromCents(centsOf(c.fairValue)),
+    contractsWonValue: fromCents(centsOf(c.contractsWonValue)),
+    decisionValue: fromCents(centsOf(c.decisionValue)),
+    creditDrawn: fromCents(centsOf(c.creditDrawn)),
+    lastTradePrice:
+      c.lastTradePrice !== undefined && c.lastTradePrice !== null
+        ? fromCents(centsOf(c.lastTradePrice))
+        : null,
+    lastTickRevenue: fromCents(centsOf(c.lastTickRevenue)),
+    lastTickExpenses: fromCents(centsOf(c.lastTickExpenses)),
+    lastTickTax: fromCents(centsOf(c.lastTickTax)),
+    lastTickNetIncome: fromCents(centsOf(c.lastTickNetIncome)),
+  };
+}
 
 /** Recompute a company's fair value and record a CompanyValueHistory row. */
 export async function refreshFairValue(tx: Db, companyId: string): Promise<void> {
@@ -70,12 +117,23 @@ export async function refreshFairValue(tx: Db, companyId: string): Promise<void>
     }),
     getExchangeConfig(tx),
   ]);
-  const breakdown = computeFairValue(c, index?.value ?? INDEX_BASE, cfg);
-  await tx.company.update({ where: { id: companyId }, data: { fairValue: breakdown.fairValue } });
+  const breakdown = computeFairValue(
+    {
+      capital: fromCents(centsOf(c.capital)),
+      creditDrawn: fromCents(centsOf(c.creditDrawn)),
+      contractsWonValue: fromCents(centsOf(c.contractsWonValue)),
+      standing: c.standing,
+      decisionValue: fromCents(centsOf(c.decisionValue)),
+    },
+    index?.value ?? INDEX_BASE,
+    cfg
+  );
+  const fairValue = dbCents(toCents(breakdown.fairValue));
+  await tx.company.update({ where: { id: companyId }, data: { fairValue } });
   await tx.companyValueHistory.create({
     data: {
       companyId,
-      fairValue: breakdown.fairValue,
+      fairValue,
       breakdown: { ...breakdown },
       recordedIxTime: Date.now(),
     },
@@ -99,6 +157,23 @@ export async function requireOwnedCompany(
     throw new ExchangeError("CONFLICT", "This company is no longer active");
   }
   return company;
+}
+
+export async function assertNoVoteNeeded(
+  tx: Db,
+  company: { id: string; founderId: string; sharesOutstanding: number }
+): Promise<void> {
+  if (company.sharesOutstanding <= 0) return;
+  const holders = await holdersOf(tx, company.id);
+  const outside = holders
+    .filter((h) => h.userId !== company.founderId)
+    .reduce((sum, h) => sum + h.shares, 0);
+  if (outside / company.sharesOutstanding >= 0.1) {
+    throw new ExchangeError(
+      "CONFLICT",
+      "Outside shareholders own 10% or more: open a shareholder vote to do this"
+    );
+  }
 }
 
 export interface FoundCompanyInput {
@@ -195,7 +270,7 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         const existing = await tx.company.findFirst({
           where: { founderId: input.userId, realmId, name },
         });
-        if (existing) return { company: existing, alreadyApplied: true };
+        if (existing) return { company: companyView(existing), alreadyApplied: true };
       }
 
       const subIndustryKey = subIndustryFor(input.sectorKey, input.subIndustryKey);
@@ -213,7 +288,7 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
       }
 
       const now = Date.now();
-      const pricePerShare = round2(cfg.charterFee / FOUNDER_SHARES);
+      const pricePerShareCents = dbCents(Math.round(toCents(cfg.charterFee) / FOUNDER_SHARES));
       const company = await tx.company.create({
         data: {
           founderId: input.userId,
@@ -230,17 +305,23 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         },
       });
       await tx.shareIssuance.create({
-        data: { companyId: company.id, shares: FOUNDER_SHARES, pricePerShare, issuedIxTime: now },
+        data: {
+          companyId: company.id,
+          shares: FOUNDER_SHARES,
+          pricePerShare: pricePerShareCents,
+          issuedIxTime: now,
+        },
       });
       await tx.shareholding.create({
         data: {
           companyId: company.id,
           ownerUserId: input.userId,
           shares: FOUNDER_SHARES,
-          avgCost: pricePerShare,
+          avgCost: pricePerShareCents,
         },
       });
       await refreshFairValue(tx, company.id);
+      const refreshed = await tx.company.findUniqueOrThrow({ where: { id: company.id } });
       await publishNewsTx(tx, {
         realmId,
         kind: "company_listed",
@@ -252,13 +333,13 @@ export async function foundCompany(db: PrismaClient, input: FoundCompanyInput) {
         countryId: company.hqCountryId ?? undefined,
         key: `news:company_listed:${company.id}`,
       });
-      return { company, alreadyApplied: false };
+      return { company: companyView(refreshed), alreadyApplied: false };
     });
   } catch (error) {
     if (isUniqueViolation(error)) {
       const existing = await findExisting();
       const applied = await db.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
-      if (existing && applied) return { company: existing, alreadyApplied: true };
+      if (existing && applied) return { company: companyView(existing), alreadyApplied: true };
       throw new ExchangeError("CONFLICT", "That company name is taken");
     }
     throw error;
@@ -296,18 +377,21 @@ export async function depositToCompany(db: PrismaClient, input: CapitalMoveInput
         idempotencyKey: key,
       });
       if (r.alreadyApplied) return { newBalance: r.newBalance, alreadyApplied: true };
-      const creditLimit = Math.min(
-        250_000,
-        0.5 * (company.decisionValue + 0.25 * company.contractsWonValue)
+      const amountCents = toCents(input.amount);
+      const creditLimitCents = Math.min(
+        250_000_00,
+        Math.round(
+          0.5 * (centsOf(company.decisionValue) + 0.25 * centsOf(company.contractsWonValue))
+        )
       );
       const cured =
         company.status === "DISTRESSED" &&
-        company.capital + input.amount >= 0 &&
-        company.creditDrawn <= creditLimit + 1e-9;
+        centsOf(company.capital) + amountCents >= 0 &&
+        centsOf(company.creditDrawn) <= creditLimitCents;
       await tx.company.update({
         where: { id: input.companyId },
         data: {
-          capital: { increment: input.amount },
+          capital: { increment: dbCents(amountCents) },
           ...(cured ? { status: "ACTIVE", distressedSinceIxTime: null } : {}),
         },
       });
@@ -355,8 +439,10 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
         where: { idempotencyKey: key },
         select: { balanceAfter: true },
       });
-      if (applied) return { newBalance: applied.balanceAfter, alreadyApplied: true };
-      if (company.creditDrawn > 0) {
+      if (applied) {
+        return { newBalance: fromCents(centsOf(applied.balanceAfter)), alreadyApplied: true };
+      }
+      if (company.creditDrawn > 0n) {
         throw new ExchangeError("CONFLICT", "Repay the credit line before withdrawing");
       }
       const holders = await holdersOf(tx, input.companyId);
@@ -368,9 +454,10 @@ export async function withdrawFromCompany(db: PrismaClient, input: CapitalMoveIn
       }
       await assertNoOpenPrimaryIssue(tx, input.companyId);
 
+      const amountCents = dbCents(toCents(input.amount));
       const { count } = await tx.company.updateMany({
-        where: { id: input.companyId, status: "ACTIVE", capital: { gte: input.amount } },
-        data: { capital: { decrement: input.amount } },
+        where: { id: input.companyId, status: "ACTIVE", capital: { gte: amountCents } },
+        data: { capital: { decrement: amountCents } },
       });
       if (count !== 1) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");
@@ -408,15 +495,17 @@ export interface DissolveResult {
  */
 export async function dissolveCompanyTx(
   tx: Db,
-  input: { userId: string; companyId: string }
+  input: { userId: string; companyId: string; viaVote?: boolean }
 ): Promise<DissolveResult> {
   const notices: ExchangeNotice[] = [];
   await assertExchangeOpen(tx);
   await lockCompany(tx, input.companyId);
   const company = await requireOwnedCompany(tx, input.companyId, input.userId);
-  if (company.creditDrawn > 0) {
+  if (!input.viaVote) await assertNoVoteNeeded(tx, company);
+  if (company.creditDrawn > 0n) {
     throw new ExchangeError("CONFLICT", "Repay the credit line before dissolving this company");
   }
+  await unwindCompanyMoneyTx(tx, company.id, Date.now());
   const live = await tx.contract.count({
     where: {
       OR: [
@@ -442,20 +531,24 @@ export async function dissolveCompanyTx(
   await returnBuyOrders(tx, company.id);
   await closeCompanyProposalsTx(tx, company.id, Date.now());
 
+  const { capital } = await tx.company.findUniqueOrThrow({
+    where: { id: company.id },
+    select: { capital: true },
+  });
   const { count } = await tx.company.updateMany({
-    where: { id: company.id, status: "ACTIVE", capital: company.capital },
+    where: { id: company.id, status: "ACTIVE", capital },
     data: {
       status: "DELISTED",
-      capital: 0,
+      capital: 0n,
       tradingOpen: false,
-      decisionValue: 0,
+      decisionValue: 0n,
       standing: 0,
-      contractsWonValue: 0,
+      contractsWonValue: 0n,
     },
   });
   if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
 
-  const split = splitProRata(toCents(company.capital), await holdersOf(tx, company.id));
+  const split = splitProRata(centsOf(capital), await holdersOf(tx, company.id));
   const payouts = new Map(split.payouts.map((p) => [p.userId, p.cents]));
   payouts.set(input.userId, (payouts.get(input.userId) ?? 0) + split.remainderCents);
   for (const [userId, cents] of [...payouts].sort(([a], [b]) => (a < b ? -1 : 1))) {
@@ -552,15 +645,16 @@ export async function listMyCompanies(db: Db, userId: string, realmId?: string) 
     select: COMPANY_SELECT,
     take: 50,
   });
-  return rows;
+  return rows.map(companyView);
 }
 
 /** The directory: ACTIVE companies by fair value. `realmId` narrows to one realm. */
 export async function listCompanies(db: Db, limit = 50, realmId?: string) {
-  return db.company.findMany({
+  const rows = await db.company.findMany({
     where: { status: "ACTIVE", ...(realmId ? { realmId } : {}) },
     orderBy: [{ fairValue: "desc" }, { createdAt: "asc" }],
     select: COMPANY_SELECT,
     take: Math.min(Math.max(limit, 1), 100),
   });
+  return rows.map(companyView);
 }

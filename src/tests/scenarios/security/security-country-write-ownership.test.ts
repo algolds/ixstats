@@ -1056,6 +1056,9 @@ export const fixtureRouter = createTRPCRouter({
   unguarded: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => ctx.db.policy.create({ data: input })),
+  unguardedRateLimited: rateLimitedMutationProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.policy.create({ data: input })),
   inline: countryOwnerProcedure
     .input(z.object({ countryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -1081,15 +1084,30 @@ export const fixtureRouter = createTRPCRouter({
     expect(Object.fromEntries(analyze().map((f) => [f.procedure, f.status]))).toEqual({
       guarded: "OK",
       unguarded: "MISSING",
+      unguardedRateLimited: "MISSING",
       inline: "MANUAL",
       rowById: "MISSING",
     });
+  });
+
+  it("throws an audit error when a mutation uses an unknown *Procedure root", () => {
+    const unknownSource = `
+export const r = createTRPCRouter({
+  mystery: brandNewCustomProcedure
+    .input(z.object({ countryId: z.string() }))
+    .mutation(async ({ ctx, input }) => ctx.db.policy.create({ data: input })),
+});
+`;
+    expect(() =>
+      analyzeSource(new Project({ useInMemoryFileSystem: true }), FILE, unknownSource)
+    ).toThrow(/Unknown procedure root "brandNewCustomProcedure"/);
   });
 
   it("allowlists only the named procedures and fails while anything is unresolved", () => {
     const findings = applyAllowlist(analyze(), {
       [`${FILE}#inline`]: "compares ctx.country.id to input.countryId",
       [`${FILE}#unguarded`]: "reviewed",
+      [`${FILE}#unguardedRateLimited`]: "reviewed",
       [`${FILE}#rowById`]: "reviewed",
     });
     expect(findings.find((f) => f.procedure === "inline")?.status).toBe("ALLOWED");

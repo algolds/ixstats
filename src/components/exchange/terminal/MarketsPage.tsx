@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { keepPreviousData } from "@tanstack/react-query";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
 import { SearchField } from "~/components/ui/search-field";
@@ -109,7 +111,11 @@ export function MarketsPage({ realmId }: { realmId: string }) {
   const params = useSearchParams();
   const kind = marketKindOf(params.get("kind"));
   const query = params.get("q") ?? "";
-  const markets = api.exchange.markets.useQuery({ realmId, kind, query: query || undefined });
+  const [draft, setDraft] = useState(() => params.get("q") ?? "");
+  const markets = api.exchange.markets.useQuery(
+    { realmId, kind, query: query || undefined },
+    { placeholderData: keepPreviousData }
+  );
   const treasury = useTreasuryActor(realmId);
   const canManageRealm = useRealmOverview(realmId).data?.canManageRealm ?? false;
   const update = (key: string, value: string) => {
@@ -119,6 +125,11 @@ export function MarketsPage({ realmId }: { realmId: string }) {
     if (!next.has("kind")) next.set("kind", kind);
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   };
+  useEffect(() => {
+    if (draft === query) return;
+    const timer = setTimeout(() => update("q", draft), 250);
+    return () => clearTimeout(timer);
+  }, [draft, query]);
   return (
     <div className="space-y-4">
       <Card content="data" padding="lg" className="space-y-4">
@@ -133,9 +144,9 @@ export function MarketsPage({ realmId }: { realmId: string }) {
           <SearchField
             className="w-full sm:w-64"
             placeholder={`Search ${KIND_LABELS[kind].toLowerCase()}`}
-            value={query}
+            value={draft}
             autoFocus={params.get("focus") === "search"}
-            onValueChange={(v) => update("q", v)}
+            onValueChange={setDraft}
           />
         </div>
         {markets.isLoading ? (

@@ -362,6 +362,7 @@ describe("rolling a world back", () => {
       "close slots",
       "read claims",
       "delete slots",
+      "lock realm",
     ]);
     expect(filed).toBe(true);
     expect(restored.slots).toEqual({ restored: 1, removed: 2, kept: 1 });

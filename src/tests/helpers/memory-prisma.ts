@@ -145,6 +145,13 @@ const same = (a: Value, b: Value): boolean => {
   if (isDate(a) || isDate(b)) {
     return isDate(a) && isDate(b) ? a.getTime() === b.getTime() : toTime(a) === toTime(b);
   }
+  if (
+    (typeof a === "bigint" || typeof a === "number") &&
+    (typeof b === "bigint" || typeof b === "number") &&
+    typeof a !== typeof b
+  ) {
+    return Number.isInteger(typeof a === "number" ? a : b) && BigInt(a) === BigInt(b);
+  }
   if (typeof a === "object" && a !== null && typeof b === "object" && b !== null) {
     return JSON.stringify(a) === JSON.stringify(b);
   }
@@ -166,6 +173,11 @@ function compareValues(field: Field | undefined, a: Value, b: Value): number {
   }
   const x = toTime(a);
   const y = toTime(b);
+  if (typeof x === "bigint" || typeof y === "bigint") {
+    const bx = BigInt(x as bigint | number);
+    const by = BigInt(y as bigint | number);
+    return bx < by ? -1 : bx > by ? 1 : 0;
+  }
   if (typeof x === "number" && typeof y === "number") return x - y;
   if (typeof x === "boolean" && typeof y === "boolean") return Number(x) - Number(y);
   const s = String(x);
@@ -333,6 +345,7 @@ export class MemoryStore {
       }
     }
     if (Array.isArray(d)) return clone(d);
+    if (f.type === "BigInt" && (typeof d === "string" || typeof d === "number")) return BigInt(d);
     return d;
   }
 
@@ -352,6 +365,9 @@ export class MemoryStore {
         } else v = null;
       }
       if (f.type === "DateTime" && typeof v === "string") v = new Date(v);
+      if (f.type === "BigInt" && v !== null && v !== undefined && typeof v !== "bigint") {
+        v = BigInt(v as string | number);
+      }
       row[f.name] = clone(v);
     }
     for (const key of Object.keys(data)) {
@@ -813,17 +829,31 @@ function applyData(store: MemoryStore, model: Model, row: Row, data: Args): void
     if (change === Prisma.DbNull || change === Prisma.JsonNull) next = null;
     else if (isPlainObject(change) && field.type !== "Json") {
       const [op, by] = Object.entries(change)[0] ?? unsupported("empty update op");
-      const cur = row[key] as number;
-      if (op === "set") next = by;
-      else if (op === "increment") next = cur + (by as number);
-      else if (op === "decrement") next = cur - (by as number);
-      else if (op === "multiply") next = cur * (by as number);
-      else if (op === "divide") next = cur / (by as number);
-      else if (op === "push")
-        next = [...((row[key] as Value[]) ?? []), ...(Array.isArray(by) ? by : [by])];
-      else unsupported(`update op ${op}`);
+      if (field.type === "BigInt") {
+        const cur = BigInt((row[key] as bigint | number | undefined) ?? 0n);
+        const rhs = BigInt(by as bigint | number);
+        if (op === "set") next = rhs;
+        else if (op === "increment") next = cur + rhs;
+        else if (op === "decrement") next = cur - rhs;
+        else if (op === "multiply") next = cur * rhs;
+        else if (op === "divide") next = cur / rhs;
+        else unsupported(`update op ${op}`);
+      } else {
+        const cur = row[key] as number;
+        if (op === "set") next = by;
+        else if (op === "increment") next = cur + (by as number);
+        else if (op === "decrement") next = cur - (by as number);
+        else if (op === "multiply") next = cur * (by as number);
+        else if (op === "divide") next = cur / (by as number);
+        else if (op === "push")
+          next = [...((row[key] as Value[]) ?? []), ...(Array.isArray(by) ? by : [by])];
+        else unsupported(`update op ${op}`);
+      }
     }
     if (field.type === "DateTime" && typeof next === "string") next = new Date(next);
+    if (field.type === "BigInt" && next !== null && next !== undefined && typeof next !== "bigint") {
+      next = BigInt(next as string | number);
+    }
     if (
       field.type === "Int" &&
       typeof next === "number" &&
@@ -907,7 +937,11 @@ function aggregateOf(model: Model, rows: Row[], args: Args): Row {
       const field = model.fields.get(key)!;
       const vs = rows.map((r) => r[key]).filter((v) => v !== null && v !== undefined);
       if (op === "_sum")
-        part[key] = vs.length ? vs.reduce((s: number, v) => s + (v as number), 0) : null;
+        part[key] = vs.length
+          ? field.type === "BigInt"
+            ? vs.reduce((s: bigint, v) => s + BigInt(v as bigint | number), 0n)
+            : vs.reduce((s: number, v) => s + (v as number), 0)
+          : null;
       else if (op === "_avg")
         part[key] = vs.length ? (vs as number[]).reduce((s, v) => s + v, 0) / vs.length : null;
       else

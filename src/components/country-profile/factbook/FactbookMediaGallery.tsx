@@ -24,50 +24,20 @@ import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { countryTabHref } from "~/lib/country/country-routes";
+import { classifyArticleTopic, cleanSummary, type ArticleTopic } from "~/lib/country/article-topics";
 import { stripHtml } from "~/lib/utils/sanitize-html";
 
-function cleanSummary(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const stripped = stripHtml(raw)
-    .replace(/\{\{[^{}]*\}\}/g, "")
-    .replace(/\[\[(?:[^\]|]+\|)?([^\]]+)\]\]/g, "$1")
-    .replace(/'{2,}/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  return stripped || null;
-}
-
-function classifyArticleTopic(title: string): { label: string; icon: React.ReactNode } {
-  if (/\b(histor|ancient|war|era|dynast|emp|revolut|chronicle)\b/i.test(title)) {
-    return { label: "History", icon: <Clock /> };
-  }
-  if (
-    /\b(govern|politic|senat|assembl|parliament|corcillum|ministr|council|court|judic|constitut|law|imperator|monarch|presiden|chancellor|administrat|provin)\b/i.test(
-      title
-    )
-  ) {
-    return { label: "State & law", icon: <Bank /> };
-  }
-  if (/\b(econom|bank|treasur|budget|tax|trad|industr|commerc|currenc|rail|port)\b/i.test(title)) {
-    return { label: "Economy", icon: <Coins /> };
-  }
-  if (/\b(armed|militar|nav|defen|legion|cohort|force|security)\b/i.test(title)) {
-    return { label: "Defense", icon: <Shield /> };
-  }
-  if (/\b(foreign|diplom|treat|allianc|embass|internation)\b/i.test(title)) {
-    return { label: "Diplomacy", icon: <Globe /> };
-  }
-  if (/\b(geograph|climat|region|territor|city|capital)\b/i.test(title)) {
-    return { label: "Geography", icon: <Globe /> };
-  }
-  if (/\b(demograph|educat|health|stratific|social|people|population)\b/i.test(title)) {
-    return { label: "Society", icon: <Group /> };
-  }
-  if (/\b(cultur|relig|church|languag|latin|art|architect|sport|leagu)\b/i.test(title)) {
-    return { label: "Culture", icon: <OpenBook /> };
-  }
-  return { label: "Dossier", icon: <OpenBook /> };
-}
+const TOPIC_BADGES: Record<ArticleTopic, { label: string; icon: React.ReactNode }> = {
+  history: { label: "History", icon: <Clock /> },
+  state: { label: "State & law", icon: <Bank /> },
+  economy: { label: "Economy", icon: <Coins /> },
+  defense: { label: "Defense", icon: <Shield /> },
+  diplomacy: { label: "Diplomacy", icon: <Globe /> },
+  geography: { label: "Geography", icon: <Globe /> },
+  society: { label: "Society", icon: <Group /> },
+  culture: { label: "Culture", icon: <OpenBook /> },
+  dossier: { label: "Dossier", icon: <OpenBook /> },
+};
 
 function ArticleSpotlightTile({ article }: { article: ProfileMediaArticle }) {
   const resolvedUrl = article.imageUrl ? proxyCardArtwork(article.imageUrl) : null;
@@ -75,7 +45,7 @@ function ArticleSpotlightTile({ article }: { article: ProfileMediaArticle }) {
   const showImage = Boolean(resolvedUrl && failed !== resolvedUrl);
   const isVector = Boolean(resolvedUrl && /\.svg(?:$|\?)/i.test(resolvedUrl));
   const summary = cleanSummary(article.summary);
-  const topic = classifyArticleTopic(article.title);
+  const topic = TOPIC_BADGES[classifyArticleTopic(article.title)];
 
   return (
     <Link

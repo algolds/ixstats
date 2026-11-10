@@ -7,6 +7,8 @@ jest.mock("~/lib/exchange/notify", () => ({
   sendExchangeNotices: jest.fn(),
 }));
 import { castVote, finalizeProposalsTx, openProposal, outcomeOf } from "~/lib/exchange/governance";
+import { dissolveCompany } from "~/lib/exchange/companies";
+import { issueShares } from "~/lib/exchange/shares";
 import { DAY_MS } from "~/lib/exchange/contracts";
 import type { Db } from "~/lib/exchange/guards";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -27,9 +29,9 @@ function setup() {
     exchangeWallet: ["alice", "bob", "carol", "dave"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -38,10 +40,10 @@ function setup() {
         founderId: "alice",
         name: "Alice Works",
         sectorKey: "industry",
-        capital: 20_000,
+        capital: 20_000_00n,
         standing: 0,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         tradingOpen: true,
@@ -49,20 +51,20 @@ function setup() {
       },
     ],
     shareholding: [
-      { companyId: "co", ownerUserId: "alice", shares: 400, avgCost: 1 },
-      { companyId: "co", ownerUserId: "bob", shares: 350, avgCost: 1 },
-      { companyId: "co", ownerUserId: "carol", shares: 250, avgCost: 1 },
+      { companyId: "co", ownerUserId: "alice", shares: 400, avgCost: 100n },
+      { companyId: "co", ownerUserId: "bob", shares: 350, avgCost: 100n },
+      { companyId: "co", ownerUserId: "carol", shares: 250, avgCost: 100n },
     ],
     systemConfig: [],
   });
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const proposals = () => fake.tables.companyProposal ?? [];
 const soleOwner = () => {
-  fake.tables.shareholding = [{ companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 1 }];
+  fake.tables.shareholding = [{ companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 100n }];
 };
 
 beforeEach(setup);
@@ -86,7 +88,7 @@ describe("opening a proposal", () => {
       requestId: rid(),
     });
     expect(proposal).toMatchObject({ status: "PASSED", sharesFor: 1000, sharesAgainst: 0 });
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     expect(sov("alice")).toBe(25_000);
   });
 
@@ -98,7 +100,7 @@ describe("opening a proposal", () => {
       requestId: rid(),
     });
     expect(proposal).toMatchObject({ status: "OPEN", sharesFor: 400, totalEligibleShares: 1000 });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
     expect(fake.tables.companyVote).toEqual([
       expect.objectContaining({ voterUserId: "alice", support: true, shares: 400 }),
     ]);
@@ -187,7 +189,7 @@ describe("voting", () => {
 
     const { proposal } = await castVote(fake.client, { userId: "bob", proposalId, support: true });
     expect(proposal).toMatchObject({ status: "PASSED", sharesFor: 750, sharesAgainst: 0 });
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     expect((fake.tables.exchangeNewsItem ?? []).filter((n) => n.kind === "vote_passed")).toEqual([
       expect.objectContaining({ prominence: "HEADLINE", companyId: "co" }),
     ]);
@@ -215,7 +217,7 @@ describe("voting", () => {
       support: false,
     });
     expect(proposal).toMatchObject({ status: "REJECTED", sharesAgainst: 600 });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
   });
 
   it("refuses a vote from someone who holds no shares", async () => {
@@ -238,7 +240,7 @@ describe("voting", () => {
       companyId: "co",
       ownerUserId: "dave",
       shares: 200,
-      avgCost: 1,
+      avgCost: 100n,
     });
 
     const { proposal } = await castVote(fake.client, {
@@ -265,12 +267,43 @@ describe("expiry", () => {
     const first = await fake.client.$transaction((tx: Db) => finalizeProposalsTx(tx, "co", later));
     expect(first.expired).toBe(1);
     expect(proposals()[0]).toMatchObject({ status: "EXPIRED" });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
 
     const second = await fake.client.$transaction((tx: Db) => finalizeProposalsTx(tx, "co", later));
     expect(second.expired).toBe(0);
     await expect(
       castVote(fake.client, { userId: "bob", proposalId: proposal.id, support: true })
     ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("(b) a founder with 5% and an outside holder with >= 10% calling dissolveCompany or issueShares -> CONFLICT, while a sole founder succeeds directly", async () => {
+    fake.tables.shareholding = [
+      { companyId: "co", ownerUserId: "alice", shares: 50, avgCost: 100n },
+      { companyId: "co", ownerUserId: "bob", shares: 100, avgCost: 100n },
+      { companyId: "co", ownerUserId: "carol", shares: 850, avgCost: 100n },
+    ];
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: "co" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    await expect(
+      issueShares(fake.client, {
+        userId: "alice",
+        companyId: "co",
+        shares: 100,
+        requestId: rid(),
+      })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+
+    soleOwner();
+    const issued = await issueShares(fake.client, {
+      userId: "alice",
+      companyId: "co",
+      shares: 100,
+      requestId: rid(),
+    });
+    expect(issued.listing).toMatchObject({ shares: 100, status: "OPEN" });
+    const dissolved = await dissolveCompany(fake.client, { userId: "alice", companyId: "co" });
+    expect(dissolved.returned).toBe(20_000);
+    expect(company().status).toBe("DELISTED");
   });
 });

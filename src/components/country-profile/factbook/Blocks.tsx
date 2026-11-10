@@ -8,6 +8,7 @@ import { formatBig, formatPercent, formatRate } from "~/app/countries/[slug]/_ut
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FlagImage } from "~/components/ui/facet/identity/FlagImage";
 import { assetUrl } from "~/lib/base-path";
 import { formatRealmDate } from "~/lib/realms/realm-clock";
 import { electionDisplayName } from "~/lib/realms/realm-year";
@@ -116,8 +117,10 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
 }
 
 function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selection, setSelection] = useState<{ id: string; pinned: boolean } | null>(null);
+  const selectedId = selection?.id ?? null;
   const active = shares.regions.find((r) => r.id === selectedId) ?? null;
+  const clearUnpinned = () => setSelection((curr) => (curr?.pinned ? curr : null));
 
   return (
     <Card padding="sm" className="flex flex-col gap-2">
@@ -127,18 +130,26 @@ function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
           {`${shares.topShare.toFixed(1)}% top ${shares.regions.length}`}
         </span>
       </div>
-      <div className="rounded-control-sm flex h-3 gap-0.5 overflow-hidden">
+      <div
+        className="rounded-control-sm flex h-3 gap-0.5 overflow-hidden"
+        onMouseLeave={clearUnpinned}
+        onBlur={clearUnpinned}
+      >
         {shares.regions.map((r, i) => {
           const isSelected = r.id === selectedId;
+          const preview = () =>
+            setSelection((curr) =>
+              curr?.pinned && curr.id === r.id ? curr : { id: r.id, pinned: false }
+            );
           return (
             <button
               key={r.id}
               type="button"
               aria-label={r.name}
               aria-pressed={isSelected}
-              onClick={() => setSelectedId((curr) => (curr === r.id ? null : r.id))}
-              onMouseEnter={() => setSelectedId(r.id)}
-              onFocus={() => setSelectedId(r.id)}
+              onClick={() => setSelection({ id: r.id, pinned: true })}
+              onMouseEnter={preview}
+              onFocus={preview}
               style={{ width: `${Math.max(r.share, 6)}%` }}
               className={cn(
                 SHARE_FILLS[i],
@@ -405,30 +416,9 @@ export function StateBlock({ layer, onMore }: BlockProps) {
   );
 }
 
-function FlagAvatar({ src, name }: { src: string | null; name: string }) {
-  const resolved = assetUrl(src);
-  const [failed, setFailed] = useState<string | null>(null);
-  if (!resolved || failed === resolved) {
-    return (
-      <span
-        aria-hidden
-        className="bg-fill-3 text-caption text-label-secondary flex h-5 w-7 shrink-0 items-center justify-center rounded-xs font-medium"
-      >
-        {name.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    // oxlint-disable-next-line nextjs/no-img-element -- remote flag thumbnail
-    <img
-      src={resolved}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(resolved)}
-      className="border-separator h-5 w-7 shrink-0 rounded-xs border object-cover"
-    />
-  );
-}
+const FLAG_AVATAR_CLASS = "border-separator h-5 w-7 shrink-0 rounded-xs border object-cover";
+const FLAG_AVATAR_MONOGRAM_CLASS =
+  "bg-fill-3 text-caption text-label-secondary flex h-5 w-7 shrink-0 items-center justify-center rounded-xs font-medium";
 
 export function ForeignBlock({ layer, onMore }: BlockProps) {
   const m = diplomaticMatrix(layer.world);
@@ -472,7 +462,12 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                     <li key={r.id} className="flex flex-col gap-1">
                       <div className="flex items-center justify-between gap-2">
                         <span className="flex min-w-0 items-center gap-2">
-                          <FlagAvatar src={r.flagUrl} name={r.name} />
+                          <FlagImage
+                            src={r.flagUrl}
+                            name={r.name}
+                            className={FLAG_AVATAR_CLASS}
+                            monogramClassName={FLAG_AVATAR_MONOGRAM_CLASS}
+                          />
                           <span className="text-footnote text-label truncate font-medium">
                             {r.name}
                           </span>
@@ -504,7 +499,12 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
               {embassyLinks.map((emb) => {
                 const content = (
                   <>
-                    <FlagAvatar src={emb.flagUrl} name={emb.countryName} />
+                    <FlagImage
+                      src={emb.flagUrl}
+                      name={emb.countryName}
+                      className={FLAG_AVATAR_CLASS}
+                      monogramClassName={FLAG_AVATAR_MONOGRAM_CLASS}
+                    />
                     <span className="text-caption text-label truncate font-medium">
                       {emb.countryName}
                     </span>

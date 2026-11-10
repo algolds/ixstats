@@ -9,10 +9,11 @@ import type { Company, ShareBuyOrder, ShareListing } from "@prisma/client";
 import { LATEST_GROWTH_SELECT } from "~/lib/economy/effective-growth";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
 import { refreshFairValue } from "./companies";
+import { isFundInsiderPair } from "./fund-insiders";
 import { lockWallet, type Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, toCents } from "./ownership";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns } from "./amounts";
 import { countryMacroOf } from "./macro";
 import { LARGE_TRADE_SOVEREIGNS, publishNewsTx } from "./news";
 import { transferToTreasuryTx } from "./treasury";
@@ -61,14 +62,78 @@ export async function lockParties(tx: Db, userIds: ReadonlyArray<string | null>)
 
 /** Price-time priority for asks: cheapest first, then oldest. */
 export function askRank(a: ShareListing, b: ShareListing): number {
-  return toCents(a.pricePerShare) - toCents(b.pricePerShare) || a.createdIxTime - b.createdIxTime;
+  return centsOf(a.pricePerShare) - centsOf(b.pricePerShare) || a.createdIxTime - b.createdIxTime;
 }
 
 /** Price-time priority for bids: highest limit first, then oldest. */
 export function bidRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
   return (
-    toCents(b.maxPricePerShare) - toCents(a.maxPricePerShare) || a.createdIxTime - b.createdIxTime
+    centsOf(b.maxPricePerShare) - centsOf(a.maxPricePerShare) || a.createdIxTime - b.createdIxTime
   );
+}
+
+/** Order buy-order refunds by buyer user-id (then order id) so wallet locks match dissolution/liquidation order. */
+export function refundRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
+  if (a.buyerUserId !== b.buyerUserId) return a.buyerUserId < b.buyerUserId ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** Open bids on `ask.companyId` that cross `ask` and are not self-trades or wealth-fund insider pairs, highest first. */
+export async function crossingBids(tx: Db, ask: ShareListing): Promise<ShareBuyOrder[]> {
+  const candidates = (
+    await tx.shareBuyOrder.findMany({ where: { companyId: ask.companyId, status: "OPEN" } })
+  )
+    .filter(
+      (b) =>
+        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
+        b.buyerUserId !== ask.sellerUserId
+    )
+    .sort(bidRank);
+  const bids: ShareBuyOrder[] = [];
+  for (const b of candidates) {
+    if (!(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))) {
+      bids.push(b);
+    }
+  }
+  return bids;
+}
+
+/**
+ * Every seller and buyer across the asks and bids that will cross for a company, so `matchCompanyOrders`
+ * can lock all party wallets in user-id order before the first fill's capital-gains tax locks the treasury.
+ */
+export async function crossingParties(
+  tx: Db,
+  companyId: string,
+  asks: readonly ShareListing[]
+): Promise<Array<string | null>> {
+  const bids = await tx.shareBuyOrder.findMany({ where: { companyId, status: "OPEN" } });
+  const remaining = new Map(bids.map((b) => [b.id, b.shares]));
+  const sortedBids = [...bids].sort(bidRank);
+  const parties: Array<string | null> = [];
+  for (const ask of [...asks].sort(askRank)) {
+    const eligible: ShareBuyOrder[] = [];
+    for (const b of sortedBids) {
+      const left = remaining.get(b.id) ?? 0;
+      if (
+        left > 0 &&
+        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
+        b.buyerUserId !== ask.sellerUserId &&
+        !(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))
+      ) {
+        eligible.push({ ...b, shares: left });
+      }
+    }
+    const fills = takeFills(eligible, ask.shares);
+    if (fills.length > 0) {
+      parties.push(ask.sellerUserId);
+      for (const f of fills) {
+        parties.push(f.order.buyerUserId);
+        remaining.set(f.order.id, (remaining.get(f.order.id) ?? 0) - f.shares);
+      }
+    }
+  }
+  return parties;
 }
 
 /**
@@ -116,7 +181,7 @@ export async function consumeBid(tx: Db, bid: ShareBuyOrder, shares: number): Pr
     where: { id: bid.id, status: "OPEN", shares: bid.shares },
     data: {
       shares: left,
-      escrow: fromCents(toCents(bid.maxPricePerShare) * left),
+      escrow: dbCents(centsOf(bid.maxPricePerShare) * left),
       status: left === 0 ? "FILLED" : "OPEN",
     },
   });
@@ -138,7 +203,10 @@ async function capGainsTax(
     where: { companyId_ownerUserId: { companyId: company.id, ownerUserId: seller } },
     select: { avgCost: true },
   });
-  const gainCents = Math.max(0, (priceCents - toCents(holding?.avgCost ?? 0)) * shares);
+  const gainCents = Math.max(
+    0,
+    (priceCents - (holding ? centsOf(holding.avgCost) : 0)) * shares
+  );
   const cents = ratedCents(gainCents, rate);
   return cents > 0 ? { countryId: company.hqCountryId, cents } : null;
 }
@@ -162,13 +230,12 @@ interface SaleInput {
 export async function paySale(tx: Db, company: Company, sale: SaleInput): Promise<number> {
   const grossCents = toCents(sale.price) * sale.shares;
   if (!sale.seller) {
-    const cost = fromCents(grossCents);
     await tx.company.update({
       where: { id: company.id },
-      data: { capital: { increment: cost }, sharesOutstanding: { increment: sale.shares } },
+      data: { capital: { increment: dbCents(grossCents) }, sharesOutstanding: { increment: sale.shares } },
     });
     await refreshFairValue(tx, company.id);
-    return cost;
+    return fromCents(grossCents);
   }
   await earnSovereignsTx(tx, {
     userId: sale.seller,
@@ -244,6 +311,7 @@ export async function creditHolding(
   shares: number,
   cost: number
 ): Promise<void> {
+  const costCents = toCents(cost);
   const holding = await tx.shareholding.findUnique({
     where: { companyId_ownerUserId: { companyId, ownerUserId: userId } },
   });
@@ -253,7 +321,7 @@ export async function creditHolding(
         companyId,
         ownerUserId: userId,
         shares,
-        avgCost: Math.round((cost / shares) * 100) / 100,
+        avgCost: dbCents(Math.round(costCents / shares)),
       },
     });
     return;
@@ -265,10 +333,10 @@ export async function creditHolding(
   const escrowedShares = openListings.reduce((sum, l) => sum + l.shares, 0);
   const existingOwned = holding.shares + escrowedShares;
   const total = existingOwned + shares;
-  const avgCost = Math.round(((existingOwned * holding.avgCost + cost) / total) * 100) / 100;
+  const avgCostCents = Math.round((existingOwned * centsOf(holding.avgCost) + costCents) / total);
   await tx.shareholding.update({
     where: { id: holding.id },
-    data: { shares: { increment: shares }, avgCost },
+    data: { shares: { increment: shares }, avgCost: dbCents(avgCostCents) },
   });
 }
 
@@ -286,10 +354,11 @@ export async function recordTrade(
   });
   await tx.company.update({
     where: { id: companyId },
-    data: { lastTradePrice: price, lastTradeIxTime: Date.now() },
+    data: { lastTradePrice: dbCents(toCents(price)), lastTradeIxTime: Date.now() },
   });
   if (!before) return;
   const value = price * shares;
+  const prevPrice = before.lastTradePrice !== null ? fromCents(centsOf(before.lastTradePrice)) : 0;
   await publishNewsTx(tx, {
     realmId: before.realmId,
     kind: "trade",
@@ -297,9 +366,7 @@ export async function recordTrade(
     sourceKind: "EXCHANGE",
     headline: `${shares.toLocaleString("en-US")} ${shares === 1 ? "share" : "shares"} of ${before.name} traded at ${formatSovereigns(price)}`,
     companyId,
-    movePct: before.lastTradePrice
-      ? ((price - before.lastTradePrice) / before.lastTradePrice) * 100
-      : undefined,
+    movePct: prevPrice > 0 ? ((price - prevPrice) / prevPrice) * 100 : undefined,
     key: `news:trade:${tradeKey}`,
   });
 }
@@ -316,17 +383,18 @@ export async function fillBuyerAgainstAsk(
   shares: number,
   key: string
 ): Promise<number> {
+  const askPrice = fromCents(centsOf(ask.pricePerShare));
   await consumeAsk(tx, ask, shares);
   const net = await paySale(tx, company, {
     seller: ask.sellerUserId,
     shares,
-    price: ask.pricePerShare,
+    price: askPrice,
     key,
     metadata: {
       listingId: ask.id,
       companyId: company.id,
       shares,
-      pricePerShare: ask.pricePerShare,
+      pricePerShare: askPrice,
     },
   });
   await creditHolding(
@@ -334,8 +402,8 @@ export async function fillBuyerAgainstAsk(
     company.id,
     buyer,
     shares,
-    fromCents(toCents(ask.pricePerShare) * shares)
+    fromCents(centsOf(ask.pricePerShare) * shares)
   );
-  await recordTrade(tx, company.id, ask.pricePerShare, shares, key);
+  await recordTrade(tx, company.id, askPrice, shares, key);
   return net;
 }

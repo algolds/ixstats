@@ -81,8 +81,8 @@ describe("syncCorporateFeedback", () => {
           subIndustryKey: "software_media",
           hqCountryId: NATION,
           status: "ACTIVE",
-          decisionValue: 150_000,
-          capital: 0,
+          decisionValue: 150_000_00n,
+          capital: 0n,
         },
       ],
     });

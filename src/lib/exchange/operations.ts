@@ -14,14 +14,14 @@
  */
 
 import type { Company, PrismaClient } from "@prisma/client";
-import { round2 } from "./amounts";
+import { centsOf, dbCents, fromCents, toCents } from "./amounts";
 import { INDEX_BASE, SECTOR_KEYS, type SectorKey } from "./companies";
 import { borrowRateOf, creditLimitFor } from "./credit";
 import { applyDistressTx, distressDecision, setCapitalTx, type DistressAction } from "./distress";
 import type { Db } from "./guards";
 import { countryMacroOf, sectorAdvantageOf, type CountryMacro } from "./macro";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { fromCents, lockCompany, toCents } from "./ownership";
+import { lockCompany } from "./ownership";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { SUB_INDUSTRIES, creditRatingFor, supplyChainFactor } from "./taxonomy";
 import { transferToTreasuryTx, type TreasuryInflowType } from "./treasury";
@@ -29,7 +29,7 @@ import { lendingTermsFor, type LendingTerms } from "./lending";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const TICKS_PER_DAY = 4;
-const OPERATING_TICK_MS = DAY_MS / TICKS_PER_DAY;
+export const OPERATING_TICK_MS = DAY_MS / TICKS_PER_DAY;
 const CAPITAL_BASE_CAP = 50_000;
 const CAPITAL_BASE_WEIGHT = 0.5;
 const STANDING_BASE_WEIGHT = 250;
@@ -73,8 +73,8 @@ export function operatingTickKey(nowMs: number): string {
 
 function productiveBaseOf(c: Pick<Company, "decisionValue" | "capital" | "standing">): number {
   return (
-    c.decisionValue +
-    CAPITAL_BASE_WEIGHT * Math.min(c.capital, CAPITAL_BASE_CAP) +
+    fromCents(centsOf(c.decisionValue)) +
+    CAPITAL_BASE_WEIGHT * Math.min(fromCents(centsOf(c.capital)), CAPITAL_BASE_CAP) +
     STANDING_BASE_WEIGHT * Math.max(0, c.standing)
   );
 }
@@ -122,19 +122,20 @@ async function mintOperatingRevenueTx(
   const key = `${RUN_KEY_PREFIX}${input.realmId}:${input.tickKey}`;
   const claimed = await tx.systemConfig.findUnique({ where: { key }, select: { id: true } });
   if (claimed) return false;
-  const minted = input.mints.reduce((sum, m) => sum + m.amount, 0);
+  const mintedCents = input.mints.reduce((sum, m) => sum + toCents(m.amount), 0);
   await tx.systemConfig.create({
     data: {
       key,
-      value: JSON.stringify({ minted: round2(minted), companies: input.mints.length }),
+      value: JSON.stringify({ minted: fromCents(mintedCents), companies: input.mints.length }),
       description: "Exchange operating revenue minted for this realm and tick",
     },
   });
   for (const m of input.mints) {
-    if (m.amount <= 0) continue;
+    const cents = toCents(m.amount);
+    if (cents <= 0) continue;
     await tx.company.update({
       where: { id: m.companyId },
-      data: { capital: { increment: m.amount } },
+      data: { capital: { increment: dbCents(cents) } },
     });
   }
   return true;
@@ -299,7 +300,8 @@ function draftOf(c: Company, ctx: RealmContext): Draft | null {
     ((base * sub.upkeepRate) / TICKS_PER_DAY) * (1 + Math.max(0, inflation - INFLATION_FLOOR));
   const spread = c.hqCountryId ? (ctx.terms.get(c.hqCountryId)?.spread ?? 0) : 0;
   const rate = macro ? borrowRateOf(macro.interestRate, c.creditRating, spread) : 0;
-  const interest = (c.creditDrawn * rate) / (DAYS_PER_YEAR * TICKS_PER_DAY);
+  const interest =
+    (fromCents(centsOf(c.creditDrawn)) * rate) / (DAYS_PER_YEAR * TICKS_PER_DAY);
   const relief = c.lobbyBuffType === "tax_relief" && (c.lobbyBuffUntilIxTime ?? 0) > ctx.nowMs;
   return {
     company: c,
@@ -351,7 +353,7 @@ async function settleTx(
 ): Promise<DistressAction> {
   const c = plan.company;
   const key = `op:${ctx.realmId}:${ctx.tickKey}:${c.id}`;
-  let cash = toCents(c.capital) + plan.revenueCents;
+  let cash = centsOf(c.capital) + plan.revenueCents;
   await setCapitalTx(tx, c.id, cash);
 
   const upkeepPaid = Math.min(plan.upkeepCents, cash);
@@ -379,22 +381,24 @@ async function settleTx(
   const interestUnpaid = plan.interestCents - interestPaid;
   const unpaid =
     plan.upkeepCents - upkeepPaid > 0 || interestUnpaid > 0 || plan.taxCents - taxPaid > 0;
-  const creditDrawn = c.creditDrawn + fromCents(interestUnpaid);
+  const creditDrawn = fromCents(centsOf(c.creditDrawn) + interestUnpaid);
   const netCents = plan.revenueCents - plan.upkeepCents - plan.interestCents - plan.taxCents;
   const capital = fromCents(cash);
+  const decisionValue = fromCents(centsOf(c.decisionValue));
+  const contractsWonValue = fromCents(centsOf(c.contractsWonValue));
   const rating = creditRatingFor({
     standing: c.standing,
-    debtToEquity: creditDrawn / Math.max(1, capital + c.decisionValue),
+    debtToEquity: creditDrawn / Math.max(1, capital + decisionValue),
     lastTickNetIncome: fromCents(netCents),
   });
   await tx.company.update({
     where: { id: c.id },
     data: {
-      lastTickRevenue: fromCents(plan.revenueCents),
-      lastTickExpenses: fromCents(plan.upkeepCents + plan.interestCents),
-      lastTickTax: fromCents(plan.taxCents),
-      lastTickNetIncome: fromCents(netCents),
-      creditDrawn: { increment: fromCents(interestUnpaid) },
+      lastTickRevenue: dbCents(plan.revenueCents),
+      lastTickExpenses: dbCents(plan.upkeepCents + plan.interestCents),
+      lastTickTax: dbCents(plan.taxCents),
+      lastTickNetIncome: dbCents(netCents),
+      creditDrawn: { increment: dbCents(interestUnpaid) },
       creditRating: rating,
     },
   });
@@ -405,7 +409,10 @@ async function settleTx(
     unpaid,
     capital,
     creditDrawn,
-    creditLimit: creditLimitFor(c, c.hqCountryId ? ctx.terms.get(c.hqCountryId)?.cap : undefined),
+    creditLimit: creditLimitFor(
+      { decisionValue, contractsWonValue },
+      c.hqCountryId ? ctx.terms.get(c.hqCountryId)?.cap : undefined
+    ),
     nowMs: ctx.nowMs,
   });
   await applyDistressTx(
@@ -491,6 +498,7 @@ export async function runCompanyOperations(
     distinct: ["realmId"],
     select: { realmId: true },
   });
+  let totalMintedCents = 0;
   for (const { realmId } of realms) {
     try {
       const outcome = await db.$transaction((tx) => operateRealmTx(tx, realmId, nowMs), {
@@ -500,13 +508,13 @@ export async function runCompanyOperations(
       summary.realms++;
       if (outcome.skipped) summary.skippedRealms++;
       summary.companies += outcome.companies;
-      summary.revenueMinted += outcome.mintedCents / 100;
+      totalMintedCents += outcome.mintedCents;
       summary.distressed += outcome.distressed;
       summary.bankrupt += outcome.bankrupt;
     } catch (error) {
       console.error(`[Exchange] company operations in realm ${realmId} failed:`, error);
     }
   }
-  summary.revenueMinted = round2(summary.revenueMinted);
+  summary.revenueMinted = fromCents(totalMintedCents);
   return summary;
 }

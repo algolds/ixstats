@@ -19,10 +19,12 @@ import {
   cancelContract,
   completeContract,
   createContract,
+  DAY_MS,
   disputeContract,
   placeBid,
   resolveDispute,
 } from "~/lib/exchange/contracts";
+import { expireLapsedContracts } from "~/lib/exchange/expiry";
 import type { Db } from "~/lib/exchange/guards";
 import { ensureSectorIndices } from "~/lib/exchange/sectors";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -37,9 +39,9 @@ function wallet(userId: string) {
   return {
     id: `w_${userId}`,
     userId,
-    sovereigns: 5000,
-    lifetimeEarned: 5000,
-    lifetimeSpent: 0,
+    sovereigns: 5000_00n,
+    lifetimeEarned: 5000_00n,
+    lifetimeSpent: 0n,
   };
 }
 
@@ -59,15 +61,15 @@ function setup(config: Record<string, string> = {}) {
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const company = (id: string) => fake.tables.company!.find((c) => c.id === id)!;
 const contract = (id: string) => fake.tables.contract!.find((c) => c.id === id)!;
 
 /** All ₷ in wallets, company capital and contract escrow. Fees aside, moves conserve it. */
 function totalMoney() {
-  const wallets = fake.tables.exchangeWallet!.reduce((s, w) => s + w.sovereigns, 0);
-  const capital = (fake.tables.company ?? []).reduce((s, c) => s + c.capital, 0);
-  const escrow = (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0);
+  const wallets = fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0);
+  const capital = (fake.tables.company ?? []).reduce((s, c) => s + Number(c.capital) / 100, 0);
+  const escrow = (fake.tables.contract ?? []).reduce((s, c) => s + Number(c.escrow) / 100, 0);
   return wallets + capital + escrow;
 }
 
@@ -200,7 +202,7 @@ describe("companies", () => {
       )
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(2);
-    expect(company(id).capital).toBe(100);
+    expect(company(id).capital).toBe(100_00n);
     expect(totalMoney()).toBe(before);
   });
 
@@ -217,22 +219,33 @@ describe("companies", () => {
       withdrawFromCompany(fake.client, input),
       withdrawFromCompany(fake.client, input),
     ]);
-    expect(company(id).capital).toBe(300);
+    expect(company(id).capital).toBe(300_00n);
   });
 
-  it("won't dissolve with a live contract, then returns capital once settled", async () => {
-    const { aliceCo, contractId } = await openContractWithBid();
+  it("won't dissolve with an awarded contract, and unwinds an open contract on dissolve", async () => {
+    const { aliceCo, contractId, bidId } = await openContractWithBid();
+    await awardContract(fake.client, { userId: "alice", contractId, bidId });
     await expect(
       dissolveCompany(fake.client, { userId: "alice", companyId: aliceCo })
     ).rejects.toMatchObject({
       code: "CONFLICT",
     });
-    await cancelContract(fake.client, { userId: "alice", contractId });
+    await completeContract(fake.client, { userId: "alice", contractId });
+    // Create another OPEN contract; dissolving unwinds its escrow back into capital and pays out all 700.
+    await createContract(fake.client, {
+      userId: "alice",
+      issuerCompanyId: aliceCo,
+      title: "Second job",
+      sectorKey: "industry",
+      value: 200,
+      biddingDays: 7,
+      requestId: rid(),
+    });
     const before = sov("alice");
     const r = await dissolveCompany(fake.client, { userId: "alice", companyId: aliceCo });
-    expect(r.returned).toBe(1000);
-    expect(sov("alice")).toBe(before + 1000);
-    expect(company(aliceCo)).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(r.returned).toBe(700);
+    expect(sov("alice")).toBe(before + 700);
+    expect(company(aliceCo)).toMatchObject({ status: "DELISTED", capital: 0n });
   });
 
   it("keeps a company's name unique within its realm only", async () => {
@@ -362,8 +375,8 @@ describe("companies", () => {
       amount: 1000,
       requestId: rid(),
     });
-    expect(company(alpha.id).fairValue).toBe(1500);
-    expect(company(home.id).fairValue).toBe(1000);
+    expect(company(alpha.id).fairValue).toBe(1500_00n);
+    expect(company(home.id).fairValue).toBe(1000_00n);
   });
 
   it("refuses to withdraw or dissolve while a credit line is drawn", async () => {
@@ -374,7 +387,7 @@ describe("companies", () => {
       amount: 500,
       requestId: rid(),
     });
-    company(id).creditDrawn = 200;
+    company(id).creditDrawn = 200_00n;
     await expect(
       withdrawFromCompany(fake.client, {
         userId: "alice",
@@ -387,7 +400,7 @@ describe("companies", () => {
       dissolveCompany(fake.client, { userId: "alice", companyId: id })
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
-    company(id).creditDrawn = 0;
+    company(id).creditDrawn = 0n;
     await expect(
       dissolveCompany(fake.client, { userId: "alice", companyId: id })
     ).resolves.toMatchObject({ returned: 500 });
@@ -406,8 +419,8 @@ describe("companies", () => {
 describe("contract state machine", () => {
   it("escrows the value from the issuer's capital", async () => {
     const { aliceCo, contractId } = await openContractWithBid();
-    expect(contract(contractId)).toMatchObject({ status: "OPEN", escrow: 400 });
-    expect(company(aliceCo).capital).toBe(600);
+    expect(contract(contractId)).toMatchObject({ status: "OPEN", escrow: 400_00n });
+    expect(company(aliceCo).capital).toBe(600_00n);
   });
   it("won't let the issuer bid on its own contract", async () => {
     const { aliceCo, contractId } = await openContractWithBid();
@@ -426,10 +439,10 @@ describe("contract state machine", () => {
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
     expect(contract(contractId)).toMatchObject({
       status: "AWARDED",
-      escrow: 300,
+      escrow: 300_00n,
       winnerCompanyId: bobCo,
     });
-    expect(company(aliceCo).capital).toBe(700); // 100 refunded on award
+    expect(company(aliceCo).capital).toBe(700_00n); // 100 refunded on award
     await expect(
       awardContract(fake.client, { userId: "alice", contractId, bidId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -443,8 +456,8 @@ describe("contract state machine", () => {
       [1, 2, 3].map(() => completeContract(fake.client, { userId: "alice", contractId }))
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(company(bobCo)).toMatchObject({ capital: 300, contractsWonValue: 300, standing: 1 });
-    expect(contract(contractId)).toMatchObject({ status: "COMPLETED", escrow: 0 });
+    expect(company(bobCo)).toMatchObject({ capital: 300_00n, contractsWonValue: 300_00n, standing: 1 });
+    expect(contract(contractId)).toMatchObject({ status: "COMPLETED", escrow: 0n });
     expect(totalMoney()).toBe(before);
     const kinds = (fake.tables.exchangeNewsItem ?? [])
       .filter((n) => n.contractId === contractId)
@@ -458,7 +471,7 @@ describe("contract state machine", () => {
   it("cancel refunds escrow; a cancelled contract can't be awarded", async () => {
     const { aliceCo, contractId, bidId } = await openContractWithBid();
     await cancelContract(fake.client, { userId: "alice", contractId });
-    expect(company(aliceCo).capital).toBe(1000);
+    expect(company(aliceCo).capital).toBe(1000_00n);
     await expect(
       awardContract(fake.client, { userId: "alice", contractId, bidId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -483,7 +496,7 @@ describe("contract state machine", () => {
       note: "No delivery shown",
     });
     expect(r).toMatchObject({ status: "CANCELLED", amount: 300 });
-    expect(company(aliceCo).capital).toBe(1000);
+    expect(company(aliceCo).capital).toBe(1000_00n);
     expect(company(bobCo).standing).toBe(-1);
     await expect(
       resolveDispute(fake.client, { contractId, outcome: "PAY_CONTRACTOR", note: "again" })
@@ -509,7 +522,7 @@ describe("contract state machine", () => {
     const id = await found("alice", "Alice Works");
     company(id).status = "DISTRESSED";
     company(id).distressedSinceIxTime = Date.now() - 1000;
-    company(id).creditDrawn = 0;
+    company(id).creditDrawn = 0n;
 
     await depositToCompany(fake.client, {
       userId: "alice",
@@ -519,12 +532,12 @@ describe("contract state machine", () => {
     });
     expect(company(id)).toMatchObject({
       status: "ACTIVE",
-      capital: 500,
+      capital: 500_00n,
       distressedSinceIxTime: null,
     });
   });
 
-  it("refunds contract escrow to founder wallet if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
+  it("keeps contract escrow on the company record if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
     const { aliceCo, bobCo, contractId, bidId } = await openContractWithBid();
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
 
@@ -534,21 +547,40 @@ describe("contract state machine", () => {
       completeContract(fake.client, { userId: "alice", contractId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
-    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund lands in alice's wallet.
+    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund stays on company capital, not founder wallet.
     await disputeContract(fake.client, {
       userId: "alice",
       contractId,
       reason: "Contractor went bankrupt",
     });
     company(aliceCo).status = "BANKRUPT";
-    company(aliceCo).capital = 0;
+    company(aliceCo).capital = 0n;
     const aliceWalletBefore = sov("alice");
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     await resolveDispute(fake.client, {
       contractId,
       outcome: "REFUND_ISSUER",
-      note: "Refund to founder wallet",
+      note: "Refund to company record",
     });
-    expect(sov("alice")).toBe(aliceWalletBefore + 300);
-    expect(company(aliceCo).capital).toBe(0);
+    warnSpy.mockRestore();
+    expect(sov("alice")).toBe(aliceWalletBefore);
+    expect(company(aliceCo).capital).toBe(300_00n);
+  });
+
+  it("(a) a BANKRUPT company's issued OPEN contract cancelled or expired does not raise the founder's wallet", async () => {
+    const { aliceCo, contractId } = await openContractWithBid();
+    company(aliceCo).status = "BANKRUPT";
+    company(aliceCo).capital = 0n;
+    const aliceWalletBefore = sov("alice");
+
+    await expect(
+      cancelContract(fake.client, { userId: "alice", contractId })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(sov("alice")).toBe(aliceWalletBefore);
+
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    await expireLapsedContracts(fake.client, Date.now() + 11 * DAY_MS);
+    warnSpy.mockRestore();
+    expect(sov("alice")).toBe(aliceWalletBefore);
   });
 });

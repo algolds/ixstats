@@ -6,6 +6,7 @@
  */
 import type { PrismaClient } from "@prisma/client";
 import { ExchangeError } from "~/lib/vault/exchange-service";
+import { centsOf, dbCents, fromCents, toCents } from "./amounts";
 import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { getOrCreateTreasury } from "./treasury";
 
@@ -26,7 +27,9 @@ export async function lendingTermsOf(db: Db, countryId: string): Promise<Lending
     where: { countryId },
     select: { lendingSpread: true, companyCreditCap: true },
   });
-  return row ? { spread: row.lendingSpread, cap: row.companyCreditCap } : DEFAULT_TERMS;
+  return row
+    ? { spread: row.lendingSpread, cap: fromCents(centsOf(row.companyCreditCap)) }
+    : DEFAULT_TERMS;
 }
 
 /** Terms for many nations at once (the market tick). */
@@ -39,7 +42,10 @@ export async function lendingTermsFor(
     select: { countryId: true, lendingSpread: true, companyCreditCap: true },
   });
   return new Map(
-    rows.map((r) => [r.countryId, { spread: r.lendingSpread, cap: r.companyCreditCap }])
+    rows.map((r) => [
+      r.countryId,
+      { spread: r.lendingSpread, cap: fromCents(centsOf(r.companyCreditCap)) },
+    ])
   );
 }
 
@@ -57,33 +63,51 @@ export async function setLendingTerms(
   if (!Number.isFinite(i.cap) || i.cap < 0 || i.cap > COMPANY_CREDIT_CAP_MAX) {
     throw new ExchangeError("INVALID_AMOUNT", "The credit cap must be from ₷0 to ₷250,000");
   }
+  const capCents = toCents(i.cap);
   return db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     const country = await requireCountryOwner(tx, i.countryId, i.userId);
     const treasury = await getOrCreateTreasury(tx, country.id, country.realmId);
     await tx.nationTreasury.update({
       where: { id: treasury.id },
-      data: { lendingSpread: i.spread, companyCreditCap: i.cap },
+      data: { lendingSpread: i.spread, companyCreditCap: dbCents(capCents) },
     });
-    return { spread: i.spread, cap: i.cap };
+    return { spread: i.spread, cap: fromCents(capCents) };
   });
 }
 
-/** Companies the nation's owner founded or holds any shares in. */
+/** Companies the nation's insiders (`ownerUserId` or `User.countryId`) founded, hold shares in, or have listed. */
 export async function ownerCompanyIds(db: Db, countryId: string): Promise<Set<string>> {
-  const country = await db.country.findUnique({
-    where: { id: countryId },
-    select: { ownerUserId: true },
-  });
-  if (!country?.ownerUserId) return new Set();
-  const [founded, held] = await Promise.all([
-    db.company.findMany({ where: { founderId: country.ownerUserId }, select: { id: true } }),
+  const [country, acting] = await Promise.all([
+    db.country.findUnique({
+      where: { id: countryId },
+      select: { ownerUserId: true },
+    }),
+    db.user.findMany({
+      where: { countryId },
+      select: { id: true },
+    }),
+  ]);
+  const insiders = [
+    ...new Set([...(country?.ownerUserId ? [country.ownerUserId] : []), ...acting.map((u) => u.id)]),
+  ];
+  if (insiders.length === 0) return new Set();
+  const [founded, held, listed] = await Promise.all([
+    db.company.findMany({ where: { founderId: { in: insiders } }, select: { id: true } }),
     db.shareholding.findMany({
-      where: { ownerUserId: country.ownerUserId, shares: { gt: 0 } },
+      where: { ownerUserId: { in: insiders }, shares: { gt: 0 } },
+      select: { companyId: true },
+    }),
+    db.shareListing.findMany({
+      where: { sellerUserId: { in: insiders }, status: "OPEN" },
       select: { companyId: true },
     }),
   ]);
-  return new Set([...founded.map((c) => c.id), ...held.map((h) => h.companyId)]);
+  return new Set([
+    ...founded.map((c) => c.id),
+    ...held.map((h) => h.companyId),
+    ...listed.map((l) => l.companyId),
+  ]);
 }
 
 export async function assertNotOwnersCompany(

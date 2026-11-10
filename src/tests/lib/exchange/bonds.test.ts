@@ -37,18 +37,25 @@ function setup(treasuryBalance = 50_000) {
     exchangeWallet: USERS.map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 200_000,
-      lifetimeEarned: 200_000,
-      lifetimeSpent: 0,
+      sovereigns: 200_000_00n,
+      lifetimeEarned: 200_000_00n,
+      lifetimeSpent: 0n,
     })),
     country: [{ id: "na", name: "Caphiria", realmId: "default", ownerUserId: "alice" }],
-    nationTreasury: [{ id: "t_na", countryId: "na", realmId: "default", balance: treasuryBalance }],
+    nationTreasury: [
+      {
+        id: "t_na",
+        countryId: "na",
+        realmId: "default",
+        balance: BigInt(Math.round(treasuryBalance * 100)),
+      },
+    ],
     systemConfig: [],
   });
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const treasury = () => fake.tables.nationTreasury!.find((t) => t.countryId === "na")!;
 const bond = (id: string) => fake.tables.nationBond!.find((b) => b.id === id)!;
 const holding = (userId: string) =>
@@ -203,6 +210,12 @@ describe("issueBond", () => {
     await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
   });
 
+  it("counts unsold units against the cap, so unsold issues can't be stacked", async () => {
+    await issue(500);
+    await issue(500); // 100,000 issued, none sold: exactly the cap
+    await expect(issue(10)).rejects.toMatchObject({ code: "LIMIT_REACHED" });
+  });
+
   it("refuses to issue during a default ban", async () => {
     treasury().bondBanUntil = new Date(Date.now() + WEEK_MS);
     await expect(issue()).rejects.toMatchObject({ code: "CONFLICT" });
@@ -217,7 +230,7 @@ describe("buyBondPrimary", () => {
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId });
     expect(sov("bob")).toBe(200_000 - 10 * BOND_FACE);
-    expect(treasury().balance).toBe(50_000 + 10 * BOND_FACE);
+    expect(treasury().balance).toBe(BigInt((50_000 + 10 * BOND_FACE) * 100));
     expect(bond(id).unitsSold).toBe(10);
     expect(holding("bob")).toBe(10);
     expect(news("bond_bought")[0]!.headline).toBe("A private investor bought 10 Caphiria bonds");
@@ -230,7 +243,7 @@ describe("buyBondPrimary", () => {
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId: rid() });
     await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 30, requestId: rid() });
     expect((fake.tables.bondHolding ?? []).filter((h) => h.ownerUserId === "bob")).toEqual([
-      expect.objectContaining({ units: 40, avgCost: 100 }),
+      expect.objectContaining({ units: 40, avgCost: 100_00n }),
     ]);
   });
 
@@ -246,6 +259,41 @@ describe("buyBondPrimary", () => {
       reason: { code: "LIMIT_REACHED" },
     });
     expect(bond(id).unitsSold).toBe(10);
+  });
+});
+
+describe("a nation's insiders", () => {
+  it("can't buy the nation's bonds from the treasury, owner or acting as the nation", async () => {
+    const id = await issue();
+    await expect(
+      buyBondPrimary(fake.client, { userId: "alice", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    fake.tables.user!.find((u) => u.id === "carol")!.countryId = "na";
+    await expect(
+      buyBondPrimary(fake.client, { userId: "carol", bondId: id, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 10, requestId: rid() });
+    expect(holding("bob")).toBe(10);
+    expect(holding("alice")).toBe(0);
+    expect(sov("alice")).toBe(200_000);
+  });
+
+  it("can't buy them from another player's listing either", async () => {
+    const id = await issue();
+    await buyBondPrimary(fake.client, { userId: "bob", bondId: id, units: 50, requestId: rid() });
+    const { listingId } = await listBondUnits(fake.client, {
+      userId: "bob",
+      bondId: id,
+      units: 30,
+      pricePerUnit: 100,
+      requestId: rid(),
+    });
+    await expect(
+      buyBondListing(fake.client, { userId: "alice", listingId, units: 10, requestId: rid() })
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    await buyBondListing(fake.client, { userId: "carol", listingId, units: 10, requestId: rid() });
+    expect(holding("carol")).toBe(10);
+    expect(holding("alice")).toBe(0);
   });
 });
 
@@ -265,7 +313,7 @@ describe("listings", () => {
     expect(holding("carol")).toBe(10);
     expect(sov("carol")).toBe(200_000 - 1040);
     expect(sov("bob")).toBe(200_000 - 5000 + 1040);
-    expect(bond(id).lastTradePrice).toBe(104);
+    expect(bond(id).lastTradePrice).toBe(104_00n);
     await cancelBondListing(fake.client, { userId: "bob", listingId });
     expect(holding("bob")).toBe(40);
   });
@@ -298,7 +346,7 @@ describe("runBondPayments", () => {
       units: 400,
       requestId: rid(),
     });
-    treasury().balance = 50;
+    treasury().balance = 50_00n;
     const before = { bob: sov("bob"), carol: sov("carol") };
     const now = bond(id).issuedAt.getTime() + WEEK_MS;
 

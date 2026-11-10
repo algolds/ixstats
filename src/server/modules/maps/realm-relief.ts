@@ -34,6 +34,7 @@ import {
   type HeightGrid,
 } from "~/lib/worldgen/relief";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import {
   buildRealmRaster,
   planRealmRaster,
@@ -152,12 +153,10 @@ export async function planRealmRelief(
 
 /** Put the entry in the realm's settings (everything else kept) and drop the versions before the previous one. */
 async function record(db: ReliefDb, realmId: string, plan: ReliefPlan): Promise<void> {
-  const settings = await storedSettings(db, realmId);
-  const layers = withRasterLayer(parseRealmMapSettings(settings).rasterLayers ?? [], plan.entry);
-  const rasterLayers = RealmMapSettingsSchema.shape.rasterLayers.parse(layers);
-  await db.realm.update({
-    where: { id: realmId },
-    data: { settings: withRealmMapSettings(settings, { rasterLayers }) as Prisma.InputJsonValue },
+  await updateRealmSettings(db, realmId, (settings) => {
+    const layers = withRasterLayer(parseRealmMapSettings(settings).rasterLayers ?? [], plan.entry);
+    const rasterLayers = RealmMapSettingsSchema.shape.rasterLayers.parse(layers);
+    return withRealmMapSettings(settings, { rasterLayers });
   });
   await pruneRasterVersions(realmId, RELIEF_LAYER_ID, [
     plan.entry.version,

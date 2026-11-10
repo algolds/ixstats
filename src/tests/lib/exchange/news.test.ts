@@ -28,9 +28,9 @@ function setup() {
     exchangeWallet: ["alice", "bob"].map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: 5000,
-      lifetimeEarned: 5000,
-      lifetimeSpent: 0,
+      sovereigns: 5000_00n,
+      lifetimeEarned: 5000_00n,
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -39,19 +39,19 @@ function setup() {
         name: "Alice Works",
         realmId: "default",
         sectorKey: "industry",
-        capital: 1000,
-        fairValue: 1000,
+        capital: 1000_00n,
+        fairValue: 1000_00n,
         standing: 0,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         tradingOpen: true,
         status: "ACTIVE",
-        lastTradePrice: 500,
+        lastTradePrice: 500_00n,
       },
     ],
-    shareholding: [{ id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 1 }],
+    shareholding: [{ id: "sh_a", companyId: "co", ownerUserId: "alice", shares: 1000, avgCost: 100n }],
     systemConfig: [],
   });
 }

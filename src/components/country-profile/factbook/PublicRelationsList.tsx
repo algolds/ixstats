@@ -5,35 +5,14 @@ import { Globe } from "iconoir-react";
 import type { ProfileWorld } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FlagImage } from "~/components/ui/facet/identity/FlagImage";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { assetUrl } from "~/lib/base-path";
 import { relationshipBadge } from "../labels";
 
-function FlagDot({ src, name }: { src: string | null; name: string }) {
-  const resolved = assetUrl(src);
-  const [failed, setFailed] = useState<string | null>(null);
-  if (!resolved || failed === resolved) {
-    return (
-      <span
-        aria-hidden
-        className="bg-fill-3 text-caption text-label-secondary flex size-7 items-center justify-center rounded-full"
-      >
-        {name.charAt(0)}
-      </span>
-    );
-  }
-  return (
-    // oxlint-disable-next-line nextjs/no-img-element -- remote flag thumbnail
-    <img
-      src={resolved}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(resolved)}
-      className="border-separator size-7 rounded-full border object-cover"
-    />
-  );
-}
+const FLAG_DOT_CLASS = "border-separator size-7 rounded-full border object-cover";
+const FLAG_DOT_MONOGRAM_CLASS =
+  "bg-fill-3 text-caption text-label-secondary flex size-7 items-center justify-center rounded-full";
 
 type ForeignFilter = "all" | "relations" | "embassies";
 
@@ -86,7 +65,14 @@ export function PublicRelationsList({
               return (
                 <FacetRow
                   key={r.id}
-                  leading={<FlagDot src={r.flagUrl} name={r.name} />}
+                  leading={
+                    <FlagImage
+                      src={r.flagUrl}
+                      name={r.name}
+                      className={FLAG_DOT_CLASS}
+                      monogramClassName={FLAG_DOT_MONOGRAM_CLASS}
+                    />
+                  }
                   title={r.name}
                   subtitle={treatySummary}
                   trailing={<Badge variant={badge.variant}>{badge.label}</Badge>}
@@ -100,7 +86,14 @@ export function PublicRelationsList({
             {world.embassies.map((e) => (
               <FacetRow
                 key={e.id}
-                leading={<FlagDot src={e.flagUrl} name={e.countryName} />}
+                leading={
+                  <FlagImage
+                    src={e.flagUrl}
+                    name={e.countryName}
+                    className={FLAG_DOT_CLASS}
+                    monogramClassName={FLAG_DOT_MONOGRAM_CLASS}
+                  />
+                }
                 title={e.countryName}
                 subtitle={e.role === "host" ? "Their embassy here" : "Our embassy there"}
                 trailing={e.level != null ? `Level ${e.level}` : e.status}

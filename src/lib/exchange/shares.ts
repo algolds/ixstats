@@ -23,21 +23,25 @@ import {
   isUniqueViolation,
   spendSovereignsTx,
 } from "~/lib/vault/exchange-service";
-import { requireOwnedCompany } from "./companies";
+import { assertNoVoteNeeded, requireOwnedCompany } from "./companies";
+import { assertNotFundInsiderPair, isFundInsiderPair } from "./fund-insiders";
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
+import { centsOf, dbCents } from "./amounts";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import {
   askRank,
-  bidRank,
   consumeAsk,
   consumeBid,
   creditHolding,
+  crossingBids,
+  crossingParties,
   fillBuyerAgainstAsk,
   lockParties,
   paySale,
   pushSaleNotice,
   recordTrade,
+  refundRank,
   takeFills,
   boughtNotice,
 } from "./fills";
@@ -70,6 +74,7 @@ export interface IssueSharesInput {
   companyId: string;
   shares: number;
   requestId: string;
+  viaVote?: boolean;
 }
 
 function assertWholeShares(shares: number): void {
@@ -120,6 +125,8 @@ function issueKey(input: IssueSharesInput): string {
   return `exchange:share-issue:${input.userId}:${input.requestId}`;
 }
 
+const listingView = (l: ShareListing) => ({ ...l, pricePerShare: fromCents(centsOf(l.pricePerShare)) });
+
 /**
  * The founder's primary issue inside the caller's transaction, under the company lock. Matches the new
  * shares against resting bids it crosses. The notices go out once the transaction commits.
@@ -127,16 +134,17 @@ function issueKey(input: IssueSharesInput): string {
 export async function issueSharesTx(
   tx: Db,
   input: IssueSharesInput
-): Promise<{ listing: ShareListing; alreadyApplied: boolean; notices: ExchangeNotice[] }> {
+) {
   assertWholeShares(input.shares);
   await assertExchangeOpen(tx);
   await lockCompany(tx, input.companyId);
   const key = issueKey(input);
   const existing = await tx.shareListing.findUnique({ where: { idempotencyKey: key } });
-  if (existing) return { listing: existing, alreadyApplied: true, notices: [] };
+  if (existing) return { listing: listingView(existing), alreadyApplied: true, notices: [] };
 
   await requireOwnedCompany(tx, input.companyId, input.userId);
   const company = await requireTradable(tx, input.companyId);
+  if (!input.viaVote) await assertNoVoteNeeded(tx, company);
   const open = await tx.shareListing.count({
     where: { companyId: company.id, status: "OPEN", sellerUserId: null },
   });
@@ -155,7 +163,9 @@ export async function issueSharesTx(
   }
 
   const now = Date.now();
-  const pricePerShare = primaryPricePerShare(company.fairValue, company.sharesOutstanding);
+  const pricePerShare = dbCents(
+    toCents(primaryPricePerShare(fromCents(centsOf(company.fairValue)), company.sharesOutstanding))
+  );
   await tx.company.update({
     where: { id: company.id },
     data: { sharesIssued: { increment: input.shares } },
@@ -176,7 +186,7 @@ export async function issueSharesTx(
   });
   const notices = await matchCompanyOrders(tx, company.id);
   const listing = await tx.shareListing.findUniqueOrThrow({ where: { id: created.id } });
-  return { listing, alreadyApplied: false, notices };
+  return { listing: listingView(listing), alreadyApplied: false, notices };
 }
 
 /** Founder issues new shares as a primary listing at fair value per share. */
@@ -189,7 +199,7 @@ export async function issueShares(db: PrismaClient, input: IssueSharesInput) {
   } catch (error) {
     if (isUniqueViolation(error)) {
       const listing = await db.shareListing.findUnique({ where: { idempotencyKey: key } });
-      if (listing) return { listing, alreadyApplied: true };
+      if (listing) return { listing: listingView(listing), alreadyApplied: true };
     }
     throw error;
   }
@@ -215,7 +225,7 @@ export async function listShares(
       await assertExchangeOpen(tx);
       await lockCompany(tx, input.companyId);
       const existing = await tx.shareListing.findUnique({ where: { idempotencyKey: key } });
-      if (existing) return { listing: existing, alreadyApplied: true };
+      if (existing) return { listing: listingView(existing), alreadyApplied: true };
 
       const company = await requireTradable(tx, input.companyId);
       const open = await tx.shareListing.count({
@@ -243,21 +253,21 @@ export async function listShares(
           sellerUserId: input.userId,
           shares: input.shares,
           sharesListed: input.shares,
-          pricePerShare: input.pricePerShare,
+          pricePerShare: dbCents(toCents(input.pricePerShare)),
           createdIxTime: Date.now(),
           idempotencyKey: key,
         },
       });
       await matchAsk(tx, company, listing, notices);
       const current = await tx.shareListing.findUniqueOrThrow({ where: { id: listing.id } });
-      return { listing: current, alreadyApplied: false };
+      return { listing: listingView(current), alreadyApplied: false };
     });
     notifyExchange(notices);
     return result;
   } catch (error) {
     if (isUniqueViolation(error)) {
       const listing = await db.shareListing.findUnique({ where: { idempotencyKey: key } });
-      if (listing) return { listing, alreadyApplied: true };
+      if (listing) return { listing: listingView(listing), alreadyApplied: true };
     }
     throw error;
   }
@@ -326,7 +336,13 @@ export async function buyShares(
       await lockCompany(tx, found.companyId);
       await lockParties(tx, [input.userId, found.sellerUserId]);
       const applied = await tx.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
-      if (applied) return { shares: input.shares, cost: -applied.sovereigns, alreadyApplied: true };
+      if (applied) {
+        return {
+          shares: input.shares,
+          cost: fromCents(-centsOf(applied.sovereigns)),
+          alreadyApplied: true,
+        };
+      }
 
       const listing = await tx.shareListing.findUnique({ where: { id: input.listingId } });
       if (!listing || listing.status !== "OPEN") {
@@ -336,11 +352,13 @@ export async function buyShares(
       if (listing.sellerUserId === input.userId) {
         throw new ExchangeError("FORBIDDEN", "You can't buy your own listing");
       }
+      await assertNotFundInsiderPair(tx, input.userId, listing.sellerUserId);
       if (input.shares > listing.shares) {
         throw new ExchangeError("CONFLICT", `Only ${listing.shares} shares are left`);
       }
 
-      const cost = fromCents(toCents(listing.pricePerShare) * input.shares);
+      const askPrice = fromCents(centsOf(listing.pricePerShare));
+      const cost = fromCents(centsOf(listing.pricePerShare) * input.shares);
       await spendSovereignsTx(tx, {
         userId: input.userId,
         amount: cost,
@@ -350,7 +368,7 @@ export async function buyShares(
           listingId: listing.id,
           companyId: company.id,
           shares: input.shares,
-          pricePerShare: listing.pricePerShare,
+          pricePerShare: askPrice,
         },
         idempotencyKey: key,
       });
@@ -363,7 +381,13 @@ export async function buyShares(
   } catch (error) {
     if (isUniqueViolation(error)) {
       const applied = await db.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
-      if (applied) return { shares: input.shares, cost: -applied.sovereigns, alreadyApplied: true };
+      if (applied) {
+        return {
+          shares: input.shares,
+          cost: fromCents(-centsOf(applied.sovereigns)),
+          alreadyApplied: true,
+        };
+      }
     }
     throw error;
   }
@@ -377,24 +401,18 @@ async function matchAsk(
   tx: Db,
   company: Company,
   ask: ShareListing,
-  notices: ExchangeNotice[]
+  notices: ExchangeNotice[],
+  partiesLocked = false
 ): Promise<void> {
-  const bids = (
-    await tx.shareBuyOrder.findMany({ where: { companyId: company.id, status: "OPEN" } })
-  )
-    .filter(
-      (b) =>
-        toCents(b.maxPricePerShare) >= toCents(ask.pricePerShare) &&
-        b.buyerUserId !== ask.sellerUserId
-    )
-    .sort(bidRank);
-  const fills = takeFills(bids, ask.shares);
+  const fills = takeFills(await crossingBids(tx, ask), ask.shares);
   if (fills.length === 0) return;
-  await lockParties(tx, [ask.sellerUserId, ...fills.map((f) => f.order.buyerUserId)]);
+  if (!partiesLocked) {
+    await lockParties(tx, [ask.sellerUserId, ...fills.map((f) => f.order.buyerUserId)]);
+  }
 
   let left = ask.shares;
   for (const { order: bid, shares } of fills) {
-    const price = bid.maxPricePerShare;
+    const price = fromCents(centsOf(bid.maxPricePerShare));
     left = await consumeAsk(tx, { id: ask.id, shares: left }, shares);
     await consumeBid(tx, bid, shares);
     const net = await paySale(tx, company, {
@@ -404,13 +422,7 @@ async function matchAsk(
       key: `exchange:share-fill:${ask.id}:${bid.id}`,
       metadata: { listingId: ask.id, companyId: company.id, shares, pricePerShare: price },
     });
-    await creditHolding(
-      tx,
-      company.id,
-      bid.buyerUserId,
-      shares,
-      fromCents(toCents(price) * shares)
-    );
+    await creditHolding(tx, company.id, bid.buyerUserId, shares, fromCents(centsOf(bid.maxPricePerShare) * shares));
     await recordTrade(tx, company.id, price, shares, `exchange:share-fill:${ask.id}:${bid.id}`);
     pushSaleNotice(notices, company, ask.sellerUserId, bid.buyerUserId, shares, net);
     notices.push(boughtNotice(company, bid.buyerUserId, shares, price));
@@ -427,8 +439,9 @@ export async function matchCompanyOrders(tx: Db, companyId: string): Promise<Exc
   const company = await tx.company.findUnique({ where: { id: companyId } });
   if (!company || company.status !== "ACTIVE" || !company.tradingOpen) return notices;
   const asks = await tx.shareListing.findMany({ where: { companyId, status: "OPEN" } });
+  await lockParties(tx, await crossingParties(tx, companyId, asks));
   for (const ask of asks.sort(askRank)) {
-    await matchAsk(tx, company, ask, notices);
+    await matchAsk(tx, company, ask, notices, true);
   }
   return notices;
 }
@@ -460,12 +473,18 @@ async function crossingAsks(tx: Db, input: PlaceBuyOrderInput): Promise<ShareLis
   const asks = (
     await tx.shareListing.findMany({ where: { companyId: input.companyId, status: "OPEN" } })
   )
-    .filter((a) => toCents(a.pricePerShare) <= toCents(input.maxPricePerShare))
+    .filter((a) => centsOf(a.pricePerShare) <= toCents(input.maxPricePerShare))
     .sort(askRank);
   if (asks.some((a) => a.sellerUserId === input.userId)) {
     throw new ExchangeError("FORBIDDEN", "Your own listing is at or below that price");
   }
-  return asks;
+  const eligible: ShareListing[] = [];
+  for (const a of asks) {
+    if (!(await isFundInsiderPair(tx, input.userId, a.sellerUserId))) {
+      eligible.push(a);
+    }
+  }
+  return eligible;
 }
 
 /** Only a bid that rests becomes an open order, so only a resting bid counts against the limit. */
@@ -525,7 +544,7 @@ export async function placeBuyOrder(
       for (const { order: ask, shares } of fills) {
         const fillKey = `${key}:fill:${ask.id}`;
         const net = await fillBuyerAgainstAsk(tx, company, input.userId, ask, shares, fillKey);
-        const priceCents = toCents(ask.pricePerShare);
+        const priceCents = centsOf(ask.pricePerShare);
         const refund = fromCents((toCents(input.maxPricePerShare) - priceCents) * shares);
         if (refund > 0) {
           await earnSovereignsTx(tx, {
@@ -550,8 +569,8 @@ export async function placeBuyOrder(
             buyerUserId: input.userId,
             shares: resting,
             sharesOrdered: input.shares,
-            maxPricePerShare: input.maxPricePerShare,
-            escrow: fromCents(toCents(input.maxPricePerShare) * resting),
+            maxPricePerShare: dbCents(toCents(input.maxPricePerShare)),
+            escrow: dbCents(toCents(input.maxPricePerShare) * resting),
             status: "OPEN",
             createdIxTime: Date.now(),
             idempotencyKey: key,
@@ -579,12 +598,12 @@ export async function placeBuyOrder(
 async function closeBuyOrder(tx: Db, order: ShareBuyOrder): Promise<boolean> {
   const { count } = await tx.shareBuyOrder.updateMany({
     where: { id: order.id, status: "OPEN" },
-    data: { status: "CANCELLED", shares: 0, escrow: 0 },
+    data: { status: "CANCELLED", shares: 0, escrow: 0n },
   });
   if (count !== 1) return false;
   await earnSovereignsTx(tx, {
     userId: order.buyerUserId,
-    amount: order.escrow,
+    amount: fromCents(centsOf(order.escrow)),
     type: "SHARE_ORDER_REFUND",
     source: `SHARES:${order.companyId}`,
     metadata: { orderId: order.id, companyId: order.companyId },
@@ -596,11 +615,11 @@ async function closeBuyOrder(tx: Db, order: ShareBuyOrder): Promise<boolean> {
 /** Cancel a company's open bids and refund their escrow. Dissolution and bankruptcy use it. */
 export async function returnBuyOrders(tx: Db, companyId: string): Promise<number> {
   const open = await tx.shareBuyOrder.findMany({ where: { companyId, status: "OPEN" } });
-  let refunded = 0;
-  for (const order of open) {
-    if (await closeBuyOrder(tx, order)) refunded += order.escrow;
+  let refundedCents = 0;
+  for (const order of open.sort(refundRank)) {
+    if (await closeBuyOrder(tx, order)) refundedCents += centsOf(order.escrow);
   }
-  return refunded;
+  return fromCents(refundedCents);
 }
 
 /** Withdraw a buy order: its remaining escrow goes back to the buyer. Works while trading is closed. */
@@ -620,7 +639,7 @@ export async function cancelBuyOrder(db: PrismaClient, input: { userId: string; 
     if (!(await closeBuyOrder(tx, order))) {
       throw new ExchangeError("CONFLICT", "The order changed; try again");
     }
-    return { refunded: order.escrow };
+    return { refunded: fromCents(centsOf(order.escrow)) };
   });
 }
 
@@ -632,11 +651,11 @@ interface DepthLevel {
 
 function depthOf<T extends { shares: number }>(
   rows: readonly T[],
-  priceOf: (row: T) => number
+  priceCentsOf: (row: T) => number
 ): DepthLevel[] {
   const levels = new Map<number, { shares: number; count: number }>();
   for (const row of rows) {
-    const cents = toCents(priceOf(row));
+    const cents = priceCentsOf(row);
     const level = levels.get(cents) ?? { shares: 0, count: 0 };
     level.shares += row.shares;
     level.count += 1;
@@ -666,12 +685,13 @@ export async function getOrderBook(db: Db, companyId: string) {
     }),
   ]);
   return {
-    bids: depthOf(bids, (b) => b.maxPricePerShare)
+    bids: depthOf(bids, (b) => centsOf(b.maxPricePerShare))
       .sort((a, b) => b.price - a.price)
       .map(({ price, shares, count }) => ({ price, shares, orders: count })),
-    asks: depthOf(asks, (a) => a.pricePerShare)
+    asks: depthOf(asks, (a) => centsOf(a.pricePerShare))
       .sort((a, b) => a.price - b.price)
       .map(({ price, shares, count }) => ({ price, shares, listings: count })),
-    lastTradePrice: company.lastTradePrice ?? null,
+    lastTradePrice:
+      company.lastTradePrice !== null ? fromCents(centsOf(company.lastTradePrice)) : null,
   };
 }

@@ -11,8 +11,9 @@ import {
 } from "~/server/api/trpc";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
-import { round2 } from "~/lib/exchange/amounts";
-import { SECTOR_KEYS } from "~/lib/exchange/companies";
+import { centsOf, fromCents, round2 } from "~/lib/exchange/amounts";
+import { requireCountryOwner } from "~/lib/exchange/guards";
+import { companyView, SECTOR_KEYS } from "~/lib/exchange/companies";
 import {
   createFaucetTender,
   createGovernmentContract,
@@ -59,6 +60,11 @@ export const exchangeTreasuryRouter = createTRPCRouter({
           select: { id: true, name: true, realmId: true, economicTier: true },
         });
         const realmId = country?.realmId ?? DEFAULT_REALM_ID;
+        // Tender bids are sealed: the issuing nation sees the amounts, everyone else only a count.
+        const isOwner = await requireCountryOwner(ctx.db, input.countryId, ctx.user.id).then(
+          () => true,
+          () => false
+        );
         const [companies, treasury, macro, realmCountries, openTenders] = await Promise.all([
           ctx.db.company.findMany({
             where: {
@@ -84,7 +90,6 @@ export const exchangeTreasuryRouter = createTRPCRouter({
               lastTickTax: true,
               lastTickNetIncome: true,
               distressedSinceIxTime: true,
-              founderId: true,
             },
           }),
           ctx.db.nationTreasury.findUnique({
@@ -129,10 +134,13 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             : (macro?.corporateTaxRate ?? 0.2);
 
         const terms = await lendingTermsOf(ctx.db, input.countryId);
-        const enriched = companies.map((c) => ({
-          ...c,
-          creditLimit: round2(creditLimitFor(c, terms.cap)),
-        }));
+        const enriched = companies.map((raw) => {
+          const c = companyView(raw);
+          return {
+            ...c,
+            creditLimit: round2(creditLimitFor(c, terms.cap)),
+          };
+        });
 
         return {
           countryId: input.countryId,
@@ -159,14 +167,17 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             id: t.id,
             title: t.title,
             sectorKey: t.sectorKey,
-            value: t.value,
+            value: fromCents(centsOf(t.value)),
             fundedBy: t.fundedBy,
             status: t.status,
             endIxTime: t.endIxTime,
             linkedDirectiveId: t.linkedDirectiveId,
             linkedIssueId: t.linkedIssueId,
             bidCount: t.bids.length,
-            lowestBid: t.bids.length > 0 ? Math.min(...t.bids.map((b) => b.amount)) : null,
+            lowestBid:
+              isOwner && t.bids.length > 0
+                ? Math.min(...t.bids.map((b) => fromCents(centsOf(b.amount))))
+                : null,
           })),
         };
       })

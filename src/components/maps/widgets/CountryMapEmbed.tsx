@@ -15,7 +15,9 @@ import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import {
   fitEmbedToCountry,
   geometryBounds,
+  getEmbedFitSettled,
 } from "~/components/maps/widgets/embed-map-layers";
+import { toCarrierLngLat } from "~/lib/maps/flat-projection";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
@@ -90,8 +92,10 @@ export function CountryMapEmbed({
 
   // ponytail: refits on every inset change, so a resize resets the user's pan
   useEffect(() => {
-    if (mapReady && mapRef.current) {
-      fitEmbedToCountry(mapRef.current, state, boundsPadding, insetRight);
+    const map = mapRef.current;
+    if (mapReady && map && fitEmbedToCountry(map, state, boundsPadding, insetRight)) {
+      const onFitSettled = getEmbedFitSettled(map, state);
+      map.once("idle", () => onFitSettled?.());
     }
   }, [mapReady, insetRight]);
   useEffect(() => {
@@ -99,12 +103,17 @@ export function CountryMapEmbed({
     if (!focus || !map || !mapReady) return;
     const duration = reduceMotion ? 0 : 600;
     if (focus.kind === "point") {
-      map.flyTo({ center: [focus.lng, focus.lat], zoom: 7, duration });
+      map.flyTo({ center: toCarrierLngLat(focus.lng, focus.lat), zoom: 7, duration });
       return;
     }
     const sub = subdivisions.find((s) => s.id === focus.id);
     const bounds = sub?.geometry ? geometryBounds(sub.geometry) : null;
-    if (bounds) map.fitBounds(bounds, { padding: 40, duration });
+    if (bounds) {
+      map.fitBounds(
+        [toCarrierLngLat(bounds[0][0], bounds[0][1]), toCarrierLngLat(bounds[1][0], bounds[1][1])],
+        { padding: 40, duration }
+      );
+    }
   }, [focus, mapReady, mapRef, reduceMotion, subdivisions]);
 
   if (state.isLoading) {

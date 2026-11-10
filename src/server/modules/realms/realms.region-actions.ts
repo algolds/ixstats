@@ -17,6 +17,7 @@ import { sanitizeRealmContent } from "~/lib/utils/sanitize-html";
 import { isRealmPublished, isSiteAdmin, type RealmActor } from "./realms.access";
 import { dropOfficerPostWithoutNation, releaseNation } from "./realms.ownership";
 import { RealmRegionError, requireRealmStaff } from "./realms.region";
+import { updateRealmSettings } from "./realm-settings";
 import { withFounderTitle, withInactivity } from "./realms.settings";
 import { holdNationMaterial } from "./realms.material";
 import { invalidateCache } from "~/lib/cache";
@@ -56,33 +57,31 @@ export async function updateRealmAppearance(
       "FORBIDDEN",
       "Only site staff can change the founder or founding year"
     );
-  const settings =
-    input.founderTitle === undefined
-      ? undefined
-      : withFounderTitle(
-          (await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } }))
-            ?.settings,
-          input.founderTitle || null
-        );
   const tags = input.tags
     ? [...new Set(input.tags)].filter((t) => (REALM_TAGS as readonly string[]).includes(t))
     : undefined;
   if (tags && tags.length > MAX_REALM_TAGS)
     throw new RealmRegionError("BAD_REQUEST", `Choose at most ${MAX_REALM_TAGS} tags`);
-  await db.realm.update({
-    where: { id: realm.id },
-    data: {
-      ...(input.bannerUrl !== undefined && { bannerUrl: input.bannerUrl || null }),
-      ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail || null }),
-      ...(input.emblemUrl !== undefined && { emblemUrl: input.emblemUrl || null }),
-      ...(input.description !== undefined && { description: input.description || null }),
-      ...(tags && { tags }),
-      ...(settings && { settings }),
-      ...(input.foundedYear !== undefined && {
-        foundedAt: input.foundedYear ? new Date(Date.UTC(input.foundedYear, 0, 1)) : null,
-      }),
-    },
-  });
+  const data: Omit<Prisma.RealmUpdateInput, "settings"> = {
+    ...(input.bannerUrl !== undefined && { bannerUrl: input.bannerUrl || null }),
+    ...(input.thumbnail !== undefined && { thumbnail: input.thumbnail || null }),
+    ...(input.emblemUrl !== undefined && { emblemUrl: input.emblemUrl || null }),
+    ...(input.description !== undefined && { description: input.description || null }),
+    ...(tags && { tags }),
+    ...(input.foundedYear !== undefined && {
+      foundedAt: input.foundedYear ? new Date(Date.UTC(input.foundedYear, 0, 1)) : null,
+    }),
+  };
+  if (input.founderTitle !== undefined) {
+    await updateRealmSettings(
+      db,
+      realm.id,
+      (settings) => withFounderTitle(settings as Prisma.JsonValue, input.founderTitle || null),
+      data
+    );
+  } else {
+    await db.realm.update({ where: { id: realm.id }, data });
+  }
   return { success: true };
 }
 
@@ -161,16 +160,12 @@ export async function updateRealmInactivity(
   input: { slug: string; inactivityDays: number | null; reclaimWindowExclusive: boolean }
 ) {
   const realm = await requireRealmStaff(db, actor, input.slug, "founder");
-  const stored = await db.realm.findUnique({ where: { id: realm.id }, select: { settings: true } });
-  await db.realm.update({
-    where: { id: realm.id },
-    data: {
-      settings: withInactivity(stored?.settings, {
-        inactivityDays: input.inactivityDays,
-        reclaimWindowExclusive: input.reclaimWindowExclusive,
-      }),
-    },
-  });
+  await updateRealmSettings(db, realm.id, (settings) =>
+    withInactivity(settings as Prisma.JsonValue, {
+      inactivityDays: input.inactivityDays,
+      reclaimWindowExclusive: input.reclaimWindowExclusive,
+    })
+  );
   return { success: true };
 }
 
