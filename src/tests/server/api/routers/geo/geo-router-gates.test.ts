@@ -520,6 +520,12 @@ describe("updateFeatureProperties input bounds", () => {
     ["more than 50 properties", {
       properties: Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`k${i}`, i])),
     }],
+    ["properties nested two levels deep", {
+      properties: { coverage: { inner: { tolerance: 0.01 } } },
+    }],
+    ["a property list over 200 entries", {
+      properties: { sourceKeys: Array.from({ length: 201 }, (_, i) => `k${i}`) },
+    }],
     ["serialized properties over 20,000 bytes", {
       properties: Object.fromEntries(
         Array.from({ length: 15 }, (_, i) => [`key_${i}`, "v".repeat(1500)])
@@ -530,5 +536,14 @@ describe("updateFeatureProperties input bounds", () => {
     await expect(callUpdate(db, input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
     expect(db.mapLayer.findFirst).not.toHaveBeenCalled();
     expect(db.mapLayer.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a smoothed feature's nested coverage record", { coverage: { tolerance: 0.01, smooth: true, hash: "abc" } }],
+    ["a map import's sourceKeys list", { source: "map-import", sourceKeys: ["a", "b"] }],
+  ])("accepts %s and reaches the feature lookup", async (_label, properties) => {
+    const db = createMockPrisma();
+    await expect(callUpdate(db, { properties })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(db.mapLayer.findFirst).toHaveBeenCalledTimes(1);
   });
 });
