@@ -261,27 +261,32 @@ async function lockPayer(tx: Db, from: TreasuryPayer): Promise<void> {
   await lockWallet(tx, from.userId);
 }
 
-async function debitCompanyCapital(tx: Db, companyId: string, amount: number): Promise<void> {
+async function debitCompanyCapital(tx: Db, companyId: string, cents: number): Promise<void> {
+  const delta = dbCents(cents);
   const { count } = await tx.company.updateMany({
-    where: { id: companyId, capital: { gte: amount } },
-    data: { capital: { decrement: amount } },
+    where: { id: companyId, capital: { gte: delta } },
+    data: { capital: { decrement: delta } },
   });
   if (count !== 1) {
     const company = await tx.company.findUnique({
       where: { id: companyId },
       select: { capital: true },
     });
-    throw insufficient("The company", company?.capital ?? 0, amount);
+    throw insufficient(
+      "The company",
+      company ? fromCents(centsOf(company.capital)) : 0,
+      fromCents(cents)
+    );
   }
   await refreshFairValue(tx, companyId);
 }
 
 async function debitPayer(tx: Db, input: TreasuryTransferInput, cents: number): Promise<void> {
-  const amount = fromCents(cents);
   if (input.from.kind === "COMPANY") {
-    await debitCompanyCapital(tx, input.from.companyId, amount);
+    await debitCompanyCapital(tx, input.from.companyId, cents);
     return;
   }
+  const amount = fromCents(cents);
   const spent = await spendSovereignsTx(tx, {
     userId: input.from.userId,
     amount,

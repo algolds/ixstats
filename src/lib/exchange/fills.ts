@@ -13,7 +13,7 @@ import { isFundInsiderPair } from "./fund-insiders";
 import { lockWallet, type Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, toCents } from "./ownership";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns } from "./amounts";
 import { countryMacroOf } from "./macro";
 import { LARGE_TRADE_SOVEREIGNS, publishNewsTx } from "./news";
 import { transferToTreasuryTx } from "./treasury";
@@ -227,13 +227,12 @@ interface SaleInput {
 export async function paySale(tx: Db, company: Company, sale: SaleInput): Promise<number> {
   const grossCents = toCents(sale.price) * sale.shares;
   if (!sale.seller) {
-    const cost = fromCents(grossCents);
     await tx.company.update({
       where: { id: company.id },
-      data: { capital: { increment: cost }, sharesOutstanding: { increment: sale.shares } },
+      data: { capital: { increment: dbCents(grossCents) }, sharesOutstanding: { increment: sale.shares } },
     });
     await refreshFairValue(tx, company.id);
-    return cost;
+    return fromCents(grossCents);
   }
   await earnSovereignsTx(tx, {
     userId: sale.seller,
@@ -351,10 +350,11 @@ export async function recordTrade(
   });
   await tx.company.update({
     where: { id: companyId },
-    data: { lastTradePrice: price, lastTradeIxTime: Date.now() },
+    data: { lastTradePrice: dbCents(toCents(price)), lastTradeIxTime: Date.now() },
   });
   if (!before) return;
   const value = price * shares;
+  const prevPrice = before.lastTradePrice !== null ? fromCents(centsOf(before.lastTradePrice)) : 0;
   await publishNewsTx(tx, {
     realmId: before.realmId,
     kind: "trade",
@@ -362,9 +362,7 @@ export async function recordTrade(
     sourceKind: "EXCHANGE",
     headline: `${shares.toLocaleString("en-US")} ${shares === 1 ? "share" : "shares"} of ${before.name} traded at ${formatSovereigns(price)}`,
     companyId,
-    movePct: before.lastTradePrice
-      ? ((price - before.lastTradePrice) / before.lastTradePrice) * 100
-      : undefined,
+    movePct: prevPrice > 0 ? ((price - prevPrice) / prevPrice) * 100 : undefined,
     key: `news:trade:${tradeKey}`,
   });
 }

@@ -8,7 +8,7 @@ import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { centsOf, fromCents, round2 } from "./amounts";
 import { bondPriceOf, modelBondPrice, weeksLeftOf } from "./bonds";
-import type { SectorKey } from "./companies";
+import { companyView, type SectorKey } from "./companies";
 import type { Db } from "./guards";
 import { isFundUser } from "./fund-ids";
 import { rateToFraction } from "./macro";
@@ -84,7 +84,11 @@ const sectorLabel = (key: string) => SECTOR_LABELS[key as SectorKey] ?? key;
 export function companyPrice(
   c: Pick<Company, "lastTradePrice" | "fairValue" | "sharesOutstanding">
 ): number {
-  return round2(c.lastTradePrice ?? c.fairValue / Math.max(1, c.sharesOutstanding));
+  return round2(
+    c.lastTradePrice !== null
+      ? fromCents(centsOf(c.lastTradePrice))
+      : fromCents(centsOf(c.fairValue)) / Math.max(1, c.sharesOutstanding)
+  );
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -150,7 +154,10 @@ async function companyMoves(db: Db, companies: readonly Company[], nowMs: number
         (h) => h.recordedAt.getTime(),
         nowMs
       );
-      return [c.id, changePct(old?.fairValue, c.fairValue)] as const;
+      return [
+        c.id,
+        changePct(old ? fromCents(centsOf(old.fairValue)) : undefined, fromCents(centsOf(c.fairValue))),
+      ] as const;
     })
   );
 }
@@ -508,41 +515,42 @@ export async function getCompanyPage(
     .filter((d) => d.createdAt.getTime() >= nowMs - 30 * DAY_MS)
     .reduce((s, d) => s + d.amount, 0);
   const moves = await companyMoves(db, [company], nowMs);
+  const view = companyView(company);
   return {
     company: {
-      id: company.id,
-      name: company.name,
-      ticker: tickerOf(company.name),
-      realmId: company.realmId,
-      sectorKey: company.sectorKey,
-      sectorLabel: sectorLabel(company.sectorKey),
-      subIndustryKey: company.subIndustryKey,
-      subIndustryLabel: subIndustryLabel(company.subIndustryKey),
-      status: company.status,
-      tradingOpen: company.tradingOpen,
-      capital: company.capital,
-      standing: company.standing,
-      fairValue: company.fairValue,
-      sharesOutstanding: company.sharesOutstanding,
-      creditDrawn: company.creditDrawn,
-      creditRating: ratingOf(company.creditRating),
-      decisionValue: company.decisionValue,
-      contractsWonValue: company.contractsWonValue,
-      lastTradePrice: company.lastTradePrice,
-      lastTickRevenue: company.lastTickRevenue,
-      lastTickExpenses: company.lastTickExpenses,
-      lastTickTax: company.lastTickTax,
-      lastTickNetIncome: company.lastTickNetIncome,
-      distressedSinceIxTime: company.distressedSinceIxTime,
-      wikiSlug: company.wikiSlug,
-      wikiData: company.wikiData,
+      id: view.id,
+      name: view.name,
+      ticker: tickerOf(view.name),
+      realmId: view.realmId,
+      sectorKey: view.sectorKey,
+      sectorLabel: sectorLabel(view.sectorKey),
+      subIndustryKey: view.subIndustryKey,
+      subIndustryLabel: subIndustryLabel(view.subIndustryKey),
+      status: view.status,
+      tradingOpen: view.tradingOpen,
+      capital: view.capital,
+      standing: view.standing,
+      fairValue: view.fairValue,
+      sharesOutstanding: view.sharesOutstanding,
+      creditDrawn: view.creditDrawn,
+      creditRating: ratingOf(view.creditRating),
+      decisionValue: view.decisionValue,
+      contractsWonValue: view.contractsWonValue,
+      lastTradePrice: view.lastTradePrice,
+      lastTickRevenue: view.lastTickRevenue,
+      lastTickExpenses: view.lastTickExpenses,
+      lastTickTax: view.lastTickTax,
+      lastTickNetIncome: view.lastTickNetIncome,
+      distressedSinceIxTime: view.distressedSinceIxTime,
+      wikiSlug: view.wikiSlug,
+      wikiData: view.wikiData,
     },
     price: companyPrice(company),
     changePct: moves.get(company.id) ?? null,
-    metrics: computeCompanyMetrics({ ...company, trailing30dDividends }),
+    metrics: computeCompanyMetrics({ ...view, trailing30dDividends }),
     valueHistory: [...history]
       .reverse()
-      .map((h) => ({ t: h.recordedAt.getTime(), value: h.fairValue })),
+      .map((h) => ({ t: h.recordedAt.getTime(), value: fromCents(centsOf(h.fairValue)) })),
     hq: hq ? { id: hq.id, name: hq.name } : null,
     shareholders,
     orderBook,

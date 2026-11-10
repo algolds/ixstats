@@ -19,7 +19,7 @@ import { assertNoOpenPrimaryIssue, refreshFairValue, requireOwnedCompany } from 
 import { assertExchangeOpen, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents } from "./ownership";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns } from "./amounts";
 import { capGainsRateOf, ratedCents } from "./fills";
 import { transferToTreasuryTx } from "./treasury";
 import { alertWatchers, publishNewsTx, type PublishedHeadline } from "./news";
@@ -47,12 +47,12 @@ async function findDeclared(db: Db, key: string): Promise<DividendResult | null>
 }
 
 function assertWithinCreditCap(
-  company: { capital: number; creditDrawn: number },
+  company: { capital: bigint; creditDrawn: bigint },
   amount: number
 ): void {
-  if (company.creditDrawn <= 0) return;
+  if (company.creditDrawn <= 0n) return;
   const cap = Math.floor(
-    toCents(Math.max(0, company.capital - company.creditDrawn)) * CREDIT_CAP_SHARE
+    Math.max(0, centsOf(company.capital) - centsOf(company.creditDrawn)) * CREDIT_CAP_SHARE
   );
   if (toCents(amount) > cap) {
     throw new ExchangeError(
@@ -85,7 +85,7 @@ export async function declareDividend(
       if (declared) return declared;
 
       const company = await requireOwnedCompany(tx, input.companyId, input.userId);
-      if (input.amount > company.capital) {
+      if (toCents(input.amount) > centsOf(company.capital)) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");
       }
       assertWithinCreditCap(company, input.amount);
@@ -105,11 +105,11 @@ export async function declareDividend(
       const withheldCents = payouts.reduce((s, p) => s + p.tax, 0);
       const paid = fromCents(split.paidCents);
       // Capital leaves in two steps: the holders' share here, the withheld share once they are paid.
-      const netDebit = fromCents(split.paidCents - withheldCents);
+      const netDebitCents = dbCents(split.paidCents - withheldCents);
 
       const { count } = await tx.company.updateMany({
-        where: { id: company.id, status: "ACTIVE", capital: { gte: netDebit } },
-        data: { capital: { decrement: netDebit } },
+        where: { id: company.id, status: "ACTIVE", capital: { gte: netDebitCents } },
+        data: { capital: { decrement: netDebitCents } },
       });
       if (count !== 1) {
         throw new ExchangeError("INSUFFICIENT_SOVEREIGNS", "The company doesn't hold that much");

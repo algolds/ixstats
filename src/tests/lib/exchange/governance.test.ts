@@ -40,10 +40,10 @@ function setup() {
         founderId: "alice",
         name: "Alice Works",
         sectorKey: "industry",
-        capital: 20_000,
+        capital: 20_000_00n,
         standing: 0,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         tradingOpen: true,
@@ -88,7 +88,7 @@ describe("opening a proposal", () => {
       requestId: rid(),
     });
     expect(proposal).toMatchObject({ status: "PASSED", sharesFor: 1000, sharesAgainst: 0 });
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     expect(sov("alice")).toBe(25_000);
   });
 
@@ -100,7 +100,7 @@ describe("opening a proposal", () => {
       requestId: rid(),
     });
     expect(proposal).toMatchObject({ status: "OPEN", sharesFor: 400, totalEligibleShares: 1000 });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
     expect(fake.tables.companyVote).toEqual([
       expect.objectContaining({ voterUserId: "alice", support: true, shares: 400 }),
     ]);
@@ -189,7 +189,7 @@ describe("voting", () => {
 
     const { proposal } = await castVote(fake.client, { userId: "bob", proposalId, support: true });
     expect(proposal).toMatchObject({ status: "PASSED", sharesFor: 750, sharesAgainst: 0 });
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     expect((fake.tables.exchangeNewsItem ?? []).filter((n) => n.kind === "vote_passed")).toEqual([
       expect.objectContaining({ prominence: "HEADLINE", companyId: "co" }),
     ]);
@@ -217,7 +217,7 @@ describe("voting", () => {
       support: false,
     });
     expect(proposal).toMatchObject({ status: "REJECTED", sharesAgainst: 600 });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
   });
 
   it("refuses a vote from someone who holds no shares", async () => {
@@ -267,7 +267,7 @@ describe("expiry", () => {
     const first = await fake.client.$transaction((tx: Db) => finalizeProposalsTx(tx, "co", later));
     expect(first.expired).toBe(1);
     expect(proposals()[0]).toMatchObject({ status: "EXPIRED" });
-    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000 });
+    expect(company()).toMatchObject({ status: "ACTIVE", capital: 20_000_00n });
 
     const second = await fake.client.$transaction((tx: Db) => finalizeProposalsTx(tx, "co", later));
     expect(second.expired).toBe(0);

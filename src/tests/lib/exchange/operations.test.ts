@@ -35,7 +35,7 @@ import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
 
-type Row = Record<string, string | number | boolean | null>;
+type Row = Record<string, string | number | bigint | boolean | null>;
 
 const REALM = "default";
 const NATION = "nation_a";
@@ -54,13 +54,13 @@ function company(id: string, overrides: Row = {}): Row {
     sectorKey: "services",
     subIndustryKey: "software_media",
     hqCountryId: NATION,
-    capital: 0,
+    capital: 0n,
     standing: 0,
-    decisionValue: 10_000,
-    creditDrawn: 0,
+    decisionValue: 10_000_00n,
+    creditDrawn: 0n,
     creditRating: "B",
-    contractsWonValue: 0,
-    lastTickNetIncome: 0,
+    contractsWonValue: 0n,
+    lastTickNetIncome: 0n,
     status: "ACTIVE",
     ...overrides,
   };
@@ -96,11 +96,11 @@ describe("tick operating P&L", () => {
     setup([company("co1")]);
     await run();
     expect(co("co1")).toMatchObject({
-      capital: 200,
-      lastTickRevenue: 315,
-      lastTickExpenses: 65,
-      lastTickTax: 50,
-      lastTickNetIncome: 200,
+      capital: 200_00n,
+      lastTickRevenue: 315_00n,
+      lastTickExpenses: 65_00n,
+      lastTickTax: 50_00n,
+      lastTickNetIncome: 200_00n,
     });
     expect(treasuryBalance()).toBe(50);
     expect(fake.tables.nationTreasuryEntry).toEqual([
@@ -111,7 +111,11 @@ describe("tick operating P&L", () => {
   it("pays no tax, and no treasury money moves, when the company has no home nation", async () => {
     setup([company("co1", { hqCountryId: null })]);
     await run();
-    expect(co("co1")).toMatchObject({ capital: 250, lastTickTax: 0, lastTickNetIncome: 250 });
+    expect(co("co1")).toMatchObject({
+      capital: 250_00n,
+      lastTickTax: 0n,
+      lastTickNetIncome: 250_00n,
+    });
     expect(fake.tables.nationTreasuryEntry ?? []).toHaveLength(0);
   });
 
@@ -120,11 +124,11 @@ describe("tick operating P&L", () => {
       company("relieved", { lobbyBuffType: "tax_relief", lobbyBuffUntilIxTime: T0 + HOUR_MS }),
     ]);
     await run();
-    expect(co("relieved").lastTickTax).toBe(37.5);
+    expect(co("relieved").lastTickTax).toBe(37_50n);
 
     setup([company("lapsed", { lobbyBuffType: "tax_relief", lobbyBuffUntilIxTime: T0 - 1 })]);
     await run();
-    expect(co("lapsed").lastTickTax).toBe(50);
+    expect(co("lapsed").lastTickTax).toBe(50_00n);
   });
 });
 
@@ -136,10 +140,13 @@ describe("realm revenue budget", () => {
       company("c", { hqCountryId: null }),
     ]);
     const summary = await run();
-    const minted = ["a", "b", "c"].reduce((sum, id) => sum + co(id).lastTickRevenue, 0);
+    const minted = ["a", "b", "c"].reduce(
+      (sum, id) => sum + Number(co(id).lastTickRevenue) / 100,
+      0
+    );
     expect(minted).toBeLessThanOrEqual(500);
     expect(minted).toBeGreaterThan(499.9);
-    expect(co("a").lastTickRevenue).toBe(166.66);
+    expect(co("a").lastTickRevenue).toBe(166_66n);
     expect(summary.revenueMinted).toBeLessThanOrEqual(500);
   });
 
@@ -184,13 +191,13 @@ describe("tick retries", () => {
 
 describe("distress on a tick", () => {
   it("pays what the company has, not more, and moves it to distress", async () => {
-    setup([company("co1", { hqCountryId: null, capital: 20 })], {
+    setup([company("co1", { hqCountryId: null, capital: 20_00n })], {
       systemConfig: [{ key: "exchange_realm_operating_budget", value: "0" }],
     });
     await run();
     expect(co("co1")).toMatchObject({
       status: "DISTRESSED",
-      capital: 0,
+      capital: 0n,
       distressedSinceIxTime: T0,
     });
     expect(notices()).toEqual([
@@ -206,7 +213,7 @@ describe("Central Bank credit line", () => {
     repayCredit(fake.client, { userId, companyId: "co1", amount, requestId });
 
   beforeEach(() => {
-    setup([company("co1", { capital: 0 })], {
+    setup([company("co1", { capital: 0n })], {
       nationTreasury: [{ id: "t_a", countryId: NATION, realmId: REALM, balance: 10_000_00n }],
     });
   });
@@ -215,7 +222,7 @@ describe("Central Bank credit line", () => {
     const result = await borrow(2000);
     expect(result).toMatchObject({ alreadyApplied: false, creditDrawn: 2000, creditLimit: 5000 });
     expect(result.rate).toBeCloseTo(0.11);
-    expect(co("co1")).toMatchObject({ capital: 2000, creditDrawn: 2000 });
+    expect(co("co1")).toMatchObject({ capital: 2000_00n, creditDrawn: 2000_00n });
     expect(treasuryBalance()).toBe(8000);
   });
 
@@ -223,7 +230,7 @@ describe("Central Bank credit line", () => {
     await borrow(3000);
     await expect(borrow(2001)).rejects.toMatchObject({ code: "CONFLICT" });
     await expect(borrow(2001)).rejects.toThrow(/past its limit/);
-    expect(co("co1")).toMatchObject({ capital: 3000, creditDrawn: 3000 });
+    expect(co("co1")).toMatchObject({ capital: 3000_00n, creditDrawn: 3000_00n });
     expect(treasuryBalance()).toBe(7000);
   });
 
@@ -248,24 +255,24 @@ describe("Central Bank credit line", () => {
     await borrow(2000);
     const result = await repay(1500);
     expect(result).toMatchObject({ alreadyApplied: false, creditDrawn: 500, cured: false });
-    expect(co("co1")).toMatchObject({ capital: 500, creditDrawn: 500 });
+    expect(co("co1")).toMatchObject({ capital: 500_00n, creditDrawn: 500_00n });
     expect(treasuryBalance()).toBe(9500);
   });
 
   it("refuses a repayment above the amount drawn, and moves nothing", async () => {
     await borrow(2000);
-    co("co1").capital = 5000;
+    co("co1").capital = 5000_00n;
     await expect(repay(2500)).rejects.toBeInstanceOf(ExchangeError);
     await expect(repay(2500)).rejects.toThrow(/stands at/);
-    expect(co("co1")).toMatchObject({ capital: 5000, creditDrawn: 2000 });
+    expect(co("co1")).toMatchObject({ capital: 5000_00n, creditDrawn: 2000_00n });
     expect(treasuryBalance()).toBe(8000);
   });
 
   it("cures a distressed company once its debt is covered", async () => {
     co("co1").status = "DISTRESSED";
     co("co1").distressedSinceIxTime = T0;
-    co("co1").capital = 1000;
-    co("co1").creditDrawn = 500;
+    co("co1").capital = 1000_00n;
+    co("co1").creditDrawn = 500_00n;
     const result = await repay(500);
     expect(result).toMatchObject({ creditDrawn: 0, cured: true });
     expect(co("co1")).toMatchObject({ status: "ACTIVE", distressedSinceIxTime: null });
@@ -275,7 +282,7 @@ describe("Central Bank credit line", () => {
     await borrow(2000, "same-request");
     const retry = await borrow(2000, "same-request");
     expect(retry.alreadyApplied).toBe(true);
-    expect(co("co1").creditDrawn).toBe(2000);
+    expect(co("co1").creditDrawn).toBe(2000_00n);
     expect(treasuryBalance()).toBe(8000);
   });
 });

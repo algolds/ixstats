@@ -64,27 +64,27 @@ model Company {
   sectorKey             String
   subIndustryKey        String                @default("software_media")
   hqCountryId           String?
-  capital               Float                 @default(0)
+  capital               BigInt                @default(0)
   standing              Float                 @default(0)
-  fairValue             Float                 @default(0)
+  fairValue             BigInt                @default(0)
   sharesIssued          Int                   @default(0)
   sharesOutstanding     Int                   @default(0)
-  contractsWonValue     Float                 @default(0)
+  contractsWonValue     BigInt                @default(0)
   /// Founder control: new listings and share purchases are allowed only while true.
   tradingOpen           Boolean               @default(false)
   /// Fair value added by applied EXPAND decisions (see CompanyDecision).
-  decisionValue         Float                 @default(0)
+  decisionValue         BigInt                @default(0)
   pricingStrategy       String                @default("balanced")
   lobbyBuffType         String?
   lobbyBuffUntilIxTime  Float?
-  creditDrawn           Float                 @default(0)
+  creditDrawn           BigInt                @default(0)
   creditRating          String                @default("A")
-  lastTradePrice        Float?
+  lastTradePrice        BigInt?
   lastTradeIxTime       Float?
-  lastTickRevenue       Float                 @default(0)
-  lastTickExpenses      Float                 @default(0)
-  lastTickTax           Float                 @default(0)
-  lastTickNetIncome     Float                 @default(0)
+  lastTickRevenue       BigInt                @default(0)
+  lastTickExpenses      BigInt                @default(0)
+  lastTickTax           BigInt                @default(0)
+  lastTickNetIncome     BigInt                @default(0)
   distressedSinceIxTime Float?
   wikiSlug              String?
   wikiData              Json?
@@ -122,7 +122,7 @@ model Company {
 model CompanyValueHistory {
   id            String   @id @default(cuid())
   companyId     String
-  fairValue     Float
+  fairValue     BigInt
   breakdown     Json?
   recordedIxTime Float
   recordedAt    DateTime @default(now())

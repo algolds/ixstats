@@ -56,12 +56,12 @@ function setup() {
         subIndustryKey: "software_media",
         hqCountryId: NATION,
         status: "ACTIVE",
-        decisionValue: 10_000,
-        capital: 0,
+        decisionValue: 10_000_00n,
+        capital: 0n,
         standing: 0,
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
-        creditDrawn: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
+        creditDrawn: 0n,
         creditRating: "B",
       },
     ],
@@ -95,7 +95,7 @@ describe("runExchangeMarketTick", () => {
   });
 
   it("(d) running runExchangeMarketTick twice within one operating tick leaves sector index values and fundSovereigns as after the first run", async () => {
-    fake.tables.company![0]!.capital = 200_000;
+    fake.tables.company![0]!.capital = 200_000_00n;
     fake.tables.sectorIndex = [
       {
         id: "idx_services",

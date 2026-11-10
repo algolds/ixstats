@@ -26,7 +26,7 @@ import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
 import { alertWatchers, publishContractNewsTx, type PublishedHeadline } from "./news";
 import { assertNotOwnersCompany } from "./lending";
-import { formatSovereigns, round2 } from "./amounts";
+import { dbCents, formatSovereigns, round2, toCents } from "./amounts";
 import { payContractor, refundIssuer } from "./contract-settlement";
 import { debitTreasuryTx } from "./treasury";
 
@@ -228,9 +228,10 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
         );
       }
 
+      const valueCents = dbCents(toCents(input.value));
       const { count } = await tx.company.updateMany({
-        where: { id: input.issuerCompanyId, status: "ACTIVE", capital: { gte: input.value } },
-        data: { capital: { decrement: input.value } },
+        where: { id: input.issuerCompanyId, status: "ACTIVE", capital: { gte: valueCents } },
+        data: { capital: { decrement: valueCents } },
       });
       if (count !== 1) {
         throw new ExchangeError(

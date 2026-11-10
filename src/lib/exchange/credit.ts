@@ -6,12 +6,12 @@
 
 import type { Company, PrismaClient } from "@prisma/client";
 import { ExchangeError, isUniqueViolation } from "~/lib/vault/exchange-service";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
 import { refreshFairValue } from "./companies";
 import { distressDecision } from "./distress";
 import { assertExchangeOpen, type Db } from "./guards";
 import { lendingTermsOf } from "./lending";
-import { fromCents, lockCompany, toCents } from "./ownership";
+import { lockCompany } from "./ownership";
 import { macroOfCountry } from "./tariffs";
 import { CREDIT_RATINGS, creditRatingFor, type CreditRating } from "./taxonomy";
 import { transferToTreasuryTx, debitTreasuryTx } from "./treasury";
@@ -49,10 +49,13 @@ import { borrowRateOf, creditLimitFor } from "./valuation";
 function liveRatingOf(
   c: Pick<Company, "standing" | "creditDrawn" | "capital" | "decisionValue" | "lastTickNetIncome">
 ): CreditRating {
+  const creditDrawn = fromCents(centsOf(c.creditDrawn));
+  const capital = fromCents(centsOf(c.capital));
+  const decisionValue = fromCents(centsOf(c.decisionValue));
   return creditRatingFor({
     standing: c.standing,
-    debtToEquity: c.creditDrawn / Math.max(1, c.capital + c.decisionValue),
-    lastTickNetIncome: c.lastTickNetIncome,
+    debtToEquity: creditDrawn / Math.max(1, capital + decisionValue),
+    lastTickNetIncome: fromCents(centsOf(c.lastTickNetIncome)),
   });
 }
 
@@ -127,11 +130,18 @@ export async function borrowCredit(
         source: `CREDIT_LINE:${company.id}`,
         key,
       });
-      const limit = creditLimitFor(company, terms.cap);
+      const limit = creditLimitFor(
+        {
+          decisionValue: fromCents(centsOf(company.decisionValue)),
+          contractsWonValue: fromCents(centsOf(company.contractsWonValue)),
+        },
+        terms.cap
+      );
+      const drawn = fromCents(centsOf(company.creditDrawn));
       if (moved === 0) {
         return {
           alreadyApplied: true,
-          creditDrawn: company.creditDrawn,
+          creditDrawn: drawn,
           creditLimit: limit,
           rate: borrowRateOf(macro.interestRate, company.creditRating, terms.spread),
         };
@@ -143,24 +153,25 @@ export async function borrowCredit(
           `Its credit rating (${rating}) is below B: the Central Bank will not lend`
         );
       }
-      if (company.creditDrawn + amount > limit + EPS) {
+      if (drawn + amount > limit + EPS) {
         throw new ExchangeError(
           "CONFLICT",
           `This would take the credit line past its limit of ${formatSovereigns(limit)}`
         );
       }
+      const amountCents = dbCents(toCents(amount));
       await tx.company.update({
         where: { id: company.id },
         data: {
-          capital: { increment: amount },
-          creditDrawn: { increment: amount },
+          capital: { increment: amountCents },
+          creditDrawn: { increment: amountCents },
           creditRating: rating,
         },
       });
       await refreshFairValue(tx, company.id);
       return {
         alreadyApplied: false,
-        creditDrawn: company.creditDrawn + amount,
+        creditDrawn: fromCents(centsOf(company.creditDrawn) + toCents(amount)),
         creditLimit: limit,
         rate: borrowRateOf(macro.interestRate, rating, terms.spread),
       };
@@ -195,30 +206,36 @@ export async function repayCredit(db: PrismaClient, input: CreditLineInput): Pro
         source: `CREDIT_REPAYMENT:${company.id}`,
         key,
       });
+      const drawn = fromCents(centsOf(company.creditDrawn));
       if (moved === 0) {
-        return { alreadyApplied: true, creditDrawn: company.creditDrawn, cured: false };
+        return { alreadyApplied: true, creditDrawn: drawn, cured: false };
       }
-      if (amount > company.creditDrawn + EPS) {
+      if (amount > drawn + EPS) {
         throw new ExchangeError(
           "CONFLICT",
-          `The credit line stands at ${formatSovereigns(company.creditDrawn)}`
+          `The credit line stands at ${formatSovereigns(drawn)}`
         );
       }
+      const amountCents = dbCents(toCents(amount));
       const { count } = await tx.company.updateMany({
-        where: { id: company.id, creditDrawn: { gte: amount } },
-        data: { creditDrawn: { decrement: amount } },
+        where: { id: company.id, creditDrawn: { gte: amountCents } },
+        data: { creditDrawn: { decrement: amountCents } },
       });
       if (count !== 1) throw new ExchangeError("CONFLICT", "The credit line changed; try again");
       await refreshFairValue(tx, company.id);
       const after = await tx.company.findUniqueOrThrow({ where: { id: company.id } });
+      const afterDrawn = fromCents(centsOf(after.creditDrawn));
       const cured =
         distressDecision({
           status: after.status,
           distressedSinceIxTime: after.distressedSinceIxTime,
           unpaid: false,
-          capital: after.capital,
-          creditDrawn: after.creditDrawn,
-          creditLimit: creditLimitFor(after),
+          capital: fromCents(centsOf(after.capital)),
+          creditDrawn: afterDrawn,
+          creditLimit: creditLimitFor({
+            decisionValue: fromCents(centsOf(after.decisionValue)),
+            contractsWonValue: fromCents(centsOf(after.contractsWonValue)),
+          }),
           nowMs: Date.now(),
         }) === "CURE";
       if (cured) {
@@ -227,7 +244,7 @@ export async function repayCredit(db: PrismaClient, input: CreditLineInput): Pro
           data: { status: "ACTIVE", distressedSinceIxTime: null },
         });
       }
-      return { alreadyApplied: false, creditDrawn: after.creditDrawn, cured };
+      return { alreadyApplied: false, creditDrawn: afterDrawn, cured };
     });
   } catch (error) {
     if (isUniqueViolation(error)) return { alreadyApplied: true, creditDrawn: 0, cured: false };

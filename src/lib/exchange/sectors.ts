@@ -202,7 +202,9 @@ export async function measureSectorActivity(
   const add = (key: string, n: number) => {
     if (key in activity) activity[key as SectorKey] += n;
   };
-  for (const c of companies) add(c.sectorKey, c.capital + 100 * Math.max(0, c.standing));
+  for (const c of companies) {
+    add(c.sectorKey, fromCents(centsOf(c.capital)) + 100 * Math.max(0, c.standing));
+  }
   for (const k of contracts) add(k.sectorKey, k.value);
   return activity;
 }

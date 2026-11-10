@@ -8,9 +8,10 @@ import { DEFAULT_REALM_ID, SYSTEM_REALM_IDS } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { exchangeService } from "~/lib/vault/exchange-service";
 import { getVaultConfig } from "~/lib/vault/vault-perks";
+import { centsOf, fromCents, round2 } from "./amounts";
 import { INDEX_BASE, SECTOR_KEYS, listMyCompanies } from "./companies";
 import { DAY_MS } from "./contracts";
-import { round2, type Db } from "./guards";
+import type { Db } from "./guards";
 import { ACTIVITY_WINDOW_DAYS, SECTOR_LABELS } from "./sectors";
 import { COMPANY_CREDIT_CAP_MAX, lendingTermsFor } from "./lending";
 
@@ -183,6 +184,7 @@ export async function listMyHoldings(db: Db, userId: string, realmId: string) {
         .reduce((s, l) => s + l.shares, 0);
       const owned = h.shares + listed;
       const c = h.company;
+      const fairValue = fromCents(centsOf(c.fairValue));
       return {
         companyId: h.companyId,
         name: c.name,
@@ -195,7 +197,7 @@ export async function listMyHoldings(db: Db, userId: string, realmId: string) {
         avgCost: h.avgCost,
         stake: c.sharesOutstanding > 0 ? owned / c.sharesOutstanding : 0,
         fairValue:
-          c.sharesOutstanding > 0 ? round2((c.fairValue * owned) / c.sharesOutstanding) : 0,
+          c.sharesOutstanding > 0 ? round2((fairValue * owned) / c.sharesOutstanding) : 0,
       };
     })
     .filter((h) => h.shares + h.listed > 0)
@@ -236,7 +238,7 @@ export async function listShareMarket(db: Db, userId: string, realmId: string = 
     pricePerShare: l.pricePerShare,
     fairPricePerShare:
       l.company.sharesOutstanding > 0
-        ? round2(l.company.fairValue / l.company.sharesOutstanding)
+        ? round2(fromCents(centsOf(l.company.fairValue)) / l.company.sharesOutstanding)
         : null,
   }));
 }

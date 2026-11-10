@@ -142,13 +142,13 @@ describe("Exchange financial & state invariants", () => {
           sectorKey: "services",
           subIndustryKey: "software_media",
           hqCountryId: "nation_a",
-          capital: 1000,
+          capital: 1000_00n,
           standing: 2,
-          decisionValue: 10_000,
-          creditDrawn: 0,
+          decisionValue: 10_000_00n,
+          creditDrawn: 0n,
           creditRating: "A",
-          contractsWonValue: 0,
-          fairValue: 11_200,
+          contractsWonValue: 0n,
+          fairValue: 11_200_00n,
           status: "ACTIVE",
         },
       ],
@@ -171,10 +171,10 @@ describe("Exchange financial & state invariants", () => {
     });
 
     const afterBorrow = fake.tables.company!.find((c) => c.id === "co1")!;
-    expect(afterBorrow.capital).toBe(4000);
-    expect(afterBorrow.creditDrawn).toBe(3000);
+    expect(afterBorrow.capital).toBe(4000_00n);
+    expect(afterBorrow.creditDrawn).toBe(3000_00n);
     // Net liquid capital is still 4000 - 3000 = 1000, so fairValue remains 11,200
-    expect(afterBorrow.fairValue).toBe(11_200);
+    expect(afterBorrow.fairValue).toBe(11_200_00n);
 
     await repayCredit(fake.client, {
       userId: "alice",
@@ -184,9 +184,9 @@ describe("Exchange financial & state invariants", () => {
     });
 
     const afterRepay = fake.tables.company!.find((c) => c.id === "co1")!;
-    expect(afterRepay.capital).toBe(2500);
-    expect(afterRepay.creditDrawn).toBe(1500);
-    expect(afterRepay.fairValue).toBe(11_200);
+    expect(afterRepay.capital).toBe(2500_00n);
+    expect(afterRepay.creditDrawn).toBe(1500_00n);
+    expect(afterRepay.fairValue).toBe(11_200_00n);
   });
 
   it("counts DISTRESSED companies toward activeCompanyCap when chartering", async () => {
@@ -245,7 +245,7 @@ describe("Exchange financial & state invariants", () => {
           tradingOpen: true,
           sharesIssued: 1000,
           sharesOutstanding: 1000,
-          fairValue: 10_000,
+          fairValue: 10_000_00n,
         },
       ],
       shareholding: [
@@ -299,16 +299,19 @@ describe("Live {{BusinessData}} placeholder bridge for Exchange companies", () =
             sectorKey: "government",
             subIndustryKey: "defense_aerospace",
             hqCountryId: "c_caph",
-            capital: 25_000,
+            capital: 25_000_00n,
             standing: 4.5,
-            fairValue: 80_000,
+            fairValue: 80_000_00n,
             sharesOutstanding: 1000,
-            decisionValue: 40_000,
-            creditDrawn: 5000,
+            decisionValue: 40_000_00n,
+            contractsWonValue: 0n,
+            creditDrawn: 5000_00n,
             creditRating: "AA",
-            lastTradePrice: 85,
-            lastTickRevenue: 1200,
-            lastTickNetIncome: 450,
+            lastTradePrice: 85_00n,
+            lastTickRevenue: 1200_00n,
+            lastTickExpenses: 0n,
+            lastTickTax: 0n,
+            lastTickNetIncome: 450_00n,
             status: "ACTIVE",
           },
         ]),

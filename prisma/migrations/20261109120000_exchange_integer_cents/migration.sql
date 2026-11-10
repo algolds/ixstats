@@ -50,4 +50,38 @@ ALTER TABLE "exchange_nation_treasury_entries"
   ALTER COLUMN "amount" TYPE bigint USING round("amount" * 100)::bigint,
   ALTER COLUMN "balanceAfter" TYPE bigint USING round("balanceAfter" * 100)::bigint;
 
+-- Phase B Group 2: Company & CompanyValueHistory
+ALTER TABLE "exchange_companies"
+  ALTER COLUMN "capital" DROP DEFAULT,
+  ALTER COLUMN "capital" TYPE bigint USING round("capital" * 100)::bigint,
+  ALTER COLUMN "capital" SET DEFAULT 0,
+  ALTER COLUMN "fairValue" DROP DEFAULT,
+  ALTER COLUMN "fairValue" TYPE bigint USING round("fairValue" * 100)::bigint,
+  ALTER COLUMN "fairValue" SET DEFAULT 0,
+  ALTER COLUMN "contractsWonValue" DROP DEFAULT,
+  ALTER COLUMN "contractsWonValue" TYPE bigint USING round("contractsWonValue" * 100)::bigint,
+  ALTER COLUMN "contractsWonValue" SET DEFAULT 0,
+  ALTER COLUMN "decisionValue" DROP DEFAULT,
+  ALTER COLUMN "decisionValue" TYPE bigint USING round("decisionValue" * 100)::bigint,
+  ALTER COLUMN "decisionValue" SET DEFAULT 0,
+  ALTER COLUMN "creditDrawn" DROP DEFAULT,
+  ALTER COLUMN "creditDrawn" TYPE bigint USING round("creditDrawn" * 100)::bigint,
+  ALTER COLUMN "creditDrawn" SET DEFAULT 0,
+  ALTER COLUMN "lastTradePrice" TYPE bigint USING round("lastTradePrice" * 100)::bigint,
+  ALTER COLUMN "lastTickRevenue" DROP DEFAULT,
+  ALTER COLUMN "lastTickRevenue" TYPE bigint USING round("lastTickRevenue" * 100)::bigint,
+  ALTER COLUMN "lastTickRevenue" SET DEFAULT 0,
+  ALTER COLUMN "lastTickExpenses" DROP DEFAULT,
+  ALTER COLUMN "lastTickExpenses" TYPE bigint USING round("lastTickExpenses" * 100)::bigint,
+  ALTER COLUMN "lastTickExpenses" SET DEFAULT 0,
+  ALTER COLUMN "lastTickTax" DROP DEFAULT,
+  ALTER COLUMN "lastTickTax" TYPE bigint USING round("lastTickTax" * 100)::bigint,
+  ALTER COLUMN "lastTickTax" SET DEFAULT 0,
+  ALTER COLUMN "lastTickNetIncome" DROP DEFAULT,
+  ALTER COLUMN "lastTickNetIncome" TYPE bigint USING round("lastTickNetIncome" * 100)::bigint,
+  ALTER COLUMN "lastTickNetIncome" SET DEFAULT 0;
+
+ALTER TABLE "exchange_company_value_history"
+  ALTER COLUMN "fairValue" TYPE bigint USING round("fairValue" * 100)::bigint;
+
 COMMIT;

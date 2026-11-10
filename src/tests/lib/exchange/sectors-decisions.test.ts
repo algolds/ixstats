@@ -49,10 +49,10 @@ function setup() {
         founderId: "alice",
         name: "Alice Works",
         sectorKey: "industry",
-        capital: 20_000,
+        capital: 20_000_00n,
         standing: 2,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         status: "ACTIVE",
@@ -162,7 +162,7 @@ describe("sector funds", () => {
     });
     const before = walletCents() + fundCents();
     await computeSectorIndices(fake.client); // base run
-    company().capital = 200_000;
+    company().capital = 200_000_00n;
     await computeSectorIndices(fake.client, Date.now() + DAY_MS); // industry +5%
     expect(index("industry").fundSovereigns).toBeGreaterThan(1000);
     expect(index("services").fundSovereigns).toBeLessThan(1000);
@@ -267,12 +267,12 @@ describe("realm-scoped sectors", () => {
       founderId: "bob",
       name: "Alpha Works",
       sectorKey: "industry",
-      capital: 20_000,
+      capital: 20_000_00n,
       standing: 0,
       status: "ACTIVE",
     });
     await computeSectorIndices(fake.client); // base run
-    fake.tables.company!.find((c) => c.id === "co_alpha")!.capital = 200_000;
+    fake.tables.company!.find((c) => c.id === "co_alpha")!.capital = 200_000_00n;
     await computeSectorIndices(fake.client, Date.now() + DAY_MS);
     expect(rowOf("alpha", "industry").value).toBe(1050);
     expect(rowOf("default", "industry").value).toBe(1000);
@@ -377,7 +377,7 @@ describe("company decisions", () => {
       amount: 500,
       requestId,
     });
-    expect(company().capital).toBe(19_500);
+    expect(company().capital).toBe(19_500_00n);
     // A retry is the same decision; a different one waits for this to resolve.
     const again = await submitDecision(fake.client, {
       userId: "alice",
@@ -396,14 +396,14 @@ describe("company decisions", () => {
         requestId: rid(),
       })
     ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(company().capital).toBe(19_500);
+    expect(company().capital).toBe(19_500_00n);
 
     expect(await resolveDueDecisions(fake.client)).toBe(0); // too soon
     const at = later();
     expect(await resolveDueDecisions(fake.client, at)).toBe(1);
     expect(await resolveDueDecisions(fake.client, at)).toBe(0); // never twice
-    expect(company().decisionValue).toBe(500);
-    expect(company().fairValue).toBe(19_500 + 200 + 500);
+    expect(company().decisionValue).toBe(500_00n);
+    expect(company().fairValue).toBe(BigInt((19_500 + 200 + 500) * 100));
   });
   it("can't spend more capital than the company holds", async () => {
     await expect(
@@ -453,9 +453,9 @@ describe("company decisions", () => {
       focus: "efficiency",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_000);
+    expect(company().capital).toBe(19_000_00n);
     await resolveDueDecisions(fake.client, later());
-    expect(company()).toMatchObject({ decisionValue: 1150, standing: 3 });
+    expect(company()).toMatchObject({ decisionValue: 1150_00n, standing: 3 });
     expect(fake.tables.companyDecision![0]!.effect).toEqual({
       focus: "efficiency",
       decisionValueDelta: 1150,
@@ -494,7 +494,7 @@ describe("company decisions", () => {
       focus: "efficiency",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_750);
+    expect(company().capital).toBe(19_750_00n);
   });
 
   async function resolveBreakthrough(decisionId: string) {
@@ -568,9 +568,9 @@ describe("company decisions", () => {
       target: "b2g",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_500);
+    expect(company().capital).toBe(19_500_00n);
     expect(treasuryOf("nation_a")).toBe(250);
-    expect(company().capital + treasuryOf("nation_a")).toBe(19_750);
+    expect(Number(company().capital) / 100 + treasuryOf("nation_a")).toBe(19_750);
     expect(fake.tables.nationTreasuryEntry).toEqual([
       expect.objectContaining({ type: "LOBBY", amount: 250_00n, countryId: "nation_a" }),
     ]);
@@ -584,7 +584,7 @@ describe("company decisions", () => {
       target: "sector",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_500);
+    expect(company().capital).toBe(19_500_00n);
     expect(fake.tables.nationTreasury ?? []).toHaveLength(0);
   });
 
@@ -621,7 +621,7 @@ describe("company decisions", () => {
       strategy: "premium",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_800);
+    expect(company().capital).toBe(19_800_00n);
     await resolveDueDecisions(fake.client, later());
     expect(company().pricingStrategy).toBe("premium");
   });
@@ -644,7 +644,7 @@ describe("company decisions", () => {
       sectorKey: "services",
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_500);
+    expect(company().capital).toBe(19_500_00n);
     await resolveDueDecisions(fake.client, later());
     expect(company()).toMatchObject({ sectorKey: "services", subIndustryKey: "finance_insurance" });
   });
@@ -657,19 +657,19 @@ describe("company decisions", () => {
       amount: 1000,
       requestId: rid(),
     });
-    expect(company().capital).toBe(19_000);
+    expect(company().capital).toBe(19_000_00n);
 
     company().status = "DISTRESSED";
     const t1 = later();
     expect(await resolveDueDecisions(fake.client, t1)).toBe(0);
     const rowAfterDistressed = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
     expect(rowAfterDistressed.appliedIxTime).toBeNull();
-    expect(company().decisionValue).toBe(0);
+    expect(company().decisionValue).toBe(0n);
 
     company().status = "ACTIVE";
     expect(await resolveDueDecisions(fake.client, t1 + DAY_MS)).toBe(1);
     const rowAfterActive = fake.tables.companyDecision!.find((d) => d.id === decision.id)!;
     expect(rowAfterActive.appliedIxTime).toBe(t1 + DAY_MS);
-    expect(company().decisionValue).toBe(1000);
+    expect(company().decisionValue).toBe(1000_00n);
   });
 });

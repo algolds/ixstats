@@ -11,21 +11,22 @@
  */
 
 import type { Prisma } from "@prisma/client";
-import { round2 } from "./amounts";
+import { dbCents, fromCents, toCents } from "./amounts";
 import { acquirePayloadOf, returnOfferTx } from "./acquisition";
 import { refundIssuer } from "./contract-settlement";
 import type { Db } from "./guards";
 
-function burnedDecisionCost(
+function burnedDecisionCostCents(
   type: string,
   payload: Prisma.JsonValue,
   hqCountryId: string | null
 ): number {
   const record = (payload ?? {}) as Prisma.JsonObject;
   const cost = Number(record.cost ?? record.offerAmount ?? record.amount ?? 0);
-  if (cost <= 0) return 0;
-  const toTreasury = type === "LOBBY" && hqCountryId ? round2(cost / 2) : 0;
-  return round2(cost - toTreasury);
+  const costCents = toCents(cost);
+  if (costCents <= 0) return 0;
+  const toTreasuryCents = type === "LOBBY" && hqCountryId ? Math.round(costCents / 2) : 0;
+  return costCents - toTreasuryCents;
 }
 
 export async function unwindCompanyMoneyTx(
@@ -33,7 +34,7 @@ export async function unwindCompanyMoneyTx(
   companyId: string,
   nowMs: number
 ): Promise<number> {
-  let returned = 0;
+  let returnedCents = 0;
 
   const openContracts = await tx.contract.findMany({
     where: { issuerCompanyId: companyId, status: "OPEN" },
@@ -55,7 +56,7 @@ export async function unwindCompanyMoneyTx(
         contract.fundedBy !== "TREASURY" &&
         contract.fundedBy !== "WALLET"
       ) {
-        returned = round2(returned + contract.escrow);
+        returnedCents += toCents(contract.escrow);
       }
     }
   }
@@ -77,7 +78,7 @@ export async function unwindCompanyMoneyTx(
       amount: offerAmount,
       key: `exchange:acquire-return:${proposal.id}`,
     });
-    returned = round2(returned + offerAmount);
+    returnedCents += toCents(offerAmount);
   }
 
   const pendingDecisions = await tx.companyDecision.findMany({
@@ -90,19 +91,19 @@ export async function unwindCompanyMoneyTx(
     });
     const hqCountryId = company?.hqCountryId ?? null;
     for (const decision of pendingDecisions) {
-      const burned = burnedDecisionCost(decision.type, decision.payload, hqCountryId);
+      const burnedCents = burnedDecisionCostCents(decision.type, decision.payload, hqCountryId);
       const { count } = await tx.companyDecision.updateMany({
         where: { id: decision.id, appliedIxTime: null },
-        data: { appliedIxTime: nowMs, effect: { refunded: burned } },
+        data: { appliedIxTime: nowMs, effect: { refunded: fromCents(burnedCents) } },
       });
-      if (count !== 1 || burned <= 0) continue;
+      if (count !== 1 || burnedCents <= 0) continue;
       await tx.company.update({
         where: { id: companyId },
-        data: { capital: { increment: burned } },
+        data: { capital: { increment: dbCents(burnedCents) } },
       });
-      returned = round2(returned + burned);
+      returnedCents += burnedCents;
     }
   }
 
-  return returned;
+  return fromCents(returnedCents);
 }

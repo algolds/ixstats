@@ -46,7 +46,7 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
         founderId: "alice",
         realmId: REALM,
         sectorKey: "industry",
-        capital: companyCapital,
+        capital: BigInt(Math.round(companyCapital * 100)),
         status: "ACTIVE",
       },
     ],
@@ -157,7 +157,7 @@ describe("transferToTreasuryTx", () => {
 
   it("moves a company's tax out of capital into the treasury by the same amount", async () => {
     expect(await companyTax(120, "tax:co1:1")).toBe(120);
-    expect(company().capital).toBe(380);
+    expect(company().capital).toBe(380_00n);
     expect(balance()).toBe(120);
     expect(treasury()).toMatchObject({ lifetimeTaxEarned: 120_00n });
     expect(entries()[0]).toMatchObject({
@@ -178,7 +178,7 @@ describe("transferToTreasuryTx", () => {
   it("applies a retried company payment once", async () => {
     expect(await companyTax(120, "tax:co1:3")).toBe(120);
     expect(await companyTax(120, "tax:co1:3")).toBe(0);
-    expect(company().capital).toBe(380);
+    expect(company().capital).toBe(380_00n);
     expect(balance()).toBe(120);
   });
 
@@ -188,7 +188,7 @@ describe("transferToTreasuryTx", () => {
     await expect(companyTax(80, "tax:co1:4")).rejects.toMatchObject({
       code: "INSUFFICIENT_SOVEREIGNS",
     });
-    expect(company().capital).toBe(50);
+    expect(company().capital).toBe(50_00n);
     expect(balance()).toBe(0);
     expect(entries()).toHaveLength(0);
   });

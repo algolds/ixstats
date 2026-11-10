@@ -7,7 +7,7 @@
 import type { Contract } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
 import { refreshFairValue } from "./companies";
-import { round2 } from "./amounts";
+import { dbCents, round2, toCents } from "./amounts";
 import type { Db } from "./guards";
 import { tariffOn } from "./tariffs";
 import { creditTreasuryTx, transferToTreasuryTx } from "./treasury";
@@ -59,7 +59,7 @@ async function refundCompany(tx: Db, contract: Funded, amount: number, _step: st
   }
   await tx.company.update({
     where: { id: contract.issuerCompanyId },
-    data: { capital: { increment: amount } },
+    data: { capital: { increment: dbCents(toCents(amount)) } },
   });
   await refreshFairValue(tx, contract.issuerCompanyId);
 }
@@ -117,11 +117,12 @@ export async function payContractor(
   const delta = standingGainOf(contract, company, Date.now());
   const tariff = await tariffOn(tx, contract, company.hqCountryId, amount);
   const tariffPaid = tariff?.amount ?? 0;
+  const amountCents = dbCents(toCents(amount));
   await tx.company.update({
     where: { id: companyId },
     data: {
-      capital: { increment: amount },
-      contractsWonValue: { increment: amount },
+      capital: { increment: amountCents },
+      contractsWonValue: { increment: amountCents },
       standing: { increment: delta },
     },
   });

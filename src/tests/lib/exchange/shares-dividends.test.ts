@@ -71,11 +71,11 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
         founderId: "alice",
         name: "Alice Works",
         sectorKey: "industry",
-        capital: 1000,
-        fairValue: 1000,
+        capital: 1000_00n,
+        fairValue: 1000_00n,
         standing: 0,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: outstanding,
         sharesOutstanding: outstanding,
         tradingOpen: true,
@@ -103,7 +103,7 @@ const listing = (id: string) => fake.tables.shareListing!.find((l) => l.id === i
 /** Every ₷ in wallets and company capital, in cents. */
 const totalCents = () =>
   fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns), 0) +
-  fake.tables.company!.reduce((s, c) => s + cents(c.capital), 0);
+  fake.tables.company!.reduce((s, c) => s + Number(c.capital), 0);
 const totalShares = () =>
   (fake.tables.shareholding ?? []).reduce((s, h) => s + h.shares, 0) +
   (fake.tables.shareListing ?? [])
@@ -265,7 +265,7 @@ describe("dividends", () => {
       )
     );
     expect(results.filter((r) => !r.alreadyApplied)).toHaveLength(1);
-    expect(company().capital).toBe(900);
+    expect(company().capital).toBe(900_00n);
     expect(sov("bob")).toBe(5040);
     expect(fake.tables.companyDividend).toHaveLength(1);
   });
@@ -278,7 +278,7 @@ describe("dividends", () => {
       )
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(company().capital).toBe(400);
+    expect(company().capital).toBe(400_00n);
     expect(sov("bob")).toBe(5300);
   });
 
@@ -315,7 +315,7 @@ describe("dividends", () => {
       amount: 100,
       requestId: rid(),
     });
-    expect(company().capital).toBe(before.capital - 100);
+    expect(company().capital).toBe((before.capital as bigint) - 100_00n);
   });
 });
 
@@ -336,7 +336,7 @@ describe("dissolving a company with outside shareholders", () => {
     const r = await fake.client.$transaction((tx: Db) =>
       dissolveCompanyTx(tx, { userId: "alice", companyId: "co", viaVote: true })
     );
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     // 100,000 cents: bob and carol 33,300 each, alice 33,400.
     expect(sov("bob")).toBe(5333);
     expect(sov("carol")).toBe(5333);
@@ -373,7 +373,7 @@ describe("bids", () => {
     expect(sov("alice")).toBe(5200);
     expect(holding("bob")).toBe(100);
     expect(listing(id)).toMatchObject({ shares: 0, status: "FILLED" });
-    expect(company().lastTradePrice).toBe(2);
+    expect(company().lastTradePrice).toBe(2_00n);
     expect(orders()).toHaveLength(0);
     expect(totalCents()).toBe(before);
   });
@@ -427,7 +427,7 @@ describe("bids", () => {
     expect(holding("bob")).toBe(30);
     expect(holding("alice")).toBe(970);
     expect(orders()[0]).toMatchObject({ shares: 20, escrow: 80, status: "OPEN" });
-    expect(company().lastTradePrice).toBe(4);
+    expect(company().lastTradePrice).toBe(4_00n);
     expect(totalCents() + cents(orders()[0]!.escrow as number)).toBe(before);
     expect(totalShares()).toBe(1000);
   });
@@ -510,7 +510,7 @@ describe("bids", () => {
     });
     expect(holding("bob")).toBe(10);
     expect(orders()[0]).toMatchObject({ shares: 0, status: "FILLED" });
-    expect(company()).toMatchObject({ capital: 1020, sharesOutstanding: 1010, lastTradePrice: 2 });
+    expect(company()).toMatchObject({ capital: 1020_00n, sharesOutstanding: 1010, lastTradePrice: 2_00n });
     expect(totalCents()).toBe(before);
     expect(totalShares()).toBe(1010);
   });
@@ -542,7 +542,7 @@ describe("bids", () => {
     await aliceLists(10, 2);
     const before = Date.now();
     await bid("bob", 10, 2);
-    expect(company()).toMatchObject({ lastTradePrice: 2 });
+    expect(company()).toMatchObject({ lastTradePrice: 2_00n });
     expect(company().lastTradeIxTime as number).toBeGreaterThanOrEqual(before);
     await expect(getOrderBook(fake.client, "co")).resolves.toMatchObject({ lastTradePrice: 2 });
   });
@@ -587,7 +587,7 @@ describe("capital gains tax on secondary sales", () => {
       shares: 100,
       requestId: rid(),
     });
-    expect(company().capital).toBe(1020);
+    expect(company().capital).toBe(1020_00n);
     expect(treasury()).toBeUndefined();
   });
 
@@ -602,7 +602,7 @@ describe("capital gains tax on secondary sales", () => {
 describe("dividend credit cap and withholding", () => {
   it("refuses a dividend above half the capital above credit drawn", async () => {
     setup({ alice: 600, bob: 400 });
-    company().creditDrawn = 600;
+    company().creditDrawn = 600_00n;
     await expect(
       declareDividend(fake.client, {
         userId: "alice",
@@ -611,7 +611,7 @@ describe("dividend credit cap and withholding", () => {
         requestId: rid(),
       })
     ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(company().capital).toBe(1000);
+    expect(company().capital).toBe(1000_00n);
 
     await declareDividend(fake.client, {
       userId: "alice",
@@ -619,7 +619,7 @@ describe("dividend credit cap and withholding", () => {
       amount: 200,
       requestId: rid(),
     });
-    expect(company().capital).toBe(800);
+    expect(company().capital).toBe(800_00n);
     expect(sov("bob")).toBe(5080);
   });
 
@@ -638,7 +638,7 @@ describe("dividend credit cap and withholding", () => {
     expect(r).toMatchObject({ paid: 100, alreadyApplied: false });
     expect(sov("alice")).toBe(5054);
     expect(sov("bob")).toBe(5036);
-    expect(company().capital).toBe(900);
+    expect(company().capital).toBe(900_00n);
     expect(treasury()).toMatchObject({ balance: 10_00n, lifetimeTaxEarned: 10_00n });
     expect(totalCents() + Number(treasury()!.balance)).toBe(before);
 
@@ -650,7 +650,7 @@ describe("dividend credit cap and withholding", () => {
     });
     expect(again.alreadyApplied).toBe(true);
     expect(treasury()!.balance).toBe(10_00n);
-    expect(company().capital).toBe(900);
+    expect(company().capital).toBe(900_00n);
   });
 
   it("withholds to the cent and leaves the sub-cent remainder in capital", async () => {
@@ -668,7 +668,7 @@ describe("dividend credit cap and withholding", () => {
     expect(cents(sov("alice"))).toBe(500031);
     expect(cents(sov("bob"))).toBe(500031);
     expect(cents(sov("carol"))).toBe(500031);
-    expect(cents(company().capital)).toBe(99901);
+    expect(Number(company().capital)).toBe(99901);
     expect(treasury()!.balance).toBe(6n);
     expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });

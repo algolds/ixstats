@@ -6,6 +6,7 @@ import type { WikiAuthContext } from "~/lib/wiki-os/auth";
 import { formatNumber, formatCurrency } from "~/lib/utils/format-utils";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { formatSovereigns } from "~/lib/exchange/amounts";
+import { companyView } from "~/lib/exchange/companies";
 import { SUB_INDUSTRIES, computeCompanyMetrics } from "~/lib/exchange/taxonomy";
 import { companyHref } from "~/lib/exchange/routes";
 
@@ -505,14 +506,16 @@ export async function resolveWikiPlaceholderValues(
   // Fetch all required Exchange companies first so their HQ countries can be included
   const exchangeCompanies: ExchangeCompanyRecord[] =
     companyNames.length > 0 && typeof db.company?.findMany === "function"
-      ? await db.company.findMany({
-          where: {
-            OR: [
-              { name: { in: companyNames, mode: "insensitive" } },
-              { wikiSlug: { in: companySlugs, mode: "insensitive" } },
-            ],
-          },
-        })
+      ? (
+          await db.company.findMany({
+            where: {
+              OR: [
+                { name: { in: companyNames, mode: "insensitive" } },
+                { wikiSlug: { in: companySlugs, mode: "insensitive" } },
+              ],
+            },
+          })
+        ).map(companyView)
       : [];
   const hqCountryIds = [
     ...new Set(

@@ -79,7 +79,7 @@ const setTreasury = (balance: number, countryId = "ruritania") => {
 };
 const totalMoney = () =>
   fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns) / 100, 0) +
-  (fake.tables.company ?? []).reduce((s, c) => s + c.capital, 0) +
+  (fake.tables.company ?? []).reduce((s, c) => s + Number(c.capital) / 100, 0) +
   (fake.tables.contract ?? []).reduce((s, c) => s + c.escrow, 0) +
   (fake.tables.nationTreasury ?? []).reduce((s, t) => s + Number(t.balance) / 100, 0);
 
@@ -164,7 +164,7 @@ describe("government tenders", () => {
     ]);
     await completeContract(fake.client, { userId: "alice", contractId: id });
     // Paid into capital; same-sector tender: standing +2.
-    expect(company(bobCo)).toMatchObject({ capital: 300, standing: 2 });
+    expect(company(bobCo)).toMatchObject({ capital: 300_00n, standing: 2 });
     expect(totalMoney()).toBe(before);
     expect(notifyExchange).toHaveBeenLastCalledWith([
       expect.objectContaining({ userId: "bob", title: "Build a harbour completed" }),
@@ -281,7 +281,7 @@ describe("treasury-funded tenders", () => {
     await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
     expect(treasuryBalance()).toBe(700);
     await completeContract(fake.client, { userId: "alice", contractId: id });
-    expect(company(bobCo).capital).toBe(300);
+    expect(company(bobCo).capital).toBe(300_00n);
     expect(treasuryBalance()).toBe(700);
     expect(totalMoney()).toBe(before);
     expect(fake.tables.nationTreasuryEntry).toEqual(
@@ -435,7 +435,7 @@ describe("faucet tenders", () => {
     });
     expect(totalMoney()).toBe(before - 300);
     await completeContract(fake.client, { userId: "alice", contractId: k.id as string });
-    expect(company(bobCo).capital).toBe(300);
+    expect(company(bobCo).capital).toBe(300_00n);
     expect(totalMoney()).toBe(before - 300);
   });
 });
@@ -491,7 +491,7 @@ describe("cross-border tariffs and trade agreements", () => {
     const { winner, contractId } = await awardedB2B(400);
     const before = totalMoney();
     await completeContract(fake.client, { userId: "alice", contractId });
-    expect(company(winner).capital).toBe(360);
+    expect(company(winner).capital).toBe(360_00n);
     expect(treasuryBalance("ruritania")).toBe(40);
     expect(contract(contractId)).toMatchObject({ tariffRate: 0.1, tariffPaid: 40 });
     expect(totalMoney()).toBe(before);
@@ -505,7 +505,7 @@ describe("cross-border tariffs and trade agreements", () => {
     const { winner, contractId } = await awardedB2B(400);
     await completeContract(fake.client, { userId: "alice", contractId });
     expect(treasuryBalance("ruritania")).toBe(100);
-    expect(company(winner).capital).toBe(300);
+    expect(company(winner).capital).toBe(300_00n);
     expect(contract(contractId)).toMatchObject({ tariffRate: 0.25, tariffPaid: 100 });
   });
 
@@ -513,7 +513,7 @@ describe("cross-border tariffs and trade agreements", () => {
     setupTrade();
     const { winner, contractId } = await awardedB2B(400, "ruritania");
     await completeContract(fake.client, { userId: "alice", contractId });
-    expect(company(winner).capital).toBe(400);
+    expect(company(winner).capital).toBe(400_00n);
     expect(treasuryBalance("ruritania")).toBe(0);
     expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0 });
   });
@@ -531,7 +531,7 @@ describe("cross-border tariffs and trade agreements", () => {
     ];
     const { winner, contractId } = await awardedB2B(400);
     await completeContract(fake.client, { userId: "alice", contractId });
-    expect(company(winner).capital).toBe(400);
+    expect(company(winner).capital).toBe(400_00n);
     expect(treasuryBalance("ruritania")).toBe(0);
     expect(contract(contractId)).toMatchObject({ tariffRate: 0, tariffPaid: 0 });
   });
@@ -549,7 +549,7 @@ describe("cross-border tariffs and trade agreements", () => {
     ];
     const { winner, contractId } = await awardedB2B(400);
     await completeContract(fake.client, { userId: "alice", contractId });
-    expect(company(winner).capital).toBe(360);
+    expect(company(winner).capital).toBe(360_00n);
     expect(contract(contractId)).toMatchObject({ tariffPaid: 40 });
   });
 
@@ -567,7 +567,7 @@ describe("cross-border tariffs and trade agreements", () => {
     await awardContract(fake.client, { userId: "alice", contractId: id, bidId: bid.id });
     const before = totalMoney();
     await completeContract(fake.client, { userId: "alice", contractId: id });
-    expect(company(bobCo).capital).toBe(270);
+    expect(company(bobCo).capital).toBe(270_00n);
     expect(treasuryBalance("ruritania")).toBe(730);
     expect(contract(id)).toMatchObject({ tariffRate: 0.1, tariffPaid: 30 });
     expect(totalMoney()).toBe(before);
@@ -606,7 +606,7 @@ describe("expireLapsedContracts", () => {
     const runs = await Promise.all([1, 2, 3].map(() => expireLapsedContracts(fake.client, late)));
     expect(runs.reduce((s, r) => s + r.expired, 0)).toBe(2);
     expect(sov("alice")).toBe(5000 - 100 - 1000 + 0); // tender refunded; charter and deposit stay
-    expect(company(co).capital).toBe(1000);
+    expect(company(co).capital).toBe(1000_00n);
     expect(contract(id)).toMatchObject({ status: "CANCELLED", escrow: 0 });
     expect(fake.tables.contractBid![0].outcome).toBe("LOST");
     expect(totalMoney()).toBe(before);

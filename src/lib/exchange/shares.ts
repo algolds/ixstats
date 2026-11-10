@@ -161,7 +161,10 @@ export async function issueSharesTx(
   }
 
   const now = Date.now();
-  const pricePerShare = primaryPricePerShare(company.fairValue, company.sharesOutstanding);
+  const pricePerShare = primaryPricePerShare(
+    fromCents(centsOf(company.fairValue)),
+    company.sharesOutstanding
+  );
   await tx.company.update({
     where: { id: company.id },
     data: { sharesIssued: { increment: input.shares } },
@@ -692,6 +695,7 @@ export async function getOrderBook(db: Db, companyId: string) {
     asks: depthOf(asks, (a) => a.pricePerShare)
       .sort((a, b) => a.price - b.price)
       .map(({ price, shares, count }) => ({ price, shares, listings: count })),
-    lastTradePrice: company.lastTradePrice ?? null,
+    lastTradePrice:
+      company.lastTradePrice !== null ? fromCents(centsOf(company.lastTradePrice)) : null,
   };
 }

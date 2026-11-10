@@ -36,7 +36,7 @@ const REALM = "default";
 const NATION = "nation_a";
 let fake: FakeDb;
 
-function setup(owner: string, companyOver: Record<string, number | string> = {}) {
+function setup(owner: string, companyOver: Record<string, number | bigint | string> = {}) {
   invalidateExchangeConfigCache();
   invalidateVaultConfigCache();
   fake = createFakeExchangeDb({
@@ -66,13 +66,13 @@ function setup(owner: string, companyOver: Record<string, number | string> = {})
         sectorKey: "services",
         subIndustryKey: "software_media",
         hqCountryId: NATION,
-        capital: 0,
+        capital: 0n,
         standing: 0,
-        decisionValue: 10_000,
-        creditDrawn: 0,
+        decisionValue: 10_000_00n,
+        creditDrawn: 0n,
         creditRating: "B",
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
         status: "ACTIVE",
         ...companyOver,
       },
@@ -115,7 +115,7 @@ describe("terms on credit lines", () => {
 
   it("charges the extra spread in the tick's interest", async () => {
     const interestAt = async (spread: number) => {
-      setup("bob", { capital: 50_000, creditDrawn: 10_000 });
+      setup("bob", { capital: 50_000_00n, creditDrawn: 10_000_00n });
       treasury().lendingSpread = spread;
       await runCompanyOperations(fake.client, Date.now());
       return (fake.tables.nationTreasuryEntry ?? [])
@@ -187,13 +187,13 @@ describe("no self-dealing", () => {
       sectorKey: "services",
       subIndustryKey: "software_media",
       hqCountryId: NATION,
-      capital: 1000,
+      capital: 1000_00n,
       standing: 0,
-      decisionValue: 0,
-      creditDrawn: 0,
+      decisionValue: 0n,
+      creditDrawn: 0n,
       creditRating: "A",
-      contractsWonValue: 0,
-      lastTickNetIncome: 0,
+      contractsWonValue: 0n,
+      lastTickNetIncome: 0n,
       status: "ACTIVE",
     });
     fake.tables.shareholding = [
@@ -221,13 +221,13 @@ describe("no self-dealing", () => {
       sectorKey: "services",
       subIndustryKey: "software_media",
       hqCountryId: NATION,
-      capital: 1000,
+      capital: 1000_00n,
       standing: 0,
-      decisionValue: 0,
-      creditDrawn: 0,
+      decisionValue: 0n,
+      creditDrawn: 0n,
       creditRating: "A",
-      contractsWonValue: 0,
-      lastTickNetIncome: 0,
+      contractsWonValue: 0n,
+      lastTickNetIncome: 0n,
       status: "ACTIVE",
     });
 

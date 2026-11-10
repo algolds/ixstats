@@ -13,7 +13,7 @@ import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { round2 } from "~/lib/exchange/amounts";
 import { requireCountryOwner } from "~/lib/exchange/guards";
-import { SECTOR_KEYS } from "~/lib/exchange/companies";
+import { companyView, SECTOR_KEYS } from "~/lib/exchange/companies";
 import {
   createFaucetTender,
   createGovernmentContract,
@@ -134,10 +134,13 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             : (macro?.corporateTaxRate ?? 0.2);
 
         const terms = await lendingTermsOf(ctx.db, input.countryId);
-        const enriched = companies.map((c) => ({
-          ...c,
-          creditLimit: round2(creditLimitFor(c, terms.cap)),
-        }));
+        const enriched = companies.map((raw) => {
+          const c = companyView(raw);
+          return {
+            ...c,
+            creditLimit: round2(creditLimitFor(c, terms.cap)),
+          };
+        });
 
         return {
           countryId: input.countryId,

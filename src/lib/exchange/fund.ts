@@ -247,7 +247,7 @@ async function guardOrder(
     if (!company) throw new ExchangeError("NOT_FOUND", "Company not found");
     assertSellBand(
       order.pricePerShare,
-      primaryPricePerShare(company.fairValue, company.sharesOutstanding)
+      primaryPricePerShare(fromCents(centsOf(company.fairValue)), company.sharesOutstanding)
     );
   }
   if (order.kind === "bond-buy") {

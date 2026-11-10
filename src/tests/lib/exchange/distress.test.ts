@@ -36,7 +36,7 @@ import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
 
-type Row = Record<string, string | number | boolean | null>;
+type Row = Record<string, string | number | bigint | boolean | null>;
 
 const REALM = "default";
 const NATION = "nation_a";
@@ -69,13 +69,13 @@ function setup(overrides: Row = {}) {
         sectorKey: "services",
         subIndustryKey: "software_media",
         hqCountryId: NATION,
-        capital: 0,
+        capital: 0n,
         standing: 0,
-        decisionValue: 333.33,
-        creditDrawn: 0,
+        decisionValue: 333_33n,
+        creditDrawn: 0n,
         creditRating: "B",
-        contractsWonValue: 0,
-        lastTickNetIncome: 0,
+        contractsWonValue: 0n,
+        lastTickNetIncome: 0n,
         sharesIssued: 1000,
         sharesOutstanding: 1000,
         tradingOpen: false,
@@ -147,7 +147,7 @@ describe("72-hour bankruptcy", () => {
 
   it("holds a distressed company for the full 72 hours", async () => {
     await run(T0 + 72 * HOUR_MS - 1);
-    expect(co()).toMatchObject({ status: "DISTRESSED", decisionValue: 333.33 });
+    expect(co()).toMatchObject({ status: "DISTRESSED", decisionValue: 333_33n });
     expect(treasuryBalance()).toBe(5000);
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
   });
@@ -156,9 +156,9 @@ describe("72-hour bankruptcy", () => {
     await run(T0 + 72 * HOUR_MS);
     expect(co()).toMatchObject({
       status: "BANKRUPT",
-      capital: 0,
-      creditDrawn: 0,
-      decisionValue: 0,
+      capital: 0n,
+      creditDrawn: 0n,
+      decisionValue: 0n,
       distressedSinceIxTime: null,
       tradingOpen: false,
     });
@@ -193,9 +193,9 @@ describe("72-hour bankruptcy", () => {
   });
 
   it("pays the lender before the holders, and pays the holders nothing once the debt takes all", async () => {
-    setup({ creditDrawn: 1000 });
+    setup({ creditDrawn: 1000_00n });
     await run(T0 + 72 * HOUR_MS);
-    expect(co()).toMatchObject({ status: "BANKRUPT", creditDrawn: 0 });
+    expect(co()).toMatchObject({ status: "BANKRUPT", creditDrawn: 0n });
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
@@ -205,7 +205,7 @@ describe("72-hour bankruptcy", () => {
   });
 
   it("unwinds open contracts, buyer ACQUIRE offers, and pending decisions into the waterfall (lender first, then holders pro rata)", async () => {
-    setup({ creditDrawn: 500 });
+    setup({ creditDrawn: 500_00n });
     fake.tables.contract = [
       {
         id: "ct_open",
@@ -254,7 +254,7 @@ describe("72-hour bankruptcy", () => {
       appliedIxTime: T0 + 72 * HOUR_MS,
       effect: { refunded: 250 },
     });
-    expect(co()).toMatchObject({ status: "BANKRUPT", capital: 0, creditDrawn: 0 });
+    expect(co()).toMatchObject({ status: "BANKRUPT", capital: 0n, creditDrawn: 0n });
     // Unwound 400 + 300 + 250 = 950, plus 133.33 plant recovery = 1083.33.
     // Lender takes 500.04 (500 principal + 0.04 tick interest) first; holders split 583.29 (58,329 cents) 500:300:200.
     expect(fake.tables.nationTreasuryEntry).toEqual(
