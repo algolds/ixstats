@@ -7,21 +7,15 @@
  * If articles count < 100, automatically triggers full ingestion and category indexing.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { spawn } from "child_process";
 import dotenv from "dotenv";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ quiet: true, path: ".env.local.dev" });
 dotenv.config({ quiet: true, path: ".env.local" });
 dotenv.config({ quiet: true, path: ".env" });
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
 
 async function runScript(scriptPath: string): Promise<boolean> {
   return new Promise((resolve) => {

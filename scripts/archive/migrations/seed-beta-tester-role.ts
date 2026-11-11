@@ -1,11 +1,11 @@
+import { createPrismaClient } from "~/server/prisma-client";
 // scripts/seed-beta-tester-role.ts
 // One-off: create a "beta_tester" role carrying the `labs.access` permission on
 // an already-initialized DB (initializeRoleSystem is create-only, won't re-run).
 // Idempotent. After this, assign the role to users in the admin User Management page.
 //   bun scripts/seed-beta-tester-role.ts
-import { PrismaClient } from "@prisma/client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 const perm = await db.permission.upsert({
   where: { name: "labs.access" },

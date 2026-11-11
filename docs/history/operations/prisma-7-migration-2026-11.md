@@ -1,8 +1,7 @@
 # Prisma 6 → 7 migration plan (2026-11-11)
 
-Branch `deps/prisma-7` (worktree `../ixstats-prisma7`), cut from rose-garden `ad2722f84`. Not merged until the owner
-reviews it. The rest of the November dependency sweep ships without it
-([runbook](deploy-dependencies-2026-11.md)).
+Branch `deps/prisma-7`, cut from rose-garden `ad2722f84`, merged into rose-garden on 2026-11-11 at the owner's word.
+It ships with the rest of the November dependency sweep ([runbook](deploy-dependencies-2026-11.md)).
 
 ## Why it is its own branch
 
@@ -63,8 +62,8 @@ smaller step later; waiting means staying on 6, which keeps getting fixes for no
    - **Still owed:** a signed-in browser pass (MyCountry, the Vault, a cards market buy as the interactive
      transaction) and `bun run db:push:force` on `ixstats_scenarios` to bring the scratch schema up to date (it asks
      for `--accept-data-loss`, so the owner decides).
-4. **Merge**: rebase on rose-garden after the dependency sweep lands, then `bun install` to regenerate `bun.lock`.
-   The branch's package edits are only the Prisma lines.
+4. **Merged 2026-11-11**: package.json took rose-garden's side with the Prisma lines re-added, `bun.lock` was
+   regenerated, and `setupTests.ts` keeps both sides' shims.
 
 ## Risks to check before merging
 

@@ -11,13 +11,13 @@
  * Run with: bun prisma/seeds/military-equipment-catalog.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   buildEquipmentCatalogSeed,
   buildManufacturerSeed,
 } from "../../src/lib/military/catalog-seed";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 export async function seedMilitaryEquipmentCatalog() {
   console.log("\n🔧 Starting military equipment catalog seed...\n");

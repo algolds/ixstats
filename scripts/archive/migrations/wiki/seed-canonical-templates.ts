@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * seed-canonical-templates.ts — Curates & Seeds Canonical WikiOS Template Registry & Alias Mappings
  *
@@ -8,9 +9,7 @@
  *   bun run scripts/wiki/seed-canonical-templates.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface CanonicalTemplateDef {
   name: string;

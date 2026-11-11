@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Production Validation Script for IxStats v1.1
  *
@@ -13,9 +14,7 @@
  * - Production guards and security
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface ValidationResult {
   system: string;

@@ -30,4 +30,6 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
   schema: "prisma/schema",
+  // Optional so `prisma generate` runs without a database (CI); migrate/push/studio need it.
+  datasource: { url: process.env.DATABASE_URL },
 });

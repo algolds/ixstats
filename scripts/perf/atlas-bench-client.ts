@@ -9,10 +9,14 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { setTimeout as sleep } from "node:timers/promises";
+import { prismaAdapter } from "~/server/prisma-client";
 
 console.log = () => undefined;
 
-export const client = new PrismaClient({ log: [{ emit: "event", level: "query" }] });
+export const client = new PrismaClient({
+  adapter: prismaAdapter(),
+  log: [{ emit: "event", level: "query" }],
+});
 Object.assign(globalThis, { prisma: client });
 
 const WRITE = /^\s*(INSERT|UPDATE|DELETE|TRUNCATE|DROP|ALTER|CREATE)\b/i;

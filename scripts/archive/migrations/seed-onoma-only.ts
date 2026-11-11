@@ -1,7 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { seedOnomaPresets } from "../prisma/seeds/onoma-presets";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function run() {
   try {

@@ -8,6 +8,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import { performance } from "perf_hooks";
+import { createPrismaClient } from "~/server/prisma-client";
 
 // ============================================================================
 // Types
@@ -343,7 +344,7 @@ async function runAnalysis() {
   log("  IxStats Database Analysis", "blue");
   log("═══════════════════════════════════════════════════════════════\n", "blue");
 
-  const prisma = new PrismaClient({
+  const prisma = createPrismaClient({
     log: [{ level: "error", emit: "stdout" }],
   });
 

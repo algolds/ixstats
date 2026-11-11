@@ -12,7 +12,7 @@
  * dropped the legacy columns, it only seeds missing realms (a fresh database, `db:bootstrap`), so every later deploy's
  * --apply is two small reads.
  */
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import { RETIRED_NS_CATEGORY, SYSTEM_REALM_OWNER_ID } from "~/lib/cards/legacy-mapping";
 import { getValuationConfig, rarityFloor } from "~/lib/cards/valuation";
 import { runBackfill } from "./backfill-cards-refresh-plan";
@@ -26,8 +26,9 @@ import type {
   PlanOptions,
   PlanResult,
 } from "./backfill-cards-refresh-types";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const APPLY = process.argv.includes("--apply") && !process.argv.includes("--dry-run");
 const CHUNK = 5000;
 const TRANSACTION = { timeout: 30 * 60_000, maxWait: 60_000 } as const;

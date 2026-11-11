@@ -15,6 +15,7 @@ import {
   untagClaimRevisionsTx,
 } from "~/lib/identity/claim-tags";
 import { claimSpellings, IXWIKI } from "~/lib/identity/wiki-names";
+import { createPrismaClient } from "~/server/prisma-client";
 
 export type TagMode = "dry-run" | "apply" | "undo";
 
@@ -104,7 +105,7 @@ async function run(db: PrismaClient, mode: TagMode): Promise<void> {
 
 async function main(): Promise<void> {
   const { mode } = parseTagArgs(process.argv.slice(2));
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     await run(db, mode);
   } finally {

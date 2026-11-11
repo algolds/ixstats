@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Database Verification Script
@@ -7,9 +8,7 @@
  * Run with: npm run tsx scripts/verify-single-user.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 // System owner Clerk IDs for validation
 const SYSTEM_OWNER_IDS = [

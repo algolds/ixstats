@@ -5,10 +5,10 @@
  * Tests URLs, detects broken links, and attempts auto-resolution.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { resolveEquipmentImage } from "~/server/services/wikimedia-equipment-image-resolver";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface ValidationJobResult {
   success: boolean;

@@ -40,6 +40,7 @@ import {
   spread,
   type EditOutcome,
 } from "./wikios-mode-switch-checks";
+import { createPrismaClient } from "~/server/prisma-client";
 
 interface Config {
   namespaces: number[] | "all";
@@ -132,7 +133,7 @@ async function loadPages(config: Config): Promise<PageInput[]> {
   if (new URL(databaseUrl).pathname === "/ixstats")
     throw new Error("DATABASE_URL names `ixstats`; use a clone such as ixstats_proof.");
   const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const prisma = createPrismaClient({ url: databaseUrl });
   try {
     const { namespaces } = config;
     const where = {

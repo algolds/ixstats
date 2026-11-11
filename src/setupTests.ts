@@ -27,6 +27,12 @@ if (typeof globalThis.setImmediate === "undefined") {
   Object.assign(globalThis, { setImmediate, clearImmediate });
 }
 
+// jsdom 26 (Jest's window) has no TextEncoder; pg (Prisma 7's driver) reads it when db.ts loads.
+if (typeof globalThis.TextEncoder === "undefined") {
+  const { TextEncoder, TextDecoder } = require("node:util");
+  Object.assign(globalThis, { TextEncoder, TextDecoder });
+}
+
 // Polyfill Clerk publishable key for test env
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_mock_key_for_testing";
 

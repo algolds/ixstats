@@ -7,10 +7,10 @@
  * It ensures all countries have proper slugs for the /nation/{slug} URL format.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { generateSlug } from "../../src/lib/slug-utils";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface Country {
   id: string;

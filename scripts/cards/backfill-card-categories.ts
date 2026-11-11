@@ -61,6 +61,7 @@ import {
 } from "~/lib/realms/sources/wiki-discovery-client";
 import { titleKey } from "~/lib/wiki-os/core/title";
 import { recordCardAudit } from "~/server/modules/cards/cards.audit";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const TITLES_PER_REQUEST = 50;
 const APPLY_BATCH = 200;
@@ -422,7 +423,7 @@ async function main() {
   const reportPath =
     args.report ??
     `scripts/reports/card-categories-${new Date().toISOString().replace(/[:.]/g, "-")}.md`;
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const { report, written, swept, retired } = await runBackfill(db, args, {
       queryFor: (source) =>

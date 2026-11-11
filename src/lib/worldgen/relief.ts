@@ -7,7 +7,6 @@
  * neighbours.
  */
 
-// @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay as DelaunayImpl } from "d3-delaunay";
 import { kmPerDegree, kmPerDegreeLat, kmPerDegreeLng } from "~/lib/maps/planet";
 import { DETAIL_SIZE, detailTexture } from "./relief-noise";

@@ -5,20 +5,14 @@
  * ("Created page", "Minor edit", "Updated content").
  */
 
-import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ quiet: true, path: ".env.local.dev" });
 dotenv.config({ quiet: true, path: ".env.local" });
 dotenv.config({ quiet: true, path: ".env" });
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
 
 async function main() {
   console.log("==================================================================");

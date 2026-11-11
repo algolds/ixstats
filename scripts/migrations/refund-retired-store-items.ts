@@ -10,7 +10,7 @@
  * `retired_item_refund:<purchase id>`. Re-running after --apply changes nothing. Run it after
  * `audit:vault-exploits:apply`, and take a `bun run db:backup` first.
  */
-import { PrismaClient } from "@prisma/client";
+
 import dotenv from "dotenv";
 import {
   RETIRED_STORE_ITEM_IDS,
@@ -18,12 +18,13 @@ import {
   planRetiredItemRefunds,
   type StorePurchaseRow,
 } from "../../src/lib/vault/retired-store-items";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ quiet: true, path: ".env.local.dev" });
 dotenv.config({ quiet: true, path: ".env.local" });
 dotenv.config({ quiet: true, path: ".env" });
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 async function main() {

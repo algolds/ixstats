@@ -2,8 +2,8 @@
 
 Next.js 16.4.3 → 16.4.6 (seven security advisories fixed in 16.4.5), every in-range update, and the majors that
 need no database change: Node 22, jsdom 31, Clerk 7, Plate 53 with Slate 0.146, ioredis 6, motion 14, dotenv 18,
-glob 14 and the rest. **No database change and no data script.** Prisma 7 is not part of this deploy; it has its own
-branch and plan ([Prisma 7 plan](prisma-7-migration-2026-11.md)).
+glob 14 and the rest, and Prisma 7 over the pg driver adapter ([Prisma 7 plan](prisma-7-migration-2026-11.md)).
+**No database change and no data script.**
 
 | Step | When | What |
 | --- | --- | --- |
@@ -48,6 +48,9 @@ Promote and run `./scripts/deploy-production.sh` as usual
 - **Clerk 7** needs `CLERK_ENCRYPTION_KEY` only when `secretKey` is passed to `clerkMiddleware()` at runtime, and
   `src/proxy.ts` does not.
 - **ioredis 6** defaults to RESP3; every client in `src/` sets `protocol: 2`, so the Redis traffic is what it was.
+- **Prisma 7** reads the same `DATABASE_URL`: `src/server/prisma-client.ts` turns `connection_limit`, `pool_timeout`
+  and `connect_timeout` into the pg pool, and `prisma.config.ts` gives the CLI its URL. `bun install` regenerates the
+  client (postinstall). No migration and no `db push` change.
 
 ## 4. Checks
 
@@ -57,6 +60,8 @@ Promote and run `./scripts/deploy-production.sh` as usual
 - **The wiki narrator player**: the section scrubber and the volume control are now the Facet `Slider`
   (`@audio-ui/react` is gone).
 - **The wiki visual editor**: list toggles and the slash menu's headings (Slate 0.146 `setNodes` typing).
+- **The database pool** (Prisma 7): `SELECT count(*) FROM pg_stat_activity WHERE datname = 'ixstats'` stays near
+  `connection_limit` per process, and the logs show no `DriverAdapterError` or connection timeouts.
 - **A wiki page with templates**: renders and sanitizes as before (jsdom 31, parse5 8). One expected difference:
   the serializer now escapes `<` and `>` inside attribute values (`title="&lt;s&gt;"`), as the HTML spec and current
   browsers do.

@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import type { CardType, PackType, Prisma } from "@prisma/client";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Re-create __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);

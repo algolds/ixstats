@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { prismaAdapter } from "~/server/prisma-client";
 
 // Direct leaf imports avoid loading the system barrel during database initialization
 import { queryMonitor } from "~/lib/system/query-monitor";
@@ -117,6 +118,7 @@ const createPrismaClient = () => {
   // Warnings and errors only. Per-query events are not emitted in any environment;
   // slow queries are timed in the extension at the bottom of this file instead.
   const baseClient = new PrismaClient({
+    adapter: prismaAdapter(),
     log: isDevMode
       ? [{ level: "error", emit: "stdout" }]
       : [

@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * One-off SL-14 migration: mark every match that completed before per-match revenue tracking as
  * already collected, so the first `collectMatchRevenue` after the deploy doesn't pay out a club's
@@ -8,9 +9,8 @@
  * Run once, right after the schema push that adds `homeRevenueCollectedAt` /
  * `awayRevenueCollectedAt`. Dry run by default; re-running after --apply changes nothing.
  */
-import { PrismaClient } from "@prisma/client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 async function main() {

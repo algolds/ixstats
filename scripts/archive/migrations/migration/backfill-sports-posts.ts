@@ -9,7 +9,6 @@
  * Run with --write to save changes to the database.
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   parseSportsBulletin,
   encodeSportsBulletin,
@@ -17,8 +16,9 @@ import {
   formatSeasonChampionBulletin,
   formatPlayoffBulletin,
 } from "../../src/lib/sports/feed-bulletins";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function main() {
   const writeMode = process.argv.includes("--write");
