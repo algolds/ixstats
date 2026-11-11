@@ -224,7 +224,7 @@ configuration object, never from a literal:
   `appendChainToWiki` builds each linked post's absolute URL inside the section an approved story chain appends to its
   wiki page. The save itself is WikiOS's own (`edit-service.ts` `commitWikitextSave`), which the mirror then exports.
 - **Detectors of a link to an IxWiki page** in stored or fed text, built from the configured host (`mediaWikiHostPattern`,
-  `wikiTitleFromArticleUrl`), so they keep matching the old absolute links: `src/components/dashboard/sections/TrendingSectionWidget.tsx`,
+  `wikiTitleFromArticleUrl`), so they keep matching the old absolute links:
   `src/components/dashboard/sections/feed/externalLinks.ts`,
   `src/components/dashboard/sections/UnifiedFeedItem.tsx`, `src/components/dashboard/sections/feed/FeedItemHeader.tsx`,
   `src/components/thinkpages/post/PostInlineLinkPreview.tsx`, `src/components/wiki-os/shared/GlobalLinkTooltipProvider.tsx`,

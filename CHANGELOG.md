@@ -2278,10 +2278,10 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
 
 - **Trending Topics & Intelligent Sports News Bulletin Parser**:
-  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
-  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
-  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
-  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
+  - **Apple Control Surface Redesign**: Redesigned `TrendingSectionWidget.tsx` into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
+  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in `TrendingSectionWidget.tsx` to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
+  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](src/server/api/routers/activities/trending.ts) and `TrendingSectionWidget.tsx`, extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
+  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in `TrendingSectionWidget.tsx` for instant SPA client-side transitions.
   - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](src/server/api/routers/activities/trending.ts)).
 
 - **Standalone 'Blurb of the Day' Apple Glass Widget**:
@@ -3600,7 +3600,7 @@ We refactored the monolithic `UnifiedDashboardSection.tsx` (~2,076 lines) into m
 - **[UnifiedFeedContent.tsx](src/components/dashboard/sections/UnifiedFeedContent.tsx)**: Coordinates all state and queries (`getGlobalFeed`, `getFollowingFeed`, `getRecentChanges`) for the primary dashboard activity streams.
 - **[UnifiedFeedItem.tsx](src/components/dashboard/sections/UnifiedFeedItem.tsx)**: Standardizes rendering of activity updates and external links.
 - **[WikiAuthorPopover.tsx](src/components/dashboard/sections/WikiAuthorPopover.tsx)**: Displays user details and links when hovering over wiki editors.
-- **[TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx)**: Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
+- **`TrendingSectionWidget.tsx`** (removed 2026-11): Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
 - **[CountriesToExploreCard.tsx](src/components/dashboard/sections/CountriesToExploreCard.tsx)**: Displays recommended random countries to follow.
 - **[BlurbSection.tsx](src/components/dashboard/sections/BlurbSection.tsx)**: Houses the "Blurb of the Day" prompt, response submission form, and community answers.
 

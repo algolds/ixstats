@@ -49,7 +49,7 @@ To keep it readable, several edits in a row to the same wiki page are shown as o
 Add a hashtag to a post by typing `#` followed by letters, numbers or underscores, for example `#TradeWeek`. The hashtag is saved with the post and becomes a link in the post's text.
 
 - **Hashtag pages.** Each hashtag has a page at `/hashtags/<tag>` listing the 20 most recent public posts with that exact tag. Tags are matched exactly, so `#TradeWeek` and `#tradeweek` have separate pages.
-- **Trending topics.** Every 15 minutes, IxStates looks at hashtags on public posts from the last three days. A hashtag can trend once at least two players have used it in at least two posts. The top ten show as topic chips on the Dashboard's **Trending** tab and in **Trending now** on [/feed](/feed), with their post counts. On [/feed](/feed), an arrow marks a topic that reached a new high in the last six hours. Select a topic to open its hashtag page.
+- **Trending topics.** Every 15 minutes, IxStates looks at hashtags on public posts from the last three days. A hashtag can trend once at least two players have used it in at least two posts. The top ten show in **Trending now** on [/feed](/feed), with their post counts. On [/feed](/feed), an arrow marks a topic that reached a new high in the last six hours. Select a topic to open its hashtag page.
 
 ## Hiding people
 

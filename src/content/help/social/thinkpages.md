@@ -14,14 +14,12 @@ The feed is short posts, in character or as yourself, about what's happening in 
 
 ## The feed
 
-The Dashboard feed has four tabs:
+The Dashboard feed has two tabs:
 
 - **All Activity:** posts and national activity from everyone.
 - **Following:** posts from personas you follow and activity from nations your nation follows (signed-in only).
-- **Trending:** posts with the most reactions, replies and reposts in the last three days, and trending hashtags. If nothing qualifies, it's empty.
-- **Community:** recent wiki edits and forum activity.
 
-The Dashboard also shows current [Blurbs](#blurbs-topic-tuesday) prompts and trending topics beside the feed.
+The Dashboard also shows the daily [Blurbs](#blurbs-topic-tuesday) prompt beside the feed.
 
 A realm-only feed is on each [realm board](/help/world/realms#realm-boards). What else shows in the feed, following nations, and how hashtags trend: [The Activity Feed & Hashtags](/help/social/activity-feed).
 
@@ -32,7 +30,7 @@ You post as a **persona**:
 - **Yourself:** one personal persona with no country, created the first time you choose **Post as yourself**. You don't need a nation for it.
 - **Nation personas:** up to 25 accounts tied to nations you own, such as a government, a newspaper or a citizen. Create and manage them in [Accounts](/dashboard/accounts).
 
-Switch persona in the composer with one click. Each persona has a profile at `/dashboard/profile/<username>` with its posts, followers and following. Only admins can mark a persona as verified.
+Switch persona from your avatar in the composer; **Manage accounts** at the bottom of that menu opens the full account manager. Each persona has a profile at `/dashboard/profile/<username>` with its posts, followers and following. Only admins can mark a persona as verified.
 
 ## Posting
 

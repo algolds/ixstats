@@ -39,6 +39,8 @@ interface GlassCanvasComposerProps {
   onAccountSelect?: (account: any) => void;
   onAccountSettings?: (account: any) => void;
   onCreateAccount?: () => void;
+  /** Opens the full account manager from the account menu (the dashboard's only way in). */
+  onManageAccounts?: () => void;
   isOwner: boolean;
   onPost: () => void;
   placeholder?: string;
@@ -196,6 +198,7 @@ export function GlassCanvasComposer({
   // oxlint-disable-next-line eslint/no-unused-vars
   onAccountSettings,
   onCreateAccount,
+  onManageAccounts,
   isOwner,
   onPost,
   placeholder = "What's happening?",
@@ -278,6 +281,7 @@ export function GlassCanvasComposer({
           setShowAccountManager={setShowAccountManager}
           onAccountSelect={onAccountSelect}
           onCreateAccount={onCreateAccount}
+          onManageAccounts={onManageAccounts}
           isOwner={isOwner}
           getAccountAvatar={getAccountAvatar}
           onPostAsYourself={hasPersonalAccount ? undefined : postAsYourself}
