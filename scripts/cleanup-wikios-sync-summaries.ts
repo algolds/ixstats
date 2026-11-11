@@ -8,9 +8,9 @@
 import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+dotenv.config({ quiet: true, path: ".env.local.dev" });
+dotenv.config({ quiet: true, path: ".env.local" });
+dotenv.config({ quiet: true, path: ".env" });
 
 const prisma = new PrismaClient({
   datasources: {

@@ -165,9 +165,9 @@ const sameTitle = (title: string): string => title.replace(/_/g, " ").trim();
 
 /** Reads wikitext from the local database only. Never writes. */
 async function loadFromDb(config: DbConfig): Promise<Loaded> {
-  dotenv.config({ path: ".env.local.dev" });
-  dotenv.config({ path: ".env.local" });
-  dotenv.config({ path: ".env" });
+  dotenv.config({ quiet: true, path: ".env.local.dev" });
+  dotenv.config({ quiet: true, path: ".env.local" });
+  dotenv.config({ quiet: true, path: ".env" });
   const databaseUrl = process.env.DATABASE_URL ?? "";
   if (!isLocalDatabaseUrl(databaseUrl)) {
     throw new Error(

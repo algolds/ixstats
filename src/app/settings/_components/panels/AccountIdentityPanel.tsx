@@ -20,7 +20,7 @@ import {
   Crown,
   AtSign,
 } from "iconoir-react";
-import type { UserResource } from "@clerk/types";
+import type { UserResource } from "@clerk/nextjs/types";
 import { UserButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";

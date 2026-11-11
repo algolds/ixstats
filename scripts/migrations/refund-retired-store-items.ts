@@ -19,9 +19,9 @@ import {
   type StorePurchaseRow,
 } from "../../src/lib/vault/retired-store-items";
 
-dotenv.config({ path: ".env.local.dev" });
-dotenv.config({ path: ".env.local" });
-dotenv.config({ path: ".env" });
+dotenv.config({ quiet: true, path: ".env.local.dev" });
+dotenv.config({ quiet: true, path: ".env.local" });
+dotenv.config({ quiet: true, path: ".env" });
 
 const db = new PrismaClient();
 const apply = process.argv.includes("--apply");

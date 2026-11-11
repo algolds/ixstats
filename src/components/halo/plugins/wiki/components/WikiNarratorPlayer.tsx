@@ -17,12 +17,11 @@ import {
   Dashboard as Gauge,
 } from "iconoir-react";
 import { AudioPlayer, AudioPlayerControlBar, AudioPlayerButton } from "~/components/audio/player";
-import { Transport } from "~/components/audio/elements/transport";
-import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
+import { Slider } from "~/components/ui/slider";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
@@ -275,13 +274,17 @@ export function WikiNarratorPlayer({
           </div>
         )}
 
-        {/* 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) */}
+        {/* 2. Section scrubber with chapter milestone markers */}
         <div className="relative w-full px-1 py-1">
-          <Transport
+          <Slider
             aria-label="Section timeline"
-            value={displayPercent}
-            onSeek={(val) => handleScrub(val)}
-            size="sm"
+            min={0}
+            max={100}
+            step={0.1}
+            value={[displayPercent]}
+            onValueChange={([val]) => {
+              if (val !== undefined) handleScrub(val);
+            }}
             className="w-full"
           />
 
@@ -555,19 +558,16 @@ export function WikiNarratorPlayer({
               </Button>
 
               <div className="flex-1">
-                <Fader
-                  orientation="horizontal"
-                  size="sm"
+                <Slider
+                  aria-label="Volume"
                   min={0}
                   max={100}
                   step={1}
-                  value={Math.round(currentVolume * 100)}
-                  onValueChange={(val: number | readonly number[]) => {
-                    const num = Array.isArray(val) ? val[0] : (val as number);
-                    if (typeof num === "number") {
-                      narratorActions?.setVolume(num / 100);
-                      if (num > 0) setLastNonZeroVol(num / 100);
-                    }
+                  value={[Math.round(currentVolume * 100)]}
+                  onValueChange={([num]) => {
+                    if (num === undefined) return;
+                    narratorActions?.setVolume(num / 100);
+                    if (num > 0) setLastNonZeroVol(num / 100);
                   }}
                   className="w-full"
                 />

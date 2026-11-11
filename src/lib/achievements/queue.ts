@@ -30,7 +30,7 @@ function getRedisClient(): Redis | null {
   const redisUrl = process.env.REDIS_URL;
   if (redisUrl && process.env.REDIS_ENABLED === "true") {
     try {
-      redisClient = new Redis(redisUrl, { maxRetriesPerRequest: 1 });
+      redisClient = new Redis(redisUrl, { maxRetriesPerRequest: 1, protocol: 2 });
       redisClient.on("error", (err) => {
         console.warn("[Achievement Queue] Redis connection error:", err.message);
       });
