@@ -10,13 +10,14 @@
  * The SVG must be at: public/master-map-updated.svg
  */
 
-import { PrismaClient } from "@prisma/client";
+
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { parseSvgToGeoJson, normalizeForMatching, type ParsedFeature } from "~/lib/flags/svg-parser;
 import type { FeatureCollection } from "geojson";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const isDryRun = process.argv.includes("--dry-run");
 
 const SVG_PATH = join(process.cwd(), "public", "master-map-updated.svg");

@@ -8,25 +8,19 @@
  *   bun run audit:wikios-db
  */
 
-import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
 import { cleanExcerpt } from "../../src/lib/wiki-os/transformers/wikitext-parser";
 import type {
   WikiArticleCardData,
   WikiCategoryPortalData,
 } from "../../src/lib/wiki-os/types/canonical";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
 
 const EXPECTED_DOMAINS = [
   "Countries",

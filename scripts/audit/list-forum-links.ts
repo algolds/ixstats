@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Lists every IxStats user with a linked forum account (WK-1 audit). Read-only.
@@ -13,9 +14,7 @@
  *   bun run audit:forum-links --json     (machine-readable output)
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface ForumLinkRow {
   userId: string;

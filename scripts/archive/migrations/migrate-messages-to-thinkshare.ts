@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Phase 2 Data Migration: Unify messaging tables into ThinkShare
  *
@@ -9,9 +10,7 @@
  * Run: npx tsx scripts/migrate-messages-to-thinkshare.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function migrateDiplomaticChannels() {
   console.log("\n=== Migrating Diplomatic Channels → ThinkshareConversation ===");

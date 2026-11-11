@@ -10,20 +10,14 @@
  * `hidden` flag, set on `wiki_categories` from each render), not a name filter kept here.
  */
 
-import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
-const db = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const db = createPrismaClient({ url: process.env.DATABASE_URL });
 
 function toArticleSlug(str: string): string {
   return (

@@ -12,11 +12,11 @@
  * Usage: npm run tsx scripts/verify-user-management.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { SYSTEM_OWNER_IDS, isSystemOwner } from "../src/lib/system-owner-constants";
 import { UserManagementService } from "../src/lib/user-management-service";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface UserReport {
   clerkUserId: string;

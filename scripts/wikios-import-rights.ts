@@ -31,6 +31,7 @@ import { z } from "zod";
 import { canonicalizeTitle } from "../src/lib/wiki-os/core/title";
 import { normalizeWikiUsername } from "../src/lib/wiki-os/adapters/mediawiki/account-proof";
 import { WIKIOS_PROTECTIONS_MARKER_KEY } from "../src/lib/wiki-os/v1-switch";
+import { createPrismaClient } from "~/server/prisma-client";
 
 export const USER_AGENT = "IxStats-Builder";
 /** The wiki is never asked more often than this. */
@@ -636,7 +637,7 @@ export interface CliDeps {
 
 const defaultDeps = (): CliDeps => ({
   apiClient: (apiUrl) => createApiClient(apiUrl),
-  openDatabase: () => new PrismaClient(),
+  openDatabase: () => createPrismaClient(),
   databaseUrl: process.env.DATABASE_URL,
 });
 

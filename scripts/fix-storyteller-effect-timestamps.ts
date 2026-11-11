@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * One-off data fix: re-date StorytellerEffect rows (table `"DmInputs"`) written with the
  * ms×1000 bug fixed by plan 329.
@@ -32,9 +33,8 @@
  * Idempotent: after --apply no candidate remains (> 3000-01-01), so a re-run finds 0 rows.
  * Bun loads .env / .env.local automatically, so DATABASE_URL needs no extra wiring.
  */
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 const FUTURE_CUTOFF = new Date("3000-01-01T00:00:00.000Z");
@@ -161,7 +161,9 @@ async function main(): Promise<void> {
       chunk.map((f) =>
         prisma.storytellerEffect.update({
           where: { id: f.id },
-          data: f.deactivate ? { ixTimeTimestamp: f.to, isActive: false } : { ixTimeTimestamp: f.to },
+          data: f.deactivate
+            ? { ixTimeTimestamp: f.to, isActive: false }
+            : { ixTimeTimestamp: f.to },
         })
       )
     );

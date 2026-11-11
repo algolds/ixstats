@@ -1,12 +1,11 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Detailed check for duplicate countries
  */
 
-import { PrismaClient } from "@prisma/client";
-
 // Note: Uses DATABASE_URL from environment (PostgreSQL, October 2025)
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function checkDuplicates() {
   console.log("🔍 Checking for duplicate countries in production database...\n");

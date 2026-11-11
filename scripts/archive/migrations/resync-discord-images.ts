@@ -8,16 +8,16 @@
  * Usage: bun run scripts/resync-discord-images.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import * as path from "path";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const DISCORD_API_BASE = "https://discord.com/api/v10";
 const BASE_PATH = process.env.BASE_PATH || process.env.NEXT_PUBLIC_BASE_PATH || "";
 const IMAGE_DIR = path.join(process.cwd(), "public", "images", "discord");
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function downloadImage(url: string, filepath: string): Promise<boolean> {
   try {

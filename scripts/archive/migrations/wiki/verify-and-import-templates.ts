@@ -9,7 +9,6 @@
  *   bun run scripts/wiki/verify-and-import-templates.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   getIxWikiPool,
   closeWikiBridge,
@@ -21,8 +20,9 @@ import {
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface TemplateItem {
   pageId: number;

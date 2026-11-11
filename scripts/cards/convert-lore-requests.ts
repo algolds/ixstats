@@ -7,12 +7,13 @@
  *
  * Idempotent: a second run finds nothing to reopen or home.
  */
-import { PrismaClient } from "@prisma/client";
+
 import { canonicalCardTitle, parseCardWikiSource } from "~/lib/cards/card-sources";
 import { planRequestConversion } from "~/lib/cards/lore-request-conversion";
 import { resolveImportRealm } from "~/server/modules/cards/cards.importer";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 async function main() {

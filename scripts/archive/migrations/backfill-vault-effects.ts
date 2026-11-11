@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * One-off backfill: populate `VaultStoreItem.effects` for items that have none.
  *
@@ -12,9 +13,8 @@
  *
  * Idempotent: items that already have a non-empty `effects` are skipped.
  */
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 // Exact effects for the canonical catalog ids (matches src/lib/cosmetics.ts + the

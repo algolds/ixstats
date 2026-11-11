@@ -11,7 +11,7 @@
  * nothing twice. Run it after `audit:vault-exploits:apply` (the shortfalls it took back count as paid), and take a
  * `bun run db:backup` first.
  */
-import { PrismaClient } from "@prisma/client";
+
 import { round2 } from "~/lib/exchange/amounts";
 import { isRevokedPurchase } from "~/lib/vault/store-purchases";
 import {
@@ -28,8 +28,9 @@ import {
   ledgerMetadata,
 } from "~/lib/vault/retired-store-items";
 import { clearVaultCaches } from "~/lib/vault/vault-cache";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 function itemOutcome(itemId: string): string {

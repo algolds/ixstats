@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Initialize Missing Country Data
  *
@@ -7,9 +8,7 @@
  * Run with: bunx tsx scripts/initialize-missing-country-data.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("🔍 Starting country data initialization...\n");

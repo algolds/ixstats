@@ -11,8 +11,9 @@
  */
 
 import "./lib/load-env"; // first: the WikiOS config reads process.env when it loads
-import { PrismaClient } from "@prisma/client";
+
 import { backfillBlurhashes } from "../src/lib/wiki-os/services/blurhash-backfill";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const DRY_RUN_LIMIT = 25;
 const DEFAULT_DELAY_MS = 100;
@@ -27,7 +28,7 @@ function numberArg(name: string): number | undefined {
   return value;
 }
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 async function main() {

@@ -5,10 +5,10 @@
  * Sets up the database schema and initial data
  */
 
-import { PrismaClient } from "@prisma/client";
 import { seedCardPacks } from "../../prisma/seeds/card-packs";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function initializeDatabase() {
   try {

@@ -13,6 +13,7 @@
 import { PrismaClient } from "@prisma/client";
 import { UserManagementService } from "../src/lib/auth/user-management-service";
 import { SYSTEM_OWNER_IDS } from "../src/lib/auth/system-owner-constants";
+import { createPrismaClient } from "~/server/prisma-client";
 
 interface DatabaseInfo {
   name: string;
@@ -34,7 +35,7 @@ async function syncSystemOwnerRoles(): Promise<void> {
     {
       name: "Current Database",
       path: process.env.DATABASE_URL,
-      db: new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } }),
+      db: createPrismaClient({ url: process.env.DATABASE_URL }),
     },
   ];
 

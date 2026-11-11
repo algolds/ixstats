@@ -11,15 +11,15 @@
  * Eras: 4 time periods
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   SMALL_ARMS_DATABASE,
   SMALL_ARMS_MANUFACTURERS,
   WEAPON_ERAS,
   type SmallArmsItem,
 } from "./data/small-arms-equipment";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 /**
  * Determines the equipment type based on the weapon category

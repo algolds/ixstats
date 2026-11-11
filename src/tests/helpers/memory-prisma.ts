@@ -1,5 +1,5 @@
 /**
- * An in-memory Prisma client built from the schema itself (`Prisma.dmmf`): every model delegate with its relations,
+ * An in-memory Prisma client built from the schema itself (the full datamodel, see dmmf-cache.ts): every model delegate with its relations,
  * defaults, unique keys, referential actions and enum order, so a scenario drives the real modules end to end with no
  * per-call stubs. It is a stateful fake, not a mock: a compare-and-swap `updateMany` that loses really loses, a unique
  * key really refuses (P2002), a missing row really throws (P2025), and a `$transaction` that throws puts every table
@@ -14,6 +14,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { fullDatamodel } from "./dmmf-cache";
 
 type Value = unknown;
 type Row = Record<string, Value>;
@@ -59,13 +60,13 @@ interface Model {
   uniques: string[][];
 }
 
-const ENUMS = new Map(
-  Prisma.dmmf.datamodel.enums.map((e) => [e.name, e.values.map((v) => v.name)] as const)
-);
+const DATAMODEL = fullDatamodel();
+
+const ENUMS = new Map(DATAMODEL.enums.map((e) => [e.name, e.values.map((v) => v.name)] as const));
 
 function buildModels(): Map<string, Model> {
   const models = new Map<string, Model>();
-  for (const m of Prisma.dmmf.datamodel.models) {
+  for (const m of DATAMODEL.models) {
     const fields = m.fields as unknown as Field[];
     const uniques: string[][] = [];
     for (const f of fields) if (f.isId || f.isUnique) uniques.push([f.name]);
@@ -851,7 +852,12 @@ function applyData(store: MemoryStore, model: Model, row: Row, data: Args): void
       }
     }
     if (field.type === "DateTime" && typeof next === "string") next = new Date(next);
-    if (field.type === "BigInt" && next !== null && next !== undefined && typeof next !== "bigint") {
+    if (
+      field.type === "BigInt" &&
+      next !== null &&
+      next !== undefined &&
+      typeof next !== "bigint"
+    ) {
       next = BigInt(next as string | number);
     }
     if (

@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Production Database Audit & CRUD Verification Script
  *
@@ -7,15 +8,7 @@
  * Usage: bunx tsx scripts/prod-audit.ts [test-user-clerk-id]
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
 
 interface AuditResult {
   test: string;

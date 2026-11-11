@@ -14,14 +14,14 @@
 // Must be set before any imports that touch ~/env
 process.env.SKIP_ENV_VALIDATION = "1";
 
-import { PrismaClient } from "@prisma/client";
 import { IxTime } from "../src/lib/ixtime";
 import { IxStatsCalculator } from "../src/lib/calculations";
 import { getDefaultEconomicConfig, getEconomicConfigFromDB } from "../src/lib/config-service";
 import { calculateAllVitalityScores } from "../src/lib/vitality-calculator";
 import type { BaseCountryData } from "../src/types/ixstats";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // --- Helpers duplicated from src/server/api/routers/countries.ts (private to router) ---
 

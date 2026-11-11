@@ -9,10 +9,10 @@
  *   --description <d>  Optional description
  */
 
-import { PrismaClient } from "@prisma/client";
 import { writeFileSync } from "fs";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function getArg(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);

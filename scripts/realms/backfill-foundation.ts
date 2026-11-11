@@ -8,7 +8,7 @@
  * Preflight (before any write): the Ixnay realm row must exist; its ownerId is printed. --apply refuses (exit 1,
  * nothing written) unless that ownerId is "system" and no owner collision is left (ruling F-5).
  */
-import { PrismaClient } from "@prisma/client";
+
 import { isSystemOwner } from "~/lib/auth";
 import { DEFAULT_REALM_ID } from "~/server/modules/realms";
 import {
@@ -17,8 +17,9 @@ import {
   planOwnerBackfill,
   type OwnerPlan,
 } from "./backfill-plan";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 async function planOwners(): Promise<OwnerPlan> {

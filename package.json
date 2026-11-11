@@ -156,7 +156,8 @@
     "@deck.gl/layers": "^9.4.0",
     "@deck.gl/mapbox": "^9.4.0",
     "@number-flow/react": "^0.5.14",
-    "@prisma/client": "^6.19.3",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-avatar": "^1.2.6",
@@ -249,7 +250,8 @@
     "@clerk/types": "^4.101.26",
     "@csstools/css-tokenizer": "3.0.4",
     "@jest/globals": "^30.4.1",
-    "@prisma/config": "^6.19.3",
+    "@prisma/config": "^7.10.1",
+    "@prisma/internals": "7.10.1",
     "@swc/core": "^1.16.1",
     "@swc/jest": "^0.2.39",
     "@tailwindcss/node": "4.3.3",
@@ -257,6 +259,7 @@
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.10.0",
     "@testing-library/react": "^16.3.2",
+    "@types/d3-delaunay": "^6.0.4",
     "@types/geojson": "^7946.0.16",
     "@types/jest": "^30.0.0",
     "@types/jsdom": "^21.1.7",
@@ -277,7 +280,7 @@
     "postcss": "^8.5.26",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.7.4",
-    "prisma": "^6.19.3",
+    "prisma": "^7.10.1",
     "tailwindcss": "^4.3.3",
     "ts-morph": "^28.0.0",
     "typescript": "^7.0.2"
@@ -334,6 +337,7 @@
       "lcov",
       "html"
     ],
+    "globalSetup": "<rootDir>/src/tests/helpers/dmmf-global-setup.ts",
     "setupFilesAfterEnv": [
       "<rootDir>/src/setupTests.ts"
     ],
