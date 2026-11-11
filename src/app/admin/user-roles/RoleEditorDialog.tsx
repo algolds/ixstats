@@ -252,8 +252,6 @@ export function RoleEditorDialog({
               <div className="max-h-64 space-y-4 overflow-y-auto pr-1">
                 {Object.entries(permissionsByCategory).map(([category, perms]) => {
                   const allCatSelected = perms.every((p) => selectedPermissionIds.has(p.id));
-                  const someCatSelected =
-                    !allCatSelected && perms.some((p) => selectedPermissionIds.has(p.id));
 
                   return (
                     <div

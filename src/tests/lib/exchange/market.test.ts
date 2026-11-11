@@ -143,7 +143,7 @@ describe("runExchangeMarketTick", () => {
       auth: { userId: "c_alice" } as never,
       user: { id: "alice", clerkUserId: "c_alice", role: { name: "admin", level: 0 } } as never,
       headers: new Headers(),
-    });
+    } as never);
     await expect(caller.adminRunMarketTick()).rejects.toMatchObject({
       code: "CONFLICT",
       message: "The market tick is already running",
