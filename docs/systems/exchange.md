@@ -20,7 +20,7 @@ same wallet.
 | Router | `api.exchange.*` (`src/server/api/routers/exchange/`). `index.ts`: `getOverview`, `listCompanies`, `foundCompany`, `depositToCompany`, `withdrawFromCompany`, `dissolveCompany`, `listContracts`, `createContract`, `placeBid`, `withdrawBid`, `awardContract`, `completeContract`, `cancelContract`, `releaseContract`, `disputeContract`. `markets.ts`: `getShareMarket`, `getOrderBook`, `setShareTrading`, `issueShares`, `listShares`, `cancelShareListing`, `buyShares`, `placeBuyOrder`, `cancelBuyOrder`, `declareDividend`, `getCompanyRecord`, `submitDecision`, `getSectors`, `buySectorUnits`, `sellSectorUnits`, `setSectorDmModifier`, `createTender`. `governance.ts`: `listProposals`, `openProposal`, `castVote`, `getAcquisitionOffers`. `treasury.ts`: `getTreasury`, `getRealmCorporateSummary`, `createTreasuryTender`, `createFaucetTender`, `borrowCredit`, `repayCredit`. `terminal.ts`: public `realms`, `frontPage`, `markets`, `companyPage`, `bondPage`, `nationPage`, `story`, `news`, `leaderboards`; signed-in `portfolio`, `toggleWatch`, `issueBond`, `buyBondPrimary`, `listBondUnits`, `buyBondListing`, `cancelBondListing`. `admin.ts`: `adminGetExchangeConfig`, `adminSaveExchangeConfig`, `adminRunMarketTick`, `adminSetSectorDmModifier`, `adminListDisputes`, `adminResolveDispute`, `adminAdjustSovereigns` |
 | Wallet ledger | `src/lib/vault/exchange-service.ts`: `getOrCreateWallet`, `earnSovereignsTx`, `spendSovereignsTx`, `lockWallet`, `exchangeService.earn/spend` (MyClub's entry point) |
 | Config | `src/lib/vault/exchange-config.ts` (`exchange_*` SystemConfig keys, clamped); flag `isExchangeEnabled` in `src/lib/vault/vault-perks.ts` |
-| Logic | `src/lib/exchange/`: `taxonomy.ts` (4×12 sub-industries, supply-chain multipliers, credit ratings), `macro.ts` (nation macro & realm GDP sector weights), `treasury.ts` (Nation ₷ Treasury ledger & stipends), `companies.ts`, `contracts.ts` + `contract-settlement.ts` + `tariffs.ts` (B2B, B2G treasury/wallet, DM faucet, cross-border tariffs & FTAs), `shares.ts` + `fills.ts` (two-sided Bid/Ask order book & cap-gains tax), `dividends.ts`, `ownership.ts`, `sectors.ts`, `decisions.ts` (6 decision types), `governance.ts` (shareholder proposals & ballots), `acquisition.ts` (pro-rata M&A buyouts), `operations.ts` (tick P&L statement), `credit.ts` (Central Bank credit lines), `distress.ts` (`ACTIVE → DISTRESSED → BANKRUPT`), `feedback.ts` (`±5%` GDP level adjustment via `syncLevelEffects`), `expiry.ts`, `market.ts` (`runExchangeMarketTick`), `valuation.ts` (fair value and credit math, client-safe), `bonds.ts` (nation bonds, ratings, weekly coupons, default), `news.ts` (business news and live activity, watcher alerts), `policy.ts` (policy headlines from tick-to-tick snapshots), `terminal.ts` (the terminal's read models), `routes.ts` (addresses), `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` |
+| Logic | `src/lib/exchange/`: `taxonomy.ts` (4×12 sub-industries, supply-chain multipliers, credit ratings), `macro.ts` (nation macro & realm GDP sector weights), `treasury.ts` (Nation ₷ Treasury ledger & stipends), `companies.ts`, `contracts.ts` + `contract-settlement.ts` + `tariffs.ts` (B2B, B2G treasury/wallet, DM faucet, cross-border tariffs & FTAs), `shares.ts` + `fills.ts` (two-sided Bid/Ask order book & cap-gains tax), `dividends.ts`, `ownership.ts`, `sectors.ts`, `decisions.ts` (6 decision types), `governance.ts` (shareholder proposals & ballots), `acquisition.ts` (pro-rata M&A buyouts), `operations.ts` (tick P&L statement), `credit.ts` (Central Bank credit lines), `distress.ts` (`ACTIVE → DISTRESSED → BANKRUPT`), `feedback.ts` (`±5%` GDP level adjustment via `syncLevelEffects`), `expiry.ts`, `market.ts` (`runExchangeMarketTick`), `valuation.ts` (fair value and credit math, client-safe), `bonds.ts` (nation bonds, ratings, weekly coupons, default), `news.ts` (business news and live activity, watcher alerts), `policy.ts` (policy headlines from tick-to-tick snapshots), `terminal.ts` + `terminal-valuation.ts` (the terminal's read models; prices, the portfolio and leaderboards in the second), `routes.ts` (addresses), `notify.ts`, `queries.ts`, `guards.ts`, `amounts.ts` |
 | Jobs | `exchange-market` (`7 */6 * * *`, `market.ts` `runExchangeMarketTick`) and `exchange-contract-expiry` (`*/15 * * * *`, `expiry.ts` `expireLapsedContracts`) in `src/server/cron/jobs.ts`; both off unless named in `CRON_ENABLED_JOBS` |
 | Schema | `prisma/schema/exchange.prisma` (`ExchangeWallet`, `ExchangeTransaction`, `Company`, `CompanyValueHistory`, `ShareIssuance`, `Shareholding`, `ShareListing`, `ShareBuyOrder`, `CompanyDividend`, `CompanyDecision`, `CompanyProposal`, `CompanyVote`, `SectorIndex`, `SectorIndexHistory`, `SectorPosition`, `Contract`, `ContractBid`, `NationTreasury` (with `creditRating`, `bondBanUntil`), `NationTreasuryEntry`, `NationBond`, `BondHolding`, `BondListing`, `ExchangeNewsItem`, `ExchangeNationSnapshot`, `ExchangeWatch`) |
 | Tests | `src/tests/lib/vault/exchange-wallet-safety.test.ts`, `src/tests/lib/exchange/` (11 unit test suites covering taxonomy, macro, treasury, companies/contracts, shares/dividends/orderbook, sectors/decisions, tenders/expiry, governance, acquisition, operations, distress, feedback, and market tick; in-memory database: `src/tests/helpers/fake-exchange-db.ts`), `src/tests/server/api/routers/money-router-gates.test.ts`, `src/tests/architecture/play-as-money.test.ts`, `src/tests/architecture/platform-real-time.test.ts`, `src/tests/architecture/facet-zero-dirs.test.ts` |
@@ -106,6 +106,18 @@ All Exchange `₷` money columns in `prisma/schema/exchange.prisma` are stored a
 
 ### Operator Runbook
 
+The conversion SQL (`prisma/migrations/20261109120000_exchange_integer_cents/migration.sql`) is **idempotent**: it
+converts only while `exchange_wallets.sovereigns` is still `double precision`, and does nothing once converted. It must
+run before `db push`, which would retype the same columns with a plain cast and no ×100 (every amount 1/100 of its
+value). `scripts/deploy-production.sh`, `start-development.sh` (dev startup) and `scripts/refresh-local-db.sh` all run
+it before their push, so dev startup converts a local database too.
+
+`scripts/deploy-production.sh` also does steps 4 to 6 below on its own: when the conversion is pending it prints a
+banner and `pm2 stop`s `ixstats-web`, `ixstats-cron` and `ixstats-ws` before the deploy SQL, and starts them again after
+the PM2 reload, on the new build. A deploy that fails after the stop leaves them stopped (the old code must not run
+against cents): fix the cause and run the deploy again. The market tick (`runExchangeMarketTick`) skips itself while the
+Exchange is closed. A manual run follows the steps in order.
+
 1. **Close the Exchange (maintenance mode):**
    `assertExchangeOpen` (`src/lib/exchange/guards.ts`) checks `getVaultConfig(db)` for `vault_isMaintenanceMode` (`cfg.isMaintenanceMode`) and `vault_isExchangeEnabled` (`cfg.isExchangeEnabled`). Close the Exchange before running the migration:
    ```sql
@@ -151,16 +163,26 @@ All Exchange `₷` money columns in `prisma/schema/exchange.prisma` are stored a
       OR "tariffPaid" * 100 <> round("tariffPaid" * 100);
    ```
 
-4. **Apply the SQL migration in one transaction:**
+4. **Stop the writers:** the old code writes ₷ floats, which PostgreSQL silently casts into the bigint columns as if
+   they were cents. Stop web, cron and websockets before the SQL:
+   ```bash
+   pm2 stop ixstats-web ixstats-cron ixstats-ws
+   ```
+
+5. **Apply the SQL migration (one transaction; a re-run does nothing):**
    ```bash
    docker exec -i ixstats-postgres psql -U postgres -d ixstats -v ON_ERROR_STOP=1 \
      < prisma/migrations/20261109120000_exchange_integer_cents/migration.sql
    ```
 
-5. **Deploy the new application build:**
-   Deploy the updated server and regenerate Prisma client (`bun run db:generate`).
+6. **Deploy the new application build, then start the writers:**
+   Deploy the updated server and regenerate Prisma client (`bun run db:generate`), then start the stopped processes on
+   the new build (a reload may leave a stopped process stopped):
+   ```bash
+   pm2 start ixstats-web ixstats-cron ixstats-ws --update-env
+   ```
 
-6. **Re-open the Exchange:**
+7. **Re-open the Exchange:**
    ```sql
    UPDATE "system_config" SET "value" = 'true', "updatedAt" = NOW()
    WHERE "key" = 'vault_isExchangeEnabled';

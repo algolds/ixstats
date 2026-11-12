@@ -10,6 +10,9 @@
 # has already replaced node_modules with the release's, so never start a stopped server on this checkout. The build moves .next to .next.prev first and puts it back if anything fails before the new server answers; .next.prev
 # is deleted once it does.
 #
+# While the Exchange integer-cents conversion is pending (its money columns still floats), web, cron and websockets stop
+# before the deploy SQL and start again at the PM2 reload, so the old code writes no ₷ floats into the bigint columns.
+#
 # SKIP_SCHEMA_SYNC=1 runs everything but the schema work (the additive step, the SQL and db push): for a rollback to
 # older code (scripts/deployment/rollback-deployment.sh), where an older schema must never be pushed over a newer one.
 
@@ -215,6 +218,46 @@ fi
 if [ "${SKIP_SCHEMA_SYNC:-}" = "1" ]; then
     echo "⏭️  SKIP_SCHEMA_SYNC=1: the additive step, the deploy SQL and db push are skipped; the schema stays as it is"
 else
+    # Exchange integer cents (plan 446, docs/systems/exchange.md "Deploy: integer cents migration"): while the money
+    # columns are still floats, the SQL below converts them to bigint cents. The running (old) code writes ₷ floats,
+    # which PostgreSQL would silently cast into the new columns as if they were cents, so web, cron and websockets stop
+    # for the conversion and stay stopped until the PM2 reload below starts the new build. A failed deploy leaves them
+    # stopped: the old code must not run against cents. Reads only, through Prisma as the other deploy steps do.
+    CENTS_STOPPED_APPS=""
+    CENTS_COLUMN_TYPE="$(bun -e '
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+prisma
+  .$queryRawUnsafe(
+    "SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2",
+    "exchange_wallets",
+    "sovereigns"
+  )
+  .then((rows) => console.log(rows[0]?.data_type ?? ""))
+  .finally(() => prisma.$disconnect());
+' 2>/dev/null)" || { echo "❌ Could not read the Exchange wallet column type: is the database up?"; exit 1; }
+    if [ "$CENTS_COLUMN_TYPE" = "double precision" ]; then
+        echo ""
+        echo "================================================================================"
+        echo "💱 Exchange integer-cents conversion pending: every ₷ amount becomes bigint cents."
+        echo "   Stopping ixstats-web, ixstats-cron and ixstats-ws so the old code writes nothing"
+        echo "   during the switch. The PM2 reload below starts them on the new build; if this"
+        echo "   deploy fails they stay stopped (fix it and run the deploy again)."
+        echo "================================================================================"
+        if command -v pm2 &> /dev/null; then
+            for app in ixstats-web ixstats-cron ixstats-ws; do
+                app_pid="$(pm2 pid "$app" 2>/dev/null | tail -n 1 || true)"
+                if [ -n "$app_pid" ] && [ "$app_pid" != "0" ]; then
+                    pm2 stop "$app" > /dev/null 2>&1 200>&- || { echo "❌ pm2 stop $app failed: stopping before the conversion"; exit 1; }
+                    CENTS_STOPPED_APPS="$CENTS_STOPPED_APPS $app"
+                fi
+            done
+            echo "   Stopped:${CENTS_STOPPED_APPS:- nothing was running under PM2}"
+        fi
+        if [ -n "$(lsof -t -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)" ]; then
+            echo "⚠️  A web server outside PM2 still listens on port $PORT: keep the Exchange closed (vault_isExchangeEnabled=false) until the deploy finishes"
+        fi
+    fi
     # Realms (rose-garden runbook 5a): the schema dropped world_configs (1 row) and territory_claims, which db push
     # refuses to drop without a prompt it cannot answer here. Owner-approved data drop; the backup above keeps the row.
     bunx prisma db execute --schema prisma/schema --file scripts/migrations/2026-10-realms/drop-world-configs.sql || exit 1
@@ -285,6 +328,9 @@ else
     # Exchange Phase 3 (docs/specs/2026-11-01-exchange-phase-3-design.md): realm-scoped companies, sectors and contracts,
     # nation treasuries, share buy order book and shareholder governance. Additive and idempotent.
     bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261107120000_exchange_phase3/migration.sql || exit 1
+    # Exchange integer cents (plan 446): every ₷ amount column becomes bigint cents, ×100. BEFORE the push, which would
+    # retype the same columns with a plain cast (every amount 1/100 of its value). Does nothing once converted.
+    bunx prisma db execute --schema prisma/schema --file prisma/migrations/20261109120000_exchange_integer_cents/migration.sql || exit 1
 
     # MyCountry fixes and realm time (docs/history/operations/deploy-mycountry-2026-10.md, deploy-realm-time-2026-10.md): the data
     # SQL in the runbooks' order. Realm time drops the legacy security tables and retypes military columns, which db push
@@ -342,7 +388,11 @@ restore_previous_build() {
         rm -rf .next
         mv "$NEXT_PREV" .next
     fi
-    if [ "${PAUSED_BG_WORKERS:-0}" = "1" ]; then
+    if [ -n "${CENTS_STOPPED_APPS:-}" ]; then
+        # The database holds integer cents now; the old build must not run against it.
+        echo "⚠️  Left stopped after the integer-cents conversion:$CENTS_STOPPED_APPS. Fix the deploy and run it again."
+        [ "${PAUSED_BG_WORKERS:-0}" = "1" ] && { pm2 start ixstats-ixtwitter > /dev/null 2>&1 200>&- || true; }
+    elif [ "${PAUSED_BG_WORKERS:-0}" = "1" ]; then
         pm2 start ixstats-cron ixstats-ixtwitter > /dev/null 2>&1 200>&- || true
     fi
 }
@@ -459,6 +509,15 @@ else
     fi
     # A failed reload aborts the deploy instead of leaving stale cron/ws processes running silently.
     pm2 startOrReload ecosystem.config.cjs --update-env --silent 200>&-
+    # A reload may leave a stopped process stopped: start what the integer-cents step stopped, if still down.
+    for app in ${CENTS_STOPPED_APPS:-}; do
+        app_pid="$(pm2 pid "$app" 2>/dev/null | tail -n 1 || true)"
+        if [ -z "$app_pid" ] || [ "$app_pid" = "0" ]; then
+            echo "▶️  Starting $app (stopped for the integer-cents conversion)..."
+            pm2 start "$app" --update-env > /dev/null 2>&1 200>&-
+        fi
+    done
+    CENTS_STOPPED_APPS=""
 fi
 
 # The weekly WikiOS proof may run again: release the lease the proof check took. A failed release only means the lease

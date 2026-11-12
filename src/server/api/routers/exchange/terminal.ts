@@ -31,12 +31,11 @@ import {
   getBondPage,
   getCompanyPage,
   getFrontPage,
-  getLeaderboards,
   getMarkets,
   getNationPage,
-  getPortfolio,
   getStory,
 } from "~/lib/exchange/terminal";
+import { getLeaderboards, getPortfolio } from "~/lib/exchange/terminal-valuation";
 import { listOpenRealms } from "~/lib/exchange/queries";
 import { SECTOR_KEYS } from "~/lib/exchange/companies";
 import { depositToFund, fundSummary, fundTrade, withdrawFromFund } from "~/lib/exchange/fund";

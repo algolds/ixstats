@@ -333,7 +333,7 @@ async function faucetMintedCentsSince(tx: Db, realmId: string, sinceMs: number):
     where: { realmId, fundedBy: "FAUCET", createdIxTime: { gte: sinceMs } },
     _sum: { value: true },
   });
-  return centsOf(totals._sum.value ?? 0);
+  return centsOf(totals._sum.value ?? 0n);
 }
 
 /**

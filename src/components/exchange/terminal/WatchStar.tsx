@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/nextjs";
 import { Star, StarSolid } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import type { WatchKind } from "~/lib/exchange/terminal";
+import type { WatchKind } from "~/lib/exchange/terminal-valuation";
 import { useSignInHref } from "./useSignInHref";
 
 /** Watch or stop watching a company, bond or nation; signed out, a way to sign in. */

@@ -33,7 +33,7 @@ import {
   placeBuyOrder,
   primaryPricePerShare,
 } from "./shares";
-import { getPortfolio, type Portfolio } from "./terminal";
+import { getPortfolio, type Portfolio } from "./terminal-valuation";
 import { creditTreasuryTx, debitTreasuryTx, getOrCreateTreasury, lockTreasuryTx } from "./treasury";
 
 export { FUND_USER_PREFIX, fundUserIdOf, isFundUser } from "./fund-ids";

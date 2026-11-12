@@ -9,7 +9,7 @@ import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { bondHref, companyHref } from "~/lib/exchange/routes";
-import type { Portfolio } from "~/lib/exchange/terminal";
+import type { Portfolio } from "~/lib/exchange/terminal-valuation";
 import { useRequestId } from "../shared";
 import {
   DATA_ROW_ITEM,

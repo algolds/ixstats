@@ -25,7 +25,8 @@ import {
 } from "~/lib/exchange/fund";
 import { sendExchangeNotices } from "~/lib/exchange/notify";
 import { buyShares, cancelListing, listShares, placeBuyOrder } from "~/lib/exchange/shares";
-import { getLeaderboards, getNationPage } from "~/lib/exchange/terminal";
+import { getNationPage } from "~/lib/exchange/terminal";
+import { getLeaderboards } from "~/lib/exchange/terminal-valuation";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";

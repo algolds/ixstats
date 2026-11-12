@@ -11,7 +11,7 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { bondHref, companyHref, nationHref } from "~/lib/exchange/routes";
-import type { Portfolio } from "~/lib/exchange/terminal";
+import type { Portfolio } from "~/lib/exchange/terminal-valuation";
 import {
   DATA_ROW_ITEM,
   DATA_ROW_LINK,
