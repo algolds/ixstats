@@ -58,6 +58,8 @@ type OtherParticipant = ParticipantAccount & {
   id: string;
   accountId: string;
   account: ParticipantAccount;
+  /** Always true: the list query loads active participants only. */
+  isActive: true;
   isOnline: boolean;
 };
 
@@ -166,6 +168,7 @@ export function formatMessagesConversation(
       id: p.id || p.userId,
       accountId: p.userId,
       account: acc,
+      isActive: true as const,
       isOnline: online.has(p.userId),
     };
   });

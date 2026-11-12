@@ -11,7 +11,7 @@ import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { formatTimestamp } from "~/lib/messages/format";
 import { toRouterPath } from "~/lib/base-path";
-import { sanitizeMessageContent } from "~/lib/utils/sanitize-html";
+import { sanitizeMessageContent } from "~/lib/utils/sanitize-message";
 
 export interface BroadcastItem {
   id: string;

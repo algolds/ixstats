@@ -3,7 +3,7 @@
 import { Reply, Shield } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
-import { sanitizeMessageContent } from "~/lib/utils/sanitize-html";
+import { sanitizeMessageContent } from "~/lib/utils/sanitize-message";
 import {
   displayNameOf,
   highlightMatches,

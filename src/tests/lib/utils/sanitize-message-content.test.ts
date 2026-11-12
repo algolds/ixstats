@@ -5,7 +5,8 @@
  */
 import { describe, expect, it } from "@jest/globals";
 import { JSDOM } from "jsdom";
-import { sanitizeMessageContent, sanitizeUserContent } from "~/lib/utils/sanitize-html";
+import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
+import { sanitizeMessageContent } from "~/lib/utils/sanitize-message";
 
 const imageSources = (html: string): string[] =>
   Array.from(JSDOM.fragment(html).querySelectorAll("img")).map(

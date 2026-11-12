@@ -13,13 +13,12 @@
  */
 
 import DOMPurify, { type Config } from "dompurify";
-import { appOrigin } from "~/lib/app-url";
 import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
 import { articleInlineStyle, scopeTemplateStyles, type StylePolicy } from "./scope-template-styles";
 
-type Purifier = typeof DOMPurify;
+export type Purifier = typeof DOMPurify;
 type StyleSanitizer = (style: Element) => void;
 
 let serverWindow: import("jsdom").DOMWindow | null = null;
@@ -30,7 +29,7 @@ let serverWindow: import("jsdom").DOMWindow | null = null;
  * use. `typeof window` is a compile-time constant per bundle, so browser bundles drop
  * the jsdom branch. `fresh` asks for an instance of its own (hooks are per instance), not the shared one.
  */
-function createPurifier(fresh = false): Purifier {
+export function createPurifier(fresh = false): Purifier {
   if (typeof window === "undefined") {
     const { JSDOM } = require("jsdom") as typeof import("jsdom");
     serverWindow ??= new JSDOM("").window;
@@ -40,7 +39,7 @@ function createPurifier(fresh = false): Purifier {
 }
 
 /** Block data: URIs in src/href attributes. */
-function installSharedHooks(created: Purifier): void {
+export function installSharedHooks(created: Purifier): void {
   created.addHook("uponSanitizeAttribute", (_node, event) => {
     if (
       (event.attrName === "src" || event.attrName === "href") &&
@@ -122,8 +121,7 @@ function getArticlePurifier(): Purifier {
   return articlePurifier;
 }
 
-/** The strict user-content config, shared by sanitizeUserContent and sanitizeMessageContent. */
-const USER_CONTENT_CONFIG: Config = {
+export const USER_CONTENT_CONFIG: Config = {
   ALLOWED_TAGS: [
     "p",
     "br",
@@ -195,55 +193,6 @@ const USER_CONTENT_CONFIG: Config = {
 export function sanitizeUserContent(html: string): string {
   if (!html) return "";
   return stripPositioning(purify.sanitize(html, USER_CONTENT_CONFIG));
-}
-
-let messagePurifier: Purifier | null = null;
-
-/** The site origin an `<img>` in a private message may load from, besides a relative path. */
-const MESSAGE_IMAGE_EXTRA_ORIGIN = "https://ixwiki.com";
-
-function ownSiteOrigin(): string | null {
-  try {
-    return appOrigin();
-  } catch {
-    return null; // production without a public URL: only the extra origin counts
-  }
-}
-
-/**
- * True for a relative path starting with one `/` (not `//` or `/\\`, which a browser reads as another host), or for an
- * absolute http(s) URL on the app's own origin or on ixwiki.com.
- */
-function isMessageImageAllowed(src: string): boolean {
-  const value = src.trim();
-  if (value.startsWith("/")) return !/^\/[/\\]/.test(value);
-  if (!URL.canParse(value)) return false;
-  const origin = new URL(value).origin;
-  return origin === MESSAGE_IMAGE_EXTRA_ORIGIN || origin === ownSiteOrigin();
-}
-
-function getMessagePurifier(): Purifier {
-  if (messagePurifier) return messagePurifier;
-  const created = createPurifier(true);
-  installSharedHooks(created);
-  // A remote <img> is a tracking pixel in a private message: remove the tag, not just its src.
-  created.addHook("uponSanitizeElement", (node, data) => {
-    if (data.tagName !== "img") return;
-    const src = (node as Element).getAttribute("src") ?? "";
-    if (!isMessageImageAllowed(src)) (node as Element).remove();
-  });
-  messagePurifier = created;
-  return created;
-}
-
-/**
- * sanitizeUserContent for private messages: the same allowlist, but an `<img>` survives only when its `src` is a
- * relative path on this site or on ixwiki.com. Any other image (a remote one can report when a message is read)
- * is removed.
- */
-export function sanitizeMessageContent(html: string): string {
-  if (!html) return "";
-  return stripPositioning(getMessagePurifier().sanitize(html, USER_CONTENT_CONFIG));
 }
 
 /**
