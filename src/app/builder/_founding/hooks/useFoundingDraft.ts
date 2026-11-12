@@ -135,9 +135,10 @@ export function useFoundingDraft() {
     setWasReset(true);
     setStatus("idle");
     clearLocalDraft();
+    // A save already sent would land after the clear and bring the old draft back.
+    const pending = inFlight.current;
     try {
-      // A save already sent would land after the clear and bring the old draft back.
-      await inFlight.current?.catch(() => undefined);
+      if (pending) await pending.catch(() => undefined);
       await clearDraft();
     } catch {
       // The next edit overwrites it.
