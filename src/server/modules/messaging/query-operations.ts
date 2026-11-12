@@ -123,6 +123,17 @@ export class MessagingQueryOperations {
    * Swaps a group conversation's preview for its latest message from a sender not in `blocked`. Only the groups
    * whose latest message is from a blocked sender need a lookup, so this is rarely more than a query or two.
    */
+  private async withoutRevokedBoardChats<
+    T extends { source: string | null; sourceId: string | null },
+  >(conversations: T[], actorId: string): Promise<T[]> {
+    const revoked = await Promise.all(
+      conversations.map((c) => realmBoardChatRevoked(this.db, c, actorId))
+    );
+    return conversations.filter((_, i) => !revoked[i]);
+  }
+
+  // ponytail: one query per thread whose latest message is from a blocked sender, in parallel; bounded by the
+  // page size and rare. A DISTINCT ON query would make it one round trip if it ever shows up in traces.
   private async replaceBlockedPreviews(
     groups: Array<{ id: string; messages: ThinkshareMessage[] }>,
     blocked: readonly string[]
@@ -241,7 +252,9 @@ export class MessagingQueryOperations {
           },
         },
       });
-      const { page: conversations, nextCursor } = this.trimPage(rows, limit);
+      const { page, nextCursor } = this.trimPage(rows, limit);
+      // A realm board's chat leaves the list once the board no longer counts the actor as a member.
+      const conversations = await this.withoutRevokedBoardChats(page, actorId);
 
       // Messages from accounts the viewer blocked are hidden in group conversations, so they
       // neither preview nor count as unread there.
@@ -330,7 +343,8 @@ export class MessagingQueryOperations {
       const src = p.conversation.source;
       // ThinkTank chats are not in the Inbox folder, so their unread belongs to `thinktank` alone.
       if (src !== "thinktank") counts.inbox += unread;
-      if ((COUNTED_SOURCES as readonly string[]).includes(src)) counts[src as CountedSource] += unread;
+      if ((COUNTED_SOURCES as readonly string[]).includes(src))
+        counts[src as CountedSource] += unread;
     }
     counts.total = counts.inbox + counts.thinktank + counts.requests;
 
@@ -436,12 +450,7 @@ export class MessagingQueryOperations {
   }
 
   public async getConversationMessages(actorId: string, input: GetConversationMessagesInput) {
-    const {
-      conversationId,
-      limit = DEFAULT_MESSAGE_PAGE,
-      cursor,
-      direction = "before",
-    } = input;
+    const { conversationId, limit = DEFAULT_MESSAGE_PAGE, cursor, direction = "before" } = input;
 
     const conv = await this.db.thinkshareConversation.findFirst({
       where: {

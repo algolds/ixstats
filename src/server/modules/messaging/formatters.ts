@@ -8,7 +8,60 @@
 import type { UserAccount } from "./contracts";
 import { UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 
-const toDate = (value: Date | string | number | null | undefined) => new Date(value || Date.now());
+type DateLike = Date | string | number | null | undefined;
+
+interface FormattableMessage {
+  id: string;
+  userId: string;
+  content: string;
+  deletedAt?: DateLike;
+  isDeleted?: boolean | null;
+  senderName?: string | null;
+  senderAvatar?: string | null;
+  ixTimeTimestamp?: DateLike;
+  createdAt?: DateLike;
+}
+
+interface FormattableParticipant {
+  id?: string;
+  userId: string;
+  requestStatus?: string | null;
+}
+
+/** The fields of a conversation row (with participants and its latest message) the formatter reads. */
+export interface FormattableConversation {
+  id: string;
+  name?: string | null;
+  subject?: string | null;
+  avatar?: string | null;
+  channelId?: string | null;
+  sourceId?: string | null;
+  conversationType?: string | null;
+  diplomaticClassification?: string | null;
+  priority?: string | null;
+  type?: string | null;
+  source?: string | null;
+  isGroup?: boolean | null;
+  isActive?: boolean | null;
+  lastActivity?: DateLike;
+  updatedAt?: DateLike;
+  createdAt?: DateLike;
+  participants?: FormattableParticipant[];
+  messages?: FormattableMessage[];
+  lastMessage?: FormattableMessage | null;
+  thinktankGroup?: { id: string; name?: string | null; avatar?: string | null } | null;
+}
+
+type ParticipantAccount = UserAccount | ReturnType<typeof fallbackAccount>;
+
+type OtherParticipant = ParticipantAccount & {
+  id: string;
+  accountId: string;
+  account: ParticipantAccount;
+  isOnline: boolean;
+};
+
+const toDate = (value: DateLike) => new Date(value || Date.now());
 
 /** Stand-in account for a participant the account lookup did not resolve. */
 function fallbackAccount(userId: string) {
@@ -28,7 +81,7 @@ function fallbackAccount(userId: string) {
   };
 }
 
-function formatLastMessage(conv: any, accountMap: Map<string, UserAccount>) {
+function formatLastMessage(conv: FormattableConversation, accountMap: Map<string, UserAccount>) {
   const lastMsg = conv.messages?.[0] || conv.lastMessage;
   if (!lastMsg) return null;
   const senderAccount = accountMap.get(lastMsg.userId);
@@ -68,8 +121,8 @@ interface MessagesConversationResult {
   isRequest: boolean;
   /** Another participant has not yet accepted it as a message request. */
   awaitingAcceptance: boolean;
-  otherParticipants: any[];
-  otherParticipant?: any;
+  otherParticipants: OtherParticipant[];
+  otherParticipant?: ParticipantAccount;
   lastMessage?: {
     id: string;
     content: string;
@@ -81,7 +134,7 @@ interface MessagesConversationResult {
   } | null;
 }
 
-function conversationDescriptor(conv: any) {
+function conversationDescriptor(conv: FormattableConversation) {
   return {
     id: conv.id,
     name: conv.name ?? conv.subject ?? conv.thinktankGroup?.name ?? null,
@@ -96,17 +149,17 @@ function conversationDescriptor(conv: any) {
 }
 
 export function formatMessagesConversation(
-  conv: any,
+  conv: FormattableConversation,
   actorId: string,
   accountMap: Map<string, UserAccount>,
   unreadCount = 0,
   /** Participants shown as online (presence.ts already applied their privacy setting). */
   online: ReadonlySet<string> = new Set()
 ): MessagesConversationResult {
-  const participants: any[] = conv.participants || [];
+  const participants = conv.participants ?? [];
   const others = participants.filter((p) => p.userId !== actorId);
 
-  const otherAccounts: any[] = others.map((p) => {
+  const otherAccounts: OtherParticipant[] = others.map((p) => {
     const acc = accountMap.get(p.userId) || fallbackAccount(p.userId);
     return {
       ...acc,

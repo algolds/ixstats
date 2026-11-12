@@ -33,7 +33,8 @@ export async function mapMessagingErrors<T>(
 ): Promise<T> {
   try {
     return await call();
-  } catch (err: any) {
+  } catch (err) {
+    if (!(err instanceof Error)) throw err;
     if (err.name === "MessagingNotFoundError" && messages.notFound) {
       throw new TRPCError({ code: "NOT_FOUND", message: messages.notFound });
     }
