@@ -3,16 +3,7 @@
 import React, { useState, useMemo, useCallback, useReducer } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  SystemRestart as Loader2,
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Trophy,
-  Undo as RotateCcw,
-  MediaImage as ImageIcon,
-  Trash as Trash2,
-} from "iconoir-react";
+import { SystemRestart as Loader2, ArrowLeft, ArrowRight, Check, Trophy } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -42,6 +33,8 @@ import {
   stepVariants,
 } from "./league-creator-config";
 import { LeagueWikiImport } from "./LeagueWikiImport";
+import { LeagueCoverField } from "./LeagueCoverField";
+import { LeagueCreatedStep } from "./LeagueCreatedStep";
 
 const MediaSearchModal = dynamic(
   () =>
@@ -480,73 +473,14 @@ export function LeagueCreator({
         </div>
       )}
 
-      {/* League Cover Image */}
-      <div className="space-y-2">
-        <Label>League cover image</Label>
-
-        {commonsLoading && !coverImage ? (
-          <div className="border-separator bg-fill-4 rounded-control flex h-40 w-full items-center justify-center border border-dashed">
-            <Loader2 className="text-label-secondary h-6 w-6 animate-spin" />
-            <span className="text-label-secondary text-footnote ml-2">Fetching suggestion...</span>
-          </div>
-        ) : coverImage ? (
-          <div className="group border-separator rounded-control relative h-40 w-full overflow-hidden border">
-            <img
-              src={assetUrl(coverImage) ?? undefined}
-              alt="Suggested cover"
-              className="h-full w-full object-cover"
-            />
-            <div className="duration-fast absolute inset-0 bg-black/40 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100" />
-            <div className="duration-fast absolute right-3 bottom-3 flex items-center gap-2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={handleShuffleCover}
-                disabled={!commonsData?.images || commonsData.images.length <= 1}
-              >
-                <RotateCcw className="h-3 w-3" />
-                Shuffle
-              </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => setMediaSearchOpen(true)}
-              >
-                <ImageIcon className="h-3 w-3" />
-                Browse
-              </Button>
-              <Button type="button" variant="destructive" size="sm" onClick={handleRemoveCover}>
-                <Trash2 className="h-3 w-3" />
-                Remove
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="border-separator bg-fill-4 rounded-control flex h-40 w-full flex-col items-center justify-center border border-dashed p-4">
-            <ImageIcon className="text-label-tertiary mb-2 h-8 w-8" />
-            <p className="text-label-secondary text-footnote mb-3">No cover image selected</p>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setMediaSearchOpen(true)}
-              >
-                <ImageIcon className="h-3 w-3" />
-                Browse media
-              </Button>
-              {commonsData?.images && commonsData.images.length > 0 && (
-                <Button type="button" variant="outline" size="sm" onClick={handleShuffleCover}>
-                  <RotateCcw className="h-3 w-3" />
-                  Suggest image
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <LeagueCoverField
+        coverImage={coverImage}
+        loading={commonsLoading}
+        suggestionCount={commonsData?.images?.length ?? 0}
+        onShuffle={handleShuffleCover}
+        onBrowse={() => setMediaSearchOpen(true)}
+        onRemove={handleRemoveCover}
+      />
 
       {/* Archetype preview */}
       {archetypeLabel && (
@@ -701,48 +635,6 @@ export function LeagueCreator({
     );
   };
 
-  // Step 4: Created!
-  const renderStep4 = () => (
-    <motion.div
-      key="step-4"
-      variants={stepVariants}
-      initial="enter"
-      animate="center"
-      exit="exit"
-      transition={springSmooth}
-      className="space-y-6"
-    >
-      <div className="flex flex-col items-center justify-center py-6 text-center">
-        <motion.div
-          initial={{ scale: 0, rotate: -10 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="bg-tint-fill mb-4 flex h-16 w-16 items-center justify-center rounded-full"
-        >
-          <span className="text-large-title">{selectedPreset?.icon}</span>
-        </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <h3 className="text-label text-title-3 font-semibold">League created</h3>
-          <p className="text-label-secondary text-body mt-1">
-            {leagueName} is now active and ready for configuration.
-          </p>
-        </motion.div>
-      </div>
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Button onClick={handleViewLeague}>View league</Button>
-        <Button variant="outline" onClick={handleCreateAnother}>
-          <RotateCcw className="h-4 w-4" />
-          Create another
-        </Button>
-      </div>
-    </motion.div>
-  );
-
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -769,7 +661,14 @@ export function LeagueCreator({
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
               {currentStep === 3 && renderStep3()}
-              {currentStep === 4 && renderStep4()}
+              {currentStep === 4 && (
+                <LeagueCreatedStep
+                  icon={selectedPreset?.icon}
+                  leagueName={leagueName}
+                  onView={handleViewLeague}
+                  onCreateAnother={handleCreateAnother}
+                />
+              )}
             </AnimatePresence>
           </div>
         </DialogContent>

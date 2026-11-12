@@ -179,15 +179,14 @@ export function QuickGeneratorControls({
   const handleCleanWords = () => {
     const seen = new Set<string>();
     const unique: string[] = [];
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'w' is intentional in this scope
-    for (const w of wordDraft
+    for (const word of wordDraft
       .split(/[,\r\n]+/)
       .map((w) => w.trim())
       .filter(Boolean)) {
-      const normalized = w.toLowerCase();
+      const normalized = word.toLowerCase();
       if (!seen.has(normalized)) {
         seen.add(normalized);
-        unique.push(w);
+        unique.push(word);
       }
     }
     setWordDraft(unique.join(", "));

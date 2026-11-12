@@ -20,7 +20,6 @@
   "src/lib/economy/auction-service.ts": 796,
   "src/app/admin/vault/VaultUserDirectory.tsx": 791,
   "src/lib/maps/province-importer/alignment.ts": 760,
-  "src/components/sports/league/LeagueCreator.tsx": 753,
   "src/lib/maps/province-importer/parse-provinces.ts": 726,
   "src/app/admin/_components/IxTimeVisualizer.tsx": 718,
   "src/lib/maps/geo-analytics.ts": 710,

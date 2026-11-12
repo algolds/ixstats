@@ -1,7 +1,7 @@
 "use client";
 
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
@@ -384,10 +384,12 @@ function EconomyDrillDownComponent({
   const [activeTab, setActiveTab] = useState<EconomyTab>(
     () => economyTabFromParam(tabParam) ?? "report"
   );
-  useEffect(() => {
+  const [syncedTabParam, setSyncedTabParam] = useState(tabParam);
+  if (tabParam !== syncedTabParam) {
+    setSyncedTabParam(tabParam);
     const next = economyTabFromParam(tabParam);
     if (next) setActiveTab(next);
-  }, [tabParam]);
+  }
   const { country } = useCountryData();
   const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
     { countryId },

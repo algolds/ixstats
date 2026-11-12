@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "~/components/ui/dialog";
 import {
@@ -28,7 +27,6 @@ import {
   Search,
   Sparks as Sparkles,
   Group as Users,
-  Mail,
   EditPencil,
   Trash,
   Plus,
@@ -42,6 +40,7 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
 import { RoleEditorDialog, type EditableRole } from "./RoleEditorDialog";
+import { InviteUserDialog } from "./InviteUserDialog";
 
 /** Which dialog is open, and the role it acts on (none for invite or a new role). */
 interface PanelDialog {
@@ -71,12 +70,6 @@ export function UserRolesPanel() {
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
-
-  const [inviteForm, setInviteForm] = useState({
-    emailAddress: "",
-    reservedNationName: "",
-    role: "user" as "admin" | "user" | "owner",
-  });
 
   // Queries
   const {
@@ -114,21 +107,6 @@ export function UserRolesPanel() {
     },
   });
 
-  const inviteUserMutation = api.admin.inviteUserToBypassWaitlist.useMutation({
-    onSuccess: (result) => {
-      notify.success("Success", result.message || "Invitation sent successfully");
-      closeDialog();
-      setInviteForm({
-        emailAddress: "",
-        reservedNationName: "",
-        role: "user",
-      });
-    },
-    onError: (error: { message?: string }) => {
-      notify.error("Error", error.message || "Failed to send invitation");
-    },
-  });
-
   const updateMembershipTier = api.users.updateMembershipTier.useMutation({
     onSuccess: () => {
       notify.success("Success", "Updated membership tier");
@@ -138,14 +116,6 @@ export function UserRolesPanel() {
       notify.error("Error", error.message || "Failed to update membership tier");
     },
   });
-
-  const handleSendInvite = () => {
-    if (!inviteForm.emailAddress || !inviteForm.reservedNationName) {
-      notify.error("Validation Error", "Email address and reserved nation name are required");
-      return;
-    }
-    inviteUserMutation.mutate(inviteForm);
-  };
 
   const handleOpenCreateRole = () => {
     setDialog({ open: "editor", role: null });
@@ -233,83 +203,12 @@ export function UserRolesPanel() {
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Create Role
                   </Button>
-                  <Dialog
+                  <InviteUserDialog
                     open={dialog.open === "invite"}
                     onOpenChange={(open) =>
                       open ? setDialog((d) => ({ ...d, open: "invite" })) : closeDialog()
                     }
-                  >
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Mail className="mr-1.5 h-3.5 w-3.5" />
-                        Invite VIP / Role
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Send waitlist bypass invitation</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-3">
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Email address</label>
-                          <Input
-                            type="email"
-                            value={inviteForm.emailAddress}
-                            onChange={(e) =>
-                              setInviteForm({ ...inviteForm, emailAddress: e.target.value })
-                            }
-                            placeholder="player@domain.com"
-                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Reserved nation name</label>
-                          <Input
-                            value={inviteForm.reservedNationName}
-                            onChange={(e) =>
-                              setInviteForm({ ...inviteForm, reservedNationName: e.target.value })
-                            }
-                            placeholder="Kingdom of Solaria"
-                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Initial role</label>
-                          <Select
-                            value={inviteForm.role}
-                            onValueChange={(val: "admin" | "user" | "owner") =>
-                              setInviteForm({ ...inviteForm, role: val })
-                            }
-                          >
-                            <SelectTrigger size="sm">
-                              <SelectValue placeholder="Choose a role..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">Standard Player (User)</SelectItem>
-                              <SelectItem value="admin">Administrator (Admin)</SelectItem>
-                              <SelectItem value="owner">System Owner (Owner)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" size="sm" onClick={closeDialog}>
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSendInvite}
-                          disabled={
-                            inviteUserMutation.isPending ||
-                            !inviteForm.emailAddress ||
-                            !inviteForm.reservedNationName
-                          }
-                        >
-                          {inviteUserMutation.isPending ? "Sending..." : "Send Invitation"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  />
                 </Can>
               </div>
             </div>

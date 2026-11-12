@@ -154,10 +154,7 @@ function ExecutiveAgendaComponent({
             ))}
           </div>
         ) : visible.length > 0 ? (
-          <ul
-            role="list"
-            className="divide-separator flex max-h-[420px] flex-col divide-y overflow-y-auto"
-          >
+          <ul className="divide-separator flex max-h-[420px] flex-col divide-y overflow-y-auto">
             {visible.map((item) => (
               <AgendaRow
                 key={item.id}
