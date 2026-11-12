@@ -45,6 +45,7 @@ function realmDb(settings: Record<string, unknown> = { maxNationsPerUser: 2 }, s
   const state = { settings };
   const db: any = {
     state,
+    $queryRaw: jest.fn(async () => []),
     realm: {
       findUnique: jest.fn(async () => ({
         id: "eurth-id",

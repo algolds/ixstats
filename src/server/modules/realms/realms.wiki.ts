@@ -129,7 +129,7 @@ export async function getRealmWikiView(db: Pick<PrismaClient, "realm">, actor: R
 
 /** Save (or with `null`, clear) the realm's wiki settings; every other key of `Realm.settings` is kept. */
 export async function saveRealmWikiSettings(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   input: RealmWikiSettingsInput | null
@@ -199,7 +199,7 @@ const CHOSEN_MAP_ORIGINAL_TTL_MS = 15 * 60 * 1000;
 const chosenMapOriginalCache = new Cache<WikiFileOriginal>({ defaultTtlMs: CHOSEN_MAP_ORIGINAL_TTL_MS });
 
 export async function chooseRealmWikiMap(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   fileTitle: string,
@@ -282,7 +282,7 @@ export type MapRecheckStatus = "unchanged" | "changed" | "missing";
  * when it was checked; never changes the stored choice.
  */
 export async function recheckRealmWikiMap(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   deps: RealmWikiDeps = {}

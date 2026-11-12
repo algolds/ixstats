@@ -128,7 +128,7 @@ function slugTaken(error: Error): never {
 
 /** An admin's edit of a realm row; a nation cap is merged into `Realm.settings` (NOT_FOUND when there is no realm). */
 async function updateRealm(
-  db: Pick<PrismaClient, "realm">,
+  db: PrismaClient,
   id: string,
   data: Prisma.RealmUpdateInput,
   maxNationsPerUser?: number
@@ -137,13 +137,13 @@ async function updateRealm(
 
   const realm = await db.realm.findUnique({ where: { id }, select: { settings: true } });
   if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-  const settings = await updateRealmSettings(
+  await updateRealmSettings(
     db,
     id,
     (current) => withMaxNationsPerUser(current as Prisma.JsonValue, maxNationsPerUser),
     data
   );
-  return { ...realm, ...data, settings };
+  return db.realm.findUniqueOrThrow({ where: { id } });
 }
 
 export const realmsRouter = createTRPCRouter({

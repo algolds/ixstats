@@ -702,7 +702,7 @@ describe("realms list bounds", () => {
     role: { name: "admin", level: 10 },
   };
 
-  it("caps listClaims at 500 rows ordered newest first", async () => {
+  it("caps listClaims at 500 rows ordered oldest first", async () => {
     const db = createMockPrisma();
     db.realmClaim.findMany.mockResolvedValue([]);
     const ctx = createMockRouterContext({
@@ -715,7 +715,7 @@ describe("realms list bounds", () => {
     expect(db.realmClaim.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 500,
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       })
     );
   });

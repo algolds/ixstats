@@ -929,10 +929,10 @@ export function createClaimsService(db: ClaimsDb, deps: ClaimsDeps) {
             ],
           },
         };
-    // ponytail: capped at 500; add cursor paging when a realm nears it
+    // ponytail: capped at 500, oldest first so the oldest pending claims are never the ones cut off; add cursor paging when a realm nears it
     return db.realmClaim.findMany({
       where: { status, ...scope },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
       take: 500,
       include: {
         realm: { select: { id: true, name: true, slug: true } },

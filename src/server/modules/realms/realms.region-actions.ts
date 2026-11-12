@@ -33,6 +33,7 @@ type ActionDb = Pick<
   | "user"
   | "nationMaterialHold"
   | "$transaction"
+  | "$queryRaw"
 >;
 
 export async function updateRealmAppearance(

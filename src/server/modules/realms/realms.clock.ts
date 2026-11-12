@@ -29,7 +29,7 @@ import { RealmRegionError, requireRealmStaff } from "./realms.region";
 import { updateRealmSettings } from "./realm-settings";
 import { withRealmClock } from "./realms.settings";
 
-type ClockDb = Pick<PrismaClient, "realm" | "country">;
+type ClockDb = Pick<PrismaClient, "realm" | "country" | "$queryRaw">;
 type JumpDb = ClockDb & Pick<PrismaClient, "systemConfig">;
 
 const IXNAY_SPEED = "Ixnay's clock is IxTime: site staff set its speed in Admin";
