@@ -6,6 +6,7 @@ import { Clock, Map as MapIcon, OpenBook, Page, Settings } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
+import { countryTransitionName, SharedElement } from "~/components/ui/view-transition";
 import {
   DocumentRibbon,
   ribbonPanelId,
@@ -22,7 +23,7 @@ import { MapTab } from "~/components/country-profile/map/MapTab";
 import { useCountryTab } from "~/hooks/useCountryTab";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import type { CountryTab } from "~/lib/country/country-routes";
-import { REDUCED_MOTION_FADE, springSmooth } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
 import { cn } from "~/lib/utils/cn";
 import { useCountryProfileLayer, type CountryProfileLayer } from "../_hooks/useCountryProfileLayer";
 import { EMPTY_PROFILE_MEDIA } from "../_utils/profileLayer";
@@ -69,7 +70,7 @@ function FlipFace({
     <div style={{ perspective: 1800 }}>
       <div
         className={cn(
-          "relative grid transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-3d",
+          "relative grid transition-transform duration-[350ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-3d",
           "motion-reduce:[transform:none] motion-reduce:transition-none",
           flipped && "[transform:rotateY(180deg)]"
         )}
@@ -152,24 +153,34 @@ export function CountryDocument({ initialTab }: { initialTab: CountryTab }) {
   return (
     // Clip, not hidden: hidden makes the card a scroll container, and the Lore rail could not stick inside it.
     <Card className="overflow-clip">
-      <FlipFace
-        flipped={flipped}
-        front={<ProfileFace layer={layer} cover={cover} action={action} onExpandMap={openMap} />}
-        back={
-          isOwner ? (
-            <CountryBackFace
-              countryId={country.id}
-              shown={flipped}
-              name={country.name.replace(/_/g, " ")}
+      <SharedElement name={countryTransitionName("face", slug)}>
+        <FlipFace
+          flipped={flipped}
+          front={
+            <ProfileFace
+              layer={layer}
               cover={cover}
-              factbookCovers={(layer.media ?? EMPTY_PROFILE_MEDIA).sectionCovers}
-              hasMap={layer.land?.hasGeometry ?? false}
-              owner={layer.owner}
-              onDone={() => setFlipped(false)}
+              action={action}
+              onExpandMap={openMap}
+              shared={!flipped}
             />
-          ) : null
-        }
-      />
+          }
+          back={
+            isOwner ? (
+              <CountryBackFace
+                countryId={country.id}
+                shown={flipped}
+                name={country.name.replace(/_/g, " ")}
+                cover={cover}
+                factbookCovers={(layer.media ?? EMPTY_PROFILE_MEDIA).sectionCovers}
+                hasMap={layer.land?.hasGeometry ?? false}
+                owner={layer.owner}
+                onDone={() => setFlipped(false)}
+              />
+            ) : null
+          }
+        />
+      </SharedElement>
       <div ref={ribbonRef} className="scroll-mt-[calc(var(--shell-top-offset,5rem)+1rem)]">
         <DocumentRibbon
           tabs={TABS}
@@ -184,14 +195,17 @@ export function CountryDocument({ initialTab }: { initialTab: CountryTab }) {
         id={ribbonPanelId(idBase)}
         aria-labelledby={ribbonTabId(idBase, tab)}
         tabIndex={0}
-        className="focus-visible:outline-tint p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:p-6"
+        className="focus-visible:outline-tint relative p-4 focus-visible:outline-2 focus-visible:-outline-offset-2 sm:p-6"
       >
-        <AnimatePresence mode="wait" initial={false}>
+        {/* popLayout, not wait: the new tab enters at once while the old one leaves out of flow,
+            so a quick second switch retargets instead of queueing behind an exit. Exits are a
+            short fade, faster than the entrance. */}
+        <AnimatePresence mode="popLayout" initial={false}>
           <motion.div
             key={tab}
             initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
             animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+            exit={{ opacity: 0, transition: tweenExit }}
             transition={reduceMotion ? REDUCED_MOTION_FADE : springSmooth}
           >
             <Panel tab={tab} layer={layer} />

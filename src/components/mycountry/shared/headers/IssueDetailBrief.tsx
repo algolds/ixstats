@@ -20,7 +20,6 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -61,7 +60,7 @@ type Issue = NonNullable<RouterOutputs["nationalIssues"]["getIssue"]>;
 type ReconData = NonNullable<RouterOutputs["nationalIssues"]["getReconReveal"]>;
 
 function formatReveal(r: ReconRevealItem): string {
-  if (r.value == null) return "—";
+  if (r.value == null) return "–";
   if (r.operation === "multiply") return `×${r.value}`;
   if (r.operation === "set") return `=${r.value}`;
   return `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
@@ -415,10 +414,10 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         <div className="space-y-3">
           <Card className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
-              <Eyebrow className="flex items-center gap-2">
+              <span className="text-footnote text-label-secondary flex items-center gap-2 font-medium">
                 <AlertTriangle className="text-yellow h-3.5 w-3.5" />
                 Executive issue resolution
-              </Eyebrow>
+              </span>
             </div>
 
             <div

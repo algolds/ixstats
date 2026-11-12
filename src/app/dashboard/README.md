@@ -12,13 +12,13 @@ their own (below). ThinkPages itself is the forum, at `/thinkpages`
 
 ## Routes
 
-| Route        | Page title            | File                                   |
-| ------------ | --------------------- | -------------------------------------- |
-| `/dashboard` | "Dashboard - IxStats" | `page.tsx` → `DashboardPageClient.tsx` |
-| `/dashboard/accounts` | "Accounts - IxStats" | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`) |
-| `/dashboard/post/[postId]` | feed post | `post/[postId]/page.tsx` (client page: a feed post with replies and the inline reply composer) |
-| `/dashboard/profile/[username]` | persona profile | `profile/[username]/page.tsx` (client page: a persona's posts, followers and following) |
-| `/dashboard/saved` | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only) |
+| Route                           | Page title              | File                                                                                           |
+| ------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `/dashboard`                    | "Dashboard - IxStats"   | `page.tsx` → `DashboardPageClient.tsx`                                                         |
+| `/dashboard/accounts`           | "Accounts - IxStats"    | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`)                  |
+| `/dashboard/post/[postId]`      | feed post               | `post/[postId]/page.tsx` (client page: a feed post with replies and the inline reply composer) |
+| `/dashboard/profile/[username]` | persona profile         | `profile/[username]/page.tsx` (client page: a persona's posts, followers and following)        |
+| `/dashboard/saved`              | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only)                               |
 
 Feed posts and persona profiles are public, as they were under `/thinkpages`; Accounts and
 Saved posts need a sign-in.
@@ -46,8 +46,9 @@ feed tab are not reflected in the URL.
   an executive telemetry micro-bar. The hero is collapsible and starts collapsed
   when the nation has no linked map territory (`countries.getMapLinkStatus`).
 - **Unified feed** (`UnifiedDashboardSection`): the ThinkPages composer (`GlassCanvasComposer`, signed-in
-  only) on top, with persona switching and "Manage accounts" in its avatar menu; then the feed's tabs, All
-  activity and Following (signed-in only, so signed-out visitors get no tabs), beside the "Around IxStates" button.
+  only) on top, with persona switching and "Manage accounts" in its avatar menu; then a right-aligned compact
+  **All activity** / **Following** switcher (signed-in only, so signed-out visitors get no tabs) and the
+  "Around IxStates" button below `xl`, directly above the stream.
 - **Around IxStates Inspector**: Your realm (`YourRealmPanel`), Daily blurb (`DailyBlurbCard`), Countries to
   Explore (`CountriesToExploreCard`), and Economic Tier Distribution. An aside at
   1280px and up; below that the "Around IxStates" button in the feed toolbar opens it as a sheet.
@@ -74,18 +75,18 @@ page.tsx / accounts/page.tsx (server: resolves signed-in country id) → Dashboa
 
 Key files (all under `src/components/dashboard/`):
 
-| Component                                               | Role                                                                   |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
-| `hero/DashboardHero.tsx`                                | Nation hero on the shared `CountryHeroCard` (map, cosmetics, MyCountry) |
-| `DashboardColumn.tsx`                                   | Shared content layout: a plain centred column (hero, children)         |
-| `accounts/AccountsSection.tsx`                          | The Accounts section: persona list, create and settings modals         |
-| `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs |
-| `accounts/form/`                                        | Creation form parts: type selector, details form, traits, username check |
-| `sections/UnifiedDashboardSection.tsx`                  | Feed tabs, composer, Inspector with the community widgets              |
-| `sections/UnifiedFeedContent.tsx`                       | Feed/Following stream rendering                                        |
-| `sections/CountriesToExploreCard.tsx`                   | Suggested countries                                                    |
-| `sections/BlurbSection.tsx`                             | Daily blurb prompt                                                     |
+| Component                                                                                                                                           | Role                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `DashboardRouter.tsx`                                                                                                                               | Top-level orchestration (global stats, map-link status, hero collapse)   |
+| `hero/DashboardHero.tsx`                                                                                                                            | Nation hero on the shared `CountryHeroCard` (map, cosmetics, MyCountry)  |
+| `DashboardColumn.tsx`                                                                                                                               | Shared content layout: a plain centred column (hero, children)           |
+| `accounts/AccountsSection.tsx`                                                                                                                      | The Accounts section: persona list, create and settings modals           |
+| `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs                                               |
+| `accounts/form/`                                                                                                                                    | Creation form parts: type selector, details form, traits, username check |
+| `sections/UnifiedDashboardSection.tsx`                                                                                                              | Feed tabs, composer, Inspector with the community widgets                |
+| `sections/UnifiedFeedContent.tsx`                                                                                                                   | Feed/Following stream rendering                                          |
+| `sections/CountriesToExploreCard.tsx`                                                                                                               | Suggested countries                                                      |
+| `sections/BlurbSection.tsx`                                                                                                                         | Daily blurb prompt                                                       |
 
 Hooks: `useUser` (auth), `usePremium`, `useActiveCosmetics` (avatar glow / chat
 badge / neon frame), `useNotify`, `usePageTitle`.

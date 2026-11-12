@@ -34,7 +34,7 @@ export function TaxRevenueProjections({ yields }: TaxRevenueProjectionsProps) {
                 <span className="text-label-secondary text-footnote truncate">{ch.shortLabel}</span>
               </div>
               <p className="text-label text-title-3 tabular-nums">
-                {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "—"}
+                {value != null ? <CurrencyFlow value={value} decimalPlaces={2} /> : "–"}
               </p>
               <p className="text-label-secondary text-footnote tabular-nums">
                 {value != null && totalYield != null && totalYield > 0 ? (

@@ -5,7 +5,10 @@ import { NavArrowDown as ChevronDown, NavArrowRight, ArrowUp, ArrowDown } from "
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { useNationClock } from "~/hooks/useNationClock";
 import { timeAgo } from "~/lib/format/compact";
+import { formatStampAsClockDate } from "~/lib/realms/nation-time";
+import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import { consequenceFieldLabel } from "~/lib/intent/consequence-labels";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { CATEGORY_STYLE } from "./domain-tiles";
@@ -17,7 +20,6 @@ import {
   formatDeltaValue,
 } from "./recordNarrative";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Card } from "~/components/ui/card";
 
 type FeedFilter = "all" | "diplomatic" | "economic" | "political";
 
@@ -51,11 +53,13 @@ const matchesFilter = (item: CanonFeedItem, filter: FeedFilter) =>
 /** One collapsible row of the activity record. */
 function RecordRow({
   item,
+  clock,
   isExpanded,
   onToggle,
   onOpenDrill,
 }: {
   item: CanonFeedItem;
+  clock: RealmClockReader | null;
   isExpanded: boolean;
   onToggle: () => void;
   onOpenDrill?: (drill: FeedDrill) => void;
@@ -75,13 +79,13 @@ function RecordRow({
         aria-controls={panelId}
         onClick={onToggle}
         className={cn(
-          "group h-auto w-full items-start justify-start gap-3 rounded-none px-3 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset",
-          isExpanded && "bg-fill-3"
+          "group rounded-control-sm h-auto w-full items-start justify-start gap-3 px-2.5 py-3 text-left font-normal whitespace-normal focus-visible:ring-inset",
+          isExpanded && "bg-fill-4"
         )}
       >
         <span
           aria-hidden="true"
-          className="bg-fill-3 text-label-secondary flex size-7 shrink-0 items-center justify-center rounded-lg"
+          className="bg-fill-3 text-label-secondary rounded-control-sm flex size-7 shrink-0 items-center justify-center"
         >
           <meta.icon className="size-3.5" />
         </span>
@@ -117,7 +121,7 @@ function RecordRow({
       </Button>
 
       {isExpanded && (
-        <div id={panelId} className="space-y-3 px-3 pb-4 pl-13">
+        <div id={panelId} className="space-y-3 px-2.5 pt-2 pb-4 pl-12">
           <div className="text-footnote flex flex-wrap items-center gap-2">
             {diagnostic.badge && (
               <Badge variant="outline" className={diagnostic.badge.cls}>
@@ -127,17 +131,14 @@ function RecordRow({
               </Badge>
             )}
             <span className="text-label-secondary tabular-nums">
-              {new Date(item.timestamp).toLocaleString(undefined, {
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}
+              {formatStampAsClockDate(item.timestamp, clock, "–")}
             </span>
           </div>
 
           <p className="text-label text-body leading-relaxed">{diagnostic.narrative}</p>
 
-          <div className="flex flex-wrap items-center gap-2">
-            {onOpenDrill && (
+          {onOpenDrill && (
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="secondary"
@@ -148,8 +149,8 @@ function RecordRow({
                 Open {meta.label.toLowerCase()}
                 <NavArrowRight aria-hidden="true" className="opacity-60" />
               </Button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </li>
@@ -163,6 +164,7 @@ export function ExecutiveRecordFeed({
   items: CanonFeedItem[];
   onOpenDrill?: (drill: FeedDrill) => void;
 }) {
+  const clock = useNationClock();
   const [visibleCount, setVisibleCount] = useState(5);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterCat, setFilterCat] = useState<FeedFilter>("all");
@@ -171,21 +173,15 @@ export function ExecutiveRecordFeed({
   const visibleItems = filteredItems.slice(0, visibleCount);
   const showMore = () => setVisibleCount((prev) => Math.min(filteredItems.length, prev + 10));
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    const nearBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 60;
-    if (nearBottom && visibleCount < filteredItems.length) showMore();
-  };
-
   if (items.length === 0) {
     return (
-      <Card className="rounded-card flex flex-col items-center px-6 py-8 text-center">
+      <div className="flex flex-col items-center px-4 py-6 text-center">
         <p className="text-label text-headline">No activity recorded yet</p>
         <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
           Decisions, directive outcomes and issue consequences are logged here as they change your
           nation.
         </p>
-      </Card>
+      </div>
     );
   }
 
@@ -203,28 +199,25 @@ export function ExecutiveRecordFeed({
         options={FEED_FILTERS.map((opt) => ({ value: opt.id, label: opt.label }))}
       />
 
-      <div
-        onScroll={handleScroll}
-        className="scrollbar-thumb-muted max-h-[520px] scrollbar-thin scrollbar-track-transparent overflow-y-auto"
-      >
+      {/* The page scrolls, not the list: an inner scroller would trap the wheel and the finger. */}
+      <div>
         {visibleItems.length === 0 ? (
-          <Card className="text-label-secondary rounded-card text-footnote px-4 py-6 text-center">
+          <p className="text-label-secondary text-footnote px-4 py-6 text-center">
             Nothing in this category yet.
-          </Card>
+          </p>
         ) : (
-          <Card className="rounded-card overflow-hidden">
-            <ul className="divide-separator divide-y">
-              {visibleItems.map((item) => (
-                <RecordRow
-                  key={item.id}
-                  item={item}
-                  isExpanded={expandedId === item.id}
-                  onToggle={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
-                  onOpenDrill={onOpenDrill}
-                />
-              ))}
-            </ul>
-          </Card>
+          <ul className="divide-separator divide-y">
+            {visibleItems.map((item) => (
+              <RecordRow
+                key={item.id}
+                item={item}
+                clock={clock}
+                isExpanded={expandedId === item.id}
+                onToggle={() => setExpandedId((prev) => (prev === item.id ? null : item.id))}
+                onOpenDrill={onOpenDrill}
+              />
+            ))}
+          </ul>
         )}
 
         {visibleCount < filteredItems.length && (

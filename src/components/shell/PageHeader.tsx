@@ -59,6 +59,13 @@ export interface PageHeaderProps {
    * `px-4` rather than `px-2`.
    */
   bleed?: boolean;
+  /**
+   * For pages whose `<h1>` lives elsewhere (the MyCountry command face): the header renders no
+   * large title block and collapses into the compact bar once this element scrolls up under the
+   * toolbar. Pass `null` while that element is not mounted yet; leave it out to use the header's
+   * own large title.
+   */
+  collapseOn?: HTMLElement | null;
   className?: string;
 }
 
@@ -73,15 +80,14 @@ export const BACKDROP_PLATE =
 
 const fade = "transition-opacity duration-fast ease-out-facet motion-reduce:transition-none";
 
-/** Tracks whether `target` has scrolled up under the sticky `toolbar`. */
+/** Tracks whether `titleEl` has scrolled up under the sticky `toolbar`. */
 function useCollapsed(
   toolbar: React.RefObject<HTMLElement | null>,
-  target: React.RefObject<HTMLElement | null>
+  titleEl: HTMLElement | null
 ): boolean {
   const [collapsed, setCollapsed] = React.useState(false);
 
   React.useEffect(() => {
-    const titleEl = target.current;
     if (!titleEl || typeof IntersectionObserver === "undefined") return;
     const bar = toolbar.current;
     // The band the toolbar covers once it sticks: its `top` plus its height.
@@ -97,7 +103,7 @@ function useCollapsed(
     );
     observer.observe(titleEl);
     return () => observer.disconnect();
-  }, [toolbar, target]);
+  }, [toolbar, titleEl]);
 
   return collapsed;
 }
@@ -110,15 +116,18 @@ export function PageHeader({
   actions,
   backdrop,
   bleed,
+  collapseOn,
   className,
 }: PageHeaderProps) {
   const toolbarRef = React.useRef<HTMLDivElement>(null);
-  const titleRef = React.useRef<HTMLHeadingElement>(null);
-  const collapsed = useCollapsed(toolbarRef, titleRef);
+  // State, not a ref: the observer must re-attach when the observed title mounts.
+  const [ownTitle, setOwnTitle] = React.useState<HTMLHeadingElement | null>(null);
+  const titleElsewhere = collapseOn !== undefined;
+  const collapsed = useCollapsed(toolbarRef, titleElsewhere ? collapseOn : ownTitle);
   const hasToolbarContent = Boolean(back) || Boolean(actions);
   const titleBlock = (
     <>
-      <h1 ref={titleRef} className="text-large-title text-label">
+      <h1 ref={setOwnTitle} className="text-large-title text-label">
         {title}
       </h1>
       {subtitle != null && subtitle !== false && (
@@ -221,27 +230,29 @@ export function PageHeader({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex items-center gap-4",
-          backdrop != null ? "z-raised relative px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
-        )}
-      >
-        {leading}
-        {/* A page has a backdrop or not, so the wrapper never swaps and the observed <h1> never
-            remounts. The Lens is sized to the text, so long names are covered too. */}
-        {backdrop != null ? (
-          <FacetMaterial
-            layer="lens"
-            data-slot="page-header-plate"
-            className="facet-lens-frosted rounded-card flex min-w-0 flex-col gap-1 px-4 py-3"
-          >
-            {titleBlock}
-          </FacetMaterial>
-        ) : (
-          <div className="flex min-w-0 flex-col gap-1">{titleBlock}</div>
-        )}
-      </div>
+      {!titleElsewhere && (
+        <div
+          className={cn(
+            "flex items-center gap-4",
+            backdrop != null ? "z-raised relative px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
+          )}
+        >
+          {leading}
+          {/* A page has a backdrop or not, so the wrapper never swaps and the observed <h1> never
+              remounts. The Lens is sized to the text, so long names are covered too. */}
+          {backdrop != null ? (
+            <FacetMaterial
+              layer="lens"
+              data-slot="page-header-plate"
+              className="facet-lens-frosted rounded-card flex min-w-0 flex-col gap-1 px-4 py-3"
+            >
+              {titleBlock}
+            </FacetMaterial>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1">{titleBlock}</div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

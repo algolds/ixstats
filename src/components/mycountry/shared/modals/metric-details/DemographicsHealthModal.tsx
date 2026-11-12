@@ -41,9 +41,9 @@ function getHealthLevel(lifeExpectancy: number) {
   return HEALTH_LEVELS.find((level) => lifeExpectancy >= level.atLeast) ?? NOT_RECORDED;
 }
 
-/** A percentage with one decimal, or an em dash when the value is missing or zero. */
+/** A percentage with one decimal, or an en dash when the value is missing or zero. */
 const percentOrDash = (value: number | undefined | null, digits: number) =>
-  value ? `${value.toFixed(digits)}%` : "—";
+  value ? `${value.toFixed(digits)}%` : "–";
 
 type EconomicData = ReturnType<typeof useCountryEconomicData>;
 type DemographicsViewProps = Pick<EconomicData, "countryData"> & {
@@ -85,7 +85,7 @@ function DemographicsOverview({ demographics, countryData }: DemographicsViewPro
             <MetricModalLayout.Tile
               valueClassName="tabular-nums"
               value={
-                demographics?.dependencyRatio ? `${demographics.dependencyRatio.toFixed(0)}%` : "—"
+                demographics?.dependencyRatio ? `${demographics.dependencyRatio.toFixed(0)}%` : "–"
               }
               label="Dependency ratio"
             />
@@ -167,7 +167,7 @@ function DemographicsDetails({ demographics }: Pick<DemographicsViewProps, "demo
     : [];
   const agePct = (match: (group: string) => boolean): string => {
     const percent = ageGroups.find((a) => a.group && match(a.group))?.percent;
-    return percent ? `${percent.toFixed(0)}%` : "—";
+    return percent ? `${percent.toFixed(0)}%` : "–";
   };
   const educationLevels = Array.isArray(demographics?.educationLevels)
     ? (demographics.educationLevels as EducationLevel[])

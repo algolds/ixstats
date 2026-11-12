@@ -24,7 +24,7 @@ import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { CommandSurface } from "./CommandSurface";
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
-  overview: "MyCountry®",
+  overview: "MyCountry",
   executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",

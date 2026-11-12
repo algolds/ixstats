@@ -2,6 +2,7 @@
 
 import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
 import { Badge } from "~/components/ui/badge";
+import { countryTransitionName, SharedElement } from "~/components/ui/view-transition";
 import { CountryHeroCard } from "~/components/shared/country-hero/CountryHeroCard";
 import type { HeroRing } from "~/components/shared/country-hero/HeroSnapshotPanels";
 import { stripHtml } from "~/lib/utils/sanitize-html";
@@ -27,6 +28,8 @@ interface ProfileHeroProps extends CountryIdentityStripProps {
   action?: React.ReactNode;
   /** The hero map's expand control: opens the Map tab. */
   onExpandMap?: () => void;
+  /** Whether the flag tile and country title participate in shared-element transitions. */
+  shared?: boolean;
 }
 
 /** Wiki infobox values can carry raw HTML (<div>, <br>…); these fields are plain text. */
@@ -43,6 +46,7 @@ function ProfileIdentity({
   realm,
   sovereign,
   claim,
+  shared = true,
 }: Omit<ProfileHeroProps, "countryId" | "stats" | "cover" | "footer" | "action" | "onExpandMap">) {
   const official = plain(officialName);
   const system = plain(governmentType);
@@ -50,11 +54,15 @@ function ProfileIdentity({
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <FlagTile src={flagUrl} name={name} />
+        <SharedElement name={shared ? countryTransitionName("flag", slug) : null}>
+          <FlagTile src={flagUrl} name={name} />
+        </SharedElement>
         <div className="min-w-0">
           {region && <p className="text-footnote text-label-secondary">{region}</p>}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <h1 className="text-large-title text-label text-balance">{name}</h1>
+            <SharedElement name={shared ? countryTransitionName("title", slug) : null}>
+              <h1 className="text-large-title text-label text-balance">{name}</h1>
+            </SharedElement>
             <CountryOwnerRibbonRack countrySlug={slug} />
           </div>
           {official && official !== name && (

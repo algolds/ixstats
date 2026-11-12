@@ -209,7 +209,7 @@ function TaxRateCardComponent({
       <div className="text-footnote flex items-center justify-between gap-2">
         <span className="text-label-secondary">Yield contribution</span>
         <span className="text-label font-semibold tabular-nums">
-          {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "—"}
+          {yieldValue != null ? <CurrencyFlow value={yieldValue} decimalPlaces={1} /> : "–"}
         </span>
       </div>
     </Card>

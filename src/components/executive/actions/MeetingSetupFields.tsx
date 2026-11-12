@@ -23,7 +23,7 @@ import { atNineAm, type TimePreset } from "./meeting-scheduler-logic";
 import type { IntentTemplate, MeetingSchedulerProps } from "./meeting-scheduler-types";
 import { assetUrl } from "~/lib/base-path";
 
-const EYEBROW = "text-label-secondary text-eyebrow";
+const SECTION_LABEL = "text-label-secondary text-footnote font-medium";
 
 const TIME_PRESETS = [
   { value: "immediately", label: "Immediately" },
@@ -50,7 +50,9 @@ export function IntentSelector({
     <>
       {prefilled && (
         <div className="bg-surface-secondary rounded-row text-footnote p-3">
-          <span className="text-eyebrow text-label-secondary mb-0.5 block">Linked reference</span>
+          <span className="text-footnote text-label-secondary mb-0.5 block font-medium">
+            Linked reference
+          </span>
           <div className="flex items-center gap-2">
             <span className="text-label font-medium">{prefilled.title}</span>
             <Badge variant="warning">
@@ -62,7 +64,7 @@ export function IntentSelector({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className={EYEBROW}>Agenda intent</Label>
+          <Label className={SECTION_LABEL}>Agenda intent</Label>
           {!isChanging && (
             <Button
               type="button"
@@ -167,7 +169,7 @@ export function ScheduleFields({
 }) {
   return (
     <div className="space-y-2">
-      <Label className={EYEBROW}>Scheduled date and time</Label>
+      <Label className={SECTION_LABEL}>Scheduled date and time</Label>
       <SegmentedControl
         aria-label="Scheduled date and time"
         fullWidth
@@ -179,7 +181,7 @@ export function ScheduleFields({
 
       {preset === "custom" && (
         <Card variant="well" padding="none" className="mt-2 space-y-2 p-3">
-          <Label htmlFor="custom-date" className={EYEBROW}>
+          <Label htmlFor="custom-date" className={SECTION_LABEL}>
             Date
           </Label>
           <RealmDayInput

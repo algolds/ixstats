@@ -62,10 +62,12 @@ export function DashboardRouter({
     if (!mapStatus.isMapped) setHeroCollapsed(true);
   }, [mapStatus]);
 
+  const showHero = section === "home" && !heroCollapsed && Boolean(countryId.trim());
+
   return (
     <DashboardColumn
       heroSection={
-        section === "home" && !heroCollapsed ? (
+        showHero ? (
           <DashboardHero collapsed={heroCollapsed} onCollapsedChange={setHeroCollapsed} />
         ) : undefined
       }
@@ -73,7 +75,11 @@ export function DashboardRouter({
       {section === "accounts" ? (
         <AccountsSection initialCountryId={initialCountryId} onBack={() => onNavigate?.("home")} />
       ) : (
-        <UnifiedDashboardSection globalStats={globalStats} onOpenAccounts={openAccounts} />
+        <UnifiedDashboardSection
+          globalStats={globalStats}
+          onOpenAccounts={openAccounts}
+          heroVisible={showHero}
+        />
       )}
     </DashboardColumn>
   );

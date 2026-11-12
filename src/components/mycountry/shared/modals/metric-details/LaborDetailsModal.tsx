@@ -183,14 +183,14 @@ function LaborBreakdown({ labor, countryData }: LaborViewProps) {
           <MetricModalLayout.Metric
             label="Productivity index"
             tone="text-green"
-            value={labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) ?? "—"}
+            value={labor?.skillsAndProductivity?.laborProductivityIndex?.toFixed(2) ?? "–"}
           />
           <MetricModalLayout.Metric
             label="Avg. Education"
             value={
               labor?.skillsAndProductivity?.averageEducationYears
                 ? `${labor.skillsAndProductivity.averageEducationYears.toFixed(1)} years`
-                : "—"
+                : "–"
             }
           />
         </MetricModalLayout.SidePanel>

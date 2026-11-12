@@ -253,7 +253,7 @@ function RelationList({ relations }: { relations: LiveRelation[] }) {
               <div className="flex items-center justify-between gap-2">
                 <span className="text-label truncate font-medium">{rel.targetName}</span>
                 <span className="text-label shrink-0 tabular-nums">
-                  {rel.strength != null ? `${rel.strength}%` : "—"}
+                  {rel.strength != null ? `${rel.strength}%` : "–"}
                 </span>
               </div>
               {rel.strength != null && <RailBar value={rel.strength} />}

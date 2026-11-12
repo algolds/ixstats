@@ -37,7 +37,7 @@ export function StandingBand({
   return (
     <section
       aria-label="Country DNA"
-      className="bg-surface-secondary rounded-row shadow-card flex flex-wrap items-start gap-x-7 gap-y-5 p-4"
+      className="facet-well rounded-row flex flex-wrap items-start gap-x-7 gap-y-5 p-4"
     >
       {rings.length > 0 && (
         <RingGrid rings={rings} onOpen={onOpenRings} className="min-w-0 flex-[1_1_16rem]" />

@@ -11,8 +11,6 @@ import {
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Badge } from "~/components/ui/badge";
-import { Card } from "~/components/ui/card";
 
 const CabinetPanel = dynamic(
   () =>
@@ -105,23 +103,6 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
 
   return (
     <div className="space-y-4">
-      {/* Player fiat notice */}
-      <Card className="rounded-card flex items-start justify-between gap-3 p-3">
-        <div className="flex min-w-0 items-start gap-2">
-          <Crown aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-label text-headline">Executive fiat mode</p>
-            <p className="text-label-secondary text-footnote leading-relaxed">
-              Political structure, parties, cabinet posts, and legislative rules are player
-              configurable. Legislative seats are won at elections.
-            </p>
-          </div>
-        </div>
-        <Badge variant="default" className="shrink-0">
-          Player fiat
-        </Badge>
-      </Card>
-
       {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
       <ElectionStatusCard countryId={countryId} />
 

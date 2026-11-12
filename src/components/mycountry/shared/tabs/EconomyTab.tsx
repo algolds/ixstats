@@ -109,7 +109,7 @@ function TradeMetric({
       value={
         amount == null ? (
           <span role="img" aria-label="Not recorded">
-            —
+            –
           </span>
         ) : (
           formatCompactCurrency(amount, "N/A", currency)

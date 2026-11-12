@@ -190,8 +190,8 @@ it("labels each recon finding by its operation", () => {
   };
   render(<IssueDetailBrief issueId="n-1" />);
   for (const label of [
-    "Alpha: —",
-    "Bravo: —",
+    "Alpha: –",
+    "Bravo: –",
     "Charlie: ×1.5",
     "Delta: =40",
     "Echo: -3",

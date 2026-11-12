@@ -19,7 +19,6 @@ import {
   Building,
   CheckCircle as CheckCircle2,
 } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import type { VitalityRing } from "~/components/mycountry/shared/primitives/tabs/vitality";
 import { Card } from "~/components/ui/card";
 
@@ -153,7 +152,7 @@ export function VitalityBreakdownModal({
                   </p>
 
                   <div className="border-separator mt-3 border-t pt-2">
-                    <Eyebrow>Core drivers</Eyebrow>
+                    <p className="text-footnote text-label-secondary font-medium">Core drivers</p>
                     <ul className="mt-1 space-y-1">
                       {meta.drivers.map((driver) => (
                         <li

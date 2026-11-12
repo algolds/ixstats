@@ -35,7 +35,6 @@ import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { createUrl } from "~/lib/utils";
 import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button, buttonVariants } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import dynamic from "next/dynamic";
 import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
 import {
@@ -360,11 +359,7 @@ export function CountryActionsMenu({
             )}
 
             <ActionGroup label="Quick links">
-              <ActionRow
-                icon={Trophy}
-                label="Leaderboards"
-                onClick={() => go("/leaderboards")}
-              />
+              <ActionRow icon={Trophy} label="Leaderboards" onClick={() => go("/leaderboards")} />
               <WikiLinkPreview title={targetCountryName}>
                 <Link
                   href={titleToWikiOSRoute(targetCountryName)}
@@ -414,7 +409,7 @@ const ACTION_ROW_CLASS = "w-full justify-start gap-3";
 function ActionGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="space-y-2" aria-label={label}>
-      <Eyebrow className="block px-1">{label}</Eyebrow>
+      <p className="text-footnote text-label-secondary px-1 font-medium">{label}</p>
       {children}
     </section>
   );

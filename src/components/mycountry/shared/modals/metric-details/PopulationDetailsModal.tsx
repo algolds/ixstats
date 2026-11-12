@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import {
   Group as Users,
@@ -126,9 +125,9 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
     >
       <MetricModalLayout.TileGrid columns="grid-cols-1 md:grid-cols-3">
         <Card variant="well" padding="none" className={tileClass}>
-          <div className="text-label-secondary text-eyebrow mb-1 flex items-center justify-center gap-2">
+          <div className="text-caption text-label-secondary mb-1 flex items-center justify-center gap-2">
             <GrowthIcon className={cn("h-4 w-4", signedTone(metrics.growth))} />
-            Recent Growth
+            Recent growth
           </div>
           <span className={cn("text-title-2", signedTone(metrics.growth))}>
             {metrics.growth > 0 ? "+" : ""}
@@ -217,7 +216,9 @@ function PopulationOverview({
           bordered={false}
           label={
             <div className="flex items-center justify-between">
-              <Eyebrow>Demographics classification</Eyebrow>
+              <span className="text-footnote text-label-secondary font-medium">
+                Demographics classification
+              </span>
               <TierInfoPopover currentIndex={tierIndex} />
             </div>
           }

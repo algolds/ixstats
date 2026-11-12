@@ -7,7 +7,6 @@ import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Select,
   SelectContent,
@@ -178,10 +177,10 @@ function RelationCard({
 
       <div className="mt-4 space-y-1">
         <div className="text-footnote flex items-center justify-between">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Handshake className="h-3 w-3" />
             Relation strength
-          </Eyebrow>
+          </span>
           <span className={cn("font-semibold", band.textClass)}>{band.label}</span>
         </div>
         <Progress value={rel.strength} className="h-1.5" indicatorClassName={band.barClass} />
@@ -189,7 +188,7 @@ function RelationCard({
 
       <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <Eyebrow>Your stance</Eyebrow>
+          <span className="text-label-secondary">Your stance</span>
           {isOwner ? (
             <Select
               value={rel.goalSelf || undefined}
@@ -212,7 +211,7 @@ function RelationCard({
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <Eyebrow>Their stance</Eyebrow>
+          <span className="text-label-secondary">Their stance</span>
           <Badge variant="outline" className="w-fit">
             {rel.goalTarget || "Not declared"}
           </Badge>
@@ -240,19 +239,19 @@ function RelationCard({
 
       <div className="border-separator text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
         <div className="flex flex-col gap-0.5">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Landmark className="h-3 w-3 shrink-0" />
             Bilateral trade
-          </Eyebrow>
+          </span>
           <span className="text-label font-semibold tabular-nums">
             {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Calendar className="h-3 w-3 shrink-0" />
             Last contact
-          </Eyebrow>
+          </span>
           <span className="text-label font-semibold">
             {formatStampAsClockDate(rel.lastContact, clock)}
           </span>

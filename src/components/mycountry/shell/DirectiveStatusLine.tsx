@@ -22,32 +22,24 @@ export const NextDirectiveIn = React.memo(function NextDirectiveIn({
   return <>{countdown === "Paused" ? "Paused" : `Next directive in ${countdown}`}</>;
 });
 
-/** How many directives are left this week, or when the next one opens. */
+/** Cooldown notice when all weekly directive slots are in use (`CommandBand` shows the live slot count). */
 export function DirectiveStatusLine({ countryId }: { countryId?: string }) {
   const status = api.intent.getStatus.useQuery(
     { countryId: countryId ?? "" },
     { enabled: !!countryId }
   );
-  if (!status.data) return null;
-  const { canCommit, usedThisWeek, cap, cooldownUntil } = status.data;
-  if (!canCommit) {
-    return (
-      <p className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
-        <FileClock aria-hidden="true" className="h-3.5 w-3.5" />
-        <span>
-          {cooldownUntil ? (
-            <NextDirectiveIn cooldownUntil={cooldownUntil} />
-          ) : (
-            `All ${cap} directives used · slots reset next week`
-          )}
-        </span>
-      </p>
-    );
-  }
-  const left = Math.max(0, cap - usedThisWeek);
+  if (!status.data || status.data.canCommit) return null;
+  const { cap, cooldownUntil } = status.data;
   return (
-    <p className="text-label-secondary text-footnote tabular-nums">
-      {left} of {cap} directives left this week
+    <p className="text-label-secondary text-footnote flex items-center gap-1 tabular-nums">
+      <FileClock aria-hidden="true" className="h-3.5 w-3.5" />
+      <span>
+        {cooldownUntil ? (
+          <NextDirectiveIn cooldownUntil={cooldownUntil} />
+        ) : (
+          `All ${cap} directives used · slots reset next week`
+        )}
+      </span>
     </p>
   );
 }

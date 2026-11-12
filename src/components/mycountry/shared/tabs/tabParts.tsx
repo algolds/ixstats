@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { StatUp as TrendingUp, StatDown as TrendingDown } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent } from "~/components/ui/card";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { InlineHelpIcon } from "~/components/ui/help-icon";
 import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
@@ -194,7 +193,7 @@ export function ToggleMetric({
   const body = (
     <>
       {eyebrow ? (
-        <Eyebrow className="block">{label}</Eyebrow>
+        <span className="text-footnote text-label-secondary block font-medium">{label}</span>
       ) : (
         <span className="text-caption text-label-secondary block">{label}</span>
       )}
@@ -305,7 +304,7 @@ export function StatGrid({
   const cells = stats.map((stat) => (
     <div key={stat.label} className="min-w-0">
       {eyebrow ? (
-        <Eyebrow className="block">{stat.label}</Eyebrow>
+        <span className="text-footnote text-label-secondary block font-medium">{stat.label}</span>
       ) : (
         <span className="text-caption text-label-secondary block">{stat.label}</span>
       )}

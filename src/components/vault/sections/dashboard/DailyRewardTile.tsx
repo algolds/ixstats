@@ -7,7 +7,6 @@ import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { StreakPill } from "~/components/vault/StreakPill";
 import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { formatDailyRewardWait } from "~/lib/vault/next-daily-reward";
 import { tweenFast } from "~/lib/design/motion";
@@ -21,7 +20,7 @@ const nextClaimLabel = () => `Next reward in ${formatDailyRewardWait(new Date())
 const useNextClaimLabel = () =>
   useSyncExternalStore(subscribeNever, nextClaimLabel, () => FALLBACK_LABEL);
 
-function ReadyTile({ streak }: { streak: number }) {
+function ReadyTile() {
   const { open } = useDailyReward();
   return (
     <Card
@@ -37,11 +36,9 @@ function ReadyTile({ streak }: { streak: number }) {
       </IconWell>
       <div className="relative flex min-w-0 flex-1 flex-col">
         <span className="text-callout truncate">Daily reward ready</span>
-        {streak > 0 && (
-          <span className="mt-0.5 flex">
-            <StreakPill streak={streak} />
-          </span>
-        )}
+        <span className="text-footnote text-label-secondary truncate">
+          IxCredits or a mystery card
+        </span>
       </div>
       <Button type="button" size="sm" className="relative" onClick={open}>
         Claim daily reward
@@ -83,7 +80,7 @@ export function DailyRewardTile() {
       animate={{ opacity: 1 }}
       transition={tweenFast}
     >
-      {ready ? <ReadyTile streak={balance.data.loginStreak} /> : <ClaimedRow />}
+      {ready ? <ReadyTile /> : <ClaimedRow />}
     </motion.div>
   );
 }

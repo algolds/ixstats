@@ -2,15 +2,13 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { KeyCommand as Command } from "iconoir-react";
-import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { PremiumPreviewFrame } from "~/components/mycountry/shared/primitives";
 import { PoliticsDrillDown } from "./PoliticsDrillDown";
 import { EconomyDrillDown } from "./EconomyDrillDown";
 import { DomainContextRail } from "./DomainContextRail";
-import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
+import type { MyCountryDomain } from "./domain-meta";
 
 const EmbassiesAndRelationsPanel = dynamic(
   () =>
@@ -36,19 +34,19 @@ const SECTION_TO_DOMAIN: Record<string, MyCountryDomain> = {
   defense: "defense",
   politics: "politics",
   economy: "economy",
-  executive: "economy",
 };
 
 /**
- * The full-page surface for the domain routes (/mycountry/diplomacy, /defense, /politics,
- * /executive): a title row, the domain's drill content inline and the shared rail alongside.
- * Defense stays premium-gated via PremiumPreviewFrame.
+ * The panel for the domain sections (/mycountry/economy, /diplomacy, /politics, /defense): the
+ * domain's drill content with its rail alongside. The command ribbon above names the section, and
+ * the command bar's Declare Directive opens on the domain's suggested goal, so the panel carries
+ * neither a title row nor a second Declare button. Defense stays premium-gated via
+ * PremiumPreviewFrame.
  */
 interface DomainSurfaceProps {
   countryId: string;
   section: string;
   onDeclare?: (prefilled?: string) => void;
-  onNavigate?: (section: string) => void;
 }
 
 function DomainSurfaceComponent({
@@ -57,50 +55,27 @@ function DomainSurfaceComponent({
   onDeclare,
 }: DomainSurfaceProps): React.JSX.Element {
   const hasDefenseAccess = useHasMycountryPremium("defense");
-  const domain = SECTION_TO_DOMAIN[section];
-  const meta = DOMAIN_META[domain];
+  const domain = SECTION_TO_DOMAIN[section] ?? "economy";
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <meta.icon aria-hidden="true" className="text-label-secondary size-6 shrink-0" />
-          <div className="min-w-0">
-            <h2 className="text-label text-title-2">{meta.title}</h2>
-            <p className="text-label-secondary text-callout">{meta.blurb}</p>
-          </div>
-        </div>
-
-        <Button
-          type="button"
-          onClick={() => onDeclare?.(meta.prefilledGoal)}
-          className="h-11 shrink-0 sm:h-9"
-          title={`Start a Directive with a suggested ${meta.title.toLowerCase()} goal`}
-        >
-          <Command aria-hidden="true" />
-          Declare Directive
-        </Button>
+    <div className="grid gap-6 lg:grid-cols-3">
+      <div className="min-w-0 space-y-6 lg:col-span-2">
+        {domain === "defense" ? (
+          <PremiumPreviewFrame feature="defense" locked={!hasDefenseAccess}>
+            <DefenseCommandPanel countryId={countryId} />
+          </PremiumPreviewFrame>
+        ) : domain === "relations" ? (
+          <EmbassiesAndRelationsPanel countryId={countryId} />
+        ) : domain === "politics" ? (
+          <PoliticsDrillDown countryId={countryId} />
+        ) : (
+          <EconomyDrillDown countryId={countryId} onDeclare={onDeclare} />
+        )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 space-y-6 lg:col-span-2">
-          {domain === "defense" ? (
-            <PremiumPreviewFrame feature="defense" locked={!hasDefenseAccess}>
-              <DefenseCommandPanel countryId={countryId} />
-            </PremiumPreviewFrame>
-          ) : domain === "relations" ? (
-            <EmbassiesAndRelationsPanel countryId={countryId} />
-          ) : domain === "politics" ? (
-            <PoliticsDrillDown countryId={countryId} />
-          ) : (
-            <EconomyDrillDown countryId={countryId} onDeclare={onDeclare} />
-          )}
-        </div>
-
-        <aside className="min-w-0 space-y-6">
-          <DomainContextRail countryId={countryId} domain={domain} />
-        </aside>
-      </div>
+      <aside className="min-w-0 space-y-6">
+        <DomainContextRail countryId={countryId} domain={domain} />
+      </aside>
     </div>
   );
 }

@@ -5,34 +5,34 @@
 **Parent App Suite:** MyCountry Suite (`INTERNAL_VERSIONS.systems.mycountry` = 6, public v1)  
 **Engine:** Statecraft Simulation Engine (`MYCOUNTRY_ENGINE_VERSION = 4`)  
 **Primary Action:** `GOVERN` | **Domain Accent:** Amber Gold (`#F59E0B` / `--color-amber-500`)  
-**Route:** `/mycountry` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); the command surface is live, but Politics, Diplomacy, Economy and National Issues are 🟡 Partial (loops below)  
+**Route:** `/mycountry` | **Status:** see [SYSTEM_STATUS.md](SYSTEM_STATUS.md); the command surface is live, but Politics, Diplomacy, Economy and National Issues are 🟡 Partial (loops below)
 
 The MyCountry Suite provides sovereign leaders with an executive command environment. Built around the single-page **Command Surface** architecture, it unifies decision-making, foreign relations, macroeconomic planning, and legislative governance into an action-first workflow.
 
 > **Open to every player:** **Overview/Executive**, **Economy**, **Politics**, and **Diplomacy** (`src/lib/auth/ability.ts`).  
-> *(**Defense** (which also serves `/mycountry/intelligence`) is premium-gated: locked behind `PremiumPreviewFrame`. The **Map Editor** is free for every owner. The app sidebar lists Defense only for MyCountry Premium members and beta testers (`requires: "mycountry-premium"` in `src/lib/navigation/app-sections.ts`); the pages keep their premium preview for anyone who arrives by URL.)*
+> _(**Defense** (which also serves `/mycountry/intelligence`) is premium-gated: locked behind `PremiumPreviewFrame`. The **Map Editor** is free for every owner. The command document's `DocumentRibbon` (`src/components/mycountry/shell/mycountry-tabs.ts`) lists Defense only for MyCountry Premium members and beta testers; the pages keep their premium preview for anyone who arrives by URL.)_
 
 ---
 
 ## Single Production Command Surface Architecture
 
-MyCountry has fully unified around the single production **Command Surface** (`CommandSurface.tsx`), removing all legacy multi-page tab switches and fragmented war rooms.
+MyCountry has fully unified around the single production **Command Surface** (`CommandSurface.tsx`), sharing the public Country Profile's document anatomy while preserving MyCountry's executive gold identity and private readings.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │            COMMAND SURFACE (src/components/mycountry/shell/)           │
 ├───────────────────────────────────┬────────────────────────────────────┤
-│ 1. Header (large title)           │ Flag + country name, leader/gov't  │
-│    headers/UnifiedGlassCommandBar │ footnote, Profile/Edit, primary    │
-│                                   │ "Declare Directive" + slot status  │
+│ 1. Sticky Compact Chrome Bar      │ Zero-flow-height until the hero    │
+│    headers/UnifiedGlassCommandBar │ scrolls off; fades in around Halo  │
 ├───────────────────────────────────┼────────────────────────────────────┤
-│ 2. National Standing (vitals)     │ Population, GDP, Approval,         │
-│    StandingBands.tsx              │ Stability, executive bandwidth + 4 vitality     │
-│                                   │ rings (full width)                 │
+│ 2. Command Document (face+ribbon) │ Live territory stage (Monogram     │
+│    face/CommandDocument.tsx       │ fallback), frosted Lens identity,  │
+│    face/CommandBand.tsx           │ RingGrid + bandwidth/slots/issues, │
+│    mycountry-tabs.ts              │ DocumentRibbon + CommandActions    │
 ├───────────────────────────────────┼────────────────────────────────────┤
-│ 3. Overview body                  │ Priority hero, agenda inbox,       │
-│    ExecutiveHome.tsx              │ recent activity; rail: alerts,     │
-│                                   │ standing, domains, territory       │
+│ 3. Overview body                  │ FirstStepsCard, alerts, priority   │
+│    ExecutiveHome.tsx              │ hero, Reminders/swipe Agenda,      │
+│                                   │ recent activity                    │
 ├───────────────────────────────────┼────────────────────────────────────┤
 │ 4. Domain Command Surfaces        │ Full-page modes for Diplomacy,     │
 │    DomainSurface.tsx              │ Defense, Politics, and Economy     │
@@ -43,46 +43,48 @@ MyCountry has fully unified around the single production **Command Surface** (`C
 ```
 
 ### Overview layout & design (Facet / Apple HIG)
-The overview reads top to bottom as one hierarchy, on an 8pt spacing rhythm (24px between cards):
-The overview follows the Facet 4 rules ([facet-design-system.md](../reference/facet-design-system.md)):
 
-1. **Header** (`headers/UnifiedGlassCommandBar.tsx`) - the MyCountry `PageHeader`: the country name as the large title over its flag as cover art (the flag banner backdrop, no small flag beside the title), the identity subtitle (leader · government type · economic tier · realm) and the directive status line ("N of 3 directives left this week" / "Next directive in …", `intent.getStatus`) on a page-background plate, and the Profile, Editor and **Declare Directive** actions. The banner and plates collapse with the header; the compact sticky bar has plain ghost actions.
-2. **Priority** (`ExecutiveOpportunityHero.tsx`) - the one thing most worth the leader's attention, dismissible for the session: an opaque `Card` with the priority's glyph in its status tone, a one-line subtitle, title and description, an optional metric (label over value) and one primary action.
-3. **Agenda** (`ExecutiveAgenda.tsx`) and **Recent activity** (`ExecutiveRecordFeed.tsx`) in the main column.
-4. The rail: **Intelligence alerts** (`IntelligenceAlertsCard.tsx`, only while threshold alerts are open: severity badge, title, value, mark read or dismiss; see [defense.md](defense.md#intelligence)), **National standing** (`StandingBands.tsx` — a gold-rimmed glass card with the country chip and vitality pill, one opaque telemetry panel: Population (tap for the exact figure), GDP, Approval, Stability, executive bandwidth with its gold meter; then the 2×2 vitality rings that open the breakdown), **Domains** (`DomainPeeksCard.tsx`, a quick way into each domain) and **Territory**.
+The overview reads top to bottom as one hierarchy, on an 8pt spacing rhythm (24px between cards), following the Facet 4 rules ([facet-design-system.md](../reference/facet-design-system.md)):
 
-**Agenda inbox.** The agenda is an inbox, not a calendar. Items are derived from live state (`agenda/deriveAgendaItems.ts`): open national issues (an issue's deadline is folded into its row), active directives and upcoming elections. Each row shows an unread dot and the source glyph, the title (bold while unread), a one-line preview after the source label, and a relative time ("2h ago", from when the item arrived) or deadline pressure ("Overdue", "Due soon", "Upcoming") — never a calendar date, weekday or "today". Urgent items (critical/high issues, urgency over 70, a deadline within two IxDays or past, an election within seven IxDays) carry a flag and form the **Needs action** mailbox. Mailboxes are a `SegmentedControl` — All · Needs action · Issues · Directives · Elections, with counts — showing only mailboxes that have items. Order: overdue, due soon, flagged, then newest. Opening an item (the `AgendaEventActionDialog`: suggested directive, issue brief or details) marks it read; the dialog also offers **Mark as unread**, **Snooze a day**, **Snooze a week** and **Done**, and on touch rows swipe (read/unread right; snooze or done left, full swipe = done). **Mark all as read** sits in the header next to the unread count. Snoozed and done items collapse into a "Show N snoozed and M done" disclosure where they can be moved back to the inbox. Read/done/snooze flags live in this browser per country (`localStorage` key `ixstats:agenda-inbox:<countryId>`, `agenda/inboxState.ts`, synced across tabs); each flag is tied to a version of the item (issue severity + deadline, directive tier, election status + scheduled time), so an item that escalates or moves comes back unread, snoozes expire in real time and come back unread, and flags for items that no longer exist are pruned. A directive you declared starts read; an issue you have viewed on the server starts read. With nothing waiting the card says so and points to Declare Directive in the header.
+1. **Command Document** (`face/CommandDocument.tsx`) — sits flush at the top of the viewport like `CountryDocument`: `CountryHeroCard` (`frameless`) hosting `CommandMedia.tsx` (live `CountryMapEmbed` with Edit territory and Open world maps Chrome controls, falling back to `MonogramBanner` + "Draw your territory" when there is no geometry), `CommandIdentity.tsx` (`FlagTile` and `<h1>` wrapped in `SharedElement` so switching to/from `/countries/[slug]` morphs them), a `Public profile` button, `CommandBand.tsx` (shared `RingGrid`, `facet-well` executive bandwidth meter + `BandwidthHelp`, weekly directive slots, internal stability, and inline open/urgent issue chips when > 0), and the attached `DocumentRibbon` (**Overview · Directives · Economy · Diplomacy · Politics · Defense**, with `issues-pending` and `diplomacy-inbox` count pills plus trailing `CommandActions` for `EditMorphButton` and context-aware **Declare Directive**).
+2. **Sticky Compact Chrome Bar** (`headers/UnifiedGlassCommandBar.tsx`) — zero-flow-height while the document is on screen; once the face's `<h1>` scrolls out of view (`collapseOn`), it mounts a `facet-chrome` bar around Halo showing the country name, a `SectionMenu` dropdown, edit, and Declare Directive.
+3. **Overview panel** (`ExecutiveHome.tsx`) — `FirstStepsCard` (when incomplete) and `IntelligenceAlertsCard` (`IntelligenceAlertsCard.tsx`, shown only while threshold alerts are open), `ExecutiveOpportunityHero.tsx` (dismissible priority card using `AnimatePresence mode="popLayout"`, `springSmooth`, `tweenExit`), and a 2:1 split of `ExecutiveAgenda.tsx` + `ExecutiveRecordFeed.tsx` (`content="feed"`, realm-clock timestamps, no nested scrollbars).
+
+**Agenda (`ExecutiveAgenda.tsx`).** Derived from live state (`agenda.ts`: open national issues, active directives, upcoming elections, and pressing corporate/treasury signals), sorted most pressing first. Shows the top 5 rows with **Show all (N)** rather than an inner scroller. Completing an item via its trailing Reminders circle (`springSnappy` check fill) or touch swipe-left (`SwipeableRow` with rubber-band elasticity, flick velocity commit, and `springMomentum`) hides it per country in `localStorage` (`ixstats:agenda-done:<countryId>`) and raises an immediate `Undo` toast.
 
 Rules the overview follows:
-- **Real data only.** Domain tiles show a real figure when one exists (Politics: stability; Economy: GDP growth from `calculatedStats.gdpGrowth`; Diplomacy: items awaiting an answer) and otherwise a plain description, never a placeholder number. The priority hero skips a card whose figure is missing (defense readiness, embassy counts). The agenda lists only open national issues, active directives and upcoming elections; the fixed sample events it used to show are gone, and an empty inbox says what lands there and points to Declare Directive in the header.
-- **Facet primitives, not a local kit.** The header is the shell `PageHeader` over the flag banner; everything else (the priority card, Agenda, Recent activity, Territory, domain pages, tiles, rows) is an opaque `Card` with `CardHeader`/`CardContent`, and tiles inside a hero use `variant="inset"`. Glass never nests. Actions are `<Button>`; the agenda's mailboxes are a `SegmentedControl`, its rows are plain `FacetList`/`FacetRow`s; the unread count and ledger deltas are `<Badge>`s; a wiki-parse result is an `<Alert>`. See [facet-design-system.md](../reference/facet-design-system.md).
-- **Gold.** Inside `data-app="mycountry"` the plain `<Button>` is the flat gold primary; never hand-roll a `bg-yellow` class. Non-button gold uses `facet-gold` (count pills, meters). Domains are identified by their glyph and label (`domain-meta.ts`; the per-domain hue module is gone); there are no glows or per-domain hero washes. Status keeps `STATUS_TEXT` (`status-tone.ts`): critical `text-destructive`, warnings orange. Theme tokens throughout, no `dark:` overrides. Loading states use `<Skeleton>` shaped like the final rows.
-- **Identity is the header banner.** The country's flag is the cover art behind the command bar (`PageHeader`'s `backdrop` slot, `headers/FlagBanner.tsx`), kept vivid under a 10% page-background wash. Readability sits on the content instead: the title block and the Profile/Editor actions have a page-background plate at 90% (`BACKDROP_PLATE`, opaque under Reduce Transparency and Increase Contrast). It collapses with the header and never reaches the compact bar. There is no watermark or glow elsewhere on MyCountry.
-- MyCountry has no private button/card kit: surfaces use the Facet primitives (`Card`, `Button`, `Badge`, `Toggle`, `SegmentedControl`). Facet 4 removes eyebrows; the `Eyebrow` uses left in MyCountry modals are counted by the facet ratchet and may only fall. The old `surface-kit.tsx` was removed.
-- **Domain pages and drill sheets follow the same rules.** `DomainSurface.tsx` opens with a `PageHeader`-style title and the gold **Declare a Directive** `<Button>` with a suggested goal; the rails (`rails/shared.tsx`: `RailCard`, `RailRow`, `DomainKpiGrid`, `DomainActivityCard`) are opaque `Card`s with `<Badge>` counts and status colours from `status-tone.ts` (plus `success`). The Economy drill-down, Fiscal Policy and Trade & Commerce consoles render inside `DrillSheets.tsx`; the sheet is the only blurred surface. Sub-tabs use the shared `SectionTabBar`. Tax and tariff sliders keep a small channel colour dot only where it keys the revenue-composition chart.
+
+- **Real data only.** Figures come from live queries; missing figures render `–` or omit optional cards, never fabricated sample numbers.
+- **Facet primitives, not a local kit.** Surfaces use `Card`, `CardTitle`, `Stat`, `Progress`, `Button`, `Badge`, `DropdownMenu`, `DocumentRibbon`, and `SwipeableRow`. Glass never nests; recessed readouts inside cards use `facet-well`.
+- **Gold.** Inside `data-app="mycountry"` the plain `<Button>` is the flat gold primary; never hand-roll a `bg-yellow` class. `STATUS_FILL.accent` uses `bg-tint`. Domains are identified by their glyph and label (`domain-meta.ts`); there are no glows or per-domain hero washes.
+- **At most one control tier inside a panel.** The `DocumentRibbon` on `CommandDocument` is the section tier; Directives history filters use a `DropdownMenu` (`HistoryFilterMenu`) rather than a nested `SegmentedControl`, and `DomainSurface.tsx` relies on the command bar's single Declare Directive button rather than repeating a domain header row.
 
 ### Key Component Architecture
+
 All under `src/components/mycountry/shell/` unless noted.
-- `CommandSurface.tsx` – Master viewport wrapper and shell orchestration
-- `ExecutiveHome.tsx` – Overview body: priority hero, agenda, recent activity, and the rail (intelligence alerts, national standing, domain peeks, territory)
-- `ExecutiveAgenda.tsx` – Agenda inbox of open issues, active directives and upcoming elections, with read/done/snooze (`agenda/`: `deriveAgendaItems`, `inboxState`, `AgendaEventActionDialog`)
-- `IntelligenceAlertsCard.tsx` – Intelligence alerts rail card: open threshold alerts from `intelligence.getMyAlerts`, most severe first, with mark read, mark all read and dismiss. Hidden while none are open; `?focus=alerts` (the alert notifications' link) scrolls to it
-- `DomainPeeksCard.tsx` – the domain peeks on the Overview (the hidden domain tiles were removed)
-- `ExecutiveOpportunityHero.tsx` – Spotlight hero prioritizing critical national crises
+
+- `CommandSurface.tsx` – Master viewport wrapper, sticky toolbar + `CommandDocument` + `<ViewTransition default="mycountry-section">` section host
+- `face/` – `CommandDocument.tsx`, `CommandIdentity.tsx`, `CommandMedia.tsx`, `CommandBand.tsx`, `command-figures.ts`
+- `mycountry-tabs.ts` – `MYCOUNTRY_TABS`, `visibleTabs`, `tabForSection` for the attached `DocumentRibbon`
+- `ExecutiveHome.tsx` – Overview body: `FirstStepsCard`, `IntelligenceAlertsCard`, `ExecutiveOpportunityHero`, `ExecutiveAgenda`, and `ExecutiveRecordFeed`
+- `ExecutiveAgenda.tsx` – Reminders-style + swipeable agenda list (`agenda.ts`: `deriveAgendaItems`, `formatAgendaTime`)
+- `IntelligenceAlertsCard.tsx` – Intelligence alerts card: open threshold alerts from `intelligence.getMyAlerts`, most severe first, with mark read, mark all read and dismiss; `?focus=alerts` scrolls to it
+- `ExecutiveOpportunityHero.tsx` – Spotlight hero prioritizing critical national signals
 - `DomainSurface.tsx` – Specialized domain view for Diplomacy, Defense, Politics, Economy
 - `DomainContextRail.tsx` – Contextual KPI trends and event activity logs
 - `DrillSheets.tsx` – Slide-over sheets for deep parameter adjustment
 - `shared/headers/IssueDetailBrief.tsx` – 4-branch issue resolution brief modal
 - `ExecutiveConsole.tsx` – The Directives page (`/mycountry/executive`); renders `directives/DirectivesWorkspace.tsx` (see [Directives page](#directives-page-mycountryexecutive))
-- `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`)
-- `status-tone.ts` – `STATUS_TEXT` (critical / warning / accent / neutral); `domain-meta.ts` – the four domains' titles, icons, routes and suggested goals (`DOMAIN_META`)
-- `MyCountryRouter.tsx` / `mycountry-sections.ts` – Single-page section router and the route ↔ section map; rendered once by `src/app/mycountry/(command)/layout.tsx`, whose section pages return `null`; navigation is the app sidebar (`src/lib/navigation/app-sections.ts`)
+- `rails/` – Per-domain context rails (`EconomyRail`, `PoliticsRail`, `RelationsRail`, `DefenseRail`, `RailCard` / `RailBar` in `rails/shared.tsx`)
+- `status-tone.ts` – `STATUS_TEXT` and `STATUS_FILL` (critical / warning / accent / neutral); `domain-meta.ts` – the four domains' titles, icons, routes and suggested goals (`DOMAIN_META`)
+- `MyCountryRouter.tsx` / `mycountry-sections.ts` – Single-page section router and the route ↔ section map; rendered once by `src/app/mycountry/(command)/layout.tsx`, whose section pages return `null`; section navigation lives on `CommandDocument`'s `DocumentRibbon` while the app sidebar (`src/lib/navigation/app-sections.ts`) carries the MyCountry app row (`issues-pending` badge) plus `Public profile` and `Editor`
 
 ---
 
 ## Statecraft Engine & Directives Architecture
 
 A foundational rule of the platform:
+
 - **Frontend (UI)**: **Directives** is the universal user-facing brand across all UI components, buttons, and dialogs (`"Declare Directive"`, `"Tune Custom Directive"`, `"Executive Directives Agenda"`).
 - **Backend (Engine)**: The **Statecraft Simulation Engine** (`src/lib/statecraft/*.ts`, `src/lib/intent/*.ts`, `src/server/api/routers/intent/`) powers intent parsing, power broker alignments, civil capacity throughput, and recon research.
 
@@ -106,24 +108,26 @@ sequenceDiagram
 ```
 
 ### Directives page (`/mycountry/executive`)
-`CommandSurface` renders `ExecutiveConsole` → `src/components/mycountry/directives/DirectivesWorkspace.tsx`. Top to bottom:
-1. **Header** — "Directives", one line on what a directive costs, and **Draft a custom policy** (`PolicyCreatorSheet`).
-2. **Status strip** (`DirectiveStatusStrip.tsx`) — weekly slots left (or the IxTime countdown to the next slot, `intent.getStatus`), executive bandwidth available with used/capacity and the directives' share (`policies.getPolicyReconContext`), and how many directives are in force (tap to open that view).
-3. **Views** (`Tabs`, with arrow-key roving focus): **New directive**, **In force**, **History**.
-   - **New directive** — the composer (`shared/primitives/IntentComposer.tsx`, parts in `shared/primitives/composer/`) as four steps (a "Step n of 4" eyebrow over each card):
-     1. *Goal*: search or type a goal, or browse the presets (`composer/directive-presets.ts`, 8 domains) with domain filter toggles (`Toggle`). "Suggest one" picks a preset for the nation's weakest signal (crime → Security, low readiness → Defense, low approval → Social). A custom goal is used as typed; foreign-policy goals are refused by `classifyGoal` and the error is shown with "Change goal".
-     2. *Approach*: Measured / Moderate / Extreme, plus Broker deal when the aligned broker is unlocked (`intent.suggest`). Each shows its executive bandwidth cost, acceptance and whether it can raise resistance. The structural tier is not offered (it has no unlock check yet).
-     3. *Projected impact*: the levers (budget notches, policy, statement), the stat effects in English with favourable/unfavourable colouring (`lib/intent/consequence-labels.ts`), the GDP level shift phased in over `GROWTH_EFFECT_YEARS` (`suggest` returns `gdpLevelShift` / `gdpEffectYears` per package), stakeholder acceptance, the aligned broker, and a resistance warning for moderate/extreme.
-     4. *Review and declare*: goal, approach, executive bandwidth held, available executive bandwidth before → after (warns, but does not block, when it goes over capacity), weekly slots, and the follow-up link (`parentId`). Declare is disabled with the reason when slots are used up or the viewer is looking at another nation.
-     After declaring, a confirmation card offers **View active directives**, **Build a follow-up** and **Declare another**. On `/mycountry/executive` the page stays put; when declared from the overview, the surface returns home with a toast.
-   - **In force** — every `active` directive, newest first (`intent.getTree`). Each card shows its phase: *Executing* while inside the executive bandwidth window (with the executive bandwidth held and time left) or *In force* after it; a resistance meter (`intent.getLinkedIssues`); and actions: **Follow up**, **Abandon** (confirmation; releases executive bandwidth, not the weekly slot), **Complete** (disabled until linked resistance issues are resolved, as `intent.updateStatus` enforces) and **Record** (the intent drill sheet). "Effects & resistance" expands the recorded effects, the levers pulled, and each resistance issue with a **Respond** button (the issue drill sheet).
+
+`CommandSurface` renders `ExecutiveConsole` → `src/components/mycountry/directives/DirectivesWorkspace.tsx`. Weekly directive slots and executive bandwidth already live in `CommandBand` directly above, so the workspace opens immediately into:
+
+1. **Views + actions bar** (`Tabs`, with arrow-key roving focus): **New directive**, **In force**, **History**, paired inline with any cooldown countdown (`DirectiveStatusLine`) and **Draft a custom policy** (`PolicyCreatorSheet`).
+   - **New directive** — the composer (`shared/primitives/IntentComposer.tsx`, parts in `shared/primitives/composer/`) as four steps:
+     1. _Goal_: search or type a goal, or browse the presets (`composer/directive-presets.ts`, 8 domains) with domain filter toggles (`Toggle`). "Suggest one" picks a preset for the nation's weakest signal (crime → Security, low readiness → Defense, low approval → Social). A custom goal is used as typed; foreign-policy goals are refused by `classifyGoal` and the error is shown with "Change goal".
+     2. _Approach_: Measured / Moderate / Extreme, plus Broker deal when the aligned broker is unlocked (`intent.suggest`). Each shows its executive bandwidth cost, acceptance and whether it can raise resistance. The structural tier is not offered (it has no unlock check yet).
+     3. _Projected impact_: the levers (budget notches, policy, statement), the stat effects in English with favourable/unfavourable colouring (`lib/intent/consequence-labels.ts`), the GDP level shift phased in over `GROWTH_EFFECT_YEARS` (`suggest` returns `gdpLevelShift` / `gdpEffectYears` per package), stakeholder acceptance, the aligned broker, and a resistance warning for moderate/extreme.
+     4. _Review and declare_: goal, approach, executive bandwidth held, available executive bandwidth before → after (warns, but does not block, when it goes over capacity), weekly slots, and the follow-up link (`parentId`). Declare is disabled with the reason when slots are used up or the viewer is looking at another nation.
+        After declaring, a confirmation card offers **View active directives**, **Build a follow-up** and **Declare another**. On `/mycountry/executive` the page stays put; when declared from the overview, the surface returns home with a toast.
+   - **In force** — every `active` directive, newest first (`intent.getTree`). Each card shows its phase: _Executing_ while inside the executive bandwidth window (with the executive bandwidth held and time left) or _In force_ after it; a resistance meter (`intent.getLinkedIssues`); and actions: **Follow up**, **Abandon** (confirmation; releases executive bandwidth, not the weekly slot), **Complete** (disabled until linked resistance issues are resolved, as `intent.updateStatus` enforces) and **Record** (the intent drill sheet). "Effects & resistance" expands the recorded effects, the levers pulled, and each resistance issue with a **Respond** button (the issue drill sheet).
    - **History** — completed, abandoned (and any draft) directives, filterable with `Toggle`s, 20 at a time, with the same expandable record and **Declare again**.
+
 - **Visibility.** `intent.getTree` returns every directive (drafts and abandoned included) only to the nation's owner and privileged roles; other players and signed-out visitors get enacted directives only, with the package line items, executive bandwidth and cooldown redacted. `intent.getOutcome` serves an enacted directive's ledger to anyone and any other directive's to the owner only (NOT_FOUND otherwise). Owner/privileged only (FORBIDDEN otherwise, via `assertCountryWriteAccess` / `assertCountryResourceWriteAccess` in `src/server/shared/country-authorization.ts`): every `nationalIssues` player procedure (`getMyIssues`, `getIssue`, `markViewed`, `respond`, `dismiss`, `commissionRecon`, `getReconReveal`, `getPendingCount`, `getHistory`), `intent.suggest`, `intent.getStatus`, `intent.getLinkedIssues` and `policies.getPolicyReconContext` (executive bandwidth). `policies.getPolicies` leaves out `draft` policies for anyone but the owner. "The owner" is the user acting as the nation or its `ownerUserId`; privileged roles (admin, owner, staff, system owner) pass too, which covers the dev "view as" toolbar, and staff "play as" acts as the target user. The public country profile reads `countries.getPublicRecord` (enacted directives and resolved issue outcomes); see `src/app/countries/README.md`. Tested in `src/tests/server/api/routers/country-private-record.test.ts`.
 - **Budgets are private.** The budget never reaches anyone but the owner and privileged roles; the rules live in `src/lib/country/public-record.ts` (`redactGovernmentBudget`, `redactEconomicBudget`, `redactMilitaryBranchBudget`, `isBudgetLedgerRow`). Readers that also serve visitors strip it: `government.getByCountryId` / `getFullByCountryId` omit `totalBudget` and return empty allocation, sub-budget and revenue-source lists (offices, leaders, branches, departments and political metrics stay public); `countries.getByIdWithEconomicData` and `mycountry.getCountryDashboard` null `governmentBudget` and `fiscalSystem.spendingByCategory` (the dashboard caches the full record and redacts per caller); `security.getMilitaryBranches` and `getSecurityAssessment` drop branch `annualBudget`/`budgetPercent` (and threats' `resourcesAllocated`); `transport.getNationalMobilityProfile` keeps the network condition but drops `degradation.fundingRatio`/`budgetedMaintenance` (cached per viewer); `diplomaticEmbassies.getEmbassies` / `getEmbassyDetails` show an embassy's `budget`/`maintenanceCost` only to the nation that runs it (the guest). `mycountry.getCanonFeed` leaves out, for visitors, effects and ledger rows tied to a directive that is not public (drafts, abandoned) and ledger rows that move a budget (policy maintenance debits). Owner/privileged only (FORBIDDEN otherwise): `elections.getPowerBrokers` (spend shares by department category), `security.getDefenseBudget` and `government.getPolicyMaintenance` (`vault.getBudgetMultiplier` and `vault.calculatePassiveIncome` were removed with the country dividend). Macro factbook figures on the country row (total spending, revenue and balance as a share of GDP, debt, tax rates) and the tax system stay public. Tested in `src/tests/server/api/routers/country-budget-privacy.test.ts`.
 - **Recorded effects** come from `intent.getOutcome`: the directive's `CountryChangeLog` rows (`sourceId` = the intent id, with before → after values) and its GDP `StorytellerEffect` (`createdBy: intent:<id>`). The page shows what was recorded, never a re-projection.
 - Pure helpers (phases, labels, effect rows) live in `directives/directive-model.ts`; `DIRECTIVE_EXECUTION_WINDOW_MS` there mirrors `DIRECTIVE_EXEC_BANDWIDTH_WINDOW_MS` (a test pins them together). The page is built from Facet primitives, not the shell kit: the workspace, status strip, composer steps and empty states are opaque `Card`s and the directive rows, approach options and effect/issue lists are `variant="inset"` cards. Actions are `<Button>` (the MyCountry amber only on the one primary action per surface: **Declare directive**, **View active directives**, **Declare a directive**), statuses `<Badge>`, captions `<Eyebrow>`, meters `<Progress>`, notes `<Alert>`, and Abandon confirms in an `AlertDialog`.
 
 ### Executive bandwidth
+
 - One function computes executive bandwidth: `loadExecBandwidthState` in `src/lib/government/exec-bandwidth.ts`. The National Issues recon context (`national-issues/player.ts`), the policy recon context (`policies/crud.ts`, served as `policies.getPolicyReconContext`) and the Standing Band all use it.
   - Capacity is `calculateCivilServiceCapacity(population, governmentEffectiveness)`, where population is the projected figure the Standing card shows (`loadProjectedPopulation`, baseline progressed with active effects), not the stored `currentPopulation`.
   - Used executive bandwidth is the sum of five things. Government component staff, with 15% relief when the Technocrats broker is satisfied. 20 per in-progress recon. Active **policies** (`Policy.execBandwidthCost`). Executing **directives**. Delegated (dismissed) issues, 15 each for 5 IxTime days.
@@ -133,7 +137,7 @@ sequenceDiagram
   - Its tooltip shows what is available, the breakdown, and the directive slots used this week (`intent.getStatus`).
 - Reactive policies (created in response to issues or broker requests) receive a **25% executive bandwidth upkeep discount** and **15% maintenance discount**.
 - **Policy lifecycle** (`src/lib/policies/lifecycle.ts`): `policies.repealPolicy` (owner only, rate limited; the Repeal button on passed bills in `BillsPanel`) moves an active or suspended policy to `repealed`, and the `policy-maintenance` job moves one whose `expiryDate` has passed to `expired`. Either way the policy leaves the active set, so its executive bandwidth is released, its `POLICY:<id>` growth effect is cleared and it is no longer debited. The job debits each active policy's `maintenanceCost` from `GovernmentStructure.totalBudget` once per IxTime budget year, recording a `PolicyEffectLog` row (`MAINTENANCE_DEBIT`, notes `FY<year>`) in the same transaction, so reruns within the year debit nothing (PL-8).
-- Over-extended executive bandwidth (or government effectiveness below 45%) raises **Information Fog** warnings in the policy creator (`PolicyReconBanner.tsx`: *"Preview estimates may be inaccurate"*, *"Detail Tracking Obscured"*). Numeric effects are not yet masked into qualitative bands.
+- Over-extended executive bandwidth (or government effectiveness below 45%) raises **Information Fog** warnings in the policy creator (`PolicyReconBanner.tsx`: _"Preview estimates may be inaccurate"_, _"Detail Tracking Obscured"_). Numeric effects are not yet masked into qualitative bands.
 
 ---
 

@@ -290,7 +290,7 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
         <RailRow className="p-2">
           <span className="text-label-secondary text-footnote block">Recorded sectors</span>
           <p className="text-label text-title-3 mt-0.5 tabular-nums">
-            {recordedSectorCount > 0 ? recordedSectorCount : "—"}
+            {recordedSectorCount > 0 ? recordedSectorCount : "–"}
           </p>
         </RailRow>
       </div>

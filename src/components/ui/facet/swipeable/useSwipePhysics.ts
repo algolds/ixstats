@@ -51,9 +51,8 @@ function resistDrag(
   return x;
 }
 
-/** Visual state while dragging, by how far the row has travelled. */
+/** Visual state while dragging, by how far the row has travelled (commit only happens on release). */
 function dragState(absX: number, px: ThresholdsPx): SwipeState {
-  if (absX >= px.commit) return "committing";
   if (absX >= px.emphasize) return "emphasized";
   if (absX >= px.reveal) return "revealing";
   return "dragging";
@@ -198,6 +197,7 @@ export function useSwipePhysics({
   const swipeState = useRef<SwipeState>("closed");
   const activeSide = useRef<SwipeSide>(null);
   const isDragging = useRef(false);
+  const hasCapture = useRef(false);
   const wasDrag = useRef(false);
   const dragStartX = useRef(0);
   const dragStartSpringX = useRef(0);
@@ -246,6 +246,7 @@ export function useSwipePhysics({
       // button or link) would never reach it.
       activePointerId.current = e.pointerId;
       isDragging.current = false;
+      hasCapture.current = false;
       wasDrag.current = false;
       dragStartX.current = e.clientX;
       dragStartSpringX.current = springX.get();
@@ -263,7 +264,8 @@ export function useSwipePhysics({
       if (activePointerId.current === null) return;
       if (e.pointerId !== activePointerId.current) return;
       const el = e.currentTarget as HTMLElement;
-      if (isDragging.current && el.hasPointerCapture?.(e.pointerId) === false) return;
+      if (isDragging.current && hasCapture.current && el.hasPointerCapture?.(e.pointerId) === false)
+        return;
 
       e.stopPropagation();
       const deltaX = e.clientX - dragStartX.current;
@@ -277,7 +279,9 @@ export function useSwipePhysics({
         wasDrag.current = true;
         try {
           el.setPointerCapture?.(e.pointerId);
+          hasCapture.current = typeof el.setPointerCapture === "function";
         } catch {
+          hasCapture.current = false;
           // The pointer is no longer active; the drag continues on bubbled events.
         }
         setState("dragging");

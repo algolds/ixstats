@@ -7,7 +7,6 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
 import { Progress } from "~/components/ui/progress";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   City as Building2,
   User,
@@ -94,10 +93,10 @@ function StatusBadge({ status }: { status: string | undefined }) {
 
 function SectionTitle({ icon: Icon, children }: { icon: IconType; children: React.ReactNode }) {
   return (
-    <Eyebrow className="mb-2 flex items-center gap-2">
-      <Icon className="h-3.5 w-3.5" />
+    <h4 className="text-label text-headline mb-2 flex items-center gap-2">
+      <Icon className="text-tint h-4 w-4" />
       {children}
-    </Eyebrow>
+    </h4>
   );
 }
 

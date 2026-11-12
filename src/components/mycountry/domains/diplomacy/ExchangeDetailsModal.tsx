@@ -23,7 +23,6 @@ import {
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Progress } from "~/components/ui/progress";
 import {
   Sheet,
@@ -213,7 +212,7 @@ function NpcResponseCard({ response }: { response: NPCResponse }) {
         </p>
         {response.conditions && response.conditions.length > 0 && (
           <div className="border-separator mt-2 border-t pt-2">
-            <Eyebrow>Conditions</Eyebrow>
+            <p className="text-label text-footnote font-medium">Conditions</p>
             <ul className="text-label-secondary text-footnote mt-1 list-disc space-y-0.5 pl-4">
               {response.conditions.map((condition, idx) => (
                 <li key={idx}>{condition}</li>
@@ -223,7 +222,7 @@ function NpcResponseCard({ response }: { response: NPCResponse }) {
         )}
         {!response.willParticipate && response.alternativeProposal && (
           <div className="border-separator mt-2 border-t pt-2">
-            <Eyebrow>Alternative proposal</Eyebrow>
+            <p className="text-label text-footnote font-medium">Alternative proposal</p>
             <p className="text-label-secondary text-footnote mt-1">
               {response.alternativeProposal.reasoning}
             </p>

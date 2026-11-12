@@ -67,17 +67,6 @@ const DOMAIN_CONFIG: Record<string, { icon: typeof TrendingUp; color: string; la
   },
 };
 
-const SEVERITY_STYLES: Record<string, string> = {
-  critical: "border-l-red bg-red/5",
-  CRITICAL: "border-l-red bg-red/5",
-  high: "border-l-yellow bg-yellow/5",
-  HIGH: "border-l-yellow bg-yellow/5",
-  medium: "border-l-blue bg-blue/5",
-  MEDIUM: "border-l-blue bg-blue/5",
-  low: "border-l-separator bg-fill-4",
-  LOW: "border-l-separator bg-fill-4",
-};
-
 const SEVERITY_BADGE: Record<string, string> = {
   critical: "bg-red/20 text-red-ink border-red/30",
   CRITICAL: "bg-red/20 text-red-ink border-red/30",
@@ -111,7 +100,6 @@ export function issueDeadlineOf(
 function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
   const domainConfig = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domainConfig.icon;
-  const severityStyle = SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.medium!;
   const badgeStyle = SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
 
   const clock = useNationClock();
@@ -125,7 +113,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   return (
     <div
       onClick={() => onView(issue.id)}
-      className={`group rounded-control border-separator hover:border-separator hover:bg-fill-4 w-full cursor-pointer border border-l-4 p-3 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${severityStyle}`}
+      className="group rounded-control border-separator bg-fill-4/50 hover:bg-fill-4 w-full cursor-pointer border p-3 text-left transition-colors"
     >
       <div className="flex items-start gap-3">
         <div className={`bg-fill-4 mt-0.5 rounded-full p-2 ${domainConfig.color}`}>

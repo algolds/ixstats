@@ -6,7 +6,8 @@ import { cn } from "~/lib/utils";
 import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
 import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
 /**
  * Status colours for the domain rails: the shell's shared `status-tone` mapping (destructive,
  * orange warning, MyCountry gold, muted) plus `success` for healthy readings.
@@ -20,7 +21,7 @@ export const STATUS_TEXT = {
 export const STATUS_FILL = {
   critical: "bg-destructive",
   warning: "bg-orange",
-  accent: "bg-yellow",
+  accent: "bg-tint",
   neutral: "bg-label-tertiary",
   success: "bg-green",
 } as const;
@@ -52,8 +53,8 @@ export function pushRecorded(
 }
 
 /**
- * A rail card: a Facet card with a plain title row (muted glyph, sentence-case title, optional
- * trailing accessory such as a count badge) and content below.
+ * A rail card: a Facet card with a title row (tinted icon, sentence-case title, optional trailing
+ * accessory such as a count badge) and content below.
  */
 export function RailCard({
   title,
@@ -73,10 +74,14 @@ export function RailCard({
   return (
     <Card className={cn("rounded-card", className)}>
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {Icon && <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />}
-          <h3 className="text-label text-headline truncate">{title}</h3>
-        </div>
+        <CardTitle
+          icon={Icon ? <Icon /> : undefined}
+          role="heading"
+          aria-level={3}
+          className="min-w-0"
+        >
+          <span className="truncate">{title}</span>
+        </CardTitle>
         {accessory ? <div className="flex shrink-0 items-center gap-2">{accessory}</div> : null}
       </CardHeader>
       <CardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>{children}</CardContent>
@@ -98,12 +103,12 @@ export function RailRow({
 /** Thin level bar (0–100). */
 export function RailBar({ value, fill = "bg-tint" }: { value: number; fill?: string }) {
   return (
-    <div className="bg-fill-3 mt-1 h-1 w-full overflow-hidden rounded-full">
-      <div
-        className={cn("h-full rounded-full", fill)}
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-      />
-    </div>
+    <Progress
+      value={Math.min(100, Math.max(0, value))}
+      aria-hidden
+      className="bg-fill-3 mt-1 h-1"
+      indicatorClassName={fill}
+    />
   );
 }
 

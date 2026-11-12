@@ -273,7 +273,9 @@ function ChamberLayout({
 }) {
   return (
     <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
-      <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
+      <h4 className="text-footnote text-label-secondary font-medium">
+        Chamber layout and settings
+      </h4>
       <div className="space-y-3">
         {chambers.map((chamber, index) => (
           <ChamberRow

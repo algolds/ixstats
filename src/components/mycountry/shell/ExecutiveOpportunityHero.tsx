@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { Compass, Xmark as X } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import {
@@ -15,7 +14,8 @@ import {
   deriveOpportunity,
 } from "./opportunityRules";
 import { STATUS_TEXT } from "./status-tone";
-import { Card } from "~/components/ui/card";
+import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
+import { Card, CardTitle } from "~/components/ui/card";
 
 interface ExecutiveOpportunityHeroProps {
   countryId: string;
@@ -29,6 +29,7 @@ function ExecutiveOpportunityHeroComponent({
   onOpenIntent,
 }: ExecutiveOpportunityHeroProps): React.JSX.Element | null {
   const { country } = useCountryData();
+  const reduceMotion = useReducedMotion();
   const storageKey = countryId ? `ixstats:dismissedHero:${countryId}` : null;
 
   const [dismissedIds, setDismissedIds] = useState<string[]>(() => {
@@ -95,17 +96,18 @@ function ExecutiveOpportunityHeroComponent({
       : null;
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    // popLayout: the next priority arrives at once while the dismissed one fades out of flow.
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.section
         key={opportunity.id}
         aria-labelledby="priority-title"
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4, transition: { duration: 0.15, ease: "easeOut" } }}
-        transition={{ type: "spring", stiffness: 450, damping: 32 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: tweenExit }}
+        transition={reduceMotion ? REDUCED_MOTION_FADE : springSmooth}
         className="w-full"
       >
-        <Card className="p-5 sm:p-6">
+        <Card className="p-4 sm:p-5">
           <Button
             type="button"
             variant="ghost"
@@ -118,24 +120,24 @@ function ExecutiveOpportunityHeroComponent({
             <X aria-hidden="true" />
           </Button>
 
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl min-w-0 space-y-3 pr-10">
-              <p className="text-footnote flex items-center gap-2 font-semibold">
-                <Icon
-                  aria-hidden="true"
-                  className={cn("size-4 shrink-0", STATUS_TEXT[opportunity.tone])}
-                />
-                {opportunity.subtitle}
-              </p>
-              <h2 id="priority-title" className="text-label text-title-2 sm:text-title-1">
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-2xl min-w-0 space-y-2 pr-10">
+              <CardTitle icon={<Icon className={STATUS_TEXT[opportunity.tone]} />}>
+                <span className="text-label-secondary text-footnote font-normal">
+                  {opportunity.subtitle}
+                </span>
+              </CardTitle>
+              <h2 id="priority-title" className="text-label text-title-3 sm:text-title-2">
                 {opportunity.title}
               </h2>
               <p className="text-label-secondary text-body line-clamp-3 leading-relaxed">
                 {opportunity.description}
               </p>
               {opportunity.metricLabel && opportunity.metricValue && (
-                <p className="flex flex-col gap-0.5">
-                  <span className="text-caption">{opportunity.metricLabel}</span>
+                <p className="flex items-baseline gap-2 pt-0.5">
+                  <span className="text-label-secondary text-footnote">
+                    {opportunity.metricLabel}
+                  </span>
                   <span className="text-label text-headline tabular-nums">
                     {opportunity.metricValue}
                   </span>
@@ -144,7 +146,7 @@ function ExecutiveOpportunityHeroComponent({
             </div>
 
             {action && (
-              <Button type="button" size="lg" onClick={action.run} className="h-11 shrink-0">
+              <Button type="button" onClick={action.run} className="shrink-0 max-sm:h-11">
                 <Compass aria-hidden="true" />
                 {action.label}
               </Button>

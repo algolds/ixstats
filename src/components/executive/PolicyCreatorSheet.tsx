@@ -204,7 +204,7 @@ function ProjectedEffects({ effects }: { effects: PolicyEffects }) {
   ];
   return (
     <div className="bg-surface-secondary rounded-row space-y-3 p-4">
-      <h4 className="text-eyebrow text-label-secondary flex items-center gap-2">
+      <h4 className="text-footnote text-label-secondary flex items-center gap-2 font-medium">
         <Sliders aria-hidden className="h-3.5 w-3.5" />
         Projected effects
       </h4>
@@ -442,7 +442,7 @@ export function PolicyCreatorSheet({
             {!isTemplate && (
               <>
                 <div className="bg-surface-secondary rounded-row space-y-2 p-4">
-                  <p className="text-eyebrow text-label-secondary">Estimated costs</p>
+                  <p className="text-footnote text-label-secondary font-medium">Estimated costs</p>
                   <div className="text-footnote grid grid-cols-2 gap-3">
                     {[
                       ["Setup cost", formImplCost],

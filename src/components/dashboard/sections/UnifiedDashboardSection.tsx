@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 
-import { Group as Users, RssFeed as Rss, Globe } from "iconoir-react";
+import { Globe } from "iconoir-react";
 import { LensCard } from "~/components/ui/lens-card";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
@@ -67,9 +67,9 @@ import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
 type FeedTab = "all" | "following";
 
-const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
-  { value: "all", label: "All activity", icon: <Rss /> },
-  { value: "following", label: "Following", icon: <Users /> },
+const FEED_TABS: readonly { value: FeedTab; label: string }[] = [
+  { value: "all", label: "All activity" },
+  { value: "following", label: "Following" },
 ];
 
 // Likes and reactions are handled globally by PostActions.
@@ -87,6 +87,8 @@ interface UnifiedDashboardSectionProps {
   };
   /** Opens the Dashboard's Accounts section from the account manager. */
   onOpenAccounts?: () => void;
+  /** Whether the nation hero card is rendered above this column. */
+  heroVisible?: boolean;
 }
 
 function PostingAs({
@@ -178,6 +180,7 @@ function useViewerAccounts(userId: string | undefined) {
 export function UnifiedDashboardSection({
   globalStats: propGlobalStats,
   onOpenAccounts,
+  heroVisible = false,
 }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const notify = useNotify();
@@ -209,7 +212,7 @@ export function UnifiedDashboardSection({
   } = useViewerAccounts(user?.id);
 
   // Anyone signed in can follow ThinkPages accounts, so Following no longer needs a country.
-  const tabs = isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.value !== "following");
+  const tabs = isSignedIn ? FEED_TABS : FEED_TABS.filter((t) => t.value !== "following");
 
   const openAccountSettings = (account: ThinkpagesAccountItem) => setSettingsAccount(account);
   const openAccountCreation = () => setShowAccountCreation(true);
@@ -277,8 +280,13 @@ export function UnifiedDashboardSection({
         className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
       >
         <motion.div variants={staggerItem}>
-          {/* The column starts below Halo's band, level with the Inspector: a full-width composer cannot share the band. */}
-          <div className="flex min-w-0 flex-col space-y-5 lg:pt-[calc(var(--shell-top-offset)-var(--shell-page-top))]">
+          {/* When no hero sits above the column, start below Halo's band, level with the Inspector. */}
+          <div
+            className={cn(
+              "flex min-w-0 flex-col space-y-5",
+              !heroVisible && "lg:pt-[calc(var(--shell-top-offset)-var(--shell-page-top))]"
+            )}
+          >
             {isSignedIn && (
               <div className="space-y-2">
                 <GlassCanvasComposer
@@ -301,40 +309,58 @@ export function UnifiedDashboardSection({
               </div>
             )}
 
-            {/* Signed out there is one feed, so no tabs; at xl the Inspector is open and the row has nothing left. */}
-            <motion.div
-              variants={staggerItem}
-              className={cn("flex items-center gap-2", tabs.length < 2 && "xl:hidden")}
-            >
-              {/* The flex item is the wrapper: with asTabs the control's className lands on the inner tab list. */}
-              <div className="min-w-0 flex-1">
+            <section aria-labelledby="dashboard-activity-heading" className="space-y-3">
+              <h2 id="dashboard-activity-heading" className="sr-only">
+                Activity
+              </h2>
+              <div
+                className={cn(
+                  "flex flex-wrap items-center justify-end gap-2 px-1",
+                  tabs.length < 2 && "xl:hidden"
+                )}
+              >
                 {tabs.length > 1 && (
                   <SegmentedControl
+                    aria-label="Activity feed"
                     options={tabs}
                     value={activeTab}
                     onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
-                    size="md"
-                    scrollable
+                    size="sm"
                     asTabs
+                    getTabPanelId={(tabId) => `dashboard-feed-panel-${tabId}`}
                   />
                 )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setInspectorOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={inspectorOpen}
+                  className="shrink-0 xl:hidden"
+                >
+                  <Globe aria-hidden className="size-4" />
+                  <span className="max-sm:sr-only">Around IxStates</span>
+                </Button>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setInspectorOpen(true)}
-                className="shrink-0 xl:hidden"
-              >
-                <Globe aria-hidden className="size-4" />
-                <span className="max-sm:sr-only">Around IxStates</span>
-              </Button>
-            </motion.div>
 
-            {activeTab === "following" ? (
-              <FollowingFeedContent {...feedHandlers} />
-            ) : (
-              <UnifiedFeedContent {...feedHandlers} />
-            )}
+              <div
+                id={tabs.length > 1 ? `dashboard-feed-panel-${activeTab}` : undefined}
+                role={tabs.length > 1 ? "tabpanel" : undefined}
+                aria-label={
+                  tabs.length > 1
+                    ? activeTab === "following"
+                      ? "Following"
+                      : "All activity"
+                    : undefined
+                }
+              >
+                {activeTab === "following" ? (
+                  <FollowingFeedContent {...feedHandlers} />
+                ) : (
+                  <UnifiedFeedContent {...feedHandlers} />
+                )}
+              </div>
+            </section>
           </div>
         </motion.div>
 

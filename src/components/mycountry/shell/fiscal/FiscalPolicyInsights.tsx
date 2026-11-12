@@ -36,7 +36,7 @@ function lafferPositionOf(burden: number | null): LafferPosition | null {
 }
 
 const percentFlow = (value: number | null, decimalPlaces: number) =>
-  value != null ? <PercentageFlow value={value} decimalPlaces={decimalPlaces} /> : "—";
+  value != null ? <PercentageFlow value={value} decimalPlaces={decimalPlaces} /> : "–";
 
 type Country = ReturnType<typeof useCountryData>["country"];
 
@@ -204,7 +204,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
                 lafferPosition == null ? "text-label" : laffer.text
               )}
             >
-              {lafferPosition == null ? "—" : laffer.label}
+              {lafferPosition == null ? "–" : laffer.label}
             </p>
           </RailRow>
         </div>

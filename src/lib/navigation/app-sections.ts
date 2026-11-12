@@ -37,7 +37,6 @@ import {
   CheckSquare,
   Clock,
   Coins,
-  Community,
   Component,
   Cpu,
   Crown,
@@ -89,15 +88,7 @@ export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default tint (iron-gall ink). */
 type AppTint =
-  | "admin"
-  | "mycountry"
-  | "maps"
-  | "thinkpages"
-  | "vault"
-  | "wiki"
-  | "realms"
-  | "labs"
-  | "exchange";
+  "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs" | "exchange";
 
 type AppId =
   | "home"
@@ -159,7 +150,8 @@ interface AppSection {
  * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher). `nation-owner`: a member who owns
  * a nation (the Exchange's Treasury).
  */
-type SectionRequirement = "mycountry-premium" | "forum-moderator" | "signed-in" | "admin" | "nation-owner";
+type SectionRequirement =
+  "mycountry-premium" | "forum-moderator" | "signed-in" | "admin" | "nation-owner";
 
 export interface AppDefinition {
   id: AppId;
@@ -233,40 +225,11 @@ export const APPS: readonly AppDefinition[] = [
     tint: "mycountry",
     match: ["/mycountry"],
     requiresAuth: true,
-    sections: [
-      {
-        id: "overview",
-        label: "Overview",
-        href: "/mycountry",
-        icon: Crown,
-        exact: true,
-      },
-      {
-        id: "executive",
-        label: "Directives",
-        href: "/mycountry/executive",
-        icon: Building,
-        badge: "issues-pending",
-      },
-      { id: "economy", label: "Economy", href: "/mycountry/economy", icon: StatsReport },
-      {
-        id: "diplomacy",
-        label: "Diplomacy",
-        href: "/mycountry/diplomacy",
-        icon: Globe,
-        badge: "diplomacy-inbox",
-      },
-      { id: "politics", label: "Politics", href: "/mycountry/politics", icon: Community },
-      {
-        id: "defense",
-        label: "Defense",
-        href: "/mycountry/defense",
-        icon: Shield,
-        // Intelligence has no row of its own; its page keeps Defense's highlight.
-        match: ["/mycountry/intelligence"],
-        requires: "mycountry-premium",
-      },
-    ],
+    // The sections live on the command ribbon in the page (MyCountry's one section navigation);
+    // the sidebar lists the app, plus the Public profile and Editor rows once the country is known.
+    // Pending national issues ride on the app row (the ribbon shows them on Directives).
+    badge: "issues-pending",
+    sections: [],
   },
   {
     id: "maps",
@@ -451,10 +414,33 @@ export const APPS: readonly AppDefinition[] = [
         match: ["/exchange/c", "/exchange/b", "/exchange/n", "/exchange/s"],
       },
       { id: "tenders", label: "Tenders", href: "/exchange/tenders", icon: Journal },
-      { id: "leaderboards", label: "Leaderboards", href: "/exchange/leaderboards", icon: Leaderboard },
-      { id: "portfolio", label: "Portfolio", href: "/exchange/portfolio", icon: Wallet, requires: "signed-in" },
-      { id: "companies", label: "My companies", href: "/exchange/companies", icon: Building, requires: "signed-in" },
-      { id: "treasury", label: "Treasury", href: "/exchange/treasury", icon: Crown, requires: "nation-owner" },
+      {
+        id: "leaderboards",
+        label: "Leaderboards",
+        href: "/exchange/leaderboards",
+        icon: Leaderboard,
+      },
+      {
+        id: "portfolio",
+        label: "Portfolio",
+        href: "/exchange/portfolio",
+        icon: Wallet,
+        requires: "signed-in",
+      },
+      {
+        id: "companies",
+        label: "My companies",
+        href: "/exchange/companies",
+        icon: Building,
+        requires: "signed-in",
+      },
+      {
+        id: "treasury",
+        label: "Treasury",
+        href: "/exchange/treasury",
+        icon: Crown,
+        requires: "nation-owner",
+      },
     ],
   },
   {

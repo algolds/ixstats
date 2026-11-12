@@ -1,23 +1,28 @@
 "use client";
 
-import React, { Activity, ViewTransition, useState } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import React, { Activity, ViewTransition, useId, useState } from "react";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
+import { ribbonPanelId, ribbonTabId } from "~/components/shared/document/DocumentRibbon";
 import { useTheme } from "~/context/theme-context";
 import { cn } from "~/lib/utils";
-import { withBasePath } from "~/lib/base-path";
 import { useNotify } from "~/hooks/useNotify";
 import { UnifiedGlassCommandBar } from "./headers/UnifiedGlassCommandBar";
+import { CommandDocument } from "./face/CommandDocument";
 import { ExecutiveHome } from "./ExecutiveHome";
 import { ExecutiveConsole } from "./ExecutiveConsole";
 import { DomainSurface } from "./DomainSurface";
 import { DrillSheets, type DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
-import { DOMAIN_SECTIONS } from "./domain-meta";
-import type { CommandNavMode } from "./command-nav-mode";
+import { DOMAIN_META, DOMAIN_SECTIONS } from "./domain-meta";
+import { tabForSection } from "./mycountry-tabs";
 
 interface CommandSurfaceProps {
   section?: string;
   onNavigate?: (section: string) => void;
+}
+
+/** A domain section's suggested Directive goal (Economy, Diplomacy, Politics, Defense). */
+function suggestedGoal(section: string): string | undefined {
+  return Object.values(DOMAIN_META).find((meta) => meta.section === section)?.prefilledGoal;
 }
 
 export function CommandSurface({
@@ -28,43 +33,19 @@ export function CommandSurface({
   const { compactMode } = useTheme();
   const notify = useNotify();
   const countryId = country?.id ?? "";
+  const idBase = `mycountry-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [drill, setDrill] = useState<DrillSheetKind>(null);
   const [goal, setGoal] = useState("");
+  // State, not a ref: the command bar re-observes the face's <h1> once the face has loaded.
+  const [faceTitle, setFaceTitle] = useState<HTMLHeadingElement | null>(null);
 
-  // The console is a URL state (?mode=executive), not component state: the sidebar Overview
-  // link (/mycountry, no param) must reset to home even when we are already on that path,
-  // and back/forward must move between home and the console. The executive section is the
-  // console by definition; domain surfaces never show it.
-  const mode: CommandNavMode =
-    section === "executive" ||
-    (!DOMAIN_SECTIONS.has(section) && searchParams.get("mode") === "executive")
-      ? "executive"
-      : "home";
-
-  // Same history pattern as MyCountryRouter: write the URL without a Next route transition.
-  // useSearchParams follows pushState/replaceState, so the surface re-renders from the URL.
-  const setMode = (next: CommandNavMode, options?: { replace?: boolean }) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (next === "executive") params.set("mode", "executive");
-    else params.delete("mode");
-    const query = params.toString();
-    const href = withBasePath(query ? `${pathname}?${query}` : pathname);
-    if (options?.replace) window.history.replaceState(null, "", href);
-    else window.history.pushState(null, "", href);
-  };
-
+  // The Directives section is the console; every Declare Directive leads there. On a domain
+  // section the composer opens on that domain's suggested goal.
   const declare = (prefilled?: string) => {
-    if (prefilled) setGoal(prefilled);
-    if (section !== "executive" && section !== "overview") {
-      // Domain surfaces hand over to the Directives section, which is the console.
-      onNavigate?.("executive");
-    } else if (section === "overview" && mode !== "executive") {
-      // Already on ?mode=executive: another push would add a duplicate history entry.
-      setMode("executive");
-    }
+    const next = prefilled ?? suggestedGoal(section);
+    if (next) setGoal(next);
+    if (section !== "executive") onNavigate?.("executive");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -79,69 +60,83 @@ export function CommandSurface({
   // Sections the player has opened stay mounted inside a hidden Activity, so returning to one is
   // instant and keeps its state. Activity tears effects down while hidden, so a section that is
   // out of view fires no toasts, timers or title writes. Anything that is not a domain section
-  // renders the home surface, so it shares the "overview" slot. The executive console replaces
+  // renders the home surface, so it shares the "overview" slot. The Directives console replaces
   // every kept section while it shows, and a section is only mounted once it has been shown.
   // ponytail: at most 5 sections stay mounted; evict least recent if memory shows up in profiles
-  const shown = mode === "executive" ? null : DOMAIN_SECTIONS.has(section) ? section : "overview";
+  const isDirectives = section === "executive";
+  const shown = isDirectives ? null : DOMAIN_SECTIONS.has(section) ? section : "overview";
   const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(shown ? [shown] : []));
   if (shown && !visited.has(shown)) setVisited(new Set(visited).add(shown));
 
-  // Facet hierarchy: the command bar is the shell (depth 1), each section below is a card
-  // (depth 2), and rows inside a card are opaque depth-3 surfaces so blur never stacks.
-  // The column runs from the sidebar to the right edge, capped at 1600px: MyCountry has no
-  // Inspector, so the shell keeps no gutter for it. Compact mode only tightens the rhythm.
+  // Facet hierarchy: the command document (face + ribbon) is the page's card, the section below is
+  // the ribbon's panel, and rows inside its cards are opaque depth-3 surfaces so blur never stacks.
+  // The column runs from the sidebar to the right edge, capped at 1600px, like the country profile.
   return (
     <div
       className={cn(
         "mx-auto w-full max-w-[1600px] px-4 md:px-8",
-        compactMode ? "space-y-5 py-4 md:py-5" : "space-y-6 py-4 md:py-8"
+        compactMode
+          ? "pt-(--shell-top-offset) pb-4 md:py-5"
+          : "pt-(--shell-top-offset) pb-6 md:py-8"
       )}
     >
-      {/* Permanent Unified Glass Command Bar */}
-      <UnifiedGlassCommandBar mode={mode} onChangeMode={setMode} onDeclare={() => declare()} />
+      <UnifiedGlassCommandBar
+        section={section}
+        onNavigate={onNavigate}
+        onDeclare={() => declare()}
+        collapseOn={faceTitle}
+      />
 
-      {/* Main Surface Body */}
-      {mode === "executive" ? (
-        <ExecutiveConsole
-          countryId={countryId}
-          initialGoal={goal}
-          onDone={(msg) => {
-            // On the Directives page itself, stay put: it shows the declared directive.
-            if (section !== "executive") setMode("home", { replace: true });
-            setGoal("");
-            if (msg) notify.success("Directive committed", msg);
-          }}
-          onOpenDrill={openDrill}
+      <div className={compactMode ? "space-y-5" : "space-y-6"}>
+        <CommandDocument
+          section={section}
+          onNavigate={onNavigate}
+          onDeclare={() => declare()}
+          idBase={idBase}
+          titleRef={setFaceTitle}
         />
-      ) : null}
-      {/* Section switches are transitions, so the browser cross-fades the swap. The class hooks
-          the fade in facet/interaction.css, which also turns it off under Reduce Motion. One
-          wrapper is the transition's single host, and keeps the hidden sections (display: none)
-          out of the column's space-y rhythm, which would count them as siblings. */}
-      <ViewTransition default="mycountry-section">
-        <div>
-          {[...visited].map((s) => (
-            <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
-              {s === "overview" ? (
-                <ExecutiveHome
-                  countryId={countryId}
-                  onDeclare={declare}
-                  onNavigate={onNavigate}
-                  onOpenIntent={openIntent}
-                  onOpenDrill={openDrill}
-                />
-              ) : (
-                <DomainSurface
-                  countryId={countryId}
-                  section={s}
-                  onDeclare={declare}
-                  onNavigate={onNavigate}
-                />
-              )}
-            </Activity>
-          ))}
+
+        <div
+          role="tabpanel"
+          id={ribbonPanelId(idBase)}
+          aria-labelledby={ribbonTabId(idBase, tabForSection(section))}
+        >
+          {isDirectives ? (
+            <ExecutiveConsole
+              countryId={countryId}
+              initialGoal={goal}
+              onDone={(msg) => {
+                // The Directives page shows the declared directive, so stay put.
+                setGoal("");
+                if (msg) notify.success("Directive committed", msg);
+              }}
+              onOpenDrill={openDrill}
+            />
+          ) : null}
+          {/* Section switches are transitions, so the browser cross-fades the swap. The class hooks
+              the fade in facet/interaction.css, which also turns it off under Reduce Motion. One
+              wrapper is the transition's single host, and keeps the hidden sections (display: none)
+              out of the column's space-y rhythm, which would count them as siblings. */}
+          <ViewTransition default="mycountry-section">
+            <div>
+              {[...visited].map((s) => (
+                <Activity key={s} mode={s === shown ? "visible" : "hidden"}>
+                  {s === "overview" ? (
+                    <ExecutiveHome
+                      countryId={countryId}
+                      onDeclare={declare}
+                      onOpenIntent={openIntent}
+                      onOpenDrill={openDrill}
+                    />
+                  ) : (
+                    <DomainSurface countryId={countryId} section={s} onDeclare={declare} />
+                  )}
+                </Activity>
+              ))}
+            </div>
+          </ViewTransition>
         </div>
-      </ViewTransition>
+      </div>
 
       {/* Drill Sheets */}
       <DrillSheets
@@ -149,6 +144,7 @@ export function CommandSurface({
         onClose={() => setDrill(null)}
         countryId={countryId}
         onDeclare={declare}
+        onNavigate={onNavigate}
       />
     </div>
   );

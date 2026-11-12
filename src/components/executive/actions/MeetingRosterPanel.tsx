@@ -19,7 +19,7 @@ import type { AgendaItem } from "./meeting-scheduler-types";
 import { AGENDA_CATEGORIES } from "./meeting-scheduler-intents";
 import { matchesRoles, type RosterOfficial } from "./meeting-scheduler-logic";
 
-const CAPTION = "text-label-secondary text-eyebrow";
+const CAPTION = "text-label-secondary text-footnote font-medium";
 
 function AttendeeChip({
   official,

@@ -14,22 +14,20 @@ The activity feed is the running record of what's happening across IxStates: pos
 
 ## What appears in it
 
-| Kind | Examples |
-| --- | --- |
-| Posts | Public [feed](/help/social/thinkpages) posts, including Blurbs answers |
+| Kind            | Examples                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Posts           | Public [feed](/help/social/thinkpages) posts, including Blurbs answers                                                    |
 | Nation activity | An achievement unlocked by a player with a nation, an embassy opened, a border change, a new point of interest on the map |
-| Community | New polls, names shared from Onoma |
-| Wiki | New wiki pages and edits, with how many bytes changed |
-| Forum | New forum threads and replies |
+| Community       | New polls, names shared from Onoma                                                                                        |
+| Wiki            | New wiki pages and edits, with how many bytes changed                                                                     |
+| Forum           | New forum threads and replies                                                                                             |
 
-To keep it readable, several edits in a row to the same wiki page are shown as one item, and so are repeats of the same kind of activity by the same player. The Dashboard feed refreshes about once a minute.
+To keep it readable, edits to the same wiki page, achievement unlocks close in time, and repeats of the same kind of activity by the same player are each folded into one item. The Dashboard feed refreshes about once a minute.
 
 ## The Dashboard tabs
 
 - **All activity**: everything above.
 - **Following**: posts from personas you follow and activity from nations your nation follows. If you don't follow anyone yet, it links to the list of nations.
-- **Trending**: the posts getting the most reactions, replies and reposts, and the trending hashtags. It's empty when nothing qualifies.
-- **Community**: wiki and forum activity only.
 
 ## Following nations and personas
 

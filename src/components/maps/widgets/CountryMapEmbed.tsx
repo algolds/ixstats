@@ -8,7 +8,7 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
@@ -46,6 +46,8 @@ interface CountryMapEmbedProps {
   highlightCountryNames?: string[];
   /** Fly the map to one subdivision (fit its bounds) or one point, once the map is ready. */
   focus?: MapFocus | null;
+  /** Shown instead of the "No map data available" note when the country has no territory yet. */
+  emptyFallback?: ReactNode;
 }
 
 export type MapFocus =
@@ -67,6 +69,7 @@ export function CountryMapEmbed({
   highlightCountryIds,
   highlightCountryNames,
   focus,
+  emptyFallback,
 }: CountryMapEmbedProps) {
   const state = useCountryMapEmbedState({
     countryId,
@@ -125,6 +128,7 @@ export function CountryMapEmbed({
   }
 
   if (!state.hasGeometry) {
+    if (emptyFallback !== undefined) return <>{emptyFallback}</>;
     return (
       <div
         className={`bg-fill-3 flex flex-col items-center justify-center gap-2 ${height} ${className}`}

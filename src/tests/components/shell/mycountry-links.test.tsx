@@ -49,6 +49,13 @@ describe("MyCountry sidebar links", () => {
     expect(screen.queryByRole("link", { name: "Editor" })).toBeNull();
   });
 
+  it("leaves the sections to the command ribbon in the page", () => {
+    render(<SourceList {...list} pathname="/mycountry" countryHref="/countries/caphiria" />);
+    for (const name of ["Overview", "Directives", "Economy", "Diplomacy", "Politics", "Defense"]) {
+      expect(screen.queryByRole("link", { name })).toBeNull();
+    }
+  });
+
   it("withCountryRows leaves other apps alone", () => {
     const apps = [getApp("vault"), getApp("mycountry")];
     expect(withCountryRows(apps, undefined)).toBe(apps);

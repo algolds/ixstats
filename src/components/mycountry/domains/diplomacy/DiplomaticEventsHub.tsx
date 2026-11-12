@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
@@ -212,7 +211,7 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
 
         {event.responseOptions && event.responseOptions.length > 0 && (
           <div className="mb-4">
-            <Eyebrow>Potential impacts</Eyebrow>
+            <p className="text-footnote text-label-secondary font-medium">Potential impacts</p>
             <ImpactPreview
               impact={{
                 relationship: first?.relationshipEffect || 0,
@@ -391,11 +390,9 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
             { label: "Total resolved", value: scenarioHistory.length, icon: History },
           ].map((stat) => (
             <div key={stat.label} className="space-y-1">
-              <dt>
-                <Eyebrow className="flex items-center gap-2">
-                  <stat.icon className="h-3.5 w-3.5" />
-                  {stat.label}
-                </Eyebrow>
+              <dt className="text-footnote text-label-secondary flex items-center gap-2">
+                <stat.icon className="h-3.5 w-3.5" />
+                {stat.label}
               </dt>
               <dd className="text-label text-title-1 tabular-nums">{stat.value}</dd>
             </div>
@@ -407,7 +404,7 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
         <TabsList className="bg-fill-3 inline-flex flex-wrap gap-1 rounded-full p-1">
           <TabsTrigger value="active" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Active Events ({activeScenarios.length})
+            Active events ({activeScenarios.length})
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />

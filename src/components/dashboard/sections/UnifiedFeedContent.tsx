@@ -8,13 +8,13 @@ import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCo
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { groupWikiEdits } from "~/lib/feed/group-wiki-edits";
+import { groupAchievements, isAchievementItem } from "~/lib/feed/group-achievements";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
 import { EmptyState, type EmptyStateProps } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
 import { Card } from "~/components/ui/card";
-
 
 /**
  * Collapses runs of consecutive items sharing a non-null `keyOf` into one `build(run, start)`
@@ -50,12 +50,12 @@ const timeOf = (a: any) => new Date(a.timestamp).getTime();
 /** A directive is declared on purpose and can be discussed in the forum: it keeps its own row. */
 const isDirective = (a: { type?: string }): boolean => a.type === "directive";
 
-/** Only `source: "activity"` groups (not wiki, thinkpages, forum), and never a directive. */
+/** Only ungrouped `source: "activity"` rows group here (wiki and achievements have their own passes, and directives stay single). */
 export function groupRepeatedActivities(activities: any[]): any[] {
   return groupRuns(
     activities,
     (a) =>
-      a.source === "activity" && !isDirective(a)
+      a.source === "activity" && !a._grouped && !isDirective(a) && !isAchievementItem(a)
         ? `${userKey(a)}\0${getActivityLabel(a).label}`
         : null,
     (group, i) => {
@@ -218,15 +218,8 @@ export function UnifiedFeedContent({
   );
 
   const raw = selectFeed(feedData?.activities, wikiChangesAsFeed(wikiRecentChanges ?? []));
-  const items = excludeAchievements
-    ? raw.filter(
-        (a) =>
-          a.type !== "achievement" &&
-          a.category !== "achievement" &&
-          !(a.source === "activity" && getActivityLabel(a).label === "Achievement")
-      )
-    : raw;
-  const filteredFeed = groupRepeatedActivities(groupWikiEdits(items));
+  const items = excludeAchievements ? raw.filter((a) => !isAchievementItem(a)) : raw;
+  const filteredFeed = groupRepeatedActivities(groupAchievements(groupWikiEdits(items)));
 
   if (feedLoading) return <FeedSkeletons />;
 
@@ -251,7 +244,8 @@ export function FollowingFeedContent(handlers: FeedHandlers) {
     );
 
   const processedActivities = useMemo(
-    () => groupRepeatedActivities(groupWikiEdits(followingData?.activities ?? [])),
+    () =>
+      groupRepeatedActivities(groupAchievements(groupWikiEdits(followingData?.activities ?? []))),
     [followingData]
   );
 

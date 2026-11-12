@@ -24,6 +24,7 @@ jest.mock("~/components/mycountry/shared/primitives", () => ({
 jest.mock("~/context/theme-context", () => ({ useTheme: () => ({ compactMode: false }) }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({ success: jest.fn() }) }));
 jest.mock("../headers/UnifiedGlassCommandBar", () => ({ UnifiedGlassCommandBar: () => null }));
+jest.mock("../face/CommandDocument", () => ({ CommandDocument: () => null }));
 jest.mock("../ExecutiveConsole", () => ({ ExecutiveConsole: () => null }));
 jest.mock("~/components/mycountry/shell/DrillSheets", () => ({ DrillSheets: () => null }));
 jest.mock("../DomainSurface", () => ({

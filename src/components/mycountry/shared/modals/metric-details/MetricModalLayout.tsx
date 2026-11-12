@@ -6,7 +6,6 @@ import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { Eyebrow } from "~/components/ui/eyebrow";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
 
@@ -226,6 +225,7 @@ MetricModalLayout.SidePanel = function MetricModalSidePanel({
 const TILE_LABEL = {
   stat: "text-caption text-label-secondary mt-1 block",
   footnote: "text-label-secondary text-footnote mt-1",
+  eyebrow: "text-footnote text-label-secondary mt-1 block font-medium",
 } as const;
 
 MetricModalLayout.Tile = function MetricModalTile({
@@ -239,17 +239,15 @@ MetricModalLayout.Tile = function MetricModalTile({
   label: string;
   tone?: string;
   valueClassName?: string;
-  labelStyle?: keyof typeof TILE_LABEL | "eyebrow";
+  labelStyle?: keyof typeof TILE_LABEL;
 }) {
   return (
     <Card variant="well" padding="none" className="p-4 text-center">
       <div className={cn("text-title-3", tone, valueClassName)}>{value}</div>
-      {labelStyle === "eyebrow" ? (
-        <Eyebrow className="mt-1 block">{label}</Eyebrow>
-      ) : labelStyle === "stat" ? (
-        <span className={TILE_LABEL.stat}>{label}</span>
-      ) : (
+      {labelStyle === "footnote" ? (
         <div className={TILE_LABEL.footnote}>{label}</div>
+      ) : (
+        <span className={TILE_LABEL[labelStyle]}>{label}</span>
       )}
     </Card>
   );

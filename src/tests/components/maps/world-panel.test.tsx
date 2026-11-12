@@ -136,8 +136,7 @@ describe("who is offered the world tools", () => {
         }
       } as unknown as typeof IntersectionObserver;
     });
-    const renderBar = () =>
-      render(<UnifiedGlassCommandBar mode="home" onChangeMode={() => undefined} />);
+    const renderBar = () => render(<UnifiedGlassCommandBar section="overview" />);
 
     it("opens the Edit pill into the country and map editors for an owner without premium", () => {
       renderBar();

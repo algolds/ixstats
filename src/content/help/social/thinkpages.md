@@ -14,9 +14,9 @@ The feed is short posts, in character or as yourself, about what's happening in 
 
 ## The feed
 
-The Dashboard feed has two tabs:
+The Dashboard feed switches between two views:
 
-- **All Activity:** posts and national activity from everyone.
+- **All activity:** posts and national activity from everyone.
 - **Following:** posts from personas you follow and activity from nations your nation follows (signed-in only).
 
 The Dashboard also shows the daily [Blurbs](#blurbs-topic-tuesday) prompt beside the feed.

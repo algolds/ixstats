@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Archive, KeyCommand, Page, Plus } from "iconoir-react";
+import { Archive, Filter, KeyCommand, Page, Plus } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { EmptyState } from "~/components/ui/empty-state";
 import { useClockNow, useNationClock } from "~/hooks/useNationClock";
 import { PolicyCreatorSheet } from "~/components/executive/PolicyCreatorSheet";
@@ -16,9 +22,9 @@ import {
   type DirectiveRef,
   type IntentCommitResult,
 } from "~/components/mycountry/shared/primitives/IntentComposer";
-import { DirectiveStatusStrip } from "./DirectiveStatusStrip";
+import { DirectiveStatusLine } from "~/components/mycountry/shell/DirectiveStatusLine";
 import { DirectiveCard } from "./DirectiveCard";
-import { directiveTimeline, type IntentRow } from "./directive-model";
+import { type IntentRow } from "./directive-model";
 import { Card } from "~/components/ui/card";
 
 type DirectivesView = "new" | "active" | "history";
@@ -56,7 +62,7 @@ function QueryGuard({
   errorTitle,
   children,
 }: {
-  tree: { isLoading: boolean; error: { message: string } | null; refetch: () => unknown };
+  tree: { isLoading: boolean; error: { message: string } | null; refetch: () => void };
   errorTitle: string;
   children: React.ReactNode;
 }) {
@@ -88,33 +94,42 @@ function ListSkeleton() {
   );
 }
 
-function DirectivesHeader({
-  readOnly,
-  onDraftPolicy,
+/**
+ * The history filter as a pull-down menu, not a third row of tabs: the command ribbon and the
+ * Declare / In force / History views are the page's only navigation.
+ */
+function HistoryFilterMenu({
+  value,
+  onChange,
 }: {
-  readOnly: boolean;
-  onDraftPolicy: () => void;
+  value: HistoryFilter;
+  onChange: (filter: HistoryFilter) => void;
 }) {
+  const current = HISTORY_FILTERS.find((f) => f.value === value) ?? HISTORY_FILTERS[0]!;
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <h2 id="directives-title" className="text-label text-title-2">
-          Directives
-        </h2>
-        <p className="text-label-secondary text-callout mt-1 max-w-2xl">
-          Each directive uses a weekly slot and holds executive bandwidth while it executes.
-        </p>
-      </div>
-      {!readOnly && (
-        <Button
-          variant="outline"
-          className="self-start max-sm:h-11 sm:self-auto"
-          onClick={onDraftPolicy}
-        >
-          <Page /> Draft a custom policy
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="max-sm:h-11" aria-label="Filter history">
+          <Filter aria-hidden />
+          {current.label}
         </Button>
-      )}
-    </header>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={value}
+          onValueChange={(next) => {
+            const filter = HISTORY_FILTERS.find((f) => f.value === next);
+            if (filter) onChange(filter.value);
+          }}
+        >
+          {HISTORY_FILTERS.map((f) => (
+            <DropdownMenuRadioItem key={f.value} value={f.value}>
+              {f.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -173,9 +188,6 @@ function DirectivesWorkspaceBody({
     };
   }, [tree.data]);
 
-  const executingCount = active.filter(
-    (i) => directiveTimeline(i, nowIxTime).phase === "executing"
-  ).length;
   const filteredHistory =
     historyFilter === "all" ? history : history.filter((i) => i.status === historyFilter);
 
@@ -203,37 +215,43 @@ function DirectivesWorkspaceBody({
   };
 
   return (
-    <section aria-labelledby="directives-title" className="space-y-6">
-      <DirectivesHeader readOnly={readOnly} onDraftPolicy={() => setShowPolicySheet(true)} />
+    <section aria-label="Directives" className="space-y-5">
+      <Tabs value={view} onValueChange={(v) => setView(v as DirectivesView)} className="space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList
+            aria-label="Directive views"
+            className="bg-fill-3 w-full rounded-full p-1 sm:w-fit"
+          >
+            {views.map((v) => (
+              <TabsTrigger
+                key={v.id}
+                value={v.id}
+                className="h-11 flex-1 px-3 sm:h-9 sm:flex-none sm:px-4"
+              >
+                {v.label}
+                {v.count != null && v.count > 0 && (
+                  <span className="facet-gold text-caption rounded-full px-2 tabular-nums">
+                    {v.count}
+                  </span>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-      <DirectiveStatusStrip
-        countryId={countryId}
-        nowIxTime={nowIxTime}
-        activeCount={tree.data ? active.length : null}
-        executingCount={tree.data ? executingCount : null}
-        onShowActive={() => setView("active")}
-      />
-
-      <Tabs value={view} onValueChange={(v) => setView(v as DirectivesView)} className="space-y-6">
-        <TabsList
-          aria-label="Directive views"
-          className="bg-fill-3 w-full rounded-full p-1 sm:w-fit"
-        >
-          {views.map((v) => (
-            <TabsTrigger
-              key={v.id}
-              value={v.id}
-              className="h-11 flex-1 px-3 sm:h-9 sm:flex-none sm:px-4"
-            >
-              {v.label}
-              {v.count != null && v.count > 0 && (
-                <span className="facet-gold text-caption rounded-full px-2 tabular-nums">
-                  {v.count}
-                </span>
-              )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+          <div className="flex flex-wrap items-center gap-3">
+            <DirectiveStatusLine countryId={countryId} />
+            {!readOnly && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="max-sm:h-11"
+                onClick={() => setShowPolicySheet(true)}
+              >
+                <Page aria-hidden /> Draft a custom policy
+              </Button>
+            )}
+          </div>
+        </div>
 
         <TabsContent value="new">
           {readOnly ? (
@@ -296,15 +314,12 @@ function DirectivesWorkspaceBody({
               />
             ) : (
               <div className="space-y-4">
-                <SegmentedControl
-                  aria-label="Filter history"
-                  size="sm"
+                <HistoryFilterMenu
                   value={historyFilter}
-                  onValueChange={(f) => {
+                  onChange={(f) => {
                     setHistoryFilter(f);
                     setHistoryLimit(HISTORY_PAGE);
                   }}
-                  options={HISTORY_FILTERS}
                 />
                 {filteredHistory.length === 0 ? (
                   <p className="text-label-secondary text-body px-1">

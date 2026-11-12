@@ -122,7 +122,7 @@ export function FiscalPolicyConsole({ countryId }: { countryId: string }) {
                   <span className="text-label-secondary text-caption ml-1">/ yr</span>
                 </>
               ) : (
-                "—"
+                "–"
               )}
             </p>
           </div>

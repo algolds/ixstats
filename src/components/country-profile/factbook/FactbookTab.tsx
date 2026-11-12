@@ -15,7 +15,6 @@ import {
 import { EconomyBlock, ForeignBlock, StateBlock } from "./Blocks";
 import { FactbookMediaGallery } from "./FactbookMediaGallery";
 import { FactbookSheets } from "./FactbookSheets";
-import { NationalBackdrop } from "./NationalBackdrop";
 
 /** The open sheet, and whether this visit pushed it (so closing it can step back). */
 type OpenSheet = { sheet: CountrySheet; segment: EconomySegment; pushed: boolean } | null;
@@ -27,8 +26,8 @@ function sheetAt(search: string): OpenSheet {
 }
 
 /**
- * FactbookTab — the country at a glance on the Facet Lens over the national watermark backdrop:
- * Economy & people, State and Foreign affairs as three rich bento blocks, each opening its full
+ * FactbookTab — the country at a glance on the Facet Lens: Economy & people, State and Foreign
+ * affairs as three rich bento blocks, each opening its full
  * detail in a sheet. The open sheet lives in the address (`?sheet=`, `&segment=labor`), so it can
  * be shared, and back closes it. Geography and symbols live in the hero's Country DNA row.
  */
@@ -78,7 +77,8 @@ export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
 
   return (
     <>
-      <NationalBackdrop>
+      {/* The factbook wears the realm tint it inherits: the MyCountry gold stays MyCountry's own. */}
+      <div data-slot="factbook-stage" className="relative flex flex-col gap-4">
         <SurfaceReset>
           <LensSurface>
             <div className="grid gap-4 lg:grid-cols-3">
@@ -89,7 +89,7 @@ export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
             <FactbookMediaGallery layer={layer} />
           </LensSurface>
         </SurfaceReset>
-      </NationalBackdrop>
+      </div>
       <FactbookSheets layer={layer} open={open} onClose={close} onSegment={setSegment} />
     </>
   );

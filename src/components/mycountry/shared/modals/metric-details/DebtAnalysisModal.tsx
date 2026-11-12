@@ -130,7 +130,7 @@ function DebtDetails({ fiscal }: Pick<DebtViewProps, "fiscal">) {
   const internalPct = fiscal?.internalDebtGDPPercent || 0;
   const externalPct = fiscal?.externalDebtGDPPercent || 0;
   const totalPct = internalPct + externalPct;
-  const share = (pct: number) => (totalPct > 0 ? `${((pct / totalPct) * 100).toFixed(0)}%` : "—");
+  const share = (pct: number) => (totalPct > 0 ? `${((pct / totalPct) * 100).toFixed(0)}%` : "–");
 
   return (
     <MetricModalLayout variant="economy">
@@ -172,7 +172,7 @@ function DebtDetails({ fiscal }: Pick<DebtViewProps, "fiscal">) {
           />
           <MetricModalLayout.Metric
             label="Average interest rate"
-            value={fiscal?.interestRates ? `${fiscal.interestRates.toFixed(2)}%` : "—"}
+            value={fiscal?.interestRates ? `${fiscal.interestRates.toFixed(2)}%` : "–"}
           />
         </MetricModalLayout.SidePanel>
       </MetricModalLayout.Sidebar>

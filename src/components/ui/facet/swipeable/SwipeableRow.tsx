@@ -471,17 +471,6 @@ function SwipeableRowRoot({
     }
   }, [isExpanded, controlledExpanded, onExpandedChange, group, rowId]);
 
-  // Physics
-  const physics = useSwipePhysics({
-    containerWidth: containerWidth || 300, // fallback for SSR
-    springPreset,
-    thresholds,
-    hasLeading,
-    hasTrailing,
-    disabled: disabled || isExpanded, // Disable swipe while expanded
-    onStateChange: onSwipeStateChange,
-  });
-
   // Commit animation state
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitColor, setCommitColor] = useState<string | null>(null);
@@ -501,31 +490,46 @@ function SwipeableRowRoot({
     [onCommit]
   );
 
-  // Watch for commit state from physics
-  const prevState = useRef<SwipeState>("closed");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    const current = physics.swipeState.current;
-    if (current !== prevState.current) {
-      prevState.current = current;
+  const physicsRef = useRef<ReturnType<typeof useSwipePhysics> | null>(null);
 
-      if (current === "committing" && !isCommitting) {
-        const side = physics.activeSide.current;
+  const handleSwipeStateChange = useCallback(
+    (next: SwipeState) => {
+      onSwipeStateChange?.(next);
+      const currentPhysics = physicsRef.current;
+      if (next === "revealing" || next === "emphasized") {
+        group?.setActiveRowId(rowId);
+      } else if (next === "committing" && !isCommitting && currentPhysics) {
+        const side = currentPhysics.activeSide.current;
         if (!side) return;
-
         const commitAction =
           side === "leading" ? leadingChild?.props?.commit : trailingChild?.props?.commit;
-
         if (commitAction) {
           runCommit(side, commitAction);
         } else {
-          // No commit action — snap back to reveal
-          physics.settle(
-            side === "trailing" ? -physics.thresholdsPx.reveal : physics.thresholdsPx.reveal
+          currentPhysics.settle(
+            side === "trailing"
+              ? -currentPhysics.thresholdsPx.reveal
+              : currentPhysics.thresholdsPx.reveal
           );
         }
       }
-    }
+    },
+    [onSwipeStateChange, group, rowId, isCommitting, leadingChild, trailingChild, runCommit]
+  );
+
+  // Physics
+  const physics = useSwipePhysics({
+    containerWidth: containerWidth || 300, // fallback for SSR
+    springPreset,
+    thresholds,
+    hasLeading,
+    hasTrailing,
+    disabled: disabled || isExpanded, // Disable swipe while expanded
+    onStateChange: handleSwipeStateChange,
+  });
+
+  useEffect(() => {
+    physicsRef.current = physics;
   });
 
   // Group coordination: close this row when another opens
@@ -537,13 +541,6 @@ function SwipeableRowRoot({
       }
     }
   }, [group?.activeRowId, rowId, physics, controlledExpanded]);
-
-  // When revealing, set this row as active in group
-  useEffect(() => {
-    if (physics.swipeState.current === "revealing" || physics.swipeState.current === "emphasized") {
-      group?.setActiveRowId(rowId);
-    }
-  });
 
   const collapse = useCallback(() => {
     if (!isExpanded) return;

@@ -294,13 +294,10 @@ describe("FactbookTab", () => {
       "/countries/urcea"
     );
 
-    // Multi-plane dynamic monogram layers (deep crown lattice + mid emblem/flag lattice) are present and respond to scroll/pointer.
-    expect(container.querySelector('[data-slot="monogram-plane-deep"]')).not.toBeNull();
-    expect(container.querySelector('[data-slot="monogram-plane-mid"]')).not.toBeNull();
-    const backdrop = container.querySelector('[data-slot="national-backdrop"]')!;
-    fireEvent.pointerMove(backdrop, { clientX: 200, clientY: 150, pointerType: "mouse" });
-    fireEvent.scroll(window);
-    fireEvent.pointerLeave(backdrop);
+    // No MyCountry monogram backdrop: the public factbook wears the realm tint, not MyCountry's gold.
+    expect(container.querySelector('[data-slot="monogram-plane-deep"]')).toBeNull();
+    const stage = container.querySelector('[data-slot="factbook-stage"]')!;
+    expect(stage.closest('[data-app="mycountry"]')).toBeNull();
   });
 
   it("renders domain cover photos, the illustrated lore spotlight and IxVault collectible cards", () => {

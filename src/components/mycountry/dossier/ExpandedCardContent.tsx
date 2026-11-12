@@ -22,7 +22,6 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
@@ -101,7 +100,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Header */}
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Eyebrow>Country actions</Eyebrow>
+              <span className="text-footnote text-label-secondary font-medium">
+                Country actions
+              </span>
               {country.continent && <Badge variant="default">{country.continent}</Badge>}
               {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
@@ -128,7 +129,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <div className="space-y-4">
               {/* Social */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Social</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Social</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -164,7 +165,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Diplomacy */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Diplomacy</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Diplomacy</p>
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
@@ -179,7 +180,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     ) : (
                       <Building2 className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                    Construct Embassy
+                    Construct embassy
                   </Button>
 
                   <Button
@@ -231,7 +232,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Foreign policy</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">
+                  Foreign policy
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -261,7 +264,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Quick links</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Quick links</p>
                 <Button asChild variant="outline" size="lg" className={actionClass}>
                   <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
                     <Globe className="text-label-secondary h-3.5 w-3.5" />

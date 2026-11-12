@@ -13,7 +13,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Dialog,
   DialogContent,
@@ -170,7 +169,7 @@ function conflictOutcome(c: Conflict, countryId: string) {
 function ConflictGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <Eyebrow className="block">{title}</Eyebrow>
+      <h4 className="text-footnote text-label-secondary font-medium">{title}</h4>
       {children}
     </div>
   );

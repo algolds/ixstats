@@ -153,9 +153,10 @@ export function BaseMetricDetailsModal({
           timeRange?: TimeRange;
           chartType?: ChartType;
         };
-        // oxlint-disable-next-line
-        if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab))
+        if (parsed.activeTab && tabs.some((t) => t.id === parsed.activeTab)) {
+          // oxlint-disable-next-line react/set-state-in-effect
           setActiveTab(parsed.activeTab);
+        }
         if (parsed.timeRange) setTimeRange(parsed.timeRange);
         if (parsed.chartType) setChartType(parsed.chartType);
       }
@@ -188,7 +189,7 @@ export function BaseMetricDetailsModal({
             <Icon className={cn("h-5 w-5", iconColor || theme.textHighlight)} />
             {title}
             {countryName && (
-              <span className="text-label-secondary font-normal">— {countryName}</span>
+              <span className="text-label-secondary font-normal">· {countryName}</span>
             )}
           </SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}

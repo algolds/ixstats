@@ -174,10 +174,7 @@ const ART_GRADIENT_FILES = [
  */
 const RAW_BACKDROP = /(?<![\w-])backdrop-(?:blur|saturate)(?:-[\w[\]/.()%-]+)?(?![\w-])/g;
 const INLINE_BACKDROP = /\b(?:Webkit)?[bB]ackdropFilter\s*:/g;
-const RAW_BACKDROP_ALLOWED = new Set([
-  // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
-  `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
-]);
+const RAW_BACKDROP_ALLOWED = new Set<string>([]);
 
 /**
  * Textures in converted feature code are the sanctioned ones
@@ -217,11 +214,11 @@ describe("Facet anti-slop guards", () => {
     expect(hits(/animate-pulse/g).length).toBeLessThanOrEqual(ANIMATE_PULSE_CEILING);
   });
 
-  it("keeps nested drill-sheet cards opaque (only the sheet itself blurs)", () => {
+  it("keeps drill sheets on SheetContent's facet-overlay with zero raw backdrop-blur", () => {
     const drillSheets = sources.find(({ file }) =>
       file.endsWith("mycountry/shell/DrillSheets.tsx")
     );
-    expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(1);
+    expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(0);
   });
 
   it("wraps the app in one reduced-motion FacetMotionConfig and no route blur wrapper", () => {

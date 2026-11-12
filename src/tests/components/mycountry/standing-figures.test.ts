@@ -1,9 +1,9 @@
 /**
- * The Standing card shows "—" for a population or GDP the record does not have, never 0 or "$0".
+ * The command face shows a dash for a population or GDP the record does not have, never 0 or "$0".
  */
 jest.mock("~/trpc/react", () => ({ api: {} }));
 
-import { deriveFigures } from "~/components/mycountry/shell/StandingBands";
+import { deriveFigures } from "~/components/mycountry/shell/face/command-figures";
 
 type Country = Parameters<typeof deriveFigures>[0];
 

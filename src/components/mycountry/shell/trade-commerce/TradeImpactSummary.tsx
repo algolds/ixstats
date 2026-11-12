@@ -18,7 +18,7 @@ interface TradeImpactSummaryProps {
 
 /** Trade figures come from GDP, which is in US dollars, so they carry "$" (not the national symbol). */
 function money(value: number | null): string {
-  if (value == null) return "—";
+  if (value == null) return "–";
   const sign = value < 0 ? "-" : "";
   return `${sign}$${formatCompact(Math.abs(value))}`;
 }

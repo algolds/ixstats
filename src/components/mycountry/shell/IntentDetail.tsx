@@ -19,7 +19,6 @@ import {
 import { ShareToRealmButton } from "~/components/action-links/ShareToRealmButton";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { STATUS_TEXT } from "./status-tone";
@@ -355,7 +354,9 @@ function ChainedInitiatives({
       <div className="space-y-3">
         {parent && (
           <div className="space-y-1">
-            <Eyebrow className="block">Parent initiative</Eyebrow>
+            <span className="text-footnote text-label-secondary block font-medium">
+              Parent initiative
+            </span>
             <div className="text-footnote flex items-center justify-between gap-2">
               <span className="text-label font-medium">{parent.goal}</span>
               <span className="text-label-secondary shrink-0 capitalize">{parent.tier}</span>
@@ -365,7 +366,9 @@ function ChainedInitiatives({
 
         {followUps.length > 0 && (
           <div className="space-y-1">
-            <Eyebrow className="block">Follow-up directives ({followUps.length})</Eyebrow>
+            <span className="text-footnote text-label-secondary block font-medium">
+              Follow-up directives ({followUps.length})
+            </span>
             <ul className="space-y-2">
               {followUps.map((kid) => (
                 <li key={kid.id} className="text-footnote flex items-center justify-between gap-2">

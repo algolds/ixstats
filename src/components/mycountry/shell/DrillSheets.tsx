@@ -2,7 +2,6 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
 import { Archery as Target, WarningTriangle as AlertTriangle, ArrowUpRight } from "iconoir-react";
 import {
   Sheet,
@@ -13,7 +12,6 @@ import {
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
-import { countrySheetHref } from "~/lib/country/country-routes";
 import { DOMAIN_META, type MyCountryDomain } from "./domain-meta";
 import { IntentDetail } from "./IntentDetail";
 import { IssueDetailBrief } from "~/components/mycountry/shared/headers/IssueDetailBrief";
@@ -61,6 +59,7 @@ interface DrillSheetsProps {
   onClose: () => void;
   countryId: string;
   onDeclare?: (prefilledGoal?: string) => void;
+  onNavigate?: (section: string) => void;
 }
 
 function sheetHeading(drill: DrillSheetKind) {
@@ -83,6 +82,7 @@ function DrillSheetsComponent({
   onClose,
   countryId,
   onDeclare,
+  onNavigate,
 }: DrillSheetsProps): React.JSX.Element {
   const { title, Icon, meta, domainKind } = sheetHeading(drill);
   // Only domain sheets carry a blurb. Without one there is no description (an empty one left a blank
@@ -95,29 +95,28 @@ function DrillSheetsComponent({
     <Sheet open={drill !== null} onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         {...(blurb ? {} : { "aria-describedby": undefined })}
-        side="right"
-        className="border-separator bg-surface w-full overflow-y-auto backdrop-blur-xl sm:max-w-xl lg:max-w-2xl"
+        size="wide"
+        className="overflow-y-auto"
       >
         <SheetHeader className="mb-4">
           <div className="flex items-center justify-between gap-2">
             <SheetTitle className="text-headline flex items-center gap-3">
-              <Icon aria-hidden="true" className="text-label-secondary size-5 shrink-0" />
+              <Icon aria-hidden="true" className="text-tint size-5 shrink-0" />
               {title}
             </SheetTitle>
-            {domainKind && (
-              <Button asChild variant="outline" size="sm" className="shrink-0">
-                <Link
-                  href={
-                    domainKind === "economy"
-                      ? countrySheetHref(encodeURIComponent(countryId), "economy")
-                      : `/countries/${encodeURIComponent(countryId)}`
-                  }
-                  target="_blank"
-                >
-                  Open page
-                  <span className="sr-only"> (opens in a new tab)</span>
-                  <ArrowUpRight aria-hidden="true" />
-                </Link>
+            {domainKind && meta && onNavigate && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  onNavigate(meta.section);
+                  onClose();
+                }}
+              >
+                Open {meta.title.toLowerCase()}
+                <ArrowUpRight aria-hidden="true" />
               </Button>
             )}
           </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { City as Building2, NavArrowRight as ChevronRight } from "iconoir-react";
@@ -92,7 +91,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           </div>
         ))}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-surface border-separator shadow-card rounded-full border p-2">
+          <div className="bg-surface border-separator rounded-full border p-2">
             <Building2 className="text-label h-4 w-4" />
           </div>
         </div>
@@ -121,7 +120,7 @@ export const EmbassyCard = React.memo(function EmbassyCard({
       <CardContent className="space-y-3 px-4 pb-4">
         <div className="space-y-2">
           <div className="text-footnote flex items-center justify-between">
-            <Eyebrow>Relationship standing</Eyebrow>
+            <span className="text-label-secondary">Relationship standing</span>
             <span className={cn("font-semibold", standing?.textClass ?? "text-label-secondary")}>
               {standing?.label ?? "Not yet rated"}
             </span>

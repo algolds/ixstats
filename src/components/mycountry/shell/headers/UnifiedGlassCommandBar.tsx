@@ -1,144 +1,187 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { KeyCommand as Command, User } from "iconoir-react";
+import React, { useEffect, useRef, useState } from "react";
+import { KeyCommand as Command, NavArrowDown } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import { cn } from "~/lib/utils";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import type { CommandNavMode } from "../command-nav-mode";
-import { PageHeader, BACKDROP_PLATE } from "~/components/shell/PageHeader";
-import { assetUrl } from "~/lib/base-path";
-import { CountryIdentityStrip } from "~/components/country-profile/CountryIdentityStrip";
-import { FlagTile } from "~/components/country-profile/HeroMedia";
-import { CountryOwnerRibbonRack } from "~/components/achievements/FloatingRibbonRack";
-import { stripHtml } from "~/lib/utils/sanitize-html";
-import { NationDateLine } from "~/components/realms/NationDateLine";
+import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
+import { tabForSection, visibleTabs, type MyCountryTab } from "../mycountry-tabs";
+import { DOMAIN_META } from "../domain-meta";
 import { EditMorphButton } from "./EditMorphButton";
-import { FlagBanner, MonogramBanner } from "./FlagBanner";
-
-/** Ghost actions over the flag get the title plate's strength, with an opaque hover and press. */
-const ACTION_PLATE = cn(
-  BACKDROP_PLATE,
-  "hover:bg-surface-secondary active:bg-surface-secondary rounded-full"
-);
 
 interface UnifiedGlassCommandBarProps {
-  mode: CommandNavMode;
-  onChangeMode: (mode: CommandNavMode) => void;
+  /** The section on screen. */
+  section: string;
+  onNavigate?: (section: MyCountryTab) => void;
   onDeclare?: () => void;
-}
-
-function str(value: string | null | undefined): string | null {
-  return value?.trim() || null;
-}
-
-/** "CONSTITUTIONAL_MONARCHY" → "Constitutional monarchy"; ordinary text passes through. */
-function humanizeEnum(value: string): string {
-  if (!/^[A-Z0-9_]+$/.test(value)) return value;
-  const words = value.toLowerCase().replace(/_/g, " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  /**
+   * The command face's `<h1>`: while it is in view, the actions live on the document ribbon and
+   * this bar occupies zero height; once it scrolls away, the compact Chrome bar glides in. Leave
+   * out to show the compact bar on its own.
+   */
+  collapseOn?: HTMLElement | null;
 }
 
 /**
- * The MyCountry page header: the country's name and identity over its flag as cover art, and a
- * toolbar (Profile, Edit, and the one Declare Directive button). Identity follows the country
- * profile hero: the flag tile, realm and IxnayID strip, ribbons and motto. The banner is cover art
- * (no small flag beside the title) and collapses with the header. Section switching is the global
- * source list.
+ * Edit + Declare Directive controls shared between the document ribbon (unscrolled) and the
+ * compact sticky Chrome bar (once the command face scrolls out of view).
  */
-export function UnifiedGlassCommandBar({
-  mode,
-  onChangeMode,
+export function CommandActions({
+  section,
   onDeclare,
-}: UnifiedGlassCommandBarProps) {
-  const { country } = useCountryData();
-
-  const profileHref = country?.slug ? `/countries/${country.slug}` : "/countries";
-
-  const isExecutiveMode = mode === "executive";
-
-  const name = country?.name ?? "MyCountry";
-  const motto = str(country?.nationalIdentity?.motto);
-  const governmentType = str(country?.governmentType);
-  const realm = country?.realm
-    ? {
-        name: country.realm.name,
-        slug: country.realm.slug,
-        logoUrl: country.realm.emblemUrl ?? country.realm.thumbnail,
-      }
-    : null;
-  const owner = country?.owner;
-  const sovereign = owner
-    ? {
-        username: str(owner.handle) ?? str(owner.forumUsername),
-        roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
-        avatarUrl: owner.avatarUrl,
-        role: owner.clerkRole ?? str(owner.role?.name),
-      }
-    : null;
-  const flagUrl = assetUrl(country?.flagUrl || country?.flag);
-  // The flag whose image failed to load; a different flag is tried afresh. When the flag is
-  // missing or fails, the gold MyCountry monogram fills the backdrop so the title Lens always has
-  // art behind it; the action pill plates only sit over the flag.
-  const [failedFlag, setFailedFlag] = useState<string | null>(null);
-  const bannerShowing = Boolean(flagUrl) && failedFlag !== flagUrl;
-  // Pills only over the visible flag: not over the quiet monogram or in the compact bar.
-  const plate = (collapsed: boolean) => (bannerShowing && !collapsed ? ACTION_PLATE : undefined);
+  size = "sm",
+}: {
+  section: string;
+  onDeclare?: () => void;
+  size?: "default" | "sm";
+}) {
+  const domain = Object.values(DOMAIN_META).find((meta) => meta.section === section);
+  const isDirectives = section === "executive";
 
   return (
-    <PageHeader
-      title={name}
-      className="group/hero"
-      leading={<FlagTile src={flagUrl ?? null} name={name} />}
-      // Always present, so the header's padding never jumps when the flag arrives late or fails.
-      backdrop={
-        bannerShowing ? (
-          <FlagBanner src={flagUrl} onError={() => setFailedFlag(flagUrl)} />
-        ) : (
-          <MonogramBanner />
-        )
-      }
-      subtitle={
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <CountryIdentityStrip realm={realm} sovereign={sovereign} />
-            {country?.slug && <CountryOwnerRibbonRack countrySlug={country.slug} />}
-          </div>
-          {motto && (
-            <p className="text-pretty">
-              <span className="sr-only">Motto: </span>&ldquo;{stripHtml(motto)}&rdquo;
-            </p>
-          )}
-          {governmentType && <p className="text-footnote">{humanizeEnum(governmentType)}</p>}
-          <NationDateLine className="text-footnote" />
-        </div>
-      }
-      actions={({ collapsed }) => (
-        <>
-          <Button asChild variant="ghost" className={cn("text-label-secondary", plate(collapsed))}>
-            <Link href={profileHref} aria-label="Open public profile" title="Open public profile">
-              <User aria-hidden="true" />
-              <span className="hidden md:inline">Profile</span>
-            </Link>
-          </Button>
-          <EditMorphButton plate={plate(collapsed)} />
-          <Button
-            type="button"
-            aria-pressed={isExecutiveMode}
-            onClick={() => {
-              if (onDeclare) onDeclare();
-              else onChangeMode("executive");
-            }}
-            className={cn(
-              isExecutiveMode && "ring-offset-surface ring-tint/40 ring-2 ring-offset-2"
-            )}
-          >
-            <Command aria-hidden="true" />
-            <span>Declare Directive</span>
-          </Button>
-        </>
+    <>
+      <EditMorphButton size={size} />
+      <Button
+        type="button"
+        size={size}
+        aria-pressed={isDirectives}
+        onClick={onDeclare}
+        title={
+          domain
+            ? `Start a Directive with a suggested ${domain.title.toLowerCase()} goal`
+            : undefined
+        }
+        className={cn(isDirectives && "ring-offset-surface ring-tint/40 ring-2 ring-offset-2")}
+      >
+        <Command aria-hidden="true" />
+        <span>Declare Directive</span>
+      </Button>
+    </>
+  );
+}
+
+/**
+ * The ribbon's sections as a title menu, for when the ribbon has scrolled away with the face: the
+ * compact bar names the section you are in and switches to another without scrolling back up.
+ */
+function SectionMenu({
+  section,
+  onNavigate,
+}: {
+  section: string;
+  onNavigate?: (section: MyCountryTab) => void;
+}) {
+  const tabs = visibleTabs(useHasMycountryPremium("defense"));
+  const active = tabForSection(section);
+  const current = tabs.find((tab) => tab.id === active) ?? tabs[0]!;
+  const Icon = current.icon;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-label"
+          aria-label={`Section: ${current.label}`}
+        >
+          <Icon aria-hidden />
+          {current.label}
+          <NavArrowDown aria-hidden className="text-label-secondary" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuRadioGroup
+          value={active}
+          onValueChange={(value) => {
+            const tab = tabs.find((t) => t.id === value);
+            if (tab) onNavigate?.(tab.id);
+          }}
+        >
+          {tabs.map((tab) => (
+            <DropdownMenuRadioItem key={tab.id} value={tab.id}>
+              {tab.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function useScrolledPast(
+  barRef: React.RefObject<HTMLElement | null>,
+  target: HTMLElement | null | undefined
+): boolean {
+  const [observed, setObserved] = useState<{ target: HTMLElement; past: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!target || typeof IntersectionObserver === "undefined") return;
+    const bar = barRef.current;
+    const stickyTop = bar ? parseFloat(getComputedStyle(bar).top) || 0 : 0;
+    const covered = Math.round(stickyTop + 56);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        const rootTop = entry.rootBounds?.top ?? covered;
+        const past = !entry.isIntersecting && entry.boundingClientRect.bottom <= rootTop + 1;
+        setObserved({ target, past });
+      },
+      { rootMargin: `-${covered}px 0px 0px 0px`, threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [barRef, target]);
+
+  return Boolean(target && observed?.target === target && observed.past);
+}
+
+/**
+ * Sticky compact Chrome bar for MyCountry: stays zero-height and out of the way while the command
+ * document is on screen (its ribbon holds Edit and Declare Directive), then fades in around Halo
+ * once the nation's heading scrolls above the top edge.
+ */
+export function UnifiedGlassCommandBar({
+  section,
+  onNavigate,
+  onDeclare,
+  collapseOn,
+}: UnifiedGlassCommandBarProps) {
+  const { country } = useCountryData();
+  const name = country?.name?.replace(/_/g, " ") ?? "MyCountry";
+  const barRef = useRef<HTMLDivElement>(null);
+  const scrolledPast = useScrolledPast(barRef, collapseOn);
+  const visible = collapseOn === undefined ? true : scrolledPast;
+
+  return (
+    <div
+      ref={barRef}
+      data-slot="command-chrome-bar"
+      data-collapsed={visible ? "" : undefined}
+      className={cn(
+        "z-sticky sticky top-(--shell-header-top)",
+        collapseOn !== undefined && "pointer-events-none h-0 overflow-visible"
       )}
-    />
+    >
+      {visible && (
+        <div className="facet-chrome shadow-floating rounded-card pointer-events-auto flex min-h-14 flex-wrap items-center gap-2 px-3 py-1.5">
+          <span aria-hidden className="text-headline text-label min-w-0 flex-1 truncate px-1">
+            {name}
+          </span>
+          <div aria-hidden className="hidden h-10 w-(--shell-halo-reserve) shrink lg:block" />
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end-safe gap-2">
+            <SectionMenu section={section} onNavigate={onNavigate} />
+            <CommandActions section={section} onDeclare={onDeclare} size="sm" />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

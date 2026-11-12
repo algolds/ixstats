@@ -32,6 +32,8 @@ interface DocumentRibbonProps<T extends string> {
   idBase: string;
   /** The tablist's accessible name ("Passport sections"). */
   label: string;
+  /** Trailing controls aligned opposite the section tabs (e.g. MyCountry's Edit and Declare actions). */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -48,6 +50,7 @@ function DocumentRibbonComponent<T extends string>({
   counts = {},
   idBase,
   label,
+  actions,
 }: DocumentRibbonProps<T>) {
   const shouldReduceMotion = useReducedMotion();
   const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
@@ -80,12 +83,12 @@ function DocumentRibbonComponent<T extends string>({
   );
 
   return (
-    <div className="border-separator bg-surface-secondary border-y px-4 py-2 sm:px-6">
+    <div className="border-separator bg-surface-secondary flex flex-wrap items-center justify-between gap-2 border-y px-4 py-2 sm:px-6">
       <div
         role="tablist"
         aria-label={label}
         aria-orientation="horizontal"
-        className="-my-2 flex scrollbar-none items-center gap-1 overflow-x-auto py-2"
+        className="-my-2 flex min-w-0 scrollbar-none items-center gap-1 overflow-x-auto py-2"
       >
         {tabs.map((tab, idx) => {
           const isActive = activeTab === tab.id;
@@ -132,6 +135,7 @@ function DocumentRibbonComponent<T extends string>({
           );
         })}
       </div>
+      {actions != null && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
   );
 }

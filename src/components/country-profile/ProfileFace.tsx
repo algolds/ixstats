@@ -18,11 +18,14 @@ export function ProfileFace({
   cover,
   action,
   onExpandMap,
+  shared = true,
 }: {
   layer: CountryProfileLayer;
   cover: HeroCover | null;
   action?: React.ReactNode;
   onExpandMap?: () => void;
+  /** False while the document is flipped to its back face, so hidden elements do not claim shared names. */
+  shared?: boolean;
 }) {
   const { identity, vitals, land, world, state } = layer;
   return (
@@ -46,6 +49,7 @@ export function ProfileFace({
       cover={cover}
       action={action}
       onExpandMap={onExpandMap}
+      shared={shared}
       footer={({ rings, openVitality }) => (
         <StandingBand
           axes={toDnaAxes(world.rankings)}

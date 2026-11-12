@@ -195,13 +195,15 @@ beforeEach(() => {
   mockMutate.mockReset();
 });
 
-const tile = (label: string) => screen.getByText(label).parentElement!;
+const tile = (label: string) =>
+  (screen.getByText(label).closest('[data-slot="stat"], [data-slot="card"]') ??
+    screen.getByText(label).parentElement)! as HTMLElement;
 
 describe("Economy report", () => {
   it("shows the engine's growth, a dash for unrecorded unemployment and wealth shares from classes", () => {
     render(<EconomyDrillDown countryId="c1" onDeclare={jest.fn()} />);
     expect(within(tile("GDP growth")).getByText("2.10%")).toBeInTheDocument();
-    expect(within(tile("Unemployment")).getByText("—")).toBeInTheDocument();
+    expect(within(tile("Unemployment")).getByText("–")).toBeInTheDocument();
     expect(within(tile("Top 10% wealth share")).getByText("50.0%")).toBeInTheDocument();
     expect(within(tile("Middle class share")).getByText("75.0%")).toBeInTheDocument();
     expect(
@@ -232,7 +234,7 @@ describe("Economy report estimates", () => {
     // The engine's 2% stand-in is never shown in place of the estimate.
     expect(within(tile("Inflation")).getByText("4.4%")).toBeInTheDocument();
     expect(within(tile("Debt to GDP")).getByText("61.0%")).toBeInTheDocument();
-    expect(within(tile("Debt to GDP")).getByText("Public debt")).toBeInTheDocument();
+    expect(within(tile("Debt to GDP")).queryByText("Estimated from your economy")).toBeNull();
   });
 });
 
