@@ -41,6 +41,8 @@ interface GlassCanvasComposerProps {
   onCreateAccount?: () => void;
   /** Opens the full account manager from the account menu (the dashboard's only way in). */
   onManageAccounts?: () => void;
+  /** True until the viewer's accounts have loaded, so an empty list is not mistaken for "no accounts". */
+  accountsLoading?: boolean;
   isOwner: boolean;
   onPost: () => void;
   placeholder?: string;
@@ -199,6 +201,7 @@ export function GlassCanvasComposer({
   onAccountSettings,
   onCreateAccount,
   onManageAccounts,
+  accountsLoading = false,
   isOwner,
   onPost,
   placeholder = "What's happening?",
@@ -249,6 +252,8 @@ export function GlassCanvasComposer({
 
   const characterLimit = 280;
   const remainingChars = characterLimit - plainText.length;
+
+  if (accountsLoading) return <ComposerSkeleton />;
 
   if (accounts.length === 0) {
     return (

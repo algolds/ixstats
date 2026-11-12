@@ -142,10 +142,13 @@ function useViewerAccounts(userId: string | undefined) {
   );
 
   // Accounts the user owns, for posting.
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
-    enabled: !!userId,
-    staleTime: 120_000,
-  });
+  const { data: accountsData, isLoading: accountsLoading } = api.thinkpages.getMyAccounts.useQuery(
+    undefined,
+    {
+      enabled: !!userId,
+      staleTime: 120_000,
+    }
+  );
   const accounts = useMemo(() => accountsData || [], [accountsData]);
   const hasCountry = !!countryId;
 
@@ -165,6 +168,7 @@ function useViewerAccounts(userId: string | undefined) {
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
@@ -198,6 +202,7 @@ export function UnifiedDashboardSection({
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
@@ -288,6 +293,7 @@ export function UnifiedDashboardSection({
                   hasCountry={hasCountry}
                   onCreateAccount={openAccountManager}
                   onManageAccounts={openAccountManager}
+                  accountsLoading={accountsLoading}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
                   <PostingAs account={selectedAccount} onSwitch={openAccountManager} />
