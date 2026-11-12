@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { assetUrl } from "~/lib/base-path";
+import { Skeleton } from "~/components/ui/skeleton";
 
 interface MessagesUserSearchResultsProps {
   query: string;
@@ -24,8 +25,16 @@ export function MessagesUserSearchResults({
 }: MessagesUserSearchResultsProps) {
   if (isLoading) {
     return (
-      <div className="flex justify-center py-6">
-        <div className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
+      <div className="flex flex-col gap-1 py-2" aria-busy="true">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div key={i} className="flex items-center gap-3 px-2 py-2">
+            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-1/4" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

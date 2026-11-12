@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { soundCues } from "~/lib/sound/cuelume";
 import { buildMessage, ownAccount } from "./useConversationMessages";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { MessageFolder } from "~/types/messages";
+import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-types";
+
+/** While the socket is down the open thread and the inbox are refreshed this often. */
+const OFFLINE_POLL_MS = 20_000;
 
 type Utils = ReturnType<typeof api.useUtils>;
 
@@ -25,7 +29,7 @@ interface Options {
 function appendIncomingMessage(
   utils: Utils,
   queryKey: { conversationId: string; userId: string },
-  data: any,
+  data: ThinkPagesMessageEvent,
   {
     currentUserId,
     user,
@@ -64,7 +68,7 @@ function appendIncomingMessage(
 function bumpConversationPreview(
   utils: Utils,
   folderQueryKey: { userId: string; folder: MessageFolder },
-  data: any,
+  data: ThinkPagesMessageEvent,
   { currentUserId, user }: Pick<Options, "currentUserId" | "user">
 ) {
   utils.messages.getConversationsByFolder.setData(folderQueryKey, (old: any) => {
@@ -104,17 +108,18 @@ export function useMessagesSocket(options: Options) {
   const utils = api.useUtils();
   const [presenceMap, setPresenceMap] = useState<Record<string, string>>({});
 
-  const handleMessageUpdate = (data: any) => {
+  const handleMessageUpdate = (data: ThinkPagesMessageEvent) => {
     if (data.type === "message:new") {
       const { mutedIds, archivedIds, settings } = options;
+      const conversationId = data.conversationId ?? "";
       if (
         data.accountId !== currentUserId &&
         settings.notificationSounds &&
-        !mutedIds.includes(data.conversationId)
+        !mutedIds.includes(conversationId)
       ) {
         soundCues.notify();
       }
-      if (archivedIds.includes(data.conversationId)) options.onUnarchive(data.conversationId);
+      if (archivedIds.includes(conversationId)) options.onUnarchive(conversationId);
 
       void utils.messages.getFolderCounts.invalidate();
       void utils.messages.getConversationsByFolder.invalidate();
@@ -153,23 +158,68 @@ export function useMessagesSocket(options: Options) {
     }
   };
 
+  /** Refreshes what the socket would have pushed: the inbox, its counts and the open thread. */
+  const refresh = () => {
+    void utils.messages.getFolderCounts.invalidate();
+    void utils.messages.getConversationsByFolder.invalidate();
+    if (selectedConversationId) {
+      void utils.messages.getConversationMessages.invalidate({
+        conversationId: selectedConversationId,
+        userId: currentUserId,
+      });
+    }
+  };
+
   const {
     clientState: raw,
     sendTypingIndicator,
     subscribeToConversation,
+    unsubscribeFromConversation,
   } = useThinkPagesWebSocket({
     accountId: currentUserId,
     autoReconnect: true,
     onMessageUpdate: handleMessageUpdate,
     onConversationUpdate: () => options.refetchConversations(),
+    // A thread that is not open: the open one already updates itself from its own events.
+    onInboxUpdate: (update) => {
+      if (update.conversationId === selectedConversationId) return;
+      void utils.messages.getFolderCounts.invalidate();
+      void utils.messages.getConversationsByFolder.invalidate();
+    },
     onPresenceUpdate: (data: any) => {
       if (data.accountId) setPresenceMap((prev) => ({ ...prev, [data.accountId]: data.status }));
     },
   });
 
+  // Joined (and re-joined after a reconnect) while the thread is open, left when it changes.
   useEffect(() => {
-    if (selectedConversationId && currentUserId) subscribeToConversation(selectedConversationId);
-  }, [selectedConversationId, currentUserId, subscribeToConversation]);
+    if (!selectedConversationId || !currentUserId) return;
+    subscribeToConversation(selectedConversationId);
+    return () => unsubscribeFromConversation(selectedConversationId);
+  }, [selectedConversationId, currentUserId, subscribeToConversation, unsubscribeFromConversation]);
+
+  const connected = raw.connected;
+  const dropped = useRef<"never" | "up" | "down">("never");
+  // The latest refresh, so the timer below is not restarted by every render.
+  const refreshRef = useRef(refresh);
+  useEffect(() => {
+    refreshRef.current = refresh;
+  });
+
+  // Polling fallback: only while the socket is not connected (disabled, blocked or dropped).
+  useEffect(() => {
+    if (connected) return;
+    const timer = setInterval(() => {
+      if (document.visibilityState !== "hidden") refreshRef.current();
+    }, OFFLINE_POLL_MS);
+    return () => clearInterval(timer);
+  }, [connected]);
+
+  // Catch up once when the socket comes back after a drop: events in between were missed.
+  useEffect(() => {
+    if (connected && dropped.current === "down") refreshRef.current();
+    dropped.current = connected ? "up" : dropped.current === "never" ? "never" : "down";
+  }, [connected]);
 
   const clientState = {
     presenceStatus: raw.presenceStatus,
@@ -180,5 +230,5 @@ export function useMessagesSocket(options: Options) {
     unreadCount: 0,
   };
 
-  return { clientState, sendTypingIndicator };
+  return { clientState, sendTypingIndicator, connected };
 }

@@ -8,7 +8,7 @@ import {
   WarningCircle as AlertCircle,
 } from "iconoir-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 
 interface Participant {
   accountId: string;
@@ -61,19 +61,25 @@ export function MessagesViewDetailsModal({
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
+  // Enum-like values (TOP_SECRET) read as sentence case, not as code.
+  const humanizeEnum = (value: string) => {
+    const words = value.toLowerCase().replace(/_/g, " ");
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  };
+
   const getDisplayName = (account: { username: string; displayName: string }) => {
     return displayNamePreference === "account" ? `@${account.username}` : account.displayName;
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-title-3 flex items-center gap-2">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="text-title-3 flex items-center gap-2">
             <Info className="text-tint size-5" aria-hidden="true" />
             Conversation details
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-6">
           <div className="text-body grid grid-cols-2 gap-3">
@@ -108,8 +114,8 @@ export function MessagesViewDetailsModal({
                 <span className="text-footnote text-label-secondary flex items-center gap-1">
                   <AlertCircle className="size-3.5" aria-hidden="true" /> Classification
                 </span>
-                <span className="text-headline text-destructive font-mono">
-                  {conversation.diplomaticClassification}
+                <span className="text-headline text-destructive">
+                  {humanizeEnum(conversation.diplomaticClassification)}
                 </span>
               </div>
             )}
@@ -126,7 +132,7 @@ export function MessagesViewDetailsModal({
                 <div className="bg-surface-secondary rounded-control flex items-center gap-3 p-2">
                   <Avatar className="size-8">
                     <AvatarImage src={currentUser.profileImageUrl ?? undefined} />
-                    <AvatarFallback className="bg-tint-fill text-caption text-tint">
+                    <AvatarFallback className="bg-tint-fill text-caption text-tint-ink">
                       {(currentUser.displayName ?? currentUser.username ?? "Me")
                         .split(" ")
                         .map((n) => n[0])
@@ -182,7 +188,7 @@ export function MessagesViewDetailsModal({
             </div>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

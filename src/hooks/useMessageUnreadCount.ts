@@ -4,27 +4,40 @@ import { useMemo } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 
+type FolderCounts = {
+  inbox?: number;
+  thinktank?: number;
+  diplomatic?: number;
+  wiki?: number;
+  forum?: number;
+  requests?: number;
+};
+
+/**
+ * The unread total for the badge. `inbox` already holds every per-source count (thinktank, diplomatic, wiki,
+ * forum), so they are not added again. `requests` counts unanswered message requests, which `inbox` leaves out.
+ */
+export function messageUnreadTotal(folderCounts: FolderCounts | undefined): number {
+  return (folderCounts?.inbox ?? 0) + (folderCounts?.requests ?? 0);
+}
+
 /**
  * Shared hook for message unread counts across all folders.
  * Used by: navigation badges, Dynamic Island, Messages folder rail.
  *
- * Returns the total inbox unread count and per-folder counts.
- * Uses a long staleTime to avoid excessive refetches — the Messages UI
- * invalidates this query when messages are read.
+ * Shares one React Query entry with `useNavBadges` (same no-argument key, same options), so the
+ * server is asked once. The Messages UI invalidates this query when messages are read.
  */
 export function useMessageUnreadCount() {
   const { user } = useUser();
   const userId = user?.id ?? "";
 
-  const { data: folderCounts, refetch } = api.messages.getFolderCounts.useQuery(
-    { userId },
-    {
-      enabled: !!userId,
-      staleTime: 60_000, // 1 minute — badges don't need real-time accuracy
-      refetchInterval: 60_000,
-      refetchOnWindowFocus: false,
-    }
-  );
+  const { data: folderCounts, refetch } = api.messages.getFolderCounts.useQuery(undefined, {
+    enabled: !!userId,
+    staleTime: 15_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const counts = useMemo(
     () => ({
@@ -33,13 +46,12 @@ export function useMessageUnreadCount() {
       diplomatic: folderCounts?.diplomatic ?? 0,
       wiki: folderCounts?.wiki ?? 0,
       forum: folderCounts?.forum ?? 0,
+      requests: folderCounts?.requests ?? 0,
     }),
     [folderCounts]
   );
 
-  const totalUnreadCount = useMemo(() => {
-    return Object.values(counts).reduce((acc, count) => acc + count, 0);
-  }, [counts]);
+  const totalUnreadCount = messageUnreadTotal(folderCounts);
 
   return {
     totalUnread: totalUnreadCount,

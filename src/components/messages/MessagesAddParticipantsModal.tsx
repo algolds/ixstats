@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { UserPlus } from "iconoir-react";
 import { SearchField } from "~/components/ui/search-field";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { api } from "~/trpc/react";
 import { MessagesUserSearchResults } from "./MessagesUserSearchResults";
 
@@ -45,14 +45,14 @@ export function MessagesAddParticipantsModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <UserPlus className="text-tint size-5" aria-hidden="true" />
             Add participant
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-4">
           <SearchField
@@ -74,7 +74,7 @@ export function MessagesAddParticipantsModal({
             />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

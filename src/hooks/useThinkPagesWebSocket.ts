@@ -7,7 +7,9 @@ import type {
   ThinkPagesWebSocketHookOptions,
   PresenceUpdate,
   TypingIndicator,
-  MessageUpdate,
+  MessageUpdateEnvelope,
+  InboxUpdate,
+  ThinkPagesMessageEvent,
   ReadReceipt,
 } from "~/lib/websocket/thinkpages-types";
 
@@ -16,6 +18,22 @@ const isServer = typeof window === "undefined";
 /** Waits between reconnection attempts grow from the first to the cap, for as long as the page stays open. */
 const RECONNECT_DELAY_MS = 2_000;
 const RECONNECT_DELAY_MAX_MS = 30_000;
+
+const MESSAGE_EVENT_TYPES: readonly string[] = [
+  "message:new",
+  "message:updated",
+  "message:deleted",
+];
+
+/** The event inside a `message:update` envelope, or null when the payload is not one. */
+function unwrapMessageUpdate(
+  envelope: MessageUpdateEnvelope | undefined
+): ThinkPagesMessageEvent | null {
+  const event = envelope?.data;
+  return event && MESSAGE_EVENT_TYPES.includes(event.type) && typeof event.messageId === "string"
+    ? event
+    : null;
+}
 
 // Initial state factory
 const createInitialState = (accountId?: string): ThinkPagesClientState => ({
@@ -51,6 +69,8 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     isSignedInRef.current = isSignedIn;
   }, [getToken, isSignedIn]);
 
+  /** Conversation and group rooms the caller wants: replayed on every (re)connect, whenever they were asked for. */
+  const wantedRooms = useRef<Set<string>>(new Set());
   const typingTimeout = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const retryCount = useRef(0);
   const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -144,6 +164,7 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     const opened = socket.current;
     socket.current.on("connect", () => {
       retryCount.current = 0;
+      for (const channel of wantedRooms.current) opened.emit("subscribe", { channel });
       setClientState((prev) => ({ ...prev, connected: true }));
       updatePresence("online");
       optionsRef.current.onConnect?.();
@@ -188,8 +209,13 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
       optionsRef.current.onTypingUpdate?.(data);
     });
 
-    socket.current.on("message:update", (data: MessageUpdate) => {
-      optionsRef.current.onMessageUpdate?.(data);
+    socket.current.on("message:update", (envelope: MessageUpdateEnvelope) => {
+      const event = unwrapMessageUpdate(envelope);
+      if (event) optionsRef.current.onMessageUpdate?.(event);
+    });
+
+    socket.current.on("inbox:update", (data: InboxUpdate) => {
+      optionsRef.current.onInboxUpdate?.(data);
     });
 
     socket.current.on("read:receipt", (data: ReadReceipt) => {
@@ -261,60 +287,61 @@ export function useThinkPagesWebSocket(options: ThinkPagesWebSocketHookOptions) 
     []
   );
 
-  const subscribeToConversation = useCallback((conversationId: string) => {
-    if (isServer) return;
+  /** Records the room as wanted (replayed on reconnect) and joins it now when connected. */
+  const joinRoom = useCallback((channel: string) => {
+    wantedRooms.current.add(channel);
+    if (socket.current?.connected) socket.current.emit("subscribe", { channel });
+  }, []);
 
-    if (socket.current?.connected) {
-      socket.current.emit("subscribe", {
-        channel: `conversation:${conversationId}`,
-      });
+  const leaveRoom = useCallback((channel: string) => {
+    wantedRooms.current.delete(channel);
+    if (socket.current?.connected) socket.current.emit("unsubscribe", { channel });
+  }, []);
 
+  const subscribeToConversation = useCallback(
+    (conversationId: string) => {
+      if (isServer) return;
+      joinRoom(`conversation:${conversationId}`);
       setClientState((prev) => ({
         ...prev,
         activeConversations: new Set([...prev.activeConversations, conversationId]),
         subscriptions: new Set([...prev.subscriptions, `conversation:${conversationId}`]),
       }));
-    }
-  }, []);
+    },
+    [joinRoom]
+  );
 
-  const unsubscribeFromConversation = useCallback((conversationId: string) => {
-    if (isServer) return;
-
-    if (socket.current?.connected) {
-      socket.current.emit("unsubscribe", {
-        channel: `conversation:${conversationId}`,
-      });
-
+  const unsubscribeFromConversation = useCallback(
+    (conversationId: string) => {
+      if (isServer) return;
+      leaveRoom(`conversation:${conversationId}`);
       setClientState((prev) => {
         const newConversations = new Set(prev.activeConversations);
         const newSubscriptions = new Set(prev.subscriptions);
         newConversations.delete(conversationId);
         newSubscriptions.delete(`conversation:${conversationId}`);
-
         return {
           ...prev,
           activeConversations: newConversations,
           subscriptions: newSubscriptions,
         };
       });
-    }
-  }, []);
+    },
+    [leaveRoom]
+  );
 
-  const subscribeToGroup = useCallback((groupId: string) => {
-    if (isServer) return;
-
-    if (socket.current?.connected) {
-      socket.current.emit("subscribe", {
-        channel: `group:${groupId}`,
-      });
-
+  const subscribeToGroup = useCallback(
+    (groupId: string) => {
+      if (isServer) return;
+      joinRoom(`group:${groupId}`);
       setClientState((prev) => ({
         ...prev,
         activeGroups: new Set([...prev.activeGroups, groupId]),
         subscriptions: new Set([...prev.subscriptions, `group:${groupId}`]),
       }));
-    }
-  }, []);
+    },
+    [joinRoom]
+  );
 
   const subscribeToChannel = useCallback((channel: string) => {
     if (isServer) return;

@@ -14,7 +14,6 @@ import {
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
-import { soundCues } from "~/lib/sound/cuelume";
 
 export interface MessagesSettings {
   notificationSounds: boolean;
@@ -68,15 +67,7 @@ export function MessagesFolderNav({
   const requestCount = unreadCounts?.requests ?? 0;
   const showRequests = requestCount > 0 || activeFolder === "requests";
   const toggleSetting = (key: keyof MessagesSettings) => {
-    const nextValue = !settings[key];
-    if (key === "notificationSounds") {
-      if (nextValue) {
-        soundCues.notify();
-      } else {
-      }
-    } else {
-    }
-    onSettingsChange?.({ ...settings, [key]: nextValue });
+    onSettingsChange?.({ ...settings, [key]: !settings[key] });
   };
 
   const totalUnread = unreadCounts?.conversations ?? 0;
@@ -88,7 +79,7 @@ export function MessagesFolderNav({
       )}
     >
       <div className="flex items-center gap-2">
-        <div className="bg-tint-fill text-tint rounded-control flex size-8 items-center justify-center">
+        <div className="bg-tint-fill text-tint-ink rounded-control flex size-8 items-center justify-center">
           <ChatBubble className="size-4" aria-hidden="true" />
         </div>
         <div className="flex items-center gap-2">
@@ -138,27 +129,10 @@ export function MessagesFolderNav({
                 <SoundHigh className="text-label-secondary size-4" aria-hidden="true" />
                 <span className="text-body">Notification sounds</span>
               </div>
-              <div className="flex items-center gap-2">
-                {settings.notificationSounds && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      soundCues.notify();
-                    }}
-                    title="Test notification sound"
-                  >
-                    Test
-                  </Button>
-                )}
-                <Switch
-                  checked={settings.notificationSounds}
-                  onCheckedChange={() => toggleSetting("notificationSounds")}
-                />
-              </div>
+              <Switch
+                checked={settings.notificationSounds}
+                onCheckedChange={() => toggleSetting("notificationSounds")}
+              />
             </label>
             <label className="flex cursor-pointer items-center justify-between gap-3">
               <div className="text-label flex items-center gap-2">

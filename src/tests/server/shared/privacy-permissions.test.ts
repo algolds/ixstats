@@ -613,7 +613,7 @@ describe("blockedUserClerkIds", () => {
 describe("group conversations hide blocked accounts from the viewer", () => {
   function service(db: ReturnType<typeof createMockPrisma>) {
     const notifications = { create: jest.fn().mockResolvedValue("n1") };
-    const websocket = { broadcastToUsers: jest.fn() };
+    const websocket = { broadcastMessage: jest.fn() };
     const svc = createMessagingService({
       db: db as never,
       notifications: notifications as never,
@@ -665,6 +665,7 @@ describe("group conversations hide blocked accounts from the viewer", () => {
 
     expect(db.thinkshareMessage.create).toHaveBeenCalled();
     expect(notifications.create.mock.calls.map((c: any[]) => c[0].userId)).toEqual(["r2"]);
-    expect(websocket.broadcastToUsers.mock.calls[0]![0]).toEqual(["r2"]);
+    // Delivered to the sender (their other tabs) and the one member who did not block them, never the blocker.
+    expect(websocket.broadcastMessage.mock.calls[0]![0].recipientIds).toEqual(["sender", "r2"]);
   });
 });

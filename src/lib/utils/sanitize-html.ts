@@ -13,6 +13,7 @@
  */
 
 import DOMPurify, { type Config } from "dompurify";
+import { appOrigin } from "~/lib/app-url";
 import { stripPositioning } from "~/lib/thinkpages-forum/strip-positioning";
 import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
@@ -121,78 +122,128 @@ function getArticlePurifier(): Purifier {
   return articlePurifier;
 }
 
+/** The strict user-content config, shared by sanitizeUserContent and sanitizeMessageContent. */
+const USER_CONTENT_CONFIG: Config = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "span",
+    "div",
+    "b",
+    "i",
+    "em",
+    "strong",
+    "u",
+    "s",
+    "sub",
+    "sup",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "mark", // search highlights
+    "pre",
+    "code",
+    "a",
+    "img",
+  ],
+  ALLOWED_ATTR: [
+    "href",
+    "title",
+    "target",
+    "src",
+    "alt",
+    "width",
+    "height",
+    "class", // Limited to safe classes
+    "data-wikiembed",
+    "data-title",
+    "data-summary",
+    "data-imageurl",
+    "data-source",
+    // Forum posts: a quote's source post, and the wiki links and embeds in posts imported from XenForo
+    "data-post",
+    "data-wiki-embed",
+    "data-wiki-title",
+    "data-width",
+    "data-spoiler", // lib/thinkpages/spoilers.ts; SAFE_FOR_TEMPLATES disables ALLOW_DATA_ATTR, so list each
+  ],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
+  FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
+  // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
+  ADD_URI_SAFE_ATTR: ["data-wiki-title"],
+  ALLOW_UNKNOWN_PROTOCOLS: false,
+  SAFE_FOR_TEMPLATES: true,
+  KEEP_CONTENT: true,
+  RETURN_TRUSTED_TYPE: false,
+};
+
 /**
  * STRICT sanitization for user-generated content
  * Use for: ThinkPages posts, comments, collaborative documents, user profiles
  *
- * Allows: Basic text formatting (b, i, em, strong, p, br, ul, ol, li, blockquote)
+ * Allows: Basic text formatting (b, i, em, strong, p, br, ul, ol, li, blockquote, mark for search highlights)
  * Blocks: Scripts, iframes, forms, links with javascript:, event handlers, positioning classes (`fixed inset-0 z-50`)
  */
 export function sanitizeUserContent(html: string): string {
   if (!html) return "";
+  return stripPositioning(purify.sanitize(html, USER_CONTENT_CONFIG));
+}
 
-  const config: Config = {
-    ALLOWED_TAGS: [
-      "p",
-      "br",
-      "span",
-      "div",
-      "b",
-      "i",
-      "em",
-      "strong",
-      "u",
-      "s",
-      "sub",
-      "sup",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "ul",
-      "ol",
-      "li",
-      "blockquote",
-      "pre",
-      "code",
-      "a",
-      "img",
-    ],
-    ALLOWED_ATTR: [
-      "href",
-      "title",
-      "target",
-      "src",
-      "alt",
-      "width",
-      "height",
-      "class", // Limited to safe classes
-      "data-wikiembed",
-      "data-title",
-      "data-summary",
-      "data-imageurl",
-      "data-source",
-      // Forum posts: a quote's source post, and the wiki links and embeds in posts imported from XenForo
-      "data-post",
-      "data-wiki-embed",
-      "data-wiki-title",
-      "data-width",
-      "data-spoiler", // lib/thinkpages/spoilers.ts; SAFE_FOR_TEMPLATES disables ALLOW_DATA_ATTR, so list each
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
-    // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
-    ADD_URI_SAFE_ATTR: ["data-wiki-title"],
-    ALLOW_UNKNOWN_PROTOCOLS: false,
-    SAFE_FOR_TEMPLATES: true,
-    KEEP_CONTENT: true,
-    RETURN_TRUSTED_TYPE: false,
-  };
+let messagePurifier: Purifier | null = null;
 
-  return stripPositioning(purify.sanitize(html, config));
+/** The site origin an `<img>` in a private message may load from, besides a relative path. */
+const MESSAGE_IMAGE_EXTRA_ORIGIN = "https://ixwiki.com";
+
+function ownSiteOrigin(): string | null {
+  try {
+    return appOrigin();
+  } catch {
+    return null; // production without a public URL: only the extra origin counts
+  }
+}
+
+/**
+ * True for a relative path starting with one `/` (not `//` or `/\\`, which a browser reads as another host), or for an
+ * absolute http(s) URL on the app's own origin or on ixwiki.com.
+ */
+function isMessageImageAllowed(src: string): boolean {
+  const value = src.trim();
+  if (value.startsWith("/")) return !/^\/[/\\]/.test(value);
+  if (!URL.canParse(value)) return false;
+  const origin = new URL(value).origin;
+  return origin === MESSAGE_IMAGE_EXTRA_ORIGIN || origin === ownSiteOrigin();
+}
+
+function getMessagePurifier(): Purifier {
+  if (messagePurifier) return messagePurifier;
+  const created = createPurifier(true);
+  installSharedHooks(created);
+  // A remote <img> is a tracking pixel in a private message: remove the tag, not just its src.
+  created.addHook("uponSanitizeElement", (node, data) => {
+    if (data.tagName !== "img") return;
+    const src = (node as Element).getAttribute("src") ?? "";
+    if (!isMessageImageAllowed(src)) (node as Element).remove();
+  });
+  messagePurifier = created;
+  return created;
+}
+
+/**
+ * sanitizeUserContent for private messages: the same allowlist, but an `<img>` survives only when its `src` is a
+ * relative path on this site or on ixwiki.com. Any other image (a remote one can report when a message is read)
+ * is removed.
+ */
+export function sanitizeMessageContent(html: string): string {
+  if (!html) return "";
+  return stripPositioning(getMessagePurifier().sanitize(html, USER_CONTENT_CONFIG));
 }
 
 /**

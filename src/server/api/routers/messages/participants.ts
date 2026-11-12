@@ -5,9 +5,10 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
+  readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
+import { MAX_MARK_READ_IDS } from "~/server/modules/messaging";
 import { TRPCError } from "@trpc/server";
 import { messagingFor, mapMessagingErrors } from "./_service";
 
@@ -73,7 +74,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
       z.object({
         conversationId: z.string(),
         userId: z.string().optional().default(""),
-        messageIds: z.array(z.string()).optional(),
+        messageIds: z.array(z.string().min(1)).max(MAX_MARK_READ_IDS).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -106,7 +107,7 @@ export const messagesParticipantsRouter = createTRPCRouter({
    * Read receipts (SL-4): when the other person in a direct conversation last read it, or null
    * unless both of you allow read receipts.
    */
-  getSeenState: protectedProcedure
+  getSeenState: readOnlyProcedure
     .input(z.object({ conversationId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const messagingService = messagingFor(ctx);
@@ -120,33 +121,39 @@ export const messagesParticipantsRouter = createTRPCRouter({
     }),
 
   /**
-   * Search users for new conversation creation.
+   * Search users for new conversation creation: by nation, passport handle or forum name, so a player with
+   * no nation is found too.
    */
-  searchUsers: protectedProcedure
-    .input(z.object({ query: z.string() }))
+  searchUsers: readOnlyProcedure
+    .input(z.object({ query: z.string().max(100) }))
     .query(async ({ ctx, input }) => {
-      if (input.query.length < 3) return [];
+      const query = input.query.trim();
+      if (query.length < 3) return [];
+      return await messagingFor(ctx).searchUsers(ctx.auth.userId, { query, limit: 10 });
+    }),
 
-      const users = await ctx.db.user.findMany({
-        where: {
-          isActive: true,
-          country: {
-            OR: [
-              { name: { contains: input.query, mode: "insensitive" } },
-              { slug: { contains: input.query, mode: "insensitive" } },
-            ],
-          },
-        },
-        // Only the fields the compose/add-participant UI renders (clerkUserId is the
-        // participant identifier). Never return the full User/Country rows.
-        select: {
-          id: true,
-          clerkUserId: true,
-          country: { select: { name: true, slug: true, flag: true } },
-        },
-        take: 10,
-      });
+  /**
+   * The conversations the caller muted and archived (kept on their participant rows, not in the browser).
+   */
+  getConversationPreferences: readOnlyProcedure.query(async ({ ctx }) => {
+    return await messagingFor(ctx).getConversationPreferences(ctx.auth.userId);
+  }),
 
-      return users;
+  /**
+   * Mute and/or archive one of the caller's conversations; the fields left out stay as they were.
+   */
+  setConversationPreferences: rateLimitedMutationProcedure
+    .input(
+      z.object({
+        conversationId: z.string().min(1),
+        muted: z.boolean().optional(),
+        archived: z.boolean().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      return await mapMessagingErrors(
+        () => messagingFor(ctx).setConversationPreferences(ctx.auth.userId, input),
+        { forbidden: "You are not an active participant in this conversation" }
+      );
     }),
 });

@@ -48,6 +48,7 @@ const eventSchema = z.object({
   accountId: z.string(),
   content: z.string().optional(),
   timestamp: z.number(),
+  recipientIds: z.array(z.string()).optional(),
 });
 
 const evictionSchema = z.object({

@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   OpenBook as BookOpen,
   Eye,
-  Bookmark,
   ClockRotateRight as History,
   User,
   Clock,
@@ -17,6 +16,7 @@ import {
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
@@ -47,7 +47,7 @@ function formatTimestamp(date: Date | string): string {
   });
 }
 
-type LoreFeedFilter = "all" | "watchlist" | "recent" | "stash";
+type LoreFeedFilter = "all" | "watchlist" | "recent";
 
 interface LoreBotFeedViewProps {
   currentUserId: string;
@@ -72,13 +72,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
     }
   );
 
-  // 3. Fetch user stashes
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { data: stashes } = api.wikios.getStashes.useQuery(undefined, {
-    enabled: !!currentUserId,
-    staleTime: 60000,
-  });
-
   const isLoading = isLoadingRecent || (!!currentUserId && isLoadingWatchlist);
 
   // Merged and filtered items
@@ -95,7 +88,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
           id: `rc-${rc.title}-${rc.timestamp}-${idx}`,
           sourceType: "recent_change",
           title: rc.title,
-          user: rc.user || "Wiki Contributor",
+          user: rc.user || "Wiki contributor",
           timestamp: rc.timestamp,
           comment: rc.comment,
           type: rc.type || "edit",
@@ -118,7 +111,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             id: `watch-${w.id}`,
             sourceType: "watchlist_item",
             title: w.pageTitle,
-            user: "Watchlist Tracked",
+            user: "Watchlist",
             timestamp: w.savedAt || w.updatedAt || new Date(),
             comment: "Article currently in your WikiOS Watchlist",
             type: "watchlist",
@@ -142,8 +135,6 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
       result = result.filter((item) => item.isWatched || item.sourceType === "watchlist_item");
     } else if (activeFilter === "recent") {
       result = result.filter((item) => item.sourceType === "recent_change");
-    } else if (activeFilter === "stash") {
-      result = result.filter((item) => item.isWatched);
     }
 
     if (searchQuery.trim()) {
@@ -164,10 +155,9 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
     label: string;
     icon: React.ComponentType<{ className?: string }>;
   }[] = [
-    { id: "all", label: "All Lorefeed", icon: BookOpen },
+    { id: "all", label: "All lorefeed", icon: BookOpen },
     { id: "watchlist", label: `Watchlist (${watchlistItems?.length ?? 0})`, icon: Eye },
     { id: "recent", label: "Recent edits", icon: Edit3 },
-    { id: "stash", label: "Stashes", icon: Bookmark },
   ];
 
   return (
@@ -204,10 +194,20 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
         style={{ scrollbarWidth: "thin" }}
       >
         {isLoading ? (
-          <div className="flex h-64 flex-col items-center justify-center gap-3">
-            <span className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
-            <p className="text-footnote text-label-secondary">Syncing LoreBot dispatches...</p>
-          </div>
+          Array.from({ length: 3 }, (_, i) => (
+            <div key={i} className="bg-surface-secondary rounded-row space-y-3 p-4">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-24 rounded-full" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+              </div>
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <div className="flex items-center justify-between gap-2 pt-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-32" />
+              </div>
+            </div>
+          ))
         ) : filteredItems.length === 0 ? (
           <EmptyState
             className="mx-auto max-w-sm py-16"
@@ -220,7 +220,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
             }
             action={
               <Button asChild variant="secondary" size="sm">
-                <Link href="/wikios">
+                <Link href="/w">
                   <span>Explore WikiOS</span>
                   <ArrowUpRight aria-hidden="true" />
                 </Link>

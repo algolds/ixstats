@@ -30,9 +30,19 @@ function account(
   id: string,
   username: string,
   displayName: string,
-  profileImageUrl: string | null = null
+  profileImageUrl: string | null = null,
+  countryName: string | null = null
 ): UserAccount {
-  return { id, username, displayName, profileImageUrl, accountType: "country" };
+  return {
+    id,
+    username,
+    displayName,
+    profileImageUrl,
+    countryFlag: profileImageUrl,
+    countryName,
+    country: countryName ? { flag: profileImageUrl, name: countryName } : null,
+    accountType: "country",
+  };
 }
 
 async function resolveClerkAccounts(realIds: string[], db: MessagingAccountsDb, map: AccountMap) {
@@ -47,7 +57,8 @@ async function resolveClerkAccounts(realIds: string[], db: MessagingAccountsDb, 
         u.clerkUserId,
         u.country?.slug ?? u.clerkUserId,
         pickDisplayName(u) ?? UNKNOWN_DISPLAY_NAME,
-        u.country?.flag
+        u.country?.flag,
+        u.country?.name
       )
     );
   }
@@ -58,7 +69,7 @@ async function resolveClerkAccounts(realIds: string[], db: MessagingAccountsDb, 
       where: { id: { in: unresolvedReal } },
       select: { id: true, slug: true, name: true, flag: true },
     });
-    for (const c of countries) map.set(c.id, account(c.id, c.slug ?? c.id, c.name, c.flag));
+    for (const c of countries) map.set(c.id, account(c.id, c.slug ?? c.id, c.name, c.flag, c.name));
   }
 
   // Users with no linked name, or with only a ThinkPages account: resolve through identity.
@@ -95,7 +106,8 @@ async function resolveForumAccounts(
           key,
           u.forumUsername ?? u.country?.slug ?? `forum-${u.forumUserId}`,
           u.forumUsername ?? u.country?.name ?? `Forum User`,
-          u.country?.flag
+          u.country?.flag,
+          u.country?.name
         )
       );
     }

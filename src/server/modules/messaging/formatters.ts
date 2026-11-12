@@ -23,6 +23,7 @@ function fallbackAccount(userId: string) {
     profileImageUrl: null,
     countryFlag: null,
     countryName: null,
+    country: null,
     accountType: "country" as const,
   };
 }
