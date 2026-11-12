@@ -1,18 +1,16 @@
-import { CutoutCard } from "~/components/ui/cutout-card";
+import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 
-/** Placeholder for the Messages split view: inbox rows on the left, the thread on the right at lg. */
+/** Placeholder for the Messages pane: inbox rows on the left, the thread beside them from 1024px. */
 export default function MessagesLoading() {
   return (
-    <div
-      className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3"
+    <Card
+      content="feed"
+      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-1rem)] min-h-112 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]"
       aria-busy="true"
       aria-label="Loading messages"
     >
-      <CutoutCard
-        trackPointerHover={false}
-        className="flex h-full min-w-0 flex-col overflow-hidden lg:col-span-1"
-      >
+      <div className="border-separator flex h-full min-w-0 flex-col lg:border-r">
         <div className="border-separator flex items-center gap-2 border-b p-4">
           <Skeleton className="rounded-control size-8" />
           <Skeleton className="h-5 w-28" />
@@ -28,12 +26,9 @@ export default function MessagesLoading() {
             </div>
           ))}
         </div>
-      </CutoutCard>
+      </div>
 
-      <CutoutCard
-        trackPointerHover={false}
-        className="hidden h-full min-w-0 flex-col overflow-hidden lg:col-span-2 lg:flex"
-      >
+      <div className="hidden h-full min-w-0 flex-col lg:flex">
         <div className="border-separator flex items-center gap-3 border-b p-4">
           <Skeleton className="size-9 rounded-full" />
           <Skeleton className="h-5 w-40" />
@@ -47,7 +42,7 @@ export default function MessagesLoading() {
         <div className="border-separator border-t p-4">
           <Skeleton className="rounded-control h-10 w-full" />
         </div>
-      </CutoutCard>
-    </div>
+      </div>
+    </Card>
   );
 }

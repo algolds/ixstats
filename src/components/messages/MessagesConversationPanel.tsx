@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import { Plus, Crown, Pin, OpenBook as BookOpen } from "iconoir-react";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
+import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { MESSAGE_FOLDERS, type MessagesSettings } from "./MessagesFolderNav";
 import {
@@ -51,9 +52,11 @@ function PinnedConversationCard({
 }: PinnedCardProps) {
   return (
     <button
+      type="button"
       onClick={onSelect}
       className={cn(
-        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none pointer-coarse:min-h-11",
+        focusRing,
         selected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
       )}
     >
@@ -74,7 +77,7 @@ function PinnedConversationCard({
             >
               {title}
             </span>
-            <Crown className="text-yellow size-3.5 shrink-0" aria-label="Official" />
+            <Crown className="text-yellow-ink size-3.5 shrink-0" aria-label="Official" />
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Pin className="text-label-tertiary size-3.5" aria-label="Pinned" />
@@ -116,7 +119,7 @@ function usePinnedPreviews(currentUserId: string) {
     { staleTime: 30000 }
   );
   const notice = notificationData?.notifications?.[0];
-  const wikiChange = (wikiData as any)?.[0];
+  const wikiChange = wikiData?.[0];
 
   return {
     systemPreview: notice
@@ -124,7 +127,7 @@ function usePinnedPreviews(currentUserId: string) {
       : "Official platform bulletins and simulation digests",
     lorebotPreview: wikiChange
       ? `Latest edit on ${wikiChange.title}: ${wikiChange.comment || `${wikiChange.user} updated article`}`
-      : "WikiOS updates, watchlist activity & lore dispatches",
+      : "WikiOS updates, watchlist activity and lore dispatches",
   };
 }
 
@@ -140,6 +143,11 @@ interface MessagesConversationPanelProps {
   onNewConversation: () => void;
   settings?: MessagesSettings;
   mutedConversations?: string[];
+  /** The list shows the archived threads, not the inbox. */
+  showArchived?: boolean;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function MessagesConversationPanel({
@@ -154,13 +162,17 @@ export function MessagesConversationPanel({
   onNewConversation,
   settings,
   mutedConversations = [],
+  showArchived = false,
+  hasMore = false,
+  isLoadingMore = false,
+  onLoadMore,
 }: MessagesConversationPanelProps) {
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
   const [activeFilter, setActiveFilter] = useState<ChannelFilter>("all");
 
   const { systemPreview, lorebotPreview } = usePinnedPreviews(currentUserId);
 
-  const isConversations = activeFolder === "conversations";
+  const isConversations = activeFolder === "conversations" && !showArchived;
   const filtered = filterConversations(conversations, {
     channel: isConversations ? activeFilter : "all",
     searchQuery,
@@ -176,12 +188,12 @@ export function MessagesConversationPanel({
         <div className="flex items-center gap-2">
           <SearchField
             containerClassName="flex-1"
-            placeholder="Search messages..."
+            placeholder="Search messages"
             aria-label="Search messages"
             value={searchQuery}
             onValueChange={onSearchChange}
           />
-          {isConversations && (
+          {activeFolder === "conversations" && (
             <Button
               size="sm"
               className="shrink-0"
@@ -199,6 +211,8 @@ export function MessagesConversationPanel({
             size="sm"
             fullWidth
             aria-label="Channel filter"
+            scrollable
+            itemClassName="px-2"
             value={activeFilter}
             onValueChange={setActiveFilter}
             options={CHANNEL_FILTERS.map((filter) => ({ value: filter.id, label: filter.label }))}
@@ -212,7 +226,7 @@ export function MessagesConversationPanel({
             title="System messages"
             selected={selectedConversationId === SYSTEM_CONVERSATION_ID}
             onSelect={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
-            avatarClass="bg-yellow/15 text-yellow"
+            avatarClass="bg-yellow/15 text-yellow-ink"
             icon={<Crown className="size-4" aria-hidden="true" />}
             preview={systemPreview}
           />
@@ -223,26 +237,29 @@ export function MessagesConversationPanel({
             title="LoreBot"
             selected={selectedConversationId === LOREBOT_CONVERSATION_ID}
             onSelect={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
-            avatarClass="bg-teal/15 text-teal"
+            avatarClass="bg-teal/15 text-teal-ink"
             icon={<BookOpen className="size-4" aria-hidden="true" />}
             preview={lorebotPreview}
           />
         )}
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="border-tint size-5 animate-spin rounded-full border-2 border-t-transparent" />
-          </div>
+          <ConversationListSkeleton />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-6 text-center">
             <p className="text-headline text-label">
-              {folderConfig?.emptyTitle || "No conversations found"}
+              {showArchived
+                ? "No archived conversations"
+                : (folderConfig?.emptyTitle ?? "No conversations found")}
             </p>
             <p className="text-callout text-label-secondary mt-1">
               {searchQuery
                 ? `No conversations match "${searchQuery}"`
-                : (folderConfig?.emptyDescription ?? "")}
+                : showArchived
+                  ? "Archive a thread from its menu to keep it out of your inbox."
+                  : (folderConfig?.emptyDescription ?? "")}
             </p>
+            {hasMore && <LoadMoreButton isLoading={isLoadingMore} onLoadMore={onLoadMore} />}
           </div>
         ) : (
           filtered.map((conversation) => (
@@ -257,7 +274,48 @@ export function MessagesConversationPanel({
             />
           ))
         )}
+
+        {hasMore && filtered.length > 0 && (
+          <LoadMoreButton isLoading={isLoadingMore} onLoadMore={onLoadMore} />
+        )}
       </div>
     </div>
+  );
+}
+
+function ConversationListSkeleton() {
+  return (
+    <div className="flex flex-col gap-1" aria-busy="true" aria-label="Loading conversations">
+      {Array.from({ length: 6 }, (_, i) => (
+        <div key={i} className="flex items-center gap-3 px-3 py-2">
+          <Skeleton className="size-10 shrink-0 rounded-full" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-3 w-5/6" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LoadMoreButton({
+  isLoading,
+  onLoadMore,
+}: {
+  isLoading: boolean;
+  onLoadMore?: () => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="mt-2 w-full"
+      disabled={isLoading}
+      onClick={onLoadMore}
+    >
+      {isLoading ? "Loading more" : "Load more conversations"}
+    </Button>
   );
 }

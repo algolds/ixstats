@@ -7,6 +7,7 @@ import {
   Shield,
   WarningCircle as AlertCircle,
 } from "iconoir-react";
+import { displayNameOf, humanizeEnum, initialsOf } from "~/lib/messages/format";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 
@@ -16,7 +17,7 @@ interface Participant {
     id: string;
     username: string;
     displayName: string;
-    profileImageUrl: string | null;
+    profileImageUrl?: string | null;
   };
 }
 
@@ -26,8 +27,8 @@ interface MessagesViewDetailsModalProps {
   conversation: {
     id: string;
     type: string;
-    name: string | null;
-    source: string;
+    name?: string | null;
+    source?: string;
     conversationType?: string | null;
     diplomaticClassification?: string | null;
     createdAt: Date;
@@ -61,16 +62,6 @@ export function MessagesViewDetailsModal({
     return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
-  // Enum-like values (TOP_SECRET) read as sentence case, not as code.
-  const humanizeEnum = (value: string) => {
-    const words = value.toLowerCase().replace(/_/g, " ");
-    return words.charAt(0).toUpperCase() + words.slice(1);
-  };
-
-  const getDisplayName = (account: { username: string; displayName: string }) => {
-    return displayNamePreference === "account" ? `@${account.username}` : account.displayName;
-  };
-
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent>
@@ -89,8 +80,8 @@ export function MessagesViewDetailsModal({
               </span>
               <span className="text-headline text-label">
                 {conversation.source === "thinktank" || conversation.type === "group"
-                  ? "ThinkTank Group"
-                  : `${formatType(conversation.type)} Chat`}
+                  ? "ThinkTank group"
+                  : `${formatType(conversation.type)} chat`}
               </span>
             </div>
             <div className="bg-surface-secondary rounded-row flex flex-col gap-1 p-3">
@@ -133,11 +124,7 @@ export function MessagesViewDetailsModal({
                   <Avatar className="size-8">
                     <AvatarImage src={currentUser.profileImageUrl ?? undefined} />
                     <AvatarFallback className="bg-tint-fill text-caption text-tint-ink">
-                      {(currentUser.displayName ?? currentUser.username ?? "Me")
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .substring(0, 2)}
+                      {initialsOf(currentUser.displayName ?? currentUser.username ?? "Me")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
@@ -168,16 +155,12 @@ export function MessagesViewDetailsModal({
                   <Avatar className="size-8">
                     <AvatarImage src={participant.account.profileImageUrl ?? undefined} />
                     <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
-                      {participant.account.displayName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .substring(0, 2)}
+                      {initialsOf(participant.account.displayName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <p className="text-headline text-label truncate">
-                      {getDisplayName(participant.account)}
+                      {displayNameOf(participant.account, displayNamePreference)}
                     </p>
                     <p className="text-label-secondary text-footnote truncate">
                       @{participant.account.username}

@@ -1,43 +1,47 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
-import { CutoutCard } from "~/components/ui/cutout-card";
 
 interface MessagesLayoutProps {
-  conversationPanel: ReactNode;
-  chatPanel: ReactNode;
-  isSidebarCollapsed: boolean;
+  /** The inbox: folder bar, search, filters and the conversation list. */
+  rail: ReactNode;
+  /** The open thread, or the empty state when none is selected. */
+  thread: ReactNode;
+  /** A thread is selected: below 1024px the thread replaces the inbox. */
+  hasThread: boolean;
 }
 
-export function MessagesLayout({
-  conversationPanel,
-  chatPanel,
-  isSidebarCollapsed,
-}: MessagesLayoutProps) {
+/**
+ * One pane holding the inbox rail and the thread. From 1024px both stay on screen with a hairline between them;
+ * below that only one shows, the inbox until a thread is selected. Its height is the window minus Halo's band and the
+ * tab bar, so the page itself never scrolls and each side scrolls on its own.
+ */
+export function MessagesLayout({ rail, thread, hasThread }: MessagesLayoutProps) {
   return (
-    <div className="relative grid h-[calc(100vh-8.5rem)] min-h-[500px] grid-cols-1 gap-5 lg:grid-cols-3">
-      {/* Column 1: Conversation list panel (1/3 width on large screens) */}
-      <CutoutCard
-        trackPointerHover={false}
+    <Card
+      content="feed"
+      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-1rem)] min-h-112 grid-cols-1 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]"
+    >
+      <section
+        aria-label="Conversations"
         className={cn(
-          "h-full min-w-0 cursor-default flex-col overflow-hidden lg:col-span-1",
-          isSidebarCollapsed ? "hidden" : "flex"
+          "border-separator min-h-0 min-w-0 flex-col lg:flex lg:h-full lg:border-r",
+          hasThread ? "hidden" : "flex h-full"
         )}
       >
-        {conversationPanel}
-      </CutoutCard>
-
-      {/* Column 2: Chat panel (2/3 width on large screens) */}
-      <CutoutCard
-        trackPointerHover={false}
+        {rail}
+      </section>
+      <section
+        aria-label="Thread"
         className={cn(
-          "h-full min-w-0 cursor-default flex-col overflow-hidden",
-          isSidebarCollapsed ? "col-span-full flex lg:col-span-3" : "hidden lg:col-span-2 lg:flex"
+          "min-h-0 min-w-0 flex-col lg:flex lg:h-full",
+          hasThread ? "flex h-full" : "hidden"
         )}
       >
-        {chatPanel}
-      </CutoutCard>
-    </div>
+        {thread}
+      </section>
+    </Card>
   );
 }

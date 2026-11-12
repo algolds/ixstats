@@ -4,6 +4,8 @@ import React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Group as Users, BellOff, Globe } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { focusRing } from "~/components/ui/button";
+import { assetUrl } from "~/lib/base-path";
 import type { ThinkShareConversation } from "~/types/thinkshare";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -18,6 +20,13 @@ export function getParticipantName(conversation: ThinkShareConversation, setting
   return settings?.displayNamePreference === "account" && account?.username
     ? `@${account.username}`
     : (account?.displayName ?? conversation.name);
+}
+
+type PreviewMessage = NonNullable<ThinkShareConversation["lastMessage"]>;
+
+/** Who wrote a conversation's last message: the list formatter sends `senderId`, realtime patches send `accountId`. */
+export function lastMessageSenderId(message: PreviewMessage): string | undefined {
+  return (message as PreviewMessage & { senderId?: string }).senderId ?? message.accountId;
 }
 
 export const isDiplomaticConversation = (c: ThinkShareConversation) =>
@@ -57,7 +66,9 @@ function CardAvatar({
 }) {
   const { isGroup, isDiplomatic, countryFlag, countryName, displayName, other } = identity;
 
-  if (!isGroup && isDiplomatic && countryFlag) {
+  const profileImage = assetUrl(isGroup ? conversation.avatar : other?.account?.profileImageUrl);
+
+  if (!isGroup && countryFlag && (isDiplomatic || !profileImage)) {
     return (
       <div className="border-separator rounded-control-sm h-7 w-10 overflow-hidden border">
         <UnifiedCountryFlag
@@ -80,10 +91,7 @@ function CardAvatar({
 
   return (
     <Avatar className="border-separator size-10 border">
-      <AvatarImage
-        src={(isGroup ? conversation.avatar : other?.account?.profileImageUrl) ?? undefined}
-        alt={displayName}
-      />
+      <AvatarImage src={profileImage ?? undefined} alt={displayName} />
       <AvatarFallback className="bg-fill-3 text-caption text-label-secondary">
         {isGroup ? <Users className="size-4" aria-hidden="true" /> : initials || "?"}
       </AvatarFallback>
@@ -120,7 +128,8 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
       onClick={onClick}
       aria-current={isSelected || undefined}
       className={cn(
-        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none",
+        "group rounded-row relative flex w-full cursor-pointer items-center gap-3 px-3 py-2 text-left transition-colors duration-150 select-none pointer-coarse:min-h-11",
+        focusRing,
         isSelected ? "bg-tint-fill text-label" : "hover:bg-fill-4 text-label hover:text-label"
       )}
     >
@@ -155,7 +164,7 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
             {isDiplomatic && (
               <Globe className="text-label-secondary size-3.5 shrink-0" aria-label="Diplomatic" />
             )}
-            {isCommunity && <span className="text-footnote text-label-secondary">• Community</span>}
+            {isCommunity && <span className="text-footnote text-label-secondary">Community</span>}
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -179,11 +188,11 @@ export const MessagesConversationCard = React.memo(function MessagesConversation
           >
             {lastMessage ? (
               <>
-                {lastMessage.accountId === currentUserId ? "You: " : ""}
+                {lastMessageSenderId(lastMessage) === currentUserId ? "You: " : ""}
                 {lastMessage.content.replace(/<[^>]*>/g, "")}
               </>
             ) : (
-              <span className="text-label-tertiary italic">No messages yet</span>
+              <span className="text-label-secondary">No messages yet</span>
             )}
           </p>
 

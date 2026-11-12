@@ -1,56 +1,26 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { isToday } from "date-fns";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
-import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import {
-  Reply,
-  EditPencil as Edit,
-  Trash as Trash2,
-  Check,
-  CheckCircle as CheckCheck,
-  Shield,
-  Emoji as Smile,
-} from "iconoir-react";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "~/components/ui/alert-dialog";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "~/components/ui/context-menu";
 import { cn } from "~/lib/utils";
-import { sanitizeUserContent } from "~/lib/utils/sanitize-html";
-import { escapeRegExp } from "~/lib/utils/escape-regexp";
-import { usePretextWithSegments, useShrinkwrap } from "~/lib/pretext/use-pretext";
+import { displayNameOf, formatTimestamp, initialsOf } from "~/lib/messages/format";
+import { isTempMessageId, type ThreadAccount, type ThreadMessage } from "~/lib/messages/thread";
 import type { MessagesSettings } from "./MessagesFolderNav";
-
-interface MessageAccount {
-  id: string;
-  username: string;
-  displayName: string;
-  profileImageUrl?: string | null;
-  accountType?: string;
-  country?: {
-    id?: string;
-    name?: string;
-    flag?: string | null;
-  } | null;
-}
-
-interface Message {
-  id: string;
-  conversationId: string;
-  accountId: string;
-  account?: MessageAccount;
-  content: string;
-  messageType: string;
-  ixTimeTimestamp: Date;
-  createdAt?: Date;
-  reactions?: Record<string, number>;
-  readReceipts?: { id: string; accountId: string; readAt: Date }[];
-  editedAt?: Date;
-  deletedAt?: Date;
-  replyTo?: Message;
-  classification?: string | null;
-  priority?: string | null;
-  source?: string;
-}
+import { MessageContent, ReplyQuote } from "./MessageContent";
+import { MessageEditor } from "./MessageEditor";
+import { MessageMenuItems, MessageMoreActions } from "./MessageMenuItems";
+import { ReactionPicker, ReactionPills } from "./MessageReactions";
 
 export interface MessageActions {
   onAddReaction: (messageId: string, reaction: string) => void;
@@ -60,214 +30,24 @@ export interface MessageActions {
 }
 
 interface MessagesBubbleProps {
-  message: Message;
+  message: ThreadMessage;
   currentUserId: string;
-  isConsecutive: boolean;
-  onReply: (message: Message) => void;
+  /** First of a run from the same sender: shows the sender's name. */
+  startsCluster: boolean;
+  /** Last of the run: shows the avatar, the tail and the time. */
+  endsCluster: boolean;
+  /** The other person has read up to and including this message. */
+  seen?: boolean;
+  onReply: (message: ThreadMessage) => void;
   actions: MessageActions;
   settings?: MessagesSettings;
   searchQuery?: string;
 }
 
-const QUICK_REACTIONS = ["❤️", "👍", "👎", "😂", "😮", "😢", "🔥"];
-
-// Pretext shrinkwrap constants
-const BUBBLE_PADDING_X = 24; // px-3 = 12px * 2
-const MAX_BUBBLE_WIDTH = 480; // max bubble content width in px
-const BUBBLE_FONT = "13.5px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-
-const DATE_TIME_FORMAT: Intl.DateTimeFormatOptions = {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-};
-
-export function formatTimestamp(date: Date | string): string {
-  const d = new Date(date);
-  return d.toLocaleString(
-    undefined,
-    isToday(d) ? { hour: "numeric", minute: "2-digit" } : DATE_TIME_FORMAT
-  );
-}
-
-const stripTags = (html: string) => html.replace(/<[^>]*>/g, "");
-
-/** Wraps search matches in <mark>, leaving HTML tags untouched. */
-function highlightMatches(content: string, query?: string): string {
-  if (!query?.trim()) return content;
-  const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-  return content
-    .split(/(<[^>]+>)/g)
-    .map((part) =>
-      part.startsWith("<") && part.endsWith(">")
-        ? part
-        : part.replace(regex, '<mark class="bg-yellow/40 text-label rounded-xs px-0.5">$1</mark>')
-    )
-    .join("");
-}
-
-const ACTION_BUTTON_CLASS = "text-label-secondary hover:text-label rounded-full";
-
-function ActionButton({
-  label,
-  icon,
-  onClick,
-  className = ACTION_BUTTON_CLASS,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  className?: string;
-}) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      type="button"
-      className={className}
-      title={label}
-      onClick={() => {
-        onClick();
-      }}
-      aria-label={label}
-    >
-      {icon}
-    </Button>
-  );
-}
-
-function ReactionBadges({
-  reactions,
-  isOwn,
-  onRemove,
-}: {
-  reactions: Record<string, number>;
-  isOwn: boolean;
-  onRemove: (emoji: string) => void;
-}) {
-  return (
-    <div
-      className={cn("absolute -bottom-2 z-10 flex flex-wrap gap-1", isOwn ? "right-2" : "left-2")}
-    >
-      {Object.entries(reactions).map(([emoji, count]) => (
-        <button
-          key={emoji}
-          type="button"
-          className="border-separator bg-surface-elevated text-caption text-label shadow-card flex items-center gap-1 rounded-full border px-2 motion-safe:hover:scale-105"
-          onClick={() => onRemove(emoji)}
-          title="Remove reaction"
-          aria-label={`Remove ${emoji} reaction (${count})`}
-        >
-          <span>{emoji}</span>
-          <span className="text-label-secondary tabular-nums">{count}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const POPOVER_CLASS =
-  "bg-surface-elevated border-separator shadow-floating absolute bottom-full z-30 mb-2";
-
-interface HoverActionsProps {
-  message: Message;
-  isOwn: boolean;
-  actions: MessageActions;
-  onReply: (message: Message) => void;
-  onEdit: () => void;
-}
-
-function HoverActions({ message, isOwn, actions, onReply, onEdit }: HoverActionsProps) {
-  const [showReactions, setShowReactions] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const side = isOwn ? "right-0" : "left-0";
-
-  return (
-    <div
-      className={cn(
-        // Shown on hover and whenever focus is inside the message, so keyboard users reach
-        // the actions too; invisible but still in the tab order otherwise.
-        "facet-overlay shadow-floating duration-fast pointer-events-none absolute -top-4 z-20 flex items-center gap-0.5 rounded-full px-1 py-0.5 opacity-0 transition-opacity group-focus-within/bubble:pointer-events-auto group-focus-within/bubble:opacity-100 group-hover/bubble:pointer-events-auto group-hover/bubble:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
-        showReactions && "pointer-events-auto opacity-100",
-        isOwn ? "right-1" : "left-1"
-      )}
-    >
-      <div className="relative">
-        <ActionButton
-          label="React"
-          icon={<Smile aria-hidden />}
-          onClick={() => setShowReactions(!showReactions)}
-        />
-        {showReactions && (
-          <div
-            className={cn(POPOVER_CLASS, "flex items-center gap-1 rounded-full border p-1", side)}
-          >
-            {QUICK_REACTIONS.map((emoji) => (
-              <button
-                key={emoji}
-                type="button"
-                aria-label={`React with ${emoji}`}
-                className="text-body flex size-7 items-center justify-center rounded-full motion-safe:hover:scale-125"
-                onClick={() => {
-                  actions.onAddReaction(message.id, emoji);
-                  setShowReactions(false);
-                }}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <ActionButton label="Reply" icon={<Reply aria-hidden />} onClick={() => onReply(message)} />
-
-      {isOwn && (
-        <>
-          <ActionButton label="Edit" icon={<Edit aria-hidden />} onClick={onEdit} />
-
-          <div className="relative">
-            <ActionButton
-              label="Delete"
-              icon={<Trash2 aria-hidden />}
-              className="text-label-secondary hover:bg-destructive/15 hover:text-destructive rounded-full"
-              onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
-            />
-
-            {showDeleteConfirm && (
-              <div
-                className={cn(POPOVER_CLASS, "rounded-row flex flex-col gap-2 border p-2", side)}
-              >
-                <span className="text-headline text-label whitespace-nowrap">Delete message?</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirm(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      actions.onDeleteMessage(message.id);
-                    }}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function resolveAccount(message: Message, isOwn: boolean): MessageAccount {
+function resolveAccount(message: ThreadMessage, isOwn: boolean): ThreadAccount {
   const shortId = message.accountId?.slice(-6);
   return (
-    message.account || {
+    message.account ?? {
       id: message.accountId,
       username: `user_${shortId || "guest"}`,
       displayName: isOwn ? "You" : `User ${shortId || "Guest"}`,
@@ -277,242 +57,198 @@ function resolveAccount(message: Message, isOwn: boolean): MessageAccount {
   );
 }
 
-const displayNameOf = (
-  acc: { username?: string; displayName: string },
-  settings?: MessagesSettings
-) =>
-  settings?.displayNamePreference === "account" && acc.username
-    ? `@${acc.username}`
-    : acc.displayName;
-
-function MessageEditor({
-  message,
-  onSave,
-  onCancel,
-}: {
-  message: Message;
-  onSave: (content: string) => void;
-  onCancel: () => void;
-}) {
-  const [content, setContent] = useState(() => stripTags(message.content));
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const save = () => {
-    if (content.trim() && content !== message.content) onSave(content.trim());
-    onCancel();
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      save();
-    } else if (e.key === "Escape") {
-      onCancel();
-    }
-  };
-
+function SenderAvatar({ account, name }: { account: ThreadAccount; name: string }) {
+  const picture = account.profileImageUrl ?? account.country?.flag ?? account.countryFlag;
   return (
-    <div className="bg-surface border-tint rounded-card w-full min-w-[280px] border p-3">
-      <textarea
-        ref={inputRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        onKeyDown={handleKeyDown}
-        rows={2}
-        aria-label="Edit message"
-        className="text-body text-label w-full resize-none bg-transparent outline-none"
-      />
-      <div className="border-separator mt-2 flex items-center justify-end gap-2 border-t pt-2">
-        <Button variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button size="sm" onClick={save}>
-          Save
-        </Button>
-      </div>
-    </div>
+    <Avatar className="border-separator size-8 rounded-full border">
+      <AvatarImage src={picture ?? undefined} alt="" className="object-cover" />
+      <AvatarFallback className="bg-tint-fill text-caption text-tint-ink">
+        {initialsOf(name)}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 
-function MessageBody({
+function MessageMeta({
   message,
+  showTime,
+  seen,
+  pending,
   isOwn,
-  searchQuery,
 }: {
-  message: Message;
+  message: ThreadMessage;
+  showTime: boolean;
+  seen: boolean;
+  pending: boolean;
   isOwn: boolean;
-  searchQuery?: string;
 }) {
-  // Only apply Pretext shrinkwrap to plain-text messages.
-  const hasHtml = /<[a-z][\s\S]*>/i.test(message.content);
-  const prepared = usePretextWithSegments(hasHtml ? "" : message.content, BUBBLE_FONT);
-  const shrinkwrappedWidth = useShrinkwrap(prepared, MAX_BUBBLE_WIDTH - BUBBLE_PADDING_X);
-  const bubbleWidth =
-    !hasHtml && shrinkwrappedWidth > 0
-      ? Math.min(MAX_BUBBLE_WIDTH, shrinkwrappedWidth + BUBBLE_PADDING_X)
-      : undefined;
-
+  const parts = [
+    showTime && formatTimestamp(message.createdAt ?? message.ixTimeTimestamp),
+    message.editedAt && "Edited",
+    pending && "Sending…",
+    seen && "Seen",
+  ].filter(Boolean);
+  if (parts.length === 0) return null;
   return (
-    <div
+    <p
       className={cn(
-        "text-callout relative overflow-hidden px-4 py-2 break-words transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
-        isOwn
-          ? "rounded-card rounded-br-control-sm bg-tint text-on-tint selection:bg-on-tint selection:text-tint"
-          : "border-separator bg-surface-secondary text-label rounded-card rounded-bl-control-sm border",
-        message.replyTo && "rounded-t-none"
+        "text-caption text-label-secondary mt-0.5 px-1 tabular-nums",
+        isOwn ? "text-right" : "text-left"
       )}
-      style={{ maxWidth: MAX_BUBBLE_WIDTH, ...(bubbleWidth ? { width: bubbleWidth } : {}) }}
     >
-      {message.classification && (
-        <div className="mb-1 flex items-center gap-1">
-          <Badge variant="warning">
-            <Shield aria-hidden="true" />
-            {message.classification}
-          </Badge>
-        </div>
-      )}
-
-      <div
-        className="[&>p]:mb-0"
-        dangerouslySetInnerHTML={{
-          __html: sanitizeUserContent(highlightMatches(message.content, searchQuery)),
-        }}
-      />
-
-      <div
-        className={cn(
-          "text-caption mt-1 flex items-center gap-2 tabular-nums select-none",
-          isOwn ? "text-on-tint/70 justify-end" : "text-label-secondary justify-start"
-        )}
-      >
-        <span>{formatTimestamp(message.createdAt ?? message.ixTimeTimestamp)}</span>
-        {message.editedAt && <span>· edited</span>}
-        {isOwn && message.readReceipts && (
-          <span className="inline-flex items-center">
-            {message.readReceipts.length > 0 ? (
-              <CheckCheck className="text-on-tint size-3.5" aria-label="Read" />
-            ) : (
-              <Check className="text-on-tint/70 size-3.5" aria-label="Sent" />
-            )}
-          </span>
-        )}
-      </div>
-    </div>
+      {parts.join(" · ")}
+    </p>
   );
 }
 
-export const MessagesBubble = React.memo(function MessagesBubble({
+export function MessagesBubble({
   message,
   currentUserId,
-  isConsecutive,
+  startsCluster,
+  endsCluster,
+  seen = false,
   onReply,
   actions,
   settings,
   searchQuery,
 }: MessagesBubbleProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const isOwn = message.accountId === currentUserId;
   const account = resolveAccount(message, isOwn);
+  const name = displayNameOf(account, settings?.displayNamePreference);
+  const pending = isTempMessageId(message.id);
+  const deleted = !!message.deletedAt;
+  const interactive = !pending && !deleted;
+  const mine = message.myReactions ?? [];
 
-  const resolvedDisplayName = displayNameOf(account, settings);
-  const initials = resolvedDisplayName
-    .replace(/^@/, "")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .substring(0, 2);
+  const menu = {
+    isOwn,
+    onReply: () => onReply(message),
+    onEdit: () => setIsEditing(true),
+    onDelete: () => setConfirmingDelete(true),
+  };
+  const toggleReaction = (emoji: string, own: boolean) =>
+    own ? actions.onRemoveReaction(message.id, emoji) : actions.onAddReaction(message.id, emoji);
 
-  const { reactions, replyTo } = message;
+  const bubble = isEditing ? (
+    <MessageEditor
+      initial={message.content}
+      onSave={(content) => actions.onEditMessage(message.id, content)}
+      onCancel={() => setIsEditing(false)}
+    />
+  ) : (
+    <MessageContent
+      message={message}
+      isOwn={isOwn}
+      hasTail={endsCluster}
+      hasReply={!!message.replyTo}
+      pending={pending}
+      searchQuery={searchQuery}
+    />
+  );
+
+  const stack = (
+    <div className="flex min-w-0 flex-col" data-message-id={message.id}>
+      {message.replyTo && (
+        <ReplyQuote
+          replyTo={message.replyTo}
+          isOwn={isOwn}
+          preference={settings?.displayNamePreference}
+        />
+      )}
+      {bubble}
+    </div>
+  );
 
   return (
     <div
       className={cn(
-        "group relative flex w-full gap-2 px-3 py-0.5 transition-colors md:px-4",
-        isOwn ? "flex-row-reverse" : "flex-row",
-        !isConsecutive && "mt-3 pt-0.5"
+        "flex w-full items-end gap-2 px-3 py-0.5 md:px-4",
+        isOwn && "flex-row-reverse",
+        startsCluster && "mt-3"
       )}
     >
-      <div className={cn("w-8 shrink-0", isOwn && "hidden")}>
-        {!isConsecutive ? (
-          <Avatar className="border-separator size-8 rounded-full border">
-            <AvatarImage src={account.profileImageUrl ?? undefined} />
-            <AvatarFallback className="bg-tint-fill text-caption text-tint">
-              {account.country?.flag ? account.country.flag : initials}
-            </AvatarFallback>
-          </Avatar>
-        ) : (
-          <div className="size-8" />
-        )}
+      <div className={cn("size-8 shrink-0", isOwn && "hidden")}>
+        {endsCluster && <SenderAvatar account={account} name={name} />}
       </div>
 
       <div
         className={cn(
-          "relative flex max-w-[85%] flex-col sm:max-w-[75%]",
+          "flex max-w-[85%] min-w-0 flex-col sm:max-w-[75%]",
           isOwn ? "items-end" : "items-start"
         )}
       >
-        {!isConsecutive && !isOwn && (
-          <div className="mb-1 ml-1 flex items-baseline gap-2">
-            <span className="text-caption text-label">{resolvedDisplayName}</span>
+        {startsCluster && !isOwn && (
+          <p className="text-caption text-label mb-1 ml-1">
+            {name}
             {account.country?.name && (
-              <span className="text-label-secondary text-footnote">· {account.country.name}</span>
+              <span className="text-footnote text-label-secondary"> · {account.country.name}</span>
             )}
-          </div>
+          </p>
         )}
 
-        <div className="group/bubble relative">
-          {replyTo && (
-            <div
-              className={cn(
-                "rounded-t-row text-footnote mb-0.5 flex items-center gap-2 px-3 py-1",
-                isOwn
-                  ? "bg-tint-hover text-on-tint"
-                  : "bg-fill-4 text-label-secondary border-separator border border-b-0"
-              )}
-            >
-              <Reply className="size-3.5 shrink-0" aria-hidden="true" />
-              <span className="max-w-[160px] truncate font-medium">
-                {replyTo.account ? displayNameOf(replyTo.account, settings) : "User"}:{" "}
-                {stripTags(replyTo.content).substring(0, 32)}
-              </span>
+        <div
+          className={cn(
+            "group/bubble flex max-w-full items-center gap-1",
+            isOwn && "flex-row-reverse"
+          )}
+        >
+          {interactive && !isEditing ? (
+            <ContextMenu>
+              <ContextMenuTrigger asChild>{stack}</ContextMenuTrigger>
+              <ContextMenuContent className="w-44">
+                <MessageMenuItems {...menu} />
+              </ContextMenuContent>
+            </ContextMenu>
+          ) : (
+            stack
+          )}
+          {interactive && !isEditing && (
+            <div className={cn("flex shrink-0 items-center", isOwn && "flex-row-reverse")}>
+              <ReactionPicker mine={mine} isOwn={isOwn} onToggle={toggleReaction} />
+              <MessageMoreActions {...menu} />
             </div>
           )}
-
-          {isEditing ? (
-            <MessageEditor
-              message={message}
-              onSave={(content) => actions.onEditMessage(message.id, content)}
-              onCancel={() => setIsEditing(false)}
-            />
-          ) : (
-            <MessageBody message={message} isOwn={isOwn} searchQuery={searchQuery} />
-          )}
-
-          {reactions && Object.keys(reactions).length > 0 && (
-            <ReactionBadges
-              reactions={reactions}
-              isOwn={isOwn}
-              onRemove={(emoji) => actions.onRemoveReaction(message.id, emoji)}
-            />
-          )}
-
-          {!isEditing && (
-            <HoverActions
-              message={message}
-              isOwn={isOwn}
-              actions={actions}
-              onReply={onReply}
-              onEdit={() => setIsEditing(true)}
-            />
-          )}
         </div>
+
+        {!deleted && (
+          <ReactionPills
+            reactions={message.reactions ?? {}}
+            mine={mine}
+            isOwn={isOwn}
+            onToggle={toggleReaction}
+          />
+        )}
+        <MessageMeta
+          message={message}
+          showTime={endsCluster}
+          seen={seen}
+          pending={pending}
+          isOwn={isOwn}
+        />
       </div>
+
+      <AlertDialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <AlertDialogContent className="sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It is removed for everyone in the conversation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={() => actions.onDeleteMessage(message.id)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
-});
+}

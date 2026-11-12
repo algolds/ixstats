@@ -13,3 +13,4 @@ export { MAX_GROUP_PARTICIPANTS, MAX_MESSAGE_LENGTH } from "./contracts";
 export { directThreadWhere } from "./direct-thread";
 export { reactionsForViewer } from "./reactions";
 export { MAX_MARK_READ_IDS } from "./message-operations";
+export { resolveRecipient } from "./recipients";

@@ -1,109 +1,92 @@
 "use client";
 
-import React, { useRef, useState, useCallback, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import type { GlassPlateEditorRef } from "~/components/thinkpages/GlassPlateEditor";
+import { Bookmark, Reply, Send, Xmark as X } from "iconoir-react";
+import type { GlassPlateEditorRef } from "~/components/shared/editor/GlassPlateEditor";
+import type { MentionSource } from "~/components/shared/editor/mention-source";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { Skeleton } from "~/components/ui/skeleton";
+import { stripTags } from "~/lib/messages/format";
+import { memberMentionItems, mentionIdsFor, type ThreadMessage } from "~/lib/messages/thread";
+import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
 
 const GlassPlateEditor = dynamic(
-  () => import("~/components/thinkpages/GlassPlateEditor").then((m) => m.GlassPlateEditor),
+  () => import("~/components/shared/editor/GlassPlateEditor").then((m) => m.GlassPlateEditor),
   {
-    loading: () => <Skeleton className="rounded-control h-12" />,
+    loading: () => <Skeleton className="rounded-control h-10 flex-1" />,
     ssr: false,
   }
 );
-import {
-  Reply,
-  Xmark as X,
-  Bookmark as BookmarkPlus,
-  Send,
-  SystemRestart as Loader2,
-} from "iconoir-react";
-import { MessagesStashAttachmentModal } from "./MessagesStashAttachmentModal";
-import { Button } from "~/components/ui/button";
-import { Skeleton } from "~/components/ui/skeleton";
 
-interface ReplyMessage {
-  id: string;
-  account: {
-    displayName: string;
-  };
-  content: string;
-}
+const TYPING_IDLE_MS = 3000;
 
 interface MessagesInputBarProps {
-  onSendMessage: (content?: string, plainText?: string) => void;
+  onSendMessage: (content: string, plainText: string, mentions: string[]) => void;
   onTyping: (isTyping: boolean) => void;
-  isSending: boolean;
-  replyingTo: ReplyMessage | null;
+  replyingTo: Pick<ThreadMessage, "id" | "content" | "account"> | null;
   onCancelReply: () => void;
+  /** The other people in the thread: the source of the @ menu and of the ids a mention is sent as. */
+  participants: Parameters<typeof memberMentionItems>[0];
 }
 
 export function MessagesInputBar({
   onSendMessage,
   onTyping,
-  isSending,
   replyingTo,
   onCancelReply,
+  participants,
 }: MessagesInputBarProps) {
   const editorRef = useRef<GlassPlateEditorRef>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [content, setContent] = useState("");
   const [plainText, setPlainText] = useState("");
   const [isStashModalOpen, setIsStashModalOpen] = useState(false);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [mentionQuery, setMentionQuery] = useState("");
 
-  // Handle typing indicator timeout
-  const handleEditorChange = useCallback(
-    (html: string, rawText: string) => {
-      setContent(html);
-      setPlainText(rawText);
+  const mentionSource: MentionSource = {
+    items: memberMentionItems(participants, mentionQuery),
+    isLoading: false,
+    onQueryChange: setMentionQuery,
+  };
 
-      if (rawText.trim().length > 0) {
-        onTyping(true);
+  const handleEditorChange = (html: string, rawText: string) => {
+    setContent(html);
+    setPlainText(rawText);
 
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-        }
-
-        typingTimeoutRef.current = setTimeout(() => {
-          onTyping(false);
-        }, 3000);
-      } else {
-        onTyping(false);
-      }
-    },
-    [onTyping]
-  );
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    if (rawText.trim().length > 0) {
+      onTyping(true);
+      typingTimeoutRef.current = setTimeout(() => onTyping(false), TYPING_IDLE_MS);
+    } else {
+      onTyping(false);
+    }
+  };
 
   useEffect(() => {
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, []);
 
-  const handleSend = useCallback(() => {
-    if (!plainText.trim() || isSending) return;
+  const canSend = plainText.trim().length > 0;
 
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
+  const handleSend = () => {
+    if (!canSend) return;
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     onTyping(false);
 
-    onSendMessage(content, plainText);
+    onSendMessage(content, plainText, mentionIdsFor(plainText, participants));
     setContent("");
     setPlainText("");
     editorRef.current?.clear();
-  }, [content, plainText, isSending, onSendMessage, onTyping]);
+  };
 
-  const handleAttachStashItem = useCallback((item: { title: string; url: string }) => {
-    if (editorRef.current) {
-      editorRef.current.insertText(` 📚 Stash: ${item.title} (${item.url}) `);
-      editorRef.current.focus();
-    }
-  }, []);
-
-  const canSend = plainText.trim().length > 0 && !isSending;
+  const handleAttachStashItem = (item: { title: string; url: string }) => {
+    editorRef.current?.insertText(` Stash: ${item.title} (${item.url}) `);
+    editorRef.current?.focus();
+  };
 
   return (
     <div className="border-separator bg-surface shrink-0 border-t p-3">
@@ -112,10 +95,10 @@ export function MessagesInputBar({
           <Reply className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <p className="text-caption text-label-secondary">
-              Replying to {replyingTo.account.displayName}
+              Replying to {replyingTo.account?.displayName ?? "this message"}
             </p>
             <p className="text-footnote text-label truncate">
-              {replyingTo.content.replace(/<[^>]*>/g, "").substring(0, 80)}
+              {stripTags(replyingTo.content).slice(0, 80)}
             </p>
           </div>
           <Button
@@ -131,31 +114,33 @@ export function MessagesInputBar({
         </div>
       )}
 
-      <div className="flex items-end gap-2">
+      <Card variant="well" padding="none" content="input" className="flex items-end gap-1 p-1.5">
         <Button
           type="button"
-          variant="secondary"
-          size="icon-lg"
+          variant="ghost"
+          size="icon"
           onClick={() => setIsStashModalOpen(true)}
-          className="mb-1 shrink-0"
-          title="Attach lore stash link"
-          aria-label="Attach lore stash link"
+          className="text-label-secondary hover:text-label shrink-0"
+          title="Attach a Stash link"
+          aria-label="Attach a Stash link"
         >
-          <BookmarkPlus />
+          <Bookmark aria-hidden />
         </Button>
 
         <div className="min-w-0 flex-1">
           <GlassPlateEditor
             ref={editorRef}
+            variant="seamless"
+            hideToolbar
             value={content}
             onChange={handleEditorChange}
             onSubmit={handleSend}
-            submitOnEnter={true}
-            placeholder="Type a message... (Enter to send, Shift+Enter for newline)"
-            disabled={isSending}
-            minHeight={44}
+            submitOnEnter
+            placeholder="Write a message"
+            mentionSource={mentionSource}
+            minHeight={40}
             maxHeight={140}
-            className="border-separator bg-surface"
+            contentClassName="py-2"
           />
         </div>
 
@@ -163,14 +148,14 @@ export function MessagesInputBar({
           type="button"
           onClick={handleSend}
           disabled={!canSend}
-          size="icon-lg"
-          className="mb-1 shrink-0"
-          title="Send message (Enter)"
+          size="icon"
+          className="shrink-0"
+          title="Send message"
           aria-label="Send message"
         >
-          {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+          <Send aria-hidden />
         </Button>
-      </div>
+      </Card>
 
       <MessagesStashAttachmentModal
         isOpen={isStashModalOpen}

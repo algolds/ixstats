@@ -8,7 +8,7 @@ import {
   readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
-import { MAX_MARK_READ_IDS } from "~/server/modules/messaging";
+import { MAX_MARK_READ_IDS, resolveRecipient } from "~/server/modules/messaging";
 import { TRPCError } from "@trpc/server";
 import { messagingFor, mapMessagingErrors } from "./_service";
 
@@ -124,6 +124,16 @@ export const messagesParticipantsRouter = createTRPCRouter({
    * Search users for new conversation creation: by nation, passport handle or forum name, so a player with
    * no nation is found too.
    */
+  /** The person a `?country=` or `?user=` link means (the nation's owner, or a Passport handle). */
+  resolveRecipient: readOnlyProcedure
+    .input(
+      z.union([
+        z.object({ countryId: z.string().min(1).max(64) }),
+        z.object({ handle: z.string().min(1).max(64) }),
+      ])
+    )
+    .query(({ ctx, input }) => resolveRecipient(ctx.db, input)),
+
   searchUsers: readOnlyProcedure
     .input(z.object({ query: z.string().max(100) }))
     .query(async ({ ctx, input }) => {

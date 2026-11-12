@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Settings, SoundHigh, ChatBubble, User, Mail } from "iconoir-react";
+import { Settings, SoundHigh, ChatBubble, User, Mail, Archive } from "iconoir-react";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import {
@@ -13,6 +13,7 @@ import {
   PopoverDescription,
 } from "~/components/ui/popover";
 import { Switch } from "~/components/ui/switch";
+import { folderFromPath } from "~/lib/messages/deep-links";
 import type { MessageFolder, MessageFolderConfig } from "~/types/messages";
 
 export interface MessagesSettings {
@@ -45,8 +46,8 @@ export const MESSAGE_FOLDERS: MessageFolderConfig[] = [
   },
 ];
 
-export function getFolderFromPathname(_pathname?: string): MessageFolder {
-  return "conversations";
+export function getFolderFromPathname(pathname?: string): MessageFolder {
+  return folderFromPath(pathname);
 }
 
 interface MessagesFolderNavProps {
@@ -55,6 +56,10 @@ interface MessagesFolderNavProps {
   unreadCounts?: Record<MessageFolder, number>;
   settings?: MessagesSettings;
   onSettingsChange?: (settings: MessagesSettings) => void;
+  /** Number of archived conversations, and whether the list shows them instead of the inbox. */
+  archivedCount?: number;
+  showArchived?: boolean;
+  onToggleArchived?: () => void;
 }
 
 export function MessagesFolderNav({
@@ -63,6 +68,9 @@ export function MessagesFolderNav({
   unreadCounts,
   settings = DEFAULT_MESSAGES_SETTINGS,
   onSettingsChange,
+  archivedCount = 0,
+  showArchived = false,
+  onToggleArchived,
 }: MessagesFolderNavProps) {
   const requestCount = unreadCounts?.requests ?? 0;
   const showRequests = requestCount > 0 || activeFolder === "requests";
@@ -103,6 +111,21 @@ export function MessagesFolderNav({
         >
           <Mail aria-hidden="true" />
           {activeFolder === "requests" ? "Back to messages" : `Requests (${requestCount})`}
+        </Button>
+      )}
+
+      {onToggleArchived && activeFolder === "conversations" && (
+        <Button
+          type="button"
+          variant={showArchived ? "secondary" : "ghost"}
+          size="icon-sm"
+          className={cn("text-label-secondary", !showRequests && "ml-auto")}
+          aria-pressed={showArchived}
+          aria-label={showArchived ? "Back to inbox" : `Archived conversations (${archivedCount})`}
+          title={showArchived ? "Back to inbox" : "Archived conversations"}
+          onClick={onToggleArchived}
+        >
+          <Archive aria-hidden="true" />
         </Button>
       )}
 

@@ -72,7 +72,7 @@ export function MessagesNewConversationModal({
           </FacetList>
 
           <SearchField
-            placeholder="Search users..."
+            placeholder="Search by nation or handle"
             aria-label="Search users"
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -90,11 +90,11 @@ export function MessagesNewConversationModal({
           <div className="max-h-64 overflow-y-auto">
             <MessagesUserSearchResults
               query={searchQuery}
-              users={users as any[] | undefined}
+              users={users}
               isLoading={isLoading}
               emptyLabel="No users found"
               disabled={isCreating}
-              onPick={(userId) => handleCreate(userId, diplomatic)}
+              onPick={(clerkUserId) => handleCreate(clerkUserId, diplomatic)}
             />
           </div>
         </div>

@@ -30,7 +30,7 @@ export function MessagesAddParticipantsModal({
 
   // Filter out users who are already in the conversation
   const filteredUsers = (users ?? []).filter(
-    (user: any) => !existingParticipantIds.includes(user.clerkUserId || user.id)
+    (user) => !existingParticipantIds.includes(user.clerkUserId)
   );
 
   const handleAdd = async (userId: string) => {

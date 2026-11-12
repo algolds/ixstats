@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { useThinkPagesWebSocket } from "~/hooks/useThinkPagesWebSocket";
 import { soundCues } from "~/lib/sound/cuelume";
-import { buildMessage, ownAccount } from "./useConversationMessages";
+import {
+  appendIncoming,
+  buildMessage,
+  mapFirstPage,
+  mapPages,
+  ownAccount,
+  type ThreadAccount,
+} from "~/lib/messages/thread";
+import type { CachedMessage } from "./useConversationMessages";
 import type { MessagesSettings } from "./MessagesFolderNav";
 import type { MessageFolder } from "~/types/messages";
 import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-types";
@@ -25,7 +33,7 @@ interface Options {
   refetchConversations: () => unknown;
 }
 
-/** Applies an incoming realtime message to the cached message list. */
+/** Applies an incoming realtime message to the cached message pages, once. */
 function appendIncomingMessage(
   utils: Utils,
   queryKey: { conversationId: string; userId: string },
@@ -36,70 +44,101 @@ function appendIncomingMessage(
     selectedConversation,
   }: Pick<Options, "currentUserId" | "user" | "selectedConversation">
 ) {
-  utils.messages.getConversationMessages.setData(queryKey, (old: any) => {
-    if (!old || old.messages.some((m: any) => m.id === data.messageId)) return old;
+  const sender: ThreadAccount =
+    data.accountId === currentUserId
+      ? ownAccount(currentUserId, user)
+      : (selectedConversation?.otherParticipants.find((p: any) => p.accountId === data.accountId)
+          ?.account ?? {
+          id: data.accountId,
+          username: "user",
+          displayName: "User",
+          profileImageUrl: null,
+          accountType: "country",
+        });
 
-    const sender =
-      data.accountId === currentUserId
-        ? ownAccount(currentUserId, user)
-        : (selectedConversation?.otherParticipants.find((p: any) => p.accountId === data.accountId)
-            ?.account ?? {
-            id: data.accountId,
-            username: "user",
-            displayName: "User",
-            profileImageUrl: null,
-            accountType: "country" as const,
-          });
+  const incoming = buildMessage({
+    id: data.messageId,
+    conversationId: data.conversationId ?? "",
+    accountId: data.accountId,
+    account: sender,
+    content: data.content ?? "",
+    messageType: "text",
+    at: new Date(data.timestamp),
+  }) as CachedMessage;
 
-    const newMessage = buildMessage({
-      id: data.messageId,
-      conversationId: data.conversationId!,
-      accountId: data.accountId,
-      account: sender,
-      content: data.content ?? "",
-      messageType: "text",
-      at: new Date(data.timestamp),
-    });
-    return { ...old, messages: [newMessage, ...old.messages] };
-  });
+  utils.messages.getConversationMessages.setInfiniteData(queryKey, (old) =>
+    old
+      ? mapFirstPage<typeof old>(old, (messages) =>
+          appendIncoming(messages, incoming, currentUserId)
+        )
+      : old
+  );
+  // The event carries no quoted reply or mentions: others' messages are completed from the server.
+  if (data.accountId !== currentUserId) {
+    void utils.messages.getConversationMessages.invalidate(queryKey);
+  }
 }
 
-/** Updates the conversation list preview in place instead of refetching it. */
+/** The row's name for whoever wrote the last message. */
+function senderNameFor(
+  conversation: { otherParticipants: { accountId: string; account?: { displayName?: string } }[] },
+  data: ThinkPagesMessageEvent,
+  { currentUserId, user }: Pick<Options, "currentUserId" | "user">
+): string {
+  if (data.accountId === currentUserId) return user?.fullName ?? "Me";
+  const other = conversation.otherParticipants.find((p) => p.accountId === data.accountId);
+  return other?.account?.displayName ?? "User";
+}
+
+/**
+ * Updates the conversation list in place instead of refetching it: the new last message and unread
+ * count, and the conversation moves to the top of the first page.
+ */
 function bumpConversationPreview(
   utils: Utils,
   folderQueryKey: { userId: string; folder: MessageFolder },
   data: ThinkPagesMessageEvent,
-  { currentUserId, user }: Pick<Options, "currentUserId" | "user">
+  options: Pick<Options, "currentUserId" | "user">
 ) {
-  utils.messages.getConversationsByFolder.setData(folderQueryKey, (old: any) => {
-    if (!old?.conversations) return old;
+  utils.messages.getConversationsByFolder.setInfiniteData(folderQueryKey, (old) => {
+    if (!old) return old;
     const at = new Date(data.timestamp);
-    const isOwn = data.accountId === currentUserId;
-    const updated = old.conversations.map((c: any) =>
-      c.id !== data.conversationId
-        ? c
-        : {
-            ...c,
-            lastActivity: at,
-            lastMessage: {
-              id: data.messageId,
-              accountId: data.accountId,
-              content: data.content ?? "",
-              ixTimeTimestamp: at,
-              createdAt: at,
-              account: isOwn
-                ? { id: currentUserId, displayName: user?.fullName ?? "Me" }
-                : (c.lastMessage?.account ?? { id: data.accountId, displayName: "User" }),
-            },
-            unreadCount: isOwn ? c.unreadCount : (c.unreadCount ?? 0) + 1,
-          }
-    );
-    // Most recently active first so the updated conversation bubbles up
-    updated.sort(
-      (a: any, b: any) => new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime()
-    );
-    return { ...old, conversations: updated };
+    const isOwn = data.accountId === options.currentUserId;
+    let bumped: (typeof old.pages)[number]["conversations"][number] | undefined;
+    const pages = old.pages.map((page) => ({
+      ...page,
+      conversations: page.conversations.filter((c) => {
+        if (c.id !== data.conversationId) return true;
+        bumped = {
+          ...c,
+          lastActivity: at,
+          unreadCount: isOwn ? c.unreadCount : c.unreadCount + 1,
+          lastMessage: {
+            id: data.messageId,
+            content: data.content ?? "",
+            senderId: data.accountId,
+            senderName: senderNameFor(c, data, options),
+            senderAvatar: null,
+            createdAt: at,
+            isDeleted: false,
+          },
+        };
+        return false;
+      }),
+    }));
+    const [first, ...rest] = pages;
+    if (!bumped || !first) return old;
+    return {
+      ...old,
+      pages: [{ ...first, conversations: [bumped, ...first.conversations] }, ...rest],
+    };
   });
+}
+
+/** What the thread panel reads from the socket: connection and who is typing where. */
+export interface MessagesClientState {
+  connectionStatus: "connected" | "disconnected";
+  typingIndicators: ReadonlyMap<string, { accountId: string; conversationId?: string }>;
 }
 
 /** Realtime connection for the messages UI: cache updates, sounds and presence. */
@@ -137,23 +176,24 @@ export function useMessagesSocket(options: Options) {
         options
       );
     } else if (data.type === "message:updated") {
-      utils.messages.getConversationMessages.setData(
+      utils.messages.getConversationMessages.setInfiniteData(
         queryKey,
-        (old: any) =>
-          old && {
-            ...old,
-            messages: old.messages.map((m: any) =>
+        (old) =>
+          old &&
+          mapPages<typeof old>(old, (messages) =>
+            messages.map((m) =>
               m.id === data.messageId
                 ? { ...m, content: data.content ?? m.content, editedAt: new Date(data.timestamp) }
                 : m
-            ),
-          }
+            )
+          )
       );
     } else if (data.type === "message:deleted") {
-      utils.messages.getConversationMessages.setData(
+      utils.messages.getConversationMessages.setInfiniteData(
         queryKey,
-        (old: any) =>
-          old && { ...old, messages: old.messages.filter((m: any) => m.id !== data.messageId) }
+        (old) =>
+          old &&
+          mapPages<typeof old>(old, (messages) => messages.filter((m) => m.id !== data.messageId))
       );
     }
   };
@@ -221,13 +261,10 @@ export function useMessagesSocket(options: Options) {
     dropped.current = connected ? "up" : dropped.current === "never" ? "never" : "down";
   }, [connected]);
 
-  const clientState = {
-    presenceStatus: raw.presenceStatus,
+  const clientState: MessagesClientState & { presenceMap: Record<string, string> } = {
     typingIndicators: raw.typingIndicators,
     presenceMap,
-    connectionStatus: raw.connected ? ("connected" as const) : ("disconnected" as const),
-    lastSyncTime: new Date(raw.lastHeartbeat),
-    unreadCount: 0,
+    connectionStatus: raw.connected ? "connected" : "disconnected",
   };
 
   return { clientState, sendTypingIndicator, connected };
