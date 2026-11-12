@@ -32,7 +32,7 @@ same wallet.
 - **Companies, Sub-Industries & Domicile:** charter fee 1,000 ₷ (burned), up to `activeCompanyCap` (3) active companies per player per realm, 1,000 founder shares. Each company chooses one of 12 sub-industries across the 4 macro sectors (`taxonomy.ts`) and an optional HQ nation (`hqCountryId`) in the same realm.
 - **Nation ₷ Treasuries & Stipends:** each nation with domiciled companies or an existing treasury receives a tick stipend (`exchange_treasury_daily_stipend` ÷ 4 ticks/day, scaled `0.5x–2.0x` by `economicTier`) up to `exchange_treasury_cap` (`25,000 ₷`), plus corporate income taxes, capital-gains taxes, dividend withholding, cross-border tariffs, Central Bank loan interest, and `50%` of `LOBBY` spend.
 - **Operating P&L & Realm Faucet Cap:** each 6-hour market tick (`operations.ts`) computes gross operating revenue (` ProductiveBase × BaseMargin × SectorIndexFactor × MacroGrowthFactor × SupplyChainFactor × PricingFactor`), deducts upkeep, inflation-scaled overhead, and credit interest, and transfers corporate tax on positive EBT to the HQ treasury. Net positive operating inflows from the system faucet are scaled pro rata so total minted operating revenue per realm per tick never exceeds `exchange_realm_operating_budget` (`500 ₷`/tick).
-- **Central Bank Credit & Distress Lifecycle:** companies rated `AAA` through `B` can draw up to `min(250,000, 0.5 × (decisionValue + 0.25 × contractsWonValue))` from their HQ nation's treasury at the nation's base interest rate plus rating spread (`credit.ts`). If `capital <= 0` after a tick or `creditDrawn > 1.2 × creditLimit`, the company enters `DISTRESSED` with a 72-hour grace window (`distress.ts`). If uncured after 72 hours, it transitions to `BANKRUPT`, cancelling open orders, repaying HQ treasury credit up to remaining capital, distributing any surplus pro rata to shareholders, and applying `-2` standing.
+- **Central Bank Credit & Distress Lifecycle:** companies rated `AAA` through `B` can draw up to `min(250,000, 0.5 × (decisionValue + 0.25 × contractsWonValue))` from their HQ nation's treasury at the nation's base interest rate plus rating spread (`credit.ts`). If `capital <= 0` after a tick or `creditDrawn > 1.2 × creditLimit`, the company enters `DISTRESSED` with a 72-hour grace window (`distress.ts`). If uncured after 72 hours, it transitions to `BANKRUPT`, unwinding pre-award contracts, open acquisition offers and pending decisions into capital, cancelling open orders, repaying HQ treasury credit up to remaining capital (`PRINCIPAL`), distributing any surplus pro rata to shareholders, and applying `-2` standing. A closed issuer's founder can still confirm delivery on an `AWARDED` contract (`completeContract`); any later contract refund or returned acquisition offer for a closed company is credited to its HQ nation's treasury as `RECOVERY`.
 - **Contracts & Tariffs:** B2B contracts escrow from company capital; B2G tenders escrow from the nation's `₷` treasury (`TREASURY`, default) or the owner's wallet (`WALLET`), and can link to a national Directive or Issue; DM faucet tenders (`FAUCET`) mint escrow up to `exchange_realm_weekly_faucet_cap` (`10,000 ₷` rolling 7d). Cross-border contract completions pay the issuing nation's sector tariff into its treasury unless an active `free_trade` agreement links the two nations (`tariffs.ts`).
 - **Two-Sided Share Order Book & Taxes:** players post sell listings (`ShareListing`) or escrowed limit buy orders (`ShareBuyOrder`). Orders cross automatically by price-time priority at the resting order's price (`fills.ts`), refunding any price improvement to the buyer. Secondary sales with a positive gain over `avgCost` pay the HQ nation's capital-gains tax into its treasury; dividends withhold `50%` of the HQ capital-gains rate into the HQ treasury.
 - **Decisions, Governance & M&A:** founders queue `EXPAND`, `ENTER_SECTOR`, `RND` (`efficiency` or deterministic `breakthrough`), `LOBBY` (`sector`, `b2g`, `tax_relief` for 14d), `PRICE` (`undercut`, `balanced`, `premium`), or `ACQUIRE` (`decisions.ts`). When outside shareholders hold `≥ 10%` of `sharesOutstanding`, direct calls to `dissolveCompany` and `issueShares` are refused (`CONFLICT`) — share dilutions (`ISSUE_SHARES`), voluntary liquidations (`DISSOLVE`), and acquisition offers (`ACQUIRE_OFFER`) must go through `openProposal` (`governance.ts`, `acquisition.ts`).
@@ -41,7 +41,7 @@ same wallet.
 ## Ledger types
 
 - `ExchangeTransaction.type`: `CONVERT_IN` and `CONVERT_OUT` (historical only), `CHARTER_FEE`, `COMPANY_DEPOSIT`, `COMPANY_WITHDRAW`, `SHARE_BUY`, `SHARE_SELL`, `SHARE_ORDER_ESCROW`, `SHARE_ORDER_REFUND`, `DIVIDEND`, `SECTOR_BUY`, `SECTOR_SELL`, `CONTRACT_ESCROW`, `CONTRACT_REFUND`, `CONTRACT_PAYOUT`, `TREASURY_PAYMENT`, `BOND_BUY`, `BOND_SELL`, `BOND_COUPON`, `BOND_PRINCIPAL`, `ADMIN_ADJUSTMENT`, plus MyClub's `STADIUM_UPGRADE`, `TRAINING_FEE`, `TEAM_TRAINING`, `PREDICTION_STAKE`, `PREDICTION_PAYOUT`.
-- `NationTreasuryEntry.type`: `STIPEND`, `TAX`, `TARIFF`, `INTEREST`, `LOBBY`, `B2G_ESCROW`, `B2G_REFUND`, `SPEND`, `BOND_SALE`, `BOND_COUPON`, `BOND_PRINCIPAL`, `FUND_RETURN`.
+- `NationTreasuryEntry.type`: `STIPEND`, `TAX`, `TARIFF`, `INTEREST`, `PRINCIPAL`, `LOBBY`, `B2G_ESCROW`, `B2G_REFUND`, `RECOVERY`, `SPEND`, `BOND_SALE`, `BOND_COUPON`, `BOND_PRINCIPAL`, `FUND_RETURN`.
 
 ## Nation bonds (terminal R1)
 
@@ -186,6 +186,11 @@ Exchange is closed. A manual run follows the steps in order.
    ```sql
    UPDATE "system_config" SET "value" = 'true', "updatedAt" = NOW()
    WHERE "key" = 'vault_isExchangeEnabled';
+   ```
+
+8. **Check for pre-existing stranded escrow on closed companies (read-only):**
+   ```bash
+   bun scripts/exchange/report-stranded-escrow.ts
    ```
 
 ### Non-money `Float` columns in `prisma/schema/exchange.prisma`
