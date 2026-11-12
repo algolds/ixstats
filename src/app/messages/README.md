@@ -88,6 +88,7 @@ All messaging data flows through the `api.messages` tRPC router (`src/server/api
 | `messages.markMessagesAsRead` / `markAllAsRead` | Read receipts |
 | `messages.getConversation` | Single conversation detail |
 | `messages.sendAdminBroadcast` / `sendAdminMessage` | Admin-only system broadcasts and direct admin messages |
+| `messages.resolveRecipient` | The person a `?country=` (nation owner) or `?user=` (Passport handle) link means |
 | `messages.searchUsers` | Participant search (`id`, `clerkUserId`, `handle`, `displayName`, `country`); participants are identified by `clerkUserId` |
 | `messages.getConversationPreferences` / `setConversationPreferences` | Muted and archived conversation ids |
 | `messages.clearAllSystemNotifications` | Clear the system-alerts folder |
@@ -101,3 +102,15 @@ Router source files: `conversations.ts`, `messaging.ts`, `participants.ts`, `ind
 - **Diplomacy / official messaging** — `diplomatic` and `official` conversation types carry classification (`PUBLIC`…`TOP_SECRET`), priority, and channel type (`BILATERAL`/`MULTILATERAL`/`EMERGENCY`), unifying official channels into the same inbox.
 - **Wiki & Forum** — conversations can carry `wiki` / `forum` sources. The messaging service still has a `syncDiscussions` method (`src/server/modules/messaging/`), but its `messages.syncDiscussions` tRPC procedure was removed on 2026-09-27 (plan 312, zero callers), so nothing currently triggers the sync from the UI.
 - **Stash** — message composer can attach Stash links from WikiOS.
+
+## Deploy note (2026-11-12 audit fixes)
+
+No columns change. Three indexes were added to `prisma/schema/social.prisma`; on production run them before or after the deploy (they are additive), outside a transaction so `CONCURRENTLY` avoids locking:
+
+```sql
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "ConversationParticipant_userId_isActive_requestStatus_idx" ON "ConversationParticipant"("userId", "isActive", "requestStatus");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "ThinkshareConversation_source_lastActivity_idx" ON "ThinkshareConversation"("source", "lastActivity");
+CREATE INDEX CONCURRENTLY IF NOT EXISTS "ThinkshareMessage_userId_ixTimeTimestamp_idx" ON "ThinkshareMessage"("userId", "ixTimeTimestamp");
+```
+
+Players' muted and archived threads moved from browser storage to the server and are not migrated, so they set them again once.
