@@ -7,7 +7,7 @@ import { MyCountryLogo } from "~/components/mycountry/shared/primitives/mycountr
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { HelpIcon } from "~/components/ui/help-icon";
-import { MonogramBackdrop } from "./Pane";
+import { MonogramBackdrop } from "~/components/ui/facet";
 
 const BUILDER_PATHS = [
   {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
+import { LensSurface } from "~/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils/cn";
 
@@ -33,6 +34,11 @@ interface InspectorProps {
    * without touching what the aside still shows.
    */
   onWiden?: () => void;
+  /**
+   * Lens cards in the aside (an owner ruling per page). The sheet keeps panes: a Lens never
+   * sits on an Overlay. Put each card over a `MonogramBackdrop` so the glass has something to bend.
+   */
+  lens?: boolean;
   children: React.ReactNode;
   className?: string;
 }
@@ -52,6 +58,7 @@ export function Inspector({
   onOpenChange,
   resetSheetOnWiden = true,
   onWiden,
+  lens = false,
   children,
   className,
 }: InspectorProps) {
@@ -73,6 +80,8 @@ export function Inspector({
     onWiden?.();
   }, [wide, open, onOpenChange, resetSheetOnWiden, onWiden]);
 
+  const asideContent = lens ? <LensSurface>{children}</LensSurface> : children;
+
   return (
     <>
       <aside
@@ -86,7 +95,7 @@ export function Inspector({
           className
         )}
       >
-        {wide || !hydrated ? children : null}
+        {wide || !hydrated ? asideContent : null}
       </aside>
       {!wide && (
         <Sheet open={open} onOpenChange={onOpenChange}>

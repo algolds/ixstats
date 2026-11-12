@@ -63,6 +63,7 @@ import { YourRealmPanel } from "./YourRealmPanel";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
+import { MonogramBackdrop } from "~/components/ui/facet";
 import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
 type FeedTab = "all" | "following";
@@ -380,12 +381,25 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
-      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
-        <div className="flex flex-col space-y-4">
-          {isSignedIn && <YourRealmPanel />}
-          <DailyBlurbCard />
-          <CountriesToExploreCard currentUserCountryId={countryId} />
-          {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
+      {/* Lens cards in the aside (owner ruling 2026-11-11), each over the monogram grain it bends. */}
+      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen} lens>
+        <div className="flex flex-col gap-4">
+          {isSignedIn && (
+            <MonogramBackdrop>
+              <YourRealmPanel />
+            </MonogramBackdrop>
+          )}
+          <MonogramBackdrop>
+            <DailyBlurbCard />
+          </MonogramBackdrop>
+          <MonogramBackdrop>
+            <CountriesToExploreCard currentUserCountryId={countryId} />
+          </MonogramBackdrop>
+          {tierDistribution && (
+            <MonogramBackdrop>
+              <EconomicTiersCard tiers={tierDistribution} />
+            </MonogramBackdrop>
+          )}
         </div>
       </Inspector>
     </>

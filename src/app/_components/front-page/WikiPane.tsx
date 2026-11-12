@@ -9,7 +9,8 @@ import { HelpIcon } from "~/components/ui/help-icon";
 import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
 import { timeAgo } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { MonogramBackdrop, Pane, PaneBody } from "./Pane";
+import { MonogramBackdrop } from "~/components/ui/facet";
+import { Pane, PaneBody } from "./Pane";
 
 const EDITS_SHOWN = 4;
 
