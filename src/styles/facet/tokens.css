@@ -459,6 +459,8 @@
     color-scheme: light;
     --text-scale: 1;
     --shadow-strength: 1;
+    /* A tint fill behind glass (MonogramBackdrop wash); dark tints are pale, so dark needs more to read. */
+    --tint-wash: 8%;
 
     /* Density: component padding/gap multiplier and control heights 28/36/44 */
     --density: 1;
@@ -471,6 +473,7 @@
   :root[data-theme="dark"] {
     color-scheme: dark;
     --shadow-strength: 0.5;
+    --tint-wash: 16%;
 
     --color-label: #e4e4e7;
     --color-label-secondary: #a1a1aa;

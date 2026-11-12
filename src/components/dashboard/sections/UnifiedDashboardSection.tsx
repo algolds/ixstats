@@ -381,22 +381,22 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
-      {/* Lens cards in the aside (owner ruling 2026-11-11), each over the monogram grain it bends. */}
+      {/* Lens cards in the aside (owner ruling 2026-11-11), each over the grain it bends, washed in its app's tint. */}
       <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen} lens>
         <div className="flex flex-col gap-4">
           {isSignedIn && (
-            <MonogramBackdrop>
+            <MonogramBackdrop app="realms" wash>
               <YourRealmPanel />
             </MonogramBackdrop>
           )}
-          <MonogramBackdrop>
+          <MonogramBackdrop app="wiki" wash>
             <DailyBlurbCard />
           </MonogramBackdrop>
-          <MonogramBackdrop>
+          <MonogramBackdrop app="mycountry" wash>
             <CountriesToExploreCard currentUserCountryId={countryId} />
           </MonogramBackdrop>
           {tierDistribution && (
-            <MonogramBackdrop>
+            <MonogramBackdrop app="exchange" wash>
               <EconomicTiersCard tiers={tierDistribution} />
             </MonogramBackdrop>
           )}
