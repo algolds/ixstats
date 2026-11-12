@@ -1,9 +1,13 @@
 /**
- * Account erasure's market step: the user's open listings, auctions and trades end by the existing cancel paths, so
- * locked copies unlock, fees refund and other players' bids are refunded, never deleted. One that cannot end (an
- * auction past its end settles on its own) is logged and left to its cron; it never stops the erasure.
+ * Account erasure's market step: the user's open listings, auctions, trades and Exchange orders end by the existing
+ * cancel paths, so locked copies unlock, fees/escrow refund, shares/bonds return to holdings and other players' bids
+ * are refunded, never deleted. One that cannot end (an auction past its end settles on its own) is logged and left to
+ * its cron; it never stops the erasure.
  */
 import type { PrismaClient } from "@prisma/client";
+import { lockBond, returnListingTx } from "~/lib/exchange/bonds";
+import { closeBuyOrder, returnShareListingTx } from "~/lib/exchange/fills";
+import { lockCompany } from "~/lib/exchange/ownership";
 import { adminCancelAuction, adminCancelListing } from "~/server/modules/cards/cards.tools";
 import { cancelTradeOffer, rejectTradeOffer } from "~/server/modules/cards/trading/trade-service";
 
@@ -69,11 +73,61 @@ async function endTrades(db: PrismaClient, user: MarketUser, now: Date): Promise
   });
 }
 
+/**
+ * Open Exchange orders: return listed shares to the user's holding, refund buy-order escrow to the wallet, and return
+ * listed bond units to the holding via the transaction-level internals (working even while the Exchange is closed).
+ */
+async function endExchangeOrders(db: PrismaClient, user: MarketUser): Promise<number> {
+  const [shareListings, buyOrders, bondListings] = await Promise.all([
+    db.shareListing.findMany({
+      where: { sellerUserId: user.id, status: "OPEN" },
+      select: { id: true, companyId: true },
+    }),
+    db.shareBuyOrder.findMany({
+      where: { buyerUserId: user.id, status: "OPEN" },
+      select: { id: true, companyId: true },
+    }),
+    db.bondListing.findMany({
+      where: { sellerUserId: user.id, status: "OPEN" },
+      select: { id: true, bondId: true },
+    }),
+  ]);
+  const sharesEnded = await endEach("share listing", shareListings, ({ id, companyId }) =>
+    db.$transaction(async (tx) => {
+      await lockCompany(tx, companyId);
+      const listing = await tx.shareListing.findUnique({ where: { id } });
+      if (!listing || listing.status !== "OPEN" || listing.sellerUserId !== user.id) return;
+      await returnShareListingTx(tx, listing);
+    })
+  );
+  const bidsEnded = await endEach("share buy order", buyOrders, ({ id, companyId }) =>
+    db.$transaction(async (tx) => {
+      await lockCompany(tx, companyId);
+      const order = await tx.shareBuyOrder.findUnique({ where: { id } });
+      if (!order || order.status !== "OPEN" || order.buyerUserId !== user.id) return;
+      await closeBuyOrder(tx, order);
+    })
+  );
+  const bondsEnded = await endEach("bond listing", bondListings, ({ id, bondId }) =>
+    db.$transaction(async (tx) => {
+      await lockBond(tx, bondId);
+      const listing = await tx.bondListing.findUnique({ where: { id } });
+      if (!listing || listing.status !== "OPEN" || listing.sellerUserId !== user.id) return;
+      await returnListingTx(tx, listing);
+    })
+  );
+  return sharesEnded + bidsEnded + bondsEnded;
+}
+
 /** End every open market item of `user`; returns how many ended. */
 export async function closeMarketItems(
   db: PrismaClient,
   user: MarketUser,
   now: Date
 ): Promise<number> {
-  return (await endListingsAndAuctions(db, user)) + (await endTrades(db, user, now));
+  return (
+    (await endListingsAndAuctions(db, user)) +
+    (await endTrades(db, user, now)) +
+    (await endExchangeOrders(db, user))
+  );
 }

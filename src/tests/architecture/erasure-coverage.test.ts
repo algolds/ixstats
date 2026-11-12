@@ -140,12 +140,7 @@ const KEPT: Record<string, string> = {
   SportPrediction: "Sports match prediction record; part of settled prediction history.",
 
   // Exchange: financial and governance records on the tombstoned User id; none holds personal free text.
-  // Open orders and listings are NOT cancelled by erasure (only the cards market is, in account-erasure.market.ts):
-  // each keeps its escrow or shares on the tombstoned User id until it fills, is cancelled by staff, or its
-  // company dissolves (returnBuyOrders). Cancelling them on erasure is a follow-up, not a decision to keep them.
-  ShareListing: "Exchange share listing (sellerUserId); open ones stay on the tombstoned User id until filled or cancelled, financial record.",
-  ShareBuyOrder: "Exchange share buy order (buyerUserId); open ones keep their escrow on the tombstoned User id until filled or the company dissolves.",
-  BondListing: "Exchange bond listing (sellerUserId); financial ledger row on the tombstoned User id, no personal text.",
+  // Open ShareListing, ShareBuyOrder and BondListing rows are cancelled by account-erasure.market.ts.
   NationBond: "Exchange nation bond (issuerUserId); financial instrument other players hold, issuer id is the tombstoned User id.",
   CompanyDividend: "Exchange dividend payout ledger (declaredByUserId); financial ledger, rows reference the tombstoned User id, no personal text.",
   CompanyProposal: "Exchange governance proposal (proposerUserId); its payload is structured action data, and holders' votes already count it.",
