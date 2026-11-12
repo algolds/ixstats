@@ -51,14 +51,14 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
 | Package / Layer | Version | Notes |
 | :--- | :---: | :--- |
-| **Next.js** | 16.4.3 | App Router architecture, Turbopack |
+| **Next.js** | 16.4.6 | App Router architecture, Turbopack |
 | **React** | 19.3.1 | React 19 concurrent features |
 | **TypeScript** | 7.0.2 | Native Go Engine concurrency |
-| **Prisma** | 6.19.3 | Multi-file schema partitioning |
-| **tRPC** | 11.18.0 | Domain-split modular routers |
-| **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
+| **Prisma** | 7.10.1 | Multi-file schema partitioning |
+| **tRPC** | 11.28.0 | Domain-split modular routers |
+| **Tailwind CSS** | 4.3.5 | v4 CSS-first theme configuration |
 | **Zod** | 4.6.7 | Schema validation |
-| **Oxlint** | 1.80.0 | Flat config, TS 7 native (50-100× faster) |
+| **Oxlint** | 1.93.0 | Flat config, TS 7 native (50-100× faster) |
 | **Jest** | 30.4.2 | Unit and characterization suites |
 | **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
 <!-- END_DOCS:FRAMEWORK_MATRIX -->
@@ -132,7 +132,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,140<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,142<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 

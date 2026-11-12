@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ChatBubble as MessageSquare } from "iconoir-react";
 import { Checkbox } from "~/components/ui/checkbox";
 import { SearchField } from "~/components/ui/search-field";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { api } from "~/trpc/react";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { MessagesUserSearchResults } from "./MessagesUserSearchResults";
@@ -45,14 +45,14 @@ export function MessagesNewConversationModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
             <MessageSquare className="text-tint size-5" aria-hidden="true" />
             New conversation
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-4">
           <FacetList>
@@ -72,7 +72,7 @@ export function MessagesNewConversationModal({
           </FacetList>
 
           <SearchField
-            placeholder="Search users..."
+            placeholder="Search by nation or handle"
             aria-label="Search users"
             value={searchQuery}
             onValueChange={setSearchQuery}
@@ -90,15 +90,15 @@ export function MessagesNewConversationModal({
           <div className="max-h-64 overflow-y-auto">
             <MessagesUserSearchResults
               query={searchQuery}
-              users={users as any[] | undefined}
+              users={users}
               isLoading={isLoading}
               emptyLabel="No users found"
               disabled={isCreating}
-              onPick={(userId) => handleCreate(userId, diplomatic)}
+              onPick={(clerkUserId) => handleCreate(clerkUserId, diplomatic)}
             />
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

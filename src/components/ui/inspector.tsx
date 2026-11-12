@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
+import { LensSurface } from "~/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils/cn";
 
@@ -86,7 +87,8 @@ export function Inspector({
           className
         )}
       >
-        {wide || !hydrated ? children : null}
+        {/* Cards in the aside are Lenses (LensCard for the full material); the sheet keeps panes. */}
+        {wide || !hydrated ? <LensSurface>{children}</LensSurface> : null}
       </aside>
       {!wide && (
         <Sheet open={open} onOpenChange={onOpenChange}>

@@ -3,15 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 
-import {
-  Group as Users,
-  RssFeed as Rss,
-  OpenBook as BookOpen,
-  Settings,
-  FireFlame as Flame,
-  StatsUpSquare,
-} from "iconoir-react";
-import { Card } from "~/components/ui/card";
+import { Group as Users, RssFeed as Rss, Globe } from "iconoir-react";
+import { LensCard } from "~/components/ui/lens-card";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -64,22 +58,18 @@ const RepostModal = dynamic(
 );
 
 import { UnifiedFeedContent, FollowingFeedContent, type FeedHandlers } from "./UnifiedFeedContent";
-import { TrendingFeedContent } from "./TrendingFeedContent";
-import { TrendingSectionWidget } from "./TrendingSectionWidget";
+import { DailyBlurbCard } from "./BlurbSection";
 import { YourRealmPanel } from "./YourRealmPanel";
-import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
 import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
-type FeedTab = "all" | "following" | "trending" | "community";
+type FeedTab = "all" | "following";
 
 const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
   { value: "all", label: "All activity", icon: <Rss /> },
   { value: "following", label: "Following", icon: <Users /> },
-  { value: "trending", label: "Trending", icon: <Flame /> },
-  { value: "community", label: "Community", icon: <BookOpen /> },
 ];
 
 // Likes and reactions are handled globally by PostActions.
@@ -124,7 +114,7 @@ function PostingAs({
 
 function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
   return (
-    <Card padding="md">
+    <LensCard app="exchange" padding="md">
       <h2 className="text-headline text-label mb-3">Economic tiers</h2>
       <div className="flex flex-wrap items-center gap-1">
         {Object.entries(tiers).map(([tier, count]) => (
@@ -134,7 +124,7 @@ function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
           </Badge>
         ))}
       </div>
-    </Card>
+    </LensCard>
   );
 }
 
@@ -152,10 +142,13 @@ function useViewerAccounts(userId: string | undefined) {
   );
 
   // Accounts the user owns, for posting.
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
-    enabled: !!userId,
-    staleTime: 120_000,
-  });
+  const { data: accountsData, isLoading: accountsLoading } = api.thinkpages.getMyAccounts.useQuery(
+    undefined,
+    {
+      enabled: !!userId,
+      staleTime: 120_000,
+    }
+  );
   const accounts = useMemo(() => accountsData || [], [accountsData]);
   const hasCountry = !!countryId;
 
@@ -175,6 +168,7 @@ function useViewerAccounts(userId: string | undefined) {
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
@@ -208,6 +202,7 @@ export function UnifiedDashboardSection({
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
@@ -282,44 +277,10 @@ export function UnifiedDashboardSection({
         className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
       >
         <motion.div variants={staggerItem}>
-          <div className="flex min-w-0 flex-col space-y-5">
-            <motion.div variants={staggerItem} className="flex items-center gap-2">
-              {/* The flex item is the wrapper: with asTabs the control's className lands on the inner tab list. */}
-              <div className="min-w-0 flex-1">
-                <SegmentedControl
-                  options={tabs}
-                  value={activeTab}
-                  onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
-                  size="md"
-                  scrollable
-                  asTabs
-                />
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setInspectorOpen(true)}
-                className="shrink-0 xl:hidden"
-              >
-                <StatsUpSquare className="size-4" />
-                Trends
-              </Button>
-              {isSignedIn && (
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={openAccountManager}
-                  className="shrink-0"
-                  title="Feed and account settings"
-                  aria-label="Feed and account settings"
-                >
-                  <Settings />
-                </Button>
-              )}
-            </motion.div>
-
-            {activeTab !== "community" && isSignedIn && (
-              <div className="mb-4 space-y-2">
+          {/* The column starts below Halo's band, level with the Inspector: a full-width composer cannot share the band. */}
+          <div className="flex min-w-0 flex-col space-y-5 lg:pt-[calc(var(--shell-top-offset)-var(--shell-page-top))]">
+            {isSignedIn && (
+              <div className="space-y-2">
                 <GlassCanvasComposer
                   account={selectedAccount}
                   onAccountSelect={setSelectedAccount}
@@ -331,6 +292,8 @@ export function UnifiedDashboardSection({
                   isSignedIn={isSignedIn}
                   hasCountry={hasCountry}
                   onCreateAccount={openAccountManager}
+                  onManageAccounts={openAccountManager}
+                  accountsLoading={accountsLoading}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
                   <PostingAs account={selectedAccount} onSwitch={openAccountManager} />
@@ -338,12 +301,39 @@ export function UnifiedDashboardSection({
               </div>
             )}
 
+            {/* Signed out there is one feed, so no tabs; at xl the Inspector is open and the row has nothing left. */}
+            <motion.div
+              variants={staggerItem}
+              className={cn("flex items-center gap-2", tabs.length < 2 && "xl:hidden")}
+            >
+              {/* The flex item is the wrapper: with asTabs the control's className lands on the inner tab list. */}
+              <div className="min-w-0 flex-1">
+                {tabs.length > 1 && (
+                  <SegmentedControl
+                    options={tabs}
+                    value={activeTab}
+                    onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                    size="md"
+                    scrollable
+                    asTabs
+                  />
+                )}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setInspectorOpen(true)}
+                className="shrink-0 xl:hidden"
+              >
+                <Globe aria-hidden className="size-4" />
+                <span className="max-sm:sr-only">Around IxStates</span>
+              </Button>
+            </motion.div>
+
             {activeTab === "following" ? (
               <FollowingFeedContent {...feedHandlers} />
-            ) : activeTab === "trending" ? (
-              <TrendingFeedContent {...feedHandlers} />
             ) : (
-              <UnifiedFeedContent activeTab={activeTab} {...feedHandlers} />
+              <UnifiedFeedContent {...feedHandlers} />
             )}
           </div>
         </motion.div>
@@ -390,11 +380,11 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
+      {/* Each card is a LensCard in its own app's tint (owner ruling 2026-11-11). */}
       <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col gap-4">
           {isSignedIn && <YourRealmPanel />}
-          <TrendingSectionWidget />
-          <BlurbSection />
+          <DailyBlurbCard />
           <CountriesToExploreCard currentUserCountryId={countryId} />
           {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
         </div>

@@ -6,10 +6,11 @@
  * --apply sets `ownerUserId` for countries with exactly one candidate user; ambiguous ones are skipped.
  *   bun scripts/identity/audit-leader-ownership.ts [--apply]
  */
-import { PrismaClient } from "@prisma/client";
-import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
 
-const db = new PrismaClient();
+import { namesOfUsers, type ClaimedName } from "~/lib/identity/wiki-names";
+import { createPrismaClient } from "~/server/prisma-client";
+
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 type MatchedBy = "forum" | "wiki" | "handle";

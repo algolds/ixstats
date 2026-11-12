@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * migrate-routes-to-segments.ts — ETL migration from point-to-point TransportRoutes to
  * OSM-style TransportNodes, TransportSegments, and TransportRouteSegments.
@@ -7,9 +8,7 @@
  *   bun run scripts/archive/migrations/migrate-routes-to-segments.ts --apply  # write changes
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 interface GeoJSONLineString {
@@ -64,7 +63,10 @@ async function main() {
   ): TempNode {
     // Check if node exists within ~0.01 deg
     for (const n of nodes) {
-      if (Math.abs(n.coordinates[0] - coord[0]) < 0.01 && Math.abs(n.coordinates[1] - coord[1]) < 0.01) {
+      if (
+        Math.abs(n.coordinates[0] - coord[0]) < 0.01 &&
+        Math.abs(n.coordinates[1] - coord[1]) < 0.01
+      ) {
         return n;
       }
     }
@@ -144,8 +146,18 @@ async function main() {
     const startCoord = coords[0]!;
     const endCoord = coords[coords.length - 1]!;
 
-    const fromNode = findOrCreateNode(startCoord, route.countryId, route.worldId, route.name ? `${route.name} (Start)` : null);
-    const toNode = findOrCreateNode(endCoord, route.countryId, route.worldId, route.name ? `${route.name} (End)` : null);
+    const fromNode = findOrCreateNode(
+      startCoord,
+      route.countryId,
+      route.worldId,
+      route.name ? `${route.name} (Start)` : null
+    );
+    const toNode = findOrCreateNode(
+      endCoord,
+      route.countryId,
+      route.worldId,
+      route.name ? `${route.name} (End)` : null
+    );
 
     const segId = `ts_${segments.length + 1}_${Math.random().toString(36).slice(2, 8)}`;
     segments.push({
@@ -168,7 +180,9 @@ async function main() {
     });
   }
 
-  console.log(`Generated ${nodes.length} unique nodes and ${segments.length} network segments across ${routes.length} routes.`);
+  console.log(
+    `Generated ${nodes.length} unique nodes and ${segments.length} network segments across ${routes.length} routes.`
+  );
 
   if (!APPLY) {
     console.log(`\n[DRY RUN SUMMARY]`);
@@ -231,7 +245,9 @@ async function main() {
     });
   }
 
-  console.log(`Migration complete! Successfully written ${nodes.length} nodes and ${segments.length} segments.`);
+  console.log(
+    `Migration complete! Successfully written ${nodes.length} nodes and ${segments.length} segments.`
+  );
 }
 
 main()

@@ -1,5 +1,6 @@
 import { SignUp } from "@clerk/nextjs";
 import Link from "next/link";
+import { Card } from "~/components/ui/card";
 import { facetClerkAppearance } from "~/lib/clerk/theme";
 
 const isClerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_"));
@@ -8,7 +9,7 @@ export default function Page() {
   if (!isClerkConfigured) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center p-4">
-        <div className="border-border bg-card w-full max-w-md rounded-2xl border p-6 text-center shadow-2xl backdrop-blur-xl">
+        <Card padding="lg" className="w-full max-w-md text-center">
           <h1 className="text-foreground text-xl font-bold tracking-tight">
             Authentication not configured
           </h1>
@@ -16,7 +17,7 @@ export default function Page() {
             Clerk publishable keys are not configured for this environment. Add your Clerk keys to
             the environment variables to enable sign-up functionality.
           </p>
-        </div>
+        </Card>
       </div>
     );
   }

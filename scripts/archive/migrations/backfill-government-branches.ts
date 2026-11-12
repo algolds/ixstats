@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * One-off backfill: seed `GovernmentBranch` rows from the legacy
  * executiveName/legislativeName/judicialName fields on GovernmentStructure.
@@ -14,9 +15,8 @@
  *
  * Idempotent: a structure that already has any GovernmentBranch rows is skipped.
  */
-import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 const LEGACY: Array<{

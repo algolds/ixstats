@@ -106,6 +106,7 @@ export async function loadForumRealms(
 export interface ForumRealmLook extends ForumRealm {
   emblemUrl: string | null;
   thumbnail: string | null;
+  bannerUrl: string | null;
 }
 
 /** `loadForumRealm` in one read that also brings the realm's images; Ixnay without a row has none. */
@@ -114,10 +115,10 @@ export function loadForumRealmLook(db: RealmDb, ref: RealmRef): Promise<ForumRea
     (where) =>
       db.realm.findUnique({
         where,
-        select: { ...REALM_SELECT, emblemUrl: true, thumbnail: true },
+        select: { ...REALM_SELECT, emblemUrl: true, thumbnail: true, bannerUrl: true },
       }),
     ref,
-    { ...IXNAY_REALM, emblemUrl: null, thumbnail: null }
+    { ...IXNAY_REALM, emblemUrl: null, thumbnail: null, bannerUrl: null }
   );
 }
 

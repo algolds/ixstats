@@ -1,12 +1,11 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Script to check for duplicate user records and fix the issue
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const DEV_USER_ID = "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo";
 

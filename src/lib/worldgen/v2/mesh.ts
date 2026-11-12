@@ -14,7 +14,6 @@
  * density keeps every cell's true area about the same, and the cells come back in longitude and latitude.
  */
 
-// @ts-expect-error d3-delaunay has no declaration file
 import { Delaunay } from "d3-delaunay";
 import { makeRng } from "./helpers/rng";
 import { createEmptyWorldGraph, type MeshGeometry, type WorldGraph } from "./types";
@@ -70,7 +69,7 @@ export function createMesh(
     }
 
     // Re-triangulate with relaxed points (in place: the buffers are reused)
-    delaunay.points.set(points);
+    (delaunay.points as Float64Array).set(points); // the Float64Array built above; the types say ArrayLike
     voronoi.update();
   }
 

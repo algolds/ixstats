@@ -20,6 +20,30 @@ async function userTalkPageHasMessages(wikiName: string): Promise<boolean> {
   }
 }
 
+/** A user's talk page is looked at again no sooner than this after the last time. */
+export const SYNC_TTL_MS = 5 * 60_000;
+/** Users remembered at most; the oldest are forgotten past this, which only costs them one extra look. */
+const MAX_REMEMBERED_USERS = 5_000;
+const lastSynced = new Map<string, number>();
+
+/** Whether the user's inbox was synced within the TTL; if not, marks it synced now. */
+function syncedRecently(userId: string, now = Date.now()): boolean {
+  const last = lastSynced.get(userId);
+  if (last !== undefined && now - last < SYNC_TTL_MS) return true;
+  lastSynced.delete(userId);
+  lastSynced.set(userId, now);
+  if (lastSynced.size > MAX_REMEMBERED_USERS) {
+    const oldest = lastSynced.keys().next().value;
+    if (oldest !== undefined) lastSynced.delete(oldest);
+  }
+  return false;
+}
+
+/** Forgets every sync time (tests). */
+export function resetWikiTalkSyncThrottle(): void {
+  lastSynced.clear();
+}
+
 export const wikiTalkBridge: BridgeAdapter = {
   async syncInbound(userId: string, db: PrismaClient): Promise<BridgeSyncResult> {
     const result: BridgeSyncResult = {
@@ -27,6 +51,10 @@ export const wikiTalkBridge: BridgeAdapter = {
       conversationsUpdated: 0,
       messagesCreated: 0,
     };
+
+    // Every folder load asks for this sync and it costs two or three queries on the mirror, so a user's
+    // talk page is checked once per TTL, not once per load.
+    if (syncedRecently(userId)) return result;
 
     // The user's own inbox: their first approved claim (a hidden one too), else their passport handle
     const user = await db.user.findFirst({

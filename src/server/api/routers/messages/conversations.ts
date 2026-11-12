@@ -5,11 +5,11 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
+  readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { MAX_GROUP_PARTICIPANTS } from "~/server/modules/messaging";
-import { mapMessagingErrors, messagingFor } from "./_service";
+import { actsAsAdmin, mapMessagingErrors, messagingFor } from "./_service";
 
 const MessageFolderSchema = z.enum([
   "inbox",
@@ -27,20 +27,14 @@ const MessageFolderSchema = z.enum([
   "requests",
 ]);
 
-const MessageSourceSchema = z.enum([
-  "thinkshare",
-  "thinktank",
-  "diplomatic",
-  "wiki",
-  "forum",
-  "system",
-]);
+/** The channels a user starts conversations in; the rest are written by the server alone. */
+const UserSourceSchema = z.enum(["thinkshare", "diplomatic"]);
 
 export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Get conversations filtered by folder — server-side folder classification.
    */
-  getConversationsByFolder: protectedProcedure
+  getConversationsByFolder: readOnlyProcedure
     .input(
       z.object({
         userId: z.string().optional().default(""),
@@ -53,7 +47,7 @@ export const messagesConversationsRouter = createTRPCRouter({
       const messagingService = messagingFor(ctx);
 
       return await messagingService.getConversationsByFolder(ctx.auth.userId, {
-        folder: input.folder as any,
+        folder: input.folder,
         limit: input.limit,
         cursor: input.cursor,
       });
@@ -62,7 +56,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Get single conversation by ID.
    */
-  getConversation: protectedProcedure
+  getConversation: readOnlyProcedure
     .input(z.object({ conversationId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const messagingService = messagingFor(ctx);
@@ -76,7 +70,7 @@ export const messagesConversationsRouter = createTRPCRouter({
   /**
    * Get unread counts per folder for the sidebar badges.
    */
-  getFolderCounts: protectedProcedure
+  getFolderCounts: readOnlyProcedure
     .input(z.object({ userId: z.string().optional().default("") }).optional())
     .query(async ({ ctx }) => {
       const messagingService = messagingFor(ctx);
@@ -104,14 +98,13 @@ export const messagesConversationsRouter = createTRPCRouter({
           .array(z.string().min(1))
           .min(1)
           .max(MAX_GROUP_PARTICIPANTS - 1),
-        source: MessageSourceSchema.optional().default("thinkshare"),
+        source: UserSourceSchema.optional().default("thinkshare"),
         name: z.string().optional(),
         conversationType: z.enum(["personal", "diplomatic", "official"]).optional(),
         diplomaticClassification: z
           .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
           .optional(),
         priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
-        encrypted: z.boolean().optional(),
         channelType: z.enum(["BILATERAL", "MULTILATERAL", "EMERGENCY"]).optional(),
       })
     )
@@ -123,11 +116,12 @@ export const messagesConversationsRouter = createTRPCRouter({
           messagingService.createConversation(ctx.auth.userId, {
             participantIds: input.participantIds,
             subject: input.name,
-            source: input.source as any,
+            source: input.source,
             conversationType: input.conversationType,
             diplomaticClassification: input.diplomaticClassification,
             priority: input.priority,
             channelType: input.channelType,
+            actorIsAdmin: actsAsAdmin(ctx),
           }),
         { forbidden: "You cannot start this conversation" }
       );

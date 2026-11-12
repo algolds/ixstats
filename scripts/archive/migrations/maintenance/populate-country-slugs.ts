@@ -3,10 +3,10 @@
  * Run with: bunx tsx scripts/populate-country-slugs.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { generateSlug } from "../src/lib/slug-utils";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("Starting slug population for countries...\n");

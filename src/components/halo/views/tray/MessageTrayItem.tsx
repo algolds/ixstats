@@ -13,32 +13,32 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { focusRing } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
+import { stripHtml } from "~/lib/utils/sanitize-html";
 
+/** The account fields a tray row shows, as `formatMessagesConversation` returns them. */
+interface TrayAccount {
+  displayName?: string | null;
+  profileImageUrl?: string | null;
+  countryName?: string | null;
+  countryFlag?: string | null;
+}
+
+/** One row of the messages list (`api.messages.*`), in the shape `formatMessagesConversation` returns. */
 export interface MessageTrayConversation {
   id: string;
-  title?: string | null;
+  name?: string | null;
   type?: string;
   source?: string;
   lastMessageAt?: Date | string | number | null;
   unreadCount?: number;
-  participants?: Array<{
-    userId: string;
-    name?: string | null;
-    avatarUrl?: string | null;
-    countryName?: string | null;
-    countryFlag?: string | null;
-  }>;
-  messages?: Array<{
-    id: string;
-    content: string;
-    createdAt: Date | string | number;
-    userId: string;
-  }>;
+  /** Everyone but the viewer; each entry carries its account under `account`. */
+  otherParticipants?: Array<TrayAccount & { account?: TrayAccount | null }>;
+  otherParticipant?: TrayAccount | null;
+  lastMessage?: { content: string } | null;
 }
 
 interface MessageTrayItemProps {
   conversation: MessageTrayConversation;
-  currentUserId?: string | null;
   relativeTime: (ts: string | number | Date) => string;
   onClick: (conv: MessageTrayConversation) => void;
   onDismiss?: (conv: MessageTrayConversation) => void;
@@ -48,7 +48,6 @@ interface MessageTrayItemProps {
 
 export function MessageTrayItem({
   conversation,
-  currentUserId,
   relativeTime,
   onClick,
   onDismiss,
@@ -56,17 +55,20 @@ export function MessageTrayItem({
   onExpandToggle,
 }: MessageTrayItemProps) {
   const isUnread = (conversation.unreadCount ?? 0) > 0;
+  // The server already leaves the viewer out of the participants.
   const otherParticipant =
-    conversation.participants?.find((p) => p.userId !== currentUserId) ??
-    conversation.participants?.[0];
+    conversation.otherParticipant ?? conversation.otherParticipants?.[0]?.account;
 
-  const latestMessage = conversation.messages?.[0];
   const displayTitle =
-    conversation.title || otherParticipant?.name || otherParticipant?.countryName || "Dispatch";
+    conversation.name ||
+    otherParticipant?.displayName ||
+    otherParticipant?.countryName ||
+    "Dispatch";
 
-  const excerpt = latestMessage?.content || "No messages yet";
+  const lastText = conversation.lastMessage ? stripHtml(conversation.lastMessage.content) : "";
+  const excerpt = lastText || "No messages yet";
   // oxlint-disable-next-line
-  const timestamp = conversation.lastMessageAt || latestMessage?.createdAt || Date.now();
+  const timestamp = conversation.lastMessageAt ?? Date.now();
 
   const isDiplomatic = conversation.source === "diplomatic" || conversation.type === "diplomatic";
 
@@ -151,9 +153,9 @@ export function MessageTrayItem({
                     showTooltip={false}
                   />
                 </div>
-              ) : otherParticipant?.avatarUrl ? (
+              ) : otherParticipant?.profileImageUrl ? (
                 <img
-                  src={assetUrl(otherParticipant.avatarUrl) ?? undefined}
+                  src={assetUrl(otherParticipant.profileImageUrl) ?? undefined}
                   alt=""
                   className="ring-separator h-8 w-8 rounded-full object-cover ring-1"
                 />

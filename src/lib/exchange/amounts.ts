@@ -10,8 +10,8 @@ export function fromCents(c: number): number {
   return c / 100;
 }
 
-/** Convert a stored database `bigint` cent value into a safe integer `number` of cents. */
-export function centsOf(b: bigint): number {
+/** Convert a stored cent value (database `bigint`, or a number from an aggregate default) into a safe integer `number` of cents. */
+export function centsOf(b: bigint | number): number {
   const n = Number(b);
   if (!Number.isSafeInteger(n)) {
     throw new RangeError(`Cents value out of safe integer range: ${b}`);

@@ -11,6 +11,7 @@ import { ErrorLogger, FeedbackLogger } from "~/lib/logging";
 import { SYSTEM_OWNER_IDS } from "~/lib/auth/system-owner-constants";
 import { notificationAPI } from "~/lib/notifications/api";
 import { TRPCError } from "@trpc/server";
+import { directThreadWhere } from "~/server/modules/messaging/direct-thread";
 
 export const userLoggingRouter = createTRPCRouter({
   /**
@@ -75,7 +76,7 @@ export const userLoggingRouter = createTRPCRouter({
               { id: { in: Array.from(SYSTEM_OWNER_IDS) } },
             ],
           },
-          select: { id: true },
+          select: { id: true, clerkUserId: true },
         });
 
         const submitterName =
@@ -104,20 +105,15 @@ export const userLoggingRouter = createTRPCRouter({
           );
         }
 
-        // Deliver direct message in ThinkShare for each admin
+        // Deliver direct message in ThinkShare for each admin: an ordinary (writable) direct thread, so the
+        // admin can reply; `system` threads are read-only broadcasts.
+        // ThinkShare participants and senders are Clerk ids; ctx.user.id and admin.id are internal ids.
+        const submitterClerkId = ctx.auth.userId;
         for (const admin of admins) {
           if (admin.id === ctx.user.id) continue;
           try {
             let conv = await ctx.db.thinkshareConversation.findFirst({
-              where: {
-                type: "direct",
-                source: "system",
-                participants: {
-                  every: {
-                    userId: { in: [ctx.user.id, admin.id] },
-                  },
-                },
-              },
+              where: directThreadWhere(submitterClerkId, admin.clerkUserId, { source: "thinkshare" }),
             });
 
             if (!conv) {
@@ -125,12 +121,12 @@ export const userLoggingRouter = createTRPCRouter({
                 data: {
                   name: `Feedback: ${input.feedbackType}`,
                   type: "direct",
-                  source: "system",
+                  source: "thinkshare",
                   lastActivity: new Date(),
                   participants: {
                     create: [
-                      { userId: ctx.user.id, role: "member" },
-                      { userId: admin.id, role: "admin" },
+                      { userId: submitterClerkId, role: "member" },
+                      { userId: admin.clerkUserId, role: "admin" },
                     ],
                   },
                 },
@@ -145,9 +141,9 @@ export const userLoggingRouter = createTRPCRouter({
             await ctx.db.thinkshareMessage.create({
               data: {
                 conversationId: conv.id,
-                userId: ctx.user.id,
+                userId: submitterClerkId,
                 content: feedbackContent,
-                source: "system",
+                source: "thinkshare",
                 isSystem: true,
               },
             });

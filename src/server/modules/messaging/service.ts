@@ -22,22 +22,35 @@ import {
   type SearchUsersInput,
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
+  type SetConversationPreferencesInput,
 } from "./contracts";
 import { MessagingQueryOperations } from "./query-operations";
 import { MessagingMessageOperations } from "./message-operations";
 import { MessagingConversationOperations } from "./conversation-operations";
+import { MessagingPreferenceOperations } from "./preferences";
 
 export class MessagingService {
-  private db: any;
   private queries: MessagingQueryOperations;
   private messages: MessagingMessageOperations;
   private conversations: MessagingConversationOperations;
+  private preferences: MessagingPreferenceOperations;
 
   constructor(dependencies: MessagingDependencies) {
-    this.db = dependencies.db;
     this.queries = new MessagingQueryOperations(dependencies);
     this.messages = new MessagingMessageOperations(dependencies);
     this.conversations = new MessagingConversationOperations(dependencies);
+    this.preferences = new MessagingPreferenceOperations(dependencies);
+  }
+
+  public async getConversationPreferences(actorId: string) {
+    return await this.preferences.getConversationPreferences(actorId);
+  }
+
+  public async setConversationPreferences(
+    actorId: string,
+    input: SetConversationPreferencesInput
+  ) {
+    return await this.preferences.setConversationPreferences(actorId, input);
   }
 
   public async getConversationsByFolder(actorId: string, input: GetConversationsByFolderInput) {

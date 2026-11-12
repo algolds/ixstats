@@ -5,10 +5,10 @@
  * This creates user records with system owner privileges and handles country access
  */
 
-import { PrismaClient } from "@prisma/client";
 import { UserManagementService } from "../src/lib/user-management-service";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // Your specific user IDs
 const DEV_USER_ID = "user_2zqmDdZvhpNQWGLdAIj2YwH8MLo";

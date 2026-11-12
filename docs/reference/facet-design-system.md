@@ -72,7 +72,7 @@ The app palette has one colour per app, never shared:
 The Forum Red tint (hue 13) was retired with the XenForo bridge app in ThinkPages forum phase 4b; the native forum wears ThinkPages' Commons leather.
 
 - `data-app="builder"` changes only the primary action (flat gold); its tint stays the default.
-- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own. ThinkTanks and Messages use the same scope, so their primaries are Commons leather too.
+- `data-app="thinkpages"` also paints its primary action in the app tint, so the forum's New thread, Post and Reply read as ThinkPages' own. ThinkTanks use the same scope, so their primaries are Commons leather too. Messages lives under Home and wears its ink.
 
 Tint is a real accent everywhere:
 
@@ -108,7 +108,7 @@ Components that provide each layer:
 - Pane: `Card`. Well: a `Card` nested inside a `Card`, or `variant="well"`.
 - Chrome: `FacetMaterial layer="chrome"` (sidebar, tab bar, toolbars, map controls, Halo).
 - Overlay: `Dialog`, `AlertDialog`, `Sheet`, `Popover`, `HoverCard`, `Select`, `Tooltip`, toasts, and `FacetMaterial layer="overlay"`.
-- Lens: `FacetMaterial layer="lens"`, `Card variant="lens"`, or any top-level `Card` inside `LensSurface` (nested Cards stay wells; `SurfaceReset` makes overlays panes again). Every lens points at one shared filter, `#facet-lens` (`LensFilter`, rendered once in the root layout), whose units are the lens's own box. The physics are fixed: the edge band, the strength and the dispersion (red bends least, blue most) are one material everywhere. The front page is the reference: the hero, the featured realm, the feed and the Wiki pane; the dashboard and country-profile hero panels use the same frosted Lens over their map or cover.
+- Lens: `LensCard` (the standard Lens card, section 6), `FacetMaterial layer="lens"` for a panel that is not a card, `Card variant="lens"`, or any top-level `Card` inside `LensSurface` (nested Cards stay wells; `SurfaceReset` makes overlays panes again). Every lens points at one shared filter, `#facet-lens` (`LensFilter`, rendered once in the root layout), whose units are the lens's own box. The physics are fixed: the edge band, the strength and the dispersion (red bends least, blue most) are one material everywhere. The front page is the reference: the hero, the featured realm, the feed and the Wiki pane; the dashboard and country-profile hero panels use the same frosted Lens over their map or cover.
 
 Rules:
 
@@ -117,8 +117,8 @@ Rules:
 - Layer utilities paint only. They never set position, z-index, radius, margin or letter-spacing; the component owns those.
 - Reduce Transparency makes Pane, Chrome and Overlay opaque. Increase Contrast strengthens hairlines and labels. Both themes are supported.
 - Do not write `backdrop-blur-*`, glass fills or elevation outside `layers.css`.
-- A Lens is a choice for a surface, made by the owner: the brand hero over a decorative backdrop (a monogram such as `facet-monogram`, art, a map), the dashboard and country-profile hero panels, the MyCountry header title, over the flag or the MyCountry monogram, and the front page's content panes (owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass. Elsewhere content stays on a Pane until the owner extends it.
-- Front page rail cards each sit over a faint repeating monogram texture (`MonogramBackdrop`, `--monogram-strength` 6% against the hero's 11%) so their rims have something to bend.
+- Lens is the standard material for cards that float beside the content (owner ruling 2026-11-11): every Inspector aside card, side rail card and featured card is a `LensCard`, and every Inspector aside wraps its cards in `LensSurface`, so a plain `Card` there is a Lens too (without the backdrop). The brand hero and the hero panels over a map or cover (dashboard, country profile, the MyCountry header title) use `FacetMaterial layer="lens"`. Feeds, tables and forms stay on a Pane; the one exception is the front page feed (`facet-lens-flat`, owner ruling 2026-11-08). Never on Chrome or an Overlay, and never glass on glass.
+- A `LensCard` sits over a flat wash of its app's tint (`--tint-wash`, 8% in light and 16% in dark, where the tints are pale) and two planes of the monogram grain (6% against the hero's 11%) that drift against the mouse, so the refraction moves. The card itself never moves (owner ruling 2026-11-11); only the brand hero's Lens has the mercury squish (`useMercuryLens`).
 - A Lens samples what is painted beneath it inside its nearest ancestor with opacity, a filter or a mask. Keep it outside those: to fade it with its content, give the Lens the same animation as a sibling rather than nesting it.
 - The refraction needs Chromium (`url()` filters on backdrops). Elsewhere a Lens is a plain frosted pane, so the design must hold without the bend. Reduce Transparency and Increase Contrast make it solid.
 
@@ -204,22 +204,23 @@ Import from `~/components/ui/*`. Feature code never imports `@radix-ui/*`; the w
   - `ShellPageHeader` and `shellPageTitleProps` handle pages that own their title (see `shell.css`).
 - `EntityHeader`: the header of an entity page (country, person, organisation). Unboxed on the Canvas. Props: `art` (identity art), `name` (the `<h1>`), `facts`, and at most one `action`. It sets `data-content="entity"`.
 - `Card` is a Pane at the top level and a Well inside another `Card`.
-  - `variant`: `pane | well`. Leave it unset and let nesting decide; set `well` to force the inset look.
+  - `variant`: `pane | well | lens`. Leave it unset and let nesting decide; set `well` to force the inset look. For a Lens card use `LensCard`.
   - `content`: a `ContentType` (section 4). Sets `data-content`.
   - `padding`: `none | sm | md | lg`. A pane defaults to `none` (parts supply padding); a well defaults to `md`.
   - `interactive` adds press and lift feedback and makes a clickable card a keyboard-operable button.
   - Parts: `CardHeader`, `CardTitle` (takes an `icon`, rendered tinted), `CardDescription`, `CardContent`, `CardFooter`.
   - `SurfaceReset` marks an overlay surface so Cards inside it are panes again. The overlay primitives already wrap their children in it.
 - `CutoutCard` is the feature or media card with the notched corner, the surface for collectibles. Dense UI (lists, tables, forms) uses `Card`.
-- `FacetMaterial layer="chrome" | "overlay"` (default `chrome`) is the primitive for floating glass. Do not use it for content cards.
+- `LensCard` (`~/components/ui/lens-card`) is the standard Lens card: a drop-in `Card` (same props, minus `variant`) plus `app`, the app whose tint washes the glass and colours the card's accents. Inside an overlay it renders a plain pane. Use it for Inspector, rail and featured cards (section 3).
+- `FacetMaterial layer="chrome" | "overlay" | "lens"` (default `chrome`) is the primitive for floating glass and for Lens panels that are not cards. Do not use it for content cards.
 - `Signal`: an inline semantic banner. Props: `tone` (`info | success | warning | destructive`), `title`, optional body, optional `onDismiss` (omit for critical signals). At most one per section.
-- `Inspector`: the one optional trailing column of a page, 320px wide and sticky from 1280px up, a `Sheet` below that. Props: `title`, `open`, `onOpenChange`. Use it for entity details, a table of contents or supporting data in Wells.
+- `Inspector`: the one optional trailing column of a page, 320px wide and sticky from 1280px up, a `Sheet` below that. Props: `title`, `open`, `onOpenChange`. Use it for entity details, a table of contents or supporting data in Wells. Cards in the aside are Lenses; the sheet keeps panes.
 - `FlagWatermark` (`~/components/ui/facet`) is identity art for entity pages and heroes that have not moved to `EntityHeader` yet. Do not add it elsewhere.
 
 ### Actions and data
 
 - `Button`: variants `default | destructive | outline | secondary | ghost | link`; sizes `default | xs | sm | lg | icon | icon-sm | icon-lg`.
-  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` (the forum, plus ThinkTanks and Messages, which wear that scope) it is the Commons leather app tint. Never hand-roll a gold or gradient button.
+  - `default` is the primary and is monochrome. Inside `data-app="mycountry"` and `"builder"` it is flat gold, and inside `data-app="thinkpages"` (the forum, plus ThinkTanks, which wear that scope) it is the Commons leather app tint. Never hand-roll a gold or gradient button.
   - Pressed is a colour change. There is no scale and no glow.
   - One primary per surface. Use `asChild` to render a link.
 - `Badge`: 7 variants (`default`, `secondary`, `success`, `warning`, `destructive`, `info`, `outline`). Status and count chips only. Pair colour with text or an icon.
@@ -279,7 +280,8 @@ Name every group with `aria-label` or `aria-labelledby`. Never hand-roll roving 
   - Text size: `--text-scale`, 0.9 to 1.3. Use the text styles so it applies.
   - Density: `compact:` variant. Control heights are `--control-height-sm|md|lg`; use them, not fixed heights.
   - Sound off: `data-sound="off"`.
-- A top-of-page hero leaves by `scroll-dissolve` (`interaction.css`, owner ruling 2026-11-08): it scrolls 1:1 with the page, nothing collapses, and each line dissolves as it reaches a band fixed just under Halo (Apple's scroll edge effect). Free scroll, no snapping, no scroll parallax. Pointer parallax on such a backdrop uses `springSmooth` on mouse pointers only, and is off under Reduce Motion.
+- A top-of-page hero leaves by `scroll-dissolve` (`interaction.css`, owner ruling 2026-11-08): it scrolls 1:1 with the page, nothing collapses, and each line dissolves as it reaches a band fixed just under Halo (Apple's scroll edge effect). Free scroll, no snapping, no scroll parallax. Pointer parallax on such a backdrop uses `springSmooth` on mouse pointers only (`usePointerParallax`), and is off under Reduce Motion.
+- Cards never move with the pointer: a `LensCard`'s backdrop drifts, not the card or its text. The mercury squish (`useMercuryLens`) belongs to the brand hero alone.
 - Targets are at least 44px on coarse pointers (`hitSlop`). Focus is a 2px tint outline (`focusRing`).
 
 ## 9. Copy

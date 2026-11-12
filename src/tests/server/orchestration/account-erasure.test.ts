@@ -468,6 +468,22 @@ describe("eraseAccount", () => {
     ]);
   });
 
+  it("removes a conversation the erasure leaves with nobody in it, and keeps the shared and ThinkTank ones", async () => {
+    await db.thinkshareConversation.create({ data: { id: "notes", type: "direct" } });
+    await db.conversationParticipant.create({
+      data: { conversationId: "notes", userId: "alice-clerk" },
+    });
+    await db.thinkshareConversation.create({ data: { id: "tank", type: "group", source: "thinktank" } });
+    await db.conversationParticipant.create({
+      data: { conversationId: "tank", userId: "alice-clerk" },
+    });
+
+    await eraseAccount(db, "alice", deps, NOW);
+
+    const left = (await db.thinkshareConversation.findMany({})).map((c) => c.id).sort();
+    expect(left).toEqual(["c1", "tank"]);
+  });
+
   it("erases personal rows keyed on either id, and the social graph both ways", async () => {
     await eraseAccount(db, "alice", deps, NOW);
     expect(count(await db.wikiAccountLink.findMany({}))).toBe(0);

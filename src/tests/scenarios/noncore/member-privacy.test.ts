@@ -46,6 +46,7 @@ import { batchResolveMessagingAccounts } from "~/server/modules/messaging/accoun
 import { resolveDisplayNames, UNKNOWN_DISPLAY_NAME } from "~/server/shared/display-names";
 import { recordHeartbeat, resetPresenceForTests } from "~/server/shared/presence";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { answerMessagingSql } from "~/tests/helpers/messaging-sql";
 import { addIxnay, addNation } from "~/tests/helpers/nation-world";
 import { createMockCallerContext } from "~/tests/helpers/router-context";
 
@@ -80,7 +81,7 @@ beforeEach(async () => {
   jest.spyOn(console, "warn").mockImplementation(() => undefined);
   mockThinktankActivity.mockClear();
   resetPresenceForTests();
-  db = createMemoryPrisma();
+  db = answerMessagingSql(createMemoryPrisma());
   mockDb = db;
   await addIxnay(db as never);
   await addNation(db as never, { id: "omaria", name: "Omaria", baselineDate: new Date() });
@@ -314,7 +315,7 @@ it("keeps a message from outside Hana's audience as a request, and honours both 
   const svc = createMessagingService({
     db: db as never,
     notifications: notifications as never,
-    websocket: { broadcastToUsers: jest.fn() } as never,
+    websocket: { broadcastMessage: jest.fn() } as never,
   });
   const told = (who: string) =>
     notifications.create.mock.calls.filter(([n]) => n.userId === who).length;
@@ -410,7 +411,7 @@ it("keeps a message from outside Hana's audience as a request, and honours both 
       folder: "conversations",
     } as never);
     const conv = conversations.find((c: { id: string }) => c.id === request.id);
-    return conv.otherParticipants[0].isOnline;
+    return conv?.otherParticipants[0]?.isOnline;
   };
   expect(await hanaOnline()).toBe(false);
   await privacy("hana", { showOnlineStatus: true });
@@ -428,7 +429,7 @@ it("admits only members to a ThinkTank chat, keeps each message its author's, an
   const svc = createMessagingService({
     db: db as never,
     notifications: { create: jest.fn().mockResolvedValue("n") } as never,
-    websocket: { broadcastToUsers: jest.fn() } as never,
+    websocket: { broadcastMessage: jest.fn() } as never,
   });
   const groupId = await economists();
   const group = await thinktanks(as("omar")).getThinktankById({ groupId });
@@ -562,7 +563,7 @@ async function innerCircle() {
   const svc = createMessagingService({
     db: db as never,
     notifications: { create: jest.fn().mockResolvedValue("n") } as never,
-    websocket: { broadcastToUsers: jest.fn() } as never,
+    websocket: { broadcastMessage: jest.fn() } as never,
   });
   const circle = await thinktanks(as("omar")).createThinktank({
     name: "Inner Circle",
@@ -597,7 +598,8 @@ it.each([
   await expect(
     svc.getConversationMessages(userId, { conversationId: ids[target] } as never)
   ).rejects.toMatchObject(forbidden);
-  await expect(svc.getConversation(userId, ids[target])).rejects.toMatchObject(forbidden);
+  // A read of a conversation they are not in answers null, as for an id that names nothing
+  await expect(svc.getConversation(userId, ids[target])).resolves.toBeNull();
   await expect(
     svc.sendMessage(userId, { conversationId: ids[target], content: "I'm in" } as never)
   ).rejects.toMatchObject(forbidden);

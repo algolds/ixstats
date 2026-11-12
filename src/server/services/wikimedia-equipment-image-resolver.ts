@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Wikimedia Equipment Image Resolver Service
  *
@@ -5,9 +6,7 @@
  * Provides intelligent fallback search and caching strategies.
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const THUMBNAIL_WIDTH = 300;
 const CACHE_DURATION_DAYS = 7;

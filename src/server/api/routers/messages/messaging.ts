@@ -5,13 +5,15 @@
 import { z } from "zod";
 import {
   createTRPCRouter,
-  protectedProcedure,
+  readOnlyProcedure,
   adminProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
 import { validateNoXSS } from "~/lib/utils";
-import { MAX_MESSAGE_LENGTH } from "~/server/modules/messaging";
+import { MAX_MESSAGE_LENGTH, reactionsForViewer } from "~/server/modules/messaging";
+import type { UserAccount } from "~/server/modules/messaging/contracts";
 import { messagingFor, mapMessagingErrors } from "./_service";
+import { AttachmentsSchema, SafeUrl } from "./_schemas";
 
 /** A message body: bounded like a ThinkPages post, and refused (BAD_REQUEST) when it carries unsafe HTML. */
 const MessageContent = z
@@ -23,11 +25,107 @@ const MessageContent = z
       "Message contains potentially unsafe HTML. Please avoid using script tags, javascript: URLs, or event handlers.",
   });
 
+/** The accounts the resolver found, with a stand-in for one it did not. */
+function accountOf(accountMap: Map<string, UserAccount>, userId: string): UserAccount {
+  return (
+    accountMap.get(userId) ?? {
+      id: userId,
+      username: userId,
+      displayName: "Unknown",
+      profileImageUrl: null,
+      countryFlag: null,
+      countryName: null,
+      country: null,
+      accountType: "country",
+    }
+  );
+}
+
+/** A stored JSON list (mentions, attachments): empty when absent or unreadable. */
+function parseList(raw: string | null): unknown[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+interface MessageRow {
+  id: string;
+  conversationId: string;
+  userId: string;
+  content: string;
+  messageType: string;
+  replyToId: string | null;
+  reactions: string | null;
+  mentions: string | null;
+  attachments: string | null;
+  isSystem: boolean;
+  ixTimeTimestamp: Date;
+  editedAt: Date | null;
+  deletedAt: Date | null;
+  source: string;
+  classification: string | null;
+  priority: string | null;
+  subject: string | null;
+  replyTo: {
+    id: string;
+    userId: string;
+    content: string;
+    deletedAt: Date | null;
+    ixTimeTimestamp: Date;
+  } | null;
+}
+
+const DELETED_TEXT = "This message was deleted";
+
+/**
+ * A message as the client reads it. `reactions` is a count per emoji and `myReactions` the emojis the viewer
+ * reacted with; `replyTo` carries the quoted message's sender in `account`.
+ */
+function toMessageDto(m: MessageRow, accountMap: Map<string, UserAccount>, viewerId: string) {
+  const deleted = m.deletedAt !== null;
+  return {
+    id: m.id,
+    conversationId: m.conversationId,
+    accountId: m.userId,
+    account: accountOf(accountMap, m.userId),
+    content: deleted ? DELETED_TEXT : m.content,
+    messageType: m.messageType || "text",
+    replyToId: m.replyToId,
+    replyTo: m.replyTo
+      ? {
+          id: m.replyTo.id,
+          accountId: m.replyTo.userId,
+          account: accountOf(accountMap, m.replyTo.userId),
+          content: m.replyTo.deletedAt ? DELETED_TEXT : m.replyTo.content,
+          ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
+        }
+      : null,
+    ...reactionsForViewer(m.reactions, viewerId),
+    mentions: deleted ? [] : parseList(m.mentions),
+    attachments: deleted ? [] : parseList(m.attachments),
+    isSystem: m.isSystem,
+    ixTimeTimestamp: m.ixTimeTimestamp,
+    createdAt: m.ixTimeTimestamp,
+    editedAt: m.editedAt,
+    deletedAt: m.deletedAt,
+    source: m.source || "thinkshare",
+    classification: m.classification,
+    priority: m.priority,
+    subject: m.subject,
+    // Per-message receipt rows are no longer kept (see markMessagesAsRead); "seen" comes from getSeenState.
+    readReceipts: [] as { id: string; accountId: string; readAt: Date }[],
+  };
+}
+
 export const messagesMessagingRouter = createTRPCRouter({
   /**
    * Get messages for a conversation (source-aware).
    */
-  getConversationMessages: protectedProcedure
+  getConversationMessages: readOnlyProcedure
     .input(
       z.object({
         conversationId: z.string().min(1),
@@ -47,58 +145,9 @@ export const messagesMessagingRouter = createTRPCRouter({
             cursor: input.cursor,
           });
 
-          const messages = result.messages.map((m: any) => ({
-            id: m.id,
-            conversationId: m.conversationId,
-            accountId: m.userId,
-            account: result.accountMap.get(m.userId) ?? {
-              id: m.userId,
-              username: m.userId,
-              displayName: "Unknown",
-              profileImageUrl: null,
-              accountType: "country" as const,
-            },
-            content: m.deletedAt ? "This message was deleted" : m.content,
-            messageType: m.messageType || "text",
-            replyToId: m.replyToId,
-            replyTo: m.replyTo
-              ? {
-                  id: m.replyTo.id,
-                  accountId: m.replyTo.userId,
-                  content: m.replyTo.deletedAt ? "This message was deleted" : m.replyTo.content,
-                  ixTimeTimestamp: m.replyTo.ixTimeTimestamp,
-                }
-              : null,
-            reactions: m.reactions
-              ? typeof m.reactions === "string"
-                ? JSON.parse(m.reactions)
-                : m.reactions
-              : {},
-            mentions: m.mentions
-              ? typeof m.mentions === "string"
-                ? JSON.parse(m.mentions)
-                : m.mentions
-              : [],
-            attachments: m.attachments
-              ? typeof m.attachments === "string"
-                ? JSON.parse(m.attachments)
-                : m.attachments
-              : [],
-            isSystem: Boolean(m.isSystem),
-            ixTimeTimestamp: m.ixTimeTimestamp,
-            createdAt: m.ixTimeTimestamp,
-            editedAt: m.editedAt,
-            deletedAt: m.deletedAt,
-            source: m.source || "thinkshare",
-            classification: m.classification,
-            priority: m.priority,
-            subject: m.subject,
-            readReceipts: (m.readReceipts || []).map((r: any) => ({
-              id: r.id,
-              accountId: r.userId,
-              readAt: r.readAt,
-            })),
-          }));
+          const messages = result.messages.map((m) =>
+            toMessageDto(m, result.accountMap, ctx.auth.userId)
+          );
 
           return { messages, nextCursor: result.nextCursor };
         },
@@ -115,25 +164,16 @@ export const messagesMessagingRouter = createTRPCRouter({
         conversationId: z.string(),
         userId: z.string().optional().default(""),
         content: MessageContent,
-        messageType: z.enum(["text", "image", "file", "system"]).default("text"),
+        messageType: z.enum(["text", "image", "file"]).default("text"),
         replyToId: z.string().optional(),
-        mentions: z.array(z.string()).optional(),
-        attachments: z
-          .array(
-            z.object({
-              type: z.string(),
-              url: z.string(),
-              filename: z.string().optional(),
-              size: z.number().optional(),
-            })
-          )
-          .optional(),
+        mentions: z.array(z.string().min(1).max(128)).max(50).optional(),
+        attachments: AttachmentsSchema.optional(),
         // Diplomatic extensions
         classification: z
           .enum(["PUBLIC", "RESTRICTED", "CONFIDENTIAL", "SECRET", "TOP_SECRET"])
           .optional(),
         priority: z.enum(["LOW", "NORMAL", "HIGH", "URGENT", "CRITICAL"]).optional(),
-        subject: z.string().optional(),
+        subject: z.string().max(200).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,6 +186,10 @@ export const messagesMessagingRouter = createTRPCRouter({
             content: input.content,
             replyToId: input.replyToId,
             attachments: input.attachments,
+            messageType: input.messageType,
+            mentions: input.mentions,
+            classification: input.classification,
+            priority: input.priority,
             subject: input.subject,
           }),
         { forbidden: "You are not a participant in this conversation" }
@@ -267,13 +311,14 @@ export const messagesMessagingRouter = createTRPCRouter({
   sendAdminBroadcast: adminProcedure
     .input(
       z.object({
-        title: z.string().min(1),
-        description: z.string().optional(),
-        message: z.string().optional(),
+        title: z.string().min(1).max(200),
+        description: z.string().max(2000).optional(),
+        message: z.string().max(2000).optional(),
         category: z.string().optional().default("system"),
         level: z.enum(["low", "medium", "high", "critical"]).default("medium"),
         type: z.string().optional().default("system"),
-        href: z.string().optional(),
+        // Rendered as a link in the notice card: a path on this site or an https: URL, never javascript: or //host.
+        href: SafeUrl.optional(),
         scope: z.enum(["global", "country", "user"]).default("global"),
         countryId: z.string().optional(),
         userId: z.string().optional(),
@@ -295,8 +340,9 @@ export const messagesMessagingRouter = createTRPCRouter({
     .input(
       z.object({
         targetUserId: z.string().min(1),
-        content: z.string().min(1),
-        subject: z.string().optional(),
+        // The same bounded, XSS-checked body as any message: a body carrying unsafe HTML is refused.
+        content: MessageContent,
+        subject: z.string().max(200).optional(),
         source: z
           .enum(["thinkshare", "thinktank", "diplomatic", "wiki", "forum", "system"])
           .default("system"),
@@ -307,8 +353,6 @@ export const messagesMessagingRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      validateNoXSS(input.content);
-
       const messagingService = messagingFor(ctx);
 
       const actorId = ctx.auth?.userId || "system-admin";

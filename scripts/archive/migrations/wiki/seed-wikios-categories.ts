@@ -8,14 +8,14 @@
  * 100% Native Prisma PostgreSQL — Zero MariaDB / MySQL dependencies.
  */
 
-import { PrismaClient } from "@prisma/client";
 import dotenv from "dotenv";
+import { createPrismaClient } from "~/server/prisma-client";
 
 dotenv.config({ path: ".env.local.dev" });
 dotenv.config({ path: ".env.local" });
 dotenv.config({ path: ".env" });
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 function toArticleSlug(str: string): string {
   return str.trim().toLowerCase().replace(/ /g, "_").replace(/_{2,}/g, "_") || "category";

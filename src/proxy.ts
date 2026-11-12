@@ -1,4 +1,5 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import { isProtectedPath, isPublicPath } from "~/lib/security/route-patterns";
 import {
   type NextRequest,
   type NextFetchEvent,
@@ -24,46 +25,8 @@ const BASE_PATH = process.env.BASE_PATH || "";
 // oxlint-disable-next-line typescript/no-unused-vars
 const ENABLE_COMPRESSION = process.env.ENABLE_COMPRESSION === "true";
 
-const isProtectedRoute = createRouteMatcher([
-  "/admin(.*)",
-  "/settings(.*)",
-  "/builder(.*)",
-  "/mycountry(.*)",
-  "/dashboard(.*)",
-  "/vault(.*)",
-  "/messages(.*)",
-  "/myclub(.*)",
-  "/myleague(.*)",
-  "/stashes(.*)",
-  "/setup(.*)",
-  "/thinktanks(.*)",
-  "/util/lorewards(.*)",
-  "/blurbs/submit(.*)",
-  "/blurbs/mine(.*)",
-]);
-
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/id(.*)",
-  "/@(.*)",
-  "/r/(.*)",
-  "/api(.*)",
-  "/countries",
-  "/countries/(.*)",
-  // Feed posts and persona profiles are public (ThinkPages phase 5 moved them under /dashboard).
-  "/dashboard/post/(.*)",
-  "/dashboard/profile/(.*)",
-  "/thinkpages",
-  "/thinkpages/(.*)",
-  "/maps",
-  "/maps/(.*)",
-  // The Exchange is public to watch; its mutations need sign-in (docs/specs/2026-11-06-exchange-overhaul-design.md).
-  "/exchange",
-  "/exchange/(.*)",
-  "/IxEconomy.xlsx",
-]);
+const isProtectedRoute = (req: NextRequest) => isProtectedPath(req.nextUrl.pathname);
+const isPublicRoute = (req: NextRequest) => isPublicPath(req.nextUrl.pathname);
 
 // Note: Clerk configuration check is now performed dynamically in getClerkMiddleware()
 

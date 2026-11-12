@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   ChatBubble as MessageCircle,
@@ -13,7 +13,9 @@ import {
 } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
-import { Button, buttonVariants } from "~/components/ui/button";
+import { CardTitle } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
+import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -21,93 +23,59 @@ import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { cn } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
-import { Card } from "~/components/ui/card";
 import { assetUrl } from "~/lib/base-path";
 
-export function BlurbSection() {
+/** The dashboard's "Daily blurb": today's prompt straight on the card's Lens glass; the whole prompt opens the response sheet, and hover only tints the question. */
+export function DailyBlurbCard() {
   const [modalOpen, setModalOpen] = useState(false);
-  const questionId = useId();
   const { data: prompt, isLoading } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
     staleTime: 5 * 60_000,
   });
 
   if (isLoading) {
     return (
-      <Card className="no-wiki-tooltip space-y-3 p-4">
-        <div className="flex items-center justify-between">
-          <Skeleton className="rounded-control-sm h-4 w-28" />
-          <Skeleton className="h-4 w-16 rounded-full" />
-        </div>
-        <div className="space-y-2 py-1">
-          <Skeleton className="rounded-control-sm h-4 w-full" />
-          <Skeleton className="rounded-control-sm h-4 w-4/5" />
-        </div>
-        <div className="flex items-center justify-between pt-1">
-          <Skeleton className="rounded-control-sm h-3 w-20" />
-          <Skeleton className="h-7 w-20 rounded-full" />
-        </div>
-      </Card>
+      <LensCard app="wiki" padding="md" className="space-y-3">
+        <Skeleton className="rounded-control-sm h-4 w-24" />
+        <Skeleton className="rounded-row h-20" />
+      </LensCard>
     );
   }
-
   if (!prompt) return null;
 
   const responseCount = prompt._count?.responses ?? 0;
 
   return (
-    <>
-      {/* The whole card is the button (no nested controls), so "Respond" is its visual label. */}
-      <Card
-        interactive
-        padding="md"
+    <LensCard app="wiki" padding="md" className="no-wiki-tooltip space-y-3">
+      <CardTitle icon={<Quote />}>Daily blurb</CardTitle>
+      <button
+        type="button"
         onClick={() => setModalOpen(true)}
-        aria-label="Open blurb of the day"
-        aria-describedby={questionId}
-        className="no-wiki-tooltip flex flex-col justify-between"
+        className="group/blurb rounded-control-sm focus-visible:outline-tint block w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4"
       >
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-headline text-label">Blurb of the day</h2>
-          <Badge variant="secondary">Daily prompt</Badge>
-        </div>
-
-        <div className="space-y-3">
-          {/* Prompt question */}
-          <div className="space-y-1">
-            {prompt.title && <p className="text-subhead text-label-secondary">{prompt.title}</p>}
-            <blockquote id={questionId} className="text-label text-callout line-clamp-3">
-              &ldquo;{prompt.question}&rdquo;
-            </blockquote>
-          </div>
-
-          {/* Footer meta and call to action */}
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-label-secondary text-footnote flex items-center gap-2">
-              <MessageCircle aria-hidden className="size-3.5" />
-              <span className="tabular-nums">{responseCount}</span>
-              {responseCount === 1 ? "response" : "responses"}
-            </span>
-
-            <span
-              aria-hidden
-              className={buttonVariants({
-                variant: "secondary",
-                size: "sm",
-                className: "pointer-events-none rounded-full",
-              })}
-            >
-              <span>Respond</span>
-              <ChevronRight />
-            </span>
-          </div>
-        </div>
-      </Card>
+        {prompt.title && (
+          <span className="text-label-secondary text-footnote block truncate">{prompt.title}</span>
+        )}
+        <span className="text-label text-headline group-hover/blurb:text-tint duration-fast mt-0.5 block transition-colors">
+          &ldquo;{prompt.question}&rdquo;
+        </span>
+        <span className="text-label-secondary text-footnote mt-1 flex items-center justify-between gap-2">
+          <span className="flex items-center gap-1 tabular-nums">
+            <MessageCircle aria-hidden className="size-3.5" />
+            {responseCount} {responseCount === 1 ? "response" : "responses"}
+          </span>
+          <span className="text-tint flex items-center font-semibold">
+            Respond
+            <ChevronRight aria-hidden className="size-3.5" />
+          </span>
+        </span>
+      </button>
 
       <BlurbResponseModal
         open={modalOpen}
         onCloseAction={() => setModalOpen(false)}
         prompt={prompt}
       />
-    </>
+    </LensCard>
   );
 }
 

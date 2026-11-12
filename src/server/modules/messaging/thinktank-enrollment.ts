@@ -50,3 +50,22 @@ export async function enrollThinktankMember(
     })
     .catch(() => null);
 }
+
+/**
+ * Whether `actorId` has lost the right to read a realm board's chat although a participant row remains: the board
+ * no longer counts them a member (their nation was banned, or they gave the nation up). Any other conversation, and
+ * any other ThinkTank chat, is never revoked here.
+ */
+export async function realmBoardChatRevoked(
+  db: EnrollmentDb,
+  conversation: { source?: string | null; sourceId?: string | null },
+  actorId: string
+): Promise<boolean> {
+  if (conversation.source !== "thinktank" || !conversation.sourceId) return false;
+  const group = await db.thinktankGroup.findUnique({
+    where: { id: conversation.sourceId },
+    select: { id: true, type: true },
+  });
+  if (!group || !isRealmBoard(group)) return false;
+  return !(await getRealmBoardAccess(db, group.id, actorId)).isMember;
+}

@@ -1,12 +1,11 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Script to check what role ID cmgn9cbl600244kyxt8z60ola corresponds to
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const ROLE_ID = "cmgn9cbl600244kyxt8z60ola";
 

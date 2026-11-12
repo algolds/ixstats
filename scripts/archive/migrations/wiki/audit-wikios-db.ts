@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
+import { createPrismaClient } from "~/server/prisma-client";
 
 function loadEnvFile(filename: string) {
   const filePath = join(process.cwd(), filename);
@@ -27,9 +28,7 @@ loadEnvFile(".env");
 loadEnvFile(".env.local");
 loadEnvFile(".env.local.dev");
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("==================================================================");

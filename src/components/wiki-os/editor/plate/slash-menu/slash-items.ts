@@ -40,7 +40,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: "H2",
     category: "Basic Blocks",
     execute: (editor) => {
-      Transforms.setNodes(editor as never, { type: "h2" } as Partial<Descendant>);
+      Transforms.setNodes<Descendant>(editor as never, { type: "h2" } as Partial<Descendant>);
     },
   },
   {
@@ -50,7 +50,7 @@ export const SLASH_ITEMS: SlashItem[] = [
     icon: "H3",
     category: "Basic Blocks",
     execute: (editor) => {
-      Transforms.setNodes(editor as never, { type: "h3" } as Partial<Descendant>);
+      Transforms.setNodes<Descendant>(editor as never, { type: "h3" } as Partial<Descendant>);
     },
   },
   {

@@ -15,7 +15,6 @@ import { EmptyState, type EmptyStateProps } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
 import { Card } from "~/components/ui/card";
 
-type FeedTab = "all" | "following" | "community";
 
 /**
  * Collapses runs of consecutive items sharing a non-null `keyOf` into one `build(run, start)`
@@ -189,17 +188,8 @@ function wikiChangesAsFeed(changes: any[]): any[] {
     });
 }
 
-/** Picks the stream for a tab, topping it up with wiki changes when the feed has none. */
-function selectFeed(tab: FeedTab, activities: any[] | undefined, wikiItems: any[]): any[] {
-  if (tab === "community") {
-    const fromFeed = (activities ?? []).filter((a) => a.source === "wiki" || a.source === "forum");
-    if (fromFeed.length === 0 && wikiItems.length > 0) return wikiItems;
-    const merged = [...fromFeed];
-    for (const item of wikiItems) {
-      if (!merged.some((m) => m.id === item.id)) merged.push(item);
-    }
-    return newestFifty(merged);
-  }
+/** The global feed, topped up with wiki changes when it has none. */
+function selectFeed(activities: any[] | undefined, wikiItems: any[]): any[] {
   if (!activities) return [];
   const hasWiki = activities.some((a) => a.source === "wiki");
   return !hasWiki && wikiItems.length > 0 ? newestFifty([...activities, ...wikiItems]) : activities;
@@ -215,39 +205,28 @@ export function FeedEmpty(props: EmptyStateProps) {
 }
 
 export function UnifiedFeedContent({
-  activeTab,
   excludeAchievements = false,
   ...handlers
-}: FeedHandlers & { activeTab: FeedTab; excludeAchievements?: boolean }) {
+}: FeedHandlers & { excludeAchievements?: boolean }) {
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
     { limit: 50 },
     { refetchInterval: 60_000, staleTime: 30_000 }
   );
   const { data: wikiRecentChanges } = api.wikios.getRecentChanges.useQuery(
     { limit: 20 },
-    {
-      enabled: activeTab === "all" || activeTab === "community",
-      refetchInterval: 60_000,
-      staleTime: 30_000,
-    }
+    { refetchInterval: 60_000, staleTime: 30_000 }
   );
 
-  const filteredFeed = useMemo(() => {
-    const raw = selectFeed(
-      activeTab,
-      feedData?.activities,
-      wikiChangesAsFeed(wikiRecentChanges ?? [])
-    );
-    const items = excludeAchievements
-      ? raw.filter(
-          (a) =>
-            a.type !== "achievement" &&
-            a.category !== "achievement" &&
-            !(a.source === "activity" && getActivityLabel(a).label === "Achievement")
-        )
-      : raw;
-    return groupRepeatedActivities(groupWikiEdits(items));
-  }, [feedData, wikiRecentChanges, activeTab, excludeAchievements]);
+  const raw = selectFeed(feedData?.activities, wikiChangesAsFeed(wikiRecentChanges ?? []));
+  const items = excludeAchievements
+    ? raw.filter(
+        (a) =>
+          a.type !== "achievement" &&
+          a.category !== "achievement" &&
+          !(a.source === "activity" && getActivityLabel(a).label === "Achievement")
+      )
+    : raw;
+  const filteredFeed = groupRepeatedActivities(groupWikiEdits(items));
 
   if (feedLoading) return <FeedSkeletons />;
 
@@ -255,7 +234,7 @@ export function UnifiedFeedContent({
     return (
       <FeedEmpty
         icon={<Rss />}
-        title={`No recent ${activeTab === "community" ? "community updates" : "activity"}`}
+        title="No recent activity"
         message="Nothing has been posted here recently."
       />
     );

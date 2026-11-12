@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05
 
-**Framework**: Next.js 16.4.3 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
+**Framework**: Next.js 16.4.6 App Router · React 19.3.1 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
 **Design System**: **Facet** (opaque cards, glass only for floating chrome)  
 **Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (95 hook and helper modules)
 

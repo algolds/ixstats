@@ -10,10 +10,10 @@
  *   tsx scripts/audit/verify-country-links.ts (uses DATABASE_URL from environment)
  */
 
-import { PrismaClient } from "@prisma/client";
 import { SYSTEM_OWNER_IDS } from "../../src/lib/auth/system-owner-constants";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const SYSTEM_OWNER_SET = new Set<string>(SYSTEM_OWNER_IDS);
 
 type SummaryRow = {

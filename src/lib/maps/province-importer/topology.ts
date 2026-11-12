@@ -2,7 +2,7 @@
  * Province Topology Validation
  *
  * Detects gaps, overlaps, and coverage issues between imported provinces
- * and the country border. Uses @turf/turf for geometric operations.
+ * and the country border. Uses turf submodules for geometric operations.
  *
  * Client-side compatible (no server dependencies).
  */

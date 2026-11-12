@@ -224,7 +224,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   };
 
   const handleMessageClick = (conv: MessageTrayConversation) => {
-    window.location.href = createAbsoluteUrl(`/messages?conversationId=${conv.id}`);
+    window.location.href = createAbsoluteUrl(`/messages?conversation=${conv.id}`);
   };
 
   const toggleGroup = (key: string) => {
@@ -327,7 +327,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   <MessageTrayItem
                     key={conv.id}
                     conversation={conv}
-                    currentUserId={user?.id}
                     relativeTime={relativeTime}
                     onClick={handleMessageClick}
                     onDismiss={handleDismissMessage}

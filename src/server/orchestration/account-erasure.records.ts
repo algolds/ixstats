@@ -79,6 +79,26 @@ async function eraseSessionsAndSettings(tx: Tx, ids: ErasureIds): Promise<void> 
   await tx.notification.deleteMany({ where });
 }
 
+/**
+ * The user's conversation memberships, then any conversation they leave with nobody in it (their notes to
+ * themselves, a sports desk or feedback thread only they were in). A ThinkTank's chat is kept, since its group
+ * still owns it and rebuilds the participants from its members.
+ */
+async function eraseConversationMemberships(tx: Tx, ids: ErasureIds): Promise<void> {
+  const mine = await tx.conversationParticipant.findMany({
+    where: { userId: both(ids) },
+    select: { conversationId: true },
+  });
+  await tx.conversationParticipant.deleteMany({ where: { userId: both(ids) } });
+  await tx.thinkshareConversation.deleteMany({
+    where: {
+      id: { in: [...new Set(mine.map((p) => p.conversationId))] },
+      source: { not: "thinktank" },
+      participants: { none: {} },
+    },
+  });
+}
+
 /** Connections both ways, follows by the user or their personas, bookmarks, memberships, officer posts and founding-member credits. */
 async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): Promise<void> {
   const where = { userId: both(ids) };
@@ -90,7 +110,7 @@ async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): 
   });
   await tx.thinkpagesPersonalAccount.deleteMany({ where: { clerkUserId: both(ids) } });
   await tx.postBookmark.deleteMany({ where });
-  await tx.conversationParticipant.deleteMany({ where });
+  await eraseConversationMemberships(tx, ids);
   await tx.thinktankMember.deleteMany({ where });
   await tx.realmOfficer.deleteMany({ where });
   await tx.realmFounder.deleteMany({ where });

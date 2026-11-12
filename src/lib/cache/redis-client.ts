@@ -24,7 +24,8 @@ export function getSharedRedis(): Redis | null {
   const url = getEnabledRedisUrl();
   if (!url) return null;
 
-  shared = new Redis(url, { maxRetriesPerRequest: 3, enableOfflineQueue: false });
+  // protocol 2 (RESP2): the reply shapes this code was written for; ioredis 6 defaults to RESP3
+  shared = new Redis(url, { maxRetriesPerRequest: 3, enableOfflineQueue: false, protocol: 2 });
   shared.on("error", (err: Error) => {
     // ioredis emits on every reconnect attempt while Redis is down; log each distinct error once.
     if (err.message === lastErrorMessage) return;

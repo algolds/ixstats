@@ -10,11 +10,11 @@
  *   --dry-run  Show what would be done without writing
  */
 
-import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const GEOJSON_DIR = join(process.cwd(), "scripts", "geojson_fixed");
 const LAYER_TYPES = [

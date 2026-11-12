@@ -85,7 +85,7 @@ function getRedisClient(): Redis | null {
   const redisEnabled = process.env.REDIS_ENABLED === "true";
   if (redisUrl && redisEnabled) {
     try {
-      redis = new Redis(redisUrl, { maxRetriesPerRequest: 3, lazyConnect: true });
+      redis = new Redis(redisUrl, { maxRetriesPerRequest: 3, lazyConnect: true, protocol: 2 });
       redis.on("error", () => {
         /* degrade to network */
       });

@@ -10,12 +10,12 @@
  *   npx tsx scripts/validate-military-equipment-images.ts --fix
  */
 
-import { PrismaClient } from "@prisma/client";
 import * as https from "https";
 import * as http from "http";
 import * as fs from "fs";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface ValidationIssue {
   type: "error" | "warning" | "info";

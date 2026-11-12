@@ -8,10 +8,10 @@
  * Run: npx tsx prisma/seed-blurb-responses.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
+import { createPrismaClient } from "../src/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 // Discord username -> country name (manually curated)
 const DISCORD_TO_COUNTRY: Record<string, string> = {

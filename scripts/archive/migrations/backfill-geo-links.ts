@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Backfill Geo Links (Maps ↔ MyCountry Integration — Phase A)
  *
@@ -20,9 +21,7 @@
  *   bunx tsx scripts/backfill-geo-links.ts --apply    # actually write changes
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const APPLY = process.argv.includes("--apply");
 const DRY_RUN = !APPLY; // default is dry-run; only --apply writes

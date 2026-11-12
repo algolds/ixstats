@@ -46,7 +46,7 @@ export function FrontPageFeed() {
       <h2 id="front-page-activity" className="sr-only">
         Latest activity
       </h2>
-      <UnifiedFeedContent activeTab="all" excludeAchievements {...feedHandlers} />
+      <UnifiedFeedContent excludeAchievements {...feedHandlers} />
     </section>
   );
 }

@@ -10,15 +10,15 @@
  *   bun run scripts/wiki/migrate-historical-revisions.ts --from-db --all
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   getIxWikiPool,
   closeWikiBridge,
 } from "../../src/lib/wiki-os/adapters/mediawiki/bridge/mysql-pool";
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import type mysql from "mysql2/promise";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const NAMESPACE_PREFIXES: Record<number, string> = {
   0: "",

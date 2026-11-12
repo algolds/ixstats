@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Link Dev User to Country
  *
@@ -12,9 +13,7 @@
  *   bunx tsx scripts/link-dev-user-to-country.ts "Caphiria"
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   const countryName = process.argv[2] || "Caphiria";

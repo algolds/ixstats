@@ -17,6 +17,22 @@ if (typeof globalThis.structuredClone === "undefined") {
   globalThis.structuredClone = <T>(value: T): T => deserialize(serialize(value));
 }
 
+// Jest's jsdom 26 window drops Node globals that jsdom 31's undici uses when server code loads jsdom.
+if (typeof globalThis.MessagePort === "undefined") {
+  const { MessageChannel, MessagePort } = require("node:worker_threads");
+  Object.assign(globalThis, { MessageChannel, MessagePort });
+}
+if (typeof globalThis.setImmediate === "undefined") {
+  const { setImmediate, clearImmediate } = require("node:timers");
+  Object.assign(globalThis, { setImmediate, clearImmediate });
+}
+
+// jsdom 26 (Jest's window) has no TextEncoder; pg (Prisma 7's driver) reads it when db.ts loads.
+if (typeof globalThis.TextEncoder === "undefined") {
+  const { TextEncoder, TextDecoder } = require("node:util");
+  Object.assign(globalThis, { TextEncoder, TextDecoder });
+}
+
 // Polyfill Clerk publishable key for test env
 process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_mock_key_for_testing";
 

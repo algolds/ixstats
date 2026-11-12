@@ -9,17 +9,18 @@ jest.mock("~/lib/notifications/api", () => ({
 
 import { createMessagingService } from "~/server/modules/messaging";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { answerMessagingSql } from "~/tests/helpers/messaging-sql";
 
 const ANA = "ana-clerk";
 const BEN = "ben-clerk";
 
 let db: MemoryPrisma;
 let notifications: { create: jest.Mock };
-let websocket: { broadcastToUsers: jest.Mock; evictFromRoom: jest.Mock };
+let websocket: { broadcastMessage: jest.Mock; evictFromRoom: jest.Mock };
 
 function service() {
   notifications = { create: jest.fn().mockResolvedValue("n") };
-  websocket = { broadcastToUsers: jest.fn(), evictFromRoom: jest.fn() };
+  websocket = { broadcastMessage: jest.fn(), evictFromRoom: jest.fn() };
   return createMessagingService({
     db: db as never,
     notifications: notifications as never,
@@ -29,7 +30,7 @@ function service() {
 
 beforeEach(async () => {
   jest.spyOn(console, "log").mockImplementation(() => undefined);
-  db = createMemoryPrisma();
+  db = answerMessagingSql(createMemoryPrisma());
   for (const id of ["ana", "ben"]) {
     await db.user.create({ data: { id, clerkUserId: `${id}-clerk`, lastSeenAt: new Date() } });
   }
