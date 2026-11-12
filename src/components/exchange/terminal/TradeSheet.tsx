@@ -46,6 +46,22 @@ export type TradeInstrument =
 type Side = "buy" | "sell";
 type Run = (side: Side, amount: number, requestId: string, onSuccess: () => void) => void;
 
+/** One attempt's request id, owned by the sheet so switching "Trade as" can start a new attempt. */
+interface Request {
+  id: string;
+  rotate: () => void;
+}
+
+/** A failed mutation's message, only while it belongs to the attempt now on screen. */
+function errorOf(
+  mutation: { error: { message: string } | null; variables?: { requestId?: string } },
+  requestId: string
+): string | null {
+  return mutation.error && mutation.variables?.requestId === requestId
+    ? mutation.error.message
+    : null;
+}
+
 interface FormProps {
   unit: { buy: string; sell: string };
   estimate: (side: Side, amount: number) => string;
@@ -54,6 +70,7 @@ interface FormProps {
   run: Run;
   pending: boolean;
   error: string | null;
+  request: Request;
 }
 
 /** Side and amount in, one request id per attempt: kept on a retry, replaced after a success. */
@@ -65,17 +82,17 @@ function TradeForm({
   run,
   pending,
   error,
+  request,
 }: FormProps) {
   const [side, setSide] = useState<Side>("buy");
   const [raw, setRaw] = useState("");
-  const [requestId, rotate] = useRequestId();
   const amount = Number(raw);
   const allowed = canSubmit ? canSubmit(side) : true;
   const blockedMessage = unavailableReason?.(side) ?? null;
   const valid = allowed && Number.isFinite(amount) && amount > 0;
   const submit = () =>
-    run(side, amount, requestId, () => {
-      rotate();
+    run(side, amount, request.id, () => {
+      request.rotate();
       setRaw("");
     });
   return (
@@ -124,7 +141,8 @@ function useDone() {
 function useFundRun(
   fundCountryId: string | undefined,
   orderOf: (side: Side, amount: number) => FundOrder,
-  own: { run: Run; pending: boolean; error: string | null }
+  own: { run: Run; pending: boolean; error: string | null },
+  requestId: string
 ) {
   const done = useDone();
   const fund = api.exchange.fundTrade.useMutation({ onSuccess: done });
@@ -134,15 +152,17 @@ function useFundRun(
       { countryId: fundCountryId, order: orderOf(side, amount), requestId },
       { onSuccess }
     );
-  return { run, pending: fund.isPending, error: fund.error?.message ?? null };
+  return { run, pending: fund.isPending, error: errorOf(fund, requestId) };
 }
 
 function ShareTrade({
   i,
   fundCountryId,
+  request,
 }: {
   i: Extract<TradeInstrument, { kind: "share" }>;
   fundCountryId?: string;
+  request: Request;
 }) {
   const done = useDone();
   const buy = api.exchange.placeBuyOrder.useMutation({ onSuccess: done });
@@ -168,8 +188,9 @@ function ShareTrade({
     {
       run: ownRun,
       pending: buy.isPending || sell.isPending,
-      error: buy.error?.message ?? sell.error?.message ?? null,
-    }
+      error: errorOf(buy, request.id) ?? errorOf(sell, request.id),
+    },
+    request.id
   );
   return (
     <TradeForm
@@ -180,6 +201,7 @@ function ShareTrade({
       run={run}
       pending={pending}
       error={error}
+      request={request}
     />
   );
 }
@@ -187,9 +209,11 @@ function ShareTrade({
 function BondTrade({
   i,
   fundCountryId,
+  request,
 }: {
   i: Extract<TradeInstrument, { kind: "bond" }>;
   fundCountryId?: string;
+  request: Request;
 }) {
   const done = useDone();
   const primary = api.exchange.buyBondPrimary.useMutation({ onSuccess: done });
@@ -218,8 +242,9 @@ function BondTrade({
     {
       run: ownRun,
       pending: primary.isPending || take.isPending || list.isPending,
-      error: primary.error?.message ?? take.error?.message ?? list.error?.message ?? null,
-    }
+      error: errorOf(primary, request.id) ?? errorOf(take, request.id) ?? errorOf(list, request.id),
+    },
+    request.id
   );
   return (
     <TradeForm
@@ -236,6 +261,7 @@ function BondTrade({
       run={run}
       pending={pending}
       error={error}
+      request={request}
     />
   );
 }
@@ -243,9 +269,11 @@ function BondTrade({
 function FundTrade({
   i,
   fundCountryId,
+  request,
 }: {
   i: Extract<TradeInstrument, { kind: "fund" }>;
   fundCountryId?: string;
+  request: Request;
 }) {
   const done = useDone();
   const buy = api.exchange.buySectorUnits.useMutation({ onSuccess: done });
@@ -269,8 +297,9 @@ function FundTrade({
     {
       run: ownRun,
       pending: buy.isPending || sell.isPending,
-      error: buy.error?.message ?? sell.error?.message ?? null,
-    }
+      error: errorOf(buy, request.id) ?? errorOf(sell, request.id),
+    },
+    request.id
   );
   return (
     <TradeForm
@@ -283,6 +312,7 @@ function FundTrade({
       run={run}
       pending={pending}
       error={error}
+      request={request}
     />
   );
 }
@@ -303,6 +333,8 @@ export function TradeSheet({
   const { isSignedIn } = useAuth();
   const signInHref = useSignInHref();
   const [actor, setActor] = useState<"you" | "treasury">("you");
+  const [requestId, rotate] = useRequestId();
+  const request = { id: requestId, rotate };
   const fundCountryId = treasury && actor === "treasury" ? treasury.countryId : undefined;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -327,7 +359,11 @@ export function TradeSheet({
                   size="sm"
                   aria-label="Trade as"
                   value={actor}
-                  onValueChange={setActor}
+                  onValueChange={(next) => {
+                    setActor(next);
+                    // Another actor is a new attempt: it must not reuse the last one's request id or error.
+                    rotate();
+                  }}
                   options={[
                     { value: "you", label: "You" },
                     { value: "treasury", label: `${treasury.name} Treasury` },
@@ -336,11 +372,11 @@ export function TradeSheet({
               </div>
             )}
             {instrument.kind === "share" ? (
-              <ShareTrade i={instrument} fundCountryId={fundCountryId} />
+              <ShareTrade i={instrument} fundCountryId={fundCountryId} request={request} />
             ) : instrument.kind === "bond" ? (
-              <BondTrade i={instrument} fundCountryId={fundCountryId} />
+              <BondTrade i={instrument} fundCountryId={fundCountryId} request={request} />
             ) : (
-              <FundTrade i={instrument} fundCountryId={fundCountryId} />
+              <FundTrade i={instrument} fundCountryId={fundCountryId} request={request} />
             )}
           </>
         )}

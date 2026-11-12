@@ -105,7 +105,7 @@ async function requireMapEditor(
 
 /** Change the realm's map settings (null removes a key); every other stored setting is kept. */
 export async function updateRealmMapSettings(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   realmId: string,
   changes: RealmMapSettingsChanges

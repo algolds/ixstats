@@ -124,7 +124,7 @@ export const realmMapSettings = (realm: ImportRealm): RealmMapSettings =>
 
 /** Save a georeference as the realm's (Realm.settings.map); other settings keys are kept. */
 export async function saveRealmGeoreference(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   realm: ImportRealm,
   georef: MapGeoreference
 ): Promise<void> {

@@ -304,7 +304,7 @@ export async function loadSourcePreset(
 
 /** The preset's wiki values become the realm's wiki settings, unless the realm already has its own. */
 async function fillRealmWikiFromPreset(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   realmId: string,
   wiki: RealmWikiSettings
 ): Promise<boolean> {

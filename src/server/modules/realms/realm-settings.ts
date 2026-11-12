@@ -1,10 +1,11 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-export type RealmSettingsDb =
-  | PrismaClient
-  | Prisma.TransactionClient
-  | (Pick<Prisma.TransactionClient, "realm"> &
-      Partial<Pick<PrismaClient, "$transaction" | "$queryRaw">>);
+/**
+ * A client that can lock the row: `$queryRaw` is required, so the lock is never skipped. A full client also has
+ * `$transaction` (the update then runs inside one); a transaction client is already inside one and is used as it is.
+ */
+export type RealmSettingsDb = Pick<Prisma.TransactionClient, "realm" | "$queryRaw"> &
+  Partial<Pick<PrismaClient, "$transaction">>;
 
 /** Read-modify-write Realm.settings under a row lock so concurrent writers never drop each other's keys. */
 export async function updateRealmSettings(
@@ -13,12 +14,8 @@ export async function updateRealmSettings(
   mutate: (settings: unknown) => unknown,
   extraData?: Omit<Prisma.RealmUpdateInput, "settings">
 ): Promise<unknown> {
-  const run = async (
-    tx: Pick<Prisma.TransactionClient, "realm"> & Partial<Pick<Prisma.TransactionClient, "$queryRaw">>
-  ) => {
-    if (typeof tx.$queryRaw === "function") {
-      await tx.$queryRaw`SELECT id FROM realms WHERE id = ${realmId} FOR UPDATE`;
-    }
+  const run = async (tx: RealmSettingsDb) => {
+    await tx.$queryRaw`SELECT id FROM realms WHERE id = ${realmId} FOR UPDATE`;
     const row = await tx.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
     const next = mutate(row?.settings ?? null);
     await tx.realm.update({
@@ -27,8 +24,6 @@ export async function updateRealmSettings(
     });
     return next;
   };
-  if ("$transaction" in db && typeof db.$transaction === "function") {
-    return db.$transaction((tx) => run(tx));
-  }
+  if (db.$transaction) return db.$transaction((tx) => run(tx));
   return run(db);
 }

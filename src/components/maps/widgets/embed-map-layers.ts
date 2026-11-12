@@ -5,17 +5,13 @@ import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
 import { toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 import type { useCountryMapEmbedState } from "./hooks/useCountryMapEmbedState";
 
-type EmbedState = ReturnType<typeof useCountryMapEmbedState> & {
-  onFitSettled?: () => void;
-};
+type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
 
+/** Per map, because the state hook returns a new object each render and cannot carry the callback. */
 const fitSettledByMap = new WeakMap<MapLibreMap, () => void>();
 
-export function getEmbedFitSettled(
-  map: MapLibreMap,
-  state?: EmbedState
-): (() => void) | undefined {
-  return state?.onFitSettled ?? fitSettledByMap.get(map);
+export function getEmbedFitSettled(map: MapLibreMap): (() => void) | undefined {
+  return fitSettledByMap.get(map);
 }
 
 export interface EmbedLayerOptions {
@@ -495,7 +491,6 @@ export function populateEmbedMap(
   addSubdivisions(map, o);
   addCountry(map, o);
   const onFitSettled = addCities(map, o);
-  o.state.onFitSettled = onFitSettled;
   if (onFitSettled) fitSettledByMap.set(map, onFitSettled);
   else fitSettledByMap.delete(map);
 

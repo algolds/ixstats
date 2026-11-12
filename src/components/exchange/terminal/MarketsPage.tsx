@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData } from "@tanstack/react-query";
@@ -143,7 +143,8 @@ export function MarketsPage({ realmId }: { realmId: string }) {
   const params = useSearchParams();
   const kind = marketKindOf(params.get("kind"));
   const query = params.get("q") ?? "";
-  const [draft, setDraft] = useState(() => params.get("q") ?? "");
+  // `null` follows the address; a string is text typed but not yet written to it.
+  const [draft, setDraft] = useState<string | null>(null);
   const markets = api.exchange.markets.useQuery(
     { realmId, kind, query: query || undefined },
     { placeholderData: keepPreviousData }
@@ -157,11 +158,20 @@ export function MarketsPage({ realmId }: { realmId: string }) {
     if (!next.has("kind")) next.set("kind", kind);
     router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   };
+  // The debounce fires later than the render that scheduled it, so it reads the newest `update`
+  // (current params and kind) instead of the one it closed over.
+  const latestUpdate = useRef(update);
   useEffect(() => {
-    if (draft === query) return;
-    const timer = setTimeout(() => update("q", draft), 250);
+    latestUpdate.current = update;
+  });
+  useEffect(() => {
+    if (draft === null) return;
+    const timer = setTimeout(() => {
+      latestUpdate.current("q", draft);
+      setDraft(null);
+    }, 250);
     return () => clearTimeout(timer);
-  }, [draft, query]);
+  }, [draft]);
   return (
     <div className="space-y-4">
       <Card content="data" padding="lg" className="space-y-4">
@@ -180,7 +190,7 @@ export function MarketsPage({ realmId }: { realmId: string }) {
           <SearchField
             className="w-full sm:w-72"
             placeholder={`Search ${KIND_LABELS[kind].toLowerCase()}`}
-            value={draft}
+            value={draft ?? query}
             autoFocus={params.get("focus") === "search"}
             onValueChange={setDraft}
           />
@@ -190,12 +200,12 @@ export function MarketsPage({ realmId }: { realmId: string }) {
         ) : (markets.data ?? []).length === 0 ? (
           <div className="flex items-center justify-between gap-3 py-4">
             <p className="text-footnote text-label-secondary">Nothing listed here yet.</p>
-            {(draft || query) && (
+            {(draft ?? query) && (
               <Button
                 size="xs"
                 variant="ghost"
                 onClick={() => {
-                  setDraft("");
+                  setDraft(null);
                   update("q", "");
                 }}
               >

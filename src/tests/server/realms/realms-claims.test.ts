@@ -385,7 +385,7 @@ describe("listClaims", () => {
     await claims.listClaims(admin, "pending");
     const { include, take, orderBy } = db.realmClaim.findMany.mock.calls[0][0];
     expect(take).toBe(500);
-    expect(orderBy).toEqual([{ createdAt: "desc" }, { id: "desc" }]);
+    expect(orderBy).toEqual([{ createdAt: "asc" }, { id: "asc" }]);
     expect(include.user.select).toEqual({
       id: true,
       clerkUserId: true,

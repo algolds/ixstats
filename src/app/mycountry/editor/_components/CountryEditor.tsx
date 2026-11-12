@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { City, Community, Language, WhiteFlag } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -208,10 +208,31 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
   ];
 }
 
+const hashWatchers = new Set<() => void>();
+
+/** The address's hash is the current section; `replaceState` fires no `hashchange`, so jumps notify directly. */
+function watchHash(notify: () => void) {
+  hashWatchers.add(notify);
+  window.addEventListener("hashchange", notify);
+  return () => {
+    hashWatchers.delete(notify);
+    window.removeEventListener("hashchange", notify);
+  };
+}
+
+function readHashId(): string {
+  try {
+    return decodeURIComponent(window.location.hash.slice(1)) || "name";
+  } catch {
+    return "name";
+  }
+}
+
 /** Scrolls to a section and keeps the address on it without adding a history entry. */
 function jumpTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ block: "start" });
   window.history.replaceState(window.history.state, "", `#${id}`);
+  hashWatchers.forEach((notify) => notify());
 }
 
 function EditorNav({
@@ -345,7 +366,7 @@ export function CountryEditor({ countryId }: { countryId: string }) {
   const [state, setState] = useState<EditorState | null>(null);
   const [reloads, setReloads] = useState<SectionReloads>({});
   const [conflicts, setConflicts] = useState<EditorSectionId[]>([]);
-  const [activeId, setActiveId] = useState<string>("name");
+  const activeId = useSyncExternalStore(watchHash, readHashId, () => "name");
 
   useEffect(() => {
     if (query.data && !state) setState(query.data);
@@ -366,11 +387,7 @@ export function CountryEditor({ countryId }: { countryId: string }) {
 
   const loaded = !!state;
   useEffect(() => {
-    if (loaded && window.location.hash) {
-      const hashId = decodeURIComponent(window.location.hash.slice(1));
-      setActiveId(hashId);
-      document.getElementById(hashId)?.scrollIntoView();
-    }
+    if (loaded && window.location.hash) document.getElementById(readHashId())?.scrollIntoView();
   }, [loaded]);
 
   if (query.isError && !state) {
@@ -393,11 +410,6 @@ export function CountryEditor({ countryId }: { countryId: string }) {
 
   const groups = editorGroups(state, reloads);
   const flagUrl = normalizeFlagUrl(state.flag);
-
-  const handleJump = (id: string) => {
-    setActiveId(id);
-    jumpTo(id);
-  };
 
   // Takes the latest values for the sections in conflict only, and remounts just those.
   const reloadConflicts = async () => {
@@ -446,7 +458,7 @@ export function CountryEditor({ countryId }: { countryId: string }) {
           )}
 
           <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-            <EditorNav groups={groups} activeId={activeId} onSelect={handleJump} />
+            <EditorNav groups={groups} activeId={activeId} onSelect={jumpTo} />
             <div className="flex min-w-0 flex-col gap-6">
               {groups.map((group) => (
                 <div
@@ -471,7 +483,7 @@ export function CountryEditor({ countryId }: { countryId: string }) {
           group.sections.map((s) => ({ id: s.id, label: s.label }))
         )}
         currentId={activeId}
-        onJump={handleJump}
+        onJump={jumpTo}
       />
       <LeaveGuard />
     </EditorProvider>

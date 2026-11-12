@@ -13,7 +13,10 @@ const mocks = {
   listBondUnits: jest.fn(),
   buySectorUnits: jest.fn(),
   sellSectorUnits: jest.fn(),
+  fundTrade: jest.fn(),
 };
+type MutationState = { error: { message: string } | null; variables?: { requestId: string } };
+const states: Partial<Record<keyof typeof mocks, MutationState>> = {};
 const successes: Record<string, (() => void) | undefined> = {};
 let mockSignedIn = true;
 
@@ -28,7 +31,7 @@ jest.mock("~/trpc/react", () => {
   const mutation = (name: keyof typeof mocks) => ({
     useMutation: (options: Options = {}) => {
       successes[name] = options.onSuccess;
-      return { mutate: mocks[name], isPending: false, error: null };
+      return { mutate: mocks[name], isPending: false, error: null, ...states[name] };
     },
   });
   return {
@@ -42,7 +45,7 @@ jest.mock("~/trpc/react", () => {
         listBondUnits: mutation("listBondUnits"),
         buySectorUnits: mutation("buySectorUnits"),
         sellSectorUnits: mutation("sellSectorUnits"),
-        fundTrade: { useMutation: () => ({ mutate: jest.fn(), isPending: false, error: null }) },
+        fundTrade: mutation("fundTrade"),
       },
     },
   };
@@ -61,6 +64,7 @@ const share = {
 
 beforeEach(() => {
   for (const m of Object.values(mocks)) m.mockReset();
+  for (const name of Object.keys(states)) delete states[name as keyof typeof mocks];
   mockSignedIn = true;
 });
 
@@ -144,5 +148,37 @@ describe("TradeSheet", () => {
     );
     expect(screen.getByText("No units available to buy right now")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+  });
+
+  describe("Trade as", () => {
+    const treasury = { countryId: "x1", name: "Caphiria" };
+    const sheet = () => (
+      <TradeSheet instrument={share} treasury={treasury} open onOpenChange={() => undefined} />
+    );
+
+    it("starts a new attempt, with a new request id, when the actor changes", () => {
+      render(sheet());
+      buy("10");
+      const own = mocks.placeBuyOrder.mock.calls[0]![0].requestId as string;
+      fireEvent.click(screen.getByRole("radio", { name: "Caphiria Treasury" }));
+      fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+      const fund = mocks.fundTrade.mock.calls[0]![0].requestId as string;
+      expect(fund).not.toBe(own);
+    });
+
+    it("drops the other actor's failed attempt instead of showing it again", () => {
+      const { rerender } = render(sheet());
+      buy("10");
+      states.placeBuyOrder = {
+        error: { message: "No shares for sale" },
+        variables: { requestId: mocks.placeBuyOrder.mock.calls[0]![0].requestId },
+      };
+      rerender(sheet());
+      expect(screen.getByText("No shares for sale")).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole("radio", { name: "Caphiria Treasury" }));
+      fireEvent.click(screen.getByRole("radio", { name: "You" }));
+      expect(screen.queryByText("No shares for sale")).toBeNull();
+    });
   });
 });

@@ -23,7 +23,8 @@ const CLI_ARGS = ["scripts/audit/wikios-proof.ts", "run", "--profile", "recurrin
  * a development PORT (.env says 3000), and the cron must run with the web process's BASE_PATH (defaulting to
  * /projects/ixstates when unset, while BASE_PATH="" stays empty).
  */
-const IXSTATES_ENV = { PORT: "3550", BASE_PATH: process.env.BASE_PATH ?? "/projects/ixstates" };
+const IXSTATES_PORT = "3550";
+const IXSTATES_BASE_PATH = "/projects/ixstates";
 
 interface WikiosProofResult {
   passed: true;
@@ -77,8 +78,8 @@ function runCli(): Promise<CliExit> {
       cwd: process.cwd(),
       env: {
         ...process.env,
-        ...IXSTATES_ENV,
-        BASE_PATH: process.env.BASE_PATH ?? IXSTATES_ENV.BASE_PATH,
+        PORT: IXSTATES_PORT,
+        BASE_PATH: process.env.BASE_PATH ?? IXSTATES_BASE_PATH,
       },
       stdio: ["ignore", "pipe", "pipe"],
     });

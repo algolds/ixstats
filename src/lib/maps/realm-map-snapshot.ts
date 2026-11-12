@@ -223,7 +223,7 @@ async function reliefWithTiles(realmId: string, relief: RealmRasterLayer | null)
 
 /** Put the realm's generation record and relief layer entry back; its other settings are kept. */
 async function restoreRealmState(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   realmId: string,
   state: SnapshotRealm
 ): Promise<void> {

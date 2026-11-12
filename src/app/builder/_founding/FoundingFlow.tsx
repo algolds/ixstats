@@ -332,8 +332,7 @@ export function FoundingFlowView() {
     : "";
   const nationName = draft.identity.name.trim();
   const flagUrl = draft.identity.flagUrl.trim() || null;
-  const canReset =
-    resumed || draft.start.applied || Boolean(nationName) || Boolean(draft.imported);
+  const canReset = resumed || draft.start.applied || Boolean(nationName) || Boolean(draft.imported);
   const primaryLabel =
     step === "review" ? "Found nation" : draft.returnToReview ? "Back to review" : "Continue";
 
@@ -380,239 +379,238 @@ export function FoundingFlowView() {
           />
         </FacetMaterial>
 
-      {step === "realm" && (
-        <RealmStep
-          ref={headingRef}
-          realms={realmData?.realms ?? []}
-          value={shownRealmId}
-          onChange={(realmId) => setDraft((current) => ({ ...current, realmId }))}
-          error={attempted.realm && !shownRealmId ? "Choose a realm to continue." : undefined}
+        {step === "realm" && (
+          <RealmStep
+            ref={headingRef}
+            realms={realmData?.realms ?? []}
+            value={shownRealmId}
+            onChange={(realmId) => setDraft((current) => ({ ...current, realmId }))}
+            error={attempted.realm && !shownRealmId ? "Choose a realm to continue." : undefined}
+          />
+        )}
+        {step === "start" && (
+          <StartStep
+            // A new suggestion remounts the grid on the suggestion's era.
+            key={draft.imported?.suggestedArchetype ?? "none"}
+            ref={headingRef}
+            selection={draft.start.selection}
+            suggested={draft.imported?.suggestedArchetype ?? null}
+            importedTitle={draft.imported?.title ?? null}
+            onSelect={(key) =>
+              setDraft((current) => ({ ...current, start: { ...current.start, selection: key } }))
+            }
+            onImport={() => setImportOpen(true)}
+            onBlank={() => chooseStart(null)}
+            error={
+              attempted.start && draft.start.selection === null && !draft.start.applied
+                ? "Choose a kind of nation, or start blank."
+                : undefined
+            }
+          />
+        )}
+        {step === "identity" && (
+          <IdentityStep
+            ref={headingRef}
+            identity={draft.identity}
+            errors={identityErrors}
+            moreOpen={moreOpen}
+            onMoreOpenChange={setMoreOpen}
+            onChange={(field, value) =>
+              setDraft((current) => ({
+                ...current,
+                identity: { ...current.identity, [field]: value },
+              }))
+            }
+          />
+        )}
+        {step === "government" && (
+          <GovernmentStep
+            ref={headingRef}
+            government={draft.government}
+            onChooseForm={(formId) =>
+              setDraft((current) => ({
+                ...current,
+                government: chooseForm(current.government, formId),
+              }))
+            }
+            onToggleComponent={(type) =>
+              setDraft((current) => ({
+                ...current,
+                government: toggleComponent(current.government, type),
+              }))
+            }
+            onRename={(key, value) =>
+              setDraft((current) => ({
+                ...current,
+                government: renameInstitution(current.government, key, value),
+              }))
+            }
+            onResetComponents={() =>
+              setDraft((current) => ({
+                ...current,
+                government: { ...current.government, components: null },
+              }))
+            }
+            onApplyPreset={(components) =>
+              setDraft((current) => ({
+                ...current,
+                government: applyPreset(current.government, components),
+              }))
+            }
+          />
+        )}
+        {step === "economy" && (
+          <EconomyStep
+            ref={headingRef}
+            draft={draft}
+            errors={economyErrors}
+            onPopulationBand={(band) =>
+              setDraft((current) => ({
+                ...current,
+                economy: { ...current.economy, populationBand: band, exactPopulation: null },
+              }))
+            }
+            onWealthBand={(band) =>
+              setDraft((current) => ({
+                ...current,
+                economy: { ...current.economy, wealthBand: band, exactGdpPerCapita: null },
+              }))
+            }
+            onExact={(field, value) =>
+              setDraft((current) => ({
+                ...current,
+                economy: { ...current.economy, [field]: value },
+              }))
+            }
+            onReset={(field) => {
+              const typical = getArchetypeOption(draft.start.archetypeKey)?.display;
+              setDraft((current) => ({
+                ...current,
+                economy:
+                  field === "exactPopulation"
+                    ? {
+                        ...current.economy,
+                        exactPopulation: null,
+                        populationBand: typical?.typicalPopulationBand ?? null,
+                      }
+                    : {
+                        ...current.economy,
+                        exactGdpPerCapita: null,
+                        wealthBand: typical?.typicalWealthBand ?? null,
+                      },
+              }));
+            }}
+          />
+        )}
+        {step === "review" && (
+          <ReviewStep
+            ref={headingRef}
+            draft={draft}
+            realmName={realmName}
+            showRealm={chooseRealm}
+            summary={summary}
+            stale={stale}
+            error={foundError}
+            onEdit={editFromReview}
+          />
+        )}
+
+        <FoundingFooter
+          canGoBack={index > 0}
+          onBack={handleBack}
+          primaryLabel={primaryLabel}
+          onPrimary={handleContinue}
+          primaryDisabled={founding}
+          onOpenNation={() => setNationOpen(true)}
+          status={status}
+          resumed={resumed}
+          onRetry={retry}
         />
-      )}
-      {step === "start" && (
-        <StartStep
-          // A new suggestion remounts the grid on the suggestion's era.
-          key={draft.imported?.suggestedArchetype ?? "none"}
-          ref={headingRef}
-          selection={draft.start.selection}
-          suggested={draft.imported?.suggestedArchetype ?? null}
-          importedTitle={draft.imported?.title ?? null}
-          onSelect={(key) =>
-            setDraft((current) => ({ ...current, start: { ...current.start, selection: key } }))
-          }
-          onImport={() => setImportOpen(true)}
-          onBlank={() => chooseStart(null)}
-          error={
-            attempted.start && draft.start.selection === null && !draft.start.applied
-              ? "Choose a kind of nation, or start blank."
-              : undefined
-          }
-        />
-      )}
-      {step === "identity" && (
-        <IdentityStep
-          ref={headingRef}
-          identity={draft.identity}
-          errors={identityErrors}
-          moreOpen={moreOpen}
-          onMoreOpenChange={setMoreOpen}
-          onChange={(field, value) =>
-            setDraft((current) => ({
-              ...current,
-              identity: { ...current.identity, [field]: value },
-            }))
-          }
-        />
-      )}
-      {step === "government" && (
-        <GovernmentStep
-          ref={headingRef}
-          government={draft.government}
-          onChooseForm={(formId) =>
-            setDraft((current) => ({
-              ...current,
-              government: chooseForm(current.government, formId),
-            }))
-          }
-          onToggleComponent={(type) =>
-            setDraft((current) => ({
-              ...current,
-              government: toggleComponent(current.government, type),
-            }))
-          }
-          onRename={(key, value) =>
-            setDraft((current) => ({
-              ...current,
-              government: renameInstitution(current.government, key, value),
-            }))
-          }
-          onResetComponents={() =>
-            setDraft((current) => ({
-              ...current,
-              government: { ...current.government, components: null },
-            }))
-          }
-          onApplyPreset={(components) =>
-            setDraft((current) => ({
-              ...current,
-              government: applyPreset(current.government, components),
-            }))
-          }
-        />
-      )}
-      {step === "economy" && (
-        <EconomyStep
-          ref={headingRef}
-          draft={draft}
-          errors={economyErrors}
-          onPopulationBand={(band) =>
-            setDraft((current) => ({
-              ...current,
-              economy: { ...current.economy, populationBand: band, exactPopulation: null },
-            }))
-          }
-          onWealthBand={(band) =>
-            setDraft((current) => ({
-              ...current,
-              economy: { ...current.economy, wealthBand: band, exactGdpPerCapita: null },
-            }))
-          }
-          onExact={(field, value) =>
-            setDraft((current) => ({ ...current, economy: { ...current.economy, [field]: value } }))
-          }
-          onReset={(field) => {
-            const typical = getArchetypeOption(draft.start.archetypeKey)?.display;
-            setDraft((current) => ({
-              ...current,
-              economy:
-                field === "exactPopulation"
-                  ? {
-                      ...current.economy,
-                      exactPopulation: null,
-                      populationBand: typical?.typicalPopulationBand ?? null,
-                    }
-                  : {
-                      ...current.economy,
-                      exactGdpPerCapita: null,
-                      wealthBand: typical?.typicalWealthBand ?? null,
-                    },
-            }));
+
+        <Inspector title="Nation" open={nationOpen} onOpenChange={setNationOpen}>
+          <Card padding="md" content="data">
+            <NationCard summary={summary} stale={stale} />
+          </Card>
+        </Inspector>
+
+        <ImportSheet
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onApply={(nation, keep) => {
+            setDraft((current) => applyImport(current, nation, keep));
+            setImportOpen(false);
+            if (step !== "start") goTo("start");
           }}
         />
-      )}
-      {step === "review" && (
-        <ReviewStep
-          ref={headingRef}
-          draft={draft}
-          realmName={realmName}
-          showRealm={chooseRealm}
-          summary={summary}
-          stale={stale}
-          error={foundError}
-          onEdit={editFromReview}
-        />
-      )}
 
-      <FoundingFooter
-        canGoBack={index > 0}
-        onBack={handleBack}
-        primaryLabel={primaryLabel}
-        onPrimary={handleContinue}
-        primaryDisabled={founding}
-        onOpenNation={() => setNationOpen(true)}
-        status={status}
-        resumed={resumed}
-        onRetry={retry}
-      />
+        <AlertDialog
+          open={pendingStart !== null}
+          onOpenChange={(open) => !open && setPendingStart(null)}
+        >
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Switch to {pendingLabel}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Switching to {pendingLabel} replaces your size, wealth and government. Your name,
+                flag and other identity stay.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep what I have</AlertDialogCancel>
+              <Button
+                type="button"
+                onClick={() => {
+                  const key = pendingStart?.key ?? null;
+                  setPendingStart(null);
+                  applyStartAndGo(key);
+                }}
+              >
+                Switch
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      <Inspector title="Nation" open={nationOpen} onOpenChange={setNationOpen}>
-        <Card padding="md" content="data">
-          <NationCard summary={summary} stale={stale} />
-        </Card>
-      </Inspector>
+        <AlertDialog
+          open={confirmDialog === "found"}
+          onOpenChange={(open) => !founding && !open && setConfirmDialog(null)}
+        >
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Found {nationName}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {nationName} will be founded{realmName ? ` in ${realmName}` : ""} and become your
+                active nation there.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={founding}>Not yet</AlertDialogCancel>
+              <Button type="button" disabled={founding} onClick={() => void handleFound()}>
+                {founding ? "Founding…" : "Found nation"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      <ImportSheet
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onApply={(nation, keep) => {
-          setDraft((current) => applyImport(current, nation, keep));
-          setImportOpen(false);
-          if (step !== "start") goTo("start");
-        }}
-      />
-
-      <AlertDialog
-        open={pendingStart !== null}
-        onOpenChange={(open) => !open && setPendingStart(null)}
-      >
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Switch to {pendingLabel}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Switching to {pendingLabel} replaces your size, wealth and government. Your name, flag
-              and other identity stay.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep what I have</AlertDialogCancel>
-            <Button
-              type="button"
-              onClick={() => {
-                const key = pendingStart?.key ?? null;
-                setPendingStart(null);
-                applyStartAndGo(key);
-              }}
-            >
-              Switch
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={confirmDialog === "found"}
-        onOpenChange={(open) => !founding && !open && setConfirmDialog(null)}
-      >
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Found {nationName}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {nationName} will be founded{realmName ? ` in ${realmName}` : ""} and become your
-              active nation there.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={founding}>Not yet</AlertDialogCancel>
-            <Button type="button" disabled={founding} onClick={() => void handleFound()}>
-              {founding ? "Founding…" : "Found nation"}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog
-        open={confirmDialog === "reset"}
-        onOpenChange={(open) => !open && setConfirmDialog(null)}
-      >
-        <AlertDialogContent className="sm:max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Start over?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This clears your current draft so you can start building from scratch.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep draft</AlertDialogCancel>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => void handleResetDraft()}
-            >
-              Start over
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <AlertDialog
+          open={confirmDialog === "reset"}
+          onOpenChange={(open) => !open && setConfirmDialog(null)}
+        >
+          <AlertDialogContent className="sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Start over?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This clears your current draft so you can start building from scratch.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Keep draft</AlertDialogCancel>
+              <Button type="button" variant="destructive" onClick={() => void handleResetDraft()}>
+                Start over
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </LensSurface>
   );

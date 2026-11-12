@@ -297,4 +297,38 @@ describe("the country editor", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "Leave" }));
     expect(mockPush).toHaveBeenCalledWith("/mycountry/economy?tab=budget");
   });
+
+  describe("the current section", () => {
+    const sectionLinks = () =>
+      screen.getAllByRole("link").filter((link) => link.getAttribute("href")?.startsWith("#"));
+    const current = () =>
+      sectionLinks()
+        .filter((link) => link.getAttribute("aria-current") === "location")
+        .map((link) => link.getAttribute("href"));
+    afterEach(() => window.history.replaceState(null, "", "#"));
+
+    it("starts on the section in the address, or the first", () => {
+      const first = render(<MyCountryEditorPage />);
+      expect(current()).toEqual(["#name"]);
+      const secondHref = sectionLinks()[1]!.getAttribute("href")!;
+      first.unmount();
+
+      window.history.replaceState(null, "", secondHref);
+      render(<MyCountryEditorPage />);
+      expect(current()).toEqual([window.location.hash]);
+    });
+
+    it("follows a nav click and the address changing on its own", () => {
+      render(<MyCountryEditorPage />);
+      const [, second, third] = sectionLinks();
+      fireEvent.click(second!);
+      expect(current()).toEqual([second!.getAttribute("href")]);
+
+      act(() => {
+        window.history.replaceState(null, "", third!.getAttribute("href")!);
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
+      });
+      expect(current()).toEqual([third!.getAttribute("href")]);
+    });
+  });
 });

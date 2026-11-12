@@ -74,4 +74,48 @@ describe("CompactView toast peek", () => {
     });
     expect(screen.queryByText("Treaty ratified")).toBeNull();
   });
+
+  it("does not re-peek an older queued toast when the newest is dismissed", () => {
+    render(
+      <CompactView
+        mode="compact"
+        isSticky
+        isCollapsed={false}
+        setIsCollapsed={jest.fn()}
+        setIsUserInteracting={jest.fn()}
+        onSwitchMode={jest.fn()}
+        activePlugin={null}
+        pluginCenter={null}
+        pluginActions={undefined}
+        pluginBadge={undefined}
+      />
+    );
+
+    act(() => {
+      useToastQueueStore
+        .getState()
+        .enqueue({ title: "Older toast", type: "info", priority: "high" });
+    });
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByText("Older toast")).toBeNull();
+
+    let newestId = "";
+    act(() => {
+      newestId = useToastQueueStore.getState().enqueue({
+        title: "Newest toast",
+        type: "info",
+        priority: "high",
+      });
+    });
+    expect(screen.getByText("Newest toast")).toBeInTheDocument();
+
+    act(() => {
+      useToastQueueStore.getState().dismiss(newestId);
+      jest.advanceTimersByTime(3000);
+    });
+    expect(screen.queryByText("Newest toast")).toBeNull();
+    expect(screen.queryByText("Older toast")).toBeNull();
+  });
 });

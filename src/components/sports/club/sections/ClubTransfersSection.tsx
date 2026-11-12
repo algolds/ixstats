@@ -47,9 +47,11 @@ export function ClubTransfersSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [comparePlayer, setComparePlayer] = useState<ComparePlayerItem | null>(null);
 
+  // The server wants at least 2 trimmed characters
+  const trimmedQuery = searchQuery.trim();
   const { data: searchResults } = api.sports.searchSportsEntities.useQuery(
-    { query: searchQuery },
-    { enabled: searchQuery.length > 1 }
+    { query: trimmedQuery },
+    { enabled: trimmedQuery.length > 1 }
   );
 
   const { data: bidsData, refetch: refetchBids } = api.sports.getTeamBids.useQuery({ teamId });

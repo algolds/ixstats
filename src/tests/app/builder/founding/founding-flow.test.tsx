@@ -8,7 +8,8 @@
  * Folds founding-draft (its payload cases are in tests/scenarios/engines/founding-to-first-steps).
  */
 import "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, within } from "@testing-library/react";
+import { useFoundingDraft } from "~/app/builder/_founding/hooks/useFoundingDraft";
 import {
   applyImport,
   applyStart,
@@ -217,6 +218,54 @@ describe("founding flow", () => {
     });
     expect(mockClear).toHaveBeenCalledTimes(1);
     expect(mockReplace).toHaveBeenLastCalledWith("/builder?step=start", { scroll: false });
+    // Nothing is left to start over from, and the "resumed" notice is gone with the draft.
+    expect(screen.queryByRole("button", { name: "Start over" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Draft saved")).not.toBeInTheDocument();
+  });
+
+  it("clears the server draft only after a save already sent has landed", async () => {
+    jest.useFakeTimers();
+    serve(named("identity"), "step=identity");
+    let landSave: () => void = () => undefined;
+    mockSave.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        landSave = resolve;
+      })
+    );
+    const { result } = renderHook(() => useFoundingDraft());
+    expect(result.current.resumed).toBe(true);
+    act(() => {
+      result.current.update((current) => ({
+        ...current,
+        identity: { ...current.identity, name: "Valoria Nova" },
+      }));
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(2000);
+    });
+    expect(mockSave).toHaveBeenCalledTimes(1);
+
+    let resetting: Promise<void> = Promise.resolve();
+    act(() => {
+      resetting = result.current.reset();
+    });
+    expect(result.current.draft?.updatedAt).toBe(0);
+    expect(result.current.resumed).toBe(false);
+    expect(mockClear).not.toHaveBeenCalled();
+
+    await act(async () => {
+      landSave();
+      await resetting;
+    });
+    expect(mockClear).toHaveBeenCalledTimes(1);
+    expect(mockSave.mock.invocationCallOrder[0]).toBeLessThan(
+      mockClear.mock.invocationCallOrder[0]!
+    );
+    // The save that landed did not bring the old draft back, and no further save was queued.
+    expect(result.current.draft?.identity.name).toBe("");
+    expect(result.current.status).toBe("idle");
+    act(() => jest.advanceTimersByTime(5000));
+    expect(mockSave).toHaveBeenCalledTimes(1);
   });
 });
 
