@@ -49,6 +49,11 @@ export interface ThinkPagesMessageEvent {
   accountId: string;
   content?: string;
   timestamp: number;
+  /**
+   * Clerk ids allowed to receive this event. When set, only those users' sockets in the room get
+   * it (the sender filtered out blockers and pending requests); unset means every room member.
+   */
+  recipientIds?: string[];
 }
 
 /**
