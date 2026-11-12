@@ -5,6 +5,8 @@ import { NavArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import type { ContentType } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
+import type { APP_IDS } from "~/lib/design/tokens";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils/cn";
@@ -19,6 +21,8 @@ interface PaneProps {
   className?: string;
   /** Rendered flush (no padding), for full-bleed stages. */
   flush?: boolean;
+  /** A rail card: a LensCard in this app's tint instead of a plain card. */
+  lens?: (typeof APP_IDS)[number];
   children: React.ReactNode;
 }
 
@@ -31,14 +35,16 @@ export function Pane({
   content,
   className,
   flush = false,
+  lens,
   children,
 }: PaneProps) {
-  return (
-    <Card
-      content={content}
-      padding={flush ? "none" : "md"}
-      className={cn("flex min-w-0 flex-col", className)}
-    >
+  const surface = {
+    content,
+    padding: flush ? ("none" as const) : ("md" as const),
+    className: cn("flex min-w-0 flex-col", className),
+  };
+  const body = (
+    <>
       <CardHeader
         className={cn(
           "flex-row items-start justify-between gap-3 pb-3",
@@ -62,7 +68,14 @@ export function Pane({
         )}
       </CardHeader>
       <CardContent className="flex-1 px-0">{children}</CardContent>
-    </Card>
+    </>
+  );
+  return lens ? (
+    <LensCard app={lens} {...surface}>
+      {body}
+    </LensCard>
+  ) : (
+    <Card {...surface}>{body}</Card>
   );
 }
 

@@ -7,7 +7,7 @@ import { useUser } from "~/context/auth-context";
 import { RealmCrest } from "~/components/cards/face/RealmCrest";
 import { RealmMapFace } from "~/components/realms/RealmMapFace";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -151,7 +151,8 @@ export function YourRealmPanel() {
   };
 
   return (
-    <Card
+    <LensCard
+      app="realms"
       content="entity"
       role="region"
       aria-label={`Your realm, ${realm.name}`}
@@ -201,6 +202,6 @@ export function YourRealmPanel() {
           </Button>
         </div>
       </div>
-    </Card>
+    </LensCard>
   );
 }

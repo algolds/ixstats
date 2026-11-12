@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 
 import { Group as Users, RssFeed as Rss, Globe } from "iconoir-react";
-import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -63,7 +63,6 @@ import { YourRealmPanel } from "./YourRealmPanel";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
-import { MonogramBackdrop } from "~/components/ui/facet";
 import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
 type FeedTab = "all" | "following";
@@ -115,7 +114,7 @@ function PostingAs({
 
 function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
   return (
-    <Card padding="md">
+    <LensCard app="exchange" padding="md">
       <h2 className="text-headline text-label mb-3">Economic tiers</h2>
       <div className="flex flex-wrap items-center gap-1">
         {Object.entries(tiers).map(([tier, count]) => (
@@ -125,7 +124,7 @@ function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
           </Badge>
         ))}
       </div>
-    </Card>
+    </LensCard>
   );
 }
 
@@ -381,25 +380,13 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
-      {/* Lens cards in the aside (owner ruling 2026-11-11), each over the grain it bends, washed in its app's tint. */}
-      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen} lens>
+      {/* Each card is a LensCard in its own app's tint (owner ruling 2026-11-11). */}
+      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
         <div className="flex flex-col gap-4">
-          {isSignedIn && (
-            <MonogramBackdrop app="realms" wash>
-              <YourRealmPanel />
-            </MonogramBackdrop>
-          )}
-          <MonogramBackdrop app="wiki" wash>
-            <DailyBlurbCard />
-          </MonogramBackdrop>
-          <MonogramBackdrop app="mycountry" wash>
-            <CountriesToExploreCard currentUserCountryId={countryId} />
-          </MonogramBackdrop>
-          {tierDistribution && (
-            <MonogramBackdrop app="exchange" wash>
-              <EconomicTiersCard tiers={tierDistribution} />
-            </MonogramBackdrop>
-          )}
+          {isSignedIn && <YourRealmPanel />}
+          <DailyBlurbCard />
+          <CountriesToExploreCard currentUserCountryId={countryId} />
+          {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
         </div>
       </Inspector>
     </>

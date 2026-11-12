@@ -34,11 +34,6 @@ interface InspectorProps {
    * without touching what the aside still shows.
    */
   onWiden?: () => void;
-  /**
-   * Lens cards in the aside (an owner ruling per page). The sheet keeps panes: a Lens never
-   * sits on an Overlay. Put each card over a `MonogramBackdrop` so the glass has something to bend.
-   */
-  lens?: boolean;
   children: React.ReactNode;
   className?: string;
 }
@@ -58,7 +53,6 @@ export function Inspector({
   onOpenChange,
   resetSheetOnWiden = true,
   onWiden,
-  lens = false,
   children,
   className,
 }: InspectorProps) {
@@ -80,8 +74,6 @@ export function Inspector({
     onWiden?.();
   }, [wide, open, onOpenChange, resetSheetOnWiden, onWiden]);
 
-  const asideContent = lens ? <LensSurface>{children}</LensSurface> : children;
-
   return (
     <>
       <aside
@@ -95,7 +87,8 @@ export function Inspector({
           className
         )}
       >
-        {wide || !hydrated ? asideContent : null}
+        {/* Cards in the aside are Lenses (LensCard for the full material); the sheet keeps panes. */}
+        {wide || !hydrated ? <LensSurface>{children}</LensSurface> : null}
       </aside>
       {!wide && (
         <Sheet open={open} onOpenChange={onOpenChange}>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Globe } from "iconoir-react";
-import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { Button } from "~/components/ui/button";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { api } from "~/trpc/react";
@@ -37,7 +37,7 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
   if (!randomCountries || randomCountries.length === 0) return null;
 
   return (
-    <Card padding="md">
+    <LensCard app="mycountry" padding="md">
       <h2 className="text-headline text-label mb-3">Countries to explore</h2>
       <div className="space-y-2">
         <ul className="space-y-1">
@@ -94,6 +94,6 @@ export function CountriesToExploreCard({ currentUserCountryId }: { currentUserCo
           <span>Explore all countries</span>
         </Link>
       </div>
-    </Card>
+    </LensCard>
   );
 }

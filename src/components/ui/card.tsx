@@ -45,12 +45,21 @@ const InsideCard = React.createContext(false);
 /** What a top-level Card is made of: a glass pane, or a Lens inside `LensSurface`. */
 const TopLevelVariant = React.createContext<"pane" | "lens">("pane");
 
+/** True inside an overlay, where a Lens never sits (`LensCard` falls back to a pane there). */
+const InsideOverlay = React.createContext(false);
+
+export function useInsideOverlay(): boolean {
+  return React.useContext(InsideOverlay);
+}
+
 /** Overlays (Dialog, Sheet, Popover) are their own surface: Cards inside start as panes again. */
 export function SurfaceReset({ children }: { children: React.ReactNode }) {
   return (
-    <TopLevelVariant.Provider value="pane">
-      <InsideCard.Provider value={false}>{children}</InsideCard.Provider>
-    </TopLevelVariant.Provider>
+    <InsideOverlay.Provider value>
+      <TopLevelVariant.Provider value="pane">
+        <InsideCard.Provider value={false}>{children}</InsideCard.Provider>
+      </TopLevelVariant.Provider>
+    </InsideOverlay.Provider>
   );
 }
 
@@ -190,3 +199,4 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export type { CardProps };

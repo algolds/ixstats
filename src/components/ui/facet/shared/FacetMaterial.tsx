@@ -6,8 +6,9 @@ import { InsideSurface } from "~/components/ui/card";
 
 /**
  * Floating glass: `chrome` (sidebar, tab bar, toolbars, map controls, Halo) or `overlay` (sheets,
- * popovers, menus). `lens` is refractive glass over a decorative backdrop (a monogram, art, a map) for a
- * brand moment, at most one per view. Content cards are `Card`, never this.
+ * popovers, menus). `lens` is refractive glass over a decorative backdrop (a monogram, art, a map) for
+ * a panel that is not a card: the brand hero, the hero panels over a map or cover, a header plate.
+ * Content cards are `Card`, never this; a Lens card is `LensCard`.
  */
 type FacetLayer = "chrome" | "overlay" | "lens";
 

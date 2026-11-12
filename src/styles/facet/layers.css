@@ -183,9 +183,10 @@
   }
 }
 
-/* 5 · Lens: refractive glass over a decorative backdrop (FacetMaterial layer="lens"). It bends what
-   lies under its edges, splits the colours there and leaves its middle clear, with a light rim along
-   the top. The refraction is the one shared SVG filter #facet-lens, rendered once in the root layout
+/* 5 · Lens: refractive glass over a decorative backdrop (LensCard for cards, FacetMaterial
+   layer="lens" for other panels, Card variant="lens" under LensSurface). It bends what lies under its
+   edges, splits the colours there and leaves its middle clear, with a light rim along the top. The
+   refraction is the one shared SVG filter #facet-lens, rendered once in the root layout
    (components/ui/facet/shared/LensFilter.tsx); Chromium applies it, other engines show a plain frosted
    pane. Keep it out of any ancestor with opacity, a filter or a mask, or its backdrop ends there.
    Solid under Reduce Transparency and Increase Contrast. --lens-frost and --lens-diffuse are set only
@@ -208,9 +209,6 @@
   }
 }
 
-/* With facet-lens, for text over busy imagery (a map, a photo): Apple's regular glass where the plain
-   Lens is its clear glass. The rim refracts the same; the body is thicker and lightly blurred so text
-   holds over anything, and secondary labels go vibrant as on Chrome. */
 /* On an ancestor of Lens cards over the plain canvas (the front page feed): the same frost and rim,
    no bend. Over a smooth wash the refraction moves nothing you can see, and the filter is the Lens's
    whole cost: about a quarter of a scrolling frame for the feed's cards. Not with facet-lens-frosted. */
@@ -218,6 +216,9 @@
   --lens-refraction: none;
 }
 
+/* With facet-lens, for text over busy imagery (a map, a photo): Apple's regular glass where the plain
+   Lens is its clear glass. The rim refracts the same; the body is thicker and lightly blurred so text
+   holds over anything, and secondary labels go vibrant as on Chrome. */
 @utility facet-lens-frosted {
   --lens-frost: var(--lens-frosted-fill);
   --lens-diffuse: blur(12px) saturate(150%);

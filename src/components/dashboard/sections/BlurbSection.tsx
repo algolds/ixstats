@@ -13,7 +13,8 @@ import {
 } from "iconoir-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardTitle } from "~/components/ui/card";
+import { CardTitle } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -24,7 +25,7 @@ import { cn } from "~/lib/utils";
 import { timeAgo as formatRelativeTime } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 
-/** The dashboard's "Daily blurb": today's prompt as one pressable row that opens the response sheet. */
+/** The dashboard's "Daily blurb": today's prompt straight on the card's Lens glass; the whole prompt opens the response sheet, and hover only tints the question. */
 export function DailyBlurbCard() {
   const [modalOpen, setModalOpen] = useState(false);
   const { data: prompt, isLoading } = api.blurbs.getRandomActivePrompt.useQuery(undefined, {
@@ -33,10 +34,10 @@ export function DailyBlurbCard() {
 
   if (isLoading) {
     return (
-      <Card padding="md" className="space-y-3">
+      <LensCard app="wiki" padding="md" className="space-y-3">
         <Skeleton className="rounded-control-sm h-4 w-24" />
         <Skeleton className="rounded-row h-20" />
-      </Card>
+      </LensCard>
     );
   }
   if (!prompt) return null;
@@ -44,17 +45,17 @@ export function DailyBlurbCard() {
   const responseCount = prompt._count?.responses ?? 0;
 
   return (
-    <Card padding="md" className="no-wiki-tooltip space-y-3">
+    <LensCard app="wiki" padding="md" className="no-wiki-tooltip space-y-3">
       <CardTitle icon={<Quote />}>Daily blurb</CardTitle>
       <button
         type="button"
         onClick={() => setModalOpen(true)}
-        className="group/blurb bg-surface-secondary border-separator rounded-row hover:border-tint/40 hover:bg-fill-3 facet-press facet-press-subtle focus-visible:outline-tint block w-full cursor-pointer border p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="group/blurb rounded-control-sm focus-visible:outline-tint block w-full cursor-pointer text-left focus-visible:outline-2 focus-visible:outline-offset-4"
       >
         {prompt.title && (
           <span className="text-label-secondary text-footnote block truncate">{prompt.title}</span>
         )}
-        <span className="text-label text-headline group-hover/blurb:text-tint mt-0.5 line-clamp-2 block transition-colors">
+        <span className="text-label text-headline group-hover/blurb:text-tint duration-fast mt-0.5 block transition-colors">
           &ldquo;{prompt.question}&rdquo;
         </span>
         <span className="text-label-secondary text-footnote mt-1 flex items-center justify-between gap-2">
@@ -74,7 +75,7 @@ export function DailyBlurbCard() {
         onCloseAction={() => setModalOpen(false)}
         prompt={prompt}
       />
-    </Card>
+    </LensCard>
   );
 }
 
