@@ -259,6 +259,9 @@ about (company, bond, nation, tender), and the market move it caused.
 - **No self-dealing in tenders either.** A nation's treasury also won't award its tenders to a company the nation's
   insiders founded, hold shares in, or have listed.
 - A nation's owner (or anyone acting as the nation) may not buy its bonds, primary or secondary (owner ruling 2026-11-09).
+- **Closed-company escrow and late recoveries (owner ruling 2026-11-09, reviewer decision 2026-11-10):**
+  - On liquidation or dissolution, a company's pre-award (`OPEN`) issued contracts, open `ACQUIRE_OFFER` proposals and unapplied decisions unwind back into its capital before the liquidation waterfall runs (HQ lender repaid first as `PRINCIPAL`, then remaining cash split pro rata across shareholders; never directly to the founder's wallet).
+  - The founder of a closed (`BANKRUPT` or `DELISTED`) issuer may still sign off a previously `AWARDED` contract (`completeContract`) so the contractor is paid; if a dispute or release later refunds a closed issuer (or an expired/rejected acquisition offer returns to a closed buyer), the refund goes to the company's HQ nation treasury as a `RECOVERY` entry instead of dead company capital.
 - **Lending is exempt (owner, 2026-11-07).** Companies live in their founder's own nation, so a strict rule would leave
   almost no company able to borrow. Credit lines stay open to the owner's own companies, because the terms are published
   and the same for every domestic company. The rule covers the discretionary moves only: wealth-fund buys and tender

@@ -14,6 +14,7 @@ import type { Prisma } from "@prisma/client";
 import { centsOf, dbCents, fromCents, toCents } from "./amounts";
 import { acquirePayloadOf, returnOfferTx } from "./acquisition";
 import { refundIssuer } from "./contract-settlement";
+import type { DecisionPayload } from "./decisions";
 import type { Db } from "./guards";
 
 function burnedDecisionCostCents(
@@ -21,8 +22,8 @@ function burnedDecisionCostCents(
   payload: Prisma.JsonValue,
   hqCountryId: string | null
 ): number {
-  const record = (payload ?? {}) as Prisma.JsonObject;
-  const cost = Number(record.cost ?? record.offerAmount ?? record.amount ?? 0);
+  const record = (payload ?? {}) as Partial<DecisionPayload>;
+  const cost = Number(record.cost ?? 0);
   const costCents = toCents(cost);
   if (costCents <= 0) return 0;
   const toTreasuryCents = type === "LOBBY" && hqCountryId ? Math.round(costCents / 2) : 0;
@@ -75,7 +76,6 @@ export async function unwindCompanyMoneyTx(
     if (count !== 1 || offerAmount <= 0) continue;
     await returnOfferTx(tx, {
       companyId,
-      founderId: proposal.proposerUserId,
       amount: offerAmount,
       key: `exchange:acquire-return:${proposal.id}`,
     });

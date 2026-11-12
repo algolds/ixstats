@@ -26,6 +26,7 @@ import { CREDIT_RATINGS, CREDIT_SPREADS, type CreditRating } from "./taxonomy";
 import {
   debitTreasuryTx,
   getOrCreateTreasury,
+  isCountryOwner,
   lockTreasuryTx,
   transferToTreasuryTx,
 } from "./treasury";
@@ -152,9 +153,7 @@ function assertTradable(bond: NationBond): void {
 
 /** A nation's owner, anyone acting as the nation, and its wealth fund can't buy the nation's own bonds. */
 async function assertNotNationInsider(tx: Db, countryId: string, userId: string): Promise<void> {
-  const owns = await requireCountryOwner(tx, countryId, userId)
-    .then(() => true)
-    .catch(() => false);
+  const owns = await isCountryOwner(tx, countryId, userId);
   if (userId === fundUserIdOf(countryId) || owns) {
     throw new ExchangeError("FORBIDDEN", "A nation's owner can't buy its own bonds");
   }
@@ -484,7 +483,7 @@ export async function buyBondListing(
   });
 }
 
-async function returnListingTx(
+export async function returnListingTx(
   tx: Db,
   listing: { id: string; bondId: string; sellerUserId: string; units: number }
 ) {

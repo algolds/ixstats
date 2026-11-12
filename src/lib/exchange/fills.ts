@@ -78,20 +78,21 @@ export function refundRank(a: ShareBuyOrder, b: ShareBuyOrder): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
+/** Whether `bid` crosses `ask` at price and is neither a self-trade nor a wealth-fund insider pair. */
+async function bidCrossesAsk(tx: Db, ask: ShareListing, bid: ShareBuyOrder): Promise<boolean> {
+  if (centsOf(bid.maxPricePerShare) < centsOf(ask.pricePerShare)) return false;
+  if (bid.buyerUserId === ask.sellerUserId) return false;
+  return !(await isFundInsiderPair(tx, ask.sellerUserId, bid.buyerUserId));
+}
+
 /** Open bids on `ask.companyId` that cross `ask` and are not self-trades or wealth-fund insider pairs, highest first. */
 export async function crossingBids(tx: Db, ask: ShareListing): Promise<ShareBuyOrder[]> {
   const candidates = (
     await tx.shareBuyOrder.findMany({ where: { companyId: ask.companyId, status: "OPEN" } })
-  )
-    .filter(
-      (b) =>
-        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
-        b.buyerUserId !== ask.sellerUserId
-    )
-    .sort(bidRank);
+  ).sort(bidRank);
   const bids: ShareBuyOrder[] = [];
   for (const b of candidates) {
-    if (!(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))) {
+    if (await bidCrossesAsk(tx, ask, b)) {
       bids.push(b);
     }
   }
@@ -115,12 +116,7 @@ export async function crossingParties(
     const eligible: ShareBuyOrder[] = [];
     for (const b of sortedBids) {
       const left = remaining.get(b.id) ?? 0;
-      if (
-        left > 0 &&
-        centsOf(b.maxPricePerShare) >= centsOf(ask.pricePerShare) &&
-        b.buyerUserId !== ask.sellerUserId &&
-        !(await isFundInsiderPair(tx, ask.sellerUserId, b.buyerUserId))
-      ) {
+      if (left > 0 && (await bidCrossesAsk(tx, ask, b))) {
         eligible.push({ ...b, shares: left });
       }
     }
@@ -406,4 +402,57 @@ export async function fillBuyerAgainstAsk(
   );
   await recordTrade(tx, company.id, askPrice, shares, key);
   return net;
+}
+
+/**
+ * Cancel an open share listing under the company lock and return its remaining shares to the
+ * seller's holding (or un-issue them for a primary company listing).
+ */
+export async function returnShareListingTx(
+  tx: Db,
+  listing: Pick<ShareListing, "id" | "companyId" | "sellerUserId" | "shares">
+): Promise<boolean> {
+  const { count } = await tx.shareListing.updateMany({
+    where: { id: listing.id, status: "OPEN", shares: listing.shares },
+    data: { status: "CANCELLED", shares: 0 },
+  });
+  if (count !== 1) return false;
+  if (listing.sellerUserId) {
+    await tx.shareholding.update({
+      where: {
+        companyId_ownerUserId: {
+          companyId: listing.companyId,
+          ownerUserId: listing.sellerUserId,
+        },
+      },
+      data: { shares: { increment: listing.shares } },
+    });
+  } else {
+    await tx.company.update({
+      where: { id: listing.companyId },
+      data: { sharesIssued: { decrement: listing.shares } },
+    });
+  }
+  return true;
+}
+
+/**
+ * Cancel a bid's remaining shares and refund its remaining escrow. Returns false when the bid was
+ * already closed, in which case nothing moves.
+ */
+export async function closeBuyOrder(tx: Db, order: ShareBuyOrder): Promise<boolean> {
+  const { count } = await tx.shareBuyOrder.updateMany({
+    where: { id: order.id, status: "OPEN" },
+    data: { status: "CANCELLED", shares: 0, escrow: 0n },
+  });
+  if (count !== 1) return false;
+  await earnSovereignsTx(tx, {
+    userId: order.buyerUserId,
+    amount: fromCents(centsOf(order.escrow)),
+    type: "SHARE_ORDER_REFUND",
+    source: `SHARES:${order.companyId}`,
+    metadata: { orderId: order.id, companyId: order.companyId },
+    idempotencyKey: `exchange:share-bid-cancel:${order.id}`,
+  });
+  return true;
 }

@@ -56,17 +56,25 @@ async function refundTreasury(tx: Db, contract: Funded, amount: number, step: st
   });
 }
 
-async function refundCompany(tx: Db, contract: Funded, amount: number, _step: string) {
+async function refundCompany(tx: Db, contract: Funded, amount: number, step: string) {
   if (!contract.issuerCompanyId) return;
   const company = await tx.company.findUnique({
     where: { id: contract.issuerCompanyId },
-    select: { status: true },
+    select: { status: true, hqCountryId: true, realmId: true },
   });
   if (!company) return;
   if (company.status !== "ACTIVE" && company.status !== "DISTRESSED") {
-    console.warn(
-      `[exchange] refundCompany credited non-trading company ${contract.issuerCompanyId} (${company.status}) for contract ${contract.id}`
-    );
+    if (company.hqCountryId) {
+      await creditTreasuryTx(tx, {
+        countryId: company.hqCountryId,
+        realmId: company.realmId,
+        amount,
+        type: "RECOVERY",
+        source: `CONTRACT:${contract.id}`,
+        key: `exchange:contract-refund:${contract.id}:${step}`,
+      });
+    }
+    return;
   }
   await tx.company.update({
     where: { id: contract.issuerCompanyId },

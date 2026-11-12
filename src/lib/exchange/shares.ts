@@ -16,7 +16,7 @@
  * can't overdraw, and a listing or bid can't trade more shares than it has.
  */
 
-import type { Company, PrismaClient, ShareBuyOrder, ShareListing } from "@prisma/client";
+import type { Company, PrismaClient, ShareListing } from "@prisma/client";
 import {
   ExchangeError,
   earnSovereignsTx,
@@ -31,6 +31,7 @@ import { centsOf, dbCents } from "./amounts";
 import { fromCents, lockCompany, toCents } from "./ownership";
 import {
   askRank,
+  closeBuyOrder,
   consumeAsk,
   consumeBid,
   creditHolding,
@@ -42,6 +43,7 @@ import {
   pushSaleNotice,
   recordTrade,
   refundRank,
+  returnShareListingTx,
   takeFills,
   boughtNotice,
 } from "./fills";
@@ -295,26 +297,8 @@ export async function cancelListing(
     } else if (listing.sellerUserId !== input.userId) {
       throw new ExchangeError("FORBIDDEN", "This is not your listing");
     }
-    const { count } = await tx.shareListing.updateMany({
-      where: { id: listing.id, status: "OPEN", shares: listing.shares },
-      data: { status: "CANCELLED", shares: 0 },
-    });
-    if (count !== 1) throw new ExchangeError("CONFLICT", "The listing changed; try again");
-    if (listing.sellerUserId) {
-      await tx.shareholding.update({
-        where: {
-          companyId_ownerUserId: {
-            companyId: listing.companyId,
-            ownerUserId: listing.sellerUserId,
-          },
-        },
-        data: { shares: { increment: listing.shares } },
-      });
-    } else {
-      await tx.company.update({
-        where: { id: listing.companyId },
-        data: { sharesIssued: { decrement: listing.shares } },
-      });
+    if (!(await returnShareListingTx(tx, listing))) {
+      throw new ExchangeError("CONFLICT", "The listing changed; try again");
     }
     return { returned: listing.shares };
   });
@@ -589,27 +573,6 @@ export async function placeBuyOrder(
     }
     throw error;
   }
-}
-
-/**
- * Cancel a bid's remaining shares and refund its remaining escrow. Returns false when the bid was
- * already closed, in which case nothing moves.
- */
-async function closeBuyOrder(tx: Db, order: ShareBuyOrder): Promise<boolean> {
-  const { count } = await tx.shareBuyOrder.updateMany({
-    where: { id: order.id, status: "OPEN" },
-    data: { status: "CANCELLED", shares: 0, escrow: 0n },
-  });
-  if (count !== 1) return false;
-  await earnSovereignsTx(tx, {
-    userId: order.buyerUserId,
-    amount: fromCents(centsOf(order.escrow)),
-    type: "SHARE_ORDER_REFUND",
-    source: `SHARES:${order.companyId}`,
-    metadata: { orderId: order.id, companyId: order.companyId },
-    idempotencyKey: `exchange:share-bid-cancel:${order.id}`,
-  });
-  return true;
 }
 
 /** Cancel a company's open bids and refund their escrow. Dissolution and bankruptcy use it. */

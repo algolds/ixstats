@@ -8,15 +8,26 @@
 import type { NationTreasury, Prisma } from "@prisma/client";
 import { refreshFairValue } from "./companies";
 import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
-import type { Db } from "./guards";
+import { requireCountryOwner, type Db } from "./guards";
 import { lockCompany } from "./ownership";
 import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchange-service";
 
 export type TreasuryInflowType =
-  "TAX" | "TARIFF" | "INTEREST" | "LOBBY" | "B2G_ESCROW" | "BOND_SALE";
+  | "TAX"
+  | "TARIFF"
+  | "INTEREST"
+  | "PRINCIPAL"
+  | "LOBBY"
+  | "B2G_ESCROW"
+  | "BOND_SALE";
 export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND" | "BOND_COUPON" | "BOND_PRINCIPAL";
 type TreasuryEntryType =
-  "STIPEND" | "B2G_REFUND" | "FUND_RETURN" | TreasuryInflowType | TreasuryOutflowType;
+  | "STIPEND"
+  | "B2G_REFUND"
+  | "FUND_RETURN"
+  | "RECOVERY"
+  | TreasuryInflowType
+  | TreasuryOutflowType;
 
 export type TreasuryPayer =
   { kind: "COMPANY"; companyId: string } | { kind: "WALLET"; userId: string };
@@ -44,7 +55,7 @@ export interface TreasuryCreditInput {
   countryId: string;
   realmId: string;
   amount: number;
-  type: "B2G_REFUND" | "FUND_RETURN";
+  type: "B2G_REFUND" | "FUND_RETURN" | "RECOVERY";
   source: string;
   key: string;
 }
@@ -113,6 +124,22 @@ export interface TreasurySummary {
 /** A nation's stipend for a tier. Unknown labels get the 1x base. */
 export function stipendFor(tier: string, baseStipend: number): number {
   return fromCents(toCents(baseStipend * (TIER_MULTIPLIERS.get(tier) ?? 1)));
+}
+
+/** True when `userId` owns `countryId`; rethrows unexpected DB errors instead of swallowing them. */
+export async function isCountryOwner(tx: Db, countryId: string, userId: string): Promise<boolean> {
+  try {
+    await requireCountryOwner(tx, countryId, userId);
+    return true;
+  } catch (error) {
+    if (
+      error instanceof ExchangeError &&
+      (error.code === "FORBIDDEN" || error.code === "NOT_FOUND")
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 /** Read the nation's treasury, creating it with zero balances if it does not exist yet. */

@@ -24,7 +24,7 @@ import {
   withdrawFromFund,
 } from "~/lib/exchange/fund";
 import { sendExchangeNotices } from "~/lib/exchange/notify";
-import { buyShares, cancelListing, listShares, placeBuyOrder } from "~/lib/exchange/shares";
+import { buyShares, cancelListing, issueShares, listShares, placeBuyOrder } from "~/lib/exchange/shares";
 import { getNationPage } from "~/lib/exchange/terminal";
 import { getLeaderboards } from "~/lib/exchange/terminal-valuation";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
@@ -498,6 +498,33 @@ describe("what the fund may buy", () => {
     await expect(trade({ kind: "bond-buy", bondId: "b_nb", units: 5 })).rejects.toMatchObject({
       code: "CONFLICT",
       message: "The wealth fund is busy; try again",
+    });
+    jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
+    await expect(deposit(500)).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The wealth fund is busy; try again",
+    });
+    jest.mocked(withJobLock).mockResolvedValueOnce({ ran: false });
+    await expect(
+      withdrawFromFund(fake.client, { userId: "alice", countryId: NA, amount: 100, requestId: rid() })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "The wealth fund is busy; try again",
+    });
+  });
+
+  it("forbids the wealth fund from cancelling a company's primary share issue (sellerUserId: null)", async () => {
+    const { listing } = await issueShares(fake.client, {
+      userId: "bob",
+      companyId: "co2",
+      shares: 100,
+      requestId: rid(),
+    });
+    expect(listing.sellerUserId).toBeNull();
+    await expect(
+      trade({ kind: "shares-cancel-listing", listingId: listing.id })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
     });
   });
 });

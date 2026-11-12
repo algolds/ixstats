@@ -190,7 +190,7 @@ async function repayLenderTx(tx: Db, input: LifecycleInput, cashCents: number, k
       countryId: input.hq,
       realmId: c.realmId,
       amount: fromCents(cents),
-      type: "INTEREST",
+      type: "PRINCIPAL",
       source: `LIQUIDATION:${c.id}`,
       key: `${key}:lender`,
     });

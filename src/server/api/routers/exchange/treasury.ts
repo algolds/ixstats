@@ -12,7 +12,6 @@ import {
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { centsOf, fromCents, round2 } from "~/lib/exchange/amounts";
-import { requireCountryOwner } from "~/lib/exchange/guards";
 import { companyView, SECTOR_KEYS } from "~/lib/exchange/companies";
 import {
   createFaucetTender,
@@ -21,7 +20,7 @@ import {
 } from "~/lib/exchange/contracts";
 import { borrowCredit, creditLimitFor, repayCredit } from "~/lib/exchange/credit";
 import { macroOfCountry } from "~/lib/exchange/tariffs";
-import { stipendFor, treasurySummary } from "~/lib/exchange/treasury";
+import { isCountryOwner, stipendFor, treasurySummary } from "~/lib/exchange/treasury";
 import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
 import { guard } from "./_errors";
 import { lendingTermsOf } from "~/lib/exchange/lending";
@@ -61,10 +60,7 @@ export const exchangeTreasuryRouter = createTRPCRouter({
         });
         const realmId = country?.realmId ?? DEFAULT_REALM_ID;
         // Tender bids are sealed: the issuing nation sees the amounts, everyone else only a count.
-        const isOwner = await requireCountryOwner(ctx.db, input.countryId, ctx.user.id).then(
-          () => true,
-          () => false
-        );
+        const isOwner = await isCountryOwner(ctx.db, input.countryId, ctx.user.id);
         const [companies, treasury, macro, realmCountries, openTenders] = await Promise.all([
           ctx.db.company.findMany({
             where: {

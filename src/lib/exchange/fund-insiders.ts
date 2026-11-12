@@ -19,7 +19,8 @@ export async function isFundInsiderPair(
   if (!countryA && !countryB) return false;
   if (countryA && countryB) return countryA === countryB;
 
-  const countryId = (countryA ?? countryB)!;
+  const countryId = countryA ?? countryB;
+  if (!countryId) return false;
   const otherUserId = countryA ? b : a;
   const country = await tx.country.findUnique({
     where: { id: countryId },

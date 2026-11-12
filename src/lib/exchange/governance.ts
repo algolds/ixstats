@@ -254,7 +254,6 @@ async function closeTx(
     const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
     await returnOfferTx(tx, {
       companyId: buyerCompanyId,
-      founderId: proposal.proposerUserId,
       amount: offerAmount,
       key: `exchange:acquire-return:${proposal.id}`,
     });
@@ -391,7 +390,6 @@ export async function resolveAcquireDecision(
   if (blocked) {
     await returnOfferTx(tx, {
       companyId: buyer.id,
-      founderId: buyer.founderId,
       amount: offerAmount,
       key: `exchange:acquire-return:decision:${decision.id}`,
     });

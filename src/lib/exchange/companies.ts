@@ -505,6 +505,12 @@ export async function dissolveCompanyTx(
   if (company.creditDrawn > 0n) {
     throw new ExchangeError("CONFLICT", "Repay the credit line before dissolving this company");
   }
+  const pending = await tx.companyDecision.count({
+    where: { companyId: company.id, appliedIxTime: null },
+  });
+  if (pending > 0) {
+    throw new ExchangeError("CONFLICT", "Wait for the pending decision to resolve first");
+  }
   await unwindCompanyMoneyTx(tx, company.id, Date.now());
   const live = await tx.contract.count({
     where: {
@@ -519,12 +525,6 @@ export async function dissolveCompanyTx(
       "CONFLICT",
       "Settle or cancel this company's contracts before dissolving it"
     );
-  }
-  const pending = await tx.companyDecision.count({
-    where: { companyId: company.id, appliedIxTime: null },
-  });
-  if (pending > 0) {
-    throw new ExchangeError("CONFLICT", "Wait for the pending decision to resolve first");
   }
   await tx.contractBid.deleteMany({ where: { companyId: company.id, outcome: null } });
   await returnListedShares(tx, company.id);

@@ -11,6 +11,7 @@ import {
   creditTreasuryTx,
   debitTreasuryTx,
   getOrCreateTreasury,
+  isCountryOwner,
   mintStipendTx,
   stipendFor,
   transferToTreasuryTx,
@@ -344,5 +345,30 @@ describe("treasurySummary", () => {
     const summary = await treasurySummary(fake.client, NATION, CAP);
     expect(summary.recent).toHaveLength(20);
     expect(summary.balance).toBe(25);
+  });
+});
+
+describe("isCountryOwner", () => {
+  beforeEach(() => setup());
+
+  it("returns false for FORBIDDEN/NOT_FOUND and rethrows unexpected DB errors", async () => {
+    fake.tables.country = [{ id: NATION, realmId: REALM, ownerUserId: "alice" }];
+    expect(await isCountryOwner(fake.client, NATION, "alice")).toBe(true);
+    expect(await isCountryOwner(fake.client, NATION, "bob")).toBe(false);
+    expect(await isCountryOwner(fake.client, "missing_nation", "alice")).toBe(false);
+
+    const brokenDb = {
+      country: {
+        findUnique: async () => {
+          throw new Error("connection reset by peer");
+        },
+      },
+      user: {
+        findUnique: async () => null,
+      },
+    } as unknown as Db;
+    await expect(isCountryOwner(brokenDb, NATION, "alice")).rejects.toThrow(
+      "connection reset by peer"
+    );
   });
 });

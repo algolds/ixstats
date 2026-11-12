@@ -199,7 +199,7 @@ describe("72-hour bankruptcy", () => {
     expect(walletCents("alice") + walletCents("bob") + walletCents("carol")).toBe(0);
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 133_33n, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "PRINCIPAL", amount: 133_33n, source: "LIQUIDATION:co1" }),
       ])
     );
   });
@@ -259,7 +259,7 @@ describe("72-hour bankruptcy", () => {
     // Lender takes 500.04 (500 principal + 0.04 tick interest) first; holders split 583.29 (58,329 cents) 500:300:200.
     expect(fake.tables.nationTreasuryEntry).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ type: "INTEREST", amount: 500_04n, source: "LIQUIDATION:co1" }),
+        expect.objectContaining({ type: "PRINCIPAL", amount: 500_04n, source: "LIQUIDATION:co1" }),
       ])
     );
     const paid = [walletCents("alice"), walletCents("bob"), walletCents("carol")];

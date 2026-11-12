@@ -82,7 +82,7 @@ const NEUTRAL_EFFICIENCY = 0.5;
  */
 const EFFICIENCY_SWING = 0.2;
 
-interface DecisionPayload {
+export interface DecisionPayload {
   requestId: string;
   cost: number;
   amount?: number;

@@ -100,7 +100,7 @@ async function founderOf(tx: Db, companyId: string | null): Promise<string | nul
  * The issuer may act only while they still found the issuing company (B2B), or as the
  * player who posted and funded the tender (B2G, and the faucet's tenders).
  */
-async function requireIssuer(tx: Db, contractId: string, userId: string) {
+async function requireIssuer(tx: Db, contractId: string, userId: string, opts?: { allowClosed?: boolean }) {
   const contract = await tx.contract.findUnique({ where: { id: contractId } });
   if (!contract) throw new ExchangeError("NOT_FOUND", "Contract not found");
   if (contract.issuerUserId !== userId) {
@@ -116,7 +116,7 @@ async function requireIssuer(tx: Db, contractId: string, userId: string) {
   if (!issuer || issuer.founderId !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuing company can do that");
   }
-  if (issuer.status !== "ACTIVE" && issuer.status !== "DISTRESSED") {
+  if (!opts?.allowClosed && issuer.status !== "ACTIVE" && issuer.status !== "DISTRESSED") {
     throw new ExchangeError("CONFLICT", "This company is closed");
   }
   return contract;
@@ -532,7 +532,7 @@ export async function completeContract(
   let headline: PublishedHeadline | null = null;
   const result = await db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
-    await requireIssuer(tx, input.contractId, input.userId);
+    await requireIssuer(tx, input.contractId, input.userId, { allowClosed: true });
     const before = await transition(tx, input.contractId, "AWARDED", "COMPLETED", {
       escrow: 0n,
       closedIxTime: Date.now(),

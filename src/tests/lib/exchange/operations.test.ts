@@ -25,6 +25,7 @@ jest.mock("~/lib/exchange/macro", () => ({
 }));
 import { notifyExchange } from "~/lib/exchange/notify";
 import { borrowRateOf, borrowCredit, creditLimitFor, repayCredit } from "~/lib/exchange/credit";
+import { transferToTreasuryTx } from "~/lib/exchange/treasury";
 import {
   operatingTickKey,
   runCompanyOperations,
@@ -251,12 +252,29 @@ describe("Central Bank credit line", () => {
     await expect(repay(500)).resolves.toMatchObject({ creditDrawn: 1500 });
   });
 
-  it("repays part of the line into the treasury", async () => {
-    await borrow(2000);
-    const result = await repay(1500);
-    expect(result).toMatchObject({ alreadyApplied: false, creditDrawn: 500, cured: false });
-    expect(co("co1")).toMatchObject({ capital: 500_00n, creditDrawn: 500_00n });
-    expect(treasuryBalance()).toBe(9500);
+  it("repays part of the line into the treasury as PRINCIPAL without inflating lifetimeInterestEarned", async () => {
+    await borrow(1000);
+    await transferToTreasuryTx(fake.client, {
+      from: { kind: "COMPANY", companyId: "co1" },
+      countryId: NATION,
+      realmId: REALM,
+      amount: 50,
+      type: "INTEREST",
+      source: "OPERATING_INTEREST:co1",
+      key: "interest:co1:1",
+    });
+    expect(fake.tables.nationTreasury![0]!.lifetimeInterestEarned).toBe(50_00n);
+
+    co("co1").capital = 2000_00n;
+    const result = await repay(1000);
+    expect(result).toMatchObject({ alreadyApplied: false, creditDrawn: 0, cured: false });
+    expect(co("co1")).toMatchObject({ capital: 1000_00n, creditDrawn: 0n });
+    expect(fake.tables.nationTreasury![0]!.lifetimeInterestEarned).toBe(50_00n);
+    const principalEntry = fake.tables.nationTreasuryEntry!.find((e) => e.type === "PRINCIPAL");
+    expect(principalEntry).toMatchObject({
+      type: "PRINCIPAL",
+      amount: 1000_00n,
+    });
   });
 
   it("refuses a repayment above the amount drawn, and moves nothing", async () => {

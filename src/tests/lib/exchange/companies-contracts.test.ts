@@ -222,6 +222,37 @@ describe("companies", () => {
     expect(company(id).capital).toBe(300_00n);
   });
 
+  it("refuses to dissolve with a pending decision, leaving the decision unapplied and capital unchanged", async () => {
+    const id = await found("alice", "Alice Works");
+    await depositToCompany(fake.client, {
+      userId: "alice",
+      companyId: id,
+      amount: 1000,
+      requestId: rid(),
+    });
+    fake.tables.companyDecision = [
+      {
+        id: "dec_pending",
+        companyId: id,
+        type: "RND",
+        payload: { requestId: "r1", cost: 400, amount: 400, focus: "breakthrough" },
+        effect: null,
+        submittedIxTime: Date.now(),
+        appliedIxTime: null,
+      },
+    ];
+    company(id).capital = 600_00n;
+
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: id })
+    ).rejects.toMatchObject({
+      code: "CONFLICT",
+      message: "Wait for the pending decision to resolve first",
+    });
+    expect(fake.tables.companyDecision[0]!.appliedIxTime).toBeNull();
+    expect(company(id).capital).toBe(600_00n);
+  });
+
   it("won't dissolve with an awarded contract, and unwinds an open contract on dissolve", async () => {
     const { aliceCo, contractId, bidId } = await openContractWithBid();
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
@@ -537,8 +568,10 @@ describe("contract state machine", () => {
     });
   });
 
-  it("keeps contract escrow on the company record if issuer went BANKRUPT, and blocks paying a BANKRUPT contractor", async () => {
+  it("allows a BANKRUPT issuer to complete an AWARDED contract, and routes closed-issuer refunds to the HQ treasury as RECOVERY", async () => {
+    fake.tables.country = [{ id: "c_home", realmId: "default", ownerUserId: "alice" }];
     const { aliceCo, bobCo, contractId, bidId } = await openContractWithBid();
+    company(aliceCo).hqCountryId = "c_home";
     await awardContract(fake.client, { userId: "alice", contractId, bidId });
 
     // If contractor goes BANKRUPT before completion, completing the contract is blocked with CONFLICT.
@@ -547,24 +580,63 @@ describe("contract state machine", () => {
       completeContract(fake.client, { userId: "alice", contractId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
 
-    // If issuer also went BANKRUPT and a dispute refunds the issuer, refund stays on company capital, not founder wallet.
+    // When contractor is ACTIVE and issuer goes BANKRUPT, the founder of the bankrupt issuer can still confirm delivery.
+    company(bobCo).status = "ACTIVE";
+    company(aliceCo).status = "BANKRUPT";
+    company(aliceCo).capital = 0n;
+    const completed = await completeContract(fake.client, { userId: "alice", contractId });
+    expect(completed).toMatchObject({ paid: 300, tariffPaid: 0 });
+    expect(company(bobCo).capital).toBe(300_00n);
+
+    // A second AWARDED contract whose bankrupt issuer is refunded on dispute credits the HQ nation treasury as RECOVERY.
+    company(aliceCo).status = "ACTIVE";
+    await depositToCompany(fake.client, {
+      userId: "alice",
+      companyId: aliceCo,
+      amount: 400,
+      requestId: rid(),
+    });
+    const { contract: k2 } = await createContract(fake.client, {
+      userId: "alice",
+      issuerCompanyId: aliceCo,
+      title: "Second bridge",
+      sectorKey: "industry",
+      value: 400,
+      biddingDays: 7,
+      requestId: rid(),
+    });
+    const bid2 = await placeBid(fake.client, {
+      userId: "bob",
+      contractId: k2.id,
+      companyId: bobCo,
+      amount: 300,
+    });
+    await awardContract(fake.client, { userId: "alice", contractId: k2.id, bidId: bid2.id });
     await disputeContract(fake.client, {
       userId: "alice",
-      contractId,
-      reason: "Contractor went bankrupt",
+      contractId: k2.id,
+      reason: "Contractor failed to deliver",
     });
     company(aliceCo).status = "BANKRUPT";
     company(aliceCo).capital = 0n;
     const aliceWalletBefore = sov("alice");
-    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     await resolveDispute(fake.client, {
-      contractId,
+      contractId: k2.id,
       outcome: "REFUND_ISSUER",
-      note: "Refund to company record",
+      note: "Refund to HQ treasury as recovery",
     });
-    warnSpy.mockRestore();
     expect(sov("alice")).toBe(aliceWalletBefore);
-    expect(company(aliceCo).capital).toBe(300_00n);
+    expect(company(aliceCo).capital).toBe(0n);
+    const treasury = fake.tables.nationTreasury!.find((t) => t.countryId === "c_home")!;
+    expect(treasury.balance).toBe(300_00n);
+    const entry = fake.tables.nationTreasuryEntry!.find(
+      (e) => e.countryId === "c_home" && e.type === "RECOVERY"
+    );
+    expect(entry).toMatchObject({
+      type: "RECOVERY",
+      amount: 300_00n,
+      balanceAfter: 300_00n,
+    });
   });
 
   it("(a) a BANKRUPT company's issued OPEN contract cancelled or expired does not raise the founder's wallet", async () => {

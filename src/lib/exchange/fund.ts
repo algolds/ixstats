@@ -110,37 +110,47 @@ export async function depositToFund(
 ): Promise<FundSummary> {
   positive(i.amount);
   const key = `exchange:fund-in:${i.userId}:${i.requestId}`;
-  await db.$transaction(async (tx) => {
-    await assertExchangeOpen(tx);
-    const country = await requireCountryOwner(tx, i.countryId, i.userId);
-    const fundUserId = await ensureFundUser(tx, country.id);
-    await lockWallet(tx, fundUserId);
-    const treasury = await lockTreasuryTx(tx, country.id, country.realmId);
-    const invested = await investedAtCost(tx, fundUserId);
-    const treasuryBalance = fromCents(centsOf(treasury.balance));
-    if (invested + i.amount > FUND_SHARE_CAP * (treasuryBalance + invested) + 1e-9) {
-      throw new ExchangeError(
-        "LIMIT_REACHED",
-        `The wealth fund may hold at most half of the treasury and fund together`
-      );
-    }
-    const source = `FUND:${country.id}`;
-    const moved = await debitTreasuryTx(tx, {
-      countryId: country.id,
-      amount: i.amount,
-      type: "SPEND",
-      source,
-      key,
-    });
-    if (moved === 0) return;
-    await earnSovereignsTx(tx, {
-      userId: fundUserId,
-      amount: i.amount,
-      type: "TREASURY_PAYMENT",
-      source,
-      idempotencyKey: `${key}:fund`,
-    });
-  });
+  const locked = await withJobLock(
+    db,
+    `exchange-fund:${i.countryId}`,
+    async () => {
+      await db.$transaction(async (tx) => {
+        await assertExchangeOpen(tx);
+        const country = await requireCountryOwner(tx, i.countryId, i.userId);
+        const fundUserId = await ensureFundUser(tx, country.id);
+        await lockWallet(tx, fundUserId);
+        const treasury = await lockTreasuryTx(tx, country.id, country.realmId);
+        const invested = await investedAtCost(tx, fundUserId);
+        const treasuryBalance = fromCents(centsOf(treasury.balance));
+        if (invested + i.amount > FUND_SHARE_CAP * (treasuryBalance + invested) + 1e-9) {
+          throw new ExchangeError(
+            "LIMIT_REACHED",
+            `The wealth fund may hold at most half of the treasury and fund together`
+          );
+        }
+        const source = `FUND:${country.id}`;
+        const moved = await debitTreasuryTx(tx, {
+          countryId: country.id,
+          amount: i.amount,
+          type: "SPEND",
+          source,
+          key,
+        });
+        if (moved === 0) return;
+        await earnSovereignsTx(tx, {
+          userId: fundUserId,
+          amount: i.amount,
+          type: "TREASURY_PAYMENT",
+          source,
+          idempotencyKey: `${key}:fund`,
+        });
+      });
+    },
+    { timeoutMs: 60_000 }
+  );
+  if (!locked.ran) {
+    throw new ExchangeError("CONFLICT", "The wealth fund is busy; try again");
+  }
   return (await fundSummary(db, i.countryId))!;
 }
 
@@ -150,28 +160,38 @@ export async function withdrawFromFund(
 ): Promise<FundSummary> {
   positive(i.amount);
   const key = `exchange:fund-out:${i.userId}:${i.requestId}`;
-  await db.$transaction(async (tx) => {
-    await assertExchangeOpen(tx);
-    const country = await requireCountryOwner(tx, i.countryId, i.userId);
-    const fundUserId = await ensureFundUser(tx, country.id);
-    const source = `FUND:${country.id}`;
-    const spent = await spendSovereignsTx(tx, {
-      userId: fundUserId,
-      amount: i.amount,
-      type: "TREASURY_PAYMENT",
-      source,
-      idempotencyKey: key,
-    });
-    if (spent.alreadyApplied) return;
-    await creditTreasuryTx(tx, {
-      countryId: country.id,
-      realmId: country.realmId,
-      amount: i.amount,
-      type: "FUND_RETURN",
-      source,
-      key: `${key}:treasury`,
-    });
-  });
+  const locked = await withJobLock(
+    db,
+    `exchange-fund:${i.countryId}`,
+    async () => {
+      await db.$transaction(async (tx) => {
+        await assertExchangeOpen(tx);
+        const country = await requireCountryOwner(tx, i.countryId, i.userId);
+        const fundUserId = await ensureFundUser(tx, country.id);
+        const source = `FUND:${country.id}`;
+        const spent = await spendSovereignsTx(tx, {
+          userId: fundUserId,
+          amount: i.amount,
+          type: "TREASURY_PAYMENT",
+          source,
+          idempotencyKey: key,
+        });
+        if (spent.alreadyApplied) return;
+        await creditTreasuryTx(tx, {
+          countryId: country.id,
+          realmId: country.realmId,
+          amount: i.amount,
+          type: "FUND_RETURN",
+          source,
+          key: `${key}:treasury`,
+        });
+      });
+    },
+    { timeoutMs: 60_000 }
+  );
+  if (!locked.ran) {
+    throw new ExchangeError("CONFLICT", "The wealth fund is busy; try again");
+  }
   return (await fundSummary(db, i.countryId))!;
 }
 

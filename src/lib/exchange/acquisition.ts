@@ -18,7 +18,7 @@ import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
-import { transferToTreasuryTx } from "./treasury";
+import { creditTreasuryTx, transferToTreasuryTx } from "./treasury";
 import { publishNewsTx } from "./news";
 
 /** Share of the target's productive plant (decisionValue) the buyer takes over. */
@@ -95,21 +95,29 @@ async function hasLiveContracts(tx: Db, companyId: string): Promise<boolean> {
 }
 
 /**
- * Hand an offer back to the buyer's capital. If the buyer has already stopped trading, warn and
- * credit capital anyway so the money stays on the company record rather than leaking to the founder.
+ * Hand an offer back to the buyer's capital. If the buyer has already closed, credit the recovery to
+ * its HQ nation's treasury instead of a dead company record.
  */
 export async function returnOfferTx(
   tx: Db,
-  input: { companyId: string; founderId: string; amount: number; key: string }
+  input: { companyId: string; amount: number; key: string }
 ): Promise<void> {
   const buyer = await tx.company.findUniqueOrThrow({
     where: { id: input.companyId },
-    select: { status: true },
+    select: { status: true, hqCountryId: true, realmId: true },
   });
   if (buyer.status !== "ACTIVE" && buyer.status !== "DISTRESSED") {
-    console.warn(
-      `[exchange] returnOfferTx credited non-trading buyer ${input.companyId} (${buyer.status}) for offer ${input.key}`
-    );
+    if (buyer.hqCountryId) {
+      await creditTreasuryTx(tx, {
+        countryId: buyer.hqCountryId,
+        realmId: buyer.realmId,
+        amount: input.amount,
+        type: "RECOVERY",
+        source: `ACQUIRE_RETURN:${input.companyId}`,
+        key: input.key,
+      });
+    }
+    return;
   }
   await tx.company.update({
     where: { id: input.companyId },
@@ -140,7 +148,6 @@ export async function closeCompanyProposalsTx(
       const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
       await returnOfferTx(tx, {
         companyId: buyerCompanyId,
-        founderId: proposal.proposerUserId,
         amount: offerAmount,
         key: `exchange:acquire-return:${proposal.id}`,
       });

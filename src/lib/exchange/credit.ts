@@ -202,7 +202,7 @@ export async function repayCredit(db: PrismaClient, input: CreditLineInput): Pro
         countryId: hq,
         realmId: company.realmId,
         amount,
-        type: "INTEREST",
+        type: "PRINCIPAL",
         source: `CREDIT_REPAYMENT:${company.id}`,
         key,
       });
