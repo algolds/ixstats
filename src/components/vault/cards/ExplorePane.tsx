@@ -3,7 +3,7 @@
 import { useId, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { MultiplePages, Plus } from "iconoir-react";
+import { MultiplePages, Plus, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -124,6 +124,9 @@ interface ExplorePaneProps {
   onOpenCard: (cardId: string) => void;
   /** A realm slug from the address (`?realm=`): the old NationStates library redirects here with `nationstates`. */
   initialRealmSlug: string | null;
+  /** A nation from the address (`?country=`): the grid shows only cards tied to it, until cleared. */
+  countryId: string | null;
+  onClearCountry: () => void;
   /** Whether the suggestion dialog is open; the hub keeps it in the address. */
   suggesting: boolean;
   onSuggestingChange: (open: boolean) => void;
@@ -133,6 +136,8 @@ interface ExplorePaneProps {
 export function ExplorePane({
   onOpenCard,
   initialRealmSlug,
+  countryId,
+  onClearCountry,
   suggesting,
   onSuggestingChange,
 }: ExplorePaneProps) {
@@ -146,7 +151,12 @@ export function ExplorePane({
   const headingId = useId();
   const search = useDebounce(filters.search, 300);
   const query = api.cards.exploreGrid.useInfiniteQuery(
-    { ...exploreFilterInput({ ...filters, search }), sort, limit: PAGE },
+    {
+      ...exploreFilterInput({ ...filters, search }),
+      ...(countryId ? { countryId } : {}),
+      sort,
+      limit: PAGE,
+    },
     {
       getNextPageParam: (last) => last.nextCursor ?? undefined,
       // A new search or filter keeps the cards on screen until its page arrives.
@@ -168,14 +178,17 @@ export function ExplorePane({
 
   return (
     <div className="space-y-8">
-      <RealmShelves
-        loading={shelves.isLoading}
-        failed={shelves.isError && !shelves.data}
-        onRetry={() => void shelves.refetch()}
-        shelves={shelves.data?.shelves ?? []}
-        onOpen={open}
-        onBrowse={browseRealm}
-      />
+      {/* Arriving for one nation's cards, the shelves would only push them down the page. */}
+      {!countryId && (
+        <RealmShelves
+          loading={shelves.isLoading}
+          failed={shelves.isError && !shelves.data}
+          onRetry={() => void shelves.refetch()}
+          shelves={shelves.data?.shelves ?? []}
+          onOpen={open}
+          onBrowse={browseRealm}
+        />
+      )}
       <section
         ref={gridSection}
         aria-labelledby={headingId}
@@ -190,6 +203,7 @@ export function ExplorePane({
             Suggest a card
           </Button>
         </div>
+        {countryId && <CountryFilterChip countryId={countryId} onClear={onClearCountry} />}
         <CardFilterBar
           filters={filters}
           onChange={change}
@@ -211,9 +225,14 @@ export function ExplorePane({
             failed={query.isError && !query.data}
             onRetry={() => void query.refetch()}
             faces={faces}
-            filtered={activeFilterCount(filters) > 0 || filters.search.trim() !== ""}
+            filtered={
+              activeFilterCount(filters) > 0 || filters.search.trim() !== "" || countryId !== null
+            }
             onOpen={open}
-            onClearFilters={() => setFilters(EMPTY_CARD_FILTERS)}
+            onClearFilters={() => {
+              setFilters(EMPTY_CARD_FILTERS);
+              onClearCountry();
+            }}
           />
         </div>
         <MoreCards
@@ -276,6 +295,18 @@ function RealmShelves(props: ShelvesProps) {
       </h2>
       <ShelvesBody {...props} />
     </section>
+  );
+}
+
+/** The nation the grid is narrowed to, as a chip that clears it. */
+function CountryFilterChip({ countryId, onClear }: { countryId: string; onClear: () => void }) {
+  const { data: country } = api.countries.getByIdBasic.useQuery({ id: countryId });
+  return (
+    <Button variant="secondary" size="sm" onClick={onClear}>
+      Cards of {country?.name ?? "this nation"}
+      <Xmark aria-hidden />
+      <span className="sr-only">, show every nation</span>
+    </Button>
   );
 }
 

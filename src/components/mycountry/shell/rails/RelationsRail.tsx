@@ -11,6 +11,7 @@ import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStandingBand } from "~/lib/diplomacy/relation-bands";
+import { COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import {
   DomainKpiGrid,
@@ -133,10 +134,9 @@ function buildLiveRelations(
   return list;
 }
 
+const COOPERATIVE = new Set<string>(COOPERATIVE_FP_TYPES);
 const HOSTILE_TONE = (actionType: string | null | undefined) =>
-  actionType === "free_trade" || actionType === "military_alliance"
-    ? STATUS_TEXT.success
-    : STATUS_TEXT.critical;
+  COOPERATIVE.has(actionType ?? "") ? STATUS_TEXT.success : STATUS_TEXT.critical;
 
 function buildActivity(
   embassies: EmbassyItem[],

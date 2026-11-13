@@ -2531,7 +2531,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **MyCountry Decisions-to-Effects Bridge & Agenda Management (MyCountry System v5)**:
   - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in `MeetingDetailModal.tsx` to submit final notes and transition cabinet meetings to completed.
-  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
+  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in `quickactions/meetings.ts` (since removed) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
   - **Decision Implementation & Stat Effects**: Integrated **Implement** buttons next to pending meeting decisions in `MeetingDetailModal.tsx` to invoke the tRPC `implementDecision` mutation, which runs narrative effects, updates stats in the database, logs the event in the country ledger, and creates ThinkPages news.
   - **Custom Decision Recording & Metric Selectors**: Added a **Record New Decision** form to let players record custom decisions with precise percentage adjustments on national metrics (e.g. Political Stability +2% or Poverty Rate -1%), serialized as `estimatedEffect` JSON fields.
   - **Card Navigation Shortcuts**: Configured click actions in `MeetingsAndDecisionsPanel.tsx` to automatically open the details modal for pending and upcoming meetings.

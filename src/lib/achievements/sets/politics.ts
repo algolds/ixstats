@@ -37,14 +37,15 @@ export const POLITICS_DEFINITIONS: AchievementDefinition[] = [
     rule: ["POLITICS", "lawMonths", ">=", 6],
   },
   {
+    // Formerly Council of State (cabinet meetings, retired 2026-11-13); the id is kept so earned records stay.
     id: "pol-council-of-state",
-    title: "Council of State",
-    description: "Conclude 25 cabinet meetings with a decision, across 10 or more different weeks",
+    title: "Summit Circuit",
+    description: "Hold summits with 5 different nations",
     category: "Politics",
     rarity: "Rare",
     points: 50,
     icon: "Group",
-    rule: ["POLITICS", "meetingsWithDecisions", ">=", 25],
+    rule: ["POLITICS", "summitPartners", ">=", 5],
   },
   {
     id: "pol-seasoned-cabinet",

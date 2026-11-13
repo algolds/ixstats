@@ -3,6 +3,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 const mockPropose = jest.fn();
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("next/dynamic", () => () => () => null);
+jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
+  UnifiedCountryFlag: () => null,
+}));
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -26,6 +29,14 @@ jest.mock("~/components/mycountry/dossier/useCountryDiplomacyActions", () => ({
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
+    countries: {
+      getByIdBasic: {
+        useQuery: () => ({
+          data: { slug: "beta", realm: { slug: "ixnay", name: "Ixnay" }, ownerHandle: "beta_lead" },
+        }),
+      },
+      getActivityRingsData: { useQuery: () => ({ data: undefined }) },
+    },
     thinkpages: {
       createPost: {
         useMutation: () => ({ mutate: jest.fn(), isPending: false }),
@@ -64,11 +75,41 @@ const renderMenu = () =>
     />
   );
 
-it("imposes an embargo only after the confirmation", () => {
+it("imposes an embargo only after opening Pressure and confirming", () => {
   renderMenu();
+  expect(screen.queryByRole("button", { name: "Declare embargo" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Pressure" }));
   fireEvent.click(screen.getByRole("button", { name: "Declare embargo" }));
   expect(mockPropose).not.toHaveBeenCalled();
   const confirm = screen.getAllByRole("button", { name: "Declare embargo" }).at(-1)!;
   fireEvent.click(confirm);
   expect(mockPropose).toHaveBeenCalledWith("embargo");
+});
+
+it("opens the nation in every app it lives in, with its leader's passport and realm", () => {
+  renderMenu();
+  const href = (name: string) => screen.getByRole("link", { name }).getAttribute("href");
+  expect(href("Profile")).toBe("/countries/beta");
+  expect(href("Map")).toBe("/maps?country=target&name=Beta");
+  expect(href("Passport")).toBe("/id/beta_lead");
+  expect(href("Exchange")).toBe("/exchange/n/target");
+  expect(href("Realm")).toBe("/r/ixnay");
+  expect(href("Cards")).toBe("/vault/cards/explore?country=target");
+});
+
+it("shows your own nation's management instead of diplomacy", () => {
+  render(
+    <CountryActionsMenu
+      targetCountryId="target"
+      targetCountryName="Beta"
+      viewerCountryId="target"
+      isOpen
+      isOwnCountry
+      onClose={jest.fn()}
+    />
+  );
+  expect(screen.getByRole("button", { name: "Editor" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Construct embassy" })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Wiki" })).toBeInTheDocument();
 });

@@ -99,22 +99,6 @@ interface NotificationTriggerOptions {
     countryId: string;
   };
 
-  // Diplomatic notifications
-  diplomatic?: {
-    eventType: "treaty" | "agreement" | "mission" | "conflict" | "resolution";
-    countries: string[];
-    title?: string;
-  };
-
-  // Meeting notifications
-  meeting?: {
-    id: string;
-    title: string;
-    scheduledTime: Date;
-    participants: string[];
-    action: "scheduled" | "starting" | "ended" | "cancelled";
-  };
-
   // Achievement notifications
   achievement?: {
     /** The achievement's key; the notification opens it in the Vault. */
@@ -289,69 +273,6 @@ class NotificationAPIService {
       });
     }
 
-    // Diplomatic notifications
-    if (options.diplomatic) {
-      const { eventType, countries, title } = options.diplomatic;
-
-      const eventTitles: Record<typeof eventType, string> = {
-        treaty: "Treaty Signed",
-        agreement: "Agreement Reached",
-        mission: "Diplomatic Mission",
-        conflict: "Diplomatic Conflict",
-        resolution: "Conflict Resolved",
-      };
-
-      return this.create({
-        title: title ?? eventTitles[eventType],
-        message: `Diplomatic ${eventType} involving ${countries.length} countries`,
-        category: "diplomatic",
-        type: eventType === "conflict" ? "warning" : "info",
-        priority: eventType === "conflict" ? "high" : "medium",
-        href: withBasePath("/mycountry/diplomacy"),
-        source: "diplomatic-system",
-        actionable: true,
-        metadata: { eventType, countries },
-      });
-    }
-
-    // Meeting notifications
-    if (options.meeting) {
-      const { id, title, scheduledTime, participants, action } = options.meeting;
-
-      const actionMessages: Record<typeof action, string> = {
-        scheduled: "Meeting scheduled",
-        starting: "Meeting starting now",
-        ended: "Meeting has ended",
-        cancelled: "Meeting cancelled",
-      };
-
-      const actionPriorities: Record<typeof action, NotificationPriority> = {
-        scheduled: "low",
-        starting: "high",
-        ended: "low",
-        cancelled: "medium",
-      };
-
-      // Notify all participants
-      const notificationPromises = participants.map((userId) =>
-        this.create({
-          title: `${actionMessages[action]}: ${title}`,
-          message: `Meeting ${action === "starting" ? "is about to start" : actionMessages[action]}`,
-          userId,
-          category: "governance",
-          type: action === "cancelled" ? "warning" : "info",
-          priority: actionPriorities[action],
-          href: withBasePath(`/meetings/${id}`),
-          source: "meeting-system",
-          actionable: action === "starting",
-          metadata: { meetingId: id, scheduledTime: scheduledTime.toISOString(), action },
-        })
-      );
-
-      await Promise.all(notificationPromises);
-      return notificationPromises.length > 0 ? "bulk-created" : null;
-    }
-
     // Achievement notifications
     if (options.achievement) {
       const { key, name, description, category, userId } = options.achievement;
@@ -442,27 +363,6 @@ class NotificationAPIService {
         targetUserId: params.targetUserId,
       },
     }) as Promise<string>;
-  }
-
-  /**
-   * Create notification for meeting events
-   */
-  async notifyMeetingEvent(params: {
-    meetingId: string;
-    title: string;
-    scheduledTime: Date;
-    participants: string[];
-    action: "scheduled" | "starting" | "ended" | "cancelled";
-  }): Promise<void> {
-    await this.trigger({
-      meeting: {
-        id: params.meetingId,
-        title: params.title,
-        scheduledTime: params.scheduledTime,
-        participants: params.participants,
-        action: params.action,
-      },
-    });
   }
 
   /**
@@ -593,52 +493,6 @@ class NotificationAPIService {
       metadata: {
         groupId: params.groupId,
         activityType: params.activityType,
-      },
-    });
-  }
-
-  /**
-   * Notify about quick action result (convenience method)
-   */
-  async notifyQuickActionResult(params: {
-    userId?: string;
-    countryId: string;
-    actionName: string;
-    status: "success" | "failure" | "scheduled";
-    details?: string;
-  }): Promise<string> {
-    const statusTitles = {
-      success: "Action Completed",
-      failure: "Action Failed",
-      scheduled: "Action Scheduled",
-    };
-
-    const statusTypes = {
-      success: "success" as const,
-      failure: "error" as const,
-      scheduled: "info" as const,
-    };
-
-    const priorities = {
-      success: "medium" as const,
-      failure: "high" as const,
-      scheduled: "low" as const,
-    };
-
-    return this.create({
-      title: `${statusTitles[params.status]}: ${params.actionName}`,
-      message: params.details ?? statusTitles[params.status],
-      userId: params.userId ?? null,
-      countryId: params.countryId,
-      category: "governance",
-      type: statusTypes[params.status],
-      priority: priorities[params.status],
-      href: withBasePath("/mycountry/quickactions"),
-      source: "quickactions",
-      actionable: params.status === "failure",
-      metadata: {
-        actionName: params.actionName,
-        status: params.status,
       },
     });
   }

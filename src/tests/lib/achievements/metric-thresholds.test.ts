@@ -29,7 +29,6 @@ import {
   PLATFORM_LOADERS,
 } from "~/lib/achievements/metrics/platform";
 import {
-  councilMeetings,
   electionMetrics,
   lawMetrics,
   type BillRow,
@@ -347,11 +346,6 @@ const POLITICS: Row[] = [
     "peaceful transitions: general elections spanning 3 years",
     () => electionMetrics(generals(36 * MONTH_MS)).peacefulTransitions,
     2,
-  ],
-  [
-    "council: 25 meetings in 3 real weeks (12 on the 4x clock) clear nothing",
-    () => councilMeetings(Array.from({ length: 25 }, (_, i) => new Date(START + i * DAY))),
-    0,
   ],
 ];
 

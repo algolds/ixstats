@@ -69,6 +69,10 @@ jest.mock("~/components/dashboard/sections/CountriesToExploreCard", () => ({
   CountriesToExploreCard: () => <div>Explore</div>,
 }));
 
+jest.mock("~/components/dashboard/sections/RailColumn", () => ({
+  RailColumn: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 jest.mock("~/components/ui/inspector", () => ({
   Inspector: ({ title, children }: { title: string; children: React.ReactNode }) => (
     <aside aria-label={title}>{children}</aside>

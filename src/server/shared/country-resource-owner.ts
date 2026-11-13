@@ -7,17 +7,6 @@
  */
 import type { PrismaClient } from "@prisma/client";
 
-export async function resolveMeetingCountryId(
-  db: { cabinetMeeting: Pick<PrismaClient["cabinetMeeting"], "findUnique"> },
-  meetingId: string
-): Promise<string | null> {
-  const meeting = await db.cabinetMeeting.findUnique({
-    where: { id: meetingId },
-    select: { countryId: true },
-  });
-  return meeting?.countryId ?? null;
-}
-
 export async function resolveStructureCountryId(
   db: { governmentStructure: Pick<PrismaClient["governmentStructure"], "findUnique"> },
   governmentStructureId: string

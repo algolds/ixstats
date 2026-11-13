@@ -60,7 +60,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n !== 1 ? "s" : ""}`;
 
 type Structure = NonNullable<RouterOutputs["government"]["getByCountryId"]>;
 type Department = NonNullable<Structure["departments"]>[number];
-type Official = NonNullable<RouterOutputs["meetings"]["getOfficials"]>[number];
+type Official = NonNullable<RouterOutputs["government"]["getOfficials"]>[number];
 
 function DepartmentRow({
   dept,
@@ -203,23 +203,23 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
   );
 
   const structureId = structure?.id;
-  const { data: officials, isLoading: officialsLoading } = api.meetings.getOfficials.useQuery(
+  const { data: officials, isLoading: officialsLoading } = api.government.getOfficials.useQuery(
     { governmentStructureId: structureId, active: true },
     { enabled: !!structureId }
   );
 
-  const appoint = api.meetings.appointOfficial.useMutation({
+  const appoint = api.government.appointOfficial.useMutation({
     onSuccess: () => {
-      void utils.meetings.getOfficials.invalidate();
+      void utils.government.getOfficials.invalidate();
       setDialogDepartmentId(null);
       setForm(initialForm());
     },
     onError: (error) => notify.error("Could not appoint the official", error.message),
   });
 
-  const remove = api.meetings.removeOfficial.useMutation({
+  const remove = api.government.removeOfficial.useMutation({
     onSuccess: () => {
-      void utils.meetings.getOfficials.invalidate();
+      void utils.government.getOfficials.invalidate();
     },
     onError: (error) => notify.error("Could not remove the official", error.message),
   });

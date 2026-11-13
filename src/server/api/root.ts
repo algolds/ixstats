@@ -28,7 +28,6 @@ import { governmentComponentsRouter } from "./routers/governmentComponents";
 import { policiesRouter } from "./routers/policies";
 import { legislationRouter } from "./routers/legislation";
 import { electionsRouter } from "./routers/elections";
-import { quickActionsRouter } from "./routers/quickactions";
 import { nationalIssuesRouter } from "./routers/national-issues";
 import { diplomaticCoreRouter } from "./routers/diplomacy/core";
 import { diplomaticEmbassiesRouter } from "./routers/diplomacy/embassies";
@@ -39,7 +38,6 @@ import { npcPersonalitiesRouter } from "./routers/npcPersonalities";
 import { crisisEventsRouter } from "./routers/crisis-events";
 import { intelligenceRouter } from "./routers/intelligence";
 import { securityRouter } from "./routers/security";
-import { meetingsRouter } from "./routers/meetings";
 import { militaryEquipmentRouter } from "./routers/militaryEquipment";
 import { smallArmsEquipmentRouter } from "./routers/smallArmsEquipment";
 import { cardsRouter } from "./routers/cards";
@@ -111,7 +109,6 @@ export const appRouter = createTRPCRouter({
   policies: policiesRouter,
   legislation: legislationRouter,
   elections: electionsRouter,
-  quickActions: quickActionsRouter,
   nationalIssues: nationalIssuesRouter,
   intent: intentRouter,
   diplomaticCore: diplomaticCoreRouter,
@@ -123,7 +120,6 @@ export const appRouter = createTRPCRouter({
   crisisEvents: crisisEventsRouter,
   intelligence: intelligenceRouter,
   security: securityRouter,
-  meetings: meetingsRouter,
   militaryEquipment: militaryEquipmentRouter,
   smallArmsEquipment: smallArmsEquipmentRouter,
   cards: cardsRouter,

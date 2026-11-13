@@ -20,14 +20,6 @@ const CabinetPanel = dynamic(
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
 
-const CabinetMeetingsPanel = dynamic(
-  () =>
-    import("~/components/executive/politics/CabinetMeetingsPanel").then((m) => ({
-      default: m.CabinetMeetingsPanel,
-    })),
-  { loading: () => <Skeleton className="rounded-card h-32" /> }
-);
-
 const PartyManager = dynamic(
   () =>
     import("~/components/executive/politics/PartyManager").then((m) => ({
@@ -109,12 +101,7 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
       {/* Sub-tab switcher (shared with the other domain sections) */}
       <SectionTabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
-      {activeTab === "cabinet" && (
-        <div className="space-y-4">
-          <CabinetPanel countryId={countryId} />
-          <CabinetMeetingsPanel countryId={countryId} />
-        </div>
-      )}
+      {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}
       {activeTab === "legislature" && <LegislaturePanel countryId={countryId} />}
       {activeTab === "bills" && (

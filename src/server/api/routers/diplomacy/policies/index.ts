@@ -8,12 +8,15 @@
  *  - foreignPolicy: embargo / sanction / free_trade / military_alliance / blockade actions
  *    (Phase 2 Foreign Policy Actions) and bilateral trade data.
  *  - alliances:     Alliance / Bloc system (Phase 3) — membership, voting, documents.
+ *  - summits:       leaders' summits, proposed and agreed through the same inbox as treaties.
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { diplomaticPoliciesForeignPolicyRouter } from "./foreignPolicy";
 import { diplomaticPoliciesAlliancesRouter } from "./alliances";
+import { diplomaticPoliciesSummitsRouter } from "./summits";
 
 export const diplomaticPoliciesRouter = mergeRouters(
   diplomaticPoliciesForeignPolicyRouter,
-  diplomaticPoliciesAlliancesRouter
+  diplomaticPoliciesAlliancesRouter,
+  diplomaticPoliciesSummitsRouter
 );

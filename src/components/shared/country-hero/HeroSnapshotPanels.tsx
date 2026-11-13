@@ -75,6 +75,13 @@ export function heroRings(activity: HeroSnapshotData["activityRingsData"]): Hero
   });
 }
 
+/** A country's overall standing: the rating of the mean of its recorded vitality rings. */
+export function vitalityStanding(rings: readonly HeroRing[]) {
+  if (rings.length === 0) return null;
+  const score = rings.reduce((sum, ring) => sum + ring.value, 0) / rings.length;
+  return { ...getQualitativeRating(score), score };
+}
+
 /** The vitality rings as pressable tiles, each opening the vitality breakdown. */
 export function RingGrid({
   rings,
@@ -140,11 +147,7 @@ function HeroSnapshotPanelsComponent({
 
   const rings = heroRings(data.activityRingsData);
 
-  // Overall standing is the mean of the recorded vitality rings.
-  const standing =
-    rings.length > 0
-      ? getQualitativeRating(rings.reduce((sum, ring) => sum + ring.value, 0) / rings.length)
-      : null;
+  const standing = vitalityStanding(rings);
 
   const headline = [
     {

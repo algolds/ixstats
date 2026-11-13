@@ -105,6 +105,8 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
           <ExplorePane
             onOpenCard={sheet.open}
             initialRealmSlug={param("realm")}
+            countryId={param("country")}
+            onClearCountry={() => setParam("country", null)}
             suggesting={param("suggest") === "1"}
             onSuggestingChange={(open) => setParam("suggest", open ? "1" : null)}
           />

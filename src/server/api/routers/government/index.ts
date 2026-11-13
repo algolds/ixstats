@@ -8,9 +8,15 @@
  *  - crud:       structure reads (getByCountryId / getFullByCountryId) and starting a budget year
  *  - budget:     the owner's National budget edits (structure, departments, allocations) and
  *                policy maintenance spent per year
+ *  - officials:  government officials (appoint / list / remove), moved from the retired meetings router
  */
 import { mergeRouters } from "~/server/api/trpc";
 import { governmentCrudRouter } from "./crud";
 import { governmentBudgetRouter } from "./budget";
+import { governmentOfficialsRouter } from "./officials";
 
-export const governmentRouter = mergeRouters(governmentCrudRouter, governmentBudgetRouter);
+export const governmentRouter = mergeRouters(
+  governmentCrudRouter,
+  governmentBudgetRouter,
+  governmentOfficialsRouter
+);

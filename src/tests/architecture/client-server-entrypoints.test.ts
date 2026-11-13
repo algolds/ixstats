@@ -165,7 +165,6 @@ describe("the wiki route's static imports", () => {
   ];
   /** Not on the route's critical path: each is loaded on demand (a `next/dynamic(() => import())` is not followed). */
   const LAZY = [
-    "src/components/executive/actions/MeetingScheduler.tsx",
     "src/components/vault/DailyBonusWidget.tsx",
     "src/components/halo/plugins/wiki/views/WikiView.tsx",
     "src/components/halo/plugins/wiki/views/WikiProfileView.tsx",

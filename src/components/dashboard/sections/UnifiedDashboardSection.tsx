@@ -61,6 +61,7 @@ import { UnifiedFeedContent, FollowingFeedContent, type FeedHandlers } from "./U
 import { DailyBlurbCard } from "./BlurbSection";
 import { YourRealmPanel } from "./YourRealmPanel";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
+import { RailColumn } from "./RailColumn";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
 import { feedShareCopy } from "~/lib/thinkpages/share-copy";
@@ -116,7 +117,7 @@ function PostingAs({
 
 function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
   return (
-    <LensCard app="exchange" padding="md">
+    <LensCard padding="md">
       <h2 className="text-headline text-label mb-3">Economic tiers</h2>
       <div className="flex flex-wrap items-center gap-1">
         {Object.entries(tiers).map(([tier, count]) => (
@@ -406,14 +407,20 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
-      {/* Each card is a LensCard in its own app's tint (owner ruling 2026-11-11). */}
-      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
-        <div className="flex flex-col gap-4">
+      {/* Every card takes the page tint, so the rail reads as one quiet layer beside the feed (owner ruling 2026-11-13). */}
+      {/* Fixed with no scroll of its own: RailColumn drops the lowest cards that do not fit. */}
+      <Inspector
+        title="Around IxStates"
+        open={inspectorOpen}
+        onOpenChange={setInspectorOpen}
+        className="overflow-hidden"
+      >
+        <RailColumn>
           {isSignedIn && <YourRealmPanel />}
           <DailyBlurbCard />
           <CountriesToExploreCard currentUserCountryId={countryId} />
           {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
-        </div>
+        </RailColumn>
       </Inspector>
     </>
   );

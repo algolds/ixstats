@@ -152,14 +152,13 @@ export function YourRealmPanel() {
 
   return (
     <LensCard
-      app="realms"
       content="entity"
       role="region"
       aria-label={`Your realm, ${realm.name}`}
       className="overflow-hidden"
     >
       <div data-app="realms" className="relative">
-        <div aria-hidden className="h-24 overflow-hidden">
+        <div aria-hidden className="h-24 overflow-hidden [@media(max-height:800px)]:h-16">
           <RealmMapFace realm={badge} bannerUrl={realm.bannerUrl} showCrest={false} />
         </div>
         <RealmCrest
@@ -178,7 +177,8 @@ export function YourRealmPanel() {
           </p>
         </div>
 
-        <div className="border-separator space-y-2 border-t pt-3">
+        {/* Very short windows drop the preview (Open the board stays) so the rail still fits. */}
+        <div className="border-separator space-y-2 border-t pt-3 [@media(max-height:800px)]:hidden">
           {fresh === undefined ? null : (
             <p className="text-subhead text-label tabular-nums">
               {fresh > 0 ? `${countLabel(fresh)} new on the board` : "Up to date on the board"}
@@ -189,7 +189,11 @@ export function YourRealmPanel() {
               No messages on the board yet. Start the conversation.
             </p>
           ) : (
-            <BoardPreviewList messages={messages.slice(0, PANEL_POSTS)} />
+            <BoardPreviewList
+              messages={messages.slice(0, PANEL_POSTS)}
+              // Short windows keep one post so the fixed rail's other cards still fit.
+              className="[@media(max-height:960px)]:*:nth-2:hidden"
+            />
           )}
         </div>
 

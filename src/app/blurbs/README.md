@@ -56,7 +56,7 @@ Router: `src/server/api/routers/blurbs/` (`mergeRouters` of three files; registe
 | `getResponsesForPrompt`             | `browse.ts`   | public    | Paginated, featured-first option               |
 | `getResponsesForCountry`            | `browse.ts`   | public    | All blurbs for a country                       |
 | `getBlurbCount`                     | `browse.ts`   | public    | Total response count (WikiOS stat card)        |
-| `getRandomActivePrompt`             | `browse.ts`   | public    | Random/featured prompt for WikiOS homepage     |
+| `getDailyPrompt`                    | `browse.ts`   | public    | One active prompt per UTC day (dashboard)      |
 | `getMyBlurbs`                       | `respond.ts`  | protected | Current user's responses                       |
 | `getMyResponse`                     | `respond.ts`  | protected | Whether user already answered a prompt         |
 | `submitResponse`                    | `respond.ts`  | protected | Create response (+ThinkPages cross-post)       |

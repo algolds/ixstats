@@ -63,7 +63,6 @@
   "src/components/cards/suggest/ArticleSearch.tsx": 1,
   "src/components/country-profile/factbook/FactbookTab.tsx": 1,
   "src/components/dashboard/accounts/AccountCreationModal.tsx": 1,
-  "src/components/executive/actions/MeetingScheduler.tsx": 1,
   "src/components/executive/politics/ParliamentHemicycle.tsx": 1,
   "src/components/halo/HaloTourContext.tsx": 1,
   "src/components/halo/hooks.ts": 2,

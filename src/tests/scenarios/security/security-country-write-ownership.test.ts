@@ -4,7 +4,7 @@
  * admin playing as the member, on a foreign country and on the member's own. Each row is one mutation: its router, its
  * call for an own, second or foreign target, and the write it guards. A new country mutation is one row.
  *
- * Folds country-idor-government, -meetings, -policies, -quickactions, -transport and -misc, and
+ * Folds country-idor-government, -policies, -transport and -misc (officials, formerly -meetings), and
  * multi-nation-write-access: the row matrix, plus each file's own details below it. Also folds country-authorization
  * (the check decides on the fresh user row), cultural-artifact-upload-auth, diplomatic-scenarios-record-choice-auth and
  * audit-country-idor (the detector that lists the mutations needing a row).
@@ -46,9 +46,7 @@ jest.mock("~/server/db", () => ({
 import { db as moduleDb } from "~/server/db";
 import { createCallerFactory } from "~/server/api/trpc";
 import { governmentRouter } from "~/server/api/routers/government";
-import { meetingsRouter } from "~/server/api/routers/meetings";
 import { policiesRouter } from "~/server/api/routers/policies";
-import { quickActionsRouter } from "~/server/api/routers/quickactions";
 import { transportRouteMutationsRouter } from "~/server/api/routers/transport/routeMutations";
 import { legislationRouter } from "~/server/api/routers/legislation";
 import { diplomaticCulturalExchangesCoreMutationsRouter } from "~/server/api/routers/diplomacy/cultural/exchanges/core/mutations";
@@ -178,18 +176,7 @@ const governmentDb = (departments = 0) => ({
   $transaction: jest.fn(writeReached),
 });
 
-const meetingsDb = () => ({
-  cabinetMeeting: {
-    create: jest.fn(async ({ data }: { data: object }) => ({
-      id: "meeting_new",
-      title: "Summit",
-      scheduledDate: new Date(),
-      ...data,
-    })),
-    findUnique: jest.fn(byId),
-  },
-  meetingAgendaItem: { create: jest.fn(echoCreate) },
-  meetingAttendance: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn(echoCreate) },
+const officialsDb = () => ({
   governmentStructure: { findUnique: jest.fn(byId) },
   governmentDepartment: {
     findUnique: jest.fn(async ({ where }: { where: { id: string } }) => {
@@ -240,16 +227,6 @@ const policyInput = {
   policyType: "economic" as const,
   category: "fiscal",
 };
-
-const quickActionsDb = () => ({
-  cabinetMeeting: {
-    create: jest.fn(async ({ data }: { data: object }) => ({ id: "meeting_new", ...data })),
-  },
-  meetingAttendance: { createMany: jest.fn() },
-  meetingAgendaItem: { createMany: jest.fn() },
-  activitySchedule: { create: jest.fn() },
-});
-const quickMeeting = { title: "Budget review", scheduledDate: new Date("2026-10-01T00:00:00Z") };
 
 const transportDb = () => ({
   transportRoute: {
@@ -373,59 +350,22 @@ const ROWS: Row[] = [
     write: (db) => (db.governmentDepartment as { delete: jest.Mock }).delete,
     reach: "write path reached",
   },
-  {
-    name: "meetings.createMeeting",
-    run: (ctx, t) =>
-      caller(meetingsRouter, ctx).createMeeting({
-        title: "Summit",
-        scheduledDate: new Date(),
-        userId: "someone_else",
-        countryId: COUNTRY[t],
-      }),
-    db: meetingsDb,
-    write: (db) => (db as ReturnType<typeof meetingsDb>).cabinetMeeting.create,
-    reach: null,
-  },
-  {
-    name: "meetings.addAgendaItem",
-    run: (ctx, t) =>
-      caller(meetingsRouter, ctx).addAgendaItem({
-        meetingId: `meeting_${t}`,
-        title: "Tariffs",
-        order: 0,
-      }),
-    db: meetingsDb,
-    write: (db) => (db as ReturnType<typeof meetingsDb>).meetingAgendaItem.create,
-    reach: null,
-  },
-  {
-    name: "meetings.recordAttendance",
-    run: (ctx, t) =>
-      caller(meetingsRouter, ctx).recordAttendance({
-        meetingId: `meeting_${t}`,
-        attendeeName: "Minister",
-        attendanceStatus: "invited",
-      }),
-    db: meetingsDb,
-    write: (db) => (db as ReturnType<typeof meetingsDb>).meetingAttendance.create,
-    reach: null,
-  },
   ...(["governmentStructureId", "departmentId"] as const).map((key) => ({
-    name: `meetings.appointOfficial (${key})`,
+    name: `government.appointOfficial (${key})`,
     run: (ctx: MockCallerContext, t: Target) =>
-      caller(meetingsRouter, ctx).appointOfficial({
+      caller(governmentRouter, ctx).appointOfficial({
         ...appointment,
         [key]: `${key === "departmentId" ? "department" : "structure"}_${t}`,
       }),
-    db: meetingsDb,
-    write: (db: Db) => (db as ReturnType<typeof meetingsDb>).governmentOfficial.create,
+    db: officialsDb,
+    write: (db: Db) => (db as ReturnType<typeof officialsDb>).governmentOfficial.create,
     reach: null,
   })),
   {
-    name: "meetings.removeOfficial",
-    run: (ctx, t) => caller(meetingsRouter, ctx).removeOfficial({ id: `official_${t}` }),
-    db: meetingsDb,
-    write: (db) => (db as ReturnType<typeof meetingsDb>).governmentOfficial.update,
+    name: "government.removeOfficial",
+    run: (ctx, t) => caller(governmentRouter, ctx).removeOfficial({ id: `official_${t}` }),
+    db: officialsDb,
+    write: (db) => (db as ReturnType<typeof officialsDb>).governmentOfficial.update,
     reach: null,
   },
   {
@@ -434,18 +374,6 @@ const ROWS: Row[] = [
       caller(policiesRouter, ctx).createPolicy({ ...policyInput, countryId: COUNTRY[t] }),
     db: policiesDb,
     write: (db) => (db as ReturnType<typeof policiesDb>).policy.create,
-    reach: null,
-  },
-  {
-    name: "quickActions.createMeeting",
-    run: (ctx, t) =>
-      caller(quickActionsRouter, ctx).createMeeting({
-        countryId: COUNTRY[t],
-        userId: "someone_else",
-        meeting: quickMeeting,
-      }),
-    db: quickActionsDb,
-    write: (db) => (db as ReturnType<typeof quickActionsDb>).cabinetMeeting.create,
     reach: null,
   },
   {
@@ -651,18 +579,7 @@ describe("and the details each country mutation adds", () => {
     expect(own.governmentDepartment.delete).not.toHaveBeenCalled();
   });
 
-  it("meetings, policies and quick actions record the caller as organiser or author, whatever userId was sent", async () => {
-    const meetings = meetingsDb();
-    await createCallerFactory(meetingsRouter)(member(meetings)).createMeeting({
-      title: "Summit",
-      scheduledDate: new Date(),
-      userId: "someone_else",
-      countryId: OWN,
-    });
-    expect(meetings.cabinetMeeting.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ countryId: OWN, userId: MEMBER.clerkUserId }),
-    });
-
+  it("policies record the caller as author, whatever userId was sent", async () => {
     const policies = policiesDb();
     await createCallerFactory(policiesRouter)(member(policies)).createPolicy({
       ...policyInput,
@@ -671,50 +588,28 @@ describe("and the details each country mutation adds", () => {
     expect(policies.policy.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ countryId: OWN, userId: MEMBER.clerkUserId }),
     });
-
-    const quick = quickActionsDb();
-    await createCallerFactory(quickActionsRouter)(member(quick)).createMeeting({
-      countryId: OWN,
-      userId: "someone_else",
-      meeting: quickMeeting,
-    });
-    const organiser = expect.objectContaining({ userId: MEMBER.clerkUserId });
-    expect(quick.cabinetMeeting.create).toHaveBeenCalledWith({ data: organiser });
-    expect(quick.activitySchedule.create).toHaveBeenCalledWith({ data: organiser });
   });
 
-  it("meetings: an unknown meeting or official is NOT_FOUND, and an official needs an own structure and department", async () => {
-    const db = meetingsDb();
-    const meetings = createCallerFactory(meetingsRouter)(member(db));
-    await expect(
-      meetings.addAgendaItem({ meetingId: "meeting_missing", title: "Tariffs", order: 0 })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(
-      meetings.recordAttendance({
-        meetingId: "meeting_missing",
-        attendeeName: "M",
-        attendanceStatus: "invited",
-      })
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    await expect(meetings.removeOfficial({ id: "official_missing" })).rejects.toMatchObject({
+  it("officials: an unknown official is NOT_FOUND, and an official needs an own structure and department", async () => {
+    const db = officialsDb();
+    const government = createCallerFactory(governmentRouter)(member(db));
+    await expect(government.removeOfficial({ id: "official_missing" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
     await expect(
-      meetings.appointOfficial({
+      government.appointOfficial({
         ...appointment,
         governmentStructureId: "structure_own",
         departmentId: "department_foreign",
       })
     ).rejects.toMatchObject({ code: "FORBIDDEN" });
-    await expect(meetings.appointOfficial(appointment)).rejects.toMatchObject({
+    await expect(government.appointOfficial(appointment)).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
-    expect(db.meetingAgendaItem.create).not.toHaveBeenCalled();
-    expect(db.meetingAttendance.create).not.toHaveBeenCalled();
     expect(db.governmentOfficial.create).not.toHaveBeenCalled();
     expect(db.governmentOfficial.update).not.toHaveBeenCalled();
 
-    await createCallerFactory(meetingsRouter)(member(db)).appointOfficial({
+    await createCallerFactory(governmentRouter)(member(db)).appointOfficial({
       ...appointment,
       governmentStructureId: "structure_own",
       departmentId: "department_own",
@@ -821,12 +716,12 @@ describe("and the details each country mutation adds", () => {
     expect(stashes.stashItem.upsert).not.toHaveBeenCalled();
   });
 
-  it("an admin adds agenda items and appoints officials on a foreign country", async () => {
-    const db = meetingsDb();
-    const meetings = createCallerFactory(meetingsRouter)(admin(db));
-    await meetings.addAgendaItem({ meetingId: "meeting_foreign", title: "Tariffs", order: 0 });
-    await meetings.appointOfficial({ ...appointment, governmentStructureId: "structure_foreign" });
-    expect(db.meetingAgendaItem.create).toHaveBeenCalledTimes(1);
+  it("an admin appoints officials on a foreign country", async () => {
+    const db = officialsDb();
+    await createCallerFactory(governmentRouter)(admin(db)).appointOfficial({
+      ...appointment,
+      governmentStructureId: "structure_foreign",
+    });
     expect(db.governmentOfficial.create).toHaveBeenCalledTimes(1);
   });
 });

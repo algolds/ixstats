@@ -2,13 +2,12 @@
 /**
  * The country-scoped writes the security area's country-write-ownership table does not hold, one row each: a
  * signed-out visitor is refused, and so is a player writing another nation, both before anything is written. Below the
- * table, what each write does for its owner: a cabinet meeting concludes once with one decision per agenda item of its
- * own (each on the event spine), a repeal releases an enacted policy's bandwidth and growth effect, the tax system
+ * table, what each write does for its owner: a repeal releases an enacted policy's bandwidth and growth effect, the tax system
  * validates brackets before writing and an update replaces its categories, an economic profile takes integer ranks
  * only, and the first-steps checklist ticks from the rows each console writes while its dismissal leaves the nation's
  * updatedAt (the editor's stale-write check) alone.
  *
- * Folds meetings-conclude, policies-repeal, tax-system-router, economics-router, mycountry-first-steps and
+ * Folds policies-repeal, tax-system-router, economics-router, mycountry-first-steps and
  * government-start-budget-year (its owner's copy is in budget-year-rollover).
  */
 jest.mock("~/server/services/builderIntegrationService", () => ({
@@ -26,7 +25,6 @@ jest.mock("~/lib/notifications/hooks", () => ({
 
 import { describe, it, expect, beforeEach } from "@jest/globals";
 import { createCallerFactory } from "~/server/api/trpc";
-import { meetingsRouter } from "~/server/api/routers/meetings";
 import { policiesRouter } from "~/server/api/routers/policies";
 import { taxSystemRouter } from "~/server/api/routers/taxSystem";
 import { economicsRouter } from "~/server/api/routers/economics";
@@ -48,59 +46,6 @@ import {
 } from "~/tests/helpers/country-idor-context";
 
 type Db = Record<string, object>;
-
-function meetingsDb(countryId: string, status = "scheduled") {
-  const state = {
-    meeting: {
-      id: "m1",
-      countryId,
-      status,
-      title: "Spring cabinet",
-      notes: null as string | null,
-      completedAt: null as Date | null,
-    },
-    agendaItems: [
-      { id: "a1", title: "Budget review", status: "pending", outcome: null as string | null },
-      { id: "a2", title: "Port expansion", status: "pending", outcome: null as string | null },
-    ],
-    decisions: [] as Array<Record<string, unknown>>,
-  };
-  const db = {
-    state,
-    cabinetMeeting: {
-      findUnique: jest.fn(async () => ({
-        ...state.meeting,
-        agendaItems: state.agendaItems.map((a) => ({ ...a })),
-        decisions: [...state.decisions],
-      })),
-      updateMany: jest.fn(
-        async ({ where, data }: { where: { status: { notIn: string[] } }; data: object }) => {
-          if (where.status.notIn.includes(state.meeting.status)) return { count: 0 };
-          Object.assign(state.meeting, data);
-          return { count: 1 };
-        }
-      ),
-    },
-    meetingDecision: {
-      create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => {
-        const row = { id: `d${state.decisions.length + 1}`, ...data };
-        state.decisions.push(row);
-        return row;
-      }),
-    },
-    countryChangeLog: { create: jest.fn(async (_args: { data: object }) => ({})) },
-    meetingAgendaItem: {
-      update: jest.fn(async ({ where, data }: { where: { id: string }; data: object }) => {
-        const item = state.agendaItems.find((a) => a.id === where.id)!;
-        Object.assign(item, data);
-        return item;
-      }),
-    },
-    $transaction: jest.fn(),
-  };
-  db.$transaction.mockImplementation(async (cb: (tx: unknown) => unknown) => cb(db));
-  return db;
-}
 
 function policiesDb(countryId: string, status = "active") {
   const state = {
@@ -241,7 +186,6 @@ function firstStepsDb(
   };
 }
 
-const meetings = createCallerFactory(meetingsRouter);
 const policies = createCallerFactory(policiesRouter);
 const taxSystem = createCallerFactory(taxSystemRouter);
 const economics = createCallerFactory(economicsRouter);
@@ -259,15 +203,6 @@ const mock = (db: Db, model: string, method: string) =>
   (db[model] as Record<string, jest.Mock>)[method]!;
 
 const ROWS: Row[] = [
-  {
-    name: "meetings.concludeMeeting",
-    db: () => meetingsDb(FOREIGN_COUNTRY),
-    run: (ctx) => meetings(ctx).concludeMeeting({ meetingId: "m1", outcome: "Done" }),
-    writes: (db) => [
-      mock(db, "cabinetMeeting", "updateMany"),
-      mock(db, "meetingDecision", "create"),
-    ],
-  },
   {
     name: "policies.repealPolicy",
     db: () => policiesDb(FOREIGN_COUNTRY),
@@ -362,88 +297,6 @@ describe("country-scoped writes", () => {
       });
     }
   );
-});
-
-describe("meetings.concludeMeeting", () => {
-  it("records a decision per agenda item on the event spine and completes the meeting", async () => {
-    const db = meetingsDb(CALLER_COUNTRY);
-    const result = await meetingsRouter.createCaller(createIdorContext(db)).concludeMeeting({
-      meetingId: "m1",
-      outcome: "Budget passed; port plan sent back for costing.",
-      decisions: [
-        { agendaItemId: "a1", decision: "approved" },
-        { agendaItemId: "a2", decision: "deferred", notes: "Needs costing" },
-      ],
-    });
-
-    expect(db.state.meeting).toMatchObject({
-      status: "completed",
-      notes: "Budget passed; port plan sent back for costing.",
-      completedAt: expect.any(Date),
-    });
-    expect(db.state.decisions).toEqual([
-      expect.objectContaining({
-        meetingId: "m1",
-        agendaItemId: "a1",
-        title: "Budget review",
-        description: "Approved",
-        decisionType: "approved",
-      }),
-      expect.objectContaining({
-        agendaItemId: "a2",
-        description: "Needs costing",
-        decisionType: "deferred",
-      }),
-    ]);
-    expect(db.state.agendaItems.map((a) => a.status)).toEqual(["decided", "deferred"]);
-    expect(result?.decisions).toHaveLength(2);
-    expect(db.countryChangeLog.create.mock.calls.map(([args]) => args.data)).toEqual([
-      expect.objectContaining({
-        countryId: CALLER_COUNTRY,
-        sourceType: "meeting",
-        sourceId: "d1",
-        description: 'Cabinet meeting "Spring cabinet": Budget review approved',
-      }),
-      expect.objectContaining({
-        sourceId: "d2",
-        description: 'Cabinet meeting "Spring cabinet": Port expansion deferred (Needs costing)',
-      }),
-    ]);
-  });
-
-  it("refuses a meeting that is already over, and writes nothing to the spine", async () => {
-    const db = meetingsDb(CALLER_COUNTRY, "completed");
-    await expect(
-      meetingsRouter.createCaller(createIdorContext(db)).concludeMeeting({
-        meetingId: "m1",
-        outcome: "Again",
-        decisions: [{ agendaItemId: "a1", decision: "approved" }],
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.meetingDecision.create).not.toHaveBeenCalled();
-    expect(db.countryChangeLog.create).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ["an agenda item of another meeting", [{ agendaItemId: "elsewhere", decision: "approved" }]],
-    [
-      "two decisions on one item",
-      [
-        { agendaItemId: "a1", decision: "approved" },
-        { agendaItemId: "a1", decision: "rejected" },
-      ],
-    ],
-  ] as const)("refuses %s and leaves the meeting open", async (_label, decisions) => {
-    const db = meetingsDb(CALLER_COUNTRY);
-    await expect(
-      meetingsRouter.createCaller(createIdorContext(db)).concludeMeeting({
-        meetingId: "m1",
-        outcome: "Done",
-        decisions: [...decisions],
-      })
-    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
-    expect(db.state.meeting.status).toBe("scheduled");
-  });
 });
 
 describe("policies.repealPolicy", () => {

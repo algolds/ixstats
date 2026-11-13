@@ -22,6 +22,8 @@ import {
   proposalExpiryCutoff,
 } from "~/lib/diplomacy/proposal-lifecycle";
 import { notifyCountryOwners } from "./notify";
+import { acceptSummit } from "./summits";
+import { SUMMIT_TYPE } from "~/lib/diplomacy/summits";
 import { StorytellerEffectType } from "~/lib/economy/calculations";
 import { createStorytellerEffects } from "~/lib/economy/storyteller-effects";
 import { getStandingBand } from "~/lib/diplomacy/relation-bands";
@@ -41,6 +43,7 @@ const COOPERATIVE_FP = new Set<string>(COOPERATIVE_FP_TYPES);
 const FP_LABELS: Record<string, string> = {
   free_trade: "free trade agreement",
   military_alliance: "military alliance",
+  summit: "summit",
 };
 
 /** Mark a stale pending proposal expired and refuse the action with a clear message. */
@@ -454,7 +457,7 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
       });
     }),
 
-  // The target reviews incoming cooperative proposals (free trade / alliance).
+  // The target reviews incoming cooperative proposals (free trade, alliance, summit).
   getForeignPolicyProposals: protectedProcedure
     .input(z.object({ countryId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -587,6 +590,8 @@ export const diplomaticPoliciesForeignPolicyRouter = createTRPCRouter({
 
       // Accept: enact the stored effects (declining stays open across realms, so an old proposal can be turned down).
       await assertSameRealm(ctx.db, action.initiatorId, action.targetId);
+      // A summit has no economic effects to enact: agreeing schedules it and warms relations.
+      if (action.actionType === SUMMIT_TYPE) return acceptSummit(ctx.db as PrismaClient, action.id);
       const enacted = await enactForeignPolicyEffects(
         ctx.db as PrismaClient,
         action.id,

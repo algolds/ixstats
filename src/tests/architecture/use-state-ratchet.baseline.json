@@ -69,7 +69,6 @@
   "src/components/dashboard/accounts/AccountCreationModal.tsx": 6,
   "src/components/dashboard/sections/feed/WikiArticleActions.tsx": 8,
   "src/components/dashboard/sections/UnifiedDashboardSection.tsx": 8,
-  "src/components/executive/actions/MeetingScheduler.tsx": 13,
   "src/components/executive/PolicyCreatorSheet.tsx": 12,
   "src/components/executive/politics/BillsPanel.tsx": 7,
   "src/components/halo/hooks.ts": 8,

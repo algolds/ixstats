@@ -7,6 +7,7 @@ import { z } from "zod/v4";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { db } from "~/server/db";
 import { TRPCError } from "@trpc/server";
+import { pickDailyPrompt } from "~/lib/blurbs/daily-prompt";
 import {
   cursorPageInput,
   cursorPageArgs,
@@ -119,19 +120,12 @@ export const blurbsBrowseRouter = createTRPCRouter({
   // Admin endpoints
   // ---------------------------------------------------------------------------
 
-  /** Random active prompt (for WikiOS homepage — cycles on each load). */
-  getRandomActivePrompt: publicProcedure.query(async () => {
+  /** Today's prompt: one active prompt per UTC day, the same for everyone (the dashboard's Daily blurb). */
+  getDailyPrompt: publicProcedure.query(async () => {
     const activePrompts = await db.blurbPrompt.findMany({
       where: { status: "ACTIVE" },
       include: { _count: { select: { responses: true } } },
     });
-    if (activePrompts.length === 0) return null;
-
-    // Prefer featured prompts (50% chance if any exist), otherwise random
-    const featured = activePrompts.filter((p) => p.featured);
-    if (featured.length > 0 && Math.random() < 0.5) {
-      return featured[Math.floor(Math.random() * featured.length)]!;
-    }
-    return activePrompts[Math.floor(Math.random() * activePrompts.length)]!;
+    return pickDailyPrompt(activePrompts, new Date());
   }),
 });

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -22,7 +21,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { ProposeSummitForm } from "./ProposeSummitForm";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
 import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
@@ -36,11 +35,10 @@ interface ExpandedCardContentProps {
 
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
   ({ country, viewerCountryId, isOwnCountry }) => {
-    const notify = useNotify();
     const router = useRouter();
     const targetCountryId = country.id;
     const targetCountryName = country.name;
-    const [schedulerOpen, setSchedulerOpen] = useState(false);
+    const [summitOpen, setSummitOpen] = useState(false);
 
     const diplomacy = useCountryDiplomacyActions({
       viewerCountryId,
@@ -187,20 +185,26 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!viewerCountryId) {
-                        notify.error("You must be logged in to request a meeting");
-                        return;
-                      }
-                      setSchedulerOpen(true);
+                      setSummitOpen((open) => !open);
                     }}
                     disabled={!viewerCountryId || isLoading}
+                    aria-pressed={summitOpen}
                     variant="outline"
                     size="lg"
                     className={actionClass}
                   >
                     <Calendar className="text-label-secondary h-3.5 w-3.5" />
-                    Request meeting
+                    Propose summit
                   </Button>
+                  {summitOpen && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ProposeSummitForm
+                        targetCountryId={targetCountryId}
+                        targetCountryName={targetCountryName}
+                        onDone={() => setSummitOpen(false)}
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-2">
                     <Button
@@ -283,14 +287,6 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                 Login required to perform actions
               </p>
             </div>
-          )}
-          {viewerCountryId && (
-            <MeetingScheduler
-              countryId={viewerCountryId}
-              open={schedulerOpen}
-              onOpenChange={setSchedulerOpen}
-              defaultTargetCountryId={targetCountryId}
-            />
           )}
         </div>
       </div>

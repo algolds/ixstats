@@ -13,6 +13,7 @@ import {
   Group as Users,
   Community as Handshake,
   Prohibition,
+  Calendar,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import {
@@ -36,6 +37,9 @@ import {
   liftConfirmSentence,
 } from "./useDiplomacyInbox";
 import { Skeleton } from "~/components/ui/skeleton";
+import { useNationClock } from "~/hooks/useNationClock";
+import { formatClockDate } from "~/lib/realms/nation-time";
+import { SUMMIT_TYPE } from "~/lib/diplomacy/summits";
 
 interface DiplomacyInboxProps {
   countryId: string;
@@ -46,7 +50,20 @@ interface InboxRow {
   kind: "proposal" | "invite" | "hostile";
   title: string;
   subtitle: string;
+  /** A summit's agenda, shown before it is answered. */
+  detail?: string | null;
   expiresAt: Date | string;
+}
+
+/** A proposal's who line; a summit's names its date on the nation's realm clock. */
+function proposalSubtitle(
+  who: string,
+  p: { actionType: string; effectiveIxTime: number | null },
+  reader: ReturnType<typeof useNationClock>
+): string {
+  return p.actionType === SUMMIT_TYPE
+    ? `${who} · ${formatClockDate(p.effectiveIxTime, reader)}`
+    : who;
 }
 
 /**
@@ -68,6 +85,8 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
   );
   const outgoingInvites = api.diplomaticPolicies.getOutgoingAllianceInvites.useQuery(input, opts);
   const activePolicies = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(input, opts);
+  const summits = api.diplomaticPolicies.getSummits.useQuery(input, opts);
+  const reader = useNationClock();
 
   const refresh = () => {
     void utils.diplomaticPolicies.getForeignPolicyProposals.invalidate();
@@ -76,6 +95,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
     void utils.diplomaticPolicies.getOutgoingAllianceInvites.invalidate();
     void utils.diplomaticPolicies.getAlliances.invalidate();
     void utils.diplomaticPolicies.getActiveForeignPolicies.invalidate();
+    void utils.diplomaticPolicies.getSummits.invalidate();
   };
   const onError = (title: string) => (err: { message: string }) => {
     notify.error(title, err.message);
@@ -83,14 +103,21 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
   };
 
   const respondProposal = api.diplomaticPolicies.respondToForeignPolicyProposal.useMutation({
-    onSuccess: (res) => {
-      if (res.status === "active")
-        notify.success("Proposal accepted", "The agreement is now in effect.");
-      else notify.success("Proposal declined");
-      refresh();
-    },
+    onSuccess: refresh,
     onError: onError("Could not answer the proposal"),
   });
+  const answer = (p: { id: string; actionType: string }, choice: "accept" | "decline") =>
+    respondProposal.mutate(
+      { actionId: p.id, choice },
+      {
+        onSuccess: () => {
+          if (choice === "decline") notify.success("Proposal declined");
+          else if (p.actionType === SUMMIT_TYPE)
+            notify.success("Summit agreed", "It is on both nations' list of summits.");
+          else notify.success("Proposal accepted", "The agreement is now in effect.");
+        },
+      }
+    );
   const respondInvite = api.diplomaticPolicies.respondToAllianceInvite.useMutation({
     onSuccess: (res) => {
       if (res.status === "active")
@@ -135,10 +162,11 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
       key: `fp-${p.id}`,
       kind: "proposal" as const,
       title: FP_PROPOSAL_LABELS[p.actionType] ?? p.actionType,
-      subtitle: `Proposed by ${p.initiator?.name ?? "another nation"}`,
+      subtitle: proposalSubtitle(`Proposed by ${p.initiator?.name ?? "another nation"}`, p, reader),
+      detail: p.actionType === SUMMIT_TYPE ? p.description : null,
       expiresAt: p.expiresAt,
-      onAccept: () => respondProposal.mutate({ actionId: p.id, choice: "accept" }),
-      onDecline: () => respondProposal.mutate({ actionId: p.id, choice: "decline" }),
+      onAccept: () => answer(p, "accept"),
+      onDecline: () => answer(p, "decline"),
     })),
     ...(incomingInvites.data ?? []).map((i) => ({
       key: `inv-${i.allianceId}`,
@@ -163,7 +191,8 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
       key: `fp-${p.id}`,
       kind: "proposal" as const,
       title: FP_PROPOSAL_LABELS[p.actionType] ?? p.actionType,
-      subtitle: `To ${p.target?.name ?? "another nation"}`,
+      subtitle: proposalSubtitle(`To ${p.target?.name ?? "another nation"}`, p, reader),
+      detail: p.actionType === SUMMIT_TYPE ? p.description : null,
       expiresAt: p.expiresAt,
       onWithdraw: () => withdrawProposal.mutate({ actionId: p.id }),
     })),
@@ -253,7 +282,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
           void outgoingProposals.refetch();
           void outgoingInvites.refetch();
         }}
-        emptyText="No pending proposals or invitations. Propose free trade or a military alliance from another nation's profile, or invite nations to an alliance you lead."
+        emptyText="No pending proposals or invitations. Propose a summit, free trade or a military alliance from another nation's actions, or invite nations to an alliance you lead."
         count={outgoing.length}
       >
         {outgoing.map((row) => (
@@ -273,6 +302,35 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
         ))}
       </InboxSection>
 
+      <InboxSection
+        icon={Calendar}
+        title="Summits"
+        description="Summits your nation has agreed to, the next one first."
+        loading={summits.isLoading}
+        error={summits.error?.message}
+        onRetry={() => void summits.refetch()}
+        emptyText="No summits yet. Propose one from another nation's actions."
+        count={summits.data?.length ?? 0}
+      >
+        {(summits.data ?? []).map((s) => (
+          <li
+            key={s.id}
+            className="border-separator bg-surface rounded-row flex items-start gap-3 border p-3"
+          >
+            <Calendar className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-label text-headline truncate">Summit with {s.partner.name}</p>
+              <p className="text-label-secondary text-footnote">
+                {formatClockDate(s.dateIxTime, reader)} ·{" "}
+                {s.phase === "upcoming" ? "Upcoming" : "Held"}
+              </p>
+              {s.agenda && (
+                <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2">{s.agenda}</p>
+              )}
+            </div>
+          </li>
+        ))}
+      </InboxSection>
       <InboxSection
         icon={Prohibition}
         title="In force"
@@ -410,6 +468,9 @@ function InboxItem({
         <div className="min-w-0">
           <p className="text-label text-headline truncate">{row.title}</p>
           <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
+          {row.detail && (
+            <p className="text-label-secondary text-footnote line-clamp-2">{row.detail}</p>
+          )}
           <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
             <Clock className="h-3 w-3" />
             <span>

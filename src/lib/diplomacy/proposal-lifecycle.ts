@@ -13,8 +13,14 @@
 export const PROPOSAL_TTL_DAYS = 14;
 const PROPOSAL_TTL_MS = PROPOSAL_TTL_DAYS * 24 * 60 * 60 * 1000;
 
-/** Foreign-policy actions that need the target's consent before they take effect. */
-export const COOPERATIVE_FP_TYPES = ["free_trade", "military_alliance"] as const;
+/** Treaties: cooperative actions with economic effects once accepted. */
+export const AGREEMENT_FP_TYPES = ["free_trade", "military_alliance"] as const;
+
+/**
+ * Foreign-policy actions that need the target's consent before they take effect: the treaties and summits.
+ * Everything else (sanctions, embargoes, blockades) is hostile and unilateral.
+ */
+export const COOPERATIVE_FP_TYPES = [...AGREEMENT_FP_TYPES, "summit"] as const;
 
 export const PROPOSAL_STATUS = {
   pending: "proposed",

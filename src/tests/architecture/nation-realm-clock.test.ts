@@ -32,8 +32,6 @@ const NATION_ROOTS = [
   "src/server/api/routers/legislation.ts",
   "src/server/api/routers/intent",
   "src/server/api/routers/elections",
-  "src/server/api/routers/quickactions",
-  "src/server/api/routers/meetings",
   "src/server/api/routers/diplomacy",
   "src/server/api/routers/diplomaticScenarios",
   "src/server/api/routers/mycountry",

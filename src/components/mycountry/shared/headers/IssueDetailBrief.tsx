@@ -16,7 +16,6 @@ import {
   ArrowUpRight,
   KeyCommand as Command,
   ControlSlider as Sliders,
-  CalendarRotate as CalendarClock,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -310,16 +309,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     },
     onError: (e: { message?: string }) => notify.error("Failed to delegate issue", e?.message),
   });
-  const scheduleMeetingM = api.quickActions.createMeeting.useMutation({
-    onSuccess: () => {
-      notify.success(
-        "Cabinet meeting scheduled for next week. It is in Politics, under Cabinet meetings."
-      );
-      void utils.meetings.getMeetings.invalidate();
-      onClose?.();
-    },
-    onError: (e: { message?: string }) => notify.error("Failed to schedule meeting", e?.message),
-  });
   const commissionRecon = api.nationalIssues.commissionRecon.useMutation({
     onSuccess: () => {
       void reconQuery.refetch();
@@ -359,28 +348,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const chosenDirective =
     localDirective ?? options.find((o) => o.id === issue.chosenOptionId)?.recommendedDirective;
   const recon = reconQuery.data;
-
-  const handleSetMeeting = () => {
-    const nextWeekDate = new Date();
-    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-    scheduleMeetingM.mutate({
-      countryId: issue.countryId,
-      userId: issue.countryId,
-      meeting: {
-        title: `Cabinet Meeting: ${issue.title}`,
-        description: `Cabinet meeting to address the national issue '${issue.title}'.`,
-        scheduledDate: nextWeekDate,
-        duration: 60,
-        agendaItems: [
-          {
-            title: issue.title,
-            description: issue.description || undefined,
-            category: issue.domain,
-          },
-        ],
-      },
-    });
-  };
 
   return (
     <div className="space-y-5 pb-4">
@@ -423,7 +390,7 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
             <div
               className={cn(
                 "grid grid-cols-2 gap-2",
-                onDeclare ? "sm:grid-cols-4" : "sm:grid-cols-3"
+                onDeclare ? "sm:grid-cols-3" : "sm:grid-cols-2"
               )}
             >
               <PathwayButton
@@ -442,13 +409,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     .getElementById("issue-brief-options")
                     ?.scrollIntoView({ behavior: "smooth" })
                 }
-              />
-              <PathwayButton
-                icon={CalendarClock}
-                label={scheduleMeetingM.isPending ? "Scheduling…" : "Set meeting"}
-                sub="Next week"
-                onClick={handleSetMeeting}
-                disabled={scheduleMeetingM.isPending}
               />
               {onDeclare && (
                 <PathwayButton

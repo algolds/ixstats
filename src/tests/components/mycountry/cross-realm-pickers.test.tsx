@@ -17,6 +17,8 @@ jest.mock("~/trpc/react", () => ({
   api: {
     countries: {
       getAll: { useQuery: () => ({ data: { countries: COUNTRIES }, isLoading: false }) },
+      getByIdBasic: { useQuery: () => ({ data: undefined }) },
+      getActivityRingsData: { useQuery: () => ({ data: undefined }) },
     },
     users: { getProfile: { useQuery: () => ({ data: undefined }) } },
     thinkpages: { createPost: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) } },
@@ -25,6 +27,9 @@ jest.mock("~/trpc/react", () => ({
 }));
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
 jest.mock("next/dynamic", () => () => () => null);
+jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
+  UnifiedCountryFlag: () => null,
+}));
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => children,
 }));
@@ -64,9 +69,12 @@ beforeAll(() => {
 });
 
 it("the nation search lists only nations of the acting nation's realm", () => {
-  render(<CountrySearchSelect value="" onSelect={jest.fn()} excludeIds={["frost-1"]} label="Host" />, {
-    wrapper: inFrost,
-  });
+  render(
+    <CountrySearchSelect value="" onSelect={jest.fn()} excludeIds={["frost-1"]} label="Host" />,
+    {
+      wrapper: inFrost,
+    }
+  );
   fireEvent.keyDown(screen.getByRole("combobox", { name: "Host" }), { key: "Enter" });
   const options = screen.getAllByRole("option").map((o) => o.textContent);
   expect(options).toEqual(["Icereach"]);
@@ -104,20 +112,20 @@ describe("the dossier", () => {
       />
     );
 
-  it("turns embassy, meeting and proposal rows off for a nation of another realm", () => {
+  it("turns embassy, summit and proposal actions off for a nation of another realm", () => {
     mockCrossRealm = true;
     renderMenu();
-    expect(screen.getByRole("button", { name: "Construct Embassy" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Request meeting" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Construct embassy" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Summit" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Propose free trade" })).toBeDisabled();
     expect(screen.getByText(/Both nations must be in the same realm/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Follow Nation" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Follow" })).toBeEnabled();
   });
 
   it("keeps them on within one realm", () => {
     mockCrossRealm = false;
     renderMenu();
-    expect(screen.getByRole("button", { name: "Construct Embassy" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Construct embassy" })).toBeEnabled();
     expect(screen.queryByText(/Both nations must be in the same realm/)).not.toBeInTheDocument();
   });
 });

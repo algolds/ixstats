@@ -1,5 +1,4 @@
-// src/server/api/routers/meetings.ts
-// Cabinet meetings, government officials, and meeting management
+// Government officials: appoint, list and remove (the Cabinet panel).
 
 import { z } from "zod";
 import { createTRPCRouter, publicProcedure, rateLimitedMutationProcedure } from "~/server/api/trpc";
@@ -13,7 +12,7 @@ import {
   resolveStructureCountryId,
 } from "~/server/shared/country-resource-owner";
 
-export const meetingsGovernmentRouter = createTRPCRouter({
+export const governmentOfficialsRouter = createTRPCRouter({
   // ==================== GOVERNMENT OFFICIALS ====================
 
   appointOfficial: rateLimitedMutationProcedure

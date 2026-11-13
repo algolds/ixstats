@@ -18,6 +18,7 @@ export const identityProcedures = {
           slug: true,
           flag: true,
           continent: true,
+          region: true,
           currentPopulation: true,
           currentGdpPerCapita: true,
           currentTotalGdp: true,
@@ -25,6 +26,9 @@ export const identityProcedures = {
           populationDensity: true,
           centroid: true,
           realmId: true,
+          // The country actions menu: its realm and its leader's passport (handles are public).
+          realm: { select: { slug: true, name: true } },
+          owner: { select: { handle: true } },
         },
       });
       const country = pickCountryRef(rows, input.id);
@@ -39,6 +43,7 @@ export const identityProcedures = {
         slug: country.slug,
         flagUrl: normalizeFlagUrl(country.flag),
         continent: country.continent,
+        region: country.region,
         currentPopulation: country.currentPopulation,
         currentGdpPerCapita: country.currentGdpPerCapita,
         currentTotalGdp: country.currentTotalGdp,
@@ -46,6 +51,8 @@ export const identityProcedures = {
         populationDensity: country.populationDensity,
         centroid: country.centroid,
         realmId: country.realmId,
+        realm: country.realm,
+        ownerHandle: country.owner?.handle ?? null,
       };
     }),
 
