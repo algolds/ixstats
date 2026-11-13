@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { StatsReport } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { LensCard } from "~/components/ui/lens-card";
 import { Pill, SectionTitle } from "./brand";
 
 /** The terms every domestic company borrows on: an extra spread and a per-company cap. */
@@ -27,7 +27,7 @@ export function TreasuryLending({
   const valid =
     Number.isFinite(s) && s >= -0.02 && s <= 0.1 && Number.isFinite(c) && c >= 0 && c <= 250_000;
   return (
-    <Card content="input" padding="md" className="space-y-3">
+    <LensCard app="exchange" content="input" padding="md" className="space-y-3">
       <SectionTitle icon={<StatsReport />}>Lending terms</SectionTitle>
       <p className="text-footnote text-label-secondary">
         Every company based in your nation borrows on these terms, your own included: your interest
@@ -68,6 +68,6 @@ export function TreasuryLending({
       >
         Save lending terms
       </Pill>
-    </Card>
+    </LensCard>
   );
 }

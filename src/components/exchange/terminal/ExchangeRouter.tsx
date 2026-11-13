@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
+import { LensSurface } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
@@ -57,9 +58,9 @@ export function ExchangeRouter() {
   const viewerRealm = useViewerRealmId();
   const realmId = useSearchParams().get("realm") ?? viewerRealm ?? DEFAULT_REALM_ID;
   return (
-    <>
+    <LensSurface>
       <ExchangeHeader realmId={realmId} />
       <ExchangePage route={route} realmId={realmId} />
-    </>
+    </LensSurface>
   );
 }

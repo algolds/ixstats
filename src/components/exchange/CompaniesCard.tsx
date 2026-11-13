@@ -11,6 +11,7 @@ import { Card, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { LensCard } from "~/components/ui/lens-card";
 import { Signal } from "~/components/ui/signal";
 import { Stat } from "~/components/ui/stat";
 import { Switch } from "~/components/ui/switch";
@@ -18,7 +19,7 @@ import { assetUrl } from "~/lib/base-path";
 import { companyHref } from "~/lib/exchange/routes";
 import { CompanyControls } from "./CompanyControls";
 import { FoundCompanySheet, WikiLoreBanner } from "./FoundCompanySheet";
-import { Pill } from "./terminal/brand";
+import { Pill, TickerTile, symbolOf } from "./terminal/brand";
 import {
   CreditRatingBadge,
   StatusBadge,
@@ -114,21 +115,23 @@ function CompanyRow({
   const hoursLeft = distressed ? distressHoursLeft(company.distressedSinceIxTime) : null;
 
   return (
-    <Card padding="sm" className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {wikiData?.logoUrl && (
+    <LensCard app="exchange" padding="md" className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          {wikiData?.logoUrl ? (
             <img
               src={assetUrl(wikiData.logoUrl) ?? undefined}
               alt={`${company.name} logo`}
-              className="border-separator bg-surface-secondary size-8 shrink-0 rounded border object-contain p-0.5"
+              className="border-separator bg-surface-secondary size-9 shrink-0 rounded-control border object-contain p-0.5"
             />
+          ) : (
+            <TickerTile code={symbolOf(company.name, company.ticker)} size="md" />
           )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={companyHref(company.id)}
-                className="text-body text-label hover:text-tint truncate font-medium"
+                className="text-body text-label hover:text-tint truncate font-semibold transition-colors"
               >
                 {company.name}
               </Link>
@@ -224,36 +227,46 @@ function CompanyRow({
       )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat size="sm" label="Capital" value={formatSovereigns(company.capital)} />
-        <Stat size="sm" label="Fair value" value={formatSovereigns(company.fairValue)} />
-        <Stat size="sm" label="Standing" value={company.standing} />
-        <Stat size="sm" label="Credit drawn" value={formatSovereigns(company.creditDrawn)} />
+        <Card variant="well" padding="sm">
+          <Stat size="sm" label="Capital" value={formatSovereigns(company.capital)} />
+        </Card>
+        <Card variant="well" padding="sm">
+          <Stat size="sm" label="Fair value" value={formatSovereigns(company.fairValue)} />
+        </Card>
+        <Card variant="well" padding="sm">
+          <Stat size="sm" label="Standing" value={company.standing} />
+        </Card>
+        <Card variant="well" padding="sm">
+          <Stat size="sm" label="Credit drawn" value={formatSovereigns(company.creditDrawn)} />
+        </Card>
       </div>
 
-      <Card variant="well" padding="sm" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Card variant="well" padding="sm" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Revenue</span>
-          <span className="text-label font-medium">
+          <span className="text-label font-mono font-medium">
             {formatSovereigns(company.lastTickRevenue)}
           </span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Operating and interest expenses</span>
-          <span className="text-label font-medium">
+          <span className="text-label font-mono font-medium">
             -{formatSovereigns(company.lastTickExpenses)}
           </span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Corporate tax</span>
-          <span className="text-label font-medium">-{formatSovereigns(company.lastTickTax)}</span>
+          <span className="text-label font-mono font-medium">
+            -{formatSovereigns(company.lastTickTax)}
+          </span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Net income</span>
           <span
             className={
               company.lastTickNetIncome >= 0
-                ? "text-success font-medium"
-                : "text-destructive font-medium"
+                ? "text-success font-mono font-medium"
+                : "text-destructive font-mono font-medium"
             }
           >
             {company.lastTickNetIncome >= 0 ? "+" : ""}
@@ -263,66 +276,66 @@ function CompanyRow({
       </Card>
 
       {operating && (
-        <div className="flex flex-wrap items-end gap-2">
-          <div className="w-32">
-            <Input
-              aria-label={`Amount for ${company.name}`}
-              inputMode="numeric"
-              value={rowState.raw}
-              onChange={(e) =>
-                setRowState({ ...rowState, raw: e.target.value.replace(/[^0-9]/g, "") })
-              }
-              placeholder="Amount"
-            />
-          </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            disabled={busy || Number.isNaN(amount)}
-            onClick={() => deposit.mutate({ companyId: company.id, amount, requestId })}
-          >
-            {distressed ? "Deposit to cure" : "Deposit"}
-          </Button>
-          {active && (
-            <>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={busy || Number.isNaN(amount)}
-                onClick={() => withdraw.mutate({ companyId: company.id, amount, requestId })}
-              >
-                Withdraw
-              </Button>
-              <Button
-                size="sm"
-                variant={rowState.confirmDissolve ? "destructive" : "ghost"}
-                disabled={busy}
-                onClick={() =>
-                  rowState.confirmDissolve
-                    ? dissolve.mutate({ companyId: company.id })
-                    : setRowState({ ...rowState, confirmDissolve: true })
+        <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-t pt-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="w-32">
+              <Input
+                aria-label={`Amount for ${company.name}`}
+                inputMode="numeric"
+                value={rowState.raw}
+                onChange={(e) =>
+                  setRowState({ ...rowState, raw: e.target.value.replace(/[^0-9]/g, "") })
                 }
-              >
-                {rowState.confirmDissolve ? "Confirm dissolve" : "Dissolve"}
-              </Button>
-            </>
-          )}
+                placeholder="Amount"
+              />
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={busy || Number.isNaN(amount)}
+              onClick={() => deposit.mutate({ companyId: company.id, amount, requestId })}
+            >
+              {distressed ? "Deposit to cure" : "Deposit"}
+            </Button>
+            {active && (
+              <>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={busy || Number.isNaN(amount)}
+                  onClick={() => withdraw.mutate({ companyId: company.id, amount, requestId })}
+                >
+                  Withdraw
+                </Button>
+                <Button
+                  size="sm"
+                  variant={rowState.confirmDissolve ? "destructive" : "ghost"}
+                  disabled={busy}
+                  onClick={() =>
+                    rowState.confirmDissolve
+                      ? dissolve.mutate({ companyId: company.id })
+                      : setRowState({ ...rowState, confirmDissolve: true })
+                  }
+                >
+                  {rowState.confirmDissolve ? "Confirm dissolve" : "Dissolve"}
+                </Button>
+              </>
+            )}
+          </div>
+          <CompanyControls
+            company={company}
+            hqInterestRate={hqInterestRate}
+            lending={
+              hqNation
+                ? { spread: hqNation.lendingSpread, cap: hqNation.companyCreditCap }
+                : undefined
+            }
+            acquireTargets={acquireTargets}
+            onDone={onDone}
+          />
         </div>
       )}
-      {operating && (
-        <CompanyControls
-          company={company}
-          hqInterestRate={hqInterestRate}
-          lending={
-            hqNation
-              ? { spread: hqNation.lendingSpread, cap: hqNation.companyCreditCap }
-              : undefined
-          }
-          acquireTargets={acquireTargets}
-          onDone={onDone}
-        />
-      )}
-    </Card>
+    </LensCard>
   );
 }
 
@@ -343,22 +356,33 @@ export function CompaniesCard({
   const acquireTargets = directoryCompanies.filter((c) => !myIds.has(c.id));
 
   return (
-    <Card padding="lg" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <CardTitle icon={<Building />}>Companies</CardTitle>
-        {overview.isOpen && (
-          <Pill onClick={() => setChartering(true)}>Charter a company</Pill>
-        )}
-      </div>
+    <div className="space-y-4">
+      <LensCard app="exchange" padding="md">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CardTitle icon={<Building />}>Companies</CardTitle>
+            {overview.companies.length > 0 && (
+              <Badge variant="secondary" className="font-mono tabular-nums">
+                {overview.companies.length}
+              </Badge>
+            )}
+          </div>
+          {overview.isOpen && (
+            <Pill onClick={() => setChartering(true)}>Charter a company</Pill>
+          )}
+        </div>
+      </LensCard>
       {overview.companies.length === 0 ? (
-        <EmptyState
-          compact
-          icon={<Building />}
-          title="No companies yet"
-          message="Charter one to post contracts, draw credit and bid on work in this realm."
-        />
+        <LensCard app="exchange" padding="lg">
+          <EmptyState
+            compact
+            icon={<Building />}
+            title="No companies yet"
+            message="Charter one to post contracts, draw credit and bid on work in this realm."
+          />
+        </LensCard>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {overview.companies.map((c) => (
             <CompanyRow
               key={c.id}
@@ -379,6 +403,6 @@ export function CompaniesCard({
           onDone={onChanged}
         />
       )}
-    </Card>
+    </div>
   );
 }

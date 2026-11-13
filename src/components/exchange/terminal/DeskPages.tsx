@@ -7,7 +7,7 @@ import { CompaniesCard } from "../CompaniesCard";
 import { ContractsCard } from "../ContractsCard";
 import { SignInPrompt } from "./SignInPrompt";
 
-/** The signed-in workspace the tenders board and My companies share (getOverview is per player). */
+/** The signed-in workspace that Companies and Tenders share (getOverview is per player). */
 function useOverview(realmId: string) {
   const { isSignedIn } = useAuth();
   const utils = api.useUtils();
@@ -15,27 +15,40 @@ function useOverview(realmId: string) {
   return { isSignedIn, overview, refresh: () => void utils.exchange.invalidate() };
 }
 
-/** Government tenders and company contracts: open, awarded and delivered. */
+/** Unified Corporate & Procurement Desk: tenders lead when opened via /exchange/tenders. */
 export function TendersPage({ realmId }: { realmId: string }) {
   const { isSignedIn, overview, refresh } = useOverview(realmId);
+  const directory = api.exchange.listCompanies.useQuery({ realmId }, { enabled: !!isSignedIn });
   if (!isSignedIn)
-    return <SignInPrompt title="Tenders" message="Sign in to see open tenders and bid on them." />;
+    return <SignInPrompt title="Companies & tenders" message="Sign in to charter companies and bid on tenders." />;
   if (!overview.data) return <Skeleton className="h-64 w-full" />;
-  return <ContractsCard overview={overview.data} onChanged={refresh} />;
+  return (
+    <div className="space-y-6">
+      <ContractsCard overview={overview.data} onChanged={refresh} />
+      <CompaniesCard
+        overview={overview.data}
+        directoryCompanies={directory.data ?? []}
+        onChanged={refresh}
+      />
+    </div>
+  );
 }
 
-/** Charter and run your companies: capital, credit, decisions and dividends. */
+/** Unified Corporate & Procurement Desk: companies lead when opened via /exchange/companies. */
 export function MyCompaniesPage({ realmId }: { realmId: string }) {
   const { isSignedIn, overview, refresh } = useOverview(realmId);
   const directory = api.exchange.listCompanies.useQuery({ realmId }, { enabled: !!isSignedIn });
   if (!isSignedIn)
-    return <SignInPrompt title="My companies" message="Sign in to charter and run a company." />;
+    return <SignInPrompt title="Companies & tenders" message="Sign in to charter companies and bid on tenders." />;
   if (!overview.data) return <Skeleton className="h-64 w-full" />;
   return (
-    <CompaniesCard
-      overview={overview.data}
-      directoryCompanies={directory.data ?? []}
-      onChanged={refresh}
-    />
+    <div className="space-y-6">
+      <CompaniesCard
+        overview={overview.data}
+        directoryCompanies={directory.data ?? []}
+        onChanged={refresh}
+      />
+      <ContractsCard overview={overview.data} onChanged={refresh} />
+    </div>
   );
 }

@@ -65,7 +65,7 @@ export function SystemBroadcastCard({
   const at = item.createdAt ?? item.ixTimeTimestamp;
 
   return (
-    <div className="bg-surface-secondary rounded-row relative mx-4 my-2 flex gap-3 p-4">
+    <div className="facet-well rounded-row relative mx-4 my-2 flex gap-3 p-4">
       <div
         className={cn(
           "rounded-control flex size-9 shrink-0 items-center justify-center self-start",

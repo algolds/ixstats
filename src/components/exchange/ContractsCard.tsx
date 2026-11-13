@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { Page } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
-import { Card, CardTitle } from "~/components/ui/card";
+import { Badge } from "~/components/ui/badge";
+import { CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { LensCard } from "~/components/ui/lens-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   Sheet,
@@ -42,25 +44,34 @@ export function ContractsCard({
   };
 
   return (
-    <Card padding="lg" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <CardTitle icon={<Page />}>Contracts</CardTitle>
-        <div className="flex flex-wrap items-center gap-2">
-          <SegmentedControl
-            aria-label="Contracts"
-            size="sm"
-            value={scope}
-            onValueChange={(v) => setScope(v as Scope)}
-            options={[
-              { value: "open", label: "Open" },
-              { value: "mine", label: "Mine" },
-            ]}
-          />
-          {overview.isOpen && (
-            <Pill onClick={() => setPosting(true)}>Post a contract or tender</Pill>
-          )}
+    <div className="space-y-4">
+      <LensCard app="exchange" padding="md">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <CardTitle icon={<Page />}>Contracts</CardTitle>
+            {!contracts.isLoading && (
+              <Badge variant="secondary" className="font-mono tabular-nums">
+                {rows.length}
+              </Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <SegmentedControl
+              aria-label="Contracts"
+              size="sm"
+              value={scope}
+              onValueChange={(v) => setScope(v as Scope)}
+              options={[
+                { value: "open", label: "Open" },
+                { value: "mine", label: "Mine" },
+              ]}
+            />
+            {overview.isOpen && (
+              <Pill onClick={() => setPosting(true)}>Post a contract or tender</Pill>
+            )}
+          </div>
         </div>
-      </div>
+      </LensCard>
 
       {overview.isOpen && (
         <Sheet open={posting} onOpenChange={setPosting}>
@@ -92,16 +103,18 @@ export function ContractsCard({
       {contracts.isLoading ? (
         <Skeleton className="h-24 w-full" />
       ) : rows.length === 0 ? (
-        <EmptyState
-          compact
-          icon={<Page />}
-          title={scope === "open" ? "No open contracts" : "No contracts yet"}
-          message={
-            scope === "open"
-              ? "When a company or nation posts work in this realm, it shows up here for bids."
-              : "Contracts your companies post, bid on or win show up here."
-          }
-        />
+        <LensCard app="exchange" padding="lg">
+          <EmptyState
+            compact
+            icon={<Page />}
+            title={scope === "open" ? "No open contracts" : "No contracts yet"}
+            message={
+              scope === "open"
+                ? "When a company or nation posts work in this realm, it shows up here for bids."
+                : "Contracts your companies post, bid on or win show up here."
+            }
+          />
+        </LensCard>
       ) : (
         <div className="space-y-3">
           {rows.map((c) => (
@@ -115,6 +128,6 @@ export function ContractsCard({
           ))}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

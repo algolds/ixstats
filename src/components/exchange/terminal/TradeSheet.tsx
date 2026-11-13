@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -107,7 +108,7 @@ function TradeForm({
           { value: "sell", label: "Sell" },
         ]}
       />
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <Label htmlFor="trade-amount">Amount</Label>
         <Input
           id="trade-amount"
@@ -117,9 +118,11 @@ function TradeForm({
           onChange={(e) => setRaw(e.target.value)}
           placeholder={unit[side]}
         />
-        <p className="text-footnote text-label-secondary tabular-nums">
-          {blockedMessage ? blockedMessage : valid ? estimate(side, amount) : unit[side]}
-        </p>
+        <Card variant="well" padding="sm">
+          <p className="text-footnote text-label-secondary font-mono tabular-nums">
+            {blockedMessage ? blockedMessage : valid ? estimate(side, amount) : unit[side]}
+          </p>
+        </Card>
       </div>
       {error && <p className="text-footnote text-destructive">{error}</p>}
       <Button className="w-full rounded-full" disabled={!valid || pending} onClick={submit}>

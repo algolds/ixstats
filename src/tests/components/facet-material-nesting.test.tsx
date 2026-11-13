@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Card, LensSurface, SurfaceReset } from "~/components/ui/card";
 import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
 import { LENS_FILTER_ID, LensFilter } from "~/components/ui/facet/shared/LensFilter";
+import { LensCard } from "~/components/ui/lens-card";
 
 describe("FacetMaterial nesting", () => {
   it("a Card in chrome is a well", () => {
@@ -80,5 +81,35 @@ describe("Lens", () => {
       </LensSurface>
     );
     expect(screen.getByTestId("c")).toHaveAttribute("data-variant", "pane");
+  });
+
+  it("shares a viewport-fixed monogram coordinate space across multiple LensCards and falls back to a well when nested", () => {
+    const { container } = render(
+      <div>
+        <LensCard app="exchange" data-testid="card-a" className="space-y-4 lg:col-span-4">
+          <LensCard app="exchange" data-testid="nested-lens-card" />
+        </LensCard>
+        <LensCard app="exchange" data-testid="card-b" className="max-w-3xl space-y-3" />
+      </div>
+    );
+    const cardA = screen.getByTestId("card-a");
+    const cardB = screen.getByTestId("card-b");
+    expect(cardA).toHaveAttribute("data-variant", "lens");
+    expect(cardA).toHaveClass("space-y-4");
+    expect(cardA.closest("[data-slot='lens-card']")).toHaveClass("lg:col-span-4", "min-w-0");
+
+    expect(cardB).toHaveAttribute("data-variant", "lens");
+    expect(cardB).toHaveClass("space-y-3");
+    expect(cardB.closest("[data-slot='lens-card']")).toHaveClass("max-w-3xl");
+
+    expect(screen.getByTestId("nested-lens-card")).toHaveAttribute("data-variant", "well");
+
+    const stages = container.querySelectorAll("[data-slot='lens-monogram-stage']");
+    expect(stages).toHaveLength(2);
+    const monograms = container.querySelectorAll(".facet-monogram");
+    expect(monograms).toHaveLength(4);
+    for (const plane of monograms) {
+      expect(plane).toHaveClass("fixed", "-inset-6");
+    }
   });
 });

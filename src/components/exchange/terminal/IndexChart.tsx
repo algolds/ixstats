@@ -2,6 +2,7 @@
 
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { SeriesPoint } from "~/lib/exchange/terminal";
+import { formatSovereignFigure } from "./brand";
 
 export const RANGES = ["1D", "1W", "1M", "All"] as const;
 export type Range = (typeof RANGES)[number];
@@ -47,7 +48,7 @@ function ChartTooltip({
   );
 }
 
-/** A line in the Exchange tint, with no grid: the price or index over time. */
+/** A line in the Exchange tint inside a recessed stage: the price or index over time. */
 export function IndexChart({
   series,
   height = 180,
@@ -59,29 +60,58 @@ export function IndexChart({
 }) {
   if (series.length < 2) {
     return (
-      <div className="text-footnote text-label-secondary flex items-center" style={{ height }}>
-        The chart fills in as the market ticks.
+      <div
+        className="facet-well rounded-row text-footnote text-label-secondary relative flex flex-col justify-between overflow-hidden px-4 py-3"
+        style={{ height }}
+      >
+        <div
+          aria-hidden
+          className="border-separator pointer-events-none absolute inset-x-4 top-1/2 border-t border-dashed"
+        />
+        <span className="text-caption text-label-tertiary font-mono">Awaiting tick telemetry</span>
+        <span className="relative">The chart fills in as the market ticks.</span>
       </div>
     );
   }
+
+  let low = series[0]!.value;
+  let high = series[0]!.value;
+  for (const pt of series) {
+    if (pt.value < low) low = pt.value;
+    if (pt.value > high) high = pt.value;
+  }
+
   return (
-    <div style={{ height }} aria-hidden>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={series} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
-          <XAxis dataKey="t" hide />
-          <YAxis domain={["auto", "auto"]} hide />
-          <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} />} />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke="var(--tint)"
-            strokeWidth={2.5}
-            dot={false}
-            activeDot={{ r: 4, fill: "var(--tint)", strokeWidth: 0 }}
-            isAnimationActive={false}
-          />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className="facet-well rounded-row space-y-2 p-3">
+      <div style={{ height }} aria-hidden>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={series} margin={{ top: 8, right: 6, bottom: 4, left: 6 }}>
+            <XAxis dataKey="t" hide />
+            <YAxis domain={["auto", "auto"]} hide />
+            <Tooltip content={<ChartTooltip valuePrefix={valuePrefix} />} />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke="var(--tint)"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "var(--tint)", strokeWidth: 0 }}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="border-separator text-caption text-label-secondary flex flex-wrap items-center justify-between gap-2 border-t pt-2 font-mono tabular-nums">
+        <span>
+          Low {valuePrefix}
+          {formatSovereignFigure(low)}
+        </span>
+        <span>{series.length} pts</span>
+        <span>
+          High {valuePrefix}
+          {formatSovereignFigure(high)}
+        </span>
+      </div>
     </div>
   );
 }

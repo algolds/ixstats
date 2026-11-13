@@ -2,8 +2,6 @@
 
 export type MessageFolder = "conversations" | "requests";
 
-export type ChannelFilter = "all" | "diplomatic" | "direct" | "community";
-
 export const SYSTEM_CONVERSATION_ID = "system_messages";
 export const LOREBOT_CONVERSATION_ID = "lorebot_feed";
 

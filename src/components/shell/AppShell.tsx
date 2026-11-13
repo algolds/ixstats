@@ -11,7 +11,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { stripBasePath } from "~/lib/base-path";
-import { getAppForPath, isChromelessPath } from "~/lib/navigation/app-sections";
+import { getAppForPath, isChromelessPath, matchesPrefix } from "~/lib/navigation/app-sections";
 import { cn } from "~/lib/utils/cn";
 import { focusRing } from "~/components/ui/button";
 import { DailyRewardProvider } from "~/components/vault/DailyRewardProvider";
@@ -27,7 +27,7 @@ export function AppShell({ beforeMain, children }: AppShellProps) {
   const pathname = stripBasePath(usePathname() || "/");
   const chromeless = isChromelessPath(pathname);
   const app = getAppForPath(pathname);
-  const tint = app?.tint;
+  const tint = matchesPrefix(pathname, "/exchange") ? "exchange" : app?.tint;
   return (
     <DailyRewardProvider autoOpen={!chromeless}>
       <div

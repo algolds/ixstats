@@ -3,16 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Coins, Crown, Page } from "iconoir-react";
+import { Coins, Crown, Wallet } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { LensCard } from "~/components/ui/lens-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { EXCHANGE_PATHS, bondHref, nationHref } from "~/lib/exchange/routes";
 import { CreditRatingBadge, useRequestId } from "../shared";
 import {
@@ -21,6 +21,7 @@ import {
   Figure,
   Pill,
   SectionTitle,
+  TickerTile,
   bondStatusLabel,
   formatSovereignFigure,
 } from "./brand";
@@ -53,8 +54,21 @@ function Field({
   );
 }
 
-/** Units, coupon and term in; a preview of what it raises and costs each week. */
-function IssueBondForm({ countryId }: { countryId: string }) {
+/** Unified Sovereign Bonds card: active bond issues and primary issuance form in one card. */
+function SovereignBondsCard({
+  countryId,
+  bonds,
+}: {
+  countryId: string;
+  bonds: ReadonlyArray<{
+    bondId: string;
+    termWeeks: number;
+    couponRate: number;
+    status: string;
+    unitsSold: number;
+    unitsIssued: number;
+  }>;
+}) {
   const [units, setUnits] = useState("");
   const [coupon, setCoupon] = useState("");
   const [term, setTerm] = useState("");
@@ -87,36 +101,70 @@ function IssueBondForm({ countryId }: { countryId: string }) {
       }
     );
   return (
-    <Card content="input" padding="md" className="space-y-3">
-      <SectionTitle icon={<Coins />}>Issue bonds</SectionTitle>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field
-          id="bond-units"
-          label="Units"
-          value={units}
-          onChange={setUnits}
-          hint="10 to 10,000, ₷100 each"
-        />
-        <Field
-          id="bond-coupon"
-          label="Coupon (%)"
-          value={coupon}
-          onChange={setCoupon}
-          hint="0.5 to 25, a year"
-        />
-        <Field id="bond-term" label="Term (weeks)" value={term} onChange={setTerm} hint="1 to 12" />
+    <LensCard app="exchange" content="input" padding="md" className="space-y-4">
+      <div className="space-y-2.5">
+        <SectionTitle icon={<Coins />}>Issue bonds</SectionTitle>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Field
+            id="bond-units"
+            label="Units"
+            value={units}
+            onChange={setUnits}
+            hint="10 to 10,000, ₷100 each"
+          />
+          <Field
+            id="bond-coupon"
+            label="Coupon (%)"
+            value={coupon}
+            onChange={setCoupon}
+            hint="0.5 to 25, a year"
+          />
+          <Field
+            id="bond-term"
+            label="Term (weeks)"
+            value={term}
+            onChange={setTerm}
+            hint="1 to 12"
+          />
+        </div>
+        {valid && (
+          <p className="facet-well rounded-control text-footnote text-label-secondary px-3 py-2">
+            Raises up to {sov(u * FACE)}. Coupons cost about {sov((u * FACE * c * 7) / 365)} a week,
+            and the principal is due in week {t}.
+          </p>
+        )}
+        {issue.error && <p className="text-footnote text-destructive">{issue.error.message}</p>}
+        <Pill disabled={!valid || issue.isPending} onClick={submit}>
+          Issue bonds
+        </Pill>
       </div>
-      {valid && (
-        <p className="text-footnote text-label-secondary">
-          Raises up to {sov(u * FACE)}. Coupons cost about {sov((u * FACE * c * 7) / 365)} a week,
-          and the principal is due in week {t}.
-        </p>
-      )}
-      {issue.error && <p className="text-footnote text-destructive">{issue.error.message}</p>}
-      <Pill disabled={!valid || issue.isPending} onClick={submit}>
-        Issue bonds
-      </Pill>
-    </Card>
+
+      <div className="border-separator space-y-2 border-t pt-3.5">
+        <p className="text-footnote text-label font-semibold">Your bonds</p>
+        {bonds.length === 0 ? (
+          <p className="text-footnote text-label-secondary py-1">No bonds issued yet.</p>
+        ) : (
+          <ul className="divide-separator divide-y">
+            {bonds.map((b) => (
+              <li key={b.bondId}>
+                <Link href={bondHref(b.bondId)} data-row className={DATA_ROW_LINK}>
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <TickerTile code={`${b.termWeeks}W`} tone="neutral" />
+                    <span className="truncate font-medium">
+                      {b.termWeeks}-week · {(b.couponRate * 100).toFixed(2)}% ·{" "}
+                      {bondStatusLabel(b.status)}
+                    </span>
+                  </span>
+                  <span className="font-mono font-semibold tabular-nums">
+                    {b.unitsSold} of {b.unitsIssued} sold
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </LensCard>
   );
 }
 
@@ -135,15 +183,15 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
   if (overview.isLoading) return <Skeleton className="h-64 w-full" />;
   if (!nation)
     return <EmptyState title="Treasury" message="The Treasury is for a nation's owner." />;
+
+  const balance = page.data?.treasury.balance ?? 0;
+  const cap = page.data?.treasury.cap ?? 0;
+  const fillPct = cap > 0 ? Math.min(100, Math.round((balance / cap) * 100)) : 0;
+
   return (
     <div className="space-y-4">
-      <Card content="data" padding="lg" className="relative space-y-4 overflow-hidden">
-        <TextureOverlay
-          texture="chevron"
-          opacity={0.025}
-          className="[--facet-texture-color:var(--tint)]"
-        />
-        <div className="relative flex flex-wrap items-start justify-between gap-3">
+      <LensCard app="exchange" content="data" padding="lg" className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <ExchangeIconWell size="sm">
@@ -157,68 +205,67 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
               </p>
               {page.data?.rating && <CreditRatingBadge rating={page.data.rating} />}
             </div>
-            <Figure size="hero" value={sov(page.data?.treasury.balance ?? 0)} />
+            <Figure size="hero" value={sov(balance)} />
             <p className="text-footnote text-label-secondary">
-              Cap {sov(page.data?.treasury.cap ?? 0)} · rating {page.data?.rating ?? "–"}
+              Cap {sov(cap)} · rating {page.data?.rating ?? "–"}
             </p>
           </div>
-          <Button asChild variant="secondary" size="sm">
-            <Link href={EXCHANGE_PATHS.tenders}>Post a tender</Link>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="secondary" size="sm">
+              <Link href={EXCHANGE_PATHS.portfolio}>
+                <Wallet className="text-tint" />
+                <span>Personal portfolio</span>
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" size="sm">
+              <Link href={EXCHANGE_PATHS.tenders}>Post a tender</Link>
+            </Button>
+          </div>
         </div>
-        {page.data && (
-          <div className="relative grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="bg-surface-secondary rounded-row p-3">
-              <Stat size="sm" label="Stipend earned" value={sov(page.data.treasury.lifetimeStipend)} />
+        {cap > 0 && (
+          <div className="space-y-1">
+            <div className="text-caption text-label-secondary flex items-center justify-between font-mono tabular-nums">
+              <span>Reserve capacity</span>
+              <span>{fillPct}% utilized</span>
             </div>
-            <div className="bg-surface-secondary rounded-row p-3">
-              <Stat size="sm" label="Tax collected" value={sov(page.data.treasury.lifetimeTaxEarned)} />
-            </div>
-            <div className="bg-surface-secondary rounded-row p-3">
-              <Stat size="sm" label="Tariffs earned" value={sov(page.data.treasury.lifetimeTariffEarned)} />
-            </div>
-            <div className="bg-surface-secondary rounded-row p-3">
-              <Stat size="sm" label="Interest earned" value={sov(page.data.treasury.lifetimeInterestEarned)} />
+            <div className="facet-recess h-2 w-full overflow-hidden rounded-full">
+              <div
+                className="bg-tint h-full rounded-full transition-[width] duration-fast ease-out-facet"
+                style={{ width: `${fillPct}%` }}
+              />
             </div>
           </div>
         )}
-      </Card>
-      <TreasuryFund countryId={nation.id} />
-      <IssueBondForm countryId={nation.id} />
-      <Card content="data" padding="md" className="space-y-2.5">
-        <SectionTitle icon={<Page />}>Your bonds</SectionTitle>
-        {(page.data?.bonds ?? []).length === 0 ? (
-          <p className="text-footnote text-label-secondary py-2">No bonds issued yet.</p>
-        ) : (
-          <ul className="divide-separator divide-y">
-            {page.data!.bonds.map((b) => (
-              <li key={b.bondId}>
-                <Link href={bondHref(b.bondId)} data-row className={DATA_ROW_LINK}>
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <ExchangeIconWell size="sm">
-                      <Coins />
-                    </ExchangeIconWell>
-                    <span className="truncate font-medium">
-                      {b.termWeeks}-week · {(b.couponRate * 100).toFixed(2)}% ·{" "}
-                      {bondStatusLabel(b.status)}
-                    </span>
-                  </span>
-                  <span className="font-semibold tabular-nums">
-                    {b.unitsSold} of {b.unitsIssued} sold
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {page.data && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Card variant="well" padding="sm">
+              <Stat size="sm" label="Stipend earned" value={sov(page.data.treasury.lifetimeStipend)} />
+            </Card>
+            <Card variant="well" padding="sm">
+              <Stat size="sm" label="Tax collected" value={sov(page.data.treasury.lifetimeTaxEarned)} />
+            </Card>
+            <Card variant="well" padding="sm">
+              <Stat size="sm" label="Tariffs earned" value={sov(page.data.treasury.lifetimeTariffEarned)} />
+            </Card>
+            <Card variant="well" padding="sm">
+              <Stat size="sm" label="Interest earned" value={sov(page.data.treasury.lifetimeInterestEarned)} />
+            </Card>
+          </div>
         )}
-      </Card>
-      {terms && (
-        <TreasuryLending
-          countryId={nation.id}
-          spread={terms.lendingSpread}
-          cap={terms.companyCreditCap}
-        />
-      )}
+      </LensCard>
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <TreasuryFund countryId={nation.id} />
+        <div className="space-y-4">
+          <SovereignBondsCard countryId={nation.id} bonds={page.data?.bonds ?? []} />
+          {terms && (
+            <TreasuryLending
+              countryId={nation.id}
+              spread={terms.lendingSpread}
+              cap={terms.companyCreditCap}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

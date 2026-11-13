@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { cn } from "~/lib/utils";
 
 interface MessagesLayoutProps {
@@ -14,15 +14,19 @@ interface MessagesLayoutProps {
 }
 
 /**
- * One pane holding the inbox rail and the thread. From 1024px both stay on screen with a hairline between them;
- * below that only one shows, the inbox until a thread is selected. Its height is the window minus Halo's band and the
- * tab bar, so the page itself never scrolls and each side scrolls on its own.
+ * One Lens card holding the inbox rail and the thread over a two-plane monogram backdrop. The
+ * monogram drifts with the mouse while browsing the inbox and stills (recentering to zero) as soon
+ * as a conversation thread is open so reading and composing stay distraction-free. From 1024px both
+ * stay on screen with a hairline between them; below that only one shows, the inbox until a thread
+ * is selected. Its height is the window minus Halo's band and the tab bar, so the page itself never
+ * scrolls and each side scrolls on its own.
  */
 export function MessagesLayout({ rail, thread, hasThread }: MessagesLayoutProps) {
   return (
-    <Card
+    <LensCard
       content="feed"
-      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-1rem)] min-h-112 grid-cols-1 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]"
+      interactiveMonogram={!hasThread}
+      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-0.75rem)] min-h-112 grid-cols-1 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]"
     >
       <section
         aria-label="Conversations"
@@ -42,6 +46,6 @@ export function MessagesLayout({ rail, thread, hasThread }: MessagesLayoutProps)
       >
         {thread}
       </section>
-    </Card>
+    </LensCard>
   );
 }

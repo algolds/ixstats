@@ -145,17 +145,22 @@ describe("DailyRewardProvider & DailyRewardDialog", () => {
     expect(screen.getByText("2,450")).toBeInTheDocument();
     expect(screen.getByText(/Resets at 00:00 UTC/)).toBeInTheDocument();
 
-    // Multi-plane front-page monogram parallax layers sit behind the overlay
+    // Multi-plane front-page monogram parallax layers + Facet 5 lens sit behind the stage
     const parallax = document.querySelector("[data-slot='monogram-parallax']")!;
     expect(parallax).toBeInTheDocument();
     for (const app of ["wiki", "mycountry", "maps", "realms"]) {
       expect(parallax.querySelector(`[data-app='${app}']`)).toBeInTheDocument();
     }
+    const monogramLens = parallax.querySelector("[data-slot='monogram-lens']")!;
+    expect(monogramLens).toHaveClass("facet-lens");
 
-    // Choice cards have no eyebrows, and the 3 fanned cards carry distinct rarities/editions
+    // Choice cards use Facet 5 refractive lens glass, have no eyebrows, and fan 3 distinct editions
     expect(screen.queryByText("Currency roll")).not.toBeInTheDocument();
     expect(screen.queryByText("Mystery mint")).not.toBeInTheDocument();
+    const creditsTile = document.querySelector("[data-slot='daily-choice-credits']")!;
     const cardTile = document.querySelector("[data-slot='daily-choice-card']")!;
+    expect(creditsTile).toHaveClass("facet-lens");
+    expect(cardTile).toHaveClass("facet-lens");
     const cardBacks = [...cardTile.querySelectorAll("[data-card-back]")].map((el) =>
       el.getAttribute("data-card-rarity")
     );

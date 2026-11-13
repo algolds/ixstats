@@ -30,7 +30,6 @@ import {
   Bookmark,
   BookmarkBook,
   BookStack,
-  Building,
   Cart,
   ChatBubble,
   ChatLines,
@@ -69,7 +68,6 @@ import {
   Shield,
   ShieldCheck,
   Sparks,
-  StatsReport,
   Terminal,
   Translate,
   Trophy,
@@ -99,7 +97,6 @@ type AppId =
   | "thinkpages"
   | "countries"
   | "labs"
-  | "exchange"
   | "help"
   | "admin"
   | "settings";
@@ -397,66 +394,20 @@ export const APPS: readonly AppDefinition[] = [
     ],
   },
   {
-    // The market terminal (docs/specs/2026-11-06-exchange-overhaul-design.md): public to watch, actions need sign-in.
-    id: "exchange",
-    label: "Exchange",
-    href: "/exchange",
-    icon: Coins,
-    tint: "exchange",
-    match: ["/exchange"],
-    sections: [
-      { id: "front", label: "Front page", href: "/exchange", icon: HomeSimple, exact: true },
-      {
-        id: "markets",
-        label: "Markets",
-        href: "/exchange/markets",
-        icon: StatsReport,
-        match: ["/exchange/c", "/exchange/b", "/exchange/n", "/exchange/s"],
-      },
-      { id: "tenders", label: "Tenders", href: "/exchange/tenders", icon: Journal },
-      {
-        id: "leaderboards",
-        label: "Leaderboards",
-        href: "/exchange/leaderboards",
-        icon: Leaderboard,
-      },
-      {
-        id: "portfolio",
-        label: "Portfolio",
-        href: "/exchange/portfolio",
-        icon: Wallet,
-        requires: "signed-in",
-      },
-      {
-        id: "companies",
-        label: "My companies",
-        href: "/exchange/companies",
-        icon: Building,
-        requires: "signed-in",
-      },
-      {
-        id: "treasury",
-        label: "Treasury",
-        href: "/exchange/treasury",
-        icon: Crown,
-        requires: "nation-owner",
-      },
-    ],
-  },
-  {
     id: "labs",
     label: "Labs",
     href: "/labs/onoma",
     icon: SolidRoundFlask,
     tint: "labs",
-    match: ["/labs", "/myleague", "/myclub"],
+    match: ["/labs", "/myleague", "/myclub", "/exchange"],
     requiresAuth: true,
     navSetting: "showLabsTab",
     navSettingBypass: { admin: true, labsAccess: true },
-    // Labs with a shipped entry point. Onoma keeps its own in-app navigation (src/app/labs/onoma).
+    // Labs with a shipped entry point. Onoma and Exchange keep their own in-app navigation.
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
       { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
+      { id: "exchange", label: "Exchange", href: "/exchange", icon: Coins },
       { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
       { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
     ],
@@ -648,7 +599,6 @@ const TAB_BAR_PRIORITY: readonly AppId[] = [
   "wiki",
   "thinkpages",
   "vault",
-  "exchange",
   "labs",
   "help",
 ];

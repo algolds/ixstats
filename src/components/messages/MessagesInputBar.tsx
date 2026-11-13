@@ -89,9 +89,9 @@ export function MessagesInputBar({
   };
 
   return (
-    <div className="border-separator bg-surface shrink-0 border-t p-3">
+    <div className="border-separator shrink-0 border-t p-3">
       {replyingTo && (
-        <div className="bg-surface-secondary rounded-control mb-2 flex items-center gap-2 px-3 py-2">
+        <div className="facet-well rounded-control mb-2 flex items-center gap-2 px-3 py-2">
           <Reply className="text-label-secondary size-3.5 shrink-0" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <p className="text-caption text-label-secondary">

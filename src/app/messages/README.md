@@ -15,7 +15,7 @@ The page is rendered by `MessagesRouter`, which handles unified messaging across
 
 The page lives at `src/app/messages/[[...folder]]/page.tsx`. The folder comes from the path, never from state.
 
-**Layout.** `MessagesLayout` is one `Card` (a feed Pane, `overflow-clip`) under Halo's band (`pt-(--shell-top-offset)` in `layout.tsx`, which also holds the page's one `sr-only` `<h1>`). From 1024px the inbox rail (22rem) and the thread sit side by side with a `border-separator` hairline, and selecting a thread never hides the inbox. Below 1024px one pane shows at a time: the inbox until a thread is selected, then the thread with a back button. Height is `100dvh` minus `--shell-top-offset` and `--shell-tabbar-height`, so the page does not scroll and each pane scrolls on its own.
+**Layout.** `MessagesLayout` is one near-full-width `LensCard` (Facet layer 5 refractive glass over a two-plane monogram backdrop, `content="feed"`, `overflow-clip`, `interactiveMonogram={!hasThread}` so the monogram drifts while browsing the inbox and stills when a thread is open) under Halo's band (`pt-(--shell-top-offset)` in `layout.tsx`, which also holds the page's one `sr-only` `<h1>`). From 1024px the inbox rail (`22rem` at `lg`, `24rem` at `xl`) and the thread sit side by side with a `border-separator` hairline, and selecting a thread never hides the inbox. Below 1024px one pane shows at a time: the inbox until a thread is selected, then the thread with a back button. Height is `100dvh` minus `--shell-top-offset` and `--shell-tabbar-height`, so the page does not scroll and each pane scrolls on its own.
 
 ## Address and deep links
 
@@ -56,10 +56,10 @@ The URL is the state (`useMessagesAddress`, `src/lib/messages/deep-links.ts`); t
 | Component / Hook | Role |
 |------------------|------|
 | `MessagesRouter` (`src/components/messages/`) | Orchestrator: conversation state, mutations, WebSocket wiring; wrapped in `AuthenticationGuard` |
-| `MessagesLayout` | One Card with the inbox rail and the thread; two panes from 1024px, one below |
+| `MessagesLayout` | One `LensCard` with the inbox rail and the thread; two panes from 1024px, one below |
 | `useMessagesAddress` / `useMessagesDeepLink` / `useMessagesInbox` | URL state, `?country=` and `?user=` resolution, paged conversation list |
 | `MessagesFolderNav` | Rail header: unread badge, Requests, Archived, settings; exports `MESSAGE_FOLDERS`, `getFolderFromPathname` |
-| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection, channel filters (All, Diplomatic, Direct, Community) |
+| `MessagesConversationPanel` / `MessagesConversationCard` | Conversation list, search, selection, and pinned System Messages / LoreBot threads |
 | `MessagesChatPanel` / `MessagesChatHeader` / `MessagesBubble` | Active conversation thread, header, message bubbles |
 | `LoreBotFeedView` | Rich media read-only stream for LoreBot WikiOS updates, watchlist & stash dispatches |
 | `MessagesInputBar` | Composer with Stash attachment hook |

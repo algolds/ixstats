@@ -8,16 +8,19 @@ import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { LensCard } from "~/components/ui/lens-card";
+import { Stat } from "~/components/ui/stat";
 import { bondHref, companyHref } from "~/lib/exchange/routes";
 import type { Portfolio } from "~/lib/exchange/terminal-valuation";
 import { useRequestId } from "../shared";
 import {
   DATA_ROW_ITEM,
   DATA_ROW_LINK,
-  Figure,
   Pill,
   SectionTitle,
+  TickerTile,
   formatSovereignFigure,
+  symbolOf,
 } from "./brand";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
@@ -28,18 +31,21 @@ export function FundHoldings({ portfolio }: { portfolio: Portfolio }) {
     ...portfolio.shares.map((s) => ({
       key: `s:${s.companyId}`,
       href: companyHref(s.companyId),
+      code: symbolOf(s.name),
       label: `${s.name} · ${s.shares} shares`,
       value: s.value,
     })),
     ...portfolio.bonds.map((b) => ({
       key: `b:${b.bondId}`,
       href: bondHref(b.bondId),
+      code: "BOND",
       label: `${b.name} · ${b.units}`,
       value: b.value,
     })),
     ...portfolio.funds.map((f) => ({
       key: `f:${f.sectorKey}`,
       href: null,
+      code: symbolOf(f.name),
       label: `${f.name} · ${f.units.toFixed(2)} units`,
       value: f.value,
     })),
@@ -48,21 +54,30 @@ export function FundHoldings({ portfolio }: { portfolio: Portfolio }) {
     return <p className="text-footnote text-label-secondary">No holdings yet.</p>;
   return (
     <ul className="divide-separator divide-y">
-      {rows.map((r) => (
-        <li key={r.key}>
-          {r.href ? (
-            <Link href={r.href} data-row className={DATA_ROW_LINK}>
-              <span className="truncate">{r.label}</span>
-              <span className="tabular-nums">{sov(r.value)}</span>
-            </Link>
-          ) : (
-            <div data-row className={DATA_ROW_ITEM}>
-              <span className="truncate">{r.label}</span>
-              <span className="tabular-nums">{sov(r.value)}</span>
-            </div>
-          )}
-        </li>
-      ))}
+      {rows.map((r) => {
+        const inner = (
+          <>
+            <span className="flex min-w-0 items-center gap-2.5">
+              <TickerTile code={r.code} tone="neutral" />
+              <span className="truncate font-medium">{r.label}</span>
+            </span>
+            <span className="font-mono font-semibold tabular-nums">{sov(r.value)}</span>
+          </>
+        );
+        return (
+          <li key={r.key}>
+            {r.href ? (
+              <Link href={r.href} data-row className={DATA_ROW_LINK}>
+                {inner}
+              </Link>
+            ) : (
+              <div data-row className={DATA_ROW_ITEM}>
+                {inner}
+              </div>
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -87,20 +102,17 @@ export function TreasuryFund({ countryId }: { countryId: string }) {
   const s = summary.data;
   const error = deposit.error?.message ?? withdraw.error?.message;
   return (
-    <Card content="input" padding="md" className="space-y-3">
+    <LensCard app="exchange" content="input" padding="md" className="space-y-3">
       <SectionTitle icon={<Wallet />}>Wealth fund</SectionTitle>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Card variant="well" padding="sm">
-          <p className="text-caption text-label-secondary">Cash</p>
-          <Figure value={sov(s?.cash ?? 0)} />
+          <Stat size="sm" label="Cash" value={sov(s?.cash ?? 0)} />
         </Card>
         <Card variant="well" padding="sm">
-          <p className="text-caption text-label-secondary">Invested at cost</p>
-          <Figure value={sov(s?.invested ?? 0)} />
+          <Stat size="sm" label="Invested at cost" value={sov(s?.invested ?? 0)} />
         </Card>
         <Card variant="well" padding="sm">
-          <p className="text-caption text-label-secondary">Room to add</p>
-          <Figure value={s ? sov(s.room) : "–"} />
+          <Stat size="sm" label="Room to add" value={s ? sov(s.room) : "–"} />
         </Card>
       </div>
       <p className="text-footnote text-label-secondary">
@@ -137,6 +149,6 @@ export function TreasuryFund({ countryId }: { countryId: string }) {
       </div>
       {error && <p className="text-footnote text-destructive">{error}</p>}
       {s && <FundHoldings portfolio={s.portfolio} />}
-    </Card>
+    </LensCard>
   );
 }

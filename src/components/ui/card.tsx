@@ -52,6 +52,10 @@ export function useInsideOverlay(): boolean {
   return React.useContext(InsideOverlay);
 }
 
+export function useInsideCard(): boolean {
+  return React.useContext(InsideCard);
+}
+
 /** Overlays (Dialog, Sheet, Popover) are their own surface: Cards inside start as panes again. */
 export function SurfaceReset({ children }: { children: React.ReactNode }) {
   return (

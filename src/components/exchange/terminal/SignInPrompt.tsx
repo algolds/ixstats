@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { EmptyState } from "~/components/ui/empty-state";
+import { LensCard } from "~/components/ui/lens-card";
 import { Pill } from "./brand";
 import { useSignInHref } from "./useSignInHref";
 
@@ -9,14 +10,17 @@ import { useSignInHref } from "./useSignInHref";
 export function SignInPrompt({ title, message }: { title: string; message: string }) {
   const href = useSignInHref();
   return (
-    <EmptyState
-      title={title}
-      message={message}
-      action={
-        <Pill asChild>
-          <Link href={href}>Sign in</Link>
-        </Pill>
-      }
-    />
+    <LensCard app="exchange" padding="lg">
+      <EmptyState
+        compact
+        title={title}
+        message={message}
+        action={
+          <Pill asChild>
+            <Link href={href}>Sign in</Link>
+          </Pill>
+        }
+      />
+    </LensCard>
   );
 }

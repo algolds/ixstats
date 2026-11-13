@@ -40,6 +40,63 @@ export function ExchangeIconWell({
   );
 }
 
+const TICKER_SIZES = {
+  sm: "h-7 min-w-9 px-1.5 text-caption",
+  md: "h-9 min-w-11 px-2 text-footnote",
+} as const;
+
+/** Derives a short 2–4 character symbol when a company has no explicit public ticker. */
+export function symbolOf(name: string, ticker?: string | null): string {
+  if (ticker && ticker.trim().length > 0) return ticker.trim().slice(0, 4).toUpperCase();
+  const words = name
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0);
+  if (words.length >= 2) {
+    return words
+      .slice(0, 3)
+      .map((w) => w[0] ?? "")
+      .join("")
+      .toUpperCase();
+  }
+  return (words[0] ?? "EX").slice(0, 3).toUpperCase();
+}
+
+/** Recessed monospace symbol tile for equities, bond maturities and instrument codes. */
+export function TickerTile({
+  code,
+  tone = "tint",
+  size = "sm",
+  className,
+}: {
+  code: string;
+  tone?: "tint" | "gain" | "loss" | "neutral";
+  size?: keyof typeof TICKER_SIZES;
+  className?: string;
+}) {
+  const toneClass =
+    tone === "gain"
+      ? "bg-success/12 text-success border-success/25"
+      : tone === "loss"
+        ? "bg-destructive/12 text-destructive border-destructive/25"
+        : tone === "neutral"
+          ? "facet-recess text-label-secondary border-separator"
+          : "bg-tint-fill text-tint border-tint/20";
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "rounded-control relative inline-flex shrink-0 items-center justify-center border font-mono font-semibold tracking-tight tabular-nums select-none",
+        TICKER_SIZES[size],
+        toneClass,
+        className
+      )}
+    >
+      {code}
+    </span>
+  );
+}
+
 export function ExchangeWordmark({ className }: { className?: string }) {
   return (
     <span className={cn("text-title-2 text-tint font-bold tracking-tight", className)}>
@@ -184,8 +241,8 @@ export function bondStatusLabel(status: string): string {
 
 /** Interactive row link classes for data lists (36px desktop, 44px coarse pointer, fill-4 hover, fill-3 active). */
 export const DATA_ROW_LINK =
-  "text-callout hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint rounded-control -mx-2 flex min-h-9 items-center justify-between gap-3 px-2 py-1.5 transition-colors duration-fast ease-out-facet focus-visible:outline-2 pointer-coarse:min-h-11";
+  "text-callout facet-press facet-press-subtle hover:bg-fill-4 active:bg-fill-3 focus-visible:outline-tint rounded-control -mx-2 flex min-h-10 items-center justify-between gap-3 px-2.5 py-2 transition-colors duration-fast ease-out-facet focus-visible:outline-2 pointer-coarse:min-h-11";
 
 /** Static or composite row classes inside a data list. */
 export const DATA_ROW_ITEM =
-  "text-callout flex min-h-9 items-center justify-between gap-3 py-1.5 pointer-coarse:min-h-11";
+  "text-callout flex min-h-10 items-center justify-between gap-3 py-2 pointer-coarse:min-h-11";

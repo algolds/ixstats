@@ -1,37 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Plus, Crown, Pin, OpenBook as BookOpen } from "iconoir-react";
 import { SearchField } from "~/components/ui/search-field";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Button, focusRing } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { MESSAGE_FOLDERS, type MessagesSettings } from "./MessagesFolderNav";
-import {
-  MessagesConversationCard,
-  getParticipantName,
-  isCommunityConversation,
-  isDiplomaticConversation,
-} from "./MessagesConversationCard";
+import { MessagesConversationCard, getParticipantName } from "./MessagesConversationCard";
 import type { ThinkShareConversation } from "~/types/thinkshare";
-import type { MessageFolder, ChannelFilter } from "~/types/messages";
+import type { MessageFolder } from "~/types/messages";
 import { SYSTEM_CONVERSATION_ID, LOREBOT_CONVERSATION_ID } from "~/types/messages";
 import { api } from "~/trpc/react";
-
-const CHANNEL_FILTERS: { id: ChannelFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "diplomatic", label: "Diplomatic" },
-  { id: "direct", label: "Direct" },
-  { id: "community", label: "Community" },
-];
-
-const CHANNEL_PREDICATES: Record<ChannelFilter, (c: ThinkShareConversation) => boolean> = {
-  all: () => true,
-  diplomatic: isDiplomaticConversation,
-  direct: (c) => !isDiplomaticConversation(c) && !isCommunityConversation(c) && c.type !== "group",
-  community: isCommunityConversation,
-};
 
 interface PinnedCardProps {
   title: string;
@@ -94,17 +74,12 @@ function PinnedConversationCard({
 
 function filterConversations(
   conversations: ThinkShareConversation[],
-  {
-    channel,
-    searchQuery,
-    settings,
-  }: { channel: ChannelFilter; searchQuery: string; settings?: MessagesSettings }
+  { searchQuery, settings }: { searchQuery: string; settings?: MessagesSettings }
 ) {
   const query = searchQuery.trim() && searchQuery.toLowerCase();
   return conversations.filter(
     (c) =>
       c.source !== "thinktank" &&
-      CHANNEL_PREDICATES[channel](c) &&
       (!query || (getParticipantName(c, settings) ?? "").toLowerCase().includes(query))
   );
 }
@@ -168,79 +143,59 @@ export function MessagesConversationPanel({
   onLoadMore,
 }: MessagesConversationPanelProps) {
   const folderConfig = MESSAGE_FOLDERS.find((f) => f.id === activeFolder);
-  const [activeFilter, setActiveFilter] = useState<ChannelFilter>("all");
 
   const { systemPreview, lorebotPreview } = usePinnedPreviews(currentUserId);
 
   const isConversations = activeFolder === "conversations" && !showArchived;
   const filtered = filterConversations(conversations, {
-    channel: isConversations ? activeFilter : "all",
     searchQuery,
     settings,
   });
 
-  const showSystemCard = isConversations && (activeFilter === "all" || activeFilter === "direct");
-  const showLoreBotCard = showSystemCard || (isConversations && activeFilter === "community");
-
   return (
     <div className="flex h-full flex-col">
-      <div className={cn("border-separator relative flex shrink-0 flex-col gap-3 border-b p-3")}>
-        <div className="flex items-center gap-2">
-          <SearchField
-            containerClassName="flex-1"
-            placeholder="Search messages"
-            aria-label="Search messages"
-            value={searchQuery}
-            onValueChange={onSearchChange}
-          />
-          {activeFolder === "conversations" && (
-            <Button
-              size="sm"
-              className="shrink-0"
-              onClick={onNewConversation}
-              title="Start a new conversation"
-            >
-              <Plus aria-hidden="true" />
-              New
-            </Button>
-          )}
-        </div>
-
-        {isConversations && (
-          <SegmentedControl
+      <div className="border-separator relative flex shrink-0 items-center gap-2 border-b p-3">
+        <SearchField
+          containerClassName="flex-1"
+          placeholder="Search messages"
+          aria-label="Search messages"
+          value={searchQuery}
+          onValueChange={onSearchChange}
+        />
+        {activeFolder === "conversations" && (
+          <Button
             size="sm"
-            fullWidth
-            aria-label="Channel filter"
-            scrollable
-            itemClassName="px-2"
-            value={activeFilter}
-            onValueChange={setActiveFilter}
-            options={CHANNEL_FILTERS.map((filter) => ({ value: filter.id, label: filter.label }))}
-          />
+            className="shrink-0"
+            onClick={onNewConversation}
+            title="Start a new conversation"
+          >
+            <Plus aria-hidden="true" />
+            New
+          </Button>
         )}
       </div>
 
       <div className="flex-1 space-y-1 overflow-y-auto p-2" style={{ scrollbarWidth: "thin" }}>
-        {showSystemCard && (
-          <PinnedConversationCard
-            title="System messages"
-            selected={selectedConversationId === SYSTEM_CONVERSATION_ID}
-            onSelect={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
-            avatarClass="bg-yellow/15 text-yellow-ink"
-            icon={<Crown className="size-4" aria-hidden="true" />}
-            preview={systemPreview}
-          />
-        )}
+        {isConversations && (
+          <>
+            <PinnedConversationCard
+              title="System messages"
+              selected={selectedConversationId === SYSTEM_CONVERSATION_ID}
+              onSelect={() => onSelectConversation(SYSTEM_CONVERSATION_ID)}
+              avatarClass="bg-yellow/15 text-yellow-ink"
+              icon={<Crown className="size-4" aria-hidden="true" />}
+              preview={systemPreview}
+            />
 
-        {showLoreBotCard && (
-          <PinnedConversationCard
-            title="LoreBot"
-            selected={selectedConversationId === LOREBOT_CONVERSATION_ID}
-            onSelect={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
-            avatarClass="bg-teal/15 text-teal-ink"
-            icon={<BookOpen className="size-4" aria-hidden="true" />}
-            preview={lorebotPreview}
-          />
+            <PinnedConversationCard
+              title="LoreBot"
+              selected={selectedConversationId === LOREBOT_CONVERSATION_ID}
+              onSelect={() => onSelectConversation(LOREBOT_CONVERSATION_ID)}
+              avatarClass="bg-teal/15 text-teal-ink"
+              icon={<BookOpen className="size-4" aria-hidden="true" />}
+              preview={lorebotPreview}
+            />
+          </>
         )}
 
         {isLoading ? (

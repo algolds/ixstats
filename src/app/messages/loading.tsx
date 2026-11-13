@@ -1,12 +1,12 @@
-import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { Skeleton } from "~/components/ui/skeleton";
 
-/** Placeholder for the Messages pane: inbox rows on the left, the thread beside them from 1024px. */
+/** Placeholder for the Messages Lens card: inbox rows on the left, the thread beside them from 1024px. */
 export default function MessagesLoading() {
   return (
-    <Card
+    <LensCard
       content="feed"
-      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-1rem)] min-h-112 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]"
+      className="h-[calc(100dvh-var(--shell-top-offset)-var(--shell-tabbar-height)-0.75rem)] min-h-112 overflow-clip lg:grid lg:grid-cols-[22rem_minmax(0,1fr)] xl:grid-cols-[24rem_minmax(0,1fr)]"
       aria-busy="true"
       aria-label="Loading messages"
     >
@@ -43,6 +43,6 @@ export default function MessagesLoading() {
           <Skeleton className="rounded-control h-10 w-full" />
         </div>
       </div>
-    </Card>
+    </LensCard>
   );
 }

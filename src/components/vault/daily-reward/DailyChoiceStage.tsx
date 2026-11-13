@@ -24,7 +24,7 @@ interface DailyChoiceStageProps {
 }
 
 const CHOICE_SURFACE = cn(
-  "group facet-pane facet-press facet-press-subtle rounded-card relative flex flex-col justify-between overflow-hidden p-4 text-left",
+  "group facet-lens facet-press facet-press-subtle rounded-card relative flex flex-col justify-between overflow-hidden p-4 text-left",
   "focus-visible:outline-tint cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
   "disabled:cursor-not-allowed"
 );

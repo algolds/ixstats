@@ -5,8 +5,8 @@ import { StatsReport } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { LensCard } from "~/components/ui/lens-card";
 import { SectionTitle } from "./brand";
 
 // ponytail: mirrors DM_MODIFIER_MIN/MAX in lib/exchange/sectors.ts (a server module); the router enforces them
@@ -28,7 +28,7 @@ export function SectorLevers({ realmId }: { realmId: string }) {
   });
 
   return (
-    <Card content="input" padding="lg" className="space-y-3">
+    <LensCard app="exchange" content="input" padding="lg" className="space-y-3">
       <div>
         <SectionTitle icon={<StatsReport />}>Sector levers</SectionTitle>
         <p className="text-footnote text-label-secondary">
@@ -71,6 +71,6 @@ export function SectorLevers({ realmId }: { realmId: string }) {
           );
         })}
       </ul>
-    </Card>
+    </LensCard>
   );
 }

@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Building, CheckSquare, Clock, Coins, Star, StatsReport, Wallet } from "iconoir-react";
+import { CheckSquare, Clock, Crown, Star, StatsReport, Wallet } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
-import { bondHref, companyHref, nationHref } from "~/lib/exchange/routes";
+import { EXCHANGE_PATHS, bondHref, companyHref, nationHref } from "~/lib/exchange/routes";
 import type { Portfolio } from "~/lib/exchange/terminal-valuation";
 import {
   DATA_ROW_ITEM,
@@ -18,63 +18,43 @@ import {
   ExchangeIconWell,
   Figure,
   SectionTitle,
+  TickerTile,
   formatSovereignFigure,
   proposalTypeLabel,
+  symbolOf,
 } from "./brand";
 import { SignInPrompt } from "./SignInPrompt";
 import { WatchStar } from "./WatchStar";
+import { useTreasuryActor } from "./useTreasuryActor";
 
 const sov = (n: number) => `₷${formatSovereignFigure(n)}`;
 const WATCH_HREF = { COMPANY: companyHref, BOND: bondHref, NATION: nationHref } as const;
 
-function Section({
-  title,
-  icon,
-  empty,
-  children,
-}: {
-  title: string;
-  icon: React.ReactNode;
-  empty: string;
-  children: React.ReactNode[];
-}) {
-  return (
-    <Card content="data" padding="md" className="space-y-2.5">
-      <div className="flex items-center justify-between gap-2">
-        <SectionTitle icon={icon}>{title}</SectionTitle>
-        {children.length > 0 && (
-          <Badge variant="secondary" className="tabular-nums">
-            {children.length}
-          </Badge>
-        )}
-      </div>
-      {children.length === 0 ? (
-        <p className="text-footnote text-label-secondary py-2">{empty}</p>
-      ) : (
-        <ul className="divide-separator divide-y">{children}</ul>
-      )}
-    </Card>
-  );
-}
-
 function Row({
   href,
-  icon,
+  leading,
   label,
+  kindBadge,
   value,
 }: {
   href?: string;
-  icon?: React.ReactNode;
+  leading?: React.ReactNode;
   label: string;
+  kindBadge?: string;
   value: string;
 }) {
   const body = (
     <>
       <span className="flex min-w-0 items-center gap-2.5">
-        {icon && <ExchangeIconWell size="sm">{icon}</ExchangeIconWell>}
+        {leading}
         <span className="truncate font-medium">{label}</span>
+        {kindBadge && (
+          <Badge variant="outline" className="hidden sm:inline-flex">
+            {kindBadge}
+          </Badge>
+        )}
       </span>
-      <span className="font-semibold tabular-nums">{value}</span>
+      <span className="font-mono font-semibold tabular-nums">{value}</span>
     </>
   );
   return (
@@ -92,18 +72,16 @@ function Row({
   );
 }
 
-function OpenOrders({ orders }: { orders: Portfolio["orders"] }) {
+function OpenOrdersList({ orders }: { orders: Portfolio["orders"] }) {
   const utils = api.useUtils();
   const done = { onSuccess: () => void utils.exchange.invalidate() };
   const cancelOrder = api.exchange.cancelBuyOrder.useMutation(done);
   const cancelShares = api.exchange.cancelShareListing.useMutation(done);
   const cancelBonds = api.exchange.cancelBondListing.useMutation(done);
-  const row = (key: string, label: string, onCancel: () => void) => (
+  const row = (key: string, side: "BUY" | "ASK", label: string, onCancel: () => void) => (
     <li key={key} data-row className={DATA_ROW_ITEM}>
       <span className="flex min-w-0 items-center gap-2.5">
-        <ExchangeIconWell size="sm">
-          <Clock />
-        </ExchangeIconWell>
+        <TickerTile code={side} tone={side === "BUY" ? "gain" : "neutral"} />
         <span className="truncate">{label}</span>
       </span>
       <Button size="xs" variant="secondary" onClick={onCancel}>
@@ -111,27 +89,27 @@ function OpenOrders({ orders }: { orders: Portfolio["orders"] }) {
       </Button>
     </li>
   );
-  return (
-    <Section title="Open orders" icon={<Clock />} empty="No open orders.">
-      {[
-        ...orders.buyOrders.map((o) =>
-          row(o.id, `Buying ${o.shares} shares up to ${sov(o.maxPricePerShare)}`, () =>
-            cancelOrder.mutate({ orderId: o.id })
-          )
-        ),
-        ...orders.shareListings.map((l) =>
-          row(l.id, `Selling ${l.shares} shares at ${sov(l.pricePerShare)}`, () =>
-            cancelShares.mutate({ listingId: l.id })
-          )
-        ),
-        ...orders.bondListings.map((l) =>
-          row(l.id, `Selling ${l.units} bond units at ${sov(l.pricePerUnit)}`, () =>
-            cancelBonds.mutate({ listingId: l.id })
-          )
-        ),
-      ]}
-    </Section>
-  );
+  const items = [
+    ...orders.buyOrders.map((o) =>
+      row(o.id, "BUY", `Buying ${o.shares} shares up to ${sov(o.maxPricePerShare)}`, () =>
+        cancelOrder.mutate({ orderId: o.id })
+      )
+    ),
+    ...orders.shareListings.map((l) =>
+      row(l.id, "ASK", `Selling ${l.shares} shares at ${sov(l.pricePerShare)}`, () =>
+        cancelShares.mutate({ listingId: l.id })
+      )
+    ),
+    ...orders.bondListings.map((l) =>
+      row(l.id, "ASK", `Selling ${l.units} bond units at ${sov(l.pricePerUnit)}`, () =>
+        cancelBonds.mutate({ listingId: l.id })
+      )
+    ),
+  ];
+  if (items.length === 0) {
+    return <p className="text-footnote text-label-secondary py-1">No open orders.</p>;
+  }
+  return <ul className="divide-separator divide-y">{items}</ul>;
 }
 
 /** What you hold, what you've ordered, what you watch and the votes you owe. */
@@ -141,6 +119,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
     { realmId },
     { enabled: !!isSignedIn }
   );
+  const treasury = useTreasuryActor(realmId);
   if (!isSignedIn)
     return <SignInPrompt title="Your portfolio" message="Sign in to see what you hold." />;
   if (isLoading || !data) return <Skeleton className="h-80 w-full" />;
@@ -150,107 +129,174 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
     data.orders.buyOrders.length +
     data.orders.shareListings.length +
     data.orders.bondListings.length;
+  const holdingsRows = [
+    ...data.shares.map((s) => (
+      <Row
+        key={`share:${s.companyId}`}
+        href={companyHref(s.companyId)}
+        leading={<TickerTile code={symbolOf(s.name)} />}
+        label={`${s.name} · ${s.shares}`}
+        kindBadge="Shares"
+        value={sov(s.value)}
+      />
+    )),
+    ...data.bonds.map((b) => (
+      <Row
+        key={`bond:${b.bondId}`}
+        href={bondHref(b.bondId)}
+        leading={<TickerTile code="BOND" tone="neutral" />}
+        label={`${b.name} · ${b.units}`}
+        kindBadge="Bond"
+        value={sov(b.value)}
+      />
+    )),
+    ...data.funds.map((f) => (
+      <Row
+        key={`fund:${f.sectorKey}`}
+        leading={<TickerTile code={symbolOf(f.name)} tone="tint" />}
+        label={`${f.name} · ${f.units.toFixed(2)}`}
+        kindBadge="Fund"
+        value={sov(f.value)}
+      />
+    )),
+  ];
 
   return (
     <div className="space-y-4">
-      <Card content="data" padding="lg" className="relative space-y-4 overflow-hidden">
-        <TextureOverlay
-          texture="chevron"
-          opacity={0.025}
-          className="[--facet-texture-color:var(--tint)]"
-        />
-        <div className="relative space-y-1">
-          <div className="flex items-center gap-2">
-            <ExchangeIconWell size="sm">
-              <Wallet />
-            </ExchangeIconWell>
-            <p className="text-footnote text-label-secondary font-medium">Total value</p>
+      <LensCard app="exchange" content="data" padding="lg" className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <ExchangeIconWell size="sm">
+                <Wallet />
+              </ExchangeIconWell>
+              <p className="text-footnote text-label-secondary font-medium">Total value</p>
+            </div>
+            <Figure size="hero" value={sov(data.totalValue)} />
+            <p className="text-footnote text-label-secondary">Wallet {sov(data.wallet)}</p>
           </div>
-          <Figure size="hero" value={sov(data.totalValue)} />
-          <p className="text-footnote text-label-secondary">Wallet {sov(data.wallet)}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            {data.votesOwed.length > 0 && (
+              <Badge variant="warning" className="tabular-nums">
+                {data.votesOwed.length} {data.votesOwed.length === 1 ? "vote" : "votes"} pending
+              </Badge>
+            )}
+            {treasury && (
+              <Button asChild variant="secondary" size="sm">
+                <Link href={EXCHANGE_PATHS.treasury}>
+                  <Crown className="text-tint" />
+                  <span>{treasury.name} Treasury</span>
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
-        <div className="relative grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="bg-surface-secondary rounded-row p-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Card variant="well" padding="sm">
             <Stat size="sm" label="Spendable wallet" value={sov(data.wallet)} />
-          </div>
-          <div className="bg-surface-secondary rounded-row p-3">
+          </Card>
+          <Card variant="well" padding="sm">
             <Stat size="sm" label="Invested holdings" value={sov(invested)} />
-          </div>
-          <div className="bg-surface-secondary rounded-row p-3">
+          </Card>
+          <Card variant="well" padding="sm">
+            <Stat size="sm" label="Positions held" value={String(holdingsRows.length)} />
+          </Card>
+          <Card variant="well" padding="sm">
             <Stat size="sm" label="Open orders" value={String(openOrdersCount)} />
-          </div>
+          </Card>
         </div>
-      </Card>
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Section title="Votes owed" icon={<CheckSquare />} empty="No votes waiting for you.">
-          {data.votesOwed.map((v) => (
-            <Row
-              key={v.proposalId}
-              href={companyHref(v.companyId)}
-              icon={<CheckSquare />}
-              label={`${v.companyName}: ${proposalTypeLabel(v.type)}`}
-              value="Vote"
-            />
-          ))}
-        </Section>
-        <Section title="Shares" icon={<Building />} empty="No shares yet.">
-          {data.shares.map((s) => (
-            <Row
-              key={s.companyId}
-              href={companyHref(s.companyId)}
-              icon={<Building />}
-              label={`${s.name} · ${s.shares}`}
-              value={sov(s.value)}
-            />
-          ))}
-        </Section>
-        <Section title="Bonds" icon={<Coins />} empty="No bonds yet.">
-          {data.bonds.map((b) => (
-            <Row
-              key={b.bondId}
-              href={bondHref(b.bondId)}
-              icon={<Coins />}
-              label={`${b.name} · ${b.units}`}
-              value={sov(b.value)}
-            />
-          ))}
-        </Section>
-        <Section title="Funds" icon={<StatsReport />} empty="No fund units yet.">
-          {data.funds.map((f) => (
-            <Row
-              key={f.sectorKey}
-              icon={<StatsReport />}
-              label={`${f.name} · ${f.units.toFixed(2)}`}
-              value={sov(f.value)}
-            />
-          ))}
-        </Section>
-        <OpenOrders orders={data.orders} />
-        <Section
-          title="Watchlist"
-          icon={<Star />}
-          empty="Star a company, bond or nation to watch it."
-        >
-          {data.watchlist.map((w) => (
-            <li key={`${w.kind}:${w.id}`} data-row className={DATA_ROW_ITEM}>
-              <Link
-                href={WATCH_HREF[w.kind](w.id)}
-                className="hover:text-tint flex min-w-0 flex-1 items-center justify-between gap-3 transition-colors"
-              >
-                <span className="flex min-w-0 items-center gap-2.5">
-                  <ExchangeIconWell size="sm">
-                    <Star />
-                  </ExchangeIconWell>
-                  <span className="truncate font-medium">{w.name}</span>
-                </span>
-                <span className="font-semibold tabular-nums">
-                  {w.price !== null ? sov(w.price) : ""}
-                </span>
-              </Link>
-              <WatchStar subjectKind={w.kind} subjectId={w.id} watching />
-            </li>
-          ))}
-        </Section>
+      </LensCard>
+
+      {data.votesOwed.length > 0 && (
+        <LensCard app="exchange" content="data" padding="md" className="space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <SectionTitle icon={<CheckSquare />}>Votes owed</SectionTitle>
+            <Badge variant="warning" className="font-mono tabular-nums">
+              {data.votesOwed.length}
+            </Badge>
+          </div>
+          <ul className="divide-separator divide-y">
+            {data.votesOwed.map((v) => (
+              <Row
+                key={v.proposalId}
+                href={companyHref(v.companyId)}
+                leading={<TickerTile code={symbolOf(v.companyName)} />}
+                label={`${v.companyName}: ${proposalTypeLabel(v.type)}`}
+                value="Vote"
+              />
+            ))}
+          </ul>
+        </LensCard>
+      )}
+
+      <div className="grid items-start gap-4 lg:grid-cols-12">
+        <LensCard app="exchange" content="data" padding="md" className="space-y-2.5 lg:col-span-7">
+          <div className="flex items-center justify-between gap-2">
+            <SectionTitle icon={<StatsReport />}>Holdings</SectionTitle>
+            {holdingsRows.length > 0 && (
+              <Badge variant="secondary" className="font-mono tabular-nums">
+                {holdingsRows.length}
+              </Badge>
+            )}
+          </div>
+          {holdingsRows.length === 0 ? (
+            <p className="text-footnote text-label-secondary py-2">
+              No shares, bonds or fund units held yet.
+            </p>
+          ) : (
+            <ul className="divide-separator divide-y">{holdingsRows}</ul>
+          )}
+        </LensCard>
+
+        <LensCard app="exchange" content="data" padding="md" className="space-y-4 lg:col-span-5">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <SectionTitle icon={<Clock />}>Open orders</SectionTitle>
+              {openOrdersCount > 0 && (
+                <Badge variant="secondary" className="font-mono tabular-nums">
+                  {openOrdersCount}
+                </Badge>
+              )}
+            </div>
+            <OpenOrdersList orders={data.orders} />
+          </div>
+
+          <div className="border-separator space-y-2 border-t pt-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <SectionTitle icon={<Star />}>Watchlist</SectionTitle>
+              {data.watchlist.length > 0 && (
+                <Badge variant="secondary" className="font-mono tabular-nums">
+                  {data.watchlist.length}
+                </Badge>
+              )}
+            </div>
+            {data.watchlist.length === 0 ? (
+              <p className="text-footnote text-label-secondary py-1">
+                Star a company, bond or nation to watch it.
+              </p>
+            ) : (
+              <ul className="divide-separator divide-y">
+                {data.watchlist.map((w) => (
+                  <li key={`${w.kind}:${w.id}`} data-row className={DATA_ROW_ITEM}>
+                    <Link
+                      href={WATCH_HREF[w.kind](w.id)}
+                      className="hover:text-tint flex min-w-0 flex-1 items-center justify-between gap-3 transition-colors"
+                    >
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <TickerTile code={symbolOf(w.name)} tone="neutral" />
+                        <span className="truncate font-medium">{w.name}</span>
+                      </span>
+                      <span className="font-mono font-semibold tabular-nums">
+                        {w.price !== null ? sov(w.price) : ""}
+                      </span>
+                    </Link>
+                    <WatchStar subjectKind={w.kind} subjectId={w.id} watching />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </LensCard>
       </div>
     </div>
   );

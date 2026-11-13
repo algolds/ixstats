@@ -7,8 +7,10 @@ import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
+import { LensCard } from "~/components/ui/lens-card";
 import { Signal } from "~/components/ui/signal";
 import { CompanySelect, StatusBadge, formatSovereigns, parseAmount, sectorLabel } from "./shared";
+import { Figure, TickerTile } from "./terminal/brand";
 
 type Contract = RouterOutputs["exchange"]["listContracts"][number];
 
@@ -162,18 +164,25 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
     "Company capital";
 
   return (
-    <Card padding="sm" className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <p className="text-body text-label font-medium">{contract.title}</p>
-          <p className="text-caption text-label-secondary tabular-nums">
-            {contract.issuer?.name ?? "Realm faucet"} · {sectorLabel(contract.sectorKey)} ·{" "}
-            {formatSovereigns(contract.value)}
-            {contract.biddingOpen &&
-              ` · bids close ${new Date(contract.biddingClosesAt).toLocaleDateString()}`}
-          </p>
+    <LensCard app="exchange" padding="md" className="space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <TickerTile
+            code={contract.type}
+            tone={contract.type === "B2G" ? "tint" : "neutral"}
+            size="md"
+          />
+          <div className="min-w-0">
+            <p className="text-body text-label font-semibold">{contract.title}</p>
+            <p className="text-caption text-label-secondary tabular-nums">
+              {contract.issuer?.name ?? "Realm faucet"} · {sectorLabel(contract.sectorKey)}
+              {contract.biddingOpen &&
+                ` · bids close ${new Date(contract.biddingClosesAt).toLocaleDateString()}`}
+            </p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Figure value={formatSovereigns(contract.value)} />
           {contract.type === "B2G" && <Badge variant="info">Government tender</Badge>}
           <Badge variant="outline">{fundingLabel}</Badge>
           <StatusBadge status={status} />
@@ -186,7 +195,7 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
       )}
 
       {role === "issuer" && status === "OPEN" && (
-        <div className="space-y-2">
+        <Card variant="well" padding="sm" className="space-y-2">
           <p className="text-footnote text-label font-medium">Bids ({contract.bids.length})</p>
           {contract.bids.map((b) => {
             const crossBorder = isCrossBorder(issuerCountryId, b.company.hqCountryId);
@@ -200,7 +209,7 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
                   {crossBorder && <Badge variant="outline">Cross-border</Badge>}
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="tabular-nums">{formatSovereigns(b.amount)}</span>
+                  <span className="font-mono tabular-nums">{formatSovereigns(b.amount)}</span>
                   {isOpen && (
                     <Button
                       size="xs"
@@ -217,11 +226,11 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
               </div>
             );
           })}
-        </div>
+        </Card>
       )}
 
       {role !== "issuer" && myBid && (
-        <p className="text-footnote text-label-secondary tabular-nums">
+        <p className="facet-well rounded-control text-footnote text-label-secondary px-3 py-2 tabular-nums">
           Your bid from {myBid.company.name}: {formatSovereigns(myBid.amount)}
           {isCrossBorder(issuerCountryId, myBid.company.hqCountryId) ? " · cross-border" : ""}
           {myBid.outcome ? ` (${myBid.outcome === "WON" ? "won" : "not chosen"})` : ""}
@@ -286,6 +295,6 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
       {contract.resolutionNote && (
         <p className="text-footnote text-label-secondary">Admin note: {contract.resolutionNote}</p>
       )}
-    </Card>
+    </LensCard>
   );
 }

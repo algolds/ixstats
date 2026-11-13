@@ -226,7 +226,7 @@ function CreditsClaimReveal({
       </div>
 
       {shownBalance !== null && (
-        <div className="facet-well rounded-row flex w-full items-center justify-between gap-3 px-4 py-3">
+        <div className="facet-lens rounded-row flex w-full items-center justify-between gap-3 px-4 py-3">
           <span className="text-subhead text-label-secondary">Vault balance</span>
           <span className="text-headline text-label inline-flex items-center gap-1.5 tabular-nums">
             <IxCreditsSymbol decorative className="text-tint size-4 shrink-0" />

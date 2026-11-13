@@ -54,7 +54,7 @@ const MotionFacetMaterial = motion.create(FacetMaterial);
 
 export function PlatformTopBar({ facts }: { facts: FrontPageFacts | undefined }) {
   const reduceMotion = useFacetReducedMotion();
-  const { px, py, onPointerMove, onPointerLeave } = usePointerParallax(reduceMotion);
+  const { px, py } = usePointerParallax(reduceMotion);
   const mercury = useMercuryLens(reduceMotion);
 
   const platformStats = [
@@ -83,11 +83,7 @@ export function PlatformTopBar({ facts }: { facts: FrontPageFacts | undefined })
 
   return (
     <div className="border-separator border-b text-center">
-      <div
-        className="relative overflow-hidden px-4 py-8 md:py-10"
-        onPointerMove={onPointerMove}
-        onPointerLeave={onPointerLeave}
-      >
+      <div className="relative overflow-hidden px-4 py-8 md:py-10">
         <div aria-hidden className="pointer-events-none absolute inset-0 print:hidden">
           {MONOGRAM_LAYERS.map((layer) => (
             <MonogramLayer key={layer.app} {...layer} px={px} py={py} className="-inset-6" />

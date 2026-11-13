@@ -1,18 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "motion/react";
+import { AnimatePresence, motion, useTransform, type MotionValue } from "motion/react";
 import { api } from "~/trpc/react";
 import { useCardSheetOpen } from "~/hooks/useCardSheet";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
+import { usePointerParallax } from "~/hooks/usePointerParallax";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
+import { FacetMaterial } from "~/components/ui/facet";
+import { MonogramLayer } from "~/components/ui/facet/shared/MonogramLayer";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
 import type { CardRarity } from "~/lib/cards/face/types";
@@ -41,28 +37,11 @@ const INITIAL_SESSION: ClaimSession = {
   preClaimCredits: null,
 };
 
-function MonogramLayer({
-  app,
-  depth,
-  style,
-  px,
-  py,
-}: (typeof MONOGRAM_LAYERS)[number] & { px: MotionValue<number>; py: MotionValue<number> }) {
-  const x = useTransform(px, (v) => v * -depth);
-  const y = useTransform(py, (v) => v * -depth);
-  return (
-    <motion.div
-      data-app={app}
-      className="facet-monogram absolute -inset-6"
-      style={{ ...style, x, y }}
-    />
-  );
-}
-
 /**
  * Ambient backdrop inside the `facet-overlay` sheet: front-page multi-plane monogram parallax,
  * an aurora wash (switching to the pulled card's rarity hue on card reveal, or foil luster on
- * credits reveal), and a diffused full-bleed art wash when a card with artwork is revealed.
+ * credits reveal), a diffused full-bleed art wash when a card with artwork is revealed, and a
+ * Facet 5 `facet-lens` refractive glass layer (`#facet-lens`) bending the monogram underneath.
  */
 function StageAtmosphere({
   artwork,
@@ -85,11 +64,11 @@ function StageAtmosphere({
       aria-hidden
       data-slot="monogram-parallax"
       data-card-rarity={rarity ?? undefined}
-      className="pointer-events-none absolute inset-0 -z-10 overflow-hidden [--facet-accent:var(--card-rarity,var(--tint))]"
+      className="rounded-sheet pointer-events-none absolute inset-0 -z-10 overflow-hidden [--facet-accent:var(--card-rarity,var(--tint))]"
     >
       <div className="absolute inset-0 print:hidden">
         {MONOGRAM_LAYERS.map((layer) => (
-          <MonogramLayer key={layer.app} {...layer} px={px} py={py} />
+          <MonogramLayer key={layer.app} {...layer} px={px} py={py} className="-inset-6" />
         ))}
       </div>
       <motion.div className="facet-aurora absolute -inset-8" style={{ x: auroraX, y: auroraY }} />
@@ -104,6 +83,12 @@ function StageAtmosphere({
           <div className="bg-surface/45 absolute inset-0" />
         </>
       )}
+      <FacetMaterial
+        layer="lens"
+        aria-hidden
+        data-slot="monogram-lens"
+        className="rounded-sheet pointer-events-none absolute inset-0 print:hidden"
+      />
     </div>
   );
 }
@@ -124,23 +109,7 @@ export function DailyRewardDialog({
   const reduce = useFacetReducedMotion();
   const [session, setSession] = useState<ClaimSession>(INITIAL_SESSION);
 
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const px = useSpring(pointerX, springSmooth);
-  const py = useSpring(pointerY, springSmooth);
-
-  const followPointer = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType !== "mouse" || reduce) return;
-    const box = event.currentTarget.getBoundingClientRect();
-    if (!box.width || !box.height) return;
-    pointerX.set(((event.clientX - box.left) / box.width) * 2 - 1);
-    pointerY.set(((event.clientY - box.top) / box.height) * 2 - 1);
-  };
-
-  const recentre = () => {
-    pointerX.set(0);
-    pointerY.set(0);
-  };
+  const { px, py, onPointerMove, onPointerLeave } = usePointerParallax(reduce);
 
   const { data: balanceData } = api.vault.getBalance.useQuery(undefined);
 
@@ -194,12 +163,11 @@ export function DailyRewardDialog({
       if (!open && session.claiming) return;
       setIsOpen(open);
       if (!open) {
-        pointerX.set(0);
-        pointerY.set(0);
+        onPointerLeave();
         window.setTimeout(() => setSession(INITIAL_SESSION), 200);
       }
     },
-    [pointerX, pointerY, session.claiming, setIsOpen]
+    [onPointerLeave, session.claiming, setIsOpen]
   );
 
   const stageTransition = reduce ? REDUCED_MOTION_FADE : springSmooth;
@@ -223,8 +191,8 @@ export function DailyRewardDialog({
         data-app="vault"
         data-content={session.result ? "reveal" : undefined}
         showCloseButton={!session.claiming}
-        onPointerMove={followPointer}
-        onPointerLeave={recentre}
+        onPointerMove={onPointerMove}
+        onPointerLeave={onPointerLeave}
         className="isolate max-h-[calc(100dvh-2rem)] max-w-[calc(100%-2rem)] gap-0 overflow-x-hidden overflow-y-auto p-0 sm:max-w-lg"
       >
         <StageAtmosphere

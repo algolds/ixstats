@@ -195,7 +195,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
       >
         {isLoading ? (
           Array.from({ length: 3 }, (_, i) => (
-            <div key={i} className="bg-surface-secondary rounded-row space-y-3 p-4">
+            <div key={i} className="facet-well rounded-row space-y-3 p-4">
               <div className="flex items-center gap-2">
                 <Skeleton className="h-5 w-24 rounded-full" />
                 <Skeleton className="h-5 w-16 rounded-full" />
@@ -236,7 +236,7 @@ export function LoreBotFeedView({ currentUserId }: LoreBotFeedViewProps) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.98 }}
                 transition={springSmooth}
-                className="group bg-surface-secondary rounded-row relative p-4"
+                className="group facet-well rounded-row relative p-4"
               >
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">

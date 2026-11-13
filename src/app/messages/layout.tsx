@@ -13,7 +13,7 @@ export const metadata: Metadata = {
  */
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative mx-auto w-full max-w-7xl px-4 pt-(--shell-top-offset) pb-4 sm:px-6">
+    <div className="relative w-full px-3 pt-(--shell-top-offset) pb-3 sm:px-4">
       <h1 className="sr-only">Messages</h1>
       {/* The router reads ?conversation= and friends, which needs a Suspense boundary. */}
       <Suspense fallback={null}>{children}</Suspense>

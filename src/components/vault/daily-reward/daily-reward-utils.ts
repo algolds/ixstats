@@ -84,6 +84,5 @@ export const MONOGRAM_LAYERS = (
   depth,
   style: {
     "--monogram": `url("${withBasePath(`/images/ix-monogram-${app}.svg`)}")`,
-    "--monogram-strength": "9%",
   } as CSSProperties,
 }));

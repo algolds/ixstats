@@ -29,10 +29,10 @@ export function lastMessageSenderId(message: PreviewMessage): string | undefined
   return (message as PreviewMessage & { senderId?: string }).senderId ?? message.accountId;
 }
 
-export const isDiplomaticConversation = (c: ThinkShareConversation) =>
+const isDiplomaticConversation = (c: ThinkShareConversation) =>
   c.source === "diplomatic" || c.conversationType === "diplomatic";
 
-export const isCommunityConversation = (c: ThinkShareConversation) =>
+const isCommunityConversation = (c: ThinkShareConversation) =>
   ["wiki", "forum", "community"].includes(c.source ?? "");
 
 function getCardIdentity(conversation: ThinkShareConversation, settings?: CardSettings) {

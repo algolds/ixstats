@@ -1,23 +1,21 @@
 "use client";
 
+import { useId } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Building,
   Coins,
-  Crown,
   HomeSimple,
-  Journal,
-  Leaderboard,
-  NavArrowLeft,
   StatsReport,
   Wallet,
 } from "iconoir-react";
+import { DocumentRibbon, type RibbonTab } from "~/components/shared/document/DocumentRibbon";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { FacetMaterial } from "~/components/ui/facet";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
-import { SegmentedControl } from "~/components/ui/segmented-control";
+import { LensCard } from "~/components/ui/lens-card";
 import { EXCHANGE_VERSION } from "~/lib/buildVersion";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
@@ -29,6 +27,15 @@ import {
 import { ExchangeIconWell, Pill, formatSovereignFigure } from "./brand";
 import { useRealmOverview } from "./useTreasuryActor";
 
+/**
+ * The 4 primary Exchange ribbon tabs (Apple Design restraint: max 4 items per navigation group).
+ * - `front` (Overview): Realm index, news dispatches, movers, nation bonds & leaderboards
+ * - `markets` (Markets): Searchable equities, sovereign bonds & macro sector funds
+ * - `portfolio` (Portfolio): Personal wallet, holdings, orders, watchlist & sovereign treasury desk
+ * - `companies` (Companies): Corporate charters, operating controls & B2G/B2B tenders
+ */
+type PrimaryTab = "front" | "markets" | "portfolio" | "companies";
+
 const EXCHANGE_HELP_STEPS: HeroHelpStep[] = [
   {
     title: "Welcome to the Exchange",
@@ -39,56 +46,76 @@ const EXCHANGE_HELP_STEPS: HeroHelpStep[] = [
     body: "Open Markets to browse listed corporations, sovereign nation bonds and the 4 macro sector funds. Place instant fills or resting limit orders on the two-sided order book.",
   },
   {
-    title: "Charter & run companies",
-    body: "Open My companies to charter a corporation in one of 12 sub-industries, draw central bank credit, queue expansion or R&D decisions, and pay dividends to shareholders.",
+    title: "Portfolio & sovereign treasury",
+    body: "Open Portfolio to track your holdings, open orders and watchlist. Nation owners can switch directly to their Sovereign Treasury to manage their wealth fund, bond issuances and lending.",
   },
   {
-    title: "Tenders & sovereign treasuries",
-    body: "Bid on B2G government procurement tenders and B2B supply contracts on the Tenders board. Nation owners manage their sovereign treasury, wealth fund and bond issuances in Treasury.",
+    title: "Companies & tenders",
+    body: "Open Companies to charter corporations, draw central bank credit, declare dividends, and bid on B2G government procurement tenders and B2B supply contracts.",
   },
 ];
 
 const SECTION_TITLES: Record<ExchangeSection, string> = {
   front: "Exchange",
   markets: "Markets",
-  tenders: "Tenders",
+  tenders: "Companies & tenders",
   portfolio: "Portfolio",
-  leaderboards: "Leaderboards",
-  treasury: "Treasury",
-  companies: "My companies",
+  leaderboards: "Exchange",
+  treasury: "Portfolio & treasury",
+  companies: "Companies & tenders",
 };
 
 const SECTION_SUBTITLES: Record<ExchangeSection, string> = {
-  front: "Sovereign (₷) capital markets, equities, nation bonds and business press.",
+  front: "Sovereign (₷) capital markets, equities, nation bonds, leaderboards and business press.",
   markets: "Browse and trade listed company shares, sovereign bonds and sector index funds.",
-  tenders: "Government procurement tenders and corporate contracts open for bidding.",
+  tenders: "Charter corporations, manage operations and bid on government or corporate tenders.",
   leaderboards: "Largest corporations by market cap, sovereign treasuries and investor portfolios.",
-  portfolio: "Your Sovereign (₷) wallet, equity stakes, bond holdings, open orders and watchlist.",
-  companies: "Charter corporations, manage capital, draw central bank credit and declare dividends.",
+  portfolio: "Your Sovereign (₷) wallet, holdings, open orders, watchlist and sovereign treasury.",
+  companies: "Charter corporations, manage operations and bid on government or corporate tenders.",
   treasury: "Manage your nation's Sovereign (₷) treasury, wealth fund, bond issuances and lending.",
 };
 
 const OBJECT_CONTEXT: Record<
   Exclude<ExchangeRoute["kind"], "section" | "unknown">,
-  { title: string; subtitle: string }
+  { title: string; subtitle: string; tab: PrimaryTab }
 > = {
   company: {
     title: "Corporate equity",
     subtitle: "Live share price, two-sided order book, governance & operating P&L.",
+    tab: "markets",
   },
   bond: {
     title: "Sovereign bond",
     subtitle: "Fixed-income coupon, yield to maturity, treasury backing & secondary listings.",
+    tab: "markets",
   },
   nation: {
     title: "Sovereign issuer",
     subtitle: "National treasury balance, credit rating, sovereign wealth fund & domiciled corporations.",
+    tab: "markets",
   },
   story: {
     title: "Business press dispatch",
     subtitle: "Market-moving filings, corporate announcements & economic dispatches.",
+    tab: "front",
   },
 };
+
+function primaryTabForSection(section: ExchangeSection): PrimaryTab {
+  switch (section) {
+    case "front":
+    case "leaderboards":
+      return "front";
+    case "markets":
+      return "markets";
+    case "portfolio":
+    case "treasury":
+      return "portfolio";
+    case "companies":
+    case "tenders":
+      return "companies";
+  }
+}
 
 function realmPath(path: string, realmId: string): string {
   return realmId && realmId !== DEFAULT_REALM_ID
@@ -102,16 +129,23 @@ function SearchHref(realmId: string): string {
   return `${EXCHANGE_PATHS.markets}?${query.toString()}`;
 }
 
-/** Masthead and Chrome navigation console for the Exchange, matching MyLeague, MyClub, Onoma and Vault. */
+const PRIMARY_TABS: readonly RibbonTab<PrimaryTab>[] = [
+  { id: "front", label: "Overview", icon: HomeSimple },
+  { id: "markets", label: "Markets", icon: StatsReport },
+  { id: "portfolio", label: "Portfolio", icon: Wallet },
+  { id: "companies", label: "Companies", icon: Building },
+];
+
+/** Masthead and 4-tab Facet Lens ribbon console for the Exchange. */
 export function ExchangeHeader({ realmId }: { realmId: string }) {
+  const ribbonId = useId();
   const router = useRouter();
   const pathname = usePathname();
   const route = exchangeRouteOf(pathname);
   const overview = useRealmOverview(realmId);
   const walletBalance = overview.data?.wallet?.sovereigns;
-  const hasNationInRealm = Boolean(
-    overview.data?.nations?.some((n) => n.realmId === realmId)
-  );
+  const activeCompaniesCount =
+    overview.data?.companies?.filter((c) => c.status !== "DISSOLVED").length ?? 0;
 
   const isSection = route.kind === "section";
   const isMarkets = isSection && route.section === "markets";
@@ -121,17 +155,11 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
     route.section === "companies" ||
     route.section === "tenders";
 
-  const sectionTabs = [
-    { value: "front" as const, label: "Overview", icon: <HomeSimple /> },
-    { value: "markets" as const, label: "Markets", icon: <StatsReport /> },
-    { value: "tenders" as const, label: "Tenders", icon: <Journal /> },
-    { value: "leaderboards" as const, label: "Leaderboards", icon: <Leaderboard /> },
-    { value: "portfolio" as const, label: "Portfolio", icon: <Wallet /> },
-    { value: "companies" as const, label: "My companies", icon: <Building /> },
-    ...(hasNationInRealm || (isSection && route.section === "treasury")
-      ? [{ value: "treasury" as const, label: "Treasury", icon: <Crown /> }]
-      : []),
-  ];
+  const activeTab: PrimaryTab = isSection
+    ? primaryTabForSection(route.section)
+    : route.kind !== "unknown"
+      ? OBJECT_CONTEXT[route.kind].tab
+      : "front";
 
   const actions = (
     <>
@@ -162,9 +190,19 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
     </>
   );
 
-  if (isSection) {
-    return (
-      <div className="space-y-3">
+  const backHref =
+    route.kind === "story"
+      ? realmPath(EXCHANGE_PATHS.front, realmId)
+      : realmPath(EXCHANGE_PATHS.markets, realmId);
+  const backLabel = route.kind === "story" ? "Overview" : "Markets";
+  const contextMeta =
+    !isSection && route.kind !== "unknown"
+      ? OBJECT_CONTEXT[route.kind]
+      : null;
+
+  return (
+    <div className="space-y-3">
+      {isSection ? (
         <PageHeader
           bleed
           leading={
@@ -186,66 +224,35 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
           }
           actions={actions}
         />
+      ) : (
+        <PageHeader
+          bleed
+          title={contextMeta?.title ?? "Exchange"}
+          back={{ href: backHref, label: backLabel }}
+          collapseOn={null}
+          actions={actions}
+        />
+      )}
 
-        <FacetMaterial layer="chrome" className="rounded-card p-1.5">
-          <SegmentedControl
-            asTabs
-            activationMode="manual"
-            scrollable
-            fullWidth
-            size="sm"
-            aria-label="Exchange sections"
-            value={route.section}
-            onValueChange={(next) =>
-              router.push(realmPath(EXCHANGE_PATHS[next as ExchangeSection], realmId))
-            }
-            options={sectionTabs}
-            itemClassName="min-w-max"
-          />
-        </FacetMaterial>
-      </div>
-    );
-  }
-
-  const backHref =
-    route.kind === "story"
-      ? realmPath(EXCHANGE_PATHS.front, realmId)
-      : realmPath(EXCHANGE_PATHS.markets, realmId);
-  const backLabel = route.kind === "story" ? "Overview" : "Markets";
-  const contextMeta =
-    route.kind !== "unknown"
-      ? OBJECT_CONTEXT[route.kind]
-      : { title: "Exchange", subtitle: "Sovereign (₷) capital markets" };
-
-  return (
-    <div className="space-y-3 pt-12 lg:pt-14">
-      <FacetMaterial layer="chrome" className="rounded-card p-2">
-        <div className="flex flex-col justify-between gap-2 px-1 py-0.5 sm:flex-row sm:items-center">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button asChild variant="secondary" size="sm" className="shrink-0">
-              <Link href={backHref}>
-                <NavArrowLeft aria-hidden />
-                <span>Back to {backLabel}</span>
-              </Link>
-            </Button>
-            <div className="border-separator flex min-w-0 flex-col border-l py-0.5 pl-3 select-none">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="text-headline text-label flex shrink-0 items-center gap-1.5">
-                  <Coins className="text-tint size-4" aria-hidden="true" />
-                  <span>{contextMeta.title}</span>
-                </span>
-                <span className="text-label-tertiary hidden sm:inline" aria-hidden="true">
-                  ·
-                </span>
-                <span className="text-footnote text-label-secondary hidden truncate md:inline">
-                  {contextMeta.subtitle}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">{actions}</div>
-        </div>
-      </FacetMaterial>
+      <LensCard app="exchange" padding="none" className="overflow-hidden [&>*]:border-y-0">
+        <DocumentRibbon
+          idBase={ribbonId}
+          label="Exchange sections"
+          tabs={PRIMARY_TABS}
+          activeTab={activeTab}
+          counts={activeCompaniesCount > 0 ? { companies: activeCompaniesCount } : undefined}
+          onSelectTab={(next) =>
+            router.push(realmPath(EXCHANGE_PATHS[next], realmId))
+          }
+          actions={
+            contextMeta ? (
+              <Badge variant="outline" className="hidden sm:inline-flex">
+                {contextMeta.title}
+              </Badge>
+            ) : undefined
+          }
+        />
+      </LensCard>
     </div>
   );
 }
