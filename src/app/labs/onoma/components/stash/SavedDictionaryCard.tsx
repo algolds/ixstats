@@ -17,7 +17,7 @@ import {
   SystemRestart as Loader2,
   SoundHigh as AudioLines,
   GitFork,
-  Sparks as Sparkles,
+  Flash,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -116,7 +116,7 @@ export function SavedDictionaryCard({
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
-            <h4 className="text-label text-footnote truncate font-semibold">{dict.title}</h4>
+            <h4 className="text-label text-footnote truncate font-medium">{dict.title}</h4>
             <div className="text-label-secondary text-caption mt-0.5 flex items-center gap-2">
               <span>{wordsCount} words</span>
               {dict.category && (
@@ -152,20 +152,20 @@ export function SavedDictionaryCard({
             {dict.clonedFromId && (
               <>
                 <span>•</span>
-                <span className="text-tint/80 font-semibold">Cloned</span>
+                <span className="text-tint/80 font-medium">Cloned</span>
               </>
             )}
             {dict.stashName && (
               <>
                 <span>•</span>
                 <span
-                  className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
+                  className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-medium select-none"
                   style={{
-                    backgroundColor: `${dict.stashColor || "#3b82f6"}20`,
-                    color: dict.stashColor || "#3b82f6",
+                    backgroundColor: `color-mix(in srgb, ${dict.stashColor || "var(--color-tint)"} 12%, transparent)`,
+                    color: dict.stashColor || "var(--color-tint)",
                   }}
                 >
-                  📁 {dict.stashName}
+                  {dict.stashName}
                 </span>
               </>
             )}
@@ -235,7 +235,7 @@ export function SavedDictionaryCard({
                 onClick={() => onNavigateExplore("writing", dict.values, dict.title)}
                 title="Typeset words in Writing Systems"
               >
-                <Sparkles className="h-3 w-3" />
+                <Flash className="h-3 w-3" />
                 <span className="hidden sm:inline">Script</span>
               </Button>
             )}

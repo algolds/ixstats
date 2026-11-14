@@ -23,8 +23,11 @@ describe("readiness", () => {
     );
     expect(screen.getByText("C-3")).toBeTruthy();
     expect(screen.getByText("Partly ready")).toBeTruthy();
-    expect(screen.getByText("76% readiness")).toBeTruthy();
-    const areas = within(screen.getByRole("list", { name: "Readiness areas" })).getAllByRole("listitem");
+    expect(screen.getByRole("progressbar", { name: "Readiness meter" })).toBeTruthy();
+    expect(screen.queryByText(/% readiness/)).toBeNull();
+    const areas = within(screen.getByRole("list", { name: "Readiness areas" })).getAllByRole(
+      "listitem"
+    );
     expect(areas).toHaveLength(4);
     const worst = areas.filter((a) => a.hasAttribute("data-worst"));
     expect(worst).toHaveLength(1);
@@ -86,11 +89,13 @@ describe("national force", () => {
   });
 
   it("names the burden's source, the human factor and the technology lag", () => {
-    render(<DefenseOverview overview={ownerDefense()} reader={sixTimesReader()} nowClockMs={CLOCK_NOW} />);
+    render(
+      <DefenseOverview overview={ownerDefense()} reader={sixTimesReader()} nowClockMs={CLOCK_NOW} />
+    );
     expect(screen.getByText("2.1% of GDP")).toBeTruthy();
     expect(screen.getByText(/Defense department's lines/)).toBeTruthy();
     expect(screen.getByText("×1.04")).toBeTruthy();
     expect(screen.getByText("3.2 years behind")).toBeTruthy();
-    expect(screen.getByText("C-3 · 72%")).toBeTruthy();
+    expect(screen.getByText("C-3 · Partly ready")).toBeTruthy();
   });
 });

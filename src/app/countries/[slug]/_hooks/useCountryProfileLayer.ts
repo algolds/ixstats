@@ -303,7 +303,6 @@ function buildIdentity(
           username: firstStr(owner.handle, owner.forumUsername),
           roleName: firstStr(owner.role?.displayName, owner.role?.name),
           avatarUrl: str(owner.avatarUrl),
-          role: firstStr(owner.clerkRole, owner.role?.name),
         }
       : null,
     claim: claimableNation(c),

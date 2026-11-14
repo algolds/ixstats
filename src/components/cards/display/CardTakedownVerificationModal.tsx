@@ -6,8 +6,6 @@ import {
   ShieldAlert,
   OpenNewWindow as ExternalLink,
   CheckCircle as CheckCircle2,
-  WarningCircle as AlertCircle,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import {
   Dialog,
@@ -17,6 +15,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
+import { Signal } from "~/components/ui/signal";
 import { api } from "~/trpc/react";
 import {
   Select,
@@ -118,7 +117,7 @@ export function CardTakedownVerificationModal({
               <DialogTitle className="text-label text-title-3">Content removal request</DialogTitle>
               <DialogDescription className="text-label-secondary text-footnote">
                 Submit a verified ownership claim to request immediate removal of associated artwork
-                for <span className="text-label font-semibold">{cardTitle}</span>
+                for <span className="text-label font-medium">{cardTitle}</span>
                 {nsCardId && season ? ` (Card #${nsCardId})` : ""}.
               </DialogDescription>
             </div>
@@ -127,7 +126,7 @@ export function CardTakedownVerificationModal({
 
         {successMessage ? (
           <div className="space-y-4 py-4 text-center">
-            <div className="border-green/30 bg-green/20 text-green mx-auto flex h-12 w-12 items-center justify-center rounded-full border">
+            <div className="border-green/30 bg-green/15 text-green-ink mx-auto flex h-12 w-12 items-center justify-center rounded-full border">
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <p className="text-label text-footnote font-medium">{successMessage}</p>
@@ -139,8 +138,8 @@ export function CardTakedownVerificationModal({
           <div className="space-y-4 pt-2">
             {/* Nation name first — drives the dynamic verify URL */}
             <div>
-              <label className="text-label-secondary text-footnote mb-1 block font-semibold">
-                Nation Name <span className="text-red">*</span>
+              <label className="text-label-secondary text-subhead mb-1 block">
+                Nation name <span className="text-red">*</span>
               </label>
               <input
                 type="text"
@@ -154,21 +153,19 @@ export function CardTakedownVerificationModal({
             {/* Verification Instructions — OAuth-style steps */}
             <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote space-y-2 border p-3">
               <div className="flex items-center justify-between">
-                <span className="text-label text-footnote font-semibold">
-                  How to verify ownership
-                </span>
+                <span className="text-label text-subhead">How to verify ownership</span>
                 <a
                   href="https://www.nationstates.net/pages/api.html#verification"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-footnote text-blue inline-flex items-center gap-1 font-medium hover:underline"
+                  className="text-footnote text-blue-ink inline-flex items-center gap-1 font-medium hover:underline"
                 >
                   NS API Docs <ExternalLink className="h-2.5 w-2.5" />
                 </a>
               </div>
               <ol className="text-footnote space-y-2 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     1
                   </span>
                   <span>
@@ -177,7 +174,7 @@ export function CardTakedownVerificationModal({
                       href={verifyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue font-medium hover:underline"
+                      className="text-blue-ink font-medium hover:underline"
                     >
                       nation-specific verify page
                     </a>
@@ -187,13 +184,13 @@ export function CardTakedownVerificationModal({
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     2
                   </span>
                   <span>Copy the one-time verification token shown on that page.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     3
                   </span>
                   <span>
@@ -207,24 +204,24 @@ export function CardTakedownVerificationModal({
             {/* Remaining inputs */}
             <div className="space-y-3">
               <div>
-                <label className="text-label-secondary text-footnote mb-1 block font-semibold">
-                  Verification Token <span className="text-red">*</span>
+                <label className="text-label-secondary text-subhead mb-1 block">
+                  Verification token <span className="text-red">*</span>
                 </label>
                 <input
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
                   placeholder="Paste one-time token"
-                  className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 font-mono transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
+                  className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row font-data text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
                 />
               </div>
 
               <div className="space-y-2">
                 <label
                   id="takedown-reason-label"
-                  className="text-label-secondary text-footnote block font-semibold"
+                  className="text-label-secondary text-subhead block"
                 >
-                  Basis for Removal <span className="text-label-tertiary">(Optional)</span>
+                  Basis for removal <span className="text-label-tertiary">(optional)</span>
                 </label>
                 <Select
                   value={selectedReason || NO_REASON}
@@ -262,10 +259,9 @@ export function CardTakedownVerificationModal({
 
             {/* Error Display */}
             {takedownMutation.error && (
-              <div className="rounded-row border-red/30 bg-red/10 text-footnote text-red flex items-start gap-2 border p-3">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{takedownMutation.error.message}</p>
-              </div>
+              <Signal tone="destructive" title="Verification failed">
+                {takedownMutation.error.message}
+              </Signal>
             )}
 
             {/* Submit Actions */}
@@ -274,19 +270,12 @@ export function CardTakedownVerificationModal({
                 Cancel
               </Button>
               <Button
+                variant="destructive"
                 size="sm"
                 disabled={!nationName.trim() || !checksum.trim() || takedownMutation.isPending}
                 onClick={handleVerifyAndTakedown}
-                className="border-red/30 bg-red text-on-red border"
               >
-                {takedownMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    Validating Identity...
-                  </>
-                ) : (
-                  "Submit Removal Request"
-                )}
+                {takedownMutation.isPending ? "Validating identity..." : "Submit removal request"}
               </Button>
             </div>
           </div>

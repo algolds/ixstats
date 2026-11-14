@@ -8,7 +8,7 @@ import type {
   MapEditorInstance,
   EditorFeature,
 } from "../types/editor-state";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 
 interface EditorContextMenuWrapperProps {
   contextMenu: EditorContextMenuData | null;
@@ -30,6 +30,14 @@ export function EditorContextMenuWrapper({
 
   if (!contextMenu) return null;
   const target = editor.allFeatures.find((f: EditorFeature) => f.id === contextMenu.feature.id);
+  const wikiTitle =
+    contextMenu.feature.wikiPageTitle ??
+    (typeof target?.properties?.wikiPageTitle === "string"
+      ? target.properties.wikiPageTitle
+      : null);
+  const wikiSource =
+    contextMenu.feature.wikiSource ??
+    (typeof target?.properties?.wikiSource === "string" ? target.properties.wikiSource : null);
 
   return (
     <FeatureContextMenu
@@ -73,9 +81,9 @@ export function EditorContextMenuWrapper({
           : undefined
       }
       onOpenWiki={
-        contextMenu.feature.wikiPageTitle
+        wikiTitle
           ? () => {
-              router.push(titleToWikiOSRoute(contextMenu.feature.wikiPageTitle!));
+              router.push(wikiReaderPath(wikiTitle, parseWikiSource(wikiSource)));
               setContextMenu(null);
             }
           : undefined

@@ -1,10 +1,13 @@
 /**
- * The IIWiki admin panel (/admin/iiwiki): status, the IIWiki switch, the breaker reset and the live test. Admin only.
+ * The IIWiki admin panel (/admin/iiwiki): status, the IIWiki switch, the breaker reset and the live test. Admin only,
+ * except `iiwikiAvailability`: what every wiki picker needs to grey IIWiki out (on, switched off or resting per
+ * feature). It reads the switch's own 15 s cache and the in-memory breaker, so it costs no request and no query.
  */
 import { z } from "zod/v4";
-import { adminProcedure, createTRPCRouter } from "~/server/api/trpc";
+import { adminProcedure, createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import { IIWIKI_FEATURE_IDS, type IiwikiFeature } from "~/lib/wiki-os/iiwiki-switch";
 import {
+  getIiwikiAvailability,
   getIiwikiStatus,
   resetIiwikiCircuit,
   runIiwikiLiveTest,
@@ -24,6 +27,8 @@ const actorOf = (user: { id: string; clerkUserId: string; handle: string | null 
 });
 
 export const wikiosIiwikiRouter = createTRPCRouter({
+  iiwikiAvailability: publicProcedure.query(() => getIiwikiAvailability()),
+
   getIiwikiStatus: adminProcedure.query(() => getIiwikiStatus()),
 
   setIiwikiSwitch: adminProcedure

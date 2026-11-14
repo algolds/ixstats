@@ -1,5 +1,6 @@
 "use client";
 
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { useCallback, useState, type ReactNode } from "react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Label } from "~/components/ui/label";
@@ -212,6 +213,8 @@ export function parseDecimalAmount(raw: string): number {
 }
 
 export interface CompanyWikiData {
+  /** The wiki the page is on; a row that does not say is an IxWiki page. */
+  wikiSource: WikiSource;
   wikiSlug: string;
   pageTitle: string;
   logoUrl: string | null;
@@ -240,6 +243,7 @@ export function readCompanyWikiData(
   const pageTitle = strOrNull(r.pageTitle) ?? (wikiSlug ? wikiSlug.replace(/_/g, " ") : null);
   if (!wikiSlug || !pageTitle) return null;
   return {
+    wikiSource: parseWikiSource(strOrNull(r.wikiSource)),
     wikiSlug,
     pageTitle,
     logoUrl: strOrNull(r.logoUrl),

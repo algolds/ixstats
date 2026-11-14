@@ -1,8 +1,8 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useState, useRef } from "react";
 import { Pin as Crosshair } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils/cn";
 import { Card } from "~/components/ui/card";
 
@@ -104,7 +104,7 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
   return (
     <div className="space-y-2">
       <div className="text-footnote flex items-center justify-between">
-        <Eyebrow>Coordinates</Eyebrow>
+        <span className="text-caption text-label-secondary font-medium">Coordinates</span>
         <span className="text-label-secondary text-footnote italic">Drag label or type value</span>
       </div>
 
@@ -112,28 +112,28 @@ export const ScrubbableCoordinateInput = React.memo(function ScrubbableCoordinat
         {(Object.keys(AXES) as Axis[]).map((axis) => (
           <Card
             key={axis}
-            className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-within:ring-1"
+            className="focus-within:border-tint focus-within:ring-tint flex flex-1 items-center px-2 py-1 transition-colors focus-within:ring-1"
           >
             <span
               onPointerDown={(e) => handlePointerDown(axis, e)}
               onPointerMove={(e) => handlePointerMove(axis, e)}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              className={`text-eyebrow cursor-ew-resize font-mono transition-colors select-none ${
+              className={`text-caption cursor-ew-resize font-medium transition-colors select-none ${
                 activeScrub === axis ? "text-tint" : "text-label-secondary hover:text-label"
               }`}
               title={`Drag horizontally to scrub ${AXES[axis].name} (Shift for 10x, Alt for 0.1x)`}
             >
               {AXES[axis].label}
             </span>
-            <input
+            <Input
               type="text"
               value={texts[axis]}
               onChange={(e) => setTexts((t) => ({ ...t, [axis]: e.target.value }))}
               onBlur={() => handleInputBlur(axis)}
               onKeyDown={(e) => handleKeyDown(axis, e)}
               disabled={disabled || !coordinates}
-              className="text-label text-footnote w-full bg-transparent text-right tabular-nums focus:outline-none"
+              className="text-label text-footnote font-data h-6 w-full border-0 bg-transparent px-1 py-0 text-right tabular-nums shadow-none hover:bg-transparent focus-visible:outline-none"
             />
             <span className="text-label-secondary text-footnote ml-0.5">&deg;</span>
           </Card>

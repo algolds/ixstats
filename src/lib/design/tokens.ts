@@ -239,10 +239,17 @@ export const Z_INDEX = {
 /** `rounded-cutout` radius in px. */
 export const CUTOUT_RADIUS = 28;
 
-/** Monochrome primary (`Button variant="filled"`, `facet-primary`). `on` must hold 4.5:1 on `fill` and `hover`. */
+/**
+ * Monochrome primary (`Button variant="default"`, `facet-primary`): iron-gall ink, not zinc. The fill is the
+ * default app tint's strong shade and the hover its tint, in both themes. `on` must hold 4.5:1 on both.
+ */
 export const PRIMARY_MONO = {
-  light: { fill: "#18181b", hover: "#3f3f46", on: "#fafafa" },
-  dark: { fill: "#e4e4e7", hover: "#d4d4d8", on: "#0f1114" },
+  light: {
+    fill: APP_TINTS.default.light.strong,
+    hover: APP_TINTS.default.light.tint,
+    on: "#fafafa",
+  },
+  dark: { fill: APP_TINTS.default.dark.strong, hover: APP_TINTS.default.dark.tint, on: "#0f1114" },
 } as const satisfies Record<Appearance, { fill: string; hover: string; on: string }>;
 
 /**

@@ -1,138 +1,141 @@
 "use client";
 
-import { Component } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
-import { Button } from "~/components/ui/button";
 import { useState } from "react";
-import { useVexelEditor } from "../VexelEditorProvider";
-import { api } from "~/trpc/react";
-import { CHARGE_CATEGORIES } from "~/lib/heraldry";
+import { Globe, Shield } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { Card, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
+import { Skeleton } from "~/components/ui/skeleton";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { Card } from "~/components/ui/card";
+import { CHARGE_CATEGORIES } from "~/lib/heraldry";
+import { api, type RouterInputs } from "~/trpc/react";
 import { BUILTIN_CHARGES } from "../builtin-charges";
-import { sanitizeSvgMarkup } from "~/lib/utils/sanitize-html";
+import { ChargeGlyph } from "../ChargeGlyph";
+import { useVexelEditor } from "../VexelEditorProvider";
+
+type ChargeCategory = NonNullable<RouterInputs["heraldry"]["getChargeLibrary"]["category"]>;
 
 interface ChargeLibraryPanelProps {
   onOpenCommons: () => void;
 }
 
+const TILE_GRID = "grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6";
+
+/** One charge to add: its drawing over its name. */
+function ChargeTile({
+  chargeId,
+  name,
+  svgData,
+  onAdd,
+}: {
+  chargeId: string;
+  name: string;
+  svgData?: string | null;
+  onAdd: (chargeId: string) => void;
+}) {
+  return (
+    <Card
+      interactive
+      padding="sm"
+      onClick={() => onAdd(chargeId)}
+      aria-label={`Add ${name}`}
+      className="flex min-w-0 flex-col items-center gap-2"
+    >
+      <ChargeGlyph chargeId={chargeId} svgData={svgData} className="text-tint" />
+      <span className="text-caption text-label-secondary w-full truncate text-center">{name}</span>
+    </Card>
+  );
+}
+
 export default function ChargeLibraryPanel({ onOpenCommons }: ChargeLibraryPanelProps) {
   const { addCharge } = useVexelEditor();
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<string>("");
+  const [category, setCategory] = useState("");
 
   const { data, isLoading } = api.heraldry.getChargeLibrary.useQuery({
     search: search || undefined,
-    category: category ? (category as any) : undefined,
+    category: category ? (category as ChargeCategory) : undefined,
     limit: 30,
   });
-
-  const localTemplates = BUILTIN_CHARGES.filter(
+  const imported = data?.items ?? [];
+  const builtin = BUILTIN_CHARGES.filter(
     (c) => !search || c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAddCharge = (chargeId: string) => {
-    addCharge({
-      chargeId,
-      position: "fess-point",
-      count: 1,
-      tincture: "or",
-      size: 1.0,
-    });
-  };
+  const handleAdd = (chargeId: string) =>
+    addCharge({ chargeId, position: "fess-point", count: 1, tincture: "or", size: 1.0 });
 
   return (
-    <Card className="h-full overflow-hidden">
-      <div className="flex h-full flex-col p-4">
-        <div className="border-separator mb-4 flex items-center justify-between border-b pb-2">
-          <h2 className="text-label text-headline">Charge library</h2>
-          <Button variant="ghost" size="xs" onClick={onOpenCommons}>
-            Browse Commons
-          </Button>
-        </div>
-
-        <div className="text-footnote mb-4 space-y-2">
-          <SearchField
-            aria-label="Search charges"
-            placeholder="Search charges..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch("")}
-          />
-
-          <OptionSelect
-            aria-label="Charge category"
-            value={category}
-            onValueChange={setCategory}
-            options={[{ value: "", label: "All categories" }, ...CHARGE_CATEGORIES]}
-          />
-        </div>
-
-        <div className="flex-1 overflow-y-auto pr-1">
-          <div className="space-y-4">
-            {localTemplates.length > 0 && (
-              <div>
-                <Eyebrow className="mb-2 block">Built-in templates</Eyebrow>
-                <div className="grid grid-cols-2 gap-2">
-                  {localTemplates.map((item) => (
-                    <Button
-                      key={item.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleAddCharge(item.id)}
-                      className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
-                    >
-                      <Component className="text-label-secondary h-5 w-5" aria-hidden />
-                      <span className="text-label-secondary text-caption w-full truncate text-center">
-                        {item.name}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div>
-              <Eyebrow className="mb-2 block">Imported charges</Eyebrow>
-
-              {isLoading ? (
-                <div className="text-label-secondary text-footnote flex justify-center py-6">
-                  Loading library...
-                </div>
-              ) : (data?.items ?? []).length === 0 ? (
-                <div className="text-label-secondary text-footnote py-6 text-center italic">
-                  No custom charges found. Use the Commons Browser to import.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {(data?.items ?? []).map((item: any) => (
-                    <Button
-                      key={item.id}
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleAddCharge(item.id)}
-                      className="h-auto min-w-0 flex-col gap-1 p-3 whitespace-normal"
-                    >
-                      <div
-                        className="text-label-secondary flex h-8 w-8 items-center justify-center overflow-hidden"
-                        dangerouslySetInnerHTML={{
-                          __html: sanitizeSvgMarkup(item.svgData)
-                            .replace(/width="[^"]*"/, 'width="100%"')
-                            .replace(/height="[^"]*"/, 'height="100%"'),
-                        }}
-                      />
-                      <span className="text-label-secondary text-caption w-full truncate text-center">
-                        {item.name}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+    <Card content="input" padding="md" className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <CardTitle icon={<Shield />}>Charge library</CardTitle>
+        <Button variant="secondary" size="sm" onClick={onOpenCommons}>
+          <Globe />
+          Browse Commons
+        </Button>
       </div>
+
+      <div className="flex flex-wrap gap-2">
+        <SearchField
+          aria-label="Search charges"
+          placeholder="Search charges"
+          value={search}
+          onValueChange={setSearch}
+          containerClassName="min-w-48 flex-1"
+        />
+        <OptionSelect
+          aria-label="Charge category"
+          className="w-48"
+          value={category}
+          onValueChange={setCategory}
+          options={[{ value: "", label: "All categories" }, ...CHARGE_CATEGORIES]}
+        />
+      </div>
+
+      {builtin.length > 0 && (
+        <section className="space-y-2" aria-labelledby="vexel-builtin-charges">
+          <h3 id="vexel-builtin-charges" className="text-subhead text-label-secondary">
+            Built in
+          </h3>
+          <div className={TILE_GRID}>
+            {builtin.map((item) => (
+              <ChargeTile key={item.id} chargeId={item.id} name={item.name} onAdd={handleAdd} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="space-y-2" aria-labelledby="vexel-imported-charges">
+        <h3 id="vexel-imported-charges" className="text-subhead text-label-secondary">
+          Imported
+        </h3>
+        {isLoading ? (
+          <div className={TILE_GRID} aria-busy="true" aria-label="Loading charges">
+            {Array.from({ length: 6 }, (_, i) => (
+              <Skeleton key={i} className="rounded-row h-20" />
+            ))}
+          </div>
+        ) : imported.length === 0 ? (
+          <EmptyState
+            compact
+            title="No imported charges"
+            message="Import charges from Wikimedia Commons to use them here."
+          />
+        ) : (
+          <div className={TILE_GRID}>
+            {imported.map((item) => (
+              <ChargeTile
+                key={item.id}
+                chargeId={item.id}
+                name={item.name}
+                svgData={item.svgData}
+                onAdd={handleAdd}
+              />
+            ))}
+          </div>
+        )}
+      </section>
     </Card>
   );
 }

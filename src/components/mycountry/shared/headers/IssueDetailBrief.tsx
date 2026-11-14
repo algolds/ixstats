@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   StatUp as TrendingUp,
   Bank as Landmark,
@@ -98,14 +98,13 @@ function IssueHero({
 
   return (
     <Card className="flex flex-col gap-3 p-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">
-          <DomainIcon />
-          {domain.label}
-        </Badge>
-        <Badge variant="outline" className={cn("capitalize", severityTone)}>
-          {severity}
-        </Badge>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-label-secondary text-footnote flex flex-wrap items-center gap-1.5">
+          <DomainIcon aria-hidden="true" className="h-3.5 w-3.5" />
+          <span>{domain.label}</span>
+          <span aria-hidden="true">·</span>
+          <span className={cn("capitalize", severityTone)}>{severity}</span>
+        </span>
         {deadline && (
           <Badge variant={deadline.urgent ? "destructive" : "outline"}>
             {deadline.urgent ? <Flame /> : <Clock />}
@@ -117,10 +116,10 @@ function IssueHero({
       <div>
         <h2 className="text-label text-title-3">{issue.title}</h2>
         {issue.intentId && (
-          <Badge variant="default" className="mt-2">
-            <Command />
+          <p className="text-label-secondary text-footnote mt-1 flex items-center gap-1.5">
+            <Command aria-hidden="true" className="h-3.5 w-3.5" />
             Linked to an active directive
-          </Badge>
+          </p>
         )}
       </div>
 
@@ -318,14 +317,14 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   });
 
   const issue = issueQuery.data;
-  const options = useMemo(() => parseOptions(issue?.responseOptions), [issue?.responseOptions]);
+  const options = parseOptions(issue?.responseOptions);
 
   if (issueQuery.isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading issue">
-        <Skeleton className="rounded-row h-40" />
-        <Skeleton className="rounded-row h-24" />
-        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-card h-40" />
+        <Skeleton className="rounded-card h-24" />
+        <Skeleton className="rounded-card h-24" />
       </div>
     );
   }

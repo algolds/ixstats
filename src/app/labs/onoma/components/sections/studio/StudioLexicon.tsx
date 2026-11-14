@@ -131,7 +131,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
       <div className="space-y-4 lg:col-span-4">
         <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-1">
-            <h3 className="text-label text-body font-semibold">Lexicon terms</h3>
+            <h3 className="text-label text-headline">Lexicon terms</h3>
             <p className="text-label-secondary text-footnote">
               Stashed names and defined vocabulary.
             </p>
@@ -171,12 +171,10 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     )}
                   >
                     <div className="min-w-0 space-y-0.5 pr-2">
-                      <span className="text-body block truncate font-mono font-semibold">
-                        {name}
-                      </span>
+                      <span className="text-headline block truncate font-mono">{name}</span>
                       {def ? (
                         <span className="text-label-secondary text-caption block truncate">
-                          <span className="text-tint mr-1 font-semibold">[{def.partOfSpeech}]</span>
+                          <span className="text-tint mr-1 font-medium">[{def.partOfSpeech}]</span>
                           {def.meaning}
                         </span>
                       ) : (
@@ -219,14 +217,14 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             <div className="border-separator flex items-start justify-between border-b pb-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-label text-title-2 font-mono font-bold">{selectedTerm}</h3>
+                  <h3 className="text-label text-title-2 font-mono">{selectedTerm}</h3>
                   {definitions[selectedTerm]?.partOfSpeech && (
-                    <span className="bg-tint/10 text-tint rounded-control-sm text-eyebrow px-2 py-0.5">
+                    <span className="bg-tint/10 text-tint rounded-control-sm text-caption px-2 py-0.5">
                       {definitions[selectedTerm].partOfSpeech}
                     </span>
                   )}
                 </div>
-                <div className="text-label-secondary text-caption mt-1 flex flex-wrap items-center gap-2 font-semibold">
+                <div className="text-label-secondary text-caption mt-1 flex flex-wrap items-center gap-2 font-medium">
                   {effectiveIpa && (
                     <span className="flex items-center">
                       <ActionPill
@@ -277,14 +275,14 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                     <>
                       <span>•</span>
                       {originLabel && (
-                        <span className="bg-tint/10 text-tint rounded-control-sm text-caption px-2 py-0.5 font-semibold capitalize">
+                        <span className="bg-tint/10 text-tint rounded-control-sm text-caption px-2 py-0.5 font-medium capitalize">
                           {originLabel}
                         </span>
                       )}
                       <span>•</span>
                       <span>
                         Stashed{" "}
-                        <span className="text-label font-semibold">
+                        <span className="text-label font-medium">
                           {new Date(stashedEntry.createdAt).toLocaleDateString(undefined, {
                             year: "numeric",
                             month: "short",
@@ -341,12 +339,10 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   }}
                   className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
+                  <span className="text-label-secondary text-caption text-caption mb-1 block">
                     Cyrillic
                   </span>
-                  <span className="text-tint text-body font-mono font-semibold">
-                    {selectedTermCyrillic}
-                  </span>
+                  <span className="text-tint text-headline font-mono">{selectedTermCyrillic}</span>
                   <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
@@ -364,12 +360,10 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   }}
                   className="rounded-row group hover:border-tint/40 h-auto flex-col gap-0 p-3 font-normal whitespace-normal"
                 >
-                  <span className="text-label-secondary text-eyebrow text-caption mb-1 block">
+                  <span className="text-label-secondary text-caption text-caption mb-1 block">
                     Greek
                   </span>
-                  <span className="text-tint text-body font-mono font-semibold">
-                    {selectedTermGreek}
-                  </span>
+                  <span className="text-tint text-headline font-mono">{selectedTermGreek}</span>
                   <span className="text-label-secondary text-caption mt-1 block opacity-0 transition-opacity group-hover:opacity-100">
                     Click to copy
                   </span>
@@ -389,14 +383,12 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                   dir="rtl"
                 >
                   <span
-                    className="text-label-secondary text-eyebrow text-caption mb-1 block text-left font-sans"
+                    className="text-label-secondary text-caption text-caption mb-1 block text-left font-sans"
                     dir="ltr"
                   >
                     Arabic
                   </span>
-                  <span className="text-tint text-body font-mono font-semibold">
-                    {selectedTermArabic}
-                  </span>
+                  <span className="text-tint text-headline font-mono">{selectedTermArabic}</span>
                   <span
                     className="text-label-secondary text-caption mt-1 block text-left font-sans opacity-0 transition-opacity group-hover:opacity-100"
                     dir="ltr"
@@ -417,14 +409,14 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <h4 className="text-label-secondary text-subhead">Noun Declension (Cases)</h4>
-                  <span className="text-label-secondary text-caption font-semibold">
+                  <span className="text-label-secondary text-caption font-medium">
                     Gender:{" "}
-                    <span className="text-tint font-semibold">{selectedTermMorphology.gender}</span>
+                    <span className="text-tint font-medium">{selectedTermMorphology.gender}</span>
                   </span>
                 </div>
 
                 <div className="border-separator bg-background rounded-row overflow-hidden border">
-                  <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-3 border-b px-3 py-2">
+                  <div className="bg-fill-4 border-separator text-label-secondary text-caption grid grid-cols-3 border-b px-3 py-2">
                     <span>Case</span>
                     <span>Singular</span>
                     <span>Plural</span>
@@ -435,15 +427,15 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
                       ([caseName, declCase]) => (
                         <div key={caseName} className="grid grid-cols-3 items-center px-3 py-2">
                           <div className="flex flex-col pr-1">
-                            <span className="text-label font-semibold capitalize">{caseName}</span>
+                            <span className="text-label font-medium capitalize">{caseName}</span>
                             <span className="text-label-secondary text-caption mt-0.5 leading-normal">
                               {declCase.descriptionSingular.split(" (")[0]}
                             </span>
                           </div>
-                          <span className="text-tint truncate font-mono font-semibold">
+                          <span className="text-tint truncate font-mono font-medium">
                             {declCase.singular}
                           </span>
-                          <span className="text-tint truncate font-mono font-semibold">
+                          <span className="text-tint truncate font-mono font-medium">
                             {declCase.plural}
                           </span>
                         </div>
@@ -473,7 +465,7 @@ export function StudioLexicon({ state }: StudioLexiconProps) {
             className="text-label-secondary text-body flex min-h-[400px] flex-col items-center justify-center border-dashed p-8 text-center"
           >
             <BookOpen className="text-tint/40 mb-3 h-8 w-8" />
-            <p className="font-semibold">No word selected</p>
+            <p className="font-medium">No word selected</p>
             <p className="text-label-secondary text-footnote mt-1">
               Select a conlang vocabulary term from the left list to view script transcriptions,
               noun case declensions, and edit its lexical definition.

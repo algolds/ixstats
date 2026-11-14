@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import { Check, Copy } from "iconoir-react";
@@ -67,12 +68,12 @@ function NationLine({ nation }: { nation: PassportFaceNation }) {
           decoding="async"
         />
       )}
-      <Link
-        href={`/countries/${encodeURIComponent(nation.country.slug)}`}
+      <CountryLink
+        country={{ slug: nation.country.slug, name: nation.country.name.replace(/_/g, " ") }}
         className={`text-label font-medium ${LINK}`}
       >
         {nation.country.name.replace(/_/g, " ")}
-      </Link>
+      </CountryLink>
       <span aria-hidden>·</span>
       <Link href={`/r/${encodeURIComponent(nation.slug)}`} className={LINK}>
         {nation.name}

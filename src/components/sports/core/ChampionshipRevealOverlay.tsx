@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { Trophy, Star, Sparks as Sparkles } from "iconoir-react";
+import { Trophy, Star } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
@@ -44,7 +44,6 @@ export function ChampionshipRevealOverlay({
           className="rounded-card bg-yellow/15 relative mx-auto mb-6 flex size-24 items-center justify-center"
         >
           <Trophy className="text-yellow size-12" aria-hidden />
-          <Sparkles className="text-yellow absolute -top-2 -right-2 size-6" aria-hidden />
           <Star
             className="text-yellow absolute -bottom-1 -left-1 size-5 fill-current"
             aria-hidden

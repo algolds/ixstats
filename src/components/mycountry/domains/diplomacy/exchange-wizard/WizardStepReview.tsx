@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 import React from "react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { useNationClock } from "~/hooks/useNationClock";
@@ -76,7 +76,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
       </div>
 
       <div className="space-y-5">
-        <div className="border-separator bg-surface rounded-row border p-4">
+        <Card variant="well" padding="md">
           <div className="flex items-start gap-3">
             {React.createElement(typeConfig.icon, {
               className: "text-label-secondary mt-1 h-5 w-5",
@@ -87,9 +87,9 @@ export const WizardStepReview = React.memo(function WizardStepReview({
               <p className="text-label-secondary text-body mt-2">{data.description}</p>
             </div>
           </div>
-        </div>
+        </Card>
 
-        <div className="border-separator bg-surface rounded-row border p-4">
+        <Card variant="well" padding="md">
           <h5 className="text-label-secondary text-headline mb-3">Participating countries</h5>
           <div className="flex flex-col gap-3">
             <ReviewCountry
@@ -106,25 +106,25 @@ export const WizardStepReview = React.memo(function WizardStepReview({
               />
             ))}
           </div>
-        </div>
+        </Card>
 
-        <div className="border-separator bg-surface rounded-row border p-4">
+        <Card variant="well" padding="md">
           <h5 className="text-label-secondary text-headline mb-2">Narrative</h5>
           <p className="text-label-secondary text-body">{data.narrative}</p>
-        </div>
+        </Card>
 
-        <div className="border-separator bg-surface rounded-row border p-4">
+        <Card variant="well" padding="md">
           <h5 className="text-label-secondary text-headline mb-3">Objectives</h5>
-          <div className="flex flex-wrap gap-2">
+          <ul className="divide-separator divide-y">
             {data.objectives.map((obj) => (
-              <Badge key={obj} variant="default">
+              <li key={obj} className="text-label text-body py-1.5 first:pt-0 last:pb-0">
                 {obj}
-              </Badge>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </Card>
 
-        <div className="border-separator bg-surface rounded-row border p-4">
+        <Card variant="well" padding="md">
           <h5 className="text-label-secondary text-headline mb-3">Details</h5>
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
@@ -138,7 +138,7 @@ export const WizardStepReview = React.memo(function WizardStepReview({
             <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

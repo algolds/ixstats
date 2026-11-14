@@ -288,6 +288,7 @@ export function pickOverlayFeature(
     coordinates: (hit.geometry as GeoPoint).coordinates as [number, number],
     ...FEATURE_EXTRAS[featureType](props),
     wikiPageTitle: strOrNull(props.wikiPageTitle),
+    wikiSource: strOrNull(props.wikiSource),
   };
 }
 

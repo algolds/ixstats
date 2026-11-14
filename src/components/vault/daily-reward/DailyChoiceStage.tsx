@@ -171,10 +171,7 @@ function CreditsChoiceTile({
             ) : (
               <>
                 <IxCreditsSymbol decorative className="text-tint size-3 shrink-0" />
-                <NumberFlowDisplay
-                  value={Math.round(credits)}
-                  className="text-label font-semibold"
-                />
+                <NumberFlowDisplay value={Math.round(credits)} className="text-label font-medium" />
                 <span>in Vault</span>
               </>
             )}

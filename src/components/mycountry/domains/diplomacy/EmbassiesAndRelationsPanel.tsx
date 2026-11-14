@@ -11,6 +11,7 @@ import {
   MailIn,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState as FacetEmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
@@ -163,43 +164,46 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
 
   return (
     <div className="space-y-5">
-      <SectionTabBar
-        tabs={[
-          ...(isOwner
-            ? [
-                {
-                  id: "inbox" as const,
-                  label: "Inbox",
-                  icon: MailIn,
-                  badge: inbox.count > 0 ? inbox.count : undefined,
-                },
-              ]
-            : []),
-          {
-            id: "embassies",
-            label: "Embassy network",
-            icon: Building2,
-            badge: stats.activeEmbassies,
-          },
-          {
-            id: "relations",
-            label: "Bilateral relations",
-            icon: Handshake,
-            badge: stats.totalRelations,
-          },
-          {
-            id: "alliances",
-            label: "Alliances & blocs",
-            icon: Users,
-            badge: stats.allianceCount,
-          },
-          { id: "exchanges", label: "Cultural exchanges", icon: Palette },
-          { id: "events", label: "Diplomatic events", icon: FileText },
-        ]}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        activeClassName="text-cyan"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-title-3 text-label">Diplomacy</h2>
+        <SectionTabBar
+          aria-label="Diplomacy sections"
+          tabs={[
+            ...(isOwner
+              ? [
+                  {
+                    id: "inbox" as const,
+                    label: "Inbox",
+                    icon: MailIn,
+                    badge: inbox.count > 0 ? inbox.count : undefined,
+                  },
+                ]
+              : []),
+            {
+              id: "embassies",
+              label: "Embassy network",
+              icon: Building2,
+              badge: stats.activeEmbassies,
+            },
+            {
+              id: "relations",
+              label: "Bilateral relations",
+              icon: Handshake,
+              badge: stats.totalRelations,
+            },
+            {
+              id: "alliances",
+              label: "Alliances & blocs",
+              icon: Users,
+              badge: stats.allianceCount,
+            },
+            { id: "exchanges", label: "Cultural exchanges", icon: Palette },
+            { id: "events", label: "Diplomatic events", icon: FileText },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
+      </div>
 
       {activeTab === "inbox" && isOwner && (
         <PanelSection
@@ -250,11 +254,13 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           }
         >
           {!alliances || alliances.length === 0 ? (
-            <Card className="rounded-card p-6 text-center">
-              <Users className="text-label-secondary mx-auto mb-3 h-6 w-6" />
-              <p className="text-label-secondary text-body">
-                Not a member of any alliances. Create one or wait for an invitation.
-              </p>
+            <Card className="rounded-card">
+              <FacetEmptyState
+                compact
+                icon={<Users />}
+                title="Not a member of any alliances"
+                message="Create one or wait for an invitation."
+              />
             </Card>
           ) : (
             <div className="space-y-3">

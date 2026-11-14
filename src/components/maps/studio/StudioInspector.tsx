@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { Card } from "~/components/ui/card";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { StudioCalibrationTab } from "./StudioCalibrationTab";
 import { StudioLayersTab } from "./StudioLayersTab";
@@ -18,7 +18,12 @@ const TABS: ReadonlyArray<{ value: string; label: string; Panel: ComponentType }
 /** The right-hand inspector: Layers, Calibration, Presets and Ship. Each panel reads `useStudio()`. */
 export function StudioInspector() {
   return (
-    <Card content="input" padding="none" className="flex min-h-0 flex-col overflow-hidden">
+    <FacetMaterial
+      as="aside"
+      layer="chrome"
+      data-content="input"
+      className="facet-chrome-subtle rounded-row pointer-events-auto flex min-h-0 flex-col overflow-hidden"
+    >
       <Tabs defaultValue="layers" className="flex min-h-0 flex-1 flex-col">
         <TabsList aria-label="Inspector" className="border-separator shrink-0 gap-1 border-b p-2">
           {TABS.map(({ value, label }) => (
@@ -33,6 +38,6 @@ export function StudioInspector() {
           </TabsContent>
         ))}
       </Tabs>
-    </Card>
+    </FacetMaterial>
   );
 }

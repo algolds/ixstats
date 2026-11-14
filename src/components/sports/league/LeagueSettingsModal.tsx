@@ -12,6 +12,7 @@ const MediaSearchModal = dynamic(
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { withBasePath } from "~/lib/base-path";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -45,6 +46,7 @@ interface LeagueSettingsModalProps {
     archetype?: string;
     settings?: any;
     wikiSlug?: string | null;
+    wikiSource?: string | null;
     seasons?: Array<{
       id: string;
       seasonNumber: number;
@@ -58,6 +60,7 @@ interface LeagueSettingsModalProps {
       color: string;
       nationId?: string | null;
       wikiSlug?: string | null;
+      wikiSource?: string | null;
       logo?: string | null;
     }>;
   };
@@ -86,7 +89,14 @@ export function LeagueSettingsModal({
   const [name, setName] = useState(league.name);
   const [logoUrl, setLogoUrl] = useState(league.logo ?? "");
   const [coverUrl, setCoverUrl] = useState(league.coverImage ?? "");
-  const [wikiSlug, setWikiSlug] = useState(league.wikiSlug ?? "");
+  const [wikiLink, setWikiLink] = useState<{ slug: string; source: WikiSource }>(() => ({
+    slug: league.wikiSlug ?? "",
+    source: parseWikiSource(league.wikiSource),
+  }));
+  const wikiSlug = wikiLink.slug;
+  const wikiSource = wikiLink.source;
+  const setWikiSlug = (slug: string) => setWikiLink((prev) => ({ ...prev, slug }));
+  const setWikiSource = (source: WikiSource) => setWikiLink((prev) => ({ ...prev, source }));
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [mediaSearchFor, setMediaSearchFor] = useState<"logo" | "cover" | null>(null);
@@ -128,7 +138,10 @@ export function LeagueSettingsModal({
       setName(league.name);
       setLogoUrl(league.logo ?? "");
       setCoverUrl(league.coverImage ?? "");
-      setWikiSlug(league.wikiSlug ?? "");
+      setWikiLink({
+        slug: league.wikiSlug ?? "",
+        source: parseWikiSource(league.wikiSource),
+      });
       setUploadedFile(null);
       setStatus(league.status ?? "active");
       setTier(league.tier ?? 1);
@@ -249,6 +262,7 @@ export function LeagueSettingsModal({
       logo: finalLogoUrl || null,
       coverImage: coverUrl || null,
       wikiSlug: wikiSlug.trim() || null,
+      wikiSource: wikiSlug.trim() ? wikiSource : null,
       status: status as "active" | "inactive" | "archived",
       tier,
       promotionCount,
@@ -284,6 +298,8 @@ export function LeagueSettingsModal({
               setName={setName}
               wikiSlug={wikiSlug}
               setWikiSlug={setWikiSlug}
+              wikiSource={wikiSource}
+              setWikiSource={setWikiSource}
               previewSrc={logoUrl}
               coverUrl={coverUrl}
               setCoverUrl={setCoverUrl}

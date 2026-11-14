@@ -115,7 +115,7 @@ export const ProvinceImportWizard = memo(function ProvinceImportWizard({
   }, [importer, onComplete]);
 
   return (
-    <div className="bg-surface flex h-full flex-col">
+    <div className="flex h-full flex-col">
       <div className="border-separator flex items-center justify-between border-b px-4 py-3">
         <h2 className="text-label text-headline">
           {SCOPE_TITLES[importer.importScope] ?? "Import Provinces & Cities"}

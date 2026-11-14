@@ -1,9 +1,8 @@
 "use client";
 
-import { springSmooth } from "~/lib/design/motion";
 import React from "react";
-import { motion } from "motion/react";
 import { Globe, ShieldCheck, CheckCircle, Download, Check } from "iconoir-react";
+import { Progress } from "~/components/ui/progress";
 import { cn } from "~/lib/utils";
 
 export type WizardStep = "intro" | "verify" | "preview" | "importing" | "complete";
@@ -17,59 +16,60 @@ const WIZARD_STEPS: { id: WizardStep; label: string; icon: typeof Globe }[] = [
 ];
 
 export function ImportStepIndicator({ currentStep }: { currentStep: WizardStep }) {
-  const currentIdx = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
+  const currentIdx = Math.max(
+    0,
+    WIZARD_STEPS.findIndex((s) => s.id === currentStep)
+  );
+  const activeStep = WIZARD_STEPS[currentIdx];
 
   return (
-    <div className="flex items-center justify-between gap-1 px-2">
-      {WIZARD_STEPS.map((step, idx) => {
-        const Icon = step.icon;
-        const isComplete = idx < currentIdx;
-        const isCurrent = idx === currentIdx;
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-subhead text-label">{activeStep?.label}</span>
+        <span className="text-footnote text-label-secondary tabular-nums">
+          Step {currentIdx + 1} of {WIZARD_STEPS.length}
+        </span>
+      </div>
 
-        return (
-          <div key={step.id} className="flex flex-1 items-center gap-0">
-            {/* Step circle */}
-            <motion.div
-              className={cn(
-                "relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                isComplete && "border-green bg-green/20",
-                isCurrent && "border-tint bg-tint-fill",
-                !isComplete && !isCurrent && "border-separator bg-fill-4"
-              )}
-            >
-              {isComplete ? (
-                <Check className="text-green h-4 w-4" />
-              ) : (
-                <Icon className={cn("h-4 w-4", isCurrent ? "text-tint" : "text-label-tertiary")} />
-              )}
-            </motion.div>
+      <Progress
+        value={currentIdx + 1}
+        max={WIZARD_STEPS.length}
+        aria-label="Import progress"
+        className="h-1.5"
+      />
 
-            {/* Label */}
-            <span
-              className={cn(
-                "text-footnote ml-2 hidden font-semibold sm:inline",
-                isComplete && "text-green",
-                isCurrent && "text-tint",
-                !isComplete && !isCurrent && "text-label-tertiary"
-              )}
-            >
-              {step.label}
-            </span>
+      <div className="flex items-center justify-between gap-2">
+        {WIZARD_STEPS.map((step, idx) => {
+          const Icon = step.icon;
+          const isComplete = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
 
-            {/* Connecting line */}
-            {idx < WIZARD_STEPS.length - 1 && (
-              <div className="bg-fill-3 mx-2 h-px flex-1 overflow-hidden rounded-full">
-                <motion.div
-                  className="bg-green h-full rounded-full"
-                  initial={{ width: "0%" }}
-                  animate={{ width: isComplete ? "100%" : isCurrent ? "50%" : "0%" }}
-                  transition={springSmooth}
-                />
+          return (
+            <div key={step.id} className="flex items-center gap-1.5">
+              <div
+                className={cn(
+                  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors",
+                  isComplete && "border-green/35 bg-green/15 text-green-ink",
+                  isCurrent && "border-tint/40 bg-tint-fill text-tint-ink",
+                  !isComplete && !isCurrent && "border-separator bg-fill-4 text-label-tertiary"
+                )}
+              >
+                {isComplete ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
               </div>
-            )}
-          </div>
-        );
-      })}
+              <span
+                className={cn(
+                  "text-footnote hidden font-medium sm:inline",
+                  isComplete && "text-green-ink",
+                  isCurrent && "text-label",
+                  !isComplete && !isCurrent && "text-label-tertiary"
+                )}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

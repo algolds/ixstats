@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { WarningCircle } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { AllAchievementsTab } from "./tabs/AllAchievementsTab";
@@ -16,6 +20,8 @@ type AchievementRow = RouterOutputs["achievements"]["getAllWithStatus"][number];
 interface AchievementsTabsProps {
   achievements: AchievementRow[] | undefined;
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
   /** The Lorewards view; the Lorewards tab exists only when this is given. */
   lorewardsPanel?: React.ReactNode;
 }
@@ -25,7 +31,7 @@ const panelId = (tab: AchievementsTabId) => `achievements-panel-${tab}`;
 function CatalogueSkeleton() {
   return (
     <div aria-busy className="space-y-4">
-      <Skeleton className="rounded-card h-40" />
+      <Skeleton className="rounded-card h-14" />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Skeleton className="rounded-card h-48" />
         <Skeleton className="rounded-card h-48" />
@@ -42,21 +48,20 @@ function CatalogueSkeleton() {
 export function AchievementsTabs({
   achievements,
   isLoading,
+  isError = false,
+  onRetry,
   lorewardsPanel,
 }: AchievementsTabsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const options = useMemo(
-    () => [
-      { value: "all" as const, label: "All" },
-      ...(lorewardsPanel ? [{ value: "lorewards" as const, label: "Lorewards" }] : []),
-      { value: "showcase" as const, label: "Showcase" },
-      { value: "leaderboard" as const, label: "Leaderboard" },
-    ],
-    [lorewardsPanel]
-  );
+  const options = [
+    { value: "all" as const, label: "All" },
+    ...(lorewardsPanel ? [{ value: "lorewards" as const, label: "Lorewards" }] : []),
+    { value: "showcase" as const, label: "Showcase" },
+    { value: "leaderboard" as const, label: "Leaderboard" },
+  ];
 
   const requested = searchParams.get("tab");
   const active: AchievementsTabId = options.find((o) => o.value === requested)?.value ?? "all";
@@ -69,6 +74,23 @@ export function AchievementsTabs({
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   };
+
+  const errorCard = (
+    <Card>
+      <EmptyState
+        icon={<WarningCircle />}
+        title="Achievements didn't load"
+        message="Please try again in a moment."
+        action={
+          onRetry ? (
+            <Button variant="secondary" size="sm" onClick={onRetry}>
+              Try again
+            </Button>
+          ) : undefined
+        }
+      />
+    </Card>
+  );
 
   return (
     <div className="space-y-4">
@@ -89,7 +111,9 @@ export function AchievementsTabs({
         aria-label={options.find((o) => o.value === active)?.label}
       >
         {active === "all" &&
-          (isLoading ? (
+          (isError ? (
+            errorCard
+          ) : isLoading ? (
             <CatalogueSkeleton />
           ) : (
             <AllAchievementsTab
@@ -98,7 +122,13 @@ export function AchievementsTabs({
             />
           ))}
         {active === "showcase" &&
-          (isLoading ? <CatalogueSkeleton /> : <ShowcaseTab achievements={achievements} />)}
+          (isError ? (
+            errorCard
+          ) : isLoading ? (
+            <CatalogueSkeleton />
+          ) : (
+            <ShowcaseTab achievements={achievements} />
+          ))}
         {active === "lorewards" && lorewardsPanel}
         {active === "leaderboard" && <LeaderboardTab />}
       </div>

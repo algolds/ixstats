@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/studio/StudioSoundShifts.tsx
 // Onoma Lab — Historical Sound Change & Language Evolution Studio
 
+import { Card } from "~/components/ui/card";
 import { useState, useMemo } from "react";
 import {
   GitFork,
@@ -244,7 +245,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
       {/* Top Controls Bar with Segmented Mode Switch */}
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h3 className="text-label text-title-2 font-bold">Sound shifts & phonetic adaptation</h3>
+          <h3 className="text-label text-title-2">Sound shifts & phonetic adaptation</h3>
           <p className="text-label-secondary text-footnote leading-relaxed">
             Model chronological diachronic sound change or configure interlinguistic borrowing and
             loanword adaptation.
@@ -271,9 +272,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
           <div className="bg-surface-secondary rounded-row relative overflow-hidden p-5 sm:p-6">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
               <div className="space-y-1">
-                <h4 className="text-label text-body font-semibold">
-                  Diachronic phonetic transformation
-                </h4>
+                <h4 className="text-label text-headline">Diachronic phonetic transformation</h4>
                 <p className="text-label-secondary text-footnote leading-relaxed">
                   Define chronological phonetic shift rules (<code>X → Y / ENV</code>) across
                   historical epochs to systematically derive daughter languages and regional
@@ -282,7 +281,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-label-secondary text-eyebrow">Presets:</span>
+                <span className="text-label-secondary text-caption">Presets:</span>
                 <ToggleGroup
                   type="single"
                   variant="outline"
@@ -311,9 +310,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Layers className="text-tint h-4 w-4" />
-                  <h4 className="text-label text-body font-semibold">
-                    Chronological epochs & rules
-                  </h4>
+                  <h4 className="text-label text-headline">Chronological epochs & rules</h4>
                 </div>
                 <Button variant="outline" size="sm" onClick={handleAddEpoch}>
                   <Plus className="h-3.5 w-3.5" />
@@ -331,7 +328,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                   >
                     <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
                       <div className="flex flex-1 items-center gap-2">
-                        <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-semibold">
+                        <span className="bg-tint/15 text-tint text-caption flex h-5 w-5 items-center justify-center rounded-full font-medium">
                           {epochIdx + 1}
                         </span>
                         <Input
@@ -408,9 +405,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             />
                           </div>
 
-                          <span className="text-label-secondary text-footnote font-semibold">
-                            /
-                          </span>
+                          <span className="text-label-secondary text-footnote font-medium">/</span>
 
                           <div className="flex min-w-[90px] flex-1 items-center">
                             <Input
@@ -479,9 +474,9 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
             {/* Right Column: Interactive Lexicon Evolution & Diff (5 cols) */}
             <div className="space-y-5 lg:col-span-5">
-              <div className="border-separator bg-surface rounded-row shadow-card space-y-2 border p-4">
+              <Card padding="none" className="space-y-2 p-4">
                 <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-                  <label className="text-label text-footnote font-semibold">
+                  <label className="text-label text-footnote font-medium">
                     Proto-Language Lexicon Input
                   </label>
                   <div className="w-full sm:w-48">
@@ -511,12 +506,12 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                   <span>{parsedWords.length} words loaded</span>
                   <span>Loaded from Stash or custom text</span>
                 </div>
-              </div>
+              </Card>
 
-              <div className="border-separator bg-surface rounded-row shadow-card space-y-3 border p-4">
+              <Card padding="none" className="space-y-3 p-4">
                 <div className="flex items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-label text-footnote font-semibold">
+                    <h4 className="text-label text-footnote font-medium">
                       Evolved daughter lexicon
                     </h4>
                     <span className="text-label-secondary text-caption">
@@ -576,7 +571,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                             <ArrowRight className="text-label-tertiary h-3 w-3 flex-shrink-0" />
 
                             <div className="flex items-center gap-1">
-                              <span className="text-label text-footnote font-mono font-semibold">
+                              <span className="text-label text-footnote font-mono font-medium">
                                 {res.final}
                               </span>
                               <Button
@@ -640,7 +635,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
 
                         {isExpanded && res.steps.length > 0 && (
                           <div className="border-separator bg-fill-4 rounded-control-sm text-caption mt-2 space-y-2 border p-2">
-                            <div className="text-label-secondary font-semibold">
+                            <div className="text-label-secondary font-medium">
                               Derivation trace:
                             </div>
                             {res.steps.map((step, sIdx) => (
@@ -652,7 +647,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                                   {step.epochName}
                                 </span>
                                 <span className="text-tint">{step.ruleDescription}</span>
-                                <span className="text-label font-semibold">
+                                <span className="text-label font-medium">
                                   {step.before} → {step.after}
                                 </span>
                               </div>
@@ -663,7 +658,7 @@ export function StudioSoundShifts({ studioWords = [] }: StudioSoundShiftsProps =
                     );
                   })}
                 </div>
-              </div>
+              </Card>
             </div>
           </div>
         </>

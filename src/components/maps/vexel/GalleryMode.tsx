@@ -2,7 +2,6 @@
 
 import { Refresh } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -12,6 +11,7 @@ import { generateBlazon } from "~/lib/heraldry/blazon";
 import type { HeraldryComposition } from "~/lib/heraldry";
 import { api } from "~/trpc/react";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { LoadingBlock } from "./LoadingBlock";
 
 type FilterKey = "cultureGroup" | "religion" | "governmentType";
@@ -110,9 +110,9 @@ export default function GalleryMode() {
       <Card className="text-label-secondary text-footnote grid grid-cols-1 gap-3 p-4 md:grid-cols-4">
         {FILTERS.map(({ key, label, options }) => (
           <div key={key} className="space-y-1">
-            <Eyebrow id={`vexel-gallery-${key}`} className="block">
+            <span id={`vexel-gallery-${key}`} className="text-caption text-label-secondary block">
               {label}
-            </Eyebrow>
+            </span>
             <OptionSelect
               aria-labelledby={`vexel-gallery-${key}`}
               value={filters[key]}
@@ -136,11 +136,11 @@ export default function GalleryMode() {
       </Card>
 
       {isLoading ? (
-        <LoadingBlock message="Forging procedural arms..." />
+        <LoadingBlock message="Generating coats of arms" />
       ) : compositions.length === 0 ? (
-        <div className="text-label-secondary text-footnote py-20 text-center italic">
-          No candidates generated.
-        </div>
+        <Card>
+          <EmptyState title="Nothing generated" message="Change the filters and roll again." />
+        </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
           {compositions.map((comp, idx) => {
@@ -151,14 +151,16 @@ export default function GalleryMode() {
                 <div className="flex flex-col items-center gap-4 p-4">
                   <div
                     onClick={() => handleSelectCard(comp)}
-                    className="relative flex aspect-square w-full max-w-[150px] transform cursor-pointer items-center justify-center transition-transform duration-200 group-hover:scale-[1.03]"
+                    className="relative flex aspect-square w-full max-w-[150px] cursor-pointer items-center justify-center"
                   >
                     <ShieldRenderer composition={comp} width="100%" height="100%" />
                   </div>
 
                   <div className="flex w-full flex-1 flex-col justify-between text-center">
                     <div>
-                      <Eyebrow className="mb-1 block">Design {idx + 1}</Eyebrow>
+                      <span className="text-caption text-label-secondary mb-1 block">
+                        Design {idx + 1}
+                      </span>
                       <p
                         className="text-label-secondary text-footnote line-clamp-2 px-2 italic"
                         title={blazon}

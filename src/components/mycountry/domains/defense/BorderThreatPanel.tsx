@@ -7,11 +7,14 @@ import {
   Archery as Crosshair,
 } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { getQualitativeRating } from "~/lib/qualitative-rating";
 
 interface BorderThreatPanelProps {
   countryId: string;
@@ -21,18 +24,18 @@ interface BorderThreatPanelProps {
 const threatLevelConfig = {
   minimal: {
     label: "Minimal",
-    color: "border-green/30 text-green",
-    indicator: "bg-green",
+    color: "border-success/30 text-success",
+    indicator: "bg-success",
   },
   low: {
     label: "Low",
-    color: "border-green/30 text-green",
-    indicator: "bg-green",
+    color: "border-success/30 text-success",
+    indicator: "bg-success",
   },
   moderate: {
     label: "Moderate",
-    color: "border-yellow/30 text-yellow",
-    indicator: "bg-yellow",
+    color: "border-warning/30 text-warning",
+    indicator: "bg-warning",
   },
   high: {
     label: "High",
@@ -46,13 +49,13 @@ const threatLevelConfig = {
   },
 };
 
-/** Diplomatic stance → semantic status colour; neutral/allied stay uncoloured. */
+/** Diplomatic stance → readable label. */
 const diplomaticConfig = {
-  hostile: { label: "Hostile", color: "border-destructive/30 text-destructive" },
-  tense: { label: "Tense", color: "border-yellow/30 text-yellow" },
-  neutral: { label: "Neutral", color: "text-label-secondary" },
-  friendly: { label: "Friendly", color: "border-green/30 text-green" },
-  allied: { label: "Allied", color: "border-green/30 text-green" },
+  hostile: { label: "Hostile" },
+  tense: { label: "Tense" },
+  neutral: { label: "Neutral" },
+  friendly: { label: "Friendly" },
+  allied: { label: "Allied" },
 };
 
 function StatItem({
@@ -86,27 +89,28 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
     diplomaticConfig.neutral;
 
   return (
-    <div className="border-separator rounded-control space-y-3 border p-4">
+    <Card variant="well" padding="md" className="space-y-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <Globe aria-hidden="true" className="text-label-secondary h-4 w-4" />
-            <h4 className="text-label text-headline">{threat.neighborName}</h4>
+            <h4 className="text-label text-headline">
+              <CountryLink
+                country={{ id: threat.neighborCountryId, name: threat.neighborName }}
+                className="hover:underline"
+              >
+                {threat.neighborName}
+              </CountryLink>
+            </h4>
           </div>
-          <Badge variant="outline" className="capitalize">
+          <p className="text-label-secondary text-footnote capitalize">
             {threat.borderType} border
-          </Badge>
+            {threat.diplomaticRelations ? ` · ${diplomatic.label}` : ""}
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline" className={level.color}>
-            {level.label}
-          </Badge>
-          {threat.diplomaticRelations && (
-            <Badge variant="outline" className={diplomatic.color}>
-              {diplomatic.label}
-            </Badge>
-          )}
-        </div>
+        <Badge variant="outline" className={level.color}>
+          {level.label}
+        </Badge>
       </div>
 
       <div className="space-y-1">
@@ -114,11 +118,7 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
           <span className="text-label-secondary">Threat score</span>
           <span className="font-medium tabular-nums">{threat.threatScore}/100</span>
         </div>
-        <Progress
-          value={threat.threatScore}
-          className="bg-fill-3 h-2"
-          indicatorClassName={level.indicator}
-        />
+        <Progress value={threat.threatScore} className="h-2" indicatorClassName={level.indicator} />
       </div>
 
       <div className="text-footnote flex items-center justify-between">
@@ -134,7 +134,7 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
           {threat.notes}
         </p>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -170,7 +170,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
         <Card>
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
-              <Shield aria-hidden="true" className="text-red h-4 w-4" />
+              <Shield aria-hidden="true" className="text-label-secondary h-4 w-4" />
               Border security overview
             </h4>
             <p className="text-label-secondary text-footnote">Current frontier posture</p>
@@ -184,7 +184,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                   <span className="text-label-secondary text-body font-normal">/100</span>
                 </div>
                 <Badge variant="outline" className="mt-1 capitalize">
-                  {border?.securityStatus ?? "unknown"}
+                  {border?.securityStatus ??
+                    getQualitativeRating(border?.overallSecurityLevel ?? 0).label}
                 </Badge>
               </div>
             </div>
@@ -203,7 +204,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
         <Card>
           <CardHeader className="p-5 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
-              <AlertTriangle aria-hidden="true" className="text-red h-4 w-4" />
+              <AlertTriangle aria-hidden="true" className="text-label-secondary h-4 w-4" />
               Neighbor threats
             </h4>
             <p className="text-label-secondary text-footnote">
@@ -214,14 +215,12 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardHeader>
           <CardContent className="px-5 pb-5">
             {threats.length === 0 ? (
-              <div className="border-separator rounded-control flex flex-col items-center justify-center border border-dashed py-10 text-center">
-                <Globe aria-hidden="true" className="text-label-secondary mb-2 h-8 w-8" />
-                <p className="text-label text-body font-medium">No land neighbors</p>
-                <p className="text-label-secondary text-footnote mt-1 max-w-xs">
-                  Neighbors come from your borders on the map. Draw or link your territory to assess
-                  them.
-                </p>
-              </div>
+              <EmptyState
+                compact
+                icon={<Globe />}
+                title="No land neighbors"
+                message="Neighbors come from your borders on the map. Draw or link your territory to assess them."
+              />
             ) : (
               <ScrollArea className="h-[420px] pr-3">
                 <div className="space-y-3">

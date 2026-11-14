@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +14,7 @@ interface AchievementDetailProps {
 
 function CountryNameResolver({ countryId }: { countryId: string }) {
   const { data: country } = api.countries.getByIdAtTime.useQuery({ id: countryId });
-  return <span className="text-label font-semibold">{country?.name || countryId.slice(0, 8)}</span>;
+  return <span className="text-label">{country?.name || countryId.slice(0, 8)}</span>;
 }
 
 export default function AchievementDetail({ achievementId }: AchievementDetailProps) {
@@ -71,7 +70,7 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
           <div className="relative flex aspect-square max-h-full max-w-full items-center justify-center">
             {composition.externals?.helm && (
               <div className="absolute -top-12 z-20 flex flex-col items-center">
-                <Eyebrow>Helm</Eyebrow>
+                <span className="text-caption text-label-secondary">Helm</span>
               </div>
             )}
 
@@ -83,9 +82,9 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
                   composition.externals.motto.position === "above" ? "-top-10" : "-bottom-4"
                 }`}
               >
-                <Eyebrow className="rounded-control-sm bg-surface-elevated text-label shadow-floating block px-5 py-2 whitespace-nowrap">
+                <span className="text-caption rounded-control-sm bg-surface-elevated text-label shadow-floating block px-5 py-2 whitespace-nowrap">
                   {composition.externals.motto.text}
-                </Eyebrow>
+                </span>
               </div>
             )}
           </div>
@@ -93,7 +92,9 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
 
         <Card className="space-y-3 p-6">
           <div className="flex items-center justify-between">
-            <Eyebrow className="block">Official blazon (heraldic description)</Eyebrow>
+            <span className="text-caption text-label-secondary block">
+              Official blazon (heraldic description)
+            </span>
             <Button variant="outline" size="xs" onClick={handleCopyBlazon}>
               {copied ? "Copied" : "Copy"}
             </Button>
@@ -107,25 +108,27 @@ export default function AchievementDetail({ achievementId }: AchievementDetailPr
       <div className="space-y-6">
         <Card className="flex flex-col gap-4 p-5">
           <div className="border-separator border-b pb-3">
-            <Eyebrow className="mb-0.5 block">Title</Eyebrow>
+            <span className="text-caption text-label-secondary mb-0.5 block">Title</span>
             <h2 className="text-label text-title-3">{achievement.title}</h2>
           </div>
 
           <div>
-            <Eyebrow className="mb-0.5 block">Registered owner</Eyebrow>
-            <span className="text-label font-semibold">{achievement.ownerId}</span>
+            <span className="text-caption text-label-secondary mb-0.5 block">Registered owner</span>
+            <span className="text-label">{achievement.ownerId}</span>
           </div>
 
           <div>
-            <Eyebrow className="mb-0.5 block">Subject binding</Eyebrow>
-            <span className="text-label mb-1 block font-semibold">{achievement.subjectType}</span>
+            <span className="text-caption text-label-secondary mb-0.5 block">Subject binding</span>
+            <span className="text-label text-subhead mb-1 block">{achievement.subjectType}</span>
             {achievement.subjectType === "COUNTRY" && achievement.subjectId && (
               <CountryNameResolver countryId={achievement.subjectId} />
             )}
           </div>
 
           <div>
-            <Eyebrow className="mb-0.5 block">Registration date</Eyebrow>
+            <span className="text-caption text-label-secondary mb-0.5 block">
+              Registration date
+            </span>
             <span className="text-label-secondary">
               {new Date(achievement.createdAt).toLocaleString()}
             </span>

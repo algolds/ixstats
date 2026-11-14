@@ -1,4 +1,5 @@
-"use client";
+import { Card } from "~/components/ui/card";
+("use client");
 
 // src/app/labs/onoma/components/sections/studio/LexiconAnalysis.tsx
 // Onoma Custom Studio Workshop — Lexicon Analysis Component
@@ -42,47 +43,51 @@ export function LexiconAnalysis({ selectedTerm, stashedEntry, originLabel }: Lex
     <div className="space-y-2">
       <h4 className="text-label-secondary text-subhead">Lexical & phonotactic analysis</h4>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="border-separator bg-background rounded-row border p-3 text-center">
-          <span className="text-label-secondary text-eyebrow mb-1 block">Phonotactic pattern</span>
-          <span className="text-tint text-body font-mono font-semibold">
-            {getCvPattern(selectedTerm)}
-          </span>
-        </div>
+        <Card padding="none" className="p-3 text-center">
+          <span className="text-label-secondary text-caption mb-1 block">Phonotactic pattern</span>
+          <span className="text-tint text-headline font-mono">{getCvPattern(selectedTerm)}</span>
+        </Card>
 
-        <div className="border-separator bg-background rounded-row border p-3 text-center">
-          <span className="text-label-secondary text-eyebrow mb-1 block">Composition</span>
-          <span className="text-label text-footnote font-mono font-semibold">
+        <Card padding="none" className="p-3 text-center">
+          <span className="text-label-secondary text-caption mb-1 block">Composition</span>
+          <span className="text-label text-footnote font-mono font-medium">
             {getLetterComposition(selectedTerm)}
           </span>
-        </div>
+        </Card>
 
         {(() => {
           const entry = stashedEntry as { stashName?: string; stashColor?: string } | undefined;
           if (!entry?.stashName) return null;
-          const color = entry.stashColor || "#3b82f6";
+          const color = entry.stashColor || "var(--color-tint)";
           return (
-            <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
-              <span className="text-label-secondary text-eyebrow mb-1 block">Stash folder</span>
+            <Card
+              padding="none"
+              className="flex flex-col items-center justify-center p-3 text-center"
+            >
+              <span className="text-label-secondary text-caption mb-1 block">Stash folder</span>
               <span
-                className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-semibold select-none"
+                className="rounded-control-sm text-caption inline-flex items-center gap-1 px-2 py-0.5 font-medium select-none"
                 style={{
-                  backgroundColor: `${color}20`,
+                  backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`,
                   color: color,
                 }}
               >
-                📁 {entry.stashName}
+                {entry.stashName}
               </span>
-            </div>
+            </Card>
           );
         })()}
 
         {originLabel && (
-          <div className="border-separator bg-background rounded-row flex flex-col items-center justify-center border p-3 text-center">
-            <span className="text-label-secondary text-eyebrow mb-1 block">Origin / Name Set</span>
-            <span className="text-label text-footnote block w-full truncate px-1 font-semibold">
+          <Card
+            padding="none"
+            className="flex flex-col items-center justify-center p-3 text-center"
+          >
+            <span className="text-label-secondary text-caption mb-1 block">Origin / Name Set</span>
+            <span className="text-label text-footnote block w-full truncate px-1 font-medium">
               {originLabel}
             </span>
-          </div>
+          </Card>
         )}
       </div>
     </div>

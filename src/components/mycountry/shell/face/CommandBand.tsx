@@ -6,83 +6,87 @@ import { RingGrid, type HeroRing } from "~/components/shared/country-hero/HeroSn
 import { BandwidthHelp } from "~/components/mycountry/directives/BandwidthHelp";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { useInternalStability } from "~/hooks/useInternalStability";
+import { getQualitativeRating } from "~/lib/qualitative-rating";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import {
   deriveFigures,
   describeExecBandwidth,
   execBandwidthPercent,
-  slotPercent,
+  slotPips,
 } from "./command-figures";
 
-/** One reading as the profile's Country DNA draws it: label, meter, value. */
-const METER_ROW =
-  "text-footnote grid w-full grid-cols-[7rem_minmax(0,1fr)_3.5rem] items-center gap-3 text-left";
+/** One reading of the cluster: its name, its value in words or a count, then its meter. */
+const READING = "flex min-w-0 flex-col gap-1 text-left";
 
-/** A reading's visible parts; its host (a button or a group) carries the accessible name. */
-function MeterParts({
-  label,
-  value,
-  pct,
-  over,
-}: {
-  label: string;
-  value: string;
-  pct: number | null;
-  over?: boolean;
-}) {
+/** A slim meter. Spans, not the Progress primitive (a div): a reading can sit inside a button. */
+function Meter({ share, over }: { share: number | null; over?: boolean }) {
   return (
-    <>
-      <span aria-hidden className="text-label-secondary">
-        {label}
-      </span>
-      {/* Spans, not the Progress primitive (a div): this row can sit inside a button. */}
-      <span aria-hidden className="bg-fill-2 block h-1.5 overflow-hidden rounded-full">
-        <span
-          className={cn(
-            "duration-fast ease-out-facet block h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none",
-            over ? "bg-destructive" : "bg-tint"
-          )}
-          style={{ transform: `scaleX(${(pct ?? 0) / 100})` }}
-        />
-      </span>
+    <span aria-hidden className="bg-fill-2 mt-1 block h-1 overflow-hidden rounded-full">
       <span
-        aria-hidden
         className={cn(
-          "text-right font-semibold tabular-nums",
-          over ? "text-destructive" : "text-label"
+          "duration-fast ease-out-facet block h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none",
+          over ? "bg-destructive" : "bg-tint"
         )}
-      >
-        {value}
-      </span>
-    </>
+        style={{ transform: `scaleX(${(share ?? 0) / 100})` }}
+      />
+    </span>
   );
 }
 
-/** A read-only reading, named as one phrase for assistive tech. */
-function ReadingRow({
+/** One pip per slot, the used ones filled. */
+function Pips({ pips }: { pips: readonly boolean[] }) {
+  return (
+    <span aria-hidden className="mt-1 flex gap-1">
+      {pips.map((used, i) => (
+        <span
+          // Slots have no identity but their order.
+          key={i}
+          className={cn(
+            "duration-fast h-1 flex-1 rounded-full transition-colors motion-reduce:transition-none",
+            used ? "bg-tint" : "bg-fill-2"
+          )}
+        />
+      ))}
+    </span>
+  );
+}
+
+/** A reading's visible parts; its host (a button or a group) carries the accessible name. */
+function ReadingParts({
   label,
-  name,
   value,
-  pct,
+  detail,
+  valueClassName,
+  children,
 }: {
   label: string;
-  name: string;
+  /** The figure or rating word. */
   value: string;
-  pct: number | null;
+  /** What the figure is out of, in a quieter voice. */
+  detail?: string;
+  valueClassName?: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div role="group" aria-label={name} className={cn(METER_ROW, "py-0.5")}>
-      <MeterParts label={label} value={value} pct={pct} />
-    </div>
+    <>
+      <span aria-hidden className="text-caption text-label-secondary truncate">
+        {label}
+      </span>
+      <span aria-hidden className="text-callout truncate tabular-nums">
+        <span className={cn("font-semibold", valueClassName ?? "text-label")}>{value}</span>
+        {detail && <span className="text-label-secondary"> {detail}</span>}
+      </span>
+      {children}
+    </>
   );
 }
 
 /**
  * CommandBand — the command face's footer row, the private counterpart of the profile's Country
- * DNA: the shared vitality rings, then the readings only the owner sees (executive bandwidth,
- * this week's directive slots, the internal stability Defense computes) and the issues waiting on
- * them. Bandwidth opens its breakdown.
+ * DNA: the shared vitality rings, then one cluster of the readings only the owner sees (executive
+ * bandwidth as a meter with its count, this week's directive slots as pips, the internal stability
+ * Defense computes as a rating word) and the issues waiting on them. Bandwidth opens its breakdown.
  */
 export function CommandBand({
   countryId,
@@ -105,7 +109,10 @@ export function CommandBand({
   );
 
   const slots = status ? { used: status.usedThisWeek, cap: status.cap } : null;
+  const pips = slotPips(slots);
   const reading = describeExecBandwidth(bandwidth, slots);
+  const bandwidthShare = execBandwidthPercent(bandwidth);
+  const rating = stabilityPct === null ? null : getQualitativeRating(stabilityPct);
   const openIssues = pending?.total ?? 0;
   const urgent = pending?.urgent ?? 0;
 
@@ -118,52 +125,72 @@ export function CommandBand({
         <RingGrid rings={rings} onOpen={onOpenRings} className="min-w-0 flex-[1_1_16rem]" />
       )}
 
-      <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-2">
-        <BandwidthHelp
-          state={bandwidth}
-          trigger={
-            <button
-              type="button"
-              title={reading.title}
-              aria-label={`${reading.title} Show the breakdown.`}
-              data-testid="exec-bandwidth-band"
-              className={cn(
-                METER_ROW,
-                "facet-press-subtle hover:bg-fill-4 rounded-control-sm -mx-1 cursor-pointer px-1 py-0.5 pointer-coarse:min-h-11",
-                focusRing
-              )}
+      <div className="flex min-w-0 flex-[1_1_16rem] flex-col gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(7rem,1fr))] items-start gap-x-5 gap-y-3">
+          <BandwidthHelp
+            state={bandwidth}
+            trigger={
+              <button
+                type="button"
+                title={reading.title}
+                aria-label={`${reading.title} Show the breakdown.`}
+                data-testid="exec-bandwidth-band"
+                className={cn(
+                  READING,
+                  "facet-press-subtle hover:bg-fill-4 rounded-control-sm -m-1 cursor-pointer p-1 pointer-coarse:min-h-11",
+                  focusRing
+                )}
+              >
+                <ReadingParts
+                  label="Bandwidth"
+                  value={reading.value}
+                  detail={reading.detail}
+                  valueClassName={bandwidth?.overCapacity ? "text-destructive" : undefined}
+                >
+                  <Meter share={bandwidthShare} over={bandwidth?.overCapacity} />
+                </ReadingParts>
+              </button>
+            }
+          />
+          <div
+            role="group"
+            aria-label={
+              slots
+                ? `Directive slots: ${slots.used} of ${slots.cap} used this week`
+                : "Directive slots unavailable"
+            }
+            className={READING}
+          >
+            <ReadingParts
+              label="Directive slots"
+              value={slots ? `${slots.used}` : "–"}
+              detail={slots ? `of ${slots.cap} used` : undefined}
             >
-              <MeterParts
-                label="Bandwidth"
-                value={reading.value}
-                pct={execBandwidthPercent(bandwidth)}
-                over={bandwidth?.overCapacity}
-              />
-            </button>
-          }
-        />
-        <ReadingRow
-          label="Directive slots"
-          name={
-            slots
-              ? `Directive slots: ${slots.used} of ${slots.cap} used this week`
-              : "Directive slots unavailable"
-          }
-          value={slots ? `${slots.used}/${slots.cap}` : "–"}
-          pct={slotPercent(slots)}
-        />
-        <ReadingRow
-          label="Stability"
-          name={
-            stabilityPct === null
-              ? "Internal stability unavailable"
-              : `Internal stability: ${stabilityPct} of 100`
-          }
-          value={stabilityPct === null ? "–" : `${stabilityPct}%`}
-          pct={stabilityPct}
-        />
+              {pips ? (
+                <Pips pips={pips} />
+              ) : (
+                <Meter share={slots && slots.cap > 0 ? (slots.used / slots.cap) * 100 : null} />
+              )}
+            </ReadingParts>
+          </div>
+          <div
+            role="group"
+            aria-label={
+              rating ? `Internal stability: ${rating.label}` : "Internal stability unavailable"
+            }
+            className={READING}
+          >
+            <ReadingParts
+              label="Stability"
+              value={rating?.label ?? "–"}
+              valueClassName={rating?.color}
+            >
+              <Meter share={stabilityPct} />
+            </ReadingParts>
+          </div>
+        </div>
         {openIssues > 0 && (
-          <ul aria-label="Waiting on you" className="flex flex-wrap gap-1.5 pt-1">
+          <ul aria-label="Waiting on you" className="flex flex-wrap gap-1.5">
             <li className="bg-tint-fill text-footnote text-label rounded-full px-2.5 py-1 tabular-nums">
               <span className="font-semibold">{openIssues}</span>{" "}
               {openIssues === 1 ? "open issue" : "open issues"}

@@ -1,6 +1,6 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { memo } from "react";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
@@ -105,12 +105,12 @@ export const NameDetectionStep = memo(function NameDetectionStep({
                 )}
               </TableCell>
               <TableCell>
-                <input
+                <Input
                   type="text"
                   aria-label="Province name"
                   value={province.name}
                   onChange={(e) => importer.updateProvinceName(province.sourceId, e.target.value)}
-                  className="text-label focus:border-tint focus:bg-fill-3 rounded-control-sm w-full border border-transparent bg-transparent px-1 py-0.5 transition-colors outline-none"
+                  className="text-footnote hover:bg-fill-4 focus-visible:bg-fill-3 h-7 border-transparent bg-transparent px-1.5 py-0.5 shadow-none"
                 />
               </TableCell>
               <TableCell className="text-right">
@@ -175,7 +175,7 @@ export const NameDetectionStep = memo(function NameDetectionStep({
               <div className="text-footnote grid grid-cols-3 gap-2">
                 {cityLayerSelects.map((select) => (
                   <div key={select.ariaLabel} className="space-y-1">
-                    <Eyebrow className="block">{select.title}</Eyebrow>
+                    <span className="text-caption text-label-secondary block">{select.title}</span>
                     <OptionSelect
                       aria-label={select.ariaLabel}
                       size="sm"

@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, type RefObject } from "react";
 import { skipToken } from "@tanstack/react-query";
-import { Album, BookStack, Plus } from "iconoir-react";
+import { Album, BookStack, Plus, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -108,25 +108,32 @@ function ShowcaseList({ query, onOpen }: ShowcaseListProps) {
   // A failed refresh keeps the showcases it already has; only a list that never loaded says so.
   if (query.isError && !query.data) {
     return (
-      <EmptyState
-        compact
-        title="Your showcases did not load"
-        action={
-          <Button variant="secondary" onClick={query.refetch}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          compact
+          role="alert"
+          icon={<WarningCircle />}
+          title="Your showcases did not load"
+          message="Try loading your showcases again."
+          action={
+            <Button variant="secondary" onClick={query.refetch}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   const list = query.data ?? [];
   if (list.length === 0) {
     return (
-      <EmptyState
-        icon={<Album />}
-        title="No showcases yet"
-        message="Gather the cards you are proudest of. Pin a public showcase and your wallet shows it."
-      />
+      <Card>
+        <EmptyState
+          icon={<Album />}
+          title="No showcases yet"
+          message="Gather the cards you are proudest of. Pin a public showcase and your wallet shows it."
+        />
+      </Card>
     );
   }
   return (
@@ -137,6 +144,28 @@ function ShowcaseList({ query, onOpen }: ShowcaseListProps) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Header action for creating a showcase on the Sets overview. */
+export function NewShowcaseAction({ onSaved }: { onSaved: (showcaseId: string) => void }) {
+  const showcases = api.cards.listMyShowcases.useQuery();
+  const atLimit = (showcases.data?.length ?? 0) >= SHOWCASE_LIMITS.perPlayer;
+  return (
+    <ShowcaseEditorDialog
+      showcase={null}
+      onSaved={onSaved}
+      trigger={
+        <Button
+          size="sm"
+          disabled={atLimit}
+          aria-describedby={atLimit ? "sets-showcase-limit" : undefined}
+        >
+          <Plus aria-hidden />
+          New showcase
+        </Button>
+      }
+    />
   );
 }
 
@@ -152,30 +181,14 @@ function SetsOverview({
   return (
     <div className="space-y-8">
       <section aria-labelledby="sets-showcases" className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2
-            id="sets-showcases"
-            ref={headingRef}
-            tabIndex={-1}
-            className={cn("text-headline rounded-control-sm", focusRing)}
-          >
-            Showcases
-          </h2>
-          <ShowcaseEditorDialog
-            showcase={null}
-            onSaved={onOpenShowcase}
-            trigger={
-              <Button
-                size="sm"
-                disabled={atLimit}
-                aria-describedby={atLimit ? "sets-showcase-limit" : undefined}
-              >
-                <Plus />
-                New showcase
-              </Button>
-            }
-          />
-        </div>
+        <h2
+          id="sets-showcases"
+          ref={headingRef}
+          tabIndex={-1}
+          className={cn("text-headline rounded-control-sm", focusRing)}
+        >
+          Showcases
+        </h2>
         {atLimit && (
           <p id="sets-showcase-limit" className="text-footnote text-label-secondary">
             {`You have ${SHOWCASE_LIMITS.perPlayer} showcases, the most you can keep.`}

@@ -38,9 +38,9 @@ function ChartTooltip({
   const timeLabel =
     typeof label === "number" ? new Date(label).toLocaleString() : String(label ?? "");
   return (
-    <div className="facet-overlay rounded-control px-3 py-2 text-footnote tabular-nums">
+    <div className="facet-overlay rounded-control text-footnote px-3 py-2 tabular-nums">
       <p className="text-caption text-label-secondary">{timeLabel}</p>
-      <p className="text-callout text-label font-semibold">
+      <p className="text-headline text-label">
         {valuePrefix}
         {point.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </p>
@@ -68,7 +68,7 @@ export function IndexChart({
           aria-hidden
           className="border-separator pointer-events-none absolute inset-x-4 top-1/2 border-t border-dashed"
         />
-        <span className="text-caption text-label-tertiary font-mono">Awaiting tick telemetry</span>
+        <span className="text-caption text-label-tertiary">Price history</span>
         <span className="relative">The chart fills in as the market ticks.</span>
       </div>
     );
@@ -101,7 +101,7 @@ export function IndexChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="border-separator text-caption text-label-secondary flex flex-wrap items-center justify-between gap-2 border-t pt-2 font-mono tabular-nums">
+      <div className="border-separator text-caption text-label-secondary flex flex-wrap items-center justify-between gap-2 border-t pt-2 tabular-nums">
         <span>
           Low {valuePrefix}
           {formatSovereignFigure(low)}

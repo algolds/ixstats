@@ -10,6 +10,11 @@ import {
 } from "~/lib/maps/geo-validation";
 
 import { syncResourcePoolModifiers } from "~/server/shared/geo-resource-sync";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
 export const geoFeaturesPoisRouter = createTRPCRouter({
@@ -27,6 +32,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
         description: z.string().max(500).optional(),
         icon: z.string().optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
         metadata: z.record(z.string(), z.unknown()).optional(),
       })
     )
@@ -58,7 +64,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
           coordinates: input.coordinates,
           description: input.description,
           icon: input.icon,
-          wikiPageTitle: input.wikiPageTitle,
+          ...normalizeFeatureWikiCreate(input),
           status: "approved",
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
           metadata: (input.metadata ?? {}) as any,
@@ -114,6 +120,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
         description: z.string().max(500).optional(),
         icon: z.string().optional(),
         wikiPageTitle: z.string().max(200).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
         metadata: z.record(z.string(), z.unknown()).optional(),
       })
     )
@@ -156,7 +163,7 @@ export const geoFeaturesPoisRouter = createTRPCRouter({
           ...(input.coordinates && { coordinates: input.coordinates }),
           ...(input.description !== undefined && { description: input.description }),
           ...(input.icon !== undefined && { icon: input.icon }),
-          ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
+          ...normalizeFeatureWikiUpdate(input, poi),
           ...(input.metadata !== undefined && { metadata: input.metadata as any }),
         },
       });

@@ -87,7 +87,7 @@ export function DailyRewardStatus() {
         variant="ghost"
         size="sm"
         onClick={open}
-        className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-footnote w-full justify-start gap-2 px-3 font-semibold"
+        className="bg-tint-fill text-tint-ink hover:bg-tint-fill hover:text-tint active:bg-tint-fill text-subhead w-full justify-start gap-2 px-3"
       >
         <Trophy aria-hidden className="size-3.5 shrink-0" />
         <span className="flex-1 text-left whitespace-nowrap">Daily reward</span>

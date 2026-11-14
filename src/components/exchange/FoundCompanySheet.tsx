@@ -23,7 +23,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "~/components/ui/sheet";
+import { WikiSourcePicker, useWikiSource } from "~/components/wiki-os/shared/WikiSourcePicker";
 import { assetUrl } from "~/lib/base-path";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { wikiSourceLabel } from "~/lib/wiki-os/wiki-source-availability";
 import {
   Field,
   SectorSelect,
@@ -48,6 +51,7 @@ export function WikiLoreBanner({
   wikiSlug?: string | null;
 }) {
   const slug = wikiData?.wikiSlug ?? wikiSlug ?? null;
+  const source = wikiData?.wikiSource ?? "ixwiki";
   if (!slug && !wikiData) return null;
   return (
     <Card variant="well" padding="sm" className="space-y-1.5">
@@ -63,11 +67,11 @@ export function WikiLoreBanner({
           <div>
             {slug && (
               <Link
-                href={`/wiki/${encodeURIComponent(slug)}`}
+                href={wikiReaderPath(slug, source)}
                 className="text-caption text-tint-ink inline-flex items-center gap-1 font-medium hover:underline"
               >
                 <BookStack className="size-3.5" aria-hidden />
-                WikiOS: {slug.replace(/_/g, " ")}
+                {wikiSourceLabel(source)}: {slug.replace(/_/g, " ")}
               </Link>
             )}
             {wikiData?.motto && (
@@ -90,7 +94,7 @@ export function WikiLoreBanner({
   );
 }
 
-/** Sheet overlay to charter a new company or import one from WikiOS. */
+/** Sheet overlay to charter a new company or import one from a wiki page (Wiki, IIWiki or AltHistory Wiki). */
 export function FoundCompanySheet({
   open,
   onOpenChange,
@@ -114,6 +118,8 @@ export function FoundCompanySheet({
   const [wikiPreview, setWikiPreview] = useState<WikiPreview | null>(null);
   const [fetchingWiki, setFetchingWiki] = useState(false);
   const [requestId, rotate] = useRequestId();
+  // Wiki first and by default; a wiki that cannot answer (the IIWiki switch) is listed but never selected.
+  const { source: wiki, setSource: setWiki, options: wikiOptions } = useWikiSource("imports");
   const found = api.exchange.foundCompany.useMutation({
     onSuccess: ({ company }) => {
       notify.success("Company chartered", `${company.name} is open for business`);
@@ -137,6 +143,7 @@ export function FoundCompanySheet({
     try {
       const preview = await utils.exchange.previewWikiCompany.fetch({
         wikiTitle: title,
+        wiki,
         realmId: overview.realmId,
       });
       setWikiPreview(preview);
@@ -149,13 +156,13 @@ export function FoundCompanySheet({
         wikiInput: preview.wikiSlug,
       }));
       notify.success(
-        "Imported from WikiOS",
+        `Imported from ${wikiSourceLabel(wiki)}`,
         `Loaded ${preview.pageTitle} (${subIndustryLabel(preview.subIndustryKey)})`
       );
     } catch (err) {
       notify.error(
-        "Could not import from WikiOS",
-        err instanceof Error ? err.message : "WikiOS article not found"
+        `Could not import from ${wikiSourceLabel(wiki)}`,
+        err instanceof Error ? err.message : `${wikiSourceLabel(wiki)} article not found`
       );
     }
     // After, not in a finally: the catch never rethrows, and the React Compiler skips finally.
@@ -182,6 +189,7 @@ export function FoundCompanySheet({
               subIndustryKey: form.subIndustryKey,
               hqCountryId: form.hqCountryId === "none" ? null : form.hqCountryId,
               wikiSlug: wikiPreview?.wikiSlug ?? (form.wikiInput.trim() || null),
+              wikiSource: wikiPreview?.wikiSource ?? wiki,
               realmId: overview.realmId,
               requestId,
             });
@@ -189,15 +197,24 @@ export function FoundCompanySheet({
         >
           <Card variant="well" padding="sm" className="space-y-2">
             <p className="text-caption text-label-secondary">
-              Optional: prefill company name, sector, HQ, and lore from a WikiOS article.
+              Optional: prefill company name, sector, HQ, and lore from a wiki article.
             </p>
+            <WikiSourcePicker
+              size="sm"
+              value={wiki}
+              options={wikiOptions}
+              onValueChange={(next) => {
+                setWiki(next);
+                setWikiPreview(null);
+              }}
+            />
             <div className="flex flex-wrap items-center gap-2">
               <div className="min-w-44 flex-1">
                 <Input
-                  aria-label="WikiOS article title or URL"
+                  aria-label={`${wikiSourceLabel(wiki)} article title or URL`}
                   value={form.wikiInput}
                   onChange={(e) => setForm({ ...form, wikiInput: e.target.value })}
-                  placeholder="WikiOS page (e.g. Vanguard Aerospace)"
+                  placeholder={`${wikiSourceLabel(wiki)} page (e.g. Vanguard Aerospace)`}
                 />
               </div>
               <Button
@@ -208,7 +225,7 @@ export function FoundCompanySheet({
                 onClick={() => void handleImportWiki()}
               >
                 <BookStack className="mr-1.5 size-3.5" aria-hidden />
-                {fetchingWiki ? "Importing..." : "Sync from WikiOS"}
+                {fetchingWiki ? "Importing..." : `Sync from ${wikiSourceLabel(wiki)}`}
               </Button>
               {wikiPreview && (
                 <Button
@@ -295,4 +312,3 @@ export function FoundCompanySheet({
     </Sheet>
   );
 }
-

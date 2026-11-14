@@ -3,6 +3,7 @@
 import React from "react";
 import type { GovernmentDepartment, BudgetAllocation } from "~/types/government";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import type { BudgetEditing } from "~/hooks/useBudgetEditing";
 import {
   AddDepartmentForm,
@@ -35,7 +36,7 @@ function DepartmentHeader({ department }: { department: GovernmentDepartment }) 
       <div className="min-w-0">
         <h3 className="text-label text-headline truncate">{department.name}</h3>
         <p className="text-label-secondary text-footnote truncate">
-          {department.category} • {department.ministerTitle}: {department.minister || "Vacant"}
+          {department.category} · {department.ministerTitle}: {department.minister || "Vacant"}
         </p>
       </div>
     </div>
@@ -54,10 +55,13 @@ export function BudgetDepartmentList({
 }: BudgetDepartmentListProps) {
   if (departments.length === 0) {
     return (
-      <div className="text-label-secondary border-separator rounded-row text-footnote flex flex-col items-center gap-3 border border-dashed py-8 text-center">
-        <p>No departments yet.</p>
-        {editing && <AddDepartmentForm editing={editing} />}
-      </div>
+      <Card>
+        <EmptyState
+          compact
+          title="No departments yet."
+          action={editing ? <AddDepartmentForm editing={editing} /> : undefined}
+        />
+      </Card>
     );
   }
 

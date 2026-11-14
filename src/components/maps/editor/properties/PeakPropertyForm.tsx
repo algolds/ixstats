@@ -1,14 +1,9 @@
 "use client";
 import React from "react";
 import type { PeakFormData } from "~/hooks/useMapEditor";
+import { Input } from "~/components/ui/input";
 import { CoordinatePicker } from "./CoordinatePicker";
-import {
-  Field,
-  inputClasses,
-  SubdivisionSelect,
-  WikiLinkField,
-  type PointFormProps,
-} from "./fields";
+import { Field, SubdivisionSelect, WikiLinkField, type PointFormProps } from "./fields";
 
 const MEASUREMENTS = [
   { key: "elevation", label: "Elevation (m)", placeholder: "e.g. 1500" },
@@ -26,24 +21,24 @@ export const PeakPropertyForm = React.memo(function PeakPropertyForm({
 }: PointFormProps<PeakFormData>) {
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="Peak name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
 
       <div className="grid grid-cols-2 gap-2">
         {MEASUREMENTS.map(({ key, label, placeholder }) => (
           <Field key={key} label={label}>
-            <input
+            <Input
               type="number"
               placeholder={placeholder}
               value={form[key] === 0 ? "" : form[key]}
               onChange={(e) => onChange({ ...form, [key]: parseFloat(e.target.value) || 0 })}
-              className={inputClasses}
+              className="text-footnote h-8 px-2.5 tabular-nums"
             />
           </Field>
         ))}

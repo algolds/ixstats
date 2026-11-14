@@ -18,7 +18,7 @@ interface VaultSubTabNavProps<T extends string> {
 }
 
 /**
- * The vault's in-page section switcher: a full-width `SegmentedControl` exposed as tabs. No tab is narrower than its
+ * The vault's in-page section switcher: a natural-width `SegmentedControl` exposed as tabs. No tab is narrower than its
  * label; where they do not all fit (a phone), the track scrolls rather than clipping them.
  */
 export function VaultSubTabNav<T extends string>({
@@ -26,18 +26,17 @@ export function VaultSubTabNav<T extends string>({
   activeTab,
   onTabChange,
   className,
-  maxWidthClass = "sm:max-w-xl",
+  maxWidthClass = "max-w-full",
 }: VaultSubTabNavProps<T>) {
   return (
     <SegmentedControl<T>
       asTabs
-      fullWidth
       scrollable
-      itemClassName="min-w-max"
+      itemClassName="min-w-max max-[24rem]:[&_svg]:hidden"
       aria-label="Sections"
       value={activeTab}
       onValueChange={onTabChange}
-      className={cn("w-full", maxWidthClass, className)}
+      className={cn(maxWidthClass, className)}
       options={tabs.map((tab) => {
         const Icon = tab.icon;
         return {
@@ -47,7 +46,7 @@ export function VaultSubTabNav<T extends string>({
             tab.badgeCount !== undefined && tab.badgeCount > 0 ? (
               <>
                 {tab.label}
-                <span className="bg-tint text-on-tint text-caption ml-1 rounded-full px-2 tabular-nums">
+                <span className="bg-tint-fill text-tint-ink text-caption ml-1 rounded-full px-1.5 tabular-nums">
                   {tab.badgeCount}
                 </span>
               </>

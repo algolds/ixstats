@@ -188,10 +188,10 @@ const HEALTH_DISPLAY: Record<
   ModelHealth["status"],
   { label: string; color: string; border: string }
 > = {
-  excellent: { label: "Excellent", color: "text-green", border: "border-l-green" },
-  good: { label: "Good", color: "text-blue", border: "border-l-blue" },
-  fair: { label: "Fair", color: "text-yellow", border: "border-l-yellow" },
-  poor: { label: "Needs attention", color: "text-red", border: "border-l-red" },
+  excellent: { label: "Excellent", color: "text-success", border: "border-l-success" },
+  good: { label: "Good", color: "text-tint", border: "border-l-tint" },
+  fair: { label: "Fair", color: "text-warning", border: "border-l-warning" },
+  poor: { label: "Needs attention", color: "text-destructive", border: "border-l-destructive" },
 };
 
 const SECTOR_COLUMNS = [
@@ -363,7 +363,7 @@ function SectorsTab({ model }: { model: Model }) {
                       onClick={() => model.removeSectoralOutputYear(index)}
                       disabled={sectoralOutputs.length <= 1}
                     >
-                      <Minus className="text-red h-4 w-4" />
+                      <Minus className="text-destructive h-4 w-4" />
                     </Button>
                   )}
                 </TableCell>
@@ -400,7 +400,7 @@ function PoliciesTab({ model }: { model: Model }) {
             />
             {editMode && (
               <Button variant="ghost" size="sm" onClick={() => model.removePolicyEffect(index)}>
-                <Minus className="text-red h-4 w-4" />
+                <Minus className="text-destructive h-4 w-4" />
               </Button>
             )}
           </div>

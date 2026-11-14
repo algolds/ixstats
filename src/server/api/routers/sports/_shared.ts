@@ -8,7 +8,15 @@ export const MAX_LEAGUE_TEAMS = 64;
 
 /** Team fields shown on fixture and standings rows. */
 export const TEAM_BADGE = {
-  select: { id: true, name: true, shortName: true, color: true, logo: true, wikiSlug: true },
+  select: {
+    id: true,
+    name: true,
+    shortName: true,
+    color: true,
+    logo: true,
+    wikiSlug: true,
+    wikiSource: true,
+  },
 } as const;
 
 /** The team, if the caller owns it; `verb` picks the wording of the FORBIDDEN message. */

@@ -10,6 +10,7 @@
  * same panel inline in the TabBar's More sheet.
  */
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -33,7 +34,6 @@ import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { cn } from "~/lib/utils/cn";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
-import { getNationUrl } from "~/lib/utils/slug-utils";
 import { focusRing, Button } from "~/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
@@ -129,7 +129,11 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
     <ul className="flex flex-col gap-0.5 pb-1">
       {country && (
         <li>
-          <Link href={getNationUrl(country.name)} onClick={done} className={itemClass}>
+          <CountryLink
+            country={{ id: country.id, name: country.name }}
+            onClick={done}
+            className={itemClass}
+          >
             <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
               <UnifiedCountryFlag
                 countryName={country.name}
@@ -139,7 +143,7 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
               />
             </span>
             <span className="min-w-0 flex-1 truncate">{country.name}</span>
-          </Link>
+          </CountryLink>
         </li>
       )}
       <li>

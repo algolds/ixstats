@@ -6,14 +6,16 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Textarea } from "~/components/ui/textarea";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { StorylineTimeline } from "~/components/maps/core/components/StorylineTimeline";
 import { useNotify } from "~/hooks/useNotify";
 import { STORY_CATEGORIES, type StoryCategory } from "~/hooks/map-editor/history-coercion";
 import type { EditorFeature } from "~/hooks/map-editor/editor-types";
 import { capitalizedOptions } from "../optionLists";
-import { Field, inputClasses } from "../properties/fields";
+import { Field } from "../properties/fields";
 import { nextStorylineOrder, storyPlaceOptions } from "./storyline-helpers";
 
 const CATEGORY_OPTIONS = capitalizedOptions(STORY_CATEGORIES);
@@ -73,20 +75,20 @@ export function StorylinesPanel({ countryId, features, onFocusFeature }: Storyli
       >
         <Field label="New storyline">
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="text"
               placeholder="e.g. The Founding Wars"
               value={title}
               maxLength={200}
               onChange={(e) => setTitle(e.target.value)}
-              className={inputClasses}
+              className="text-footnote h-8 px-2.5"
             />
             <input
               type="color"
               aria-label="Storyline colour"
               value={color}
               onChange={(e) => setColor(e.target.value)}
-              className="border-separator rounded-control h-9 w-10 shrink-0 cursor-pointer border"
+              className="border-separator rounded-control h-8 w-10 shrink-0 cursor-pointer border"
             />
           </div>
         </Field>
@@ -175,15 +177,17 @@ function StorylineCard({
           // Storyline colour is authored map data.
           style={{ backgroundColor: storyline.color ?? DEFAULT_COLOR }}
         />
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="xs"
           aria-expanded={open}
           onClick={onToggle}
-          className="text-body text-label min-w-0 flex-1 truncate text-left font-semibold"
+          className="text-body text-label h-auto min-w-0 flex-1 justify-start truncate px-0 py-0 text-left font-semibold hover:bg-transparent"
         >
           {storyline.title}
-        </button>
-        <span className="text-caption text-label-secondary shrink-0">
+        </Button>
+        <span className="text-caption text-label-secondary shrink-0 tabular-nums">
           {count} {count === 1 ? "pin" : "pins"}
         </span>
       </div>
@@ -342,22 +346,22 @@ function NewEventForm({
       }}
     >
       <p className="text-caption text-label-secondary font-semibold">New event</p>
-      <input
+      <Input
         type="text"
         placeholder="Event title"
         value={eventTitle}
         maxLength={200}
         onChange={(e) => setEventTitle(e.target.value)}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
       />
       <div className="grid grid-cols-2 gap-2">
         <Field label="IxTime year">
-          <input
+          <Input
             type="number"
             placeholder="e.g. 1420"
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className={inputClasses}
+            className="text-footnote h-8 px-2.5 tabular-nums"
           />
         </Field>
         <Field label="Category">
@@ -380,13 +384,13 @@ function NewEventForm({
           options={places.map(({ value, label }) => ({ value, label }))}
         />
       </Field>
-      <textarea
+      <Textarea
         placeholder="What happened"
         value={content}
         maxLength={15000}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
-        className={inputClasses}
+        className="text-footnote min-h-20 px-2.5 py-2"
       />
       <Button type="submit" size="sm" variant="secondary" disabled={!canSubmit}>
         Add event

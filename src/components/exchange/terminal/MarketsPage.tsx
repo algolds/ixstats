@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { keepPreviousData } from "@tanstack/react-query";
-import { Building, Coins, Cpu, StatsReport } from "iconoir-react";
+import { Building, Coins, Cpu, StatsReport, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { LensCard } from "~/components/ui/lens-card";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -62,7 +63,7 @@ function hrefOf(row: MarketRow): string | null {
 function RowDetail({ row }: { row: MarketRow }) {
   if (row.kind === "bonds") {
     return (
-      <span className="text-footnote text-label-secondary font-mono tabular-nums">
+      <span className="text-footnote text-label-secondary tabular-nums">
         {pct(row.yield)} · {row.rating}
       </span>
     );
@@ -108,10 +109,10 @@ function MarketRowItem({
     <span className="flex min-w-0 items-center gap-3">
       <MarketRowLeading row={row} />
       <span className="min-w-0">
-        <span className="text-body text-label flex flex-wrap items-center gap-2 truncate font-semibold">
+        <span className="text-headline text-label flex flex-wrap items-center gap-2 truncate">
           <span>{row.name}</span>
           {row.kind === "bonds" && row.unitsLeft > 0 && (
-            <Badge variant="outline" className="hidden font-mono tabular-nums sm:inline-flex">
+            <Badge variant="outline" className="hidden tabular-nums sm:inline-flex">
               {row.unitsLeft} left
             </Badge>
           )}
@@ -142,10 +143,7 @@ function MarketRowItem({
           </span>
         </Link>
       ) : (
-        <div
-          data-row
-          className="flex items-center gap-3 py-2.5 pointer-coarse:min-h-11"
-        >
+        <div data-row className="flex items-center gap-3 py-2.5 pointer-coarse:min-h-11">
           <div className="min-w-0 flex-1">{name}</div>
           <div className="flex flex-col items-end">
             <Figure value={`₷${formatSovereignFigure(row.price)}`} />
@@ -213,24 +211,17 @@ export function MarketsPage({ realmId }: { realmId: string }) {
     <div className="space-y-4">
       <LensCard app="exchange" content="data" padding="lg" className="space-y-4">
         <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b pb-4">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <SegmentedControl
-              size="sm"
-              aria-label="Instruments"
-              value={kind}
-              onValueChange={(k) => update("kind", k)}
-              options={MARKET_KINDS.map((k) => ({
-                value: k,
-                label: KIND_LABELS[k],
-                icon: KIND_ICONS[k],
-              }))}
-            />
-            {!markets.isLoading && (
-              <Badge variant="secondary" className="font-mono tabular-nums">
-                {rows.length} listed
-              </Badge>
-            )}
-          </div>
+          <SegmentedControl
+            size="sm"
+            aria-label="Instruments"
+            value={kind}
+            onValueChange={(k) => update("kind", k)}
+            options={MARKET_KINDS.map((k) => ({
+              value: k,
+              label: KIND_LABELS[k],
+              icon: KIND_ICONS[k],
+            }))}
+          />
           <SearchField
             className="w-full sm:w-72"
             placeholder={`Search ${KIND_LABELS[kind].toLowerCase()}`}
@@ -241,22 +232,44 @@ export function MarketsPage({ realmId }: { realmId: string }) {
         </div>
         {markets.isLoading ? (
           <Skeleton className="h-48 w-full" />
-        ) : rows.length === 0 ? (
-          <div className="flex items-center justify-between gap-3 py-4">
-            <p className="text-footnote text-label-secondary">Nothing listed here yet.</p>
-            {(draft ?? query) && (
-              <Button
-                size="xs"
-                variant="ghost"
-                onClick={() => {
-                  setDraft(null);
-                  update("q", "");
-                }}
-              >
-                Clear search
+        ) : markets.error && !markets.data ? (
+          <EmptyState
+            role="alert"
+            compact
+            icon={<WarningCircle />}
+            title="Markets did not load"
+            message={markets.error.message}
+            action={
+              <Button size="sm" variant="secondary" onClick={() => void markets.refetch?.()}>
+                Try again
               </Button>
-            )}
-          </div>
+            }
+          />
+        ) : rows.length === 0 ? (
+          <EmptyState
+            compact
+            icon={KIND_ICONS[kind]}
+            title={(draft ?? query) ? "No matching listings" : "Nothing listed here yet"}
+            message={
+              (draft ?? query)
+                ? `Nothing in ${KIND_LABELS[kind].toLowerCase()} matched "${draft ?? query}".`
+                : `No ${KIND_LABELS[kind].toLowerCase()} are listed in this realm yet.`
+            }
+            action={
+              (draft ?? query) ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    setDraft(null);
+                    update("q", "");
+                  }}
+                >
+                  Clear search
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           <ul className="divide-separator divide-y">
             {rows.map((row) => (

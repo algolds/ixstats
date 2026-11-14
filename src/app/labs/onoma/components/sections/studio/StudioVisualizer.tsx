@@ -45,7 +45,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       <div className="space-y-4">
         <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
           <div className="space-y-1">
-            <h3 className="text-tint text-body font-semibold">Interactive path workshop</h3>
+            <h3 className="text-tint text-headline">Interactive path workshop</h3>
             <p className="text-label-secondary text-footnote leading-normal">
               Explore the Markov transition tree step-by-step. Click tokens to traverse paths.
             </p>
@@ -79,7 +79,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
             className="text-label-secondary text-body flex h-full min-h-[300px] flex-col items-center justify-center border-dashed p-8 text-center"
           >
             <Info className="text-tint/40 mb-3 h-8 w-8" />
-            <p className="font-semibold">Interactive visualizer is inactive</p>
+            <p className="font-medium">Interactive visualizer is inactive</p>
             <p className="text-label-secondary text-footnote mt-1">
               Select a corpus or provide training seeds to build the Markov transition trie.
             </p>
@@ -90,7 +90,7 @@ export function StudioVisualizer({ state }: StudioVisualizerProps) {
       {/* Lexicon Explorer & Health Panel */}
       <div className="h-full space-y-4">
         <div className="space-y-1">
-          <h3 className="text-body text-green font-semibold">Lexicon & syllable analysis</h3>
+          <h3 className="text-headline text-green">Lexicon & syllable analysis</h3>
           <p className="text-label-secondary text-footnote leading-normal">
             Verify the distinct syllable structure, entropy, and phonotactic naturalness of your
             active conlang seed lists.

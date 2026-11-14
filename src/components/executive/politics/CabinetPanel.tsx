@@ -8,6 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -78,14 +79,7 @@ function DepartmentRow({
 }) {
   const isVacant = officials.length === 0;
   return (
-    <div
-      className={cn(
-        "group rounded-control border p-3 transition-colors",
-        isVacant
-          ? "border-separator bg-fill-2 border-dashed"
-          : "border-separator bg-surface-secondary"
-      )}
-    >
+    <Card variant="well" padding="sm" className={cn("group", isVacant && "border-dashed")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -95,7 +89,9 @@ function DepartmentRow({
                 Vacant
               </Badge>
             ) : (
-              <Badge variant="secondary">{plural(officials.length, "official")}</Badge>
+              <span className="text-label-secondary text-footnote">
+                {plural(officials.length, "official")}
+              </span>
             )}
           </div>
           {dept.ministerTitle ? (
@@ -148,7 +144,7 @@ function DepartmentRow({
           ))}
         </ul>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -172,14 +168,13 @@ function CabinetBody({
   }
   if (departments.length === 0) {
     return (
-      <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
-        <Users className="mb-2 h-8 w-8 opacity-40" />
-        <p>No government departments yet.</p>
-        <p className="text-footnote mt-1 mb-3">
-          Create your government&apos;s departments, then appoint officials here.
-        </p>
-        <CreateGovernmentStructureButton countryId={countryId} />
-      </div>
+      <EmptyState
+        compact
+        icon={<Users />}
+        title="No government departments yet"
+        message="Create your government's departments, then appoint officials here."
+        action={<CreateGovernmentStructureButton countryId={countryId} />}
+      />
     );
   }
   return (
@@ -266,9 +261,9 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               </CardDescription>
             </div>
             {departments.length > 0 && (
-              <Badge variant="default" className="shrink-0">
+              <span className="text-label-secondary text-footnote shrink-0 tabular-nums">
                 {plural(departments.length, "department")}
-              </Badge>
+              </span>
             )}
           </div>
         </CardHeader>

@@ -12,9 +12,9 @@ import { cn } from "~/lib/utils";
  */
 
 const WELL_SIZES = {
-  sm: "size-7 [&_svg]:size-3.5 text-caption font-bold",
-  md: "size-9 [&_svg]:size-4 text-footnote font-bold",
-  lg: "size-12 [&_svg]:size-6 text-title-3 font-bold",
+  sm: "size-7 [&_svg]:size-3.5 text-caption",
+  md: "size-9 [&_svg]:size-4 text-subhead",
+  lg: "size-12 [&_svg]:size-6 text-title-3",
 } as const;
 
 /** A tinted decorative icon or ticker tile on the Exchange tint fill with a subtle dots texture (matches Vault's IconWell). */
@@ -81,12 +81,12 @@ export function TickerTile({
         ? "bg-destructive/12 text-destructive border-destructive/25"
         : tone === "neutral"
           ? "facet-recess text-label-secondary border-separator"
-          : "bg-tint-fill text-tint border-tint/20";
+          : "bg-tint-fill text-tint-ink border-tint/20";
   return (
     <span
       aria-hidden
       className={cn(
-        "rounded-control relative inline-flex shrink-0 items-center justify-center border font-mono font-semibold tracking-tight tabular-nums select-none",
+        "rounded-control font-data relative inline-flex shrink-0 items-center justify-center border font-medium tracking-tight tabular-nums select-none",
         TICKER_SIZES[size],
         toneClass,
         className
@@ -98,11 +98,7 @@ export function TickerTile({
 }
 
 export function ExchangeWordmark({ className }: { className?: string }) {
-  return (
-    <span className={cn("text-title-2 text-tint font-bold tracking-tight", className)}>
-      Exchange
-    </span>
-  );
+  return <span className={cn("text-title-2 text-tint", className)}>Exchange</span>;
 }
 
 type Tone = "gain" | "loss" | "flat";
@@ -130,9 +126,7 @@ export function Figure({
     <span
       className={cn(
         "tabular-nums",
-        size === "hero"
-          ? "text-large-title sm:text-display font-bold tracking-tight"
-          : "font-semibold",
+        size === "hero" ? "text-large-title sm:text-display" : "text-headline",
         TONE_CLASS[tone],
         className
       )}
@@ -164,7 +158,7 @@ export function ChangeLabel({
   );
 }
 
-/** A pill: the Exchange's button shape, filled with its tint when it is the main action. */
+/** Standard Facet action button for the Exchange: iron-gall ink primary when `tone="tint"`, secondary when `tone="plain"`. */
 export function Pill({
   className,
   tone = "tint",
@@ -174,11 +168,7 @@ export function Pill({
     <Button
       size="sm"
       variant={tone === "tint" ? "default" : "secondary"}
-      className={cn(
-        "rounded-full",
-        tone === "tint" && "bg-tint text-on-tint hover:bg-tint-hover",
-        className
-      )}
+      className={className}
       {...props}
     />
   );

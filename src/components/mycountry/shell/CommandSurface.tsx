@@ -11,6 +11,7 @@ import { CommandDocument } from "./face/CommandDocument";
 import { ExecutiveHome } from "./ExecutiveHome";
 import { ExecutiveConsole } from "./ExecutiveConsole";
 import { DomainSurface } from "./DomainSurface";
+import { NationalIssuesSignal } from "./NationalIssuesSignal";
 import { DrillSheets, type DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { DOMAIN_META, DOMAIN_SECTIONS } from "./domain-meta";
 import { tabForSection } from "./mycountry-tabs";
@@ -63,8 +64,13 @@ export function CommandSurface({
   // renders the home surface, so it shares the "overview" slot. The Directives console replaces
   // every kept section while it shows, and a section is only mounted once it has been shown.
   // ponytail: at most 5 sections stay mounted; evict least recent if memory shows up in profiles
-  const isDirectives = section === "executive";
-  const shown = isDirectives ? null : DOMAIN_SECTIONS.has(section) ? section : "overview";
+  const normalizedSection = section === "intelligence" ? "defense" : section;
+  const isDirectives = normalizedSection === "executive";
+  const shown = isDirectives
+    ? null
+    : DOMAIN_SECTIONS.has(normalizedSection)
+      ? normalizedSection
+      : "overview";
   const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set(shown ? [shown] : []));
   if (shown && !visited.has(shown)) setVisited(new Set(visited).add(shown));
 
@@ -100,7 +106,13 @@ export function CommandSurface({
           role="tabpanel"
           id={ribbonPanelId(idBase)}
           aria-labelledby={ribbonTabId(idBase, tabForSection(section))}
+          className="space-y-5"
         >
+          <NationalIssuesSignal
+            countryId={countryId}
+            section={normalizedSection}
+            onNavigate={onNavigate}
+          />
           {isDirectives ? (
             <ExecutiveConsole
               countryId={countryId}

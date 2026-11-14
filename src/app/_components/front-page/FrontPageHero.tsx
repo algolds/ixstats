@@ -1,5 +1,7 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -101,6 +103,7 @@ function HeroMapStage({
   className?: string;
 }) {
   const router = useRouter();
+  const openCountryActions = useOpenCountryActions();
   const box = useRef<HTMLDivElement>(null);
   const { zoom, insetRight } = useMapStageFit(box, panel);
   const [hoveredCountry, setHoveredCountry] = useState<EmbedPoliticalFeature | null>(null);
@@ -153,8 +156,8 @@ function HeroMapStage({
       const match =
         nations.find((n) => n.id === country.countryId) ??
         realmCountries?.find((c) => c.id === country.countryId);
-      const slugOrId = match?.slug || country.countryId;
-      router.push(`/countries/${encodeURIComponent(slugOrId)}`);
+      // The nation's actions sheet, as every country link opens.
+      openCountryActions({ id: country.countryId, slug: match?.slug, name: match?.name });
       return;
     }
     const params = new URLSearchParams();
@@ -408,9 +411,9 @@ export function FrontPageHero({
               ) : topNations.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
                   {topNations.map((nation) => (
-                    <Link
+                    <CountryLink
                       key={nation.id}
-                      href={`/countries/${encodeURIComponent(nation.slug ?? nation.id)}`}
+                      country={{ id: nation.id, slug: nation.slug, name: nation.name }}
                       className="bg-fill-4 hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group duration-fast flex items-center gap-2 p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                       title={`${nation.name} (${nation.economicTier})`}
                     >
@@ -435,7 +438,7 @@ export function FrontPageHero({
                           {`${formatCurrency(nation.currentTotalGdp)} · ${nation.economicTier}`}
                         </span>
                       </span>
-                    </Link>
+                    </CountryLink>
                   ))}
                 </div>
               ) : (

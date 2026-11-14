@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { WarningCircle as AlertCircle, SystemRestart as Loader2, Xmark as X } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { vaultNotify } from "~/lib/vault/vault-notifications";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Card, CardContent } from "~/components/ui/card";
-import { Alert, AlertDescription } from "~/components/ui/alert";
+import { Signal } from "~/components/ui/signal";
+import { Skeleton } from "~/components/ui/skeleton";
 import { proxyNSImage } from "~/lib/cards/ns-image-proxy";
 import { ImportStepIndicator, type WizardStep } from "./import/ImportStepIndicator";
 import { ImportNationStep } from "./import/ImportNationStep";
@@ -18,7 +19,6 @@ import {
   ImportCompleteStep,
   type ImportResult,
 } from "./import/ImportConfirmStep";
-import { Button } from "~/components/ui/button";
 
 interface VaultImportSectionProps {
   initialTab?: string | null;
@@ -87,12 +87,19 @@ function ImportDeckTab() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      <PageHeader
+        title="Import cards"
+        subtitle="Verify a NationStates nation and bring its deck into your Vault."
+        back={{ href: "/vault", label: "Vault" }}
+        bleed
+      />
+
       {/* Wizard container */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ duration: 0.2 }}
       >
         <Card className="relative flex flex-col gap-6 overflow-hidden py-6">
           {/* NS Header Banner */}
@@ -108,8 +115,8 @@ function ImportDeckTab() {
               alignItems: "center",
               justifyContent: "flex-start",
               position: "relative",
-              boxShadow: "0 1px 2px #666",
-              backgroundColor: "#EAEAE2",
+              boxShadow: "0 1px 2px rgba(0, 0, 0, 0.2)",
+              backgroundColor: "rgb(234, 234, 226)",
               backgroundImage: `url(${proxyNSImage(
                 "https://www.nationstates.net/images/globegreenslim2.jpg"
               )})`,
@@ -138,19 +145,13 @@ function ImportDeckTab() {
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                 >
-                  <Alert variant="destructive" className="border-red/30 bg-red/5">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      aria-label="Dismiss error"
-                      onClick={() => setErrorMessage("")}
-                      className="text-label-secondary absolute top-2 right-2"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
-                  </Alert>
+                  <Signal
+                    tone="destructive"
+                    title="Verification or import failed"
+                    onDismiss={() => setErrorMessage("")}
+                  >
+                    {errorMessage}
+                  </Signal>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -206,57 +207,21 @@ function ImportDeckTab() {
                 )}
 
                 {currentStep === "importing" && (
-                  <div className="flex flex-col items-center justify-center space-y-6 py-14">
-                    <div className="relative">
-                      <div className="relative flex h-28 w-28 items-center justify-center">
-                        {[0, 1, 2].map((i) => (
-                          <motion.div
-                            key={i}
-                            className="rounded-control border-separator bg-fill-4 absolute h-14 w-10 border"
-                            animate={{
-                              rotate: [0 + i * 120, 360 + i * 120],
-                              x: [0, 20, 0, -20, 0],
-                              y: [0, -10, 0, 10, 0],
-                            }}
-                            transition={{
-                              rotate: { duration: 3, repeat: Infinity, ease: "linear" },
-                              x: {
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                                delay: i * 0.3,
-                              },
-                              y: {
-                                duration: 2,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                                delay: i * 0.3,
-                              },
-                            }}
-                            style={{ originX: 0.5, originY: 0.5 }}
-                          />
-                        ))}
-                        <Loader2 className="text-tint relative size-10 animate-spin" />
-                      </div>
+                  <div
+                    aria-busy
+                    className="flex flex-col items-center justify-center space-y-6 py-10"
+                  >
+                    <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} className="rounded-card aspect-[5/7] w-20 sm:w-24" />
+                      ))}
                     </div>
 
-                    <div className="space-y-2 text-center">
-                      <p className="text-label text-title-2">Importing Cards...</p>
+                    <div className="space-y-1.5 text-center">
+                      <p className="text-label text-title-2">Importing cards</p>
                       <p className="text-label-secondary text-body max-w-xs">
-                        Fetching your deck from NationStates and making a card for each one. This
-                        may take a moment.
+                        Fetching your deck from NationStates and minting a card for each copy.
                       </p>
-                    </div>
-
-                    <div className="w-full max-w-xs">
-                      <div className="bg-fill-3 h-1.5 overflow-hidden rounded-full">
-                        <motion.div
-                          className="bg-tint h-full rounded-full"
-                          animate={{ x: ["-100%", "100%"] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                          style={{ width: "50%" }}
-                        />
-                      </div>
                     </div>
                   </div>
                 )}

@@ -240,7 +240,7 @@ export function StudioNameSets() {
       <div className="space-y-4 lg:col-span-5">
         <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
-            <label className="text-label-secondary text-footnote flex items-center gap-1 font-semibold">
+            <label className="text-label-secondary text-footnote flex items-center gap-1 font-medium">
               <Users className="h-3.5 w-3.5" /> Name set
             </label>
             {setNameKeys.length > 0 ? (
@@ -276,7 +276,7 @@ export function StudioNameSets() {
                   <div className="rounded-row border-indigo/20 bg-indigo/5 text-footnote flex items-start gap-2 border p-3">
                     <HelpCircle className="text-indigo mt-0.5 h-4 w-4 flex-shrink-0" />
                     <div className="space-y-1">
-                      <span className="text-label font-semibold">Convention Lore & Rules:</span>
+                      <span className="text-label font-medium">Convention Lore & Rules:</span>
                       <p className="text-label-secondary text-caption leading-relaxed">
                         {presetKey === "hendalarsk" && (
                           <>
@@ -348,7 +348,7 @@ export function StudioNameSets() {
                 {activeDicts.map((d, i) => (
                   <span
                     key={i}
-                    className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-semibold capitalize"
+                    className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-medium capitalize"
                   >
                     {d.role}
                     {d.gender !== "any" ? ` · ${d.gender}` : ""} ({d.values.length})
@@ -366,7 +366,7 @@ export function StudioNameSets() {
                       className="border-separator bg-surface rounded-row space-y-2 border p-3"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-label-secondary text-caption font-semibold">
+                        <span className="text-label-secondary text-caption font-medium">
                           #{idx + 1}
                         </span>
                         <ValueSelect
@@ -403,7 +403,7 @@ export function StudioNameSets() {
 
                       <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-label-secondary font-semibold">Prefix</span>
+                          <span className="text-label-secondary font-medium">Prefix</span>
                           <Input
                             value={slot.prefix || ""}
                             onChange={(e) => updateSlot(idx, { prefix: e.target.value })}
@@ -413,7 +413,7 @@ export function StudioNameSets() {
                         </div>
 
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-label-secondary font-semibold">Suffix rule</span>
+                          <span className="text-label-secondary font-medium">Suffix rule</span>
                           <ValueSelect
                             value={slot.suffixRule || "none"}
                             onValueChange={(
@@ -439,7 +439,7 @@ export function StudioNameSets() {
                         {/* Parent Name input (matronymic/patronymic only) */}
                         {showParentInput && (
                           <div className="col-span-2 flex flex-col gap-0.5">
-                            <span className="text-label-secondary font-semibold">
+                            <span className="text-label-secondary font-medium">
                               Parent Name Lock (Optional)
                             </span>
                             <Input
@@ -461,7 +461,7 @@ export function StudioNameSets() {
                                 })
                               }
                             />
-                            <span className="text-label-secondary font-semibold">
+                            <span className="text-label-secondary font-medium">
                               Align with unified full-name gender
                             </span>
                           </label>
@@ -498,7 +498,7 @@ export function StudioNameSets() {
                   </Button>
                   <NumberFlowDisplay
                     value={batchCount}
-                    className="text-label text-footnote min-w-[20px] px-1 text-center font-mono font-semibold"
+                    className="text-label text-footnote min-w-[20px] px-1 text-center font-mono font-medium"
                   />
                   <Button
                     variant="ghost"
@@ -530,7 +530,7 @@ export function StudioNameSets() {
         {names.length > 0 ? (
           <Card variant="well" padding="none" className="space-y-4 p-4">
             <div className="border-separator border-b pb-3">
-              <h3 className="text-label text-body font-semibold">Full names</h3>
+              <h3 className="text-label text-headline">Full names</h3>
               <p className="text-label-secondary text-caption mt-0.5">
                 Each slot generated from the {selectedSet} template.
               </p>
@@ -560,7 +560,7 @@ export function StudioNameSets() {
             className="text-label-secondary text-body border-dashed p-8 text-center"
           >
             <Info className="text-tint/40 mx-auto mb-3 h-8 w-8" />
-            <p className="font-semibold">Generate full names</p>
+            <p className="font-medium">Generate full names</p>
             <p className="text-label-secondary text-footnote mt-1">
               Pick a Name Set, arrange the template (e.g. Given + Surname), and generate.
             </p>

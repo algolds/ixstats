@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart } from "iconoir-react";
+import { Heart, WarningCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -43,30 +43,36 @@ function WishlistBody({
   if (query.isLoading) return <Skeleton className="rounded-card h-40" />;
   if (query.isError && !query.data) {
     return (
-      <EmptyState
-        role="alert"
-        title="Your wishlist did not load"
-        action={
-          <Button variant="secondary" onClick={() => void query.refetch()}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Your wishlist did not load"
+          message="Try loading your wishlist again."
+          action={
+            <Button variant="secondary" onClick={() => void query.refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   const entries = query.data ?? [];
   if (entries.length === 0) {
     return (
-      <EmptyState
-        icon={<Heart />}
-        title="No cards on your wishlist yet"
-        message="Open a card and add it to your wishlist. Players building a trade with you will see it."
-        action={
-          <Button variant="secondary" onClick={onBrowse}>
-            Browse listings
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Heart />}
+          title="No cards on your wishlist yet"
+          message="Open a card and add it to your wishlist. Players building a trade with you will see it."
+          action={
+            <Button variant="secondary" onClick={onBrowse}>
+              Browse listings
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   return (

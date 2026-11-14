@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "~/components/ui/card";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Xmark, Shield, User, Activity, ArrowRight } from "iconoir-react";
@@ -115,19 +116,20 @@ function OrganizationFocusContent({
           clearFocus();
           router.push(`/myclub/${team.id}`);
         }}
-        className="rounded-row border-separator bg-surface hover:bg-fill-3 text-label text-footnote shadow-card w-full cursor-pointer justify-between border px-3 py-2 font-semibold transition"
+        variant="secondary"
+        className="w-full justify-between"
       >
         <span className="flex items-center gap-2">
-          <Shield className="text-teal h-4 w-4" />
-          Open club headquarters
+          <Shield />
+          Open club
         </span>
-        <ArrowRight className="text-label-secondary h-3.5 w-3.5" />
+        <ArrowRight />
       </Button>
 
       {/* Top Squad Athletes Preview */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-eyebrow text-label-secondary">
+          <span className="text-caption text-label-secondary">
             Key Athletes ({activePlayers.length})
           </span>
           <span className="text-footnote text-label-tertiary font-semibold">Click to focus</span>
@@ -165,7 +167,7 @@ function OrganizationFocusContent({
                       attributeBadgeClass(ovr)
                     )}
                   >
-                    {ovr ?? <span aria-label="Not recorded">—</span>}
+                    {ovr ?? <span aria-label="Not recorded">–</span>}
                   </Badge>
                 }
                 accessory="chevron"
@@ -262,7 +264,7 @@ function AthleteFocusContent({ athleteId }: { athleteId: string }) {
             variant="outline"
             className={cn("text-body px-2 py-0.5 font-semibold", attributeBadgeClass(overall))}
           >
-            {overall ?? <span aria-label="Not recorded">—</span>}
+            {overall ?? <span aria-label="Not recorded">–</span>}
           </Badge>
           <span className="text-footnote text-label-secondary mt-0.5 block font-semibold">OVR</span>
         </div>
@@ -288,7 +290,7 @@ function AthleteFocusContent({ athleteId }: { athleteId: string }) {
       {/* Ratings & Skills Matrix */}
       {skillKeys.length > 0 && (
         <div className="space-y-2">
-          <span className="text-eyebrow text-label-secondary">Attributes & skills</span>
+          <span className="text-caption text-label-secondary">Attributes & skills</span>
           <div className="grid grid-cols-2 gap-2">
             {skillKeys.map((key) => {
               const val = ratings[key]!; // skillKeys come from the recorded ratings
@@ -351,8 +353,8 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
   return (
     <div className="space-y-5">
       {/* Match Scoreboard Snippet */}
-      <div className="rounded-card border-separator bg-surface space-y-3 border p-4 text-center">
-        <Badge variant="outline" className="text-eyebrow">
+      <Card variant="well" className="space-y-3 text-center">
+        <Badge variant="outline" className="text-caption text-label-secondary">
           {isCompleted ? "Full Time" : `Matchday ${match.matchDay ?? 1}`}
         </Badge>
 
@@ -386,7 +388,7 @@ function MatchFocusContent({ matchId }: { matchId: string }) {
             <span className="text-footnote text-label-secondary">Focus Club →</span>
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

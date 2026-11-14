@@ -43,6 +43,7 @@ export default function MapEditorOverlay({
   mapInstance: initialMapInstance,
 }: MapEditorOverlayProps) {
   const mapRef = useRef<EditorMapRef>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   // Phones use the bottom sheet; the docked side panels are not mounted there at all.
   const isMobile = useIsMobile();
 
@@ -135,121 +136,131 @@ export default function MapEditorOverlay({
   );
 
   const showLoadingScreen = !countryInfo && !isWorldMode;
+  const reusesParentMap = isWorldMode && !!initialMapInstance;
 
   return (
     <MapEditorPluginProvider state={state}>
       <div
+        data-app="maps"
         className={`${
-          isWorldMode && initialMapInstance
-            ? "pointer-events-none bg-transparent"
-            : "bg-surface pointer-events-auto"
-        } absolute inset-0 z-30 flex flex-col`}
+          reusesParentMap ? "pointer-events-none bg-transparent" : "bg-surface pointer-events-auto"
+        } absolute inset-0 z-30 overflow-hidden`}
       >
-        {showLoadingScreen && <EditorLoadingScreen />}
-
-        <EditorHeader
-          countryInfo={countryInfo}
-          activeEditorMode={activeEditorMode}
-          isWorldMode={isWorldMode}
-          activeCountryId={activeCountryId}
-          editor={editor}
-          showGrid={showGrid}
-          setShowGrid={setShowGrid}
-          mapRef={mapRef}
-          isAdmin={isAdmin}
-          editorVisibleLayers={editorVisibleLayers}
-          toggleEditorLayer={toggleEditorLayer}
-          generateTransport={generateTransport}
-          recalculateGeo={recalculateGeo}
-          simplifyAll={simplifyAll}
-          handleRequestExit={handleRequestExit}
-          onShowHelp={showHelp}
-          countryId={countryId}
-          snapEnabled={snapEnabled}
-          setSnapEnabled={setSnapEnabled}
-          snapTolerance={snapTolerance}
-          setSnapTolerance={setSnapTolerance}
-          panelsLocked={panelsLocked}
-          setPanelsLocked={setPanelsLocked}
-          onDeleteSelection={deleteSelection}
-          onShowShortcuts={openShortcuts}
-        />
-
-        {activeEditorMode !== "border_edit" && (
-          <EditorErrorBoundary name="ToolOptions">
-            <ConnectedToolOptionsBar editor={editor} onDeleteSelection={deleteSelection} />
-          </EditorErrorBoundary>
-        )}
-
-        {activeEditorMode === "border_edit" && borderState.featureId && (
-          <EditorErrorBoundary name="BorderToolOptions">
-            <BorderEditorToolOptions
-              countryName={countryInfo?.name}
-              borderState={borderState}
-              borderActions={borderActions}
-              brushRadius={brushRadius}
-              setBrushRadius={setBrushRadius}
-              isSubmitting={isSubmitting}
-              onSubmit={handleBorderToolbarSubmit}
-              onExit={handleExitBorderEdit}
-            />
-          </EditorErrorBoundary>
-        )}
-
-        <div className="flex min-h-0 flex-1">
-          <div className="pointer-events-auto hidden shrink-0 sm:block">
-            {isWorldMode && activeEditorMode === "border_edit" ? (
-              <BorderToolRail mode={borderState.mode} onModeChange={borderActions.setMode} />
-            ) : (
-              <MapEditorToolbar
-                mode={editor.mode}
-                onModeChange={editor.setMode}
-                disabled={isWorldMode ? false : toolsDisabled}
-                disabledTools={disabledTools}
-              />
-            )}
-          </div>
-
-          <EditorWorkspaceLayout
-            panelConfigs={panelConfigs}
-            panelsLocked={panelsLocked}
-            toolsDisabled={toolsDisabled}
+        <div
+          className={`${
+            reusesParentMap ? "pointer-events-none" : "pointer-events-auto"
+          } absolute inset-0 z-0`}
+        >
+          <EditorCanvas
+            state={state}
+            mapRef={mapRef}
+            viewportRef={viewportRef}
             isWorldMode={isWorldMode}
-            panelA={isMobile ? null : renderPanel("panelA")}
-            panelB={isMobile ? null : renderPanel("panelB")}
-          >
-            <EditorCanvas
-              state={state}
-              mapRef={mapRef}
-              isWorldMode={isWorldMode}
-              initialMapInstance={initialMapInstance}
-              historicalYear={historicalYear}
-              onSharedWorldMap={setSharedWorldMap}
-            />
-          </EditorWorkspaceLayout>
-        </div>
-
-        <div className="sm:hidden">
-          <MapEditorToolbar
-            mode={editor.mode}
-            onModeChange={editor.setMode}
-            disabled={isWorldMode ? false : toolsDisabled}
-            disabledTools={disabledTools}
-            horizontal
+            initialMapInstance={initialMapInstance}
+            historicalYear={historicalYear}
+            onSharedWorldMap={setSharedWorldMap}
           />
         </div>
 
-        <EditorStatusBar
-          mode={editor.mode}
-          featureCount={editor.allFeatures.length}
-          selectedCount={editor.selectedIds.size}
-          isSaving={editor.isMutating}
-          lastSavedAt={editor.lastSavedAt}
-          hasUnsavedChanges={state.hasUnsavedChanges}
-          error={editor.mutationError}
-          onDismissError={() => editor.setMutationError(null)}
-          onShowShortcuts={openShortcuts}
-        />
+        <div className="pointer-events-none relative z-10 flex h-full w-full flex-col">
+          {showLoadingScreen && <EditorLoadingScreen />}
+
+          <EditorHeader
+            countryInfo={countryInfo}
+            activeEditorMode={activeEditorMode}
+            isWorldMode={isWorldMode}
+            activeCountryId={activeCountryId}
+            editor={editor}
+            showGrid={showGrid}
+            setShowGrid={setShowGrid}
+            mapRef={mapRef}
+            isAdmin={isAdmin}
+            editorVisibleLayers={editorVisibleLayers}
+            toggleEditorLayer={toggleEditorLayer}
+            generateTransport={generateTransport}
+            recalculateGeo={recalculateGeo}
+            simplifyAll={simplifyAll}
+            handleRequestExit={handleRequestExit}
+            onShowHelp={showHelp}
+            countryId={countryId}
+            snapEnabled={snapEnabled}
+            setSnapEnabled={setSnapEnabled}
+            snapTolerance={snapTolerance}
+            setSnapTolerance={setSnapTolerance}
+            panelsLocked={panelsLocked}
+            setPanelsLocked={setPanelsLocked}
+            onDeleteSelection={deleteSelection}
+            onShowShortcuts={openShortcuts}
+          />
+
+          {activeEditorMode !== "border_edit" && (
+            <EditorErrorBoundary name="ToolOptions">
+              <ConnectedToolOptionsBar editor={editor} onDeleteSelection={deleteSelection} />
+            </EditorErrorBoundary>
+          )}
+
+          {activeEditorMode === "border_edit" && borderState.featureId && (
+            <EditorErrorBoundary name="BorderToolOptions">
+              <BorderEditorToolOptions
+                countryName={countryInfo?.name}
+                borderState={borderState}
+                borderActions={borderActions}
+                brushRadius={brushRadius}
+                setBrushRadius={setBrushRadius}
+                isSubmitting={isSubmitting}
+                onSubmit={handleBorderToolbarSubmit}
+                onExit={handleExitBorderEdit}
+              />
+            </EditorErrorBoundary>
+          )}
+
+          <div className="pointer-events-none flex min-h-0 flex-1">
+            <div className="pointer-events-auto hidden shrink-0 sm:block">
+              {isWorldMode && activeEditorMode === "border_edit" ? (
+                <BorderToolRail mode={borderState.mode} onModeChange={borderActions.setMode} />
+              ) : (
+                <MapEditorToolbar
+                  mode={editor.mode}
+                  onModeChange={editor.setMode}
+                  disabled={isWorldMode ? false : toolsDisabled}
+                  disabledTools={disabledTools}
+                />
+              )}
+            </div>
+
+            <EditorWorkspaceLayout
+              panelConfigs={panelConfigs}
+              panelsLocked={panelsLocked}
+              toolsDisabled={toolsDisabled}
+              isWorldMode={isWorldMode}
+              panelA={isMobile ? null : renderPanel("panelA")}
+              panelB={isMobile ? null : renderPanel("panelB")}
+              viewportRef={viewportRef}
+            />
+          </div>
+
+          <div className="pointer-events-auto sm:hidden">
+            <MapEditorToolbar
+              mode={editor.mode}
+              onModeChange={editor.setMode}
+              disabled={isWorldMode ? false : toolsDisabled}
+              disabledTools={disabledTools}
+              horizontal
+            />
+          </div>
+
+          <EditorStatusBar
+            mode={editor.mode}
+            featureCount={editor.allFeatures.length}
+            selectedCount={editor.selectedIds.size}
+            isSaving={editor.isMutating}
+            lastSavedAt={editor.lastSavedAt}
+            hasUnsavedChanges={state.hasUnsavedChanges}
+            error={editor.mutationError}
+            onDismissError={() => editor.setMutationError(null)}
+            onShowShortcuts={openShortcuts}
+          />
+        </div>
 
         {/* Leaf-only helpers: terrain lookup under the cursor and the confirm dialog host */}
         <CursorTerrainProbe />

@@ -404,6 +404,7 @@ describe("Facet layers", () => {
     "facet-pane",
     "facet-well",
     "facet-chrome",
+    "facet-chrome-subtle",
     "facet-overlay",
     "facet-lens",
   ])("defines the %s layer utility", (name) => {
@@ -413,7 +414,19 @@ describe("Facet layers", () => {
   it("blurs only chrome and overlay (the pane has no backdrop-filter)", () => {
     expect(utility("facet-pane")).not.toMatch(/backdrop-filter/);
     expect(utility("facet-chrome")).toMatch(/backdrop-filter/);
+    expect(utility("facet-chrome-subtle")).toMatch(/backdrop-filter/);
     expect(utility("facet-overlay")).toMatch(/backdrop-filter/);
+  });
+
+  it("facet-chrome-subtle keeps vibrant secondary labels and goes solid under Reduce Transparency and Increase Contrast", () => {
+    const subtle = utility("facet-chrome-subtle");
+    expect(subtle).toMatch(/--color-label-secondary: var\(--color-label-vibrant-secondary\)/);
+    expect(subtle).toMatch(
+      /@variant transparency-reduced \{[^}]*background-color: var\(--color-surface\);[\s\S]*?backdrop-filter: none;/
+    );
+    expect(subtle).toMatch(
+      /@variant contrast-more \{[^}]*background-color: var\(--color-surface\);[\s\S]*?border-color: var\(--color-separator-opaque\);[\s\S]*?backdrop-filter: none;/
+    );
   });
 
   it("the lens refracts through the one shared filter and goes solid when asked", () => {

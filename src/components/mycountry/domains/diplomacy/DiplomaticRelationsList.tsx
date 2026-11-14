@@ -4,7 +4,9 @@ import React from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -154,19 +156,18 @@ function RelationCard({
             />
           </div>
           <div className="min-w-0">
-            <h4 className="text-label text-headline truncate">{targetName.replace(/_/g, " ")}</h4>
+            <h4 className="text-label text-headline truncate">
+              <CountryLink
+                country={{ id: rel.targetCountryId, name: targetName.replace(/_/g, " ") }}
+                className="hover:text-tint"
+              >
+                {targetName.replace(/_/g, " ")}
+              </CountryLink>
+            </h4>
             <p className="text-label-secondary text-footnote">
               Established: {formatStampAsClockDate(rel.establishedAt, clock)}
+              {sharedBloc ? ` · In bloc: ${sharedBloc.name}` : ""}
             </p>
-            {sharedBloc && (
-              <Badge
-                variant="outline"
-                className="mt-1"
-                title={`Shares alliance membership in ${sharedBloc.name}`}
-              >
-                In bloc · {sharedBloc.name}
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -212,14 +213,12 @@ function RelationCard({
         </div>
         <div className="flex flex-col gap-1">
           <span className="text-label-secondary">Their stance</span>
-          <Badge variant="outline" className="w-fit">
-            {rel.goalTarget || "Not declared"}
-          </Badge>
+          <span className="text-label font-medium">{rel.goalTarget || "Not declared"}</span>
         </div>
       </div>
 
       {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-        <p className="text-caption text-green mt-2 flex items-center gap-2">
+        <p className="text-caption text-success mt-2 flex items-center gap-2">
           <CheckCircle className="h-3.5 w-3.5 shrink-0" />
           Goals aligned: reaching Allied status significantly faster.
         </p>
@@ -290,10 +289,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     onError: (error) => notify.error("Could not set the stance", error.message),
   });
 
-  const allRelations = React.useMemo(
-    () => mergeEmbassyRelations(relations ?? [], rawEmbassies ?? [], countryId),
-    [relations, rawEmbassies, countryId]
-  );
+  const allRelations = mergeEmbassyRelations(relations ?? [], rawEmbassies ?? [], countryId);
 
   useScrollToFocus(focusId, [allRelations]);
 
@@ -334,13 +330,13 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   if (allRelations.length === 0) {
     return (
-      <Card className="rounded-card flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
-        <Globe className="text-label-secondary mb-3 h-6 w-6" />
-        <h4 className="text-label text-headline">No diplomatic relations</h4>
-        <p className="text-label-secondary text-footnote mt-1 max-w-sm">
-          You haven't established diplomatic relationships with other nations yet. Create an embassy
-          to start building ties.
-        </p>
+      <Card className="rounded-card">
+        <EmptyState
+          compact
+          icon={<Globe />}
+          title="No diplomatic relations"
+          message="You haven't established diplomatic relationships with other nations yet. Create an embassy to start building ties."
+        />
       </Card>
     );
   }

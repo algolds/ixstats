@@ -5,6 +5,7 @@
 // and manage per-name pronunciation overrides. All customization is device-local
 // (localStorage) via ~/lib/onoma/ipa-overrides.
 
+import { Card } from "~/components/ui/card";
 import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
@@ -191,7 +192,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
     <div className="space-y-6">
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div className="space-y-1">
-          <h2 className="text-label text-title-2 font-bold">Acoustics & IPA</h2>
+          <h2 className="text-label text-title-2">Acoustics & IPA</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Configure grapheme-to-phoneme mapping rules, inspect acoustic formant spectra, and
             compare cross-language phonology.
@@ -215,7 +216,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
         <ComparatorSection hideHeader studioWords={studioWords} />
       ) : (
         <>
-          <div className="border-separator bg-fill-4 rounded-row space-y-2 border p-4">
+          <Card padding="none" className="space-y-2 p-4">
             <label className="text-label-secondary text-subhead">Live preview</label>
             <div className="flex flex-wrap items-center gap-2">
               <Input
@@ -229,7 +230,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                   <SelectValue placeholder="Select culture" />
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
-                  <div className="text-label-secondary text-eyebrow px-2 py-1">
+                  <div className="text-label-secondary text-caption px-2 py-1">
                     Natural Languages (13)
                   </div>
                   {CULTURES.map((c) => (
@@ -237,7 +238,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                       {c}
                     </SelectItem>
                   ))}
-                  <div className="text-label-secondary border-separator text-eyebrow mt-1 border-t px-2 pt-2 pb-1">
+                  <div className="text-label-secondary border-separator text-caption mt-1 border-t px-2 pt-2 pb-1">
                     Fantasy & Lineage Templates (18)
                   </div>
                   {getAllTemplateLinguisticProfiles().map((t) => (
@@ -256,8 +257,8 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                       <span className="text-label-secondary text-footnote flex items-center gap-2">
                         <span>→ {result.phonemes || "(empty)"}</span>
                         {result.dropped.length > 0 && (
-                          <span className="text-caption text-yellow font-semibold">
-                            ⚠ dropped: {result.dropped.join(", ")}
+                          <span className="text-caption text-yellow font-medium">
+                            Dropped: {result.dropped.join(", ")}
                           </span>
                         )}
                       </span>
@@ -313,7 +314,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                               isActive && "ring-tint border-transparent ring-2"
                             )}
                           >
-                            <span className="text-body font-mono font-semibold capitalize">
+                            <span className="text-headline font-mono capitalize">
                               {seg.grapheme}
                             </span>
                             <span className="text-label-secondary text-caption mt-0.5 font-mono">
@@ -324,9 +325,9 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
 
                         <PopoverContent align="start" className="w-72 p-4">
                           <div className="border-separator mb-2 flex items-center justify-between border-b pb-2">
-                            <span className="text-label text-eyebrow">
+                            <span className="text-label text-caption">
                               Map segment:{" "}
-                              <span className="text-tint font-mono font-semibold">
+                              <span className="text-tint font-mono font-medium">
                                 "{seg.grapheme}"
                               </span>
                             </span>
@@ -423,7 +424,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                 </div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* Acoustic Formant & Spectrogram Visualizer */}
           <AcousticFormantVisualizer currentIpa={previewIpa} accentColor={ACCENT} />
@@ -518,7 +519,7 @@ export function StudioPhonology({ studioWords = [] }: StudioPhonologyProps = {})
                   const ov = nameOverrides[name];
                   return (
                     <div key={name} className="text-footnote flex items-center gap-2 py-2">
-                      <span className="text-label font-semibold">{name}</span>
+                      <span className="text-label font-medium">{name}</span>
                       {ov.ipa && <span className="text-label-secondary font-mono">{ov.ipa}</span>}
                       {ov.voice && (
                         <span className="text-label-secondary bg-fill-4 rounded-control-sm text-caption px-2 py-0.5 font-mono">

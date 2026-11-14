@@ -317,7 +317,7 @@ export function FoundingFlowView() {
 
   if (!draft || !step) {
     return (
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-(--shell-page-top) pb-8 sm:px-6">
         <PageHeader title="Found a nation" bleed backdrop={<MonogramBanner />} />
         <FoundingSkeleton />
       </div>
@@ -338,7 +338,7 @@ export function FoundingFlowView() {
 
   return (
     <LensSurface>
-      <div className="facet-lens-flat mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6">
+      <div className="facet-lens-flat mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-(--shell-page-top) pb-8 sm:px-6">
         <PageHeader
           title="Found a nation"
           bleed

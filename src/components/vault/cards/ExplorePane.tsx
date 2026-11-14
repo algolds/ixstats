@@ -1,11 +1,12 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { MultiplePages, Plus, Xmark } from "iconoir-react";
+import { Filter, MultiplePages, WarningCircle, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -125,8 +126,8 @@ interface ExplorePaneProps {
   /** A realm slug from the address (`?realm=`): the old NationStates library redirects here with `nationstates`. */
   initialRealmSlug: string | null;
   /** A nation from the address (`?country=`): the grid shows only cards tied to it, until cleared. */
-  countryId: string | null;
-  onClearCountry: () => void;
+  countryId?: string | null;
+  onClearCountry?: () => void;
   /** Whether the suggestion dialog is open; the hub keeps it in the address. */
   suggesting: boolean;
   onSuggestingChange: (open: boolean) => void;
@@ -136,13 +137,13 @@ interface ExplorePaneProps {
 export function ExplorePane({
   onOpenCard,
   initialRealmSlug,
-  countryId,
-  onClearCountry,
+  countryId = null,
+  onClearCountry = () => {},
   suggesting,
   onSuggestingChange,
 }: ExplorePaneProps) {
   const shelves = api.cards.exploreShelves.useQuery();
-  const realms = useMemo(() => shelves.data?.realms ?? [], [shelves.data]);
+  const realms = shelves.data?.realms ?? [];
   const facets = api.cards.exploreFacets.useQuery(undefined, { staleTime: FACETS_STALE_MS });
   const { filters, setFilters, change, nsRealmId } = useExploreFilters(realms, initialRealmSlug);
   const [sort, setSort] = useState<ExploreSort>("newest");
@@ -164,7 +165,7 @@ export function ExplorePane({
     }
   );
   const pages = query.data?.pages;
-  const faces = useMemo(() => uniqueFaces(pages ?? []), [pages]);
+  const faces = uniqueFaces(pages ?? []);
   // A picked realm id is a string or null, so with no NationStates shelf this is false.
   const { regions, regionSearch } = useRegionSearch(filters.realmId === nsRealmId);
   const open = (face: CardFaceData) => onOpenCard(face.cardId);
@@ -194,15 +195,9 @@ export function ExplorePane({
         aria-labelledby={headingId}
         className="scroll-mt-(--shell-top-offset) space-y-4"
       >
-        <div className="flex items-center justify-between gap-3">
-          <h2 ref={gridHeading} id={headingId} tabIndex={-1} className="text-title-3 outline-none">
-            All cards
-          </h2>
-          <Button variant="secondary" size="sm" onClick={() => onSuggestingChange(true)}>
-            <Plus />
-            Suggest a card
-          </Button>
-        </div>
+        <h2 ref={gridHeading} id={headingId} tabIndex={-1} className="text-title-3 outline-none">
+          All cards
+        </h2>
         {countryId && <CountryFilterChip countryId={countryId} onClear={onClearCountry} />}
         <CardFilterBar
           filters={filters}
@@ -260,14 +255,19 @@ function ShelvesBody(props: ShelvesProps) {
   if (props.loading) return <Skeleton className="rounded-card h-48" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Realms did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Realms did not load"
+          message="Try loading the realm shelves again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   return (
@@ -322,14 +322,19 @@ function GridBody(props: {
   if (props.loading) return <Skeleton className="rounded-card h-64" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Cards did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Cards did not load"
+          message="Try loading the card catalogue again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.faces.length > 0) {
@@ -337,32 +342,38 @@ function GridBody(props: {
   }
   if (props.filtered) {
     return (
-      <EmptyState
-        title="No cards match these filters"
-        action={
-          <Button variant="secondary" onClick={props.onClearFilters}>
-            Clear filters
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Filter />}
+          title="No cards match these filters"
+          message="Clear or loosen your filters to see more cards."
+          action={
+            <Button variant="secondary" onClick={props.onClearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   return (
-    <EmptyState
-      icon={<MultiplePages />}
-      title="No cards yet"
-      message={
-        <>
-          Cards appear here as realms publish them. Packs are in the{" "}
-          <Link
-            href={STORE_PATH}
-            className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
-          >
-            Store
-          </Link>
-          .
-        </>
-      }
-    />
+    <Card>
+      <EmptyState
+        icon={<MultiplePages />}
+        title="No cards yet"
+        message={
+          <>
+            Cards appear here as realms publish them. Packs are in the{" "}
+            <Link
+              href={STORE_PATH}
+              className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
+            >
+              Store
+            </Link>
+            .
+          </>
+        }
+      />
+    </Card>
   );
 }

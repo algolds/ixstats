@@ -3,6 +3,8 @@ import { createTRPCRouter, standardMutationMapFeatureOwnerProcedure } from "~/se
 import { invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { upsertPeak, upsertNamedRiver, upsertNamedLake } from "~/lib/country-geo/named-features";
+import { normalizeFeatureWikiUpdate } from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
@@ -18,6 +20,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         prominence: z.number().min(0).max(9000).optional(),
         subdivisionId: z.string().nullish(),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -45,6 +48,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         prominence: z.number().min(0).max(9000).nullish(),
         subdivisionId: z.string().nullish(),
         wikiPageTitle: z.string().max(200).nullish(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -57,6 +61,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         "Peak not found"
       );
       assertOwnerMayEdit(ctx, existing, "peak");
+      const wiki = normalizeFeatureWikiUpdate(input, existing);
 
       const peak = await upsertPeak(ctx.db, input.countryId, {
         id: input.peakId,
@@ -67,7 +72,8 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         subdivisionId:
           input.subdivisionId !== undefined ? input.subdivisionId : existing.subdivisionId,
         wikiPageTitle:
-          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+          wiki.wikiPageTitle !== undefined ? wiki.wikiPageTitle : existing.wikiPageTitle,
+        wikiSource: wiki.wikiSource !== undefined ? wiki.wikiSource : existing.wikiSource,
       });
 
       await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
@@ -110,6 +116,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         name: z.string().min(1).max(100),
         geometry: z.record(z.string(), z.unknown()),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -134,6 +141,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         name: z.string().min(1).max(100).optional(),
         geometry: z.record(z.string(), z.unknown()).optional(),
         wikiPageTitle: z.string().max(200).nullish(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -146,13 +154,15 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         "NamedRiver not found"
       );
       assertOwnerMayEdit(ctx, existing, "river");
+      const wiki = normalizeFeatureWikiUpdate(input, existing);
 
       const river = await upsertNamedRiver(ctx.db, input.countryId, {
         id: input.riverId,
         name: input.name ?? existing.name,
         geometry: input.geometry ?? existing.geometry,
         wikiPageTitle:
-          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+          wiki.wikiPageTitle !== undefined ? wiki.wikiPageTitle : existing.wikiPageTitle,
+        wikiSource: wiki.wikiSource !== undefined ? wiki.wikiSource : existing.wikiSource,
       });
 
       await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);
@@ -196,6 +206,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         geometry: z.record(z.string(), z.unknown()),
         maxDepthM: z.number().min(0).optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -221,6 +232,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         geometry: z.record(z.string(), z.unknown()).optional(),
         maxDepthM: z.number().min(0).nullish(),
         wikiPageTitle: z.string().max(200).nullish(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -233,6 +245,7 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         "NamedLake not found"
       );
       assertOwnerMayEdit(ctx, existing, "lake");
+      const wiki = normalizeFeatureWikiUpdate(input, existing);
 
       const lake = await upsertNamedLake(ctx.db, input.countryId, {
         id: input.lakeId,
@@ -240,7 +253,8 @@ export const geoFeaturesNamedFeaturesRouter = createTRPCRouter({
         geometry: input.geometry ?? existing.geometry,
         maxDepthM: input.maxDepthM !== undefined ? input.maxDepthM : existing.maxDepthM,
         wikiPageTitle:
-          input.wikiPageTitle !== undefined ? input.wikiPageTitle : existing.wikiPageTitle,
+          wiki.wikiPageTitle !== undefined ? wiki.wikiPageTitle : existing.wikiPageTitle,
+        wikiSource: wiki.wikiSource !== undefined ? wiki.wikiSource : existing.wikiSource,
       });
 
       await invalidateCache(["geoCore.getAllMapFeatures", "countryGeo.getCountryGeoBundle"]);

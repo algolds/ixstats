@@ -1,7 +1,7 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { useState } from "react";
-import Link from "next/link";
 import { Bank, Coins, Globe, NavArrowRight } from "iconoir-react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { formatBig, formatPercent, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
@@ -77,7 +77,7 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
             ? formatBig(vitals.gdpPerCapita, { currency: true })
             : last
               ? formatBig(last.gdp, { currency: true })
-              : "–"}
+              : "Not recorded"}
         </span>
         {first && last && first.year !== last.year && (
           <span className="text-caption text-label-secondary block tabular-nums">
@@ -211,20 +211,18 @@ export function EconomyBlock({ layer, onMore }: BlockProps) {
           <EconomyTrajectoryWell vitals={vitals} />
           {shares && <RegionalPopulationWell shares={shares} />}
           {topCities.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {topCities.map((city) => (
-                <Badge
-                  key={city.id}
-                  variant={city.isCapital ? "secondary" : "default"}
-                  className="max-w-full truncate tabular-nums"
-                >
-                  <span className="truncate">{stripHtml(city.name)}</span>
-                  {city.population != null && (
-                    <span className="text-label-secondary">{`· ${formatBig(city.population)}`}</span>
-                  )}
-                </Badge>
+            <p className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-1.5 gap-y-0.5 tabular-nums">
+              <span className="text-label font-medium">Cities:</span>
+              {topCities.map((city, index) => (
+                <span key={city.id} className="inline-flex items-center gap-1">
+                  {index > 0 && <span aria-hidden>·</span>}
+                  <span className={cn(city.isCapital && "text-label font-medium")}>
+                    {stripHtml(city.name)}
+                  </span>
+                  {city.population != null && <span>{formatBig(city.population)}</span>}
+                </span>
               ))}
-            </div>
+            </p>
           )}
           <FactList
             facts={[
@@ -267,16 +265,11 @@ function LegislatureWell({
         <span className="text-caption text-label-secondary truncate">
           {legislatureName ? stripHtml(legislatureName) : "Legislature composition"}
         </span>
-        <div className="flex items-center gap-1.5">
-          {totalSeats > 0 && (
-            <Badge variant="secondary" className="tabular-nums">
-              {`${totalSeats} seats`}
-            </Badge>
-          )}
+        <div className="text-caption text-label-secondary flex items-center gap-1.5 tabular-nums">
+          {totalSeats > 0 && <span>{`${totalSeats} seats`}</span>}
+          {totalSeats > 0 && election.turnout != null && <span aria-hidden>·</span>}
           {election.turnout != null && (
-            <span className="text-caption text-label-secondary tabular-nums">
-              {`${formatPercent(election.turnout, 0)} turnout`}
-            </span>
+            <span>{`${formatPercent(election.turnout, 0)} turnout`}</span>
           )}
         </div>
       </div>
@@ -390,24 +383,24 @@ export function StateBlock({ layer, onMore }: BlockProps) {
             </Card>
           )}
           {departments.length > 0 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {departments.slice(0, 5).map((dept) => (
-                <Badge key={dept} variant="default" className="max-w-full truncate">
-                  {stripHtml(dept)}
-                </Badge>
+            <p className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+              <span className="text-label font-medium">Ministries:</span>
+              {departments.slice(0, 5).map((dept, index) => (
+                <span key={dept} className="inline-flex items-center gap-1.5">
+                  {index > 0 && <span aria-hidden>·</span>}
+                  <span>{stripHtml(dept)}</span>
+                </span>
               ))}
               {departments.length > 5 && (
-                <span className="text-caption text-label-secondary tabular-nums">
-                  {`+${departments.length - 5} more`}
-                </span>
+                <span className="tabular-nums">{`· +${departments.length - 5} more`}</span>
               )}
-            </div>
+            </p>
           )}
           <FactList
             facts={[
-              { label: "Legislature", value: g?.legislature ?? "–" },
-              { label: "Judiciary", value: g?.judiciary ?? "–" },
-              { label: "Next election", value: next ?? "–" },
+              { label: "Legislature", value: g?.legislature ?? null },
+              { label: "Judiciary", value: g?.judiciary ?? null },
+              { label: "Next election", value: next ?? null },
             ]}
           />
         </>
@@ -468,9 +461,18 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                             className={FLAG_AVATAR_CLASS}
                             monogramClassName={FLAG_AVATAR_MONOGRAM_CLASS}
                           />
-                          <span className="text-footnote text-label truncate font-medium">
-                            {r.name}
-                          </span>
+                          {r.countryId ? (
+                            <CountryLink
+                              country={{ id: r.countryId, name: r.name }}
+                              className="text-footnote text-label focus-visible:outline-tint rounded-control-sm truncate font-medium underline-offset-2 hover:underline focus-visible:outline-2"
+                            >
+                              {r.name}
+                            </CountryLink>
+                          ) : (
+                            <span className="text-footnote text-label truncate font-medium">
+                              {r.name}
+                            </span>
+                          )}
                         </span>
                         <div className="flex shrink-0 items-center gap-1.5">
                           {r.treaties.length > 0 && (
@@ -517,13 +519,13 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                   </>
                 );
                 return emb.countrySlug ? (
-                  <Link
+                  <CountryLink
                     key={emb.id}
-                    href={`/countries/${encodeURIComponent(emb.countrySlug)}`}
+                    country={{ slug: emb.countrySlug }}
                     className="facet-well facet-press facet-press-subtle focus-visible:outline-tint rounded-control-sm inline-flex max-w-full items-center gap-1.5 px-2.5 py-1 focus-visible:outline-2"
                   >
                     {content}
-                  </Link>
+                  </CountryLink>
                 ) : (
                   <span
                     key={emb.id}

@@ -152,7 +152,7 @@ function FactsStrip({ facts }: { facts: readonly NationalFact[] }) {
               onClick={() => jumpTo(i)}
               className={cn(
                 "size-1.5 cursor-pointer rounded-full transition-colors",
-                i === page ? "bg-label" : "bg-fill-2 hover:bg-label-tertiary"
+                i === page ? "bg-primary-fill" : "bg-fill-2 hover:bg-label-tertiary"
               )}
             />
           ))}

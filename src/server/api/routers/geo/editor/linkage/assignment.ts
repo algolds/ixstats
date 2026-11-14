@@ -14,6 +14,8 @@ import { TRPCError } from "@trpc/server";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
 import { syncCountryGeometryFromMapLayer } from "~/lib/country-geo";
+import { normalizeFeatureWikiUpdate } from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertCountryInFeatureRealm } from "~/server/shared/realm-link-guard";
 import { assertFound, requirePoliticalLayer } from "../../core/shared";
 
@@ -117,6 +119,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
                 id: true,
                 name: true,
                 wikiPageTitle: true,
+                wikiSource: true,
               },
             },
           },
@@ -133,6 +136,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
         boundingBox: feature.boundingBox,
         properties: feature.properties,
         wikiPageTitle: feature.country?.wikiPageTitle ?? null,
+        wikiSource: feature.country?.wikiSource ?? null,
         countryName: feature.country?.name ?? null,
       };
     }),
@@ -156,6 +160,7 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           .refine((p) => JSON.stringify(p).length <= 20_000, "Properties are too large")
           .optional(),
         wikiPageTitle: z.string().max(255).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
         ...realmScopeInput.shape,
       })
     )
@@ -213,11 +218,19 @@ export const geoEditorLinkageAssignmentRouter = createTRPCRouter({
           });
         }
 
-        // Update wikiPageTitle on Country if linked
-        if (renamesNation && targetCountryId && input.wikiPageTitle !== undefined) {
+        // Update wikiPageTitle / wikiSource on Country if linked
+        if (
+          renamesNation &&
+          targetCountryId &&
+          (input.wikiPageTitle !== undefined || input.wikiSource !== undefined)
+        ) {
+          const existingCountry = await ctx.db.country.findUnique({
+            where: { id: targetCountryId },
+            select: { wikiPageTitle: true, wikiSource: true },
+          });
           await ctx.db.country.update({
             where: { id: targetCountryId },
-            data: { wikiPageTitle: input.wikiPageTitle },
+            data: normalizeFeatureWikiUpdate(input, existingCountry),
           });
         }
 

@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 import { SystemRestart as Loader } from "iconoir-react";
 import { FacetMaterial } from "~/components/ui/facet";
@@ -77,7 +78,7 @@ function BorderEditorLoading({ countryName }: { countryName?: string | null }) {
     >
       <FacetMaterial
         layer="chrome"
-        className="rounded-card flex items-center gap-3 px-5 py-4 text-left"
+        className="facet-chrome-subtle rounded-row flex items-center gap-3 px-5 py-4 text-left"
       >
         <Loader aria-hidden className="text-label-secondary h-5 w-5 animate-spin" />
         <div>
@@ -94,10 +95,12 @@ function BorderEditorLoading({ countryName }: { countryName?: string | null }) {
 function CountryEditorMap({
   state,
   mapRef,
+  viewportRef,
   onMapReady,
 }: {
   state: MapEditorOverlayReturnState;
   mapRef: React.RefObject<EditorMapRef | null>;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
   onMapReady: (map: MapLibreMap | null) => void;
 }) {
   const {
@@ -132,7 +135,21 @@ function CountryEditorMap({
   );
   const handleFeatureContextMenu = React.useCallback(
     (feature: EditorFeature, screenPos: { x: number; y: number }) => {
-      setContextMenu({ x: screenPos.x, y: screenPos.y, feature });
+      setContextMenu({
+        x: screenPos.x,
+        y: screenPos.y,
+        feature: {
+          ...feature,
+          wikiPageTitle:
+            typeof feature.properties?.wikiPageTitle === "string"
+              ? feature.properties.wikiPageTitle
+              : null,
+          wikiSource:
+            typeof feature.properties?.wikiSource === "string"
+              ? feature.properties.wikiSource
+              : null,
+        },
+      });
     },
     [setContextMenu]
   );
@@ -195,6 +212,7 @@ function CountryEditorMap({
       showGuides={showGuides}
       snapEnabled={snapEnabled}
       snapTolerance={snapTolerance}
+      viewportRef={viewportRef}
     />
   );
 }
@@ -204,22 +222,37 @@ function CanvasOverlays({
   activeEditorMap,
   initialMapInstance,
   historicalYear,
+  viewportRef,
 }: {
   state: MapEditorOverlayReturnState;
   activeEditorMap: MapLibreMap | null;
   initialMapInstance: MapLibreMap | null | undefined;
   historicalYear: number | null | undefined;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const { editor, importer, mapInstance, layerStates, transportRouteData } = state;
   const transportMap = activeEditorMap ?? mapInstance ?? initialMapInstance;
+  const [portalTarget, setPortalTarget] = React.useState<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (viewportRef?.current) setPortalTarget(viewportRef.current);
+  }, [viewportRef]);
+
+  const elevationHud =
+    editor.mode === "ruler" || (editor.rulerPoints && editor.rulerPoints.length > 0) ? (
+      <HypsometricElevationHUD onClose={editor.clearRuler} />
+    ) : null;
 
   return (
     <>
       <RegionHoverTooltip features={editor.allFeatures} editorMode={editor.mode} />
 
-      {(editor.mode === "ruler" || (editor.rulerPoints && editor.rulerPoints.length > 0)) && (
-        <HypsometricElevationHUD onClose={editor.clearRuler} />
-      )}
+      {elevationHud &&
+        (viewportRef
+          ? portalTarget
+            ? createPortal(elevationHud, portalTarget)
+            : null
+          : elevationHud)}
 
       {editor.mode === "import-provinces" &&
         importer.currentProvinces.length > 0 &&
@@ -250,6 +283,7 @@ function CanvasOverlays({
 interface EditorCanvasProps {
   state: MapEditorOverlayReturnState;
   mapRef: React.RefObject<EditorMapRef | null>;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
   isWorldMode: boolean;
   initialMapInstance: MapLibreMap | null | undefined;
   historicalYear: number | null | undefined;
@@ -260,6 +294,7 @@ interface EditorCanvasProps {
 export function EditorCanvas({
   state,
   mapRef,
+  viewportRef,
   isWorldMode,
   initialMapInstance,
   historicalYear,
@@ -285,7 +320,12 @@ export function EditorCanvas({
       )}
       <EditorErrorBoundary name="Map">
         {!isWorldMode ? (
-          <CountryEditorMap state={state} mapRef={mapRef} onMapReady={handleEditorMapReady} />
+          <CountryEditorMap
+            state={state}
+            mapRef={mapRef}
+            viewportRef={viewportRef}
+            onMapReady={handleEditorMapReady}
+          />
         ) : initialMapInstance ? (
           // A map warm from the parent MapContainer is reused, so no second WebGL context is created.
           <div className="pointer-events-none h-full w-full" />
@@ -310,6 +350,7 @@ export function EditorCanvas({
           activeEditorMap={activeEditorMap}
           initialMapInstance={initialMapInstance}
           historicalYear={historicalYear}
+          viewportRef={viewportRef}
         />
       </EditorErrorBoundary>
     </>

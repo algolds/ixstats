@@ -1,9 +1,16 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import React from "react";
 import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 
 /** Compact season-by-season career log shown in the athlete focus view (plan 321 Step 3). */
@@ -17,9 +24,9 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Eyebrow>Career</Eyebrow>
+        <h4 className="text-headline text-label">Career</h4>
         {data && seasons.length > 0 && (
-          <span className="text-label-secondary text-footnote font-semibold tabular-nums">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {data.totals.goals} goals · {data.totals.assists} assists
           </span>
         )}
@@ -28,25 +35,22 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
       {seasons.length === 0 ? (
         <p className="text-label-secondary text-footnote">No recorded seasons yet.</p>
       ) : (
-        <div className="border-separator rounded-row overflow-hidden border">
-          <table className="text-footnote w-full">
-            <thead className="bg-fill-4 text-label-secondary">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium">Season</th>
-                <th
-                  className="px-2 py-2 text-right font-medium"
-                  title="Matches with a shot, goal or assist"
-                >
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Season</TableHead>
+                <TableHead className="text-right" title="Matches with a shot, goal or assist">
                   Matches
-                </th>
-                <th className="px-2 py-2 text-right font-medium">Goals</th>
-                <th className="px-3 py-2 text-right font-medium">Assists</th>
-              </tr>
-            </thead>
-            <tbody className="divide-separator divide-y">
+                </TableHead>
+                <TableHead className="text-right">Goals</TableHead>
+                <TableHead className="text-right">Assists</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {seasons.map((season) => (
-                <tr key={season.seasonId}>
-                  <td className="text-label px-3 py-2 font-semibold">
+                <TableRow key={season.seasonId}>
+                  <TableCell className="text-label">
                     Season {season.seasonNumber}
                     {season.awards.map((award) => (
                       <span
@@ -57,15 +61,15 @@ export function AthleteCareerHistory({ athleteId }: { athleteId: string }) {
                         {award}
                       </span>
                     ))}
-                  </td>
-                  <td className="px-2 py-2 text-right tabular-nums">{season.matches}</td>
-                  <td className="px-2 py-2 text-right tabular-nums">{season.goals}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{season.assists}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="text-right">{season.matches}</TableCell>
+                  <TableCell className="text-right">{season.goals}</TableCell>
+                  <TableCell className="text-right">{season.assists}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </>
       )}
     </div>
   );

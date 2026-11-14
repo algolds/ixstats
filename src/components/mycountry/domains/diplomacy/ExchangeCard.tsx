@@ -1,5 +1,6 @@
 "use client";
 
+import { levelWord } from "~/lib/qualitative-rating";
 import { ArrowRight, Calendar, EditPencil, Globe, Star, User } from "iconoir-react";
 
 import React from "react";
@@ -159,7 +160,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               </span>
               <span className="flex items-center gap-1">
                 <Star className="h-3 w-3" />
-                <span className="tabular-nums">{exchange.metrics.culturalImpact}% impact</span>
+                <span>{levelWord(exchange.metrics.culturalImpact)} impact</span>
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />

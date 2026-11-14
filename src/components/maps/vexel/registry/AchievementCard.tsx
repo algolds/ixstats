@@ -39,7 +39,7 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
     <Card className="group block overflow-hidden">
       <Link href={`/labs/vexel/registry/${achievement.id}`} className="block">
         <div className="flex flex-col items-center gap-4 p-4">
-          <div className="relative flex h-32 w-32 transform items-center justify-center transition-transform duration-200 group-hover:scale-[1.03]">
+          <div className="relative flex h-32 w-32 items-center justify-center">
             <ShieldRenderer composition={composition} />
           </div>
 
@@ -53,7 +53,7 @@ export default function AchievementCard({ achievement }: AchievementCardProps) {
                 {achievement.subjectType.toLowerCase()}
               </span>
 
-              <h4 className="text-label text-caption group-hover:text-tint truncate font-semibold transition-colors">
+              <h4 className="text-label text-caption group-hover:text-tint truncate transition-colors">
                 {achievement.title}
               </h4>
 

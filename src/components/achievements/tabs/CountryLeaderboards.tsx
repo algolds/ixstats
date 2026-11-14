@@ -87,7 +87,7 @@ const FILTERS = [
 type FilterId = (typeof FILTERS)[number]["id"];
 
 function fmt(type: string, val?: number | null) {
-  if (val === undefined || val === null) return "—";
+  if (val === undefined || val === null) return "–";
   if (type === "currency") return `$${formatCompact(val)}`;
   if (type === "percent") return formatPercent(val);
   if (type === "years") return formatYears(val);

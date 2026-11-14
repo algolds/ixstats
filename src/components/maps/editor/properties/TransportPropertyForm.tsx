@@ -178,7 +178,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
 
   if (activeRouteId) {
     return (
-      <div className="bg-surface text-label flex h-full flex-col">
+      <div className="text-label flex h-full flex-col">
         <PanelHeader
           title="Edit route path"
           closeLabel="Close edit mode"
@@ -205,7 +205,7 @@ export const TransportPropertyForm = React.memo(function TransportPropertyForm({
   }
 
   return (
-    <div className="bg-surface text-label flex h-full flex-col">
+    <div className="text-label flex h-full flex-col">
       <PanelHeader
         title="Transport network"
         closeLabel="Close transport network"

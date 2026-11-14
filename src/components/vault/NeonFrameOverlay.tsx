@@ -19,16 +19,16 @@ export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps
       className={cn(
         "rounded-card pointer-events-none absolute inset-0 z-30",
         style === "ruby" &&
-          "card-art-linear-r border-2 border-red-500 from-red-500/10 to-red-600/10 shadow-[0_0_8px_rgba(239,68,68,0.3),_inset_0_0_4px_rgba(239,68,68,0.2)]",
+          "card-art-linear-r border-red from-red/15 to-red/5 border-2 shadow-[0_0_8px_color-mix(in_srgb,var(--color-red)_35%,transparent),inset_0_0_4px_color-mix(in_srgb,var(--color-red)_20%,transparent)]",
         style === "winter" &&
-          "card-art-linear-br after:rounded-card border-2 border-cyan-300 from-cyan-400/15 via-cyan-300/5 to-transparent shadow-[0_0_8px_rgba(6,182,212,0.3),_inset_0_0_4px_rgba(6,182,212,0.2)] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
+          "card-art-linear-br after:rounded-card border-cyan from-cyan/20 via-cyan/10 border-2 to-transparent shadow-[0_0_8px_color-mix(in_srgb,var(--color-cyan)_35%,transparent),inset_0_0_4px_color-mix(in_srgb,var(--color-cyan)_20%,transparent)] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
         style !== "ruby" && style !== "winter" && "border-2",
         className
       )}
       style={
         style !== "ruby" && style !== "winter"
           ? {
-              borderColor: neonFrame.color || "#06b6d4",
+              borderColor: neonFrame.color || "var(--color-cyan)",
               boxShadow: `0 0 8px ${neonFrame.color || "rgba(6,182,212,0.25)"}, inset 0 0 4px ${neonFrame.color || "rgba(6,182,212,0.15)"}`,
             }
           : undefined

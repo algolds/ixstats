@@ -122,16 +122,16 @@ function CompanyRow({
             <img
               src={assetUrl(wikiData.logoUrl) ?? undefined}
               alt={`${company.name} logo`}
-              className="border-separator bg-surface-secondary size-9 shrink-0 rounded-control border object-contain p-0.5"
+              className="border-separator bg-surface-secondary rounded-control size-9 shrink-0 border object-contain p-0.5"
             />
           ) : (
-            <TickerTile code={symbolOf(company.name, company.ticker)} size="md" />
+            <TickerTile code={symbolOf(company.name)} size="md" />
           )}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href={companyHref(company.id)}
-                className="text-body text-label hover:text-tint truncate font-semibold transition-colors"
+                className="text-headline text-label hover:text-tint truncate transition-colors"
               >
                 {company.name}
               </Link>
@@ -244,29 +244,27 @@ function CompanyRow({
       <Card variant="well" padding="sm" className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Revenue</span>
-          <span className="text-label font-mono font-medium">
+          <span className="text-label font-medium">
             {formatSovereigns(company.lastTickRevenue)}
           </span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Operating and interest expenses</span>
-          <span className="text-label font-mono font-medium">
+          <span className="text-label font-medium">
             -{formatSovereigns(company.lastTickExpenses)}
           </span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Corporate tax</span>
-          <span className="text-label font-mono font-medium">
-            -{formatSovereigns(company.lastTickTax)}
-          </span>
+          <span className="text-label font-medium">-{formatSovereigns(company.lastTickTax)}</span>
         </div>
         <div className="text-caption tabular-nums">
           <span className="text-label-secondary block">Net income</span>
           <span
             className={
               company.lastTickNetIncome >= 0
-                ? "text-success font-mono font-medium"
-                : "text-destructive font-mono font-medium"
+                ? "text-success font-medium"
+                : "text-destructive font-medium"
             }
           >
             {company.lastTickNetIncome >= 0 ? "+" : ""}
@@ -345,11 +343,13 @@ export function CompaniesCard({
   directoryCompanies = [],
   onSelectCompany,
   onChanged,
+  primaryAction = true,
 }: {
   overview: Overview;
   directoryCompanies?: ReadonlyArray<{ id: string; name: string; founderId: string }>;
   onSelectCompany?: (companyId: string) => void;
   onChanged: () => void;
+  primaryAction?: boolean;
 }) {
   const [chartering, setChartering] = useState(false);
   const myIds = new Set(overview.companies.map((c) => c.id));
@@ -362,13 +362,15 @@ export function CompaniesCard({
           <div className="flex items-center gap-2.5">
             <CardTitle icon={<Building />}>Companies</CardTitle>
             {overview.companies.length > 0 && (
-              <Badge variant="secondary" className="font-mono tabular-nums">
+              <Badge variant="secondary" className="tabular-nums">
                 {overview.companies.length}
               </Badge>
             )}
           </div>
           {overview.isOpen && (
-            <Pill onClick={() => setChartering(true)}>Charter a company</Pill>
+            <Pill tone={primaryAction ? "tint" : "plain"} onClick={() => setChartering(true)}>
+              Charter a company
+            </Pill>
           )}
         </div>
       </LensCard>

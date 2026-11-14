@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 
 import React, { useState } from "react";
-import { Hourglass, Trophy, Sparks as Sparkles } from "iconoir-react";
+import { Hourglass, Star, Trophy } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -38,25 +38,21 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
       {/* Shelf title */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Sparkles aria-hidden className="text-label-secondary size-4" />
+          <Star aria-hidden className="text-label-secondary size-4" />
           <h2 id="rare-showcase-title" className="text-title-3 text-label">
             Rare achievements showcase
           </h2>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-label-secondary text-footnote">
-            <span className="tabular-nums">
-              {rarestShowcase?.length || 0} / {Math.min(rarestAll?.length || 0, 9)}
-            </span>{" "}
-            displayed
+          <span className="text-label-secondary text-footnote tabular-nums">
+            {rarestShowcase?.length || 0} of {Math.min(rarestAll?.length || 0, 9)} displayed
           </span>
 
           {(rarestAll?.length || 0) > 3 && (
             <Button
               variant="secondary"
               size="sm"
-              className="rounded-full"
               aria-expanded={showAll}
               onClick={() => setShowAll(!showAll)}
             >
@@ -120,10 +116,12 @@ export function ShowcaseTab({ achievements }: ShowcaseTabProps) {
                         </Badge>
                       )}
                     </div>
-                    <span className="text-label-secondary text-footnote tabular-nums">
-                      {achievement.globalUnlockPercent !== undefined
-                        ? `${achievement.globalUnlockPercent}% unlocked`
-                        : "Rare unlock"}
+                    <span className="text-label-secondary text-footnote">
+                      {(achievement.globalUnlockPercent ?? 100) < 5
+                        ? "Ultra-rare unlock"
+                        : (achievement.globalUnlockPercent ?? 100) < 20
+                          ? "Rare unlock"
+                          : "Earned"}
                     </span>
                   </div>
 

@@ -149,12 +149,15 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
 
   return (
     <div className="space-y-4">
-      <SectionTabBar
-        tabs={TABS}
-        activeTab={activeTab}
-        onChange={setActiveTab}
-        aria-label="Defense sections"
-      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-title-3 text-label">Defense</h2>
+        <SectionTabBar
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          aria-label="Defense sections"
+        />
+      </div>
 
       {activeTab === "overview" && <OverviewPanel countryId={countryId} />}
       {activeTab === "policy" && <PolicyPanel countryId={countryId} />}

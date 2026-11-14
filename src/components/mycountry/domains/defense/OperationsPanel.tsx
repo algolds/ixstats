@@ -25,7 +25,7 @@ export function OperationsPanel({ countryId }: OperationsPanelProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Swords aria-hidden="true" className="text-red h-4 w-4" />
+          <Swords aria-hidden="true" className="text-label-secondary h-4 w-4" />
           <h3 className="text-label text-headline">Military operations</h3>
         </div>
         {canEdit && <DeploymentWizard countryId={countryId} onSuccess={handleOperationCreated} />}

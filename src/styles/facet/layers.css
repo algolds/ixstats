@@ -76,6 +76,34 @@
   }
 }
 
+/* 3b · Subtler Chrome for dense full-bleed editors (Map Editor, Atlas Studio): thinner frost,
+   quieter blur and saturation, lighter hairline and softer shadow than facet-chrome, while keeping
+   secondary labels vibrant over any map backdrop and going opaque under Reduce Transparency and
+   Increase Contrast. */
+@utility facet-chrome-subtle {
+  --color-label-secondary: var(--color-label-vibrant-secondary);
+  background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
+  border: 1px solid color-mix(in srgb, var(--color-label) 7%, transparent);
+  --tw-shadow: var(--shadow-card);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @variant transparency-reduced {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface);
+    border-color: var(--color-separator-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* 4 · Dialogs, sheets, popovers, menus and tooltips. Dialogs and sheets sit over a scrim;
    popovers, menus and tooltips float without one. */
 @utility facet-overlay {

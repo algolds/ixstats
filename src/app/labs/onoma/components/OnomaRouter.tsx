@@ -44,7 +44,7 @@ function OnomaRouter() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="bg-grouped text-label min-h-screen px-4 py-4 antialiased sm:px-6 sm:py-6">
+    <div className="text-label min-h-screen px-4 py-4 antialiased sm:px-6 sm:py-6">
       {fontLink && <link rel="stylesheet" href={fontLink} />}
       <div className="mx-auto max-w-7xl space-y-5">
         <OnomaHeader
@@ -62,7 +62,7 @@ function OnomaRouter() {
           onNavigateExplore={handleNavigateExplore}
         />
 
-        <Card padding="lg" className="relative overflow-hidden">
+        <Card padding="lg" className="overflow-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`${activeSection}-${activeSection === "studio" ? activeSubTab : activeSection === "explore" ? activeExploreSubTab : ""}`}

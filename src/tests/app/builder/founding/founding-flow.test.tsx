@@ -88,6 +88,9 @@ jest.mock("~/trpc/react", () => ({
       searchWiki: { useMutation: () => ({ mutateAsync: jest.fn() }) },
       parseInfobox: { useMutation: () => ({ mutateAsync: jest.fn() }) },
     },
+    wikios: {
+      iiwikiAvailability: { useQuery: () => ({ data: undefined }) },
+    },
   },
 }));
 

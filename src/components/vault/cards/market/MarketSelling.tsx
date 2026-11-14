@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Cart, Shop, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { useAuctionBid } from "~/hooks/marketplace/useAuctionBid";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
@@ -19,13 +20,10 @@ import {
   type BidActions,
   type BidTarget,
 } from "./AuctionRow";
-import { CreateAuctionModal } from "./CreateAuctionModal";
 import { MyListings } from "./MyListings";
 
 interface MarketSellingProps {
-  /** `?sell=<ownershipId>` from a card's sheet: open the auction form with that copy. */
-  sellOwnershipId: string | null;
-  onSellHandled: () => void;
+  onSell: () => void;
   onOpenCard: (cardId: string) => void;
 }
 
@@ -118,8 +116,7 @@ function BidRow({
 }
 
 /** Selling: the player's fixed-price listings, then their auctions, then the auctions they bid on. */
-export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: MarketSellingProps) {
-  const [selling, setSelling] = useState(false);
+export function MarketSelling({ onSell, onOpenCard }: MarketSellingProps) {
   const refreshCards = useCardsRefresh();
   const listings = api.cardMarket.getMyActiveAuctions.useQuery();
   const bids = api.cardMarket.getMyActiveBids.useQuery();
@@ -139,20 +136,40 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
     <div className="space-y-8">
       <MyListings />
       <section aria-labelledby="selling-auctions" className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h3 id="selling-auctions" className="text-headline">
-            Your auctions
-          </h3>
-          <Button size="sm" onClick={() => setSelling(true)}>
-            Sell a card
-          </Button>
-        </div>
-        {mine.length === 0 ? (
-          <EmptyState
-            compact
-            title="You have no auctions running"
-            message="Sell a card at auction here, or from its sheet."
-          />
+        <h3 id="selling-auctions" className="text-headline">
+          Your auctions
+        </h3>
+        {listings.isLoading ? (
+          <Skeleton className="rounded-card h-24" />
+        ) : listings.isError && !listings.data ? (
+          <Card>
+            <EmptyState
+              compact
+              role="alert"
+              icon={<WarningCircle />}
+              title="Your auctions did not load"
+              message="Try loading your running auctions again."
+              action={
+                <Button variant="secondary" onClick={() => void listings.refetch()}>
+                  Try again
+                </Button>
+              }
+            />
+          </Card>
+        ) : mine.length === 0 ? (
+          <Card>
+            <EmptyState
+              compact
+              icon={<Shop />}
+              title="You have no auctions running"
+              message="Sell a card at auction, or from its sheet."
+              action={
+                <Button variant="secondary" size="sm" onClick={onSell}>
+                  Sell a card
+                </Button>
+              }
+            />
+          </Card>
         ) : (
           <Card content="data">
             <ul className="divide-separator divide-y">
@@ -173,12 +190,32 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
         <h3 id="selling-bids" className="text-headline">
           Your bids
         </h3>
-        {bidding.length === 0 ? (
-          <EmptyState
-            compact
-            title="No bids running"
-            message="Auctions you bid on appear here until they end."
-          />
+        {bids.isLoading ? (
+          <Skeleton className="rounded-card h-24" />
+        ) : bids.isError && !bids.data ? (
+          <Card>
+            <EmptyState
+              compact
+              role="alert"
+              icon={<WarningCircle />}
+              title="Your bids did not load"
+              message="Try loading your active bids again."
+              action={
+                <Button variant="secondary" onClick={() => void bids.refetch()}>
+                  Try again
+                </Button>
+              }
+            />
+          </Card>
+        ) : bidding.length === 0 ? (
+          <Card>
+            <EmptyState
+              compact
+              icon={<Cart />}
+              title="No bids running"
+              message="Auctions you bid on appear here until they end."
+            />
+          </Card>
         ) : (
           <Card content="data">
             <ul className="divide-separator divide-y">
@@ -196,15 +233,6 @@ export function MarketSelling({ sellOwnershipId, onSellHandled, onOpenCard }: Ma
           </Card>
         )}
       </section>
-      <CreateAuctionModal
-        key={sellOwnershipId ?? "new"}
-        open={selling || sellOwnershipId !== null}
-        initialOwnershipId={sellOwnershipId}
-        onClose={() => {
-          setSelling(false);
-          onSellHandled();
-        }}
-      />
     </div>
   );
 }

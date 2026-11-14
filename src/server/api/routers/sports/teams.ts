@@ -12,6 +12,20 @@ import { isSystemOwner } from "~/lib/auth";
 import { countStorePurchases } from "~/lib/vault/store-purchases";
 import { assertSportsEconomyOpen, MAX_LEAGUE_TEAMS } from "~/server/api/routers/sports/_shared";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
+import { toWikiSlug } from "~/lib/sports/league-wiki";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
+
+function normalizeTeamWikiWrite(
+  input: { wikiSlug?: string | null; wikiSource?: string | null },
+  existing: { wikiSlug: string | null; wikiSource?: string | null }
+): { wikiSlug?: string | null; wikiSource?: string | null } {
+  if (input.wikiSlug === undefined && input.wikiSource === undefined) return {};
+  const nextSlug = input.wikiSlug !== undefined ? toWikiSlug(input.wikiSlug) : existing.wikiSlug;
+  return {
+    ...(input.wikiSlug !== undefined ? { wikiSlug: nextSlug } : {}),
+    wikiSource: nextSlug ? (input.wikiSource ?? existing.wikiSource ?? "ixwiki") : null,
+  };
+}
 
 /** One team's changes in a bulk edit: `updateTeam`'s fields plus the short name, without the images. */
 const TeamPatch = z.object({
@@ -21,6 +35,7 @@ const TeamPatch = z.object({
   color: z.string().optional(),
   nationId: z.string().nullable().optional(),
   wikiSlug: z.string().max(500).nullable().optional(),
+  wikiSource: wikiSourceSchema.nullable().optional(),
 });
 
 export const sportsTeamsRouter = createTRPCRouter({
@@ -66,11 +81,12 @@ export const sportsTeamsRouter = createTRPCRouter({
         logo: z.string().nullable().optional(),
         coverImage: z.string().nullable().optional(),
         wikiSlug: z.string().max(500).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { id, ...data } = input;
+        const { id, wikiSlug, wikiSource, ...data } = input;
 
         const team = await ctx.db.sportTeam.findUnique({
           where: { id },
@@ -88,7 +104,13 @@ export const sportsTeamsRouter = createTRPCRouter({
           throw new TRPCError({ code: "FORBIDDEN", message: "You do not manage this team" });
         }
 
-        return ctx.db.sportTeam.update({ where: { id }, data });
+        return ctx.db.sportTeam.update({
+          where: { id },
+          data: {
+            ...data,
+            ...normalizeTeamWikiWrite({ wikiSlug, wikiSource }, team),
+          },
+        });
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
@@ -125,7 +147,7 @@ export const sportsTeamsRouter = createTRPCRouter({
       return ctx.db.$transaction(async (tx) => {
         const inLeague = await tx.sportTeam.findMany({
           where: { id: { in: ids }, leagueId: input.leagueId },
-          select: { id: true },
+          select: { id: true, wikiSlug: true, wikiSource: true },
         });
         if (inLeague.length !== ids.length) {
           throw new TRPCError({
@@ -133,8 +155,16 @@ export const sportsTeamsRouter = createTRPCRouter({
             message: "Every team must belong to this league",
           });
         }
-        for (const { id, ...data } of input.teams) {
-          await tx.sportTeam.update({ where: { id }, data });
+        const byId = new Map(inLeague.map((t) => [t.id, t]));
+        for (const { id, wikiSlug, wikiSource, ...data } of input.teams) {
+          const existing = byId.get(id)!;
+          await tx.sportTeam.update({
+            where: { id },
+            data: {
+              ...data,
+              ...normalizeTeamWikiWrite({ wikiSlug, wikiSource }, existing),
+            },
+          });
         }
         return { updated: input.teams.length };
       });

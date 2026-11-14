@@ -135,11 +135,11 @@ export const EXCHANGE_TYPES = {
 // Exchange status configurations. Status is semantic, so it keeps a status colour.
 export const STATUS_STYLES = {
   planning: {
-    color: "text-yellow",
+    color: "text-warning",
     label: "Planning",
   },
   active: {
-    color: "text-green",
+    color: "text-success",
     label: "Live",
   },
   completed: {

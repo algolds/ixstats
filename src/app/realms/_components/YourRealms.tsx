@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import Link from "next/link";
 import type { RouterOutputs } from "~/trpc/react";
 import { realmBoardHref } from "~/lib/thinkpages-forum/links";
@@ -54,8 +55,8 @@ function YourRealmRow({
       <ul className="flex flex-col gap-2" aria-label={`Your nations in ${realm.name}`}>
         {realm.nations.map((nation) => (
           <li key={nation.id} className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/countries/${nation.slug ?? nation.id}`}
+            <CountryLink
+              country={{ id: nation.id, slug: nation.slug, name: nation.name }}
               className="text-label text-body flex min-w-0 flex-1 items-center gap-2 hover:underline"
             >
               {nation.flag && (
@@ -66,7 +67,7 @@ function YourRealmRow({
                 />
               )}
               <span className="truncate">{nation.name}</span>
-            </Link>
+            </CountryLink>
             <PlayAsNation
               countryId={nation.id}
               countryName={nation.name}

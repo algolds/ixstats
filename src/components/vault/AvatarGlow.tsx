@@ -20,7 +20,7 @@ export function AvatarGlow({
     return (
       <div
         className={cn(
-          "relative flex shrink-0 items-center justify-center border border-white/20",
+          "border-separator relative flex shrink-0 items-center justify-center border",
           roundedClass,
           className
         )}
@@ -40,11 +40,11 @@ export function AvatarGlow({
         "relative flex shrink-0 items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
         roundedClass,
         isSummer &&
-          "animate-[pulse_1.5s_infinite] border-2 border-orange-500 shadow-[0_0_15px_#f97316]",
+          "border-orange animate-[pulse_1.5s_infinite] border-2 shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange)_55%,transparent)]",
         isEmerald &&
-          "animate-[pulse_2s_infinite] border-2 border-emerald-500 shadow-[0_0_15px_#10b981]",
+          "border-green animate-[pulse_2s_infinite] border-2 shadow-[0_0_15px_color-mix(in_srgb,var(--color-green)_55%,transparent)]",
         isImperial &&
-          "animate-[pulse_2.5s_infinite] border-2 border-amber-500 shadow-[0_0_20px_#eab308]",
+          "border-yellow animate-[pulse_2.5s_infinite] border-2 shadow-[0_0_20px_color-mix(in_srgb,var(--color-yellow)_55%,transparent)]",
         !isSummer && !isEmerald && !isImperial && "border",
         className
       )}
@@ -68,11 +68,11 @@ export function AvatarGlow({
       {/* Background radial aura ring */}
       <span
         className={cn(
-          "absolute inset-0 -z-10 animate-ping opacity-25",
+          "absolute inset-0 -z-10 animate-[pulse_2s_infinite] opacity-25",
           roundedClass,
-          isSummer && "bg-orange-500",
-          isEmerald && "bg-emerald-500",
-          isImperial && "bg-amber-500"
+          isSummer && "bg-orange",
+          isEmerald && "bg-green",
+          isImperial && "bg-yellow"
         )}
         style={{
           animationDuration: isSummer ? "1.5s" : isEmerald ? "2s" : "2.5s",

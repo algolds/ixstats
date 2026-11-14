@@ -76,7 +76,7 @@ function CollapsibleSection({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div className="border-separator rounded-control border">
+    <Card variant="well" padding="none">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -99,7 +99,7 @@ function CollapsibleSection({
         )}
       </button>
       {isOpen && <div className="px-3 pb-3">{children}</div>}
-    </div>
+    </Card>
   );
 }
 
@@ -203,7 +203,7 @@ function ProjectedEffects({ effects }: { effects: PolicyEffects }) {
     ["Tax revenue", signedPct(effects.taxRevenueEffect)],
   ];
   return (
-    <div className="bg-surface-secondary rounded-row space-y-3 p-4">
+    <Card variant="well" padding="md" className="space-y-3">
       <h4 className="text-footnote text-label-secondary flex items-center gap-2 font-medium">
         <Sliders aria-hidden className="h-3.5 w-3.5" />
         Projected effects
@@ -216,7 +216,7 @@ function ProjectedEffects({ effects }: { effects: PolicyEffects }) {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -269,7 +269,7 @@ export function PolicyCreatorSheet({
     if (currentTemplate) {
       setFormTitle(currentTemplate.name);
       setFormDescription(currentTemplate.description);
-      setFormType(currentTemplate.policyType as any);
+      setFormType(currentTemplate.policyType as typeof formType);
       setFormCategory(currentTemplate.category);
       setFormObjectives("");
       const initialSliders: Record<string, number> = {};
@@ -441,7 +441,7 @@ export function PolicyCreatorSheet({
 
             {!isTemplate && (
               <>
-                <div className="bg-surface-secondary rounded-row space-y-2 p-4">
+                <Card variant="well" padding="md" className="space-y-2">
                   <p className="text-footnote text-label-secondary font-medium">Estimated costs</p>
                   <div className="text-footnote grid grid-cols-2 gap-3">
                     {[
@@ -456,7 +456,7 @@ export function PolicyCreatorSheet({
                       </div>
                     ))}
                   </div>
-                </div>
+                </Card>
 
                 <PolicyTargetMetrics metrics={targetMetrics} onChange={setTargetMetrics} />
 

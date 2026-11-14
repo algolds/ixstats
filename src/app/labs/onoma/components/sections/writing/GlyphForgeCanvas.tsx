@@ -351,7 +351,7 @@ export function GlyphForgeCanvas({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-label text-footnote font-semibold">
+              <h4 className="text-label text-footnote font-medium">
                 {editingGlyph ? `Refining ⟨${editingGlyph.phoneme}⟩` : "Glyph Designer"}
               </h4>
               {strokes.length > 0 && (
@@ -568,7 +568,7 @@ export function GlyphForgeCanvas({
                 x="3"
                 y="90"
                 fontSize="6.5"
-                className="fill-tint font-mono font-semibold opacity-60 select-none"
+                className="fill-tint font-mono font-medium opacity-60 select-none"
               >
                 base 92
               </text>
@@ -644,7 +644,7 @@ export function GlyphForgeCanvas({
       </div>
 
       {/* 3. Docked Apple-Style Unified Tool Inspector */}
-      <div className="border-separator bg-fill-4 rounded-row flex items-center justify-between gap-2 border p-1">
+      <Card padding="none" className="flex items-center justify-between gap-2 p-1">
         <ToggleGroup
           type="single"
           size="sm"
@@ -715,7 +715,7 @@ export function GlyphForgeCanvas({
           <Shapes className="h-3 w-3" />
           <span>Stamps</span>
         </Toggle>
-      </div>
+      </Card>
 
       <AnimatePresence>
         {showStampDrawer && (
@@ -727,7 +727,7 @@ export function GlyphForgeCanvas({
             className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-label-secondary text-eyebrow">Geometric shapes</span>
+              <span className="text-label-secondary text-caption">Geometric shapes</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -786,7 +786,7 @@ export function GlyphForgeCanvas({
               onPressedChange={setShowIpaDrawer}
               title="Insert IPA symbol"
               aria-label="IPA symbols"
-              className="text-caption absolute top-1/2 right-1 h-6 min-w-0 -translate-y-1/2 px-2 font-semibold"
+              className="text-caption absolute top-1/2 right-1 h-6 min-w-0 -translate-y-1/2 px-2 font-medium"
             >
               IPA
             </Toggle>

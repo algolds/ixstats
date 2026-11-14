@@ -12,12 +12,14 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Progress } from "~/components/ui/progress";
 
 interface PowerBrokersPanelProps {
   countryId: string;
 }
 
-const BROKER_ICONS: Record<string, React.ComponentType<any>> = {
+const BROKER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   technocrats: Compass,
   party: Users2,
   generals: Shield,
@@ -59,13 +61,14 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
       </div>
 
       {activeBrokers.length === 0 ? (
-        <div className="text-label-secondary rounded-control border-separator text-footnote flex flex-col items-center justify-center border border-dashed py-8 text-center">
-          <AlertCircle className="mb-2 h-6 w-6 opacity-30" />
-          No power brokers are active.
-          <span className="text-footnote mt-1 opacity-75">
-            Add government components in the editor to bring in interest groups.
-          </span>
-        </div>
+        <Card>
+          <EmptyState
+            compact
+            icon={<AlertCircle />}
+            title="No power brokers are active"
+            message="Add government components in the editor to bring in interest groups."
+          />
+        </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {activeBrokers.map((broker) => {
@@ -80,8 +83,9 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
             return (
               <Card
                 key={broker.id}
-                className={`hover:border-separator flex flex-col justify-between border p-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
-                  broker.satisfied ? "border-green/25 bg-green/5" : "border-separator"
+                padding="md"
+                className={`flex flex-col justify-between ${
+                  broker.satisfied ? "border-success/25 bg-success/5" : ""
                 }`}
               >
                 <div className="space-y-2">
@@ -106,18 +110,16 @@ export function PowerBrokersPanel({ countryId }: PowerBrokersPanelProps) {
                   <div className="space-y-1">
                     <div className="text-label-secondary text-caption flex justify-between">
                       <span>Favored budget allocation</span>
-                      <span>
+                      <span className="tabular-nums">
                         {broker.currentSpend}% / {broker.requiredSpend}%
                       </span>
                     </div>
-                    <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
-                      <div
-                        className={`h-full transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ${
-                          broker.satisfied ? "bg-green" : "bg-yellow"
-                        }`}
-                        style={{ width: `${percent}%` }}
-                      />
-                    </div>
+                    <Progress
+                      value={percent}
+                      tone={broker.satisfied ? "success" : "warning"}
+                      className="h-1.5"
+                      aria-label={`${broker.name} budget allocation`}
+                    />
                   </div>
 
                   <div className="border-separator border-t pt-2">

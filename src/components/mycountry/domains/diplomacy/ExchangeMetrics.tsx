@@ -1,5 +1,6 @@
 "use client";
 
+import { levelWord } from "~/lib/qualitative-rating";
 import React from "react";
 import { Card } from "~/components/ui/card";
 
@@ -19,7 +20,7 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
     { label: "Currently active", value: String(metrics.activeExchanges) },
     { label: "Completed", value: String(metrics.completedExchanges) },
     { label: "Participants", value: String(metrics.totalParticipants) },
-    { label: "Cultural impact", value: `${metrics.avgCulturalImpact}%` },
+    { label: "Cultural impact", value: levelWord(metrics.avgCulturalImpact) },
   ];
   return (
     <Card className="rounded-card p-4">

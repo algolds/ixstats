@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { cn } from "~/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { SPORTS_ABBREVIATIONS } from "~/lib/sports/presets";
+import { SPORT_LABELS } from "~/lib/sports/theming";
 import { Card } from "~/components/ui/card";
 
 interface LineupPlayer {
@@ -96,16 +97,11 @@ export function TeamLineup({
   }, [players]);
 
   return (
-    <Card
-      className={cn(
-        "border-separator bg-surface rounded-sheet shadow-floating mx-auto w-full max-w-[550px] overflow-hidden border p-6",
-        className
-      )}
-    >
+    <Card className={cn("mx-auto w-full max-w-[550px] overflow-hidden p-4 md:p-6", className)}>
       <div className="mb-4 text-center">
-        <h3 className="text-label text-title-3 leading-none">{teamName} Lineup</h3>
-        <span className="text-label-secondary text-eyebrow mt-1 inline-block">
-          Active Formation • {sportPreset}
+        <h3 className="text-label text-title-3 leading-none">{teamName} lineup</h3>
+        <span className="text-label-secondary text-caption mt-1 inline-block">
+          Starting formation · {SPORT_LABELS[sportPreset] ?? sportPreset}
         </span>
       </div>
 
@@ -158,7 +154,7 @@ export function TeamLineup({
 
                         {/* Rating Overlay Badge */}
                         <div className="border-separator bg-surface text-caption text-label absolute -top-2 -right-2 flex min-h-5 min-w-5 items-center justify-center rounded-full border px-0.5 font-semibold tabular-nums">
-                          {player.overallRating ?? "—"}
+                          {player.overallRating ?? "–"}
                         </div>
                       </div>
 
@@ -173,14 +169,14 @@ export function TeamLineup({
                     <div className="text-label text-footnote leading-tight font-semibold">
                       {player.firstName} {player.lastName}
                     </div>
-                    <div className="text-label-secondary text-eyebrow mt-0.5">
+                    <div className="text-label-secondary text-caption mt-0.5">
                       {SPORTS_ABBREVIATIONS[player.position] || player.position} #
                       {player.number ?? "--"}
                     </div>
                     <div className="border-separator text-footnote mt-2 flex items-center justify-between border-t pt-2">
                       <span className="text-label-secondary font-semibold">RATING:</span>
                       <span className="text-green font-semibold tabular-nums">
-                        {player.overallRating ?? "—"} overall
+                        {player.overallRating ?? "–"} overall
                       </span>
                     </div>
                   </TooltipContent>

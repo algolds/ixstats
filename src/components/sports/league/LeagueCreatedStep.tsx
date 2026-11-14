@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import { Undo as RotateCcw } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { springSmooth } from "~/lib/design/motion";
+import { springSmooth, springGentle } from "~/lib/design/motion";
 import { stepVariants } from "./league-creator-config";
 
 interface LeagueCreatedStepProps {
@@ -32,9 +32,9 @@ export function LeagueCreatedStep({
     >
       <div className="flex flex-col items-center justify-center py-6 text-center">
         <motion.div
-          initial={{ scale: 0, rotate: -10 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={springGentle}
           className="bg-tint-fill mb-4 flex h-16 w-16 items-center justify-center rounded-full"
         >
           <span className="text-large-title">{icon}</span>

@@ -27,6 +27,7 @@ import { nationHref } from "~/lib/exchange/routes";
 import { assetUrl } from "~/lib/base-path";
 import type { CompanyPage as CompanyPageData } from "~/lib/exchange/terminal";
 import { cn } from "~/lib/utils";
+import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { CreditRatingBadge, StatusBadge, readCompanyWikiData } from "../shared";
 import {
   ChangeLabel,
@@ -73,11 +74,11 @@ function OrderBook({ book }: { book: CompanyPageData["orderBook"] }) {
     tone: "bid" | "ask"
   ) => (
     <div className="space-y-1.5">
-      <p className="text-footnote text-label-secondary font-semibold">{title}</p>
+      <p className="text-subhead text-label-secondary">{title}</p>
       {rows.length === 0 ? (
         <p className="text-footnote text-label-secondary">{empty}</p>
       ) : (
-        <ul className="space-y-1 text-footnote font-mono tabular-nums">
+        <ul className="text-footnote space-y-1 tabular-nums">
           {rows.map((r) => {
             const widthPct = Math.max(8, Math.round((r.shares / maxShares) * 100));
             return (
@@ -95,7 +96,7 @@ function OrderBook({ book }: { book: CompanyPageData["orderBook"] }) {
                 />
                 <span
                   className={cn(
-                    "relative font-semibold",
+                    "relative font-medium",
                     tone === "bid" ? "text-success" : "text-destructive"
                   )}
                 >
@@ -187,7 +188,7 @@ function Header({ data }: { data: CompanyPageData }) {
         description={`${c.subIndustryLabel} · ${c.sectorLabel}`}
         facts={
           <span className="flex flex-wrap items-center gap-2">
-            <span className="bg-tint-fill text-tint rounded-control px-1.5 py-0.5 font-mono text-caption font-semibold tabular-nums">
+            <span className="bg-tint-fill text-tint-ink rounded-control font-data text-caption px-1.5 py-0.5 tabular-nums">
               {c.ticker}
             </span>
             {data.hq && (
@@ -229,7 +230,10 @@ function Lore({ data }: { data: CompanyPageData }) {
     <div className="border-separator space-y-2 border-t pt-3.5">
       <SectionTitle icon={<BookStack />}>From the wiki</SectionTitle>
       <p className="text-body">{wiki.summary}</p>
-      <Link href={`/wiki/${encodeURIComponent(wiki.wikiSlug)}`} className="text-footnote text-tint">
+      <Link
+        href={wikiReaderPath(wiki.wikiSlug, wiki.wikiSource)}
+        className="text-footnote text-tint"
+      >
         Read {wiki.pageTitle}
       </Link>
     </div>
@@ -238,16 +242,28 @@ function Lore({ data }: { data: CompanyPageData }) {
 
 /** One company: who it is, its price, its numbers, its owners, its filings, its votes and its news. */
 export function CompanyPage({ companyId }: { companyId: string }) {
-  const { data, isLoading, error } = api.exchange.companyPage.useQuery({ companyId });
+  const { data, isLoading, error, refetch } = api.exchange.companyPage.useQuery({ companyId });
   const [advanced, setAdvanced] = useState(false);
   const [range, setRange] = useState<Range>("1M");
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (!data)
     return (
-      <EmptyState
-        title="Company not found"
-        message={error?.message ?? "It may have been delisted."}
-      />
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role={error ? "alert" : undefined}
+          compact
+          icon={<Building />}
+          title="Company not found"
+          message={error?.message ?? "It may have been delisted."}
+          action={
+            error ? (
+              <Button size="sm" variant="secondary" onClick={() => void refetch?.()}>
+                Try again
+              </Button>
+            ) : undefined
+          }
+        />
+      </LensCard>
     );
   const c = data.company;
   const m = data.metrics;
@@ -259,7 +275,12 @@ export function CompanyPage({ companyId }: { companyId: string }) {
       <Header data={data} />
       <div className="grid items-start gap-4 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-8">
-          <LensCard app="exchange" content="visualization" padding="none" className="overflow-hidden">
+          <LensCard
+            app="exchange"
+            content="visualization"
+            padding="none"
+            className="overflow-hidden"
+          >
             <div className="space-y-4 p-5 md:p-6">
               <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
                 <div>
@@ -292,7 +313,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
                 >
                   <NavArrowRight
                     className={cn(
-                      "transition-transform duration-fast ease-out-facet",
+                      "duration-fast ease-out-facet transition-transform",
                       advanced && "rotate-90"
                     )}
                     aria-hidden
@@ -300,9 +321,13 @@ export function CompanyPage({ companyId }: { companyId: string }) {
                   Advanced: order book
                 </Button>
                 {(bestBid !== null || bestAsk !== null) && (
-                  <div className="text-caption text-label-secondary flex flex-wrap items-center gap-3 font-mono tabular-nums">
-                    <span>Best bid {bestBid !== null ? `₷${formatSovereignFigure(bestBid)}` : "–"}</span>
-                    <span>Best ask {bestAsk !== null ? `₷${formatSovereignFigure(bestAsk)}` : "–"}</span>
+                  <div className="text-caption text-label-secondary flex flex-wrap items-center gap-3 tabular-nums">
+                    <span>
+                      Best bid {bestBid !== null ? `₷${formatSovereignFigure(bestBid)}` : "–"}
+                    </span>
+                    <span>
+                      Best ask {bestAsk !== null ? `₷${formatSovereignFigure(bestAsk)}` : "–"}
+                    </span>
                   </div>
                 )}
               </div>
@@ -346,9 +371,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
               {data.shareholders.map((s, i) => (
                 <li key={i} data-row className={DATA_ROW_ITEM}>
                   <span className="font-medium">{s.label}</span>
-                  <span className="font-mono font-semibold tabular-nums">
-                    {(s.stake * 100).toFixed(1)}%
-                  </span>
+                  <span className="text-headline tabular-nums">{(s.stake * 100).toFixed(1)}%</span>
                 </li>
               ))}
             </ul>
@@ -363,7 +386,7 @@ export function CompanyPage({ companyId }: { companyId: string }) {
                 {data.dividends.map((d) => (
                   <li key={d.id} data-row className={DATA_ROW_ITEM}>
                     <span>Dividend</span>
-                    <span className="font-mono font-semibold tabular-nums">{sov(d.amount)}</span>
+                    <span className="text-headline tabular-nums">{sov(d.amount)}</span>
                   </li>
                 ))}
                 {data.decisions.map((d) => (

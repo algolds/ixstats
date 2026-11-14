@@ -30,6 +30,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "~/components/ui/dialog";
+import { WikiSourcePicker } from "~/components/wiki-os/shared/WikiSourcePicker";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+import { WIKI_SOURCE_IDS, wikiSourceOptions } from "~/lib/wiki-os/wiki-source-availability";
+
+const STATIC_WIKI_OPTIONS = wikiSourceOptions(WIKI_SOURCE_IDS, undefined, "reader");
 
 interface TeamSettingsModalProps {
   team: {
@@ -39,6 +44,7 @@ interface TeamSettingsModalProps {
     coverImage?: string | null;
     color: string;
     wikiSlug?: string | null;
+    wikiSource?: string | null;
   };
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -61,7 +67,14 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
   const [logoUrl, setLogoUrl] = useState(team.logo ?? "");
   const [coverUrl, setCoverUrl] = useState(team.coverImage ?? "");
   const [color, setColor] = useState(team.color);
-  const [wikiSlug, setWikiSlug] = useState(team.wikiSlug ?? "");
+  const [wikiLink, setWikiLink] = useState<{ slug: string; source: WikiSource }>(() => ({
+    slug: team.wikiSlug ?? "",
+    source: parseWikiSource(team.wikiSource),
+  }));
+  const wikiSlug = wikiLink.slug;
+  const wikiSource = wikiLink.source;
+  const setWikiSlug = (slug: string) => setWikiLink((prev) => ({ ...prev, slug }));
+  const setWikiSource = (source: WikiSource) => setWikiLink((prev) => ({ ...prev, source }));
   const [isUploading, setIsUploading] = useState(false);
   const [uploadingType, setUploadingType] = useState<"logo" | "cover">("logo");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>(NO_UPLOADS);
@@ -77,7 +90,10 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
       setLogoUrl(seed.logo ?? "");
       setCoverUrl(seed.coverImage ?? "");
       setColor(seed.color);
-      setWikiSlug(seed.wikiSlug ?? "");
+      setWikiLink({
+        slug: seed.wikiSlug ?? "",
+        source: parseWikiSource(seed.wikiSource),
+      });
       setUploadedFiles(NO_UPLOADS);
     }
   }
@@ -159,6 +175,7 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
       logo: logoUrl || null,
       coverImage: coverUrl || null,
       wikiSlug: wikiSlug.trim() || null,
+      wikiSource: wikiSlug.trim() ? wikiSource : null,
     });
   };
 
@@ -214,6 +231,12 @@ export function TeamSettingsModal({ team, open, onOpenChange, onSaved }: TeamSet
 
           <div className="space-y-2">
             <Label htmlFor="team-wiki-slug">Wiki article slug</Label>
+            <WikiSourcePicker
+              size="sm"
+              value={wikiSource}
+              onValueChange={setWikiSource}
+              options={STATIC_WIKI_OPTIONS}
+            />
             <Input
               id="team-wiki-slug"
               value={wikiSlug}

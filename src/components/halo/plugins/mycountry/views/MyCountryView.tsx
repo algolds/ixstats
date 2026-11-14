@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
 import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState } from "react";
 import {
@@ -76,6 +77,8 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
         popGrowth: asPercent(country.populationGrowthRate),
       }
     : null;
+
+  const openCountryActions = useOpenCountryActions();
 
   const handleNavigate = (path: string) => {
     onClose();
@@ -226,10 +229,15 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             <div className="rounded-control relative -mx-1 px-1 py-2">
               <button
                 type="button"
-                onClick={() =>
-                  userProfile.country &&
-                  (window.location.href = createAbsoluteUrl(getNationUrl(userProfile.country.name)))
-                }
+                onClick={() => {
+                  if (!userProfile.country) return;
+                  // Your nation's actions sheet (Manage mode), as every country link opens.
+                  onClose();
+                  openCountryActions({
+                    id: userProfile.countryId ?? undefined,
+                    name: userProfile.country.name,
+                  });
+                }}
                 className="hover:bg-fill-4 rounded-control focus-visible:outline-tint flex w-full items-center gap-3 p-1 text-left transition-colors focus-visible:outline-2"
               >
                 <div className="rounded-control flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden">

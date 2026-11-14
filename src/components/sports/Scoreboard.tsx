@@ -57,7 +57,7 @@ function TeamRow({
         <div className="text-label min-w-0">
           <div className="text-headline truncate">{team.name}</div>
           {team.city && (
-            <div className="text-label-secondary text-eyebrow mt-0.5 leading-none">{team.city}</div>
+            <div className="text-label-secondary text-caption mt-0.5 leading-none">{team.city}</div>
           )}
         </div>
       </Button>
@@ -80,16 +80,11 @@ export function Scoreboard({
   className,
 }: ScoreboardProps) {
   const isCompleted = status === "completed";
-  const homeColor = homeTeam.color ?? "#3b82f6";
-  const awayColor = awayTeam.color ?? "#ef4444";
+  const homeColor = homeTeam.color ?? "var(--color-blue)";
+  const awayColor = awayTeam.color ?? "var(--color-red)";
 
   return (
-    <Card
-      className={cn(
-        "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full max-w-[360px] overflow-hidden border",
-        className
-      )}
-    >
+    <Card className={cn("mx-auto w-full max-w-[360px] overflow-hidden", className)}>
       <div className="p-6">
         <div className="flex flex-col gap-4">
           <TeamRow
@@ -102,7 +97,7 @@ export function Scoreboard({
 
           <div className="flex items-center gap-2">
             <div className="bg-border/40 h-[1px] flex-1"></div>
-            <span className="text-label-tertiary text-eyebrow flex items-center gap-1">
+            <span className="text-label-tertiary text-caption flex items-center gap-1">
               <span>{title}</span>
             </span>
             <div className="bg-border/40 h-[1px] flex-1"></div>

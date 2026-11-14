@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
-import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import {
@@ -72,13 +72,15 @@ function PartyRow({
   onDelete: () => void;
 }) {
   return (
-    <div
+    <Card
+      variant="well"
+      padding="sm"
       data-focus-id={party.id}
-      className="hover:bg-fill-4 rounded-control flex items-center justify-between border p-3 transition-colors"
+      className="flex items-center justify-between"
     >
       <div className="flex items-center gap-3">
         <div
-          className="h-4 w-4 rounded-full ring-1 ring-black/10"
+          className="border-separator h-4 w-4 rounded-full border"
           style={{ backgroundColor: party.color }}
         />
         <div>
@@ -88,17 +90,15 @@ function PartyRow({
               <span className="text-label-secondary text-footnote">({party.shortName})</span>
             )}
           </div>
-          <div className="text-label-secondary text-footnote flex items-center gap-2">
-            <Badge variant="outline" className="text-footnote">
-              {ideologyLabel(party.ideology)}
-            </Badge>
-            {party.leaderName && <span>Led by {party.leaderName}</span>}
-            {!party.isActive && <span>Inactive</span>}
+          <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-1.5">
+            <span>{ideologyLabel(party.ideology)}</span>
+            {party.leaderName && <span>· Led by {party.leaderName}</span>}
+            {!party.isActive && <span>· Inactive</span>}
           </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <div className="text-right">
+        <div className="text-right tabular-nums">
           <div className="text-headline">{party.currentSupport.toFixed(1)}%</div>
           <div className="text-label-secondary text-footnote">support</div>
         </div>
@@ -117,7 +117,7 @@ function PartyRow({
               variant="ghost"
               size="sm"
               aria-label={`Delete ${party.name}`}
-              className="text-red hover:text-red h-7 w-7 p-0"
+              className="text-label-secondary hover:text-destructive h-7 w-7 p-0"
             >
               <Trash2 className="h-3 w-3" />
             </Button>
@@ -142,7 +142,7 @@ function PartyRow({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -353,9 +353,11 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
       </CardHeader>
       <CardContent>
         {parties.length === 0 ? (
-          <div className="text-label-secondary py-6 text-center">
-            <p className="text-body">No political parties yet. Use Add party to create one.</p>
-          </div>
+          <EmptyState
+            compact
+            title="No political parties yet"
+            message="Use Add party to create one."
+          />
         ) : (
           <div className="space-y-2">
             {parties.map((party) => (

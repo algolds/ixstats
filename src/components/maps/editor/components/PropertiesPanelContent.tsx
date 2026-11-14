@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo } from "react";
 import { BorderEditorPanel } from "~/components/maps/editor/BorderEditorPanel";
@@ -203,8 +202,8 @@ function MultiSelectionPanel({ editor }: { editor: MapEditorInstance }) {
   return (
     <div className="space-y-4 px-3 py-3">
       <div className="flex items-center justify-between">
-        <Eyebrow>Selection</Eyebrow>
-        <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
+        <span className="text-subhead font-semibold">Selection</span>
+        <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5 tabular-nums">
           {editor.selectedIds.size} features selected
         </span>
       </div>
@@ -234,12 +233,12 @@ function MultiSelectionPanel({ editor }: { editor: MapEditorInstance }) {
       )}
 
       <Card className="space-y-2 p-3">
-        <Eyebrow className="block">Selected items</Eyebrow>
+        <span className="text-caption text-label-secondary block font-medium">Selected items</span>
         <div className="max-h-48 space-y-1 overflow-y-auto">
           {selected.map((f: EditorFeature) => (
             <div key={f.id} className="text-footnote flex items-center justify-between">
               <span className="text-label-secondary max-w-[180px] truncate">{f.name || f.id}</span>
-              <Eyebrow>{f.type}</Eyebrow>
+              <span className="text-caption text-label-secondary capitalize">{f.type}</span>
             </div>
           ))}
         </div>
@@ -350,14 +349,24 @@ function SelectedFeatureInspector({
   const linkWikiPage = useFeatureWikiLink(editor, activeCountryId);
 
   const handleUpdate = async (updates: FeaturePropertyUpdates) => {
-    if ("wikiPageTitle" in updates) {
+    if ("wikiPageTitle" in updates || "wikiSource" in updates) {
+      const nextTitle =
+        "wikiPageTitle" in updates
+          ? ((updates.wikiPageTitle as string | null) ?? null)
+          : ((feature.properties?.wikiPageTitle as string | null) ?? null);
       await linkWikiPage(
         feature.id,
         feature.type,
-        (updates.wikiPageTitle as string | null) ?? null
+        nextTitle,
+        updates.wikiSource as string | null | undefined
       );
     }
-    await applyFeatureUpdate(editor, feature, updates, updateRouteMutation, activeCountryId);
+    const nonWikiKeys = Object.keys(updates).filter(
+      (key) => key !== "wikiPageTitle" && key !== "wikiSource"
+    );
+    if (nonWikiKeys.length > 0) {
+      await applyFeatureUpdate(editor, feature, updates, updateRouteMutation, activeCountryId);
+    }
   };
 
   return (

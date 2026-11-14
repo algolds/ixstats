@@ -36,7 +36,15 @@ interface PostureCardProps {
   onSurge: (surging: boolean) => void;
 }
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  hint,
+}: {
+  label: string;
+  children: React.ReactNode;
+  hint?: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <div className="text-subhead text-label font-medium">{label}</div>
@@ -131,7 +139,11 @@ function AlertField({ overview, reader, nowClockMs, canEdit, pending, onAlert }:
         ))}
       </RadioCardGroup>
       {choice !== policy.alertLevel && (
-        <div className="bg-fill-4 rounded-row flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <Card
+          variant="well"
+          padding="sm"
+          className="flex flex-wrap items-center justify-between gap-3"
+        >
           <p className="text-callout text-label min-w-0 flex-1" data-testid="alert-change">
             {change.raise
               ? `Raising to ${ALERT_COPY[choice].label} takes ${change.biteDays} days to bite, from ${formatWhen(bitesAt, nowClockMs, reader)}.`
@@ -140,7 +152,7 @@ function AlertField({ overview, reader, nowClockMs, canEdit, pending, onAlert }:
           <Button size="sm" disabled={pending} onClick={() => onAlert(choice)}>
             Order {ALERT_COPY[choice].label.toLowerCase()} alert
           </Button>
-        </div>
+        </Card>
       )}
     </Field>
   );

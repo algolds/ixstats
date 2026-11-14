@@ -1,5 +1,6 @@
 "use client";
 
+import { Card } from "~/components/ui/card";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -47,7 +48,7 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
     stakeNumber <= (data?.maxStake ?? 10000);
 
   return (
-    <div className="border-separator bg-surface rounded-card space-y-3 border p-4">
+    <Card variant="well" className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-label text-footnote font-semibold">Predict the result</span>
         {data && (
@@ -123,6 +124,6 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
           </p>
         </>
       )}
-    </div>
+    </Card>
   );
 }

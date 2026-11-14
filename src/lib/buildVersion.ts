@@ -29,7 +29,7 @@ export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
-    patch: 4,
+    patch: 5,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
@@ -63,7 +63,7 @@ export const INTERNAL_VERSIONS = {
 
   // Design system.
   design: {
-    facet: 5, // v5: the Lens layer (refractive liquid glass with dispersion, FacetMaterial layer="lens"), scroll-linked hero depth; v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
+    facet: 6, // v6: global OS pass across every first-party app, editor, modal, and sheet, facet-chrome-subtle editor chrome, Facet style ratchets; v5: the Lens layer (refractive liquid glass with dispersion, FacetMaterial layer="lens"), scroll-linked hero depth; v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).
@@ -81,7 +81,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 5,
+    patch: 6,
     release: "Lobster Crosby",
     channel: "Stable" as ReleaseChannel,
   },
@@ -97,7 +97,7 @@ export const VERSIONS = {
     halo: 1,
     onoma: 1,
   },
-  design: { facet: 2 },
+  design: { facet: 3 },
   subSystems: { canvas: 1 },
   build: BUILD_VERSION,
 } as const;

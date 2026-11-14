@@ -1,13 +1,14 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React from "react";
 import { Label } from "~/components/ui/label";
 import { ColorPickerInput } from "~/components/ui/color-picker";
 import { Ruler } from "iconoir-react";
 import type { SubdivisionFormData } from "~/hooks/useMapEditor";
 import { SUBDIVISION_TYPE_OPTIONS } from "../optionLists";
-import { inputClasses, WikiLinkField } from "./fields";
+import { WikiLinkField } from "./fields";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
@@ -43,12 +44,12 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
 
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="Region name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
       <OptionSelect
@@ -59,26 +60,29 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
         size="sm"
         className="w-full"
       />
-      <input
+      <Input
         type="text"
         placeholder="Capital city (optional)"
         value={form.capital ?? ""}
         onChange={(e) => onChange({ ...form, capital: e.target.value || undefined })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
       />
       <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
-          placeholder="Population"
-          value={form.population ?? ""}
-          onChange={(e) =>
-            onChange({
-              ...form,
-              population: e.target.value ? parseInt(e.target.value, 10) : undefined,
-            })
-          }
-          className={inputClasses}
-        />
+        <div className="space-y-1">
+          <label className="text-label-secondary text-caption block">Population</label>
+          <Input
+            type="number"
+            placeholder="Population"
+            value={form.population ?? ""}
+            onChange={(e) =>
+              onChange({
+                ...form,
+                population: e.target.value ? parseInt(e.target.value, 10) : undefined,
+              })
+            }
+            className="text-footnote h-8 px-2.5 tabular-nums"
+          />
+        </div>
         <div className="space-y-1">
           <div className="flex items-center justify-between">
             <label className="text-label-secondary text-caption">Area (km²)</label>
@@ -87,7 +91,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
             )}
           </div>
           <div className="flex items-center gap-2">
-            <input
+            <Input
               type="number"
               placeholder="Area (km²)"
               value={form.areaSqKm ?? ""}
@@ -97,7 +101,7 @@ export const SubdivisionPropertyForm = React.memo(function SubdivisionPropertyFo
                   areaSqKm: e.target.value ? parseFloat(e.target.value) : undefined,
                 })
               }
-              className={inputClasses}
+              className="text-footnote h-8 px-2.5 tabular-nums"
             />
             <Button
               variant="outline"

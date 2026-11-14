@@ -15,11 +15,14 @@ export interface ExecBandwidthInput {
   } | null;
 }
 
-/** The executive bandwidth reading: real executive bandwidth used/capacity, with the weekly directive slots in the tooltip. */
+/**
+ * The executive bandwidth reading: the count used (`value`), what it is out of (`detail`), and a tooltip
+ * with the breakdown and the weekly directive slots. A count, never a percentage.
+ */
 export function describeExecBandwidth(
   execBandwidth: ExecBandwidthInput | null | undefined,
   slots: { used: number; cap: number } | null | undefined
-): { value: string; title: string } {
+): { value: string; detail?: string; title: string } {
   const slotLine = slots
     ? `Directives this week: ${slots.used}/${slots.cap} slots used.`
     : "Directive slots unavailable.";
@@ -36,7 +39,8 @@ export function describeExecBandwidth(
     : "";
   const status = execBandwidth.overCapacity ? " Over capacity." : "";
   return {
-    value: `${Math.round(execBandwidth.used)}/${Math.round(execBandwidth.capacity)}`,
+    value: `${Math.round(execBandwidth.used)}`,
+    detail: `of ${Math.round(execBandwidth.capacity)}`,
     title:
       `Executive bandwidth: ${Math.round(execBandwidth.used)} used of ${Math.round(execBandwidth.capacity)} ` +
       `(${Math.round(execBandwidth.available)} available).${status}${breakdown} ${slotLine}`,
@@ -52,12 +56,15 @@ export function execBandwidthPercent(
   return Math.min(100, Math.max(0, (execBandwidth.used / execBandwidth.capacity) * 100));
 }
 
-/** Share of this week's directive slots in use, 0–100; null without a cap. */
-export function slotPercent(
+/** The most slots drawn as one pip each; a larger cap reads as a plain meter. */
+const MAX_PIPS = 8;
+
+/** This week's directive slots as pips, used ones first; null without a cap or with too many to count. */
+export function slotPips(
   slots: { used: number; cap: number } | null | undefined
-): number | null {
-  if (!slots || !Number.isFinite(slots.cap) || slots.cap <= 0) return null;
-  return Math.min(100, Math.max(0, (slots.used / slots.cap) * 100));
+): boolean[] | null {
+  if (!slots || !Number.isInteger(slots.cap) || slots.cap <= 0 || slots.cap > MAX_PIPS) return null;
+  return Array.from({ length: slots.cap }, (_, i) => i < slots.used);
 }
 
 type CommandCountry = ReturnType<typeof useCountryData>["country"];

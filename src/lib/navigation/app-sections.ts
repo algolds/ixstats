@@ -695,6 +695,17 @@ export function getAppForPath(
 }
 
 /**
+ * The canvas tint (`data-app`) a page wears: its app's, with two exceptions. The Exchange (a Labs section) has
+ * its own. A nation's profile (`/countries/<slug>/…`) is an identity document like the passport, so it wears
+ * the passport's default tint (iron-gall ink), not the Realms purpure its sidebar row keeps.
+ */
+export function getTintForPath(pathname: string): AppTint | undefined {
+  if (matchesPrefix(pathname, "/exchange")) return "exchange";
+  if (normalizePath(pathname).startsWith("/countries/")) return undefined;
+  return getAppForPath(pathname)?.tint;
+}
+
+/**
  * The app the navigation marks current: the owner among the visible apps when there is one, else the owner among
  * all apps (a route of an app the viewer cannot see, e.g. Maps switched off, still resolves).
  */

@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import { springGentle } from "~/lib/design/motion";
 import { motion, AnimatePresence } from "motion/react";
-import { Sparks as Sparkles } from "iconoir-react";
+import { MagicWand } from "iconoir-react";
 import { IxCreditsSymbol } from "./IxCreditsSymbol";
 
 interface VaultParticle {
@@ -23,6 +23,22 @@ interface VaultParticleExplosionModalProps {
   count?: number;
 }
 
+const GOLDEN_ANGLE = 2.399963229728653;
+
+function buildParticles(count: number): VaultParticle[] {
+  return Array.from({ length: count }, (_, i) => {
+    const angle = i * GOLDEN_ANGLE;
+    const radius = 64 + ((i * 41) % 120);
+    return {
+      id: i,
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius * 0.85 - 80,
+      rotate: (i * 53) % 360,
+      scale: 0.65 + ((i * 19) % 60) / 100,
+    };
+  });
+}
+
 export function VaultParticleExplosionModal({
   open,
   title,
@@ -31,34 +47,21 @@ export function VaultParticleExplosionModal({
   icon,
   count = 30,
 }: VaultParticleExplosionModalProps) {
-  const particles: VaultParticle[] = useMemo(() => {
-    if (!open) return [];
-    return Array.from({ length: count }).map((_, i) => ({
-      id: i,
-      // oxlint-disable-next-line
-      x: (Math.random() - 0.5) * 360,
-      // oxlint-disable-next-line
-      y: (Math.random() - 0.5) * 300 - 100,
-      // oxlint-disable-next-line
-      rotate: Math.random() * 360,
-      // oxlint-disable-next-line
-      scale: 0.6 + Math.random() * 0.7,
-    }));
-  }, [open, count]);
+  const particles = open ? buildParticles(count) : [];
 
   return (
     <AnimatePresence>
       {open && (
         <div
           aria-live="polite"
-          className="z-sheet pointer-events-none fixed inset-0 flex items-center justify-center bg-black/40"
+          className="z-sheet bg-scrim pointer-events-none fixed inset-0 flex items-center justify-center"
         >
           <div className="relative">
             {/* Drifting Gold Coins / Particles */}
             {particles.map((p) => (
               <motion.div
                 key={p.id}
-                className="card-art-linear-br absolute flex h-6 w-6 items-center justify-center rounded-full border border-amber-300 from-amber-400 to-yellow-500 p-1 text-amber-950 shadow-[0_0_8px_rgba(245,158,11,0.5)] select-none"
+                className="border-yellow/50 bg-yellow text-on-yellow absolute flex h-6 w-6 items-center justify-center rounded-full border p-1 shadow-[0_0_8px_color-mix(in_srgb,var(--color-yellow)_50%,transparent)] select-none"
                 initial={{ x: 0, y: 0, scale: 0.2, opacity: 1 }}
                 animate={{
                   x: p.x,
@@ -81,8 +84,8 @@ export function VaultParticleExplosionModal({
               transition={springGentle}
               className="bg-surface-elevated rounded-sheet border-separator shadow-sheet relative flex flex-col items-center border px-10 py-7 text-center"
             >
-              <div className="bg-tint-fill text-tint mb-3 rounded-full p-4">
-                {icon || <Sparkles className="h-7 w-7" />}
+              <div className="bg-tint-fill text-tint-ink mb-3 rounded-full p-4">
+                {icon || <MagicWand className="h-7 w-7" />}
               </div>
               <h3 className="text-label text-title-3">{title}</h3>
               {amount !== undefined && (

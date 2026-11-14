@@ -65,7 +65,9 @@ function WeatherBadge({ weather }: { weather: string }) {
   }
 
   return (
-    <span className={cn("text-eyebrow inline-flex items-center gap-1", colorClass)}>
+    <span
+      className={cn("text-caption text-label-secondary inline-flex items-center gap-1", colorClass)}
+    >
       <Icon className="h-3.5 w-3.5" />
       <span>{weather}</span>
     </span>
@@ -100,7 +102,7 @@ function DriverStandingsTable({ races }: { races: RaceResultsProps["races"] }) {
     <Card padding="lg" className="space-y-4 overflow-hidden">
       <div className="border-separator flex items-center justify-between border-b pb-3">
         <div className="flex items-center gap-2">
-          <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-8 w-8 items-center justify-center border">
+          <div className="bg-tint-fill text-tint-ink rounded-row flex size-9 items-center justify-center">
             <Zap className="text-yellow h-4 w-4" />
           </div>
           <h4 className="text-headline text-label">Driver world championship standings</h4>
@@ -173,7 +175,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
           <Card key={race.id} className="relative space-y-6 overflow-hidden p-6 md:p-8">
             <div className="border-separator flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-row border-separator bg-surface-secondary shadow-card flex h-9 w-9 items-center justify-center border">
+                <div className="bg-tint-fill text-tint-ink rounded-row flex size-9 items-center justify-center">
                   <MapPin className="text-teal h-5 w-5" />
                 </div>
                 <div>
@@ -195,7 +197,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         ? "outline"
                         : "secondary"
                   }
-                  className="text-eyebrow"
+                  className="text-caption text-label-secondary"
                 >
                   {race.status === "qualifying_complete" ? "Qualifying Complete" : race.status}
                 </Badge>
@@ -206,8 +208,8 @@ export function RaceResults({ races, className }: RaceResultsProps) {
               <CircuitMap circuitName={race.circuitName} className="mb-4" />
 
               {race.grid && race.grid.length > 0 && (
-                <div className="rounded-card border-separator bg-surface-secondary border p-4">
-                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                <Card variant="well">
+                  <h4 className="text-headline text-label mb-3 flex items-center gap-2">
                     <Flag className="text-label h-3.5 w-3.5" />
                     Starting grid positions
                   </h4>
@@ -233,12 +235,12 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         ))}
                     </TableBody>
                   </Table>
-                </div>
+                </Card>
               )}
 
               {race.results && race.results.length > 0 && (
-                <div className="rounded-card border-separator bg-surface-secondary border p-4">
-                  <h4 className="text-label-secondary text-eyebrow mb-3 flex items-center gap-2">
+                <Card variant="well">
+                  <h4 className="text-headline text-label mb-3 flex items-center gap-2">
                     <Clock className="text-yellow h-3.5 w-3.5" />
                     Official Grand Prix classification
                   </h4>
@@ -288,7 +290,7 @@ export function RaceResults({ races, className }: RaceResultsProps) {
                         ))}
                     </TableBody>
                   </Table>
-                </div>
+                </Card>
               )}
             </div>
           </Card>

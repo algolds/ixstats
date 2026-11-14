@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/stash/ImportStashPanel.tsx
 // Onoma Custom Studio Workshop — Import Stash Panel Component
 
+import { Card } from "~/components/ui/card";
 import { useState } from "react";
 import { Upload, SystemRestart as Loader2 } from "iconoir-react";
 import { useNameBank } from "~/hooks/useNameBank";
@@ -55,7 +56,7 @@ export function ImportStashPanel() {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         {/* Upload .txt files (one dictionary per file) */}
-        <label className="border-separator bg-surface hover:bg-surface text-label rounded-control text-footnote flex cursor-pointer items-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
+        <label className="border-separator bg-surface hover:bg-surface text-label rounded-control text-footnote flex cursor-pointer items-center gap-2 border px-3 py-2 font-medium transition-colors select-none">
           <Upload className="h-3.5 w-3.5" />
           <span>Upload .txt</span>
           <input type="file" multiple accept=".txt" className="hidden" onChange={handleUpload} />
@@ -63,10 +64,10 @@ export function ImportStashPanel() {
       </div>
 
       {uploadStatus && (
-        <div className="border-separator bg-fill-4 rounded-row text-footnote flex items-center gap-2 border p-3 leading-normal">
+        <Card padding="none" className="text-footnote flex items-center gap-2 p-3 leading-normal">
           <Loader2 className="text-tint h-4 w-4 animate-spin" />
           <span>{uploadStatus}</span>
-        </div>
+        </Card>
       )}
     </div>
   );

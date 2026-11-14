@@ -173,7 +173,7 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
             size="md"
           />
           <div className="min-w-0">
-            <p className="text-body text-label font-semibold">{contract.title}</p>
+            <p className="text-headline text-label">{contract.title}</p>
             <p className="text-caption text-label-secondary tabular-nums">
               {contract.issuer?.name ?? "Realm faucet"} · {sectorLabel(contract.sectorKey)}
               {contract.biddingOpen &&
@@ -209,15 +209,13 @@ export function ContractRow({ contract, companies, isOpen, onDone }: ContractRow
                   {crossBorder && <Badge variant="outline">Cross-border</Badge>}
                 </span>
                 <span className="flex items-center gap-2">
-                  <span className="font-mono tabular-nums">{formatSovereigns(b.amount)}</span>
+                  <span className="tabular-nums">{formatSovereigns(b.amount)}</span>
                   {isOpen && (
                     <Button
                       size="xs"
                       variant="secondary"
                       disabled={actions.award.isPending}
-                      onClick={() =>
-                        actions.award.mutate({ contractId: contract.id, bidId: b.id })
-                      }
+                      onClick={() => actions.award.mutate({ contractId: contract.id, bidId: b.id })}
                     >
                       Award
                     </Button>

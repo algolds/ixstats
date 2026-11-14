@@ -60,7 +60,10 @@ export function GlobalBuilderLoading({
     <div
       role="status"
       aria-label={message}
-      className={cn("mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pb-8 sm:px-6", className)}
+      className={cn(
+        "mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 pt-(--shell-page-top) pb-8 sm:px-6",
+        className
+      )}
     >
       <div className="flex flex-col">
         <div className="h-14" />

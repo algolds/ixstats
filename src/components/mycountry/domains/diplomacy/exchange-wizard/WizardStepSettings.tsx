@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Calendar, Eye, EyeClosed, Group } from "iconoir-react";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
@@ -66,7 +67,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             <Skeleton className="h-9 w-full" />
           )}
           <p className="text-label-secondary text-footnote">
-            Today: {calendar && today !== null ? formatRealmDate(today, calendar) : "–"}
+            Today: {calendar && today !== null ? formatRealmDate(today, calendar) : "Loading…"}
           </p>
         </div>
         <div className="space-y-2">
@@ -106,7 +107,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
         </p>
       </div>
 
-      <div className="border-separator bg-surface rounded-row border p-4">
+      <Card variant="well" padding="md">
         <div
           onClick={() => onIsPublicChange(!isPublic)}
           className="flex w-full cursor-pointer items-center justify-between"
@@ -126,7 +127,7 @@ export const WizardStepSettings = React.memo(function WizardStepSettings({
             </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 });

@@ -221,7 +221,7 @@ export function ClubTransfersSection({
                         </span>
                       </PositionTooltip>{" "}
                       &middot; {l.player.team.name} &middot; OVR{" "}
-                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "—"}
+                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "–"}
                     </p>
                     <p className="text-footnote text-tint mt-0.5 font-medium tabular-nums">
                       Asking Price: ₷{l.price}

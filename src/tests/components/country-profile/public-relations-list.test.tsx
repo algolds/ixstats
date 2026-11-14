@@ -65,7 +65,7 @@ describe("PublicRelationsList flags", () => {
       ],
     };
     render(<PublicRelationsList world={both} />);
-    expect(screen.getByText("1 treaty · 85% strength")).toBeInTheDocument();
+    expect(screen.getByText("1 treaty · Very strong ties")).toBeInTheDocument();
     expect(screen.getByText("Maresteyn")).toBeInTheDocument();
     expect(screen.getByText("Urcea")).toBeInTheDocument();
 

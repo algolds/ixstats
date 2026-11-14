@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  OpenNewWindow as ExternalLink,
-  ShieldCheck,
-  ArrowLeft,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { OpenNewWindow as ExternalLink, ShieldCheck, ArrowLeft } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Card } from "~/components/ui/card";
@@ -35,7 +30,7 @@ export function ImportVerifyStep({
       <div className="text-center">
         <h2 className="text-label text-title-2">Verify ownership</h2>
         <p className="text-label-secondary text-body mt-1">
-          Prove you own <span className="text-yellow font-semibold">{nationName}</span> via
+          Prove you own <span className="text-label font-medium">{nationName}</span> via
           NationStates login verification
         </p>
       </div>
@@ -45,22 +40,22 @@ export function ImportVerifyStep({
         <h4 className="text-label text-headline">Instructions</h4>
         <ol className="text-label-secondary text-body list-inside space-y-2">
           <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               1
             </span>
             <span>
               Click the link below to open NationStates verification.{" "}
-              <strong className="text-label">Log in if prompted.</strong>
+              <strong className="text-label font-medium">Log in if prompted.</strong>
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               2
             </span>
             NationStates will display a verification code
           </li>
           <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-semibold">
+            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               3
             </span>
             Copy that code and paste it in the field below
@@ -74,7 +69,7 @@ export function ImportVerifyStep({
           href={verificationUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue hover:bg-blue/20 flex items-center justify-center gap-2 border px-5 py-4 transition-colors"
+          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue-ink hover:bg-blue/15 flex items-center justify-center gap-2 border px-5 py-4 transition-colors"
         >
           <ExternalLink className="h-4 w-4" />
           Open NationStates verification page
@@ -83,7 +78,7 @@ export function ImportVerifyStep({
 
       {/* Code input */}
       <Card className="rounded-row bg-tint-fill space-y-2 p-5">
-        <label className="text-footnote text-yellow-ink font-medium">
+        <label className="text-footnote text-tint-ink font-medium">
           Paste verification code from NationStates
         </label>
         <Input
@@ -95,7 +90,7 @@ export function ImportVerifyStep({
             }
           }}
           placeholder="Paste the code NationStates gave you..."
-          className="bg-background text-body h-12 font-mono"
+          className="bg-background font-data text-body h-12"
         />
       </Card>
 
@@ -106,11 +101,13 @@ export function ImportVerifyStep({
         </Button>
         <Button onClick={onVerify} disabled={!checksum.trim() || isPending} className="flex-1">
           {isPending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            "Verifying..."
           ) : (
-            <ShieldCheck className="mr-2 h-4 w-4" />
+            <>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Verify ownership
+            </>
           )}
-          Verify ownership
         </Button>
       </div>
     </div>

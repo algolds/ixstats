@@ -9,7 +9,6 @@ import { Checkbox } from "~/components/ui/checkbox";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   Sheet,
   SheetContent,
@@ -20,24 +19,19 @@ import {
 } from "~/components/ui/sheet";
 import { Signal } from "~/components/ui/signal";
 import { Skeleton } from "~/components/ui/skeleton";
+import { WikiSourcePicker, useWikiSource } from "~/components/wiki-os/shared/WikiSourcePicker";
 import { assetUrl } from "~/lib/base-path";
 import { getGovernmentForm } from "~/lib/government/forms";
-import {
-  foundImportFields,
-  type ImportFieldId,
-  type ImportedNation,
-  type WikiSiteId,
-} from "../lib/founding-draft";
+import { wikiReadErrorText, wikiSourceLabel } from "~/lib/wiki-os/wiki-source-availability";
+import { foundImportFields, type ImportFieldId, type ImportedNation } from "../lib/founding-draft";
 import { IMPORT_FIELD_LABELS, readInfobox } from "../lib/founding-import";
 import { formatMoney, formatPeople } from "../lib/founding-format";
 
-const SITES: Array<{ value: WikiSiteId; label: string }> = [
-  { value: "iiwiki", label: "IIWiki" },
-  { value: "althistory", label: "AltHistory" },
-];
-
 /** Search waits this long after the last keystroke. */
 const SEARCH_DEBOUNCE_MS = 250;
+
+/** A failed call's message and tRPC code, as `wikiReadErrorText` reads them. */
+type ReadError = Error & { data?: { code?: string } | null };
 
 interface SearchHit {
   title: string;
@@ -128,7 +122,8 @@ interface ImportSheetProps {
 
 /** "Import from the wiki": search a wiki, read a page's infobox, and keep the fields you want. */
 export function ImportSheet({ open, onOpenChange, onApply }: ImportSheetProps) {
-  const [site, setSite] = useState<WikiSiteId>("iiwiki");
+  // Wiki first and by default; a wiki that cannot answer (the IIWiki switch) is listed but never selected.
+  const { source: site, setSource: setSite, options: siteOptions } = useWikiSource("country");
   const [term, setTerm] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -154,7 +149,13 @@ export function ImportSheet({ open, onOpenChange, onApply }: ImportSheetProps) {
         .catch((searchError: unknown) => {
           if (id !== requestId.current) return;
           setHits([]);
-          setError(searchError instanceof Error ? searchError.message : "The wiki did not answer.");
+          // A wiki that cannot answer says why ("IIWiki is switched off for now.").
+          setError(
+            wikiReadErrorText(
+              searchError instanceof Error ? (searchError as ReadError) : null,
+              "The wiki did not answer."
+            )
+          );
         })
         .finally(() => {
           if (id === requestId.current) setSearching(false);
@@ -176,7 +177,12 @@ export function ImportSheet({ open, onOpenChange, onApply }: ImportSheetProps) {
       setNation(read);
       setKeep(new Set(foundImportFields(read)));
     } catch (readError) {
-      setError(readError instanceof Error ? readError.message : "The page could not be read.");
+      const failure = readError instanceof Error ? (readError as ReadError) : null;
+      setError(
+        failure?.data?.code === "NOT_FOUND"
+          ? `${wikiSourceLabel(site)} has no page under that title.`
+          : wikiReadErrorText(failure, "The page could not be read.")
+      );
     } finally {
       setReading(null);
     }
@@ -238,15 +244,13 @@ export function ImportSheet({ open, onOpenChange, onApply }: ImportSheetProps) {
           </>
         ) : (
           <div className="flex flex-col gap-4">
-            <SegmentedControl
-              aria-label="Wiki"
+            <WikiSourcePicker
               value={site}
+              options={siteOptions}
               onValueChange={(next) => {
                 setSite(next);
                 setHits([]);
               }}
-              options={SITES}
-              fullWidth
             />
             <div className="flex flex-col gap-2">
               <Label htmlFor="founding-import-search" className="text-subhead">
@@ -280,7 +284,7 @@ export function ImportSheet({ open, onOpenChange, onApply }: ImportSheetProps) {
               </div>
             ) : query && hits.length === 0 && !error ? (
               <p className="text-callout text-label-secondary">
-                No nation pages match. Check the spelling or try the other wiki.
+                No nation pages match. Check the spelling or try another wiki.
               </p>
             ) : hits.length > 0 ? (
               <FacetList>

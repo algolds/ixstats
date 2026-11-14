@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import { cn } from "~/lib/utils";
+import { springGentle } from "~/lib/design/motion";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Cart as ShoppingCart } from "iconoir-react";
@@ -48,10 +49,10 @@ export function StoreItemCard({
   // Rotation springs
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-75, 75], [12, -12]), { stiffness: 120, damping: 15 });
-  const rotateY = useSpring(useTransform(x, [-50, 50], [-12, 12]), { stiffness: 120, damping: 15 });
-  const scale = useSpring(1, { stiffness: 120, damping: 15 });
-  const translateY = useSpring(0, { stiffness: 120, damping: 15 });
+  const rotateX = useSpring(useTransform(y, [-75, 75], [12, -12]), springGentle);
+  const rotateY = useSpring(useTransform(x, [-50, 50], [-12, 12]), springGentle);
+  const scale = useSpring(1, springGentle);
+  const translateY = useSpring(0, springGentle);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -127,19 +128,13 @@ export function StoreItemCard({
             {item.badgeText}
           </Badge>
           {isOwned ? (
-            <Badge
-              variant="outline"
-              className="border-green/35 bg-green/20 text-caption text-green px-1 py-0"
-            >
+            <Badge variant="success" className="px-1.5 py-0">
               {maxPurchases > 1 ? "Maxed out" : "Owned"}
             </Badge>
           ) : (
             purchaseCount > 0 && (
-              <Badge
-                variant="outline"
-                className="border-yellow/35 bg-yellow/20 text-caption text-yellow px-1 py-0"
-              >
-                Owned x{purchaseCount}
+              <Badge variant="warning" className="px-1.5 py-0 tabular-nums">
+                {purchaseCount} owned
               </Badge>
             )
           )}
@@ -161,7 +156,7 @@ export function StoreItemCard({
               <Icon className={cn("h-7 w-7", colors.text)} />
             </div>
           )}
-          <h4 className="text-footnote text-label text-center font-semibold">{item.name}</h4>
+          <h4 className="text-subhead text-label text-center">{item.name}</h4>
           <p className="text-label-secondary text-footnote mt-1 text-center leading-tight">
             {item.description}
           </p>
@@ -175,9 +170,9 @@ export function StoreItemCard({
               size="sm"
               onClick={() => onPreview(item)}
               className={cn(
-                "text-footnote h-7 w-full border font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
+                "text-footnote h-7 w-full border font-medium transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-200",
                 isPreviewing
-                  ? "border-tint/50 bg-tint-fill text-tint"
+                  ? "border-tint/40 bg-tint-fill text-tint-ink"
                   : "border-separator hover:bg-fill-3 text-label-secondary hover:text-label"
               )}
             >

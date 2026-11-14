@@ -480,10 +480,7 @@ export function fitEmbedToCountry(
 }
 
 /** Draw the embed's own layers onto a freshly loaded map and wire up its interactions. */
-export function populateEmbedMap(
-  map: MapLibreMap,
-  o: EmbedLayerOptions
-): (() => void) | undefined {
+export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions): (() => void) | undefined {
   hideWorldLayers(map);
   removeEmbedLayers(map);
 

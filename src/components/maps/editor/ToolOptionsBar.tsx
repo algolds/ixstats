@@ -20,7 +20,6 @@ import type { EditorMode, EditorFeature } from "~/hooks/useMapEditor";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetMaterial } from "~/components/ui/facet";
 
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
@@ -123,7 +122,7 @@ function ToolOptionsShell({ children }: { children: React.ReactNode }) {
       layer="chrome"
       role="toolbar"
       aria-label="Tool options"
-      className="flex h-9 shrink-0 items-center gap-2 rounded-none px-3"
+      className="facet-chrome-subtle pointer-events-auto flex h-9 shrink-0 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 shadow-none"
     >
       {children}
     </FacetMaterial>
@@ -258,7 +257,7 @@ function CityOptions(props: ToolOptionsBarProps) {
   return (
     <>
       <ToolLabel icon={MapPin} label="City" />
-      <Eyebrow>Type</Eyebrow>
+      <span className="text-label-secondary text-caption">Type</span>
       <OptionSelect
         aria-label="City type"
         value={props.cityType ?? "city"}
@@ -302,7 +301,7 @@ function PoiOptions(props: ToolOptionsBarProps) {
   return (
     <>
       <ToolLabel icon={Landmark} label="Point of interest" />
-      <Eyebrow>Category</Eyebrow>
+      <span className="text-label-secondary text-caption">Category</span>
       <OptionSelect
         aria-label="Point of interest category"
         value={props.poiCategory ?? "landmark"}
@@ -345,7 +344,7 @@ function AddRouteOptions(props: ToolOptionsBarProps) {
   return (
     <>
       <ToolLabel icon={Route} label="Draw route" />
-      <Eyebrow>Type</Eyebrow>
+      <span className="text-label-secondary text-caption">Type</span>
       <OptionSelect
         aria-label="Route type"
         size="sm"

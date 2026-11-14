@@ -74,7 +74,7 @@ export const EditExchangeModal = React.memo<EditExchangeModalProps>(
 
           <div className="space-y-6">
             <Alert>
-              <WarningTriangle className="text-yellow" />
+              <WarningTriangle className="text-warning" />
               <AlertTitle>Limited editing</AlertTitle>
               <AlertDescription>
                 You can only modify the title and description. Other program details cannot be

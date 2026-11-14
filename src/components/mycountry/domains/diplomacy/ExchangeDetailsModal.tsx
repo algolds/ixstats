@@ -1,5 +1,6 @@
 "use client";
 
+import { levelWord } from "~/lib/qualitative-rating";
 import {
   Brain,
   Calendar,
@@ -156,7 +157,7 @@ function CountryHeader({
   );
 }
 
-function PercentMeter({
+function LevelMeter({
   label,
   value,
   indicatorClassName,
@@ -169,7 +170,7 @@ function PercentMeter({
     <>
       <div className="text-footnote flex items-center justify-between">
         <span className="text-label-secondary">{label}</span>
-        <span className="text-label font-medium tabular-nums">{Math.round(value)}%</span>
+        <span className="text-label font-medium">{levelWord(value)}</span>
       </div>
       <Progress value={value} className="h-1.5" indicatorClassName={indicatorClassName} />
     </>
@@ -177,8 +178,8 @@ function PercentMeter({
 }
 
 function enthusiasmColor(level: number) {
-  if (level > 70) return "bg-green";
-  return level > 50 ? "bg-yellow" : "bg-destructive";
+  if (level > 70) return "bg-success";
+  return level > 50 ? "bg-warning" : "bg-destructive";
 }
 
 function NpcResponseCard({ response }: { response: NPCResponse }) {
@@ -201,12 +202,12 @@ function NpcResponseCard({ response }: { response: NPCResponse }) {
           <span className="text-label">{response.personality.archetype}</span> ·{" "}
           {response.responseTimeline} response
         </p>
-        <PercentMeter
+        <LevelMeter
           label="Enthusiasm"
           value={response.enthusiasmLevel}
           indicatorClassName={enthusiasmColor(response.enthusiasmLevel)}
         />
-        <PercentMeter label="Resource commitment" value={response.resourceCommitment} />
+        <LevelMeter label="Resource commitment" value={response.resourceCommitment} />
         <p className="text-label-secondary text-footnote mt-2 italic">
           &ldquo;{response.responseMessage}&rdquo;
         </p>
@@ -362,7 +363,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
                 <ul className="space-y-2">
                   {objectives.map((objective, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle className="text-green mt-0.5 h-4 w-4 shrink-0" />
+                      <CheckCircle className="text-success mt-0.5 h-4 w-4 shrink-0" />
                       <span className="text-label-secondary text-body">{objective}</span>
                     </li>
                   ))}
@@ -381,7 +382,7 @@ export const ExchangeDetailsModal = React.memo<ExchangeDetailsModalProps>((props
             <dl className="grid grid-cols-3 gap-3">
               {[
                 { label: "Participants", value: String(exchange.metrics.participants) },
-                { label: "Impact", value: `${exchange.metrics.culturalImpact}%` },
+                { label: "Impact", value: levelWord(exchange.metrics.culturalImpact) },
                 { label: "Engagement", value: String(exchange.metrics.socialEngagement) },
               ].map((m) => (
                 <div key={m.label} className="bg-fill-3 rounded-row p-3 text-center">

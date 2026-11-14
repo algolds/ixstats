@@ -11,9 +11,11 @@ import {
   Journal,
   StatUp,
   StatsReport,
+  WarningCircle,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { LensCard } from "~/components/ui/lens-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -66,9 +68,6 @@ function IndexCard({ data }: { data: FrontPageData }) {
               <p className="text-footnote text-label-secondary font-medium">
                 {data.realm.name} realm index
               </p>
-              <Badge variant="outline" className="font-mono tabular-nums">
-                ₷ composite
-              </Badge>
             </div>
             <div className="mt-2 flex flex-wrap items-baseline gap-3">
               <Figure size="hero" value={formatSovereignFigure(data.index.value)} />
@@ -145,7 +144,7 @@ function MarketPulseRail({ data }: { data: FrontPageData }) {
                       <TickerTile code={symbolOf(m.name)} tone={moveTone} />
                       <span className="min-w-0">
                         <span className="text-label block truncate font-medium">{m.name}</span>
-                        <span className="text-caption text-label-secondary block font-mono tabular-nums">
+                        <span className="text-caption text-label-secondary block tabular-nums">
                           ₷{formatSovereignFigure(m.price)}
                         </span>
                       </span>
@@ -190,7 +189,7 @@ function MarketPulseRail({ data }: { data: FrontPageData }) {
                   </span>
                   <span className="flex shrink-0 items-center gap-2">
                     <CreditRatingBadge rating={b.rating} />
-                    <span className="font-mono font-semibold tabular-nums">{pct(b.yield)}</span>
+                    <span className="text-headline tabular-nums">{pct(b.yield)}</span>
                   </span>
                 </Link>
               </li>
@@ -209,14 +208,24 @@ function MarketPulseRail({ data }: { data: FrontPageData }) {
 
 /** The front page (mockup B): the realm index, Today in business, market pulse and realm leaderboards. */
 export function FrontPage({ realmId }: { realmId: string }) {
-  const { data, isLoading, error } = api.exchange.frontPage.useQuery({ realmId });
+  const { data, isLoading, error, refetch } = api.exchange.frontPage.useQuery({ realmId });
   if (isLoading) return <Skeleton className="h-96 w-full" />;
   if (!data)
     return (
-      <EmptyState
-        title="The Exchange didn't load"
-        message={error?.message ?? "Try again in a moment."}
-      />
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role="alert"
+          compact
+          icon={<WarningCircle />}
+          title="The Exchange did not load"
+          message={error?.message ?? "Try again in a moment."}
+          action={
+            <Button size="sm" variant="secondary" onClick={() => void refetch?.()}>
+              Try again
+            </Button>
+          }
+        />
+      </LensCard>
     );
   return (
     <div className="grid items-start gap-4 lg:grid-cols-12">

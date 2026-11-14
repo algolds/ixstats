@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { memo, useCallback, useState, useRef } from "react";
 import {
   Upload,
@@ -83,7 +82,7 @@ export const UploadStep = memo(function UploadStep({ importer }: UploadStepProps
       </div>
 
       <div className="space-y-2">
-        <Eyebrow className="block">Import scope</Eyebrow>
+        <span className="text-caption text-label-secondary block font-medium">Import scope</span>
         <SegmentedControl
           aria-label="Import scope"
           fullWidth

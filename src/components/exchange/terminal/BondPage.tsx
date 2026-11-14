@@ -55,11 +55,28 @@ function CancelBondListingButton({ listingId }: { listingId: string }) {
 
 /** One nation bond: its price and yield, what is left on sale, and who sells. */
 export function BondPage({ bondId }: { bondId: string }) {
-  const { data, isLoading, error } = api.exchange.bondPage.useQuery({ bondId });
+  const { data, isLoading, error, refetch } = api.exchange.bondPage.useQuery({ bondId });
   const treasury = useTreasuryActor(data?.bond.realmId);
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   if (!data)
-    return <EmptyState title="Bond not found" message={error?.message ?? "It may have matured."} />;
+    return (
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role={error ? "alert" : undefined}
+          compact
+          icon={<Coins />}
+          title="Bond not found"
+          message={error?.message ?? "It may have matured."}
+          action={
+            error ? (
+              <Button size="sm" variant="secondary" onClick={() => void refetch?.()}>
+                Try again
+              </Button>
+            ) : undefined
+          }
+        />
+      </LensCard>
+    );
   const b = data.bond;
   const cheapest = data.listings[0];
   const open = b.status === "OPEN";
@@ -133,13 +150,16 @@ export function BondPage({ bondId }: { bondId: string }) {
               ))}
             </div>
             <div className="space-y-1">
-              <div className="text-caption text-label-secondary flex items-center justify-between font-mono tabular-nums">
+              <div className="text-caption text-label-secondary flex items-center justify-between tabular-nums">
                 <span>Primary issuance subscription</span>
-                <span>{soldPct}% placed</span>
+                <span>
+                  {b.unitsSold.toLocaleString("en-US")} of {b.unitsIssued.toLocaleString("en-US")}{" "}
+                  placed
+                </span>
               </div>
               <div className="facet-recess h-2 w-full overflow-hidden rounded-full">
                 <div
-                  className="bg-tint h-full rounded-full transition-[width] duration-fast ease-out-facet"
+                  className="bg-tint duration-fast ease-out-facet h-full rounded-full transition-[width]"
                   style={{ width: `${soldPct}%` }}
                 />
               </div>
@@ -148,7 +168,7 @@ export function BondPage({ bondId }: { bondId: string }) {
           <LensCard app="exchange" content="data" padding="md" className="space-y-2.5">
             <div className="flex items-center justify-between gap-2">
               <SectionTitle icon={<Coins />}>Units for sale</SectionTitle>
-              <Badge variant="secondary" className="font-mono tabular-nums">
+              <Badge variant="secondary" className="tabular-nums">
                 {data.holderCount} holders
               </Badge>
             </div>
@@ -164,7 +184,7 @@ export function BondPage({ bondId }: { bondId: string }) {
                       {l.mine && <Badge variant="secondary">Yours</Badge>}
                     </span>
                     <span className="flex items-center gap-2">
-                      <span className="font-mono font-semibold">{sov(l.pricePerUnit)}</span>
+                      <span className="text-headline tabular-nums">{sov(l.pricePerUnit)}</span>
                       {l.mine && <CancelBondListingButton listingId={l.id} />}
                     </span>
                   </li>

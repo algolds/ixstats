@@ -1,6 +1,6 @@
 "use client";
 
-import { springSmooth } from "~/lib/design/motion";
+import { springGentle, springSmooth } from "~/lib/design/motion";
 import React, { useId, useState } from "react";
 import { motion } from "motion/react";
 import {
@@ -46,23 +46,23 @@ export function ImportConfirmStep({
       <div className="flex flex-col items-center py-2 text-center">
         <motion.div
           initial={{ scale: 0.96, opacity: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 200, damping: 15 }}
-          className="bg-green/20 ring-green/30 mb-4 flex h-16 w-16 items-center justify-center rounded-full ring-2"
+          animate={{ scale: 1, opacity: 1 }}
+          transition={springGentle}
+          className="bg-green/15 ring-green/30 mb-4 flex h-16 w-16 items-center justify-center rounded-full ring-2"
         >
-          <CheckCircle className="text-green h-8 w-8" />
+          <CheckCircle className="text-green-ink h-8 w-8" />
         </motion.div>
         <h2 className="text-label text-title-1">Nation verified</h2>
         <p className="text-label-secondary text-body mt-2">
-          <span className="text-green font-semibold">{nationName}</span> is confirmed as yours
+          <span className="text-green-ink font-medium">{nationName}</span> is confirmed as yours
         </p>
       </div>
 
       <Card className="rounded-row border-green/30 bg-green/10 p-5">
         <div className="flex items-start gap-3">
-          <Info className="text-green mt-0.5 h-4 w-4 shrink-0" />
+          <Info className="text-green-ink mt-0.5 h-4 w-4 shrink-0" />
           <div className="text-label-secondary text-body">
-            <p className="text-label mb-1 font-semibold">Ready to import</p>
+            <p className="text-label text-subhead mb-1">Ready to import</p>
             <p>
               This will fetch your NationStates trading card deck and make a card for each one. The
               process takes a few seconds depending on deck size.
@@ -127,10 +127,10 @@ export function ImportCompleteStep({
           <motion.div
             initial={{ scale: 0.8, opacity: 0, rotate: -180 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.1 }}
-            className="bg-green/20 ring-green/30 relative flex h-20 w-20 items-center justify-center rounded-full ring-2"
+            transition={{ ...springGentle, delay: 0.1 }}
+            className="bg-green/15 ring-green/30 relative flex h-20 w-20 items-center justify-center rounded-full ring-2"
           >
-            <CheckCircle className="text-green h-10 w-10" />
+            <CheckCircle className="text-green-ink h-10 w-10" />
           </motion.div>
         </div>
 
@@ -148,8 +148,8 @@ export function ImportCompleteStep({
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          Your deck from <span className="text-green font-semibold">{importResult.nation}</span> has
-          been imported
+          Your deck from <span className="text-green-ink font-medium">{importResult.nation}</span>{" "}
+          has been imported
         </motion.p>
       </div>
 
@@ -161,18 +161,18 @@ export function ImportCompleteStep({
         transition={{ delay: 0.5 }}
       >
         <div className="rounded-row border-indigo/20 bg-indigo/10 border p-5 text-center">
-          <Package className="text-indigo mx-auto mb-2 h-6 w-6" />
-          <p className="text-large-title text-indigo tabular-nums">
+          <Package className="text-indigo-ink mx-auto mb-2 h-6 w-6" />
+          <p className="text-large-title text-indigo-ink tabular-nums">
             <NumberFlowDisplay value={importResult.cardsImported} />
           </p>
-          <p className="text-label-secondary text-footnote font-semibold">Cards imported</p>
+          <p className="text-label-secondary text-subhead">Cards imported</p>
         </div>
         <div className="bg-tint-fill rounded-row p-5 text-center">
-          <Coins className="text-yellow mx-auto mb-2 h-6 w-6" />
-          <p className="text-large-title text-yellow tabular-nums">
+          <Coins className="text-yellow-ink mx-auto mb-2 h-6 w-6" />
+          <p className="text-large-title text-yellow-ink tabular-nums">
             +<NumberFlowDisplay value={importResult.bonusCredits} />
           </p>
-          <p className="text-label-secondary text-footnote font-semibold">Bonus IxCredits</p>
+          <p className="text-label-secondary text-subhead">Bonus IxCredits</p>
         </div>
       </motion.div>
 
@@ -184,7 +184,7 @@ export function ImportCompleteStep({
           transition={{ delay: 0.55 }}
           className="space-y-2"
         >
-          <p id={facesLabel} className="text-label-secondary text-footnote font-semibold">
+          <p id={facesLabel} className="text-label-secondary text-subhead">
             Your cards
           </p>
           <ul

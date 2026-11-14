@@ -24,7 +24,7 @@ describe("deriveOpportunity", () => {
       execBandwidth: { capacity: 100, used: 130, overCapacity: true },
     });
     expect(opportunity?.id).toBe("civil-service-overcap");
-    expect(opportunity?.metricValue).toBe("130% used");
+    expect(opportunity?.metricValue).toBe("130 of 100 used");
   });
 
   it("stays quiet about bandwidth when the band has room", () => {

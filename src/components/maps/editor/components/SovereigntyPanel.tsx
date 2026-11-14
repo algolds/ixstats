@@ -1,6 +1,6 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React from "react";
 import { Plus, EditPencil as Edit, Trash as Trash2, ArrowRight } from "iconoir-react";
 import { SOVEREIGNTY_TYPES } from "~/lib/maps/map-config";
@@ -98,9 +98,9 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
 
       {showSovereigntyForm && (
         <Card className="space-y-2 p-3">
-          <Eyebrow className="border-separator block border-b pb-1">
-            {editingSovereigntyId ? "Edit Sovereignty" : "New Sovereignty Relation"}
-          </Eyebrow>
+          <div className="border-separator text-subhead border-b pb-1 font-semibold">
+            {editingSovereigntyId ? "Edit sovereignty" : "New sovereignty relation"}
+          </div>
           <div className="text-footnote space-y-2">
             <Field label="Sovereign (Parent)">
               <OptionSelect
@@ -153,12 +153,12 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
             </Field>
             {TEXT_FIELDS.map(({ key, label, placeholder }) => (
               <Field key={key} label={label}>
-                <input
+                <Input
                   type="text"
                   placeholder={placeholder}
                   value={sovereigntyForm[key]}
                   onChange={(e) => patch({ [key]: e.target.value })}
-                  className="border-separator bg-surface focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+                  className="text-footnote rounded-control-sm h-7 px-2"
                 />
               </Field>
             ))}
@@ -189,12 +189,12 @@ export const SovereigntyPanel = React.memo(function SovereigntyPanel({
       )}
 
       <div className="flex gap-2">
-        <input
+        <Input
           type="text"
           placeholder="Search relations..."
           value={sovereigntySearch}
           onChange={(e) => setSovereigntySearch(e.target.value)}
-          className="bg-surface border-separator focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+          className="text-footnote rounded-control-sm h-7 px-2"
         />
         <OptionSelect
           aria-label="Sovereignty type"

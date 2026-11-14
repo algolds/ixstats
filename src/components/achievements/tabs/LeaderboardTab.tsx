@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import { Trophy, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection } from "~/components/ui/facet-list";
@@ -13,15 +15,17 @@ import { PodiumCard, Row } from "./leaderboard-parts";
 const LIMITS = [10, 25, 50, 100].map((l) => ({ value: String(l), label: String(l) }));
 
 const detail = (e: { achievementCount: number; rareAchievements: number }) =>
-  `${e.achievementCount} unlocked • ${e.rareAchievements} rare+`;
+  `${e.achievementCount} unlocked · ${e.rareAchievements} rare+`;
 
 /** Players ranked by achievement points. The nation boards are `CountryLeaderboards` on /leaderboards. */
 export function LeaderboardTab() {
   const [limit, setLimit] = useState(25);
-  const { data: board, isLoading } = api.achievements.getPlayerLeaderboard.useQuery(
-    { limit },
-    { staleTime: 60_000 }
-  );
+  const {
+    data: board,
+    isLoading,
+    isError,
+    refetch,
+  } = api.achievements.getPlayerLeaderboard.useQuery({ limit }, { staleTime: 60_000 });
   const podium = board && board.length >= 3 ? board.slice(0, 3) : [];
 
   return (
@@ -57,7 +61,19 @@ export function LeaderboardTab() {
         </div>
       )}
 
-      {isLoading ? (
+      {isError ? (
+        <EmptyState
+          compact
+          icon={<WarningCircle />}
+          title="The leaderboard didn't load"
+          message="Please try again in a moment."
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      ) : isLoading ? (
         <div aria-busy className="space-y-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="rounded-row h-14" />
@@ -79,7 +95,7 @@ export function LeaderboardTab() {
           </FacetListSection>
         </FacetList>
       ) : (
-        <EmptyState compact title="No achievements unlocked yet" />
+        <EmptyState compact icon={<Trophy />} title="No achievements unlocked yet" />
       )}
     </Card>
   );

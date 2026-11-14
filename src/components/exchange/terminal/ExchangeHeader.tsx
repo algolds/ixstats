@@ -1,22 +1,12 @@
 "use client";
 
-import { useId } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Building,
-  Coins,
-  HomeSimple,
-  StatsReport,
-  Wallet,
-} from "iconoir-react";
-import { DocumentRibbon, type RibbonTab } from "~/components/shared/document/DocumentRibbon";
+import { Building, Coins, Crown, HomeSimple, StatsReport, Wallet } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
-import { LensCard } from "~/components/ui/lens-card";
-import { EXCHANGE_VERSION } from "~/lib/buildVersion";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   EXCHANGE_PATHS,
@@ -24,17 +14,18 @@ import {
   type ExchangeRoute,
   type ExchangeSection,
 } from "~/lib/exchange/routes";
-import { ExchangeIconWell, Pill, formatSovereignFigure } from "./brand";
-import { useRealmOverview } from "./useTreasuryActor";
+import { ExchangeIconWell, formatSovereignFigure } from "./brand";
+import { useRealmOverview, useTreasuryActor } from "./useTreasuryActor";
 
 /**
- * The 4 primary Exchange ribbon tabs (Apple Design restraint: max 4 items per navigation group).
+ * Primary Exchange sections:
  * - `front` (Overview): Realm index, news dispatches, movers, nation bonds & leaderboards
  * - `markets` (Markets): Searchable equities, sovereign bonds & macro sector funds
- * - `portfolio` (Portfolio): Personal wallet, holdings, orders, watchlist & sovereign treasury desk
+ * - `portfolio` (Portfolio): Personal wallet, holdings, orders & watchlist
  * - `companies` (Companies): Corporate charters, operating controls & B2G/B2B tenders
+ * - `treasury` (Treasury): Sovereign treasury desk, shown for nation owners
  */
-type PrimaryTab = "front" | "markets" | "portfolio" | "companies";
+export type PrimaryTab = "front" | "markets" | "portfolio" | "companies" | "treasury";
 
 const EXCHANGE_HELP_STEPS: HeroHelpStep[] = [
   {
@@ -61,7 +52,7 @@ const SECTION_TITLES: Record<ExchangeSection, string> = {
   tenders: "Companies & tenders",
   portfolio: "Portfolio",
   leaderboards: "Exchange",
-  treasury: "Portfolio & treasury",
+  treasury: "Treasury",
   companies: "Companies & tenders",
 };
 
@@ -77,40 +68,36 @@ const SECTION_SUBTITLES: Record<ExchangeSection, string> = {
 
 const OBJECT_CONTEXT: Record<
   Exclude<ExchangeRoute["kind"], "section" | "unknown">,
-  { title: string; subtitle: string; tab: PrimaryTab }
+  { title: string; tab: PrimaryTab }
 > = {
-  company: {
-    title: "Corporate equity",
-    subtitle: "Live share price, two-sided order book, governance & operating P&L.",
-    tab: "markets",
-  },
-  bond: {
-    title: "Sovereign bond",
-    subtitle: "Fixed-income coupon, yield to maturity, treasury backing & secondary listings.",
-    tab: "markets",
-  },
-  nation: {
-    title: "Sovereign issuer",
-    subtitle: "National treasury balance, credit rating, sovereign wealth fund & domiciled corporations.",
-    tab: "markets",
-  },
-  story: {
-    title: "Business press dispatch",
-    subtitle: "Market-moving filings, corporate announcements & economic dispatches.",
-    tab: "front",
-  },
+  company: { title: "Corporate equity", tab: "markets" },
+  bond: { title: "Sovereign bond", tab: "markets" },
+  nation: { title: "Sovereign issuer", tab: "markets" },
+  story: { title: "Business press dispatch", tab: "front" },
 };
 
-function primaryTabForSection(section: ExchangeSection): PrimaryTab {
-  switch (section) {
+export const TAB_LABELS: Record<PrimaryTab, string> = {
+  front: "Overview",
+  markets: "Markets",
+  portfolio: "Portfolio",
+  companies: "Companies",
+  treasury: "Treasury",
+};
+
+export function primaryTabForRoute(route: ExchangeRoute, showTreasury: boolean): PrimaryTab {
+  if (route.kind !== "section") {
+    return route.kind !== "unknown" ? OBJECT_CONTEXT[route.kind].tab : "front";
+  }
+  switch (route.section) {
     case "front":
     case "leaderboards":
       return "front";
     case "markets":
       return "markets";
     case "portfolio":
-    case "treasury":
       return "portfolio";
+    case "treasury":
+      return showTreasury ? "treasury" : "portfolio";
     case "companies":
     case "tenders":
       return "companies";
@@ -123,69 +110,63 @@ function realmPath(path: string, realmId: string): string {
     : path;
 }
 
-function SearchHref(realmId: string): string {
+function searchHref(realmId: string): string {
   const query = new URLSearchParams({ focus: "search" });
   if (realmId && realmId !== DEFAULT_REALM_ID) query.set("realm", realmId);
   return `${EXCHANGE_PATHS.markets}?${query.toString()}`;
 }
 
-const PRIMARY_TABS: readonly RibbonTab<PrimaryTab>[] = [
-  { id: "front", label: "Overview", icon: HomeSimple },
-  { id: "markets", label: "Markets", icon: StatsReport },
-  { id: "portfolio", label: "Portfolio", icon: Wallet },
-  { id: "companies", label: "Companies", icon: Building },
-];
-
-/** Masthead and 4-tab Facet Lens ribbon console for the Exchange. */
-export function ExchangeHeader({ realmId }: { realmId: string }) {
-  const ribbonId = useId();
+/** Masthead and standard Facet segmented navigation for the Exchange. */
+export function ExchangeHeader({ realmId, panelId }: { realmId: string; panelId?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const route = exchangeRouteOf(pathname);
   const overview = useRealmOverview(realmId);
+  const treasury = useTreasuryActor(realmId);
   const walletBalance = overview.data?.wallet?.sovereigns;
-  const activeCompaniesCount =
-    overview.data?.companies?.filter((c) => c.status !== "DISSOLVED").length ?? 0;
 
   const isSection = route.kind === "section";
   const isMarkets = isSection && route.section === "markets";
+  const showTreasury = Boolean(treasury) || (isSection && route.section === "treasury");
   const hasOwnPrimaryAction =
     !isSection ||
     route.section === "treasury" ||
     route.section === "companies" ||
     route.section === "tenders";
 
-  const activeTab: PrimaryTab = isSection
-    ? primaryTabForSection(route.section)
-    : route.kind !== "unknown"
-      ? OBJECT_CONTEXT[route.kind].tab
-      : "front";
+  const activeTab = primaryTabForRoute(route, showTreasury);
+
+  const options = [
+    { value: "front" as const, label: TAB_LABELS.front, icon: <HomeSimple /> },
+    { value: "markets" as const, label: TAB_LABELS.markets, icon: <StatsReport /> },
+    { value: "portfolio" as const, label: TAB_LABELS.portfolio, icon: <Wallet /> },
+    { value: "companies" as const, label: TAB_LABELS.companies, icon: <Building /> },
+    ...(showTreasury
+      ? [{ value: "treasury" as const, label: TAB_LABELS.treasury, icon: <Crown /> }]
+      : []),
+  ];
 
   const actions = (
     <>
-      <HeroHelpModal
-        title="Exchange guide"
-        steps={EXCHANGE_HELP_STEPS}
-        accentClass="text-tint"
-      />
+      <HeroHelpModal title="Exchange guide" steps={EXCHANGE_HELP_STEPS} accentClass="text-tint" />
       {typeof walletBalance === "number" && (
         <Button asChild variant="secondary" size="sm">
           <Link
             href={realmPath(EXCHANGE_PATHS.portfolio, realmId)}
             title="Open your Exchange portfolio and wallet"
           >
-            <Wallet className="text-tint" />
+            <Wallet className="text-tint" aria-hidden />
             <span className="tabular-nums">₷{formatSovereignFigure(walletBalance)}</span>
           </Link>
         </Button>
       )}
       {!isMarkets && (
-        <Pill tone={hasOwnPrimaryAction ? "plain" : "tint"} asChild>
-          <Link href={SearchHref(realmId)}>
-            <StatsReport />
+        <Button asChild variant={hasOwnPrimaryAction ? "secondary" : "default"} size="sm">
+          <Link href={searchHref(realmId)}>
+            <StatsReport aria-hidden />
             <span>Buy or sell</span>
           </Link>
-        </Pill>
+        </Button>
       )}
     </>
   );
@@ -195,13 +176,10 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
       ? realmPath(EXCHANGE_PATHS.front, realmId)
       : realmPath(EXCHANGE_PATHS.markets, realmId);
   const backLabel = route.kind === "story" ? "Overview" : "Markets";
-  const contextMeta =
-    !isSection && route.kind !== "unknown"
-      ? OBJECT_CONTEXT[route.kind]
-      : null;
+  const contextMeta = !isSection && route.kind !== "unknown" ? OBJECT_CONTEXT[route.kind] : null;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {isSection ? (
         <PageHeader
           bleed
@@ -211,17 +189,7 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
             </ExchangeIconWell>
           }
           title={SECTION_TITLES[route.section]}
-          subtitle={
-            <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span>{SECTION_SUBTITLES[route.section]}</span>
-              <span className="text-label-tertiary" aria-hidden="true">
-                ·
-              </span>
-              <span className="text-caption text-label-tertiary font-mono tabular-nums">
-                v{EXCHANGE_VERSION}
-              </span>
-            </span>
-          }
+          subtitle={SECTION_SUBTITLES[route.section]}
           actions={actions}
         />
       ) : (
@@ -234,25 +202,18 @@ export function ExchangeHeader({ realmId }: { realmId: string }) {
         />
       )}
 
-      <LensCard app="exchange" padding="none" className="overflow-hidden [&>*]:border-y-0">
-        <DocumentRibbon
-          idBase={ribbonId}
-          label="Exchange sections"
-          tabs={PRIMARY_TABS}
-          activeTab={activeTab}
-          counts={activeCompaniesCount > 0 ? { companies: activeCompaniesCount } : undefined}
-          onSelectTab={(next) =>
-            router.push(realmPath(EXCHANGE_PATHS[next], realmId))
-          }
-          actions={
-            contextMeta ? (
-              <Badge variant="outline" className="hidden sm:inline-flex">
-                {contextMeta.title}
-              </Badge>
-            ) : undefined
-          }
-        />
-      </LensCard>
+      <SegmentedControl
+        asTabs={Boolean(panelId)}
+        activationMode="manual"
+        scrollable
+        itemClassName="min-w-max max-[24rem]:[&_svg]:hidden"
+        aria-label="Exchange sections"
+        value={activeTab}
+        onValueChange={(next) => router.push(realmPath(EXCHANGE_PATHS[next], realmId))}
+        getTabPanelId={panelId ? () => panelId : undefined}
+        options={options}
+        className="max-w-full"
+      />
     </div>
   );
 }

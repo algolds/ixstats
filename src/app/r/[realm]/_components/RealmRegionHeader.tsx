@@ -11,11 +11,10 @@ import { formatCompact } from "~/lib/format/compact";
 import { assetUrl } from "~/lib/base-path";
 import { realmHref } from "~/lib/thinkpages-forum/links";
 import { formatRealmSpeed } from "~/lib/realms/realm-clock";
-import { personHref } from "~/lib/realms/realm-region";
 import { useRealmDate } from "~/hooks/useRealmDate";
 import { useRealmClock } from "~/hooks/useRealmClock";
 import { RealmHeroMap } from "~/components/realms/RealmHeroMap";
-import { FounderNames } from "./RealmFounders";
+import { FounderNames, PersonName } from "./RealmFounders";
 
 type Overview = NonNullable<RouterOutputs["realms"]["region"]["overview"]>;
 
@@ -64,20 +63,13 @@ function StatItem({
 
 /**
  * The founder stat: the staff-set title, else the founding members, else the realm's creator, else staff. Linked to
- * their passport or nation here (`personHref`; `<Link>` adds the base path).
+ * their passport or their nation's actions sheet (`PersonName`).
  */
 function founderValue({ founderTitle, founders, founder }: Overview) {
   if (founderTitle) return founderTitle;
   if (founders.length > 0) return <FounderNames founders={founders} />;
   if (!founder) return "Administered by IxStates staff";
-  const href = personHref(founder);
-  return href ? (
-    <Link href={href} className="hover:underline">
-      {founder.name}
-    </Link>
-  ) : (
-    founder.name
-  );
+  return <PersonName person={founder} />;
 }
 
 /** Share, plus "Copy invite link" (carrying the viewer's passport handle) for those who hold a nation here. */

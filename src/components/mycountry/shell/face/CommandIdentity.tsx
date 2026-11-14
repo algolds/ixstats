@@ -53,7 +53,6 @@ export function CommandIdentity({
         username: str(owner.handle) ?? str(owner.forumUsername),
         roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
         avatarUrl: owner.avatarUrl,
-        role: owner.clerkRole ?? str(owner.role?.name),
       }
     : null;
 

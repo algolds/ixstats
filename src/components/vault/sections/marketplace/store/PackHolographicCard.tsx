@@ -2,8 +2,9 @@
 
 import React, { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { InfoCircle as Info, Star, Sparks as Sparkles, Gift } from "iconoir-react";
+import { InfoCircle as Info, Star, MagicWand, Gift } from "iconoir-react";
 import { cn } from "~/lib/utils";
+import { springGentle } from "~/lib/design/motion";
 import { Badge } from "~/components/ui/badge";
 import { focusRing, hitSlop } from "~/components/ui/button";
 import { TYPE_LABEL } from "~/lib/cards/face/labels";
@@ -53,7 +54,7 @@ const getPackConfig = (packType: string) => {
       color: "text-yellow",
       borderColor: "border-yellow/30",
       glowColor: "rgba(245,158,11,0.3)",
-      icon: Sparkles,
+      icon: MagicWand,
       label: "Premium",
     };
   if (type.includes("EVENT"))
@@ -61,7 +62,7 @@ const getPackConfig = (packType: string) => {
       color: "text-red",
       borderColor: "border-red/30",
       glowColor: "rgba(239,68,68,0.3)",
-      icon: Sparkles,
+      icon: MagicWand,
       label: "Event",
     };
   return {
@@ -85,10 +86,10 @@ export function PackHolographicCard({
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-75, 75], [12, -12]), { stiffness: 120, damping: 15 });
-  const rotateY = useSpring(useTransform(x, [-50, 50], [-12, 12]), { stiffness: 120, damping: 15 });
-  const scale = useSpring(1, { stiffness: 120, damping: 15 });
-  const translateY = useSpring(0, { stiffness: 120, damping: 15 });
+  const rotateX = useSpring(useTransform(y, [-75, 75], [12, -12]), springGentle);
+  const rotateY = useSpring(useTransform(x, [-50, 50], [-12, 12]), springGentle);
+  const scale = useSpring(1, springGentle);
+  const translateY = useSpring(0, springGentle);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -137,7 +138,7 @@ export function PackHolographicCard({
               e.stopPropagation();
             }}
             className={cn(
-              "absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/50 text-white/80 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:bg-black/85",
+              "border-separator bg-surface/85 text-label shadow-card hover:bg-surface absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
               focusRing,
               hitSlop
             )}
@@ -156,22 +157,24 @@ export function PackHolographicCard({
             <div className="border-separator text-footnote mt-4 space-y-2 border-t pt-3">
               <div className="flex justify-between">
                 <span className="text-label-secondary">Price</span>
-                <span className="text-yellow font-semibold">{pack.priceCredits} Credits</span>
+                <span className="text-yellow-ink font-medium tabular-nums">
+                  {pack.priceCredits.toLocaleString()} Credits
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-label-secondary">Cards included</span>
-                <span className="font-semibold">{pack.cardCount} cards</span>
+                <span className="text-label font-medium tabular-nums">{pack.cardCount} cards</span>
               </div>
               {pack.season && (
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Season</span>
-                  <span className="font-semibold">Season {pack.season}</span>
+                  <span className="text-label font-medium tabular-nums">Season {pack.season}</span>
                 </div>
               )}
               {pack.cardType && (
                 <div className="flex justify-between">
                   <span className="text-label-secondary">Card type</span>
-                  <span className="font-semibold">{TYPE_LABEL[pack.cardType]}</span>
+                  <span className="text-label font-medium">{TYPE_LABEL[pack.cardType]}</span>
                 </div>
               )}
               <div className="border-separator border-t pt-3">
@@ -193,8 +196,8 @@ export function PackHolographicCard({
         </div>
 
         <div className="mt-2 space-y-2 px-1">
-          <div className="flex items-center justify-between">
-            <span className="text-label text-footnote line-clamp-1 font-semibold">{pack.name}</span>
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-label text-subhead line-clamp-1">{pack.name}</span>
             <Badge variant="outline" className={cn("text-caption px-1 py-0", config.color)}>
               {config.label}
             </Badge>

@@ -32,6 +32,7 @@ const DefenseCommandPanel = dynamic(
 const SECTION_TO_DOMAIN: Record<string, MyCountryDomain> = {
   diplomacy: "relations",
   defense: "defense",
+  intelligence: "defense",
   politics: "politics",
   economy: "economy",
 };
@@ -49,7 +50,7 @@ interface DomainSurfaceProps {
   onDeclare?: (prefilled?: string) => void;
 }
 
-function DomainSurfaceComponent({
+export function DomainSurface({
   countryId,
   section,
   onDeclare,
@@ -73,11 +74,9 @@ function DomainSurfaceComponent({
         )}
       </div>
 
-      <aside className="min-w-0 space-y-6">
+      <aside className="min-w-0 space-y-6 lg:sticky lg:top-20 lg:self-start">
         <DomainContextRail countryId={countryId} domain={domain} />
       </aside>
     </div>
   );
 }
-
-export const DomainSurface = React.memo(DomainSurfaceComponent);

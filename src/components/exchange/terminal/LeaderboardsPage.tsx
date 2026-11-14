@@ -34,7 +34,7 @@ function RankBadge({ rank }: { rank: number }) {
     );
   }
   return (
-    <span className="facet-recess rounded-control text-label-secondary flex size-7 shrink-0 items-center justify-center font-mono text-caption font-semibold tabular-nums">
+    <span className="facet-recess rounded-control text-caption text-label-secondary flex size-7 shrink-0 items-center justify-center tabular-nums">
       {rank}
     </span>
   );
@@ -53,14 +53,12 @@ function Board({
     <LensCard app="exchange" content="data" padding="md" className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <SectionTitle icon={icon}>{title}</SectionTitle>
-        <Badge variant="secondary" className="font-mono tabular-nums">
+        <Badge variant="secondary" className="tabular-nums">
           Top {rows.length}
         </Badge>
       </div>
       {rows.length === 0 ? (
-        <p className="text-footnote text-label-secondary py-4">
-          Nobody on this board yet.
-        </p>
+        <p className="text-footnote text-label-secondary py-4">Nobody on this board yet.</p>
       ) : (
         <ol className="divide-separator divide-y">
           {rows.map((r, i) => {

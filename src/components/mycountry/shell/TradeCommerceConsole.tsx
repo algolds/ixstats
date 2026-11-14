@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "~/components/ui/button";
 import { Plus, InfoCircle, Globe } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -21,7 +22,7 @@ import { TradePartnersManager } from "./trade-commerce/TradePartnersManager";
 import { TradeImpactSummary } from "./trade-commerce/TradeImpactSummary";
 import { exciseWithSectorTariff, readSectorTariffs } from "./trade-commerce/sector-tariffs";
 import { CustomSectorDialog } from "./trade-commerce/CustomSectorDialog";
-import { RailCard, RailCount, RailRow } from "./rails/shared";
+import { RailCard, RailCount } from "./rails/shared";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /**
@@ -53,26 +54,17 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const taxEfficiency = finiteOrNull(fiscal?.taxEfficiency);
 
   // Planner sectors: the nation's recorded sectors plus any added in this session (unsaved).
-  const recordedSectors = useMemo(
-    () => sectorsFromRecorded(parseSectorBreakdown(profile?.sectorBreakdown), baseTariff ?? 0),
-    [profile?.sectorBreakdown, baseTariff]
+  const recordedSectors = sectorsFromRecorded(
+    parseSectorBreakdown(profile?.sectorBreakdown),
+    baseTariff ?? 0
   );
   const [addedSectors, setAddedSectors] = useState<CustomSector[]>([]);
-  const sectors = useMemo(
-    () => [...recordedSectors, ...addedSectors],
-    [recordedSectors, addedSectors]
-  );
+  const sectors = [...recordedSectors, ...addedSectors];
   const [tariffs, setTariffs] = useState<Record<string, number>>({});
 
   // Saved per-sector rates, by sector key (recorded sectors only).
-  const savedSectorTariffs = useMemo(
-    () => readSectorTariffs(fiscal?.exciseTaxRates),
-    [fiscal?.exciseTaxRates]
-  );
-  const rateOf = useCallback(
-    (s: CustomSector) => tariffs[s.id] ?? savedSectorTariffs[s.key] ?? s.defaultTariff,
-    [tariffs, savedSectorTariffs]
-  );
+  const savedSectorTariffs = readSectorTariffs(fiscal?.exciseTaxRates);
+  const rateOf = (s: CustomSector) => tariffs[s.id] ?? savedSectorTariffs[s.key] ?? s.defaultTariff;
 
   const saveMutation = api.economics.updateFiscalSystem.useMutation({
     onSuccess: () => {
@@ -92,47 +84,35 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
     exciseRef.current = fiscal?.exciseTaxRates;
   }, [fiscal?.exciseTaxRates]);
 
-  const persistTariff = useCallback(
-    (sector: CustomSector, rate: number | null) => {
-      if (!recordedSectors.some((s) => s.id === sector.id)) return; // session-only sector
-      const next = exciseWithSectorTariff(exciseRef.current, sector.key, rate);
-      exciseRef.current = next;
-      mutateRef.current({ countryId, exciseTaxRates: next });
-    },
-    [countryId, recordedSectors]
-  );
+  const persistTariff = (sector: CustomSector, rate: number | null) => {
+    if (!recordedSectors.some((s) => s.id === sector.id)) return; // session-only sector
+    const next = exciseWithSectorTariff(exciseRef.current, sector.key, rate);
+    exciseRef.current = next;
+    mutateRef.current({ countryId, exciseTaxRates: next });
+  };
 
-  const handleTariffChange = useCallback((sectorId: string, val: number) => {
+  const handleTariffChange = (sectorId: string, val: number) => {
     setTariffs((prev) => ({ ...prev, [sectorId]: val }));
-  }, []);
+  };
 
-  const handleTariffCommit = useCallback(
-    (sector: CustomSector, val: number) => {
-      setTariffs((prev) => ({ ...prev, [sector.id]: val }));
-      persistTariff(sector, val);
-    },
-    [persistTariff]
-  );
+  const handleTariffCommit = (sector: CustomSector, val: number) => {
+    setTariffs((prev) => ({ ...prev, [sector.id]: val }));
+    persistTariff(sector, val);
+  };
 
-  const toggleLock = useCallback((sectorId: string) => {
+  const toggleLock = (sectorId: string) => {
     setLockedSectors((prev) => ({ ...prev, [sectorId]: !prev[sectorId] }));
-  }, []);
+  };
 
-  const resetTariff = useCallback(
-    (sector: CustomSector) => {
-      setTariffs((prev) => ({ ...prev, [sector.id]: sector.defaultTariff }));
-      persistTariff(sector, null);
-    },
-    [persistTariff]
-  );
+  const resetTariff = (sector: CustomSector) => {
+    setTariffs((prev) => ({ ...prev, [sector.id]: sector.defaultTariff }));
+    persistTariff(sector, null);
+  };
 
-  const handleAddSector = useCallback(
-    (newSector: CustomSector) => {
-      setAddedSectors((prev) => [...prev, newSector]);
-      notify.success(`Added ${newSector.label} to the tariff planner (not saved)`);
-    },
-    [notify]
-  );
+  const handleAddSector = (newSector: CustomSector) => {
+    setAddedSectors((prev) => [...prev, newSector]);
+    notify.success(`Added ${newSector.label} to the tariff planner (not saved)`);
+  };
 
   // Recorded trade figures — null when the nation hasn't recorded them.
   const gdp = finiteOrNull(country?.currentTotalGdp);
@@ -145,33 +125,27 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
   const tradeBalance =
     totalExports != null && totalImports != null ? totalExports - totalImports : null;
 
-  const { plannedAverageTariff, plannedTariffRevenue } = useMemo(() => {
-    let weighted = 0;
-    let totalShare = 0;
-    sectors.forEach((s) => {
-      const rate = rateOf(s);
-      weighted += rate * s.defaultShare;
-      totalShare += s.defaultShare;
-    });
-    const avg = totalShare > 0 ? weighted / totalShare : null;
-    const revenue =
-      avg != null && totalImports != null
-        ? totalImports * (avg / 100) * (taxEfficiency ?? 1)
-        : null;
-    return { plannedAverageTariff: avg, plannedTariffRevenue: revenue };
-  }, [sectors, rateOf, totalImports, taxEfficiency]);
+  let weightedTariff = 0;
+  let totalSectorShare = 0;
+  sectors.forEach((s) => {
+    const rate = rateOf(s);
+    weightedTariff += rate * s.defaultShare;
+    totalSectorShare += s.defaultShare;
+  });
+  const plannedAverageTariff = totalSectorShare > 0 ? weightedTariff / totalSectorShare : null;
+  const plannedTariffRevenue =
+    plannedAverageTariff != null && totalImports != null
+      ? totalImports * (plannedAverageTariff / 100) * (taxEfficiency ?? 1)
+      : null;
 
   // Trade partners, with agreement status from recorded treaties.
-  const tradePartners = useMemo(() => {
-    if (!diplomaticRelations) return [];
-    return diplomaticRelations.map((rel) => ({
-      countryId: rel.targetCountryId || rel.id,
-      countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
-      flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
-      tradeAgreement: rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ?? false,
-      tradeVolume: rel.tradeVolume ?? 0,
-    }));
-  }, [diplomaticRelations]);
+  const tradePartners = (diplomaticRelations ?? []).map((rel) => ({
+    countryId: rel.targetCountryId || rel.id,
+    countryName: rel.targetCountryName || rel.targetCountry || "Diplomatic Partner",
+    flagUrl: rel.targetCountryFlag ?? rel.flagUrl ?? null,
+    tradeAgreement: rel.treaties?.some((t) => t.toLowerCase().includes("trade")) ?? false,
+    tradeVolume: rel.tradeVolume ?? 0,
+  }));
 
   return (
     <div className="space-y-6">
@@ -222,10 +196,12 @@ export function TradeCommerceConsole({ countryId }: { countryId: string }) {
           </p>
 
           {sectors.length === 0 ? (
-            <p className="text-label-secondary border-separator rounded-row text-footnote border border-dashed py-8 text-center">
-              No economic sectors are recorded for this nation. Add one here to sketch a tariff
-              schedule.
-            </p>
+            <EmptyState
+              compact
+              icon={<Globe />}
+              title="No economic sectors are recorded for this nation."
+              message="Add a sector here to sketch a tariff schedule."
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {sectors.map((sec) => (
@@ -282,18 +258,18 @@ export function TradeCommerceInsights({ countryId }: { countryId: string }) {
       icon={Globe}
       accessory={<RailCount>{partnerCount} partners</RailCount>}
     >
-      <div className="grid grid-cols-2 gap-2">
-        <RailRow className="p-2">
-          <span className="text-label-secondary text-footnote block">Free trade pacts</span>
-          <p className="text-label text-title-3 mt-0.5 tabular-nums">{ftaCount}</p>
-        </RailRow>
-        <RailRow className="p-2">
-          <span className="text-label-secondary text-footnote block">Recorded sectors</span>
-          <p className="text-label text-title-3 mt-0.5 tabular-nums">
-            {recordedSectorCount > 0 ? recordedSectorCount : "–"}
-          </p>
-        </RailRow>
-      </div>
+      <dl className="divide-separator grid grid-cols-2 divide-x">
+        <div className="pr-3">
+          <dt className="text-label-secondary text-footnote">Free trade pacts</dt>
+          <dd className="text-label text-title-3 mt-0.5 tabular-nums">{ftaCount}</dd>
+        </div>
+        <div className="pl-3">
+          <dt className="text-label-secondary text-footnote">Recorded sectors</dt>
+          <dd className="text-label text-title-3 mt-0.5 tabular-nums">
+            {recordedSectorCount > 0 ? recordedSectorCount : "None"}
+          </dd>
+        </div>
+      </dl>
     </RailCard>
   );
 }

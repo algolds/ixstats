@@ -1,13 +1,20 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { withBasePath } from "~/lib/base-path";
-import { Trophy, Sparks as Sparkles, Activity, Calendar } from "iconoir-react";
+import { Trophy, Medal, Activity, Calendar } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -116,7 +123,7 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <Eyebrow className="text-yellow">Champion</Eyebrow>
+                        <span className="text-caption text-yellow">Champion</span>
                         <p className="text-headline text-label truncate group-hover:underline">
                           {season.champion.teamName}
                         </p>
@@ -160,28 +167,28 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
 
           <Card padding="md" className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="text-footnote w-full text-left tabular-nums">
-                <thead>
-                  <tr className="border-separator text-eyebrow text-label-secondary border-b">
-                    <th className="py-3 pl-3">Pos</th>
-                    <th className="py-3">Club</th>
-                    <th className="py-3 text-center">P</th>
-                    <th className="py-3 text-center">W</th>
-                    <th className="py-3 text-center">D</th>
-                    <th className="py-3 text-center">L</th>
-                    <th className="py-3 text-right">GF</th>
-                    <th className="py-3 text-right">GA</th>
-                    <th className="py-3 pr-3 text-right">PTS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-separator divide-y">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="pl-3">Pos</TableHead>
+                    <TableHead>Club</TableHead>
+                    <TableHead className="text-center">P</TableHead>
+                    <TableHead className="text-center">W</TableHead>
+                    <TableHead className="text-center">D</TableHead>
+                    <TableHead className="text-center">L</TableHead>
+                    <TableHead className="text-right">GF</TableHead>
+                    <TableHead className="text-right">GA</TableHead>
+                    <TableHead className="pr-3 text-right">PTS</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {activeSeasonData.standings.map((row) => (
-                    <tr
+                    <TableRow
                       key={row.teamId}
                       onClick={() => focusOrganization(row.teamId)}
                       className="hover:bg-fill-4 cursor-pointer transition-colors"
                     >
-                      <td className="text-label-secondary py-3 pl-3 font-semibold tabular-nums">
+                      <TableCell className="text-label-secondary pl-3">
                         {row.position === 1 ? (
                           <span className="bg-yellow/15 text-footnote text-yellow flex size-6 items-center justify-center rounded-full font-semibold">
                             1
@@ -189,8 +196,8 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                         ) : (
                           row.position
                         )}
-                      </td>
-                      <td className="text-label py-3 font-semibold">
+                      </TableCell>
+                      <TableCell className="text-label">
                         <div className="flex items-center gap-2">
                           <span
                             className="h-2 w-2 shrink-0 rounded-full"
@@ -198,30 +205,28 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
                           />
                           <span className="truncate">{row.teamName}</span>
                         </div>
-                      </td>
-                      <td className="text-label-secondary py-3 text-center tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         {row.played}
-                      </td>
-                      <td className="text-label py-3 text-center tabular-nums">{row.wins}</td>
-                      <td className="text-label-secondary py-3 text-center tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label text-center">{row.wins}</TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         {row.draws}
-                      </td>
-                      <td className="text-label-secondary py-3 text-center tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         {row.losses}
-                      </td>
-                      <td className="text-label-secondary py-3 text-right tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-right">
                         {row.pointsFor}
-                      </td>
-                      <td className="text-label-secondary py-3 text-right tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-right">
                         {row.pointsAgainst}
-                      </td>
-                      <td className="text-headline text-label py-3 pr-3 text-right tabular-nums">
-                        {row.points}
-                      </td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="text-label pr-3 text-right">{row.points}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         </section>
@@ -282,12 +287,12 @@ export function LeagueArchiveTab({ leagueId }: LeagueArchiveTabProps) {
             <Card padding="md" className="flex flex-col justify-between">
               <div className="border-separator flex items-center justify-between border-b pb-2">
                 <h4 className="text-subhead text-label-secondary">Highest-scoring fixture</h4>
-                <Sparkles className="text-tint size-4" aria-hidden />
+                <Medal className="text-tint size-4" aria-hidden />
               </div>
 
               {records.highestScoringMatch ? (
                 <div className="my-auto space-y-2 py-3 text-center">
-                  <span className="text-eyebrow text-tint">
+                  <span className="text-caption text-tint">
                     Season {records.highestScoringMatch.seasonNumber} Record
                   </span>
                   <div className="text-title-1 text-label flex items-center justify-center gap-3 tabular-nums">

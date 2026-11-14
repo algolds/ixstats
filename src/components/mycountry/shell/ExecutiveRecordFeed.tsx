@@ -5,6 +5,7 @@ import { NavArrowDown as ChevronDown, NavArrowRight, ArrowUp, ArrowDown } from "
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useNationClock } from "~/hooks/useNationClock";
 import { timeAgo } from "~/lib/format/compact";
 import { formatStampAsClockDate } from "~/lib/realms/nation-time";
@@ -131,7 +132,7 @@ function RecordRow({
               </Badge>
             )}
             <span className="text-label-secondary tabular-nums">
-              {formatStampAsClockDate(item.timestamp, clock, "–")}
+              {formatStampAsClockDate(item.timestamp, clock, "Not recorded")}
             </span>
           </div>
 
@@ -175,13 +176,11 @@ export function ExecutiveRecordFeed({
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center px-4 py-6 text-center">
-        <p className="text-label text-headline">No activity recorded yet</p>
-        <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
-          Decisions, directive outcomes and issue consequences are logged here as they change your
-          nation.
-        </p>
-      </div>
+      <EmptyState
+        compact
+        title="No activity recorded yet"
+        message="Decisions, directive outcomes and issue consequences are logged here as they change your nation."
+      />
     );
   }
 
@@ -202,9 +201,7 @@ export function ExecutiveRecordFeed({
       {/* The page scrolls, not the list: an inner scroller would trap the wheel and the finger. */}
       <div>
         {visibleItems.length === 0 ? (
-          <p className="text-label-secondary text-footnote px-4 py-6 text-center">
-            Nothing in this category yet.
-          </p>
+          <EmptyState compact title="Nothing in this category yet." />
         ) : (
           <ul className="divide-separator divide-y">
             {visibleItems.map((item) => (

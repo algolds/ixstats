@@ -1,29 +1,29 @@
 "use client";
 
 import React from "react";
-import { Badge } from "~/components/ui/badge";
 import { cn } from "~/lib/utils";
 import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
 import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { Progress } from "~/components/ui/progress";
 /**
  * Status colours for the domain rails: the shell's shared `status-tone` mapping (destructive,
- * orange warning, MyCountry gold, muted) plus `success` for healthy readings.
+ * warning, MyCountry gold, muted) plus `success` for healthy readings.
  */
 export const STATUS_TEXT = {
   ...SHELL_STATUS_TEXT,
-  success: "text-green",
+  success: "text-success",
 } as const;
 
 /** Semantic fill for a progress/level bar. */
 export const STATUS_FILL = {
   critical: "bg-destructive",
-  warning: "bg-orange",
+  warning: "bg-warning",
   accent: "bg-tint",
   neutral: "bg-label-tertiary",
-  success: "bg-green",
+  success: "bg-success",
 } as const;
 
 export type StatusTone = keyof typeof STATUS_TEXT;
@@ -53,8 +53,8 @@ export function pushRecorded(
 }
 
 /**
- * A rail card: a Facet card with a title row (tinted icon, sentence-case title, optional trailing
- * accessory such as a count badge) and content below.
+ * A rail card: a Facet `LensCard` (`app="mycountry"`) with a title row (tinted icon, sentence-case
+ * title, optional trailing accessory) and content below.
  */
 export function RailCard({
   title,
@@ -72,7 +72,7 @@ export function RailCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className={cn("rounded-card", className)}>
+    <LensCard app="mycountry" padding="none" className={cn("rounded-card", className)}>
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <CardTitle
           icon={Icon ? <Icon /> : undefined}
@@ -85,11 +85,11 @@ export function RailCard({
         {accessory ? <div className="flex shrink-0 items-center gap-2">{accessory}</div> : null}
       </CardHeader>
       <CardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>{children}</CardContent>
-    </Card>
+    </LensCard>
   );
 }
 
-/** A row nested inside a rail card: opaque (no stacked blur). */
+/** A clean flat row inside a rail card (divided by hairlines, no nested box). */
 export function RailRow({
   className,
   children,
@@ -97,7 +97,16 @@ export function RailRow({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <Card className={cn("rounded-row text-footnote p-2", className)}>{children}</Card>;
+  return (
+    <div
+      className={cn(
+        "border-separator/60 text-footnote border-t py-2 first:border-t-0 first:pt-0 last:pb-0",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 /** Thin level bar (0–100). */
@@ -117,26 +126,22 @@ export function RailEmpty({ children }: { children: React.ReactNode }) {
   return <p className="text-label-secondary text-footnote py-2 text-center">{children}</p>;
 }
 
-/** Count accessory for a rail card header. */
+/** Quiet count accessory for a rail card header. */
 export function RailCount({ children }: { children: React.ReactNode }) {
-  return (
-    <Badge variant="default" className="tabular-nums">
-      {children}
-    </Badge>
-  );
+  return <span className="text-label-secondary text-footnote tabular-nums">{children}</span>;
 }
 
 export function DomainKpiGrid({ items }: { items: Kpi[] }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <dl className="divide-separator/60 grid grid-cols-3 divide-x">
       {items.map((item) => (
-        <Card key={item.label} className="p-2">
-          <span className="text-caption text-label-secondary block truncate">{item.label}</span>
-          <p className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</p>
-          {item.sub && <p className="text-label-secondary text-footnote mt-0.5">{item.sub}</p>}
-        </Card>
+        <div key={item.label} className="min-w-0 px-2.5 first:pl-0 last:pr-0">
+          <dt className="text-caption text-label-secondary truncate">{item.label}</dt>
+          <dd className="text-label text-title-3 mt-0.5 tabular-nums">{item.value}</dd>
+          {item.sub && <dd className="text-label-secondary text-footnote mt-0.5">{item.sub}</dd>}
+        </div>
       ))}
-    </div>
+    </dl>
   );
 }
 

@@ -3,6 +3,7 @@
 import { NavArrowDown, NavArrowUp } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
 import type { StudioPreset } from "~/lib/worldgen/studio-presets";
 
 interface StudioPresetListProps {
@@ -26,20 +27,25 @@ export function StudioPresetList({
     <ul aria-label="Presets" className="space-y-1">
       {presets.map((preset, index) => (
         <li key={preset.slug} className="flex items-center gap-1">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             aria-current={preset.slug === selected ? "true" : undefined}
             onClick={() => onSelect(preset.slug)}
-            className={`rounded-control-sm text-footnote flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left ${
-              preset.slug === selected ? "bg-tint-fill" : "hover:bg-fill-4"
-            }`}
+            className={cn(
+              "h-auto min-w-0 flex-1 justify-start gap-2 px-2 py-2 text-left font-normal",
+              preset.slug === selected
+                ? "bg-tint-fill text-tint-ink hover:bg-tint-fill"
+                : "hover:bg-fill-4"
+            )}
           >
             <span className="min-w-0 flex-1 truncate">{preset.name}</span>
             <Badge variant={preset.published ? "success" : "default"}>
               {preset.published ? "Published" : "Not published"}
             </Badge>
             {preset.hasDraft && <Badge variant="warning">Draft</Badge>}
-          </button>
+          </Button>
           <Button
             size="icon-sm"
             variant="ghost"

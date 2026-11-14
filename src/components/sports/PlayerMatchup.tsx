@@ -65,7 +65,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
               className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorA }}
             >
-              {playerA.overallRating ?? "—"}
+              {playerA.overallRating ?? "–"}
             </div>
           </div>
           <h4 className="text-label text-headline leading-tight">
@@ -103,7 +103,7 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
               className="border-separator text-footnote shadow-card absolute -right-1 -bottom-1 flex h-8 w-8 items-center justify-center rounded-full border font-semibold text-white tabular-nums"
               style={{ backgroundColor: colorB }}
             >
-              {playerB.overallRating ?? "—"}
+              {playerB.overallRating ?? "–"}
             </div>
           </div>
           <h4 className="text-label text-headline leading-tight">
@@ -135,16 +135,16 @@ export function PlayerMatchup({ playerA, playerB, className }: PlayerMatchupProp
                     (valA ?? 0) > (valB ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valA ?? "—"}
+                  {valA ?? "–"}
                 </span>
-                <span className="text-label-secondary text-eyebrow">{key}</span>
+                <span className="text-label-secondary text-caption">{key}</span>
                 <span
                   className={cn(
                     "tabular-nums",
                     (valB ?? 0) > (valA ?? 0) ? "text-label font-semibold" : "text-label-secondary"
                   )}
                 >
-                  {valB ?? "—"}
+                  {valB ?? "–"}
                 </span>
               </div>
 

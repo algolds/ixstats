@@ -3,15 +3,7 @@
 import { springSmooth } from "~/lib/design/motion";
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Globe,
-  OpenNewWindow as ExternalLink,
-  ShieldCheck,
-  Download,
-  ArrowRight,
-  SystemRestart as Loader2,
-} from "iconoir-react";
-import { cn } from "~/lib/utils";
+import { Globe, ShieldCheck, ArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
@@ -63,37 +55,25 @@ export function ImportNationStep({
             step: "1",
             title: "Enter nation",
             desc: "Type your NationStates nation name",
-            icon: Globe,
-            color: "amber",
           },
           {
             step: "2",
             title: "Visit NS link",
             desc: "Open a NationStates verification page",
-            icon: ExternalLink,
-            color: "cyan",
           },
           {
             step: "3",
             title: "Paste code",
             desc: "Copy the code NS gives you and paste it here",
-            icon: ShieldCheck,
-            color: "emerald",
           },
           {
             step: "4",
             title: "Import",
             desc: "Your NS trading cards are imported",
-            icon: Download,
-            color: "indigo",
           },
         ].map((item) => (
           <Card key={item.step} padding="md" className="flex items-start gap-3">
-            <div
-              className={cn(
-                "bg-tint-fill text-tint rounded-control text-footnote flex size-8 shrink-0 items-center justify-center font-semibold tabular-nums"
-              )}
-            >
+            <div className="bg-tint-fill text-tint-ink rounded-control text-subhead flex size-8 shrink-0 items-center justify-center tabular-nums">
               {item.step}
             </div>
             <div>
@@ -108,7 +88,7 @@ export function ImportNationStep({
       <Card className="text-label-secondary rounded-row text-footnote flex items-start gap-2 p-4 select-none">
         <ShieldCheck className="text-blue mt-0.5 h-4 w-4 shrink-0" />
         <div className="space-y-0.5">
-          <p className="text-label font-semibold">Important</p>
+          <p className="text-label text-subhead">Important</p>
           <p className="leading-relaxed">
             Verification uses the official{" "}
             <a
@@ -189,11 +169,13 @@ export function ImportNationStep({
                 className="w-full"
               >
                 {isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  "Starting verification..."
                 ) : (
-                  <ArrowRight className="mr-2 h-4 w-4" />
+                  <>
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                    Start verification
+                  </>
                 )}
-                Start verification
               </Button>
             </Card>
           </motion.div>

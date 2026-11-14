@@ -25,8 +25,8 @@ export function CircuitMap({
     >
       {/* Header Info HUD */}
       <div className="border-separator flex items-center justify-between border-b pb-2">
-        <span className="text-eyebrow text-red">🏎️ {circuitName}</span>
-        <span className="text-eyebrow text-label-secondary">{lapCount} Laps · DRS Zones (2)</span>
+        <span className="text-subhead text-label">{circuitName}</span>
+        <span className="text-caption text-label-secondary">{lapCount} laps · 2 DRS zones</span>
       </div>
 
       <div className="relative my-auto flex h-[calc(100%-28px)] items-center justify-center">

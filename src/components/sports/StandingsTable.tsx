@@ -1,10 +1,18 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import React from "react";
 import { cn } from "~/lib/utils";
 import { withBasePath } from "~/lib/base-path";
 import Link from "next/link";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { OpenBook as BookOpen, Download } from "iconoir-react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { Button } from "~/components/ui/button";
@@ -28,6 +36,7 @@ export interface StandingsRow {
   color?: string;
   logo?: string | null;
   wikiSlug?: string | null;
+  wikiSource?: string | null;
 }
 
 function exportStandingsCsv(title: string, rows: StandingsRow[]) {
@@ -128,19 +137,11 @@ export function StandingsTable({
   };
 
   return (
-    <Card
-      className={cn(
-        "border-separator bg-surface rounded-sheet shadow-card mx-auto w-full overflow-hidden border p-6",
-        className
-      )}
-    >
+    <Card className={cn("mx-auto w-full overflow-hidden p-4 md:p-6", className)}>
       {/* Table Title and Export Button */}
       <div className="border-separator mb-6 flex flex-col gap-3 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-label text-title-2">{title}</h3>
-          <p className="text-footnote text-label-secondary mt-0.5 font-medium">
-            Live season table with qualification zones and team form momentum.
-          </p>
         </div>
 
         <Button
@@ -150,36 +151,36 @@ export function StandingsTable({
           title="Export CSV"
           className="text-label-secondary w-fit"
         >
-          <Download className="h-3.5 w-3.5" />
-          <span>Export matrix</span>
+          <Download />
+          <span>Export CSV</span>
         </Button>
       </div>
 
       {groups.map((group, groupIdx) => (
         <div key={groupIdx} className="mb-8 last:mb-0">
           {group.label && (
-            <div className="text-label-secondary border-separator text-eyebrow mb-3 flex items-center gap-2 border-b pb-2">
+            <div className="text-label-secondary border-separator text-caption mb-3 flex items-center gap-2 border-b pb-2">
               <span className="bg-tint h-2 w-2 rounded-full" />
               <span>{group.label}</span>
             </div>
           )}
 
           <div className="overflow-x-auto">
-            <table className="text-footnote w-full border-collapse text-left">
-              <thead>
-                <tr className="text-label-secondary border-separator text-eyebrow border-b">
-                  <th className="w-14 py-3 pl-3 text-center">Rank</th>
-                  <th className="py-3">Franchise</th>
-                  <th className="py-3 text-center">GP</th>
-                  <th className="py-3 text-center">W</th>
-                  <th className="py-3 text-center">D</th>
-                  <th className="py-3 text-center">L</th>
-                  <th className="py-3 text-center">DIFF</th>
-                  <th className="text-label py-3 text-center font-semibold">PTS</th>
-                  <th className="py-3 pr-3 text-center">Form</th>
-                </tr>
-              </thead>
-              <tbody className="divide-separator divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-14 pl-3 text-center">Rank</TableHead>
+                  <TableHead>Franchise</TableHead>
+                  <TableHead className="text-center">GP</TableHead>
+                  <TableHead className="text-center">W</TableHead>
+                  <TableHead className="text-center">D</TableHead>
+                  <TableHead className="text-center">L</TableHead>
+                  <TableHead className="text-center">DIFF</TableHead>
+                  <TableHead className="text-label text-center">PTS</TableHead>
+                  <TableHead className="pr-3 text-center">Form</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {group.standings.map((team, idx) => {
                   const played = team.wins + team.losses + team.draws;
                   const diff = team.pointsFor - team.pointsAgainst;
@@ -197,7 +198,7 @@ export function StandingsTable({
                   const form = team.recentForm ?? [];
 
                   return (
-                    <tr
+                    <TableRow
                       key={team.id || team.teamId}
                       className={cn(
                         "group cursor-pointer transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150",
@@ -209,7 +210,7 @@ export function StandingsTable({
                       onClick={() => handleRowClick(team.teamId)}
                     >
                       {/* Rank with indicator */}
-                      <td className="py-3 pl-3 text-center font-semibold">
+                      <TableCell className="pl-3 text-center">
                         <div className="flex items-center justify-center gap-2">
                           {isLeader ? (
                             <span className="bg-yellow/20 text-footnote text-yellow flex h-5 w-5 items-center justify-center rounded-full font-semibold">
@@ -230,10 +231,10 @@ export function StandingsTable({
                             </span>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
 
                       {/* Team Name and Logo */}
-                      <td className="py-3">
+                      <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="border-separator bg-background rounded-row shadow-card flex aspect-square w-7 shrink-0 items-center justify-center border p-0.5">
                             {team.logo ? (
@@ -254,7 +255,7 @@ export function StandingsTable({
                           </span>
                           {team.wikiSlug && (
                             <Link
-                              href={titleToWikiOSRoute(team.wikiSlug)}
+                              href={wikiReaderPath(team.wikiSlug, parseWikiSource(team.wikiSource))}
                               onClick={(e) => e.stopPropagation()}
                               className="text-label-secondary hover:text-label opacity-60 transition-opacity hover:opacity-100"
                               title={`Wiki: ${team.teamName}`}
@@ -263,38 +264,32 @@ export function StandingsTable({
                             </Link>
                           )}
                         </div>
-                      </td>
+                      </TableCell>
 
-                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
-                        {played}
-                      </td>
-                      <td className="text-label py-3 text-center font-semibold tabular-nums">
-                        {team.wins}
-                      </td>
-                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
+                      <TableCell className="text-label-secondary text-center">{played}</TableCell>
+                      <TableCell className="text-label text-center">{team.wins}</TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         {team.draws}
-                      </td>
-                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         {team.losses}
-                      </td>
-                      <td className="text-label-secondary py-3 text-center font-semibold tabular-nums">
+                      </TableCell>
+                      <TableCell className="text-label-secondary text-center">
                         <span className={cn(diff > 0 && "text-green", diff < 0 && "text-red")}>
                           {diff > 0 ? `+${diff}` : diff}
                         </span>
-                      </td>
-                      <td className="text-label text-headline py-3 text-center tabular-nums">
-                        {team.points}
-                      </td>
+                      </TableCell>
+                      <TableCell className="text-label text-center">{team.points}</TableCell>
 
                       {/* Recent Form Pills */}
-                      <td className="py-3 pr-3 text-center">
+                      <TableCell className="pr-3 text-center">
                         <div className="flex items-center justify-center gap-1">
-                          {form.length === 0 && <span aria-label="No results yet">—</span>}
+                          {form.length === 0 && <span aria-label="No results yet">–</span>}
                           {form.map((res, i) => (
                             <span
                               key={i}
                               className={cn(
-                                "rounded-control-sm text-eyebrow shadow-card flex h-4.5 w-4.5 items-center justify-center",
+                                "rounded-control-sm text-caption text-label-secondary shadow-card flex h-4.5 w-4.5 items-center justify-center",
                                 res === "W" && "bg-green/20 text-green border-green/30 border",
                                 res === "D" && "bg-yellow/20 text-yellow border-yellow/30 border",
                                 res === "L" && "bg-red/20 text-red border-red/30 border"
@@ -304,12 +299,12 @@ export function StandingsTable({
                             </span>
                           ))}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       ))}

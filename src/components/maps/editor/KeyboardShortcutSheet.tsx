@@ -4,7 +4,6 @@
  * KeyboardShortcutSheet — Modal overlay listing all map editor keyboard shortcuts.
  */
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
 
@@ -109,7 +108,7 @@ export function KeyboardShortcutSheet({ onClose }: KeyboardShortcutSheetProps) {
         <div className="space-y-5 p-5">
           {SHORTCUT_GROUPS.map((group) => (
             <div key={group.title}>
-              <Eyebrow className="mb-2 block">{group.title}</Eyebrow>
+              <h3 className="text-caption text-label-secondary mb-2 font-medium">{group.title}</h3>
               <div className="space-y-1">
                 {group.shortcuts.map((shortcut) => (
                   <div

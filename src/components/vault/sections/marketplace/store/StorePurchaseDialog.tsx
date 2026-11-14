@@ -39,10 +39,10 @@ export function StorePurchaseDialog({
           </DialogTitle>
           <DialogDescription className="text-label-secondary text-footnote text-center">
             Are you sure you want to purchase{" "}
-            <strong className="text-label font-semibold">{item.name}</strong> for{" "}
-            <span className="text-yellow inline-flex items-center gap-0.5 font-semibold">
+            <strong className="text-label font-medium">{item.name}</strong> for{" "}
+            <span className="text-yellow-ink inline-flex items-center gap-0.5 font-medium tabular-nums">
               <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-              {item.price}
+              {item.price.toLocaleString()}
             </span>
             ?
           </DialogDescription>

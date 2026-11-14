@@ -10,12 +10,19 @@ import {
 } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { assetUrl } from "~/lib/base-path";
+import { WikiSourcePicker } from "~/components/wiki-os/shared/WikiSourcePicker";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { WIKI_SOURCE_IDS, wikiSourceOptions } from "~/lib/wiki-os/wiki-source-availability";
+
+const STATIC_WIKI_OPTIONS = wikiSourceOptions(WIKI_SOURCE_IDS, undefined, "reader");
 
 interface LeagueBrandingTabProps {
   name: string;
   setName: (v: string) => void;
   wikiSlug: string;
   setWikiSlug: (v: string) => void;
+  wikiSource?: WikiSource;
+  setWikiSource?: (v: WikiSource) => void;
   previewSrc: string | null;
   coverUrl: string;
   setCoverUrl: (v: string) => void;
@@ -30,6 +37,8 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
   setName,
   wikiSlug,
   setWikiSlug,
+  wikiSource = "ixwiki",
+  setWikiSource,
   previewSrc,
   coverUrl,
   setCoverUrl,
@@ -55,6 +64,14 @@ export const LeagueBrandingTab = React.memo(function LeagueBrandingTab({
 
       <div className="space-y-2">
         <Label htmlFor="wiki-slug">Wiki article slug</Label>
+        {setWikiSource && (
+          <WikiSourcePicker
+            size="sm"
+            value={wikiSource}
+            onValueChange={setWikiSource}
+            options={STATIC_WIKI_OPTIONS}
+          />
+        )}
         <Input
           id="wiki-slug"
           value={wikiSlug}

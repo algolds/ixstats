@@ -13,6 +13,7 @@ import {
   getCoordinates,
   getPageSections,
 } from "~/lib/wiki-os/adapters/mediawiki/bridge";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 
 interface WikiEnrichment {
   intro: string | null;
@@ -27,7 +28,10 @@ interface WikiEnrichment {
  * Fetch enrichment data for a story pin from its linked wiki page.
  * All calls go through WikiBridge's 3-tier cache.
  */
-export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichment> {
+export async function enrichFromWiki(
+  wikiPageTitle: string,
+  rawWikiSource?: string | null
+): Promise<WikiEnrichment> {
   const result: WikiEnrichment = {
     intro: null,
     thumbnailUrl: null,
@@ -38,16 +42,18 @@ export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichm
   };
 
   if (!wikiPageTitle?.trim()) return result;
+  const source = parseWikiSource(rawWikiSource);
 
   // Fire all fetches concurrently for speed
   const [intro, images, coords, sections] = await Promise.allSettled([
-    getArticleIntro(wikiPageTitle),
+    getArticleIntro(wikiPageTitle, source),
     getPageImages(wikiPageTitle, {
       limit: 12,
       excludePatterns: [/Flag_of/i, /Coat_of_arms/i, /Icon/i, /Logo/i],
+      wiki: source,
     }),
-    getCoordinates(wikiPageTitle),
-    getPageSections(wikiPageTitle),
+    getCoordinates(wikiPageTitle, source),
+    getPageSections(wikiPageTitle, source),
   ]);
 
   if (intro.status === "fulfilled" && intro.value) {
@@ -69,9 +75,7 @@ export async function enrichFromWiki(wikiPageTitle: string): Promise<WikiEnrichm
     result.sections = sections.value.map((s: { title: string }) => s.title);
   }
 
-  // Build wiki URL (try ixwiki first)
-  const encoded = encodeURIComponent(wikiPageTitle.replace(/ /g, "_"));
-  result.wikiUrl = `/wiki/${encoded}`;
+  result.wikiUrl = wikiReaderPath(wikiPageTitle, source);
 
   return result;
 }

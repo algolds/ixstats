@@ -80,11 +80,11 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
           <Card variant="well" padding="none" className="space-y-4 p-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label className="text-label-secondary text-footnote font-semibold">
+                <label className="text-label-secondary text-footnote font-medium">
                   Training seeds
                 </label>
                 <div className="flex items-center gap-2">
-                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-semibold transition-[color,background-color,border-color,box-shadow,opacity] duration-200">
+                  <label className="border-tint/20 bg-tint/5 text-tint hover:bg-tint/10 hover:text-tint rounded-control text-caption flex cursor-pointer items-center gap-1 border px-2 py-0.5 font-medium transition-[color,background-color,border-color,box-shadow,opacity] duration-200">
                     <Upload className="h-3 w-3" />
                     <span>Upload .txt</span>
                     <input
@@ -95,11 +95,11 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       onChange={handleFileUpload}
                     />
                   </label>
-                  <span className="text-label-secondary text-caption font-semibold">
+                  <span className="text-label-secondary text-caption font-medium">
                     {trainingWords.length} words loaded
                   </span>
                   {classifiedCulture !== "any" && (
-                    <span className="border-tint/20 bg-tint/10 text-tint rounded-control-sm text-eyebrow border px-2 py-0.5">
+                    <span className="border-tint/20 bg-tint/10 text-tint rounded-control-sm text-caption border px-2 py-0.5">
                       Classified: {classifiedCulture}
                     </span>
                   )}
@@ -224,7 +224,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                       <label className="text-label-secondary text-subhead">
                         Max consonant cluster
                       </label>
-                      <span className="text-tint text-caption font-semibold">
+                      <span className="text-tint text-caption font-medium">
                         {options.maxConsonantCluster ?? 3}
                       </span>
                     </div>
@@ -241,7 +241,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                   <div className="space-y-1">
                     <div className="flex justify-between">
                       <label className="text-label-secondary text-subhead">Max vowel cluster</label>
-                      <span className="text-tint text-caption font-semibold">
+                      <span className="text-tint text-caption font-medium">
                         {options.maxVowelCluster ?? 3}
                       </span>
                     </div>
@@ -318,7 +318,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
                 </Button>
                 <NumberFlowDisplay
                   value={batchCount}
-                  className="text-label text-body min-w-[20px] px-1 text-center font-semibold"
+                  className="text-label text-headline min-w-[20px] px-1 text-center"
                 />
                 <Button
                   variant="ghost"
@@ -349,7 +349,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
           {generatedNames.length > 0 ? (
             <Card variant="well" padding="none" className="space-y-4 p-4">
               <div className="border-separator border-b pb-3">
-                <h3 className="text-label text-body font-semibold">Custom model output</h3>
+                <h3 className="text-label text-headline">Custom model output</h3>
                 <p className="text-label-secondary text-caption mt-0.5">
                   Names assembled by modeling phonetic patterns from input seeds.
                 </p>
@@ -383,7 +383,7 @@ export function StudioWorkshop({ state }: StudioWorkshopProps) {
               className="text-label-secondary text-body border-dashed p-8 text-center"
             >
               <Info className="text-tint/40 mx-auto mb-3 h-8 w-8" />
-              <p className="font-semibold">Generate name candidates</p>
+              <p className="font-medium">Generate name candidates</p>
               <p className="text-label-secondary text-footnote mt-1">
                 Enter your seed list (comma or newline separated) in the training box, and click
                 Assemble to generate new names matching your pattern depth.

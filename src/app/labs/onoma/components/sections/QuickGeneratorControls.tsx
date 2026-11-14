@@ -246,7 +246,7 @@ export function QuickGeneratorControls({
       {/* 1. Dictionary Selector & Actions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-footnote text-label font-semibold">Dictionary</label>
+          <label className="text-footnote text-label font-medium">Dictionary</label>
 
           {/* Dictionary Action Controls & Rules toggle */}
           <div className="flex items-center gap-2">
@@ -411,7 +411,7 @@ export function QuickGeneratorControls({
                 {customDicts.map((dict) => (
                   <SelectItem key={dict.id} value={dict.id} className="text-footnote font-medium">
                     <div className="flex w-full min-w-0 items-center justify-between gap-2">
-                      <span className="text-label truncate font-semibold">{dict.title}</span>
+                      <span className="text-label truncate font-medium">{dict.title}</span>
                       <span className="text-label-secondary text-caption ml-auto font-mono">
                         ({dict.values.length})
                       </span>

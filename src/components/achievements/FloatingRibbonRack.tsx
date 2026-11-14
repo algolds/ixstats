@@ -45,7 +45,7 @@ const RIBBON_DEVICES: Record<string, string> = {
   Uncommon: "fill-label-secondary text-label-tertiary",
   Rare: "fill-yellow text-yellow",
   Epic: "fill-yellow text-yellow",
-  Legendary: "fill-white text-white",
+  Legendary: "fill-on-system text-on-system",
 };
 
 /** The category's accent as the stripe; `UserAchievement.category` is a snapshot, so retired category names still resolve. */

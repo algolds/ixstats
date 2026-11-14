@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Package,
-  Sparks as Sparkles,
+  MagicWand,
   Shop as Store,
   Crown,
   Cpu,
@@ -30,7 +30,7 @@ import {
   Tournament as Sword,
   Archery as Target,
   WhiteFlag as Flag,
-  Sparks as Ghost,
+  Flare,
   Emoji as Skull,
   Key,
   LightBulb as Lightbulb,
@@ -44,14 +44,16 @@ import {
   Hammer,
   Eye,
   User,
+  WarningCircle,
 } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
 import { previewCosmetic } from "~/lib/vault/public-cosmetics";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
+import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { IxCreditsSymbol } from "../../IxCreditsSymbol";
 import { StoreItemCard, type StoreItem } from "./StoreItemCard";
@@ -68,7 +70,7 @@ const PackReveal = dynamic(
 );
 
 export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Sparkles,
+  Sparkles: MagicWand,
   Cpu,
   Crown,
   BookOpen,
@@ -90,7 +92,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   Sword,
   Target,
   Flag,
-  Ghost,
+  Ghost: Flare,
   Skull,
   Key,
   Lightbulb,
@@ -109,7 +111,7 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
 const STORE_TABS = [
   { id: "my-packs" as const, label: "My packs", icon: Package },
   { id: "packs" as const, label: "Packs", icon: Store },
-  { id: "cosmetics" as const, label: "Cosmetics", icon: Sparkles },
+  { id: "cosmetics" as const, label: "Cosmetics", icon: MagicWand },
   { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
 ];
 
@@ -133,11 +135,26 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
 
   const utils = api.useUtils();
 
-  const { data: myPacksData, isLoading: myPacksLoading } = api.cardPacks.getMyPacks.useQuery({
+  const {
+    data: myPacksData,
+    isLoading: myPacksLoading,
+    isError: myPacksError,
+    refetch: refetchMyPacks,
+  } = api.cardPacks.getMyPacks.useQuery({
     isOpened: false,
   });
-  const { data: packsData, isLoading: packsLoading } = api.cardPacks.getAvailablePacks.useQuery();
-  const { data: storeItemsData, isLoading: itemsLoading } = api.vault.listStoreItems.useQuery();
+  const {
+    data: packsData,
+    isLoading: packsLoading,
+    isError: packsError,
+    refetch: refetchPacks,
+  } = api.cardPacks.getAvailablePacks.useQuery();
+  const {
+    data: storeItemsData,
+    isLoading: itemsLoading,
+    isError: itemsError,
+    refetch: refetchItems,
+  } = api.vault.listStoreItems.useQuery();
   const { data: ownedData } = api.vault.getPurchasedItems.useQuery();
 
   const purchasePackMutation = api.cardPacks.purchasePack.useMutation({
@@ -182,7 +199,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       name: item.name,
       description: item.description || "",
       price: item.price,
-      icon: ICON_MAP[item.icon] || Sparkles,
+      icon: ICON_MAP[item.icon] || MagicWand,
       quality: item.quality || "standard",
       badgeText: item.badgeText || "Cosmetic",
       category: item.category,
@@ -197,7 +214,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       name: item.name,
       description: item.description || "",
       price: item.price,
-      icon: ICON_MAP[item.icon] || Sparkles,
+      icon: ICON_MAP[item.icon] || MagicWand,
       quality: item.quality || "standard",
       badgeText: item.badgeText || "Custom",
       category: item.category,
@@ -211,86 +228,97 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
 
   const isLoading =
     storeTab === "my-packs" ? myPacksLoading : storeTab === "packs" ? packsLoading : itemsLoading;
+  const isError =
+    storeTab === "my-packs" ? myPacksError : storeTab === "packs" ? packsError : itemsError;
+  const retryActive =
+    storeTab === "my-packs" ? refetchMyPacks : storeTab === "packs" ? refetchPacks : refetchItems;
 
   const activeConfig = {
     "my-packs": {
       title: "My unopened packs",
       icon: <Package className="text-blue h-4 w-4" />,
       description: "Packs you own that are ready to open.",
-      badgeStyle: "border-blue/20 text-blue bg-blue/5",
-      statusText: "Inventory",
     },
     packs: {
       title: "Packs",
       icon: <Store className="text-tint h-4 w-4" />,
       description: "Packs from every realm. Each shows its odds.",
-      badgeStyle: "border-yellow/20 text-yellow bg-yellow/5",
-      statusText: "Packs",
     },
     cosmetics: {
       title: "Profile customizations",
-      icon: <Sparkles className="text-indigo h-4 w-4" />,
-      description:
-        "Exclusive decorations, neon frames, and elite name tags to customize your profile presence.",
-      badgeStyle: "border-indigo/20 text-indigo bg-indigo/5",
-      statusText: "Cosmetics",
+      icon: <MagicWand className="text-indigo h-4 w-4" />,
+      description: "Decorations, frames, and name badges for your profile.",
     },
     upgrades: {
       title: "Vault system upgrades",
       icon: <TrendingUp className="text-green h-4 w-4" />,
       description: "Permanent card space and passive credit yield.",
-      badgeStyle: "border-green/20 text-green bg-green/5",
-      statusText: "Account upgrades",
     },
   }[storeTab];
 
   return (
-    <div className="pb-10">
-      {/* Large Storefront Showcase Window */}
-      <Card className="relative min-h-[380px] w-full overflow-hidden p-6">
-        {/* Category Sub-Tabs Selector */}
-        <div ref={sections}>
-          <StoreCategoryHeader
-            tabs={STORE_TABS}
-            activeTab={storeTab}
-            onTabChange={setStoreTab}
-            myPacksCount={myPacks.length}
+    <div className="space-y-4 pb-10">
+      <PageHeader
+        title="Store"
+        subtitle="Packs, profile cosmetics and Vault capacity upgrades."
+        back={{ href: "/vault", label: "Vault" }}
+        bleed
+      />
+
+      <div ref={sections}>
+        <StoreCategoryHeader
+          tabs={STORE_TABS}
+          activeTab={storeTab}
+          onTabChange={setStoreTab}
+          myPacksCount={myPacks.length}
+        />
+      </div>
+
+      {isError ? (
+        <Card>
+          <EmptyState
+            icon={<WarningCircle />}
+            title="The store didn't load"
+            message="Please try again in a moment."
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void retryActive()}>
+                Try again
+              </Button>
+            }
           />
-        </div>
-
-        {/* Storefront Window Header */}
-        <div className="border-separator mb-4 flex flex-col items-start justify-between gap-2 border-b pb-4 sm:flex-row sm:items-center">
-          <div>
-            <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
-            <p className="text-label-secondary text-footnote mt-1">{activeConfig.description}</p>
+        </Card>
+      ) : isLoading ? (
+        <Card padding="lg" className="space-y-5">
+          <div className="space-y-1.5">
+            <Skeleton className="h-5 w-40" />
+            <Skeleton className="h-4 w-64" />
           </div>
-          <span
-            className={cn("text-caption rounded-full border px-2 py-0.5", activeConfig.badgeStyle)}
-          >
-            {activeConfig.statusText}
-          </span>
-        </div>
-
-        {/* Showcase Display Area */}
-        {isLoading ? (
-          <div className="flex flex-wrap justify-center gap-8 py-6">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="rounded-card bg-fill-4 h-[280px] w-44 shrink-0" />
+          <div aria-busy className="flex flex-wrap justify-center gap-6 py-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="rounded-card h-[280px] w-44 shrink-0" />
             ))}
           </div>
-        ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={storeTab}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={springSmooth}
-              className="relative"
-            >
-              {storeTab === "my-packs" &&
-                (myPacks.length > 0 ? (
-                  <div className="flex flex-wrap justify-center gap-8 py-6">
+        </Card>
+      ) : (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={storeTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            transition={springSmooth}
+            className="relative"
+          >
+            {storeTab === "my-packs" &&
+              (myPacks.length > 0 ? (
+                <Card padding="lg" className="space-y-5">
+                  <div className="border-separator border-b pb-4">
+                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      {activeConfig.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-8 py-2">
                     {myPacks.map((userPack) => {
                       const packData = userPack.pack;
                       return (
@@ -311,22 +339,33 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Package className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No unopened packs</h4>
-                    <p className="text-label-secondary text-footnote mt-1 mb-4 max-w-xs">
-                      You have no unopened packs. Buy one from Packs.
-                    </p>
-                    <Button size="sm" onClick={() => setStoreTab("packs")}>
-                      <Store className="mr-2 h-3.5 w-3.5" /> Browse packs
-                    </Button>
-                  </div>
-                ))}
+                </Card>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon={<Package />}
+                    title="No unopened packs"
+                    message="You have no unopened packs right now. Buy one from Packs."
+                    action={
+                      <Button size="sm" onClick={() => setStoreTab("packs")}>
+                        <Store aria-hidden />
+                        Browse packs
+                      </Button>
+                    }
+                  />
+                </Card>
+              ))}
 
-              {storeTab === "packs" &&
-                (packs.length > 0 ? (
-                  <div className="flex flex-wrap justify-center gap-8 py-6">
+            {storeTab === "packs" &&
+              (packs.length > 0 ? (
+                <Card padding="lg" className="space-y-5">
+                  <div className="border-separator border-b pb-4">
+                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
+                    <p className="text-label-secondary text-footnote mt-1">
+                      {activeConfig.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-8 py-2">
                     {packs.map((pack) => {
                       const isPending =
                         purchasePackMutation.isPending &&
@@ -350,8 +389,8 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                                   "Buying..."
                                 ) : (
                                   <span className="flex items-center gap-1 tabular-nums">
-                                    <IxCreditsSymbol className="text-label h-3 w-3 shrink-0" />
-                                    Buy ({pack.priceCredits})
+                                    <IxCreditsSymbol className="h-3 w-3 shrink-0" />
+                                    Buy ({pack.priceCredits.toLocaleString()})
                                   </span>
                                 )}
                               </Button>
@@ -361,18 +400,26 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                       );
                     })}
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Store className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No packs available</h4>
+                </Card>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon={<Store />}
+                    title="No packs available"
+                    message="Check back later for new pack drops and seasonal releases."
+                  />
+                </Card>
+              ))}
+
+            {storeTab === "cosmetics" &&
+              (cosmeticItems.length > 0 ? (
+                <Card padding="lg" className="space-y-5">
+                  <div className="border-separator border-b pb-4">
+                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
                     <p className="text-label-secondary text-footnote mt-1">
-                      Check back later for new pack drops and special seasonal releases.
+                      {activeConfig.description}
                     </p>
                   </div>
-                ))}
-
-              {storeTab === "cosmetics" &&
-                (cosmeticItems.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {cosmeticItems.map((item: StoreItem) => (
                       <StoreItemCard
@@ -385,18 +432,26 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                       />
                     ))}
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <Sparkles className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No cosmetics listed</h4>
+                </Card>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon={<MagicWand />}
+                    title="No cosmetics listed"
+                    message="No cosmetics are for sale right now."
+                  />
+                </Card>
+              ))}
+
+            {storeTab === "upgrades" &&
+              (upgradeItems.length > 0 ? (
+                <Card padding="lg" className="space-y-5">
+                  <div className="border-separator border-b pb-4">
+                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
                     <p className="text-label-secondary text-footnote mt-1">
-                      No cosmetics are for sale right now.
+                      {activeConfig.description}
                     </p>
                   </div>
-                ))}
-
-              {storeTab === "upgrades" &&
-                (upgradeItems.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {upgradeItems.map((item: StoreItem) => (
                       <StoreItemCard
@@ -410,19 +465,19 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
                       />
                     ))}
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-12 text-center">
-                    <TrendingUp className="text-label-tertiary mb-3 h-12 w-12" />
-                    <h4 className="text-label text-headline">No upgrades listed</h4>
-                    <p className="text-label-secondary text-footnote mt-1">
-                      No upgrades are for sale right now.
-                    </p>
-                  </div>
-                ))}
-            </motion.div>
-          </AnimatePresence>
-        )}
-      </Card>
+                </Card>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon={<TrendingUp />}
+                    title="No upgrades listed"
+                    message="No upgrades are for sale right now."
+                  />
+                </Card>
+              ))}
+          </motion.div>
+        </AnimatePresence>
+      )}
 
       <StorePurchaseDialog
         item={activeCheckoutItem}

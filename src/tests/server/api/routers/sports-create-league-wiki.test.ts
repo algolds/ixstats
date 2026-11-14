@@ -22,6 +22,7 @@ jest.mock("~/lib/wiki-os/permissions", () => ({
 }));
 
 import { createCallerFactory } from "~/server/api/trpc";
+import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 import { leaguesCrudRouter } from "~/server/api/routers/sports/leagues/crud";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -57,12 +58,33 @@ describe("createLeague with imported teams", () => {
     });
 
     expect(result.wikiSlug).toBe("Varro_League");
-    expect(result.teams.map((t) => [t.name, t.wikiSlug])).toEqual([
-      ["Varro", "FC_Varro"],
-      ["Lest", null],
+    expect(result.wikiSource).toBe("ixwiki");
+    expect(result.teams.map((t) => [t.name, t.wikiSlug, t.wikiSource])).toEqual([
+      ["Varro", "FC_Varro", "ixwiki"],
+      ["Lest", null, null],
     ]);
     expect(result.teams.map((t) => t.shortName)).toEqual(["VAR1", "LES2"]);
     expect(await db.sportCoach.count()).toBe(2);
+  });
+
+  it("persists sister-wiki wikiSource on the league and its imported clubs", async () => {
+    const result = await leagues(as()).createLeague({
+      ...base,
+      teamCount: 2,
+      wikiSlug: "Varro_League",
+      wikiSource: "iiwiki",
+      teams: [
+        { name: "Varro", wikiSlug: "FC_Varro", wikiSource: "iiwiki" },
+        { name: "Lest", wikiSlug: null, wikiSource: null },
+      ],
+    });
+
+    expect(result.wikiSlug).toBe("Varro_League");
+    expect(result.wikiSource).toBe("iiwiki");
+    expect(result.teams.map((t) => [t.name, t.wikiSlug, t.wikiSource])).toEqual([
+      ["Varro", "FC_Varro", "iiwiki"],
+      ["Lest", null, null],
+    ]);
   });
 
   it("refuses teams whose count differs from teamCount and creates and charges nothing", async () => {
@@ -122,8 +144,11 @@ describe("updateLeague's wiki article", () => {
     expect(
       (await leagues(as()).updateLeague({ id, wikiSlug: "File:Crest.png" })).wikiSlug
     ).toBeNull();
-    await leagues(as()).updateLeague({ id, wikiSlug: "Varro_League" });
-    expect((await leagues(as()).updateLeague({ id, wikiSlug: null })).wikiSlug).toBeNull();
+    await leagues(as()).updateLeague({ id, wikiSlug: "Varro_League", wikiSource: "iiwiki" });
+    expect((await db.sportLeague.findUnique({ where: { id } }))?.wikiSource).toBe("iiwiki");
+    const cleared = await leagues(as()).updateLeague({ id, wikiSlug: null });
+    expect(cleared.wikiSlug).toBeNull();
+    expect(cleared.wikiSource).toBeNull();
   });
 
   it("leaves the article alone when the update does not name one", async () => {
@@ -170,5 +195,30 @@ describe("previewWikiTeams", () => {
       /sign in/i
     );
     expect(mockWikitext).not.toHaveBeenCalled();
+  });
+
+  it("reads a sister wiki's page when one is picked, and keeps its slugs with wikiSource", async () => {
+    mockWikitext.mockResolvedValue({ wikitext: "== Teams ==\n* [[FC Varro|Varro]]\n* Plain Town" });
+
+    const teams = await leagues(as()).previewWikiTeams({
+      wikiSlug: "Varro_League",
+      wiki: "iiwiki",
+    });
+
+    expect(mockAssertVisible).toHaveBeenCalledWith(expect.anything(), "Varro_League", "iiwiki");
+    expect(mockWikitext).toHaveBeenCalledWith("Varro_League", "iiwiki");
+    expect(teams).toEqual([
+      { name: "Varro", wikiSlug: "FC_Varro", wikiSource: "iiwiki" },
+      { name: "Plain Town", wikiSlug: null, wikiSource: null },
+    ]);
+  });
+
+  it("says IIWiki is switched off in its own words instead of failing", async () => {
+    mockWikitext.mockRejectedValue(new WikiUnavailableError("IIWiki", "disabled"));
+
+    const failure = leagues(as()).previewWikiTeams({ wikiSlug: "Varro_League", wiki: "iiwiki" });
+
+    await expect(failure).rejects.toThrow("IIWiki is switched off for now.");
+    await expect(failure).rejects.toMatchObject({ cause: { trpcCode: "SERVICE_UNAVAILABLE" } });
   });
 });

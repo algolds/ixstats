@@ -187,7 +187,9 @@ export function CountryOverviewTab({
       {summary.claimed === false && (
         <div className="mb-3 flex items-center gap-2">
           <Badge variant="outline">Unclaimed</Badge>
-          <span className="text-label-secondary text-footnote">No player holds this nation yet.</span>
+          <span className="text-label-secondary text-footnote">
+            No player holds this nation yet.
+          </span>
         </div>
       )}
       {/* Brief wiki intro — first paragraph only, full content in Info tab */}

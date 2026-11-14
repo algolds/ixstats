@@ -8,7 +8,6 @@
  * infoboxes (population, coordinates, area) and lists disagreements.
  */
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { memo, useState } from "react";
 import {
@@ -106,7 +105,9 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
 
       {hasScanned && (
         <section className="space-y-2">
-          <Eyebrow className="block">Suggested links ({withSuggestions.length})</Eyebrow>
+          <span className="text-caption text-label-secondary block font-medium tabular-nums">
+            Suggested links ({withSuggestions.length})
+          </span>
           {withSuggestions.length === 0 ? (
             <p className="text-label-secondary italic">No new matches found.</p>
           ) : (
@@ -118,18 +119,22 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
                     key={r.featureId}
                     className="border-separator hover:bg-fill-3 rounded-control-sm flex items-center gap-2 border px-2 py-2"
                   >
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="xs"
                       onClick={() => onFocusFeature?.(r.featureId)}
-                      className="min-w-0 flex-1 text-left"
+                      className="h-auto min-w-0 flex-1 flex-col items-start gap-0 px-0 py-0 text-left font-normal whitespace-normal hover:bg-transparent"
                       title="Show on map"
                     >
-                      <span className="text-label block truncate font-medium">{r.featureName}</span>
-                      <span className="text-label-secondary block truncate">
+                      <span className="text-label block w-full truncate font-medium">
+                        {r.featureName}
+                      </span>
+                      <span className="text-label-secondary block w-full truncate">
                         → {best.title}{" "}
                         <span className="tabular-nums">({Math.round(best.confidence * 100)}%)</span>
                       </span>
-                    </button>
+                    </Button>
                     <Button
                       size="xs"
                       className="shrink-0"
@@ -150,7 +155,7 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
             </ul>
           )}
           {linked.size > 0 && (
-            <p className="text-green flex items-center gap-1">
+            <p className="text-green flex items-center gap-1 tabular-nums">
               <Check className="h-3 w-3" /> {linked.size} linked this session
             </p>
           )}
@@ -159,7 +164,9 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
 
       {hasScanned && !scanningConflicts && (
         <section className="space-y-2">
-          <Eyebrow className="block">Map vs wiki conflicts ({conflicts.length})</Eyebrow>
+          <span className="text-caption text-label-secondary block font-medium tabular-nums">
+            Map vs wiki conflicts ({conflicts.length})
+          </span>
           {conflicts.length === 0 ? (
             <p className="text-label-secondary italic">
               Linked features agree with their infoboxes.
@@ -172,18 +179,20 @@ export const WikiScannerPanel = memo(function WikiScannerPanel({
                   className="rounded-control-sm border-yellow/30 bg-yellow/5 flex items-start gap-2 border px-2 py-2"
                 >
                   <WarningTriangle className="text-yellow mt-0.5 h-3 w-3 shrink-0" />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     onClick={() => onFocusFeature?.(c.featureId)}
-                    className="min-w-0 flex-1 text-left"
+                    className="h-auto min-w-0 flex-1 flex-col items-start gap-0 px-0 py-0 text-left font-normal whitespace-normal hover:bg-transparent"
                   >
-                    <span className="text-label block truncate font-medium">
+                    <span className="text-label block w-full truncate font-medium">
                       {c.featureName} · {c.field}
                     </span>
-                    <span className="text-label-secondary block truncate">
+                    <span className="text-label-secondary block w-full truncate">
                       Map {c.mapValue} · Wiki {c.wikiValue}
                     </span>
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>

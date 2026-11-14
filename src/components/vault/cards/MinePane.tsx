@@ -1,11 +1,12 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { List, MultiplePages, ViewGrid } from "iconoir-react";
+import { Filter, List, MultiplePages, ViewGrid, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -89,7 +90,7 @@ function useMinePicks(listed: ReadonlySet<string>) {
   if (selected && [...selected].some((id) => !listed.has(id))) {
     setSelected(new Set([...selected].filter((id) => listed.has(id))));
   }
-  const picked = useMemo(() => (selected ? [...selected] : []), [selected]);
+  const picked = selected ? [...selected] : [];
   return {
     selected,
     picked,
@@ -116,23 +117,19 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
     }
   );
   const pages = query.data?.pages;
-  const rows = useMemo(() => uniqueRows(pages ?? []), [pages]);
-  const listed = useMemo(() => new Set(rows.map(copyIdOf)), [rows]);
+  const rows = uniqueRows(pages ?? []);
+  const listed = new Set(rows.map(copyIdOf));
   const first = pages?.[0];
   const totalCopies = first?.totalCopies ?? 0;
   const picks = useMinePicks(listed);
   const selected = picks.selected;
-  const rowById = useMemo(() => new Map(rows.map((row) => [copyIdOf(row), row])), [rows]);
+  const rowById = new Map(rows.map((row) => [copyIdOf(row), row]));
   // Picks are already limited to the listed copies.
-  const selectedCopies = useMemo(
-    () =>
-      picks.picked.flatMap((id) => {
-        const row = rowById.get(id);
-        const copy = row && selectedCopyOf(row);
-        return copy ? [copy] : [];
-      }),
-    [picks.picked, rowById]
-  );
+  const selectedCopies = picks.picked.flatMap((id) => {
+    const row = rowById.get(id);
+    const copy = row && selectedCopyOf(row);
+    return copy ? [copy] : [];
+  });
   const selectButton = useRef<HTMLButtonElement>(null);
   // Select mode picks from the grid, whichever view was on.
   const shownView: MineView = selected ? "grid" : view;
@@ -240,51 +237,62 @@ function MineBody(props: {
   if (props.loading) return <Skeleton className="rounded-card h-64" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Your cards did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Your cards did not load"
+          message="Try loading your collection again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.totalCopies === 0) {
     return (
-      <EmptyState
-        icon={<MultiplePages />}
-        title="No cards yet"
-        message={
-          <>
-            Explore every realm&apos;s cards, or buy a pack in the{" "}
-            <Link
-              href={STORE_PATH}
-              className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
-            >
-              Store
-            </Link>
-            .
-          </>
-        }
-        action={
-          <Button asChild>
-            <Link href={CARD_HUB_PATHS.explore}>Explore cards</Link>
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<MultiplePages />}
+          title="No cards yet"
+          message={
+            <>
+              Explore every realm&apos;s cards, or buy a pack in the{" "}
+              <Link
+                href={STORE_PATH}
+                className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
+              >
+                Store
+              </Link>
+              .
+            </>
+          }
+          action={
+            <Button asChild>
+              <Link href={CARD_HUB_PATHS.explore}>Explore cards</Link>
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.rows.length === 0) {
     return (
-      <EmptyState
-        title="No cards match these filters"
-        action={
-          <Button variant="secondary" onClick={props.onClearFilters}>
-            Clear filters
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Filter />}
+          title="No cards match these filters"
+          message="Clear or loosen your filters to see your cards."
+          action={
+            <Button variant="secondary" onClick={props.onClearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.view === "list") return <MineList rows={props.rows} onOpen={props.onOpen} />;

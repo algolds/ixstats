@@ -50,7 +50,7 @@ interface CountryHeroCardProps {
   overlay?: React.ReactNode;
   stats: HeroSnapshotData["stats"];
   /** Vitality scores to fall back on while the ring query has none (the country record). */
-  vitalityFallback?: Partial<Record<(typeof VITALITY_KEYS)[number], number | null>>;
+  vitalityFallback?: VitalityScores;
   /**
    * A full-width row under the media and panel. When given, the rings leave the panel for it:
    * it receives them and a way to open the vitality breakdown.
@@ -91,7 +91,6 @@ export function CountryHeroCard({
   );
   const ringData = activity ?? undefined;
   const rings = heroRings(ringData);
-  const DetailModal = activeModal && activeModal !== "vitality" ? DETAIL_MODALS[activeModal] : null;
   const openVitality = () => setActiveModal("vitality");
   const Frame = frameless ? "div" : Card;
 
@@ -133,26 +132,52 @@ export function CountryHeroCard({
         <div className="relative px-3 pb-3 md:px-4 md:pb-4">{footer({ rings, openVitality })}</div>
       )}
 
-      {DetailModal && (
-        <DetailModal
-          isOpen
-          onClose={() => setActiveModal(null)}
+      {activeModal && (
+        <HeroDetailModal
+          modal={activeModal}
           countryId={countryId}
           countryName={countryName}
-        />
-      )}
-      {activeModal === "vitality" && (
-        <VitalityBreakdownModal
-          isOpen
+          ringData={ringData}
+          vitalityFallback={vitalityFallback}
           onClose={() => setActiveModal(null)}
-          rings={createVitalityRingsFromCountry(
-            Object.fromEntries(
-              VITALITY_KEYS.map((key) => [key, ringData?.[key] ?? vitalityFallback?.[key]])
-            )
-          )}
-          countryName={countryName}
         />
       )}
     </Frame>
+  );
+}
+
+type VitalityScores = Partial<Record<(typeof VITALITY_KEYS)[number], number | null>>;
+
+/** The detail sheet behind a hero figure: the vitality breakdown, or GDP, population or government. */
+export function HeroDetailModal({
+  modal,
+  countryId,
+  countryName,
+  ringData,
+  vitalityFallback,
+  onClose,
+}: {
+  modal: HeroModal;
+  countryId: string;
+  countryName: string;
+  ringData: VitalityScores | null | undefined;
+  vitalityFallback?: VitalityScores;
+  onClose: () => void;
+}) {
+  if (modal !== "vitality") {
+    const DetailModal = DETAIL_MODALS[modal];
+    return <DetailModal isOpen onClose={onClose} countryId={countryId} countryName={countryName} />;
+  }
+  return (
+    <VitalityBreakdownModal
+      isOpen
+      onClose={onClose}
+      rings={createVitalityRingsFromCountry(
+        Object.fromEntries(
+          VITALITY_KEYS.map((key) => [key, ringData?.[key] ?? vitalityFallback?.[key]])
+        )
+      )}
+      countryName={countryName}
+    />
   );
 }

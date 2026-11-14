@@ -56,9 +56,7 @@ export function NewsList({
         <li
           key={item.id}
           className={
-            emphasis === "headline"
-              ? "py-2 first:pt-0 last:pb-0"
-              : "py-1 first:pt-0 last:pb-0"
+            emphasis === "headline" ? "py-2 first:pt-0 last:pb-0" : "py-1 first:pt-0 last:pb-0"
           }
         >
           <Link
@@ -71,7 +69,7 @@ export function NewsList({
                 <span className="text-caption text-label-secondary flex flex-wrap items-center gap-1.5 tabular-nums">
                   <span className="text-label font-medium">{item.sourceName}</span>
                   <span aria-hidden>·</span>
-                  <span className="font-mono">{ageLabel(item.createdAt)}</span>
+                  <span>{ageLabel(item.createdAt)}</span>
                   {emphasis === "headline" && item.kind && (
                     <Badge variant="outline" className="text-caption px-1.5 py-0 capitalize">
                       {item.kind.replace(/_/g, " ").toLowerCase()}
@@ -81,7 +79,7 @@ export function NewsList({
                 <span
                   className={cn(
                     "text-label group-hover:text-tint mt-0.5 block transition-colors",
-                    emphasis === "headline" ? "text-body font-semibold" : "text-callout"
+                    emphasis === "headline" ? "text-headline" : "text-callout"
                   )}
                 >
                   {item.headline}

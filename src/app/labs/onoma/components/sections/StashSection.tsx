@@ -180,8 +180,8 @@ function StashSection({ onLoadToStudio, onNavigateExplore, onNavigateStudio }: S
                 value={selectedStashFilterId}
                 onValueChange={setSelectedStashFilterId}
                 options={[
-                  ["all", "📁 All Folders"],
-                  ...(stashesQuery.data?.map((s) => [s.id, `📁 ${s.name}`] as const) ?? []),
+                  ["all", "All folders"],
+                  ...(stashesQuery.data?.map((s) => [s.id, s.name] as const) ?? []),
                 ]}
                 className="text-footnote w-full"
                 placeholder="All folders"

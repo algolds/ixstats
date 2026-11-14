@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { CheckSquare, Clock, Crown, Star, StatsReport, Wallet } from "iconoir-react";
+import { CheckSquare, Clock, Crown, Star, StatsReport, Wallet, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { LensCard } from "~/components/ui/lens-card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Stat } from "~/components/ui/stat";
@@ -54,7 +55,7 @@ function Row({
           </Badge>
         )}
       </span>
-      <span className="font-mono font-semibold tabular-nums">{value}</span>
+      <span className="text-headline tabular-nums">{value}</span>
     </>
   );
   return (
@@ -115,14 +116,31 @@ function OpenOrdersList({ orders }: { orders: Portfolio["orders"] }) {
 /** What you hold, what you've ordered, what you watch and the votes you owe. */
 export function PortfolioPage({ realmId }: { realmId: string }) {
   const { isSignedIn } = useAuth();
-  const { data, isLoading } = api.exchange.portfolio.useQuery(
+  const { data, isLoading, error, refetch } = api.exchange.portfolio.useQuery(
     { realmId },
     { enabled: !!isSignedIn }
   );
   const treasury = useTreasuryActor(realmId);
   if (!isSignedIn)
     return <SignInPrompt title="Your portfolio" message="Sign in to see what you hold." />;
-  if (isLoading || !data) return <Skeleton className="h-80 w-full" />;
+  if (isLoading) return <Skeleton className="h-80 w-full" />;
+  if (!data)
+    return (
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role="alert"
+          compact
+          icon={<WarningCircle />}
+          title="Your portfolio did not load"
+          message={error?.message ?? "Try again in a moment."}
+          action={
+            <Button size="sm" variant="secondary" onClick={() => void refetch?.()}>
+              Try again
+            </Button>
+          }
+        />
+      </LensCard>
+    );
 
   const invested = Math.max(0, data.totalValue - data.wallet);
   const openOrdersCount =
@@ -211,7 +229,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
         <LensCard app="exchange" content="data" padding="md" className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <SectionTitle icon={<CheckSquare />}>Votes owed</SectionTitle>
-            <Badge variant="warning" className="font-mono tabular-nums">
+            <Badge variant="warning" className="tabular-nums">
               {data.votesOwed.length}
             </Badge>
           </div>
@@ -234,7 +252,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
           <div className="flex items-center justify-between gap-2">
             <SectionTitle icon={<StatsReport />}>Holdings</SectionTitle>
             {holdingsRows.length > 0 && (
-              <Badge variant="secondary" className="font-mono tabular-nums">
+              <Badge variant="secondary" className="tabular-nums">
                 {holdingsRows.length}
               </Badge>
             )}
@@ -253,7 +271,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
             <div className="flex items-center justify-between gap-2">
               <SectionTitle icon={<Clock />}>Open orders</SectionTitle>
               {openOrdersCount > 0 && (
-                <Badge variant="secondary" className="font-mono tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {openOrdersCount}
                 </Badge>
               )}
@@ -265,7 +283,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
             <div className="flex items-center justify-between gap-2">
               <SectionTitle icon={<Star />}>Watchlist</SectionTitle>
               {data.watchlist.length > 0 && (
-                <Badge variant="secondary" className="font-mono tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {data.watchlist.length}
                 </Badge>
               )}
@@ -286,7 +304,7 @@ export function PortfolioPage({ realmId }: { realmId: string }) {
                         <TickerTile code={symbolOf(w.name)} tone="neutral" />
                         <span className="truncate font-medium">{w.name}</span>
                       </span>
-                      <span className="font-mono font-semibold tabular-nums">
+                      <span className="text-headline tabular-nums">
                         {w.price !== null ? sov(w.price) : ""}
                       </span>
                     </Link>

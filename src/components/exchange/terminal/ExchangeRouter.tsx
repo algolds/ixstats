@@ -1,12 +1,15 @@
 "use client";
 
+import { useId } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
+import { WarningCircle } from "iconoir-react";
 import { LensSurface } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { LensCard } from "~/components/ui/lens-card";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { exchangeRouteOf, type ExchangeRoute, type ExchangeSection } from "~/lib/exchange/routes";
-import { ExchangeHeader } from "./ExchangeHeader";
+import { ExchangeHeader, TAB_LABELS, primaryTabForRoute } from "./ExchangeHeader";
 import { BondPage } from "./BondPage";
 import { CompanyPage } from "./CompanyPage";
 import { MyCompaniesPage, TendersPage } from "./DeskPages";
@@ -17,6 +20,7 @@ import { NationPage } from "./NationPage";
 import { PortfolioPage } from "./PortfolioPage";
 import { StoryPage } from "./StoryPage";
 import { TreasuryPage } from "./TreasuryPage";
+import { useTreasuryActor } from "./useTreasuryActor";
 
 const SECTION_PAGES: Record<ExchangeSection, (props: { realmId: string }) => React.ReactNode> = {
   front: FrontPage,
@@ -44,7 +48,16 @@ function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: strin
     case "story":
       return <StoryPage newsId={route.id} />;
     default:
-      return <EmptyState title="Nothing here" message="This Exchange address doesn't exist." />;
+      return (
+        <LensCard app="exchange" padding="lg">
+          <EmptyState
+            compact
+            icon={<WarningCircle />}
+            title="Nothing here"
+            message="This Exchange address does not exist."
+          />
+        </LensCard>
+      );
   }
 }
 
@@ -54,13 +67,23 @@ function ExchangePage({ route, realmId }: { route: ExchangeRoute; realmId: strin
  * route transition.
  */
 export function ExchangeRouter() {
+  const panelId = useId();
   const route = exchangeRouteOf(usePathname());
   const viewerRealm = useViewerRealmId();
   const realmId = useSearchParams().get("realm") ?? viewerRealm ?? DEFAULT_REALM_ID;
+  const treasury = useTreasuryActor(realmId);
+  const showTreasury =
+    Boolean(treasury) || (route.kind === "section" && route.section === "treasury");
+  const activeTab = primaryTabForRoute(route, showTreasury);
+
   return (
     <LensSurface>
-      <ExchangeHeader realmId={realmId} />
-      <ExchangePage route={route} realmId={realmId} />
+      <div className="space-y-4">
+        <ExchangeHeader realmId={realmId} panelId={panelId} />
+        <div role="tabpanel" id={panelId} aria-label={TAB_LABELS[activeTab]}>
+          <ExchangePage route={route} realmId={realmId} />
+        </div>
+      </div>
     </LensSurface>
   );
 }

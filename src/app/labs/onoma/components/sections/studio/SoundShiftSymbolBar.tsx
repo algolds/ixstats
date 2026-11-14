@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/studio/SoundShiftSymbolBar.tsx
 // Onoma Lab — quick-insert bar for sound shift rule environments and IPA symbols
 
+import { Card } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 
 const QUICK_SYMBOLS = [
@@ -28,8 +29,8 @@ interface SoundShiftSymbolBarProps {
 
 export function SoundShiftSymbolBar({ onInsert }: SoundShiftSymbolBarProps) {
   return (
-    <div className="border-separator bg-fill-4 rounded-row flex flex-wrap items-center gap-2 border p-3">
-      <span className="text-label-secondary text-eyebrow mr-1">Insert:</span>
+    <Card padding="none" className="flex flex-wrap items-center gap-2 p-3">
+      <span className="text-label-secondary text-caption mr-1">Insert:</span>
       {QUICK_SYMBOLS.map((sym) => (
         <Button
           variant="outline"
@@ -41,6 +42,6 @@ export function SoundShiftSymbolBar({ onInsert }: SoundShiftSymbolBarProps) {
           {sym.label}
         </Button>
       ))}
-    </div>
+    </Card>
   );
 }

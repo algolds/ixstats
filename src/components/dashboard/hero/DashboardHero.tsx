@@ -9,6 +9,7 @@ import { useUser } from "~/context/auth-context";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { api } from "~/trpc/react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { CountryHeroCard } from "~/components/shared/country-hero/CountryHeroCard";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { assetUrl } from "~/lib/base-path";
@@ -40,22 +41,25 @@ function toHeroStats(country: Record<string, any> | null | undefined) {
   };
 }
 
+/** Your nation's name opens its actions sheet in Manage mode, as every country link does. */
 function HeroIdentity({
   stats,
+  countryId,
   profileSlug,
   flagUrl,
 }: {
   stats: ReturnType<typeof toHeroStats>;
+  countryId: string;
   profileSlug: string;
   flagUrl: string | null | undefined;
 }) {
   const { avatarGlow, chatBadge } = useActiveCosmetics();
   const CrownIcon = resolveChatBadgeIcon(chatBadge.icon);
   return (
-    <Link
-      href={`/countries/${profileSlug}`}
+    <CountryLink
+      country={{ id: countryId, slug: profileSlug, name: stats.countryName }}
       className="group/title rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-2"
-      title={`View ${stats.countryName} Profile`}
+      title={`${stats.countryName} actions`}
     >
       <AvatarGlow avatarGlow={avatarGlow} roundedClass="rounded-control">
         <div className="bg-surface border-separator rounded-control ease-out-facet flex items-center justify-center overflow-hidden border p-1 transition-[scale] duration-300 group-hover/title:scale-105 group-focus-visible/title:scale-105 motion-reduce:transition-none motion-reduce:group-hover/title:scale-100 motion-reduce:group-focus-visible/title:scale-100">
@@ -88,7 +92,7 @@ function HeroIdentity({
           )}
         </div>
       </div>
-    </Link>
+    </CountryLink>
   );
 }
 
@@ -153,7 +157,14 @@ function DashboardHeroComponent({
           insetRight={insetRight}
         />
       )}
-      identity={<HeroIdentity stats={stats} profileSlug={profileSlug} flagUrl={flagUrl} />}
+      identity={
+        <HeroIdentity
+          stats={stats}
+          countryId={countryId}
+          profileSlug={profileSlug}
+          flagUrl={flagUrl}
+        />
+      }
       action={
         // MyCountry gold scope for the tinted button.
         <span data-app="mycountry" className="contents">

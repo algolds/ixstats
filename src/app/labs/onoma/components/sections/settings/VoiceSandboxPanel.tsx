@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/settings/VoiceSandboxPanel.tsx
 // Interactive audio sandbox, IPA synthesis testbed, G2P phoneme suggester
 
+import { Card } from "~/components/ui/card";
 import React, { useState, useEffect } from "react";
 import {
   SoundHigh as Volume2,
@@ -84,7 +85,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
   const sandboxNormalized = ipaToKokoroPhonemes(sandboxIpa);
 
   return (
-    <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
+    <Card padding="none" className="space-y-4 p-4 text-left">
       <div className="flex items-center justify-between">
         <h4 className="text-label text-subhead">Voice sandbox</h4>
         <span className="text-label-secondary text-caption font-mono">
@@ -160,7 +161,7 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
               <div className="flex justify-between">
                 <span>Phonemes: {sandboxNormalized.phonemes || "(empty)"}</span>
                 {sandboxNormalized.dropped.length > 0 && (
-                  <span className="text-yellow flex items-center gap-0.5 font-semibold">
+                  <span className="text-yellow flex items-center gap-0.5 font-medium">
                     <AlertTriangle className="h-2.5 w-2.5" />
                     dropped: {sandboxNormalized.dropped.join(", ")}
                   </span>
@@ -184,6 +185,6 @@ export function VoiceSandboxPanel({ voiceOptions, speechConfig }: VoiceSandboxPa
           <span>{isPlayingSandbox ? "Speaking..." : "Preview Voice"}</span>
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

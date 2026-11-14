@@ -119,13 +119,13 @@ function TradeForm({
           placeholder={unit[side]}
         />
         <Card variant="well" padding="sm">
-          <p className="text-footnote text-label-secondary font-mono tabular-nums">
+          <p className="text-footnote text-label-secondary tabular-nums">
             {blockedMessage ? blockedMessage : valid ? estimate(side, amount) : unit[side]}
           </p>
         </Card>
       </div>
       {error && <p className="text-footnote text-destructive">{error}</p>}
-      <Button className="w-full rounded-full" disabled={!valid || pending} onClick={submit}>
+      <Button className="w-full" disabled={!valid || pending} onClick={submit}>
         Confirm
       </Button>
     </div>

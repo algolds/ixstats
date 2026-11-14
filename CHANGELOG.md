@@ -5,11 +5,26 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.5 "Lobster Crosby"**, channel Stable, to players; internally 1.5.4, see
+**IxStates 1.0.6 "Lobster Crosby"**, channel Stable, to players; internally 1.5.5, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.5.5] — 2026-11-14 "Lobster Crosby" (public 1.0.6)
+
+### 💎 Facet 6: Global OS UI/UX pass, subtle editor chrome & style ratchets (Facet 6, public 3)
+
+- **`FACET_VERSION` 6 (public 3).** Unified the Facet six-layer material hierarchy (`canvas`, `pane`, `well`, `chrome`, `overlay`, `lens`) across every first-party app, modal, sheet, and hub (MyCountry, Country Profile, Nation Builder, Vault, Exchange, Dashboard, Realms, Sports, and ThinkPages).
+- **Subtle editor chrome (`facet-chrome-subtle`):** Maps Editor, WikiOS Canvas / PlateJS floating toolbars, Onoma Studio, and Nation Builder workbars step down to `facet-chrome-subtle` so dense authoring workspaces stay legible without competing glass borders or stacked backdrops.
+- **Universal Country Actions sheet:** Every `CountryLink` surface (Dashboard, Leaderboards, Diplomatic Directory, Realms, Exchange, Sports, ThinkPages, Maps) opens the unified `CountryActionsMenu` sheet with realm context, live stats, and direct routes to Profile, MyCountry, Wiki, Map, and Diplomatic actions.
+- **Style ratchets locked:** Eliminated remaining raw arbitrary hex styling, arbitrary drop shadows, legacy glass classes, and manual `dark:` overrides across ~220 UI files, and ratcheted `audit:style` / Facet baselines downward to prevent regressions.
+
+### 🌐 First-Class IIWiki Persistence Across Sports, Maps & Exchange
+
+- **Additive `wikiSource` persistence:** Added nullable `wikiSource` columns to `SportLeague`, `SportTeam`, and all eight map feature models (`City`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel`, `Peak`, `NamedRiver`, `NamedLake`), wired end-to-end across server routers, GeoJSON bundles, conflict scanners, map inspectors, `WikiLinkWizard`, and Sports hub/detail views so IIWiki-linked leagues, teams, and map features read IIWiki directly without IxWiki homonym collisions.
+- **Sister-wiki publish guardrails:** Guarded MediaWiki-write pathways and Exchange lore/article links so IIWiki-sourced entities open in the sister-wiki reader (`/wiki/<Title>?source=iiwiki`) and never attempt writes against IxWiki's MediaWiki mirror.
+- **Prisma 7 additive deploy runner:** Updated `scripts/deployment/apply-additive-schema.ts` to Prisma 7 CLI flags (`--from-config-datasource --to-schema prisma/schema` and `db execute --file`).
 
 ### 🔍 Facet 5: the Lens, and a new front-page hero (Facet 5, public 2)
 
@@ -386,6 +401,7 @@ No version or capability integer moves.
 
   `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
   deleted.
+
 - **Old links still inside IxStates are rewritten** to the current pages:
   - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
     of an article is read
@@ -777,6 +793,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
   `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
   built from it, so adding a host is one entry and no setting can name a URL.
+
 ### 🗺️ Realm-Owned Maps & Map Display (2026-10-07)
 
 - **Map officer power:** a realm officer can hold **Map** ("Edit the realm's map, borders and labels, and import
@@ -838,6 +855,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   `Alliance.externalSourceKey`, Alliance name uniqueness per realm
   (`prisma/migrations/20261007120000_realm_source_sync/migration.sql`; apply it before `db push`, see the deploy
   runbook step 4).
+
 ### 🗺️ Map Safety & Correctness (2026-10-07)
 
 - **Upload bombs:** province imports cap their content at 25 MB (`geoAdmin.parseProvinceUpload`), the PNG province
@@ -879,6 +897,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   unchanged. Closes roadmap item 12 (per-realm calendar label).
 - **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
   `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+
 ### 🏰 Realm Ownership & Claims Officers (2026-10-07)
 
 - **Transfer a realm (site admins):** `/admin/realms` → Realms → **Transfer** hands a realm to an active account
@@ -1137,7 +1156,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 ### RC2 development log (2026-08-21 → 2026-09-22)
 
-
 ### 🌍 Countries Page UI/UX Polish & Apple Design Alignment (Plan 319)
 
 - **Permanent Idle Legibility on Country Cards**:
@@ -1278,7 +1296,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### 📑 Stash Research Vault & Apple Design Overhaul (STASH_VERSION: 1)
 
 - **Primary Brand Slogan & Architecture**:
-  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: *"Stash it once. Keep it forever."*).
+  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: _"Stash it once. Keep it forever."_).
   - Published canonical system specification ([`docs/systems/stash.md`](docs/systems/stash.md)) and design style guide ([`docs/systems/stash-style-guide.md`](docs/systems/stash-style-guide.md)) covering cognitive offloading, research workflows, WCAG 2.1 AA contrast matrices, and export schemas.
 - **Apple Design Collection Creation Popover (`CreateStashPopover.tsx`)**:
   - Replaced the disruptive, layout-shifting inline form with an anchored, non-disruptive Apple Design popover.
@@ -1552,7 +1570,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
   - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
 
-
 ### Development log included in 1.4.0 (2026-08-04 → 2026-08-20)
 
 ### 💬 Messaging & Atomic Architecture Consolidation (Wave 7: Plans 163, 166)
@@ -1786,7 +1803,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Streamlined `src/types/economy-builder.ts` from 1,053 lines down to **397 lines** ($-656\text{L}$).
   - Removed `src/types/economy-builder.ts` from `scripts/audit/arch-baseline.json`.
 
-
 ### 💎 Platform-Wide Radix UI Prune, Modals Unification & Builder Monolith Decomposition (Plan 138)
 
 - **Radix UI & Dependency Pruning**:
@@ -1808,7 +1824,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **Country Management Routers Payload Builder**:
   - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and `update.ts` ($-300\text{L}$).
-
 
 ### ✂️ Gold Master Over-Engineering Prune, Dependency Trimming & Sports AST Router Splits (Plans 133–137)
 
@@ -1941,7 +1956,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Added physical `:active` tactile feedback (`active:scale-[0.97]`) across buttons and cards throughout all sections.
   - Added unique `runHash` (`#onoma-xxxx`) per generation batch with live search, copy badge, and historical handoffs ("Load to Studio", "Save as Dictionary").
 
-
 - **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
   - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](src/lib/wiki-os/config.ts), [types.ts](src/lib/wiki-os/types.ts), `bridge.ts`, `image-url.ts`, `infobox-parser.ts`).
   - Enforced strict graduation boundary: zero game couplings (`Country`, `Card`, `PointOfInterest`) in the core engine, preparing `@wikios/core` for independent packaging and distribution.
@@ -1972,8 +1986,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
   - Removed legacy `wiki` router registration from [src/server/api/root.ts](src/server/api/root.ts).
   - Added Nginx lockdown configs and audit tools (stage3-nginx-cutover.conf and verify-stage3-cutover.ts, since renamed [wikios-takeover.conf](scripts/ops/nginx/wikios-takeover.conf) and [verify-wikios-takeover.ts](scripts/ops/verify-wikios-takeover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
-
-
 
 ### Component Architecture Consolidation & MyCountry 4-Tier Subsystem Modularization (`systems.mycountry` v5, `design.facet` v2, `systems.halo` v4, `systems.builder` v3)
 

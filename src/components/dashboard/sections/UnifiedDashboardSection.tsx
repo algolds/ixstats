@@ -418,7 +418,7 @@ export function UnifiedDashboardSection({
         <RailColumn>
           {isSignedIn && <YourRealmPanel />}
           <DailyBlurbCard />
-          <CountriesToExploreCard currentUserCountryId={countryId} />
+          <CountriesToExploreCard />
           {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
         </RailColumn>
       </Inspector>

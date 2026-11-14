@@ -15,7 +15,7 @@ const LOOKS = {
   studio: {
     label: "text-label-secondary text-subhead",
     input: "text-footnote w-full",
-    switchLabel: "text-label-secondary text-caption font-semibold",
+    switchLabel: "text-label-secondary text-caption font-medium",
   },
 } as const;
 

@@ -39,7 +39,7 @@ const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     tag: "High Variation",
     description:
       "Broad linguistic patterns; high phonetic variation and exploratory sound combinations.",
-    color: "#06b6d4",
+    color: "var(--color-cyan)",
     textClassName: "text-teal",
     bgClassName: "bg-teal/10",
     borderClassName: "border-teal/30",
@@ -52,7 +52,7 @@ const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     tag: "Recommended",
     description:
       "Natural linguistic cadence; optimal conlang sweet spot balancing novelty & cohesion.",
-    color: "#0091ff",
+    color: "var(--color-tint)",
     textClassName: "text-tint",
     bgClassName: "bg-tint/10",
     borderClassName: "border-tint/30",
@@ -64,7 +64,7 @@ const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     editorialTier: "Faithful",
     tag: "Strong Resonance",
     description: "Strong structural fidelity; generates forms closely echoing seed language roots.",
-    color: "#6366f1",
+    color: "var(--color-indigo)",
     textClassName: "text-indigo",
     bgClassName: "bg-indigo/10",
     borderClassName: "border-indigo/30",
@@ -77,7 +77,7 @@ const PATTERN_DEPTH_LEVELS: PatternDepthLevel[] = [
     tag: "Corpus Lock",
     description:
       "High pattern constraints; closely preserves literal word structures from training data.",
-    color: "#f59e0b",
+    color: "var(--color-orange)",
     textClassName: "text-yellow",
     bgClassName: "bg-yellow/10",
     borderClassName: "border-yellow/30",
@@ -120,7 +120,7 @@ export function PatternDepthControl({
                 isSelected ? level.dotClassName : "bg-label-secondary"
               )}
             />
-            <span className="text-footnote font-mono font-semibold">{level.depth}</span>
+            <span className="text-footnote font-mono font-medium">{level.depth}</span>
             <span className="text-caption leading-none font-medium">{level.editorialTier}</span>
           </span>
         ),
@@ -134,7 +134,7 @@ export function PatternDepthControl({
       <div className={cn("space-y-1", className)}>
         {showLabels && (
           <div className="flex items-center gap-1">
-            <label className="text-footnote text-label block font-semibold">Pattern depth</label>
+            <label className="text-footnote text-label block font-medium">Pattern depth</label>
             <Button
               variant="ghost"
               size="icon-sm"
@@ -160,13 +160,11 @@ export function PatternDepthControl({
             -
           </Button>
           <div className="flex items-center gap-2 leading-none">
-            <span
-              className={cn("text-footnote font-mono font-semibold", currentLevel.textClassName)}
-            >
+            <span className={cn("text-footnote font-mono font-medium", currentLevel.textClassName)}>
               {value}
             </span>
             <span
-              className={cn("text-caption leading-none font-semibold", currentLevel.textClassName)}
+              className={cn("text-caption leading-none font-medium", currentLevel.textClassName)}
             >
               {currentLevel.editorialTier}
             </span>
@@ -192,7 +190,7 @@ export function PatternDepthControl({
     <div className={cn("space-y-2", className)}>
       {showLabels && (
         <div className="flex items-center gap-2 pb-0.5">
-          <label className="text-footnote text-label font-semibold">Pattern depth</label>
+          <label className="text-footnote text-label font-medium">Pattern depth</label>
 
           {/* Help / Info Trigger Icon */}
           <Toggle
@@ -228,7 +226,7 @@ export function PatternDepthControl({
             className="overflow-hidden"
           >
             <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-caption space-y-2 border p-3">
-              <div className="text-label flex items-center justify-between font-semibold">
+              <div className="text-label flex items-center justify-between font-medium">
                 <span className="text-label">About pattern depth</span>
                 <Button
                   variant="ghost"
@@ -248,22 +246,22 @@ export function PatternDepthControl({
               <div className="border-separator text-caption grid grid-cols-2 gap-2 border-t pt-2">
                 <div className="flex items-center gap-2">
                   <span className="bg-teal h-1.5 w-1.5 rounded-full" />
-                  <span className="text-teal font-semibold">1 Fluid:</span>
+                  <span className="text-teal font-medium">1 Fluid:</span>
                   <span>High variation</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-tint h-1.5 w-1.5 rounded-full" />
-                  <span className="text-tint font-semibold">2 Organic:</span>
+                  <span className="text-tint font-medium">2 Organic:</span>
                   <span>Natural flow (Recommended)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-indigo h-1.5 w-1.5 rounded-full" />
-                  <span className="text-indigo font-semibold">3 Faithful:</span>
+                  <span className="text-indigo font-medium">3 Faithful:</span>
                   <span>Strong resonance</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="bg-yellow h-1.5 w-1.5 rounded-full" />
-                  <span className="text-yellow font-semibold">4 Strict:</span>
+                  <span className="text-yellow font-medium">4 Strict:</span>
                   <span>Corpus lock</span>
                 </div>
               </div>
@@ -275,7 +273,7 @@ export function PatternDepthControl({
       {/* Dynamic Contextual Micro-Description if enabled */}
       {showDescription && !showHelp && (
         <p className="text-label-secondary text-caption px-0.5 leading-relaxed font-normal">
-          <strong className={cn("font-semibold", currentLevel.textClassName)}>
+          <strong className={cn("font-medium", currentLevel.textClassName)}>
             {currentLevel.editorialTier}:
           </strong>{" "}
           {currentLevel.description}

@@ -36,13 +36,9 @@ export function GenerateCountPill({
         {isGenerating ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <OnomaGlyph
-            name="emerge-synthesis"
-            size="xs"
-            className="text-on-tint transition-transform group-hover:scale-110"
-          />
+          <OnomaGlyph name="emerge-synthesis" size="xs" className="text-on-tint" />
         )}
-        <span className="text-body font-semibold">Generate</span>
+        <span className="text-headline">Generate</span>
       </Button>
 
       <div className="bg-fill-3 h-5 w-[1px] shrink-0" />
@@ -64,8 +60,8 @@ export function GenerateCountPill({
         >
           -
         </Button>
-        <div className="text-body text-on-tint flex min-w-[28px] items-center justify-center px-1 leading-none font-semibold">
-          <NumberFlowDisplay value={batchCount} className="text-body text-on-tint font-semibold" />
+        <div className="text-headline text-on-tint flex min-w-[28px] items-center justify-center px-1 leading-none">
+          <NumberFlowDisplay value={batchCount} className="text-headline text-on-tint" />
         </div>
         <Button
           variant="ghost"

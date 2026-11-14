@@ -16,6 +16,8 @@ import {
   Calendar,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -313,21 +315,22 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
         count={summits.data?.length ?? 0}
       >
         {(summits.data ?? []).map((s) => (
-          <li
-            key={s.id}
-            className="border-separator bg-surface rounded-row flex items-start gap-3 border p-3"
-          >
-            <Calendar className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-label text-headline truncate">Summit with {s.partner.name}</p>
-              <p className="text-label-secondary text-footnote">
-                {formatClockDate(s.dateIxTime, reader)} ·{" "}
-                {s.phase === "upcoming" ? "Upcoming" : "Held"}
-              </p>
-              {s.agenda && (
-                <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2">{s.agenda}</p>
-              )}
-            </div>
+          <li key={s.id}>
+            <Card variant="well" padding="sm" className="flex items-start gap-3">
+              <Calendar className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-label text-headline truncate">Summit with {s.partner.name}</p>
+                <p className="text-label-secondary text-footnote">
+                  {formatClockDate(s.dateIxTime, reader)} ·{" "}
+                  {s.phase === "upcoming" ? "Upcoming" : "Held"}
+                </p>
+                {s.agenda && (
+                  <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2">
+                    {s.agenda}
+                  </p>
+                )}
+              </div>
+            </Card>
           </li>
         ))}
       </InboxSection>
@@ -441,9 +444,9 @@ function InboxSection({
           </Button>
         </div>
       ) : count === 0 ? (
-        <div className="border-separator text-label-secondary rounded-row text-body border border-dashed p-5 text-center">
-          {emptyText}
-        </div>
+        <Card variant="well" padding="sm">
+          <EmptyState compact title={emptyText} />
+        </Card>
       ) : (
         <ul className="space-y-2">{children}</ul>
       )}
@@ -462,24 +465,30 @@ function InboxItem({
 }) {
   const KindIcon = row.kind === "invite" ? Users : row.kind === "hostile" ? Prohibition : Handshake;
   return (
-    <li className="border-separator bg-surface rounded-row flex flex-wrap items-center justify-between gap-3 border p-3">
-      <div className="flex min-w-0 items-start gap-3">
-        <KindIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
-        <div className="min-w-0">
-          <p className="text-label text-headline truncate">{row.title}</p>
-          <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
-          {row.detail && (
-            <p className="text-label-secondary text-footnote line-clamp-2">{row.detail}</p>
-          )}
-          <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            <span>
-              {status} · {formatExpiry(row.expiresAt)}
-            </span>
-          </p>
+    <li>
+      <Card
+        variant="well"
+        padding="sm"
+        className="flex flex-wrap items-center justify-between gap-3"
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          <KindIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-label text-headline truncate">{row.title}</p>
+            <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
+            {row.detail && (
+              <p className="text-label-secondary text-footnote line-clamp-2">{row.detail}</p>
+            )}
+            <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>
+                {status} · {formatExpiry(row.expiresAt)}
+              </span>
+            </p>
+          </div>
         </div>
-      </div>
-      <div className="flex shrink-0 items-center gap-2">{children}</div>
+        <div className="flex shrink-0 items-center gap-2">{children}</div>
+      </Card>
     </li>
   );
 }

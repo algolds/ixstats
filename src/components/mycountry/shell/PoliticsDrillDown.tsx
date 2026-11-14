@@ -1,14 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  Group as Users,
-  ScaleFrameEnlarge as Scale,
-  City as Building2,
-  Page as FileText,
-  Crown,
-} from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
 
@@ -77,29 +70,38 @@ interface PoliticsDrillDownProps {
  * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
  * never overrides.
  */
-function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
+const TABS = [
+  { id: "cabinet" as const, label: "Cabinet" },
+  { id: "parties" as const, label: "Parties" },
+  { id: "legislature" as const, label: "Legislature" },
+  { id: "bills" as const, label: "Bills & reforms" },
+  { id: "power" as const, label: "Power brokers" },
+];
+
+/**
+ * Politics drill-down: cabinet, parties, legislature, bills and power brokers. Shared between the
+ * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
+ * never overrides.
+ */
+export function PoliticsDrillDown({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
   const [activeTab, setActiveTab] = useState<
     "cabinet" | "parties" | "legislature" | "bills" | "power"
   >("cabinet");
 
-  const tabs = useMemo(
-    () => [
-      { id: "cabinet" as const, label: "Cabinet", icon: Users },
-      { id: "parties" as const, label: "Parties", icon: Scale },
-      { id: "legislature" as const, label: "Legislature", icon: Building2 },
-      { id: "bills" as const, label: "Bills & reforms", icon: FileText },
-      { id: "power" as const, label: "Power brokers", icon: Crown },
-    ],
-    []
-  );
-
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-title-3 text-label">Politics</h2>
+        <SectionTabBar
+          tabs={TABS}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+          aria-label="Politics sections"
+        />
+      </div>
+
       {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
       <ElectionStatusCard countryId={countryId} />
-
-      {/* Sub-tab switcher (shared with the other domain sections) */}
-      <SectionTabBar tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
       {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
       {activeTab === "parties" && <PartyManager countryId={countryId} />}
@@ -114,5 +116,3 @@ function PoliticsDrillDownComponent({ countryId }: PoliticsDrillDownProps): Reac
     </div>
   );
 }
-
-export const PoliticsDrillDown = React.memo(PoliticsDrillDownComponent);

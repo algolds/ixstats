@@ -183,6 +183,7 @@ export function LeagueCreator({
         settings,
         isCanonical,
         wikiSlug: toWikiSlug(wiki.wikiSlug),
+        wikiSource: toWikiSlug(wiki.wikiSlug) ? (wiki.wikiSource ?? "ixwiki") : null,
         teams: wiki.teams?.length === teamCount ? wiki.teams : undefined,
       });
 
@@ -381,8 +382,8 @@ export function LeagueCreator({
         importedCount={wiki.teams?.length ?? null}
         minTeams={selectedPreset?.minTeamCount ?? 2}
         maxTeams={selectedPreset?.maxTeamCount ?? 64}
-        onImport={(teams) => {
-          dispatchWiki({ type: "teamsImported", teams });
+        onImport={(teams, leagueWiki) => {
+          dispatchWiki({ type: "teamsImported", teams, leagueWiki });
           setTeamCount(teams.length);
         }}
         onClear={() => dispatchWiki({ type: "teamsCleared" })}
@@ -552,7 +553,7 @@ export function LeagueCreator({
             <div className="text-body grid grid-cols-2 gap-3">
               <div>
                 <span className="text-label-secondary text-footnote">Archetype</span>
-                <p className="text-label font-medium">{archetypeLabel ?? "—"}</p>
+                <p className="text-label font-medium">{archetypeLabel ?? "–"}</p>
               </div>
               <div>
                 <span className="text-label-secondary text-footnote">Teams</span>

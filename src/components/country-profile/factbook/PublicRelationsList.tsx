@@ -1,5 +1,6 @@
 "use client";
 
+import { relationStrengthWord } from "~/lib/qualitative-rating";
 import { useState } from "react";
 import { Globe } from "iconoir-react";
 import type { ProfileWorld } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
@@ -57,11 +58,11 @@ export function PublicRelationsList({
           <FacetListSection header="Relations">
             {relations.map((r) => {
               const badge = relationshipBadge(r.relationship);
-              const pct = Math.max(0, Math.min(100, Math.round(r.strength)));
+              const ties = `${relationStrengthWord(r.strength)} ties`;
               const treatySummary =
                 r.treaties.length > 0
-                  ? `${r.treaties.length} ${r.treaties.length === 1 ? "treaty" : "treaties"} · ${pct}% strength`
-                  : `${pct}% strength`;
+                  ? `${r.treaties.length} ${r.treaties.length === 1 ? "treaty" : "treaties"} · ${ties}`
+                  : ties;
               return (
                 <FacetRow
                   key={r.id}

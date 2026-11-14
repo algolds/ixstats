@@ -21,7 +21,10 @@ interface WorldStudioProps {
 
 function Message({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-label-secondary flex h-full items-center justify-center gap-3 p-6 text-center">
+    <div
+      data-app="maps"
+      className="text-label-secondary flex h-full items-center justify-center gap-3 p-6 text-center"
+    >
       {children}
     </div>
   );

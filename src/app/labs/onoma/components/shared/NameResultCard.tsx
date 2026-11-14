@@ -236,9 +236,9 @@ export function NameResultCard({
         "group rounded-card relative flex flex-col justify-start gap-4 overflow-hidden border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300 ease-out",
         expandOnCardClick && "cursor-pointer select-none",
         // Default border/background colors matching the fit score
-        fitColor === "emerald" && "border-green/20 bg-emerald-500/[0.015]",
-        fitColor === "amber" && "border-yellow/20 bg-amber-500/[0.015]",
-        fitColor === "red" && "border-red/10 bg-red-500/[0.01]",
+        fitColor === "emerald" && "border-green/20 bg-green/5",
+        fitColor === "amber" && "border-yellow/20 bg-yellow/5",
+        fitColor === "red" && "border-red/10 bg-red/5",
         !fitColor && "border-separator bg-fill-4",
         // Expanded details modal border styles
         showDetailsModal
@@ -262,7 +262,7 @@ export function NameResultCard({
       <div className="relative z-10 flex w-full min-w-0 items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
           <span
-            className="text-label group-hover:text-tint w-full leading-none font-semibold whitespace-nowrap transition-colors duration-300"
+            className="text-label group-hover:text-tint w-full leading-none font-medium whitespace-nowrap transition-colors duration-300"
             style={{ fontSize: dynamicFontSize }}
             title={name}
           >

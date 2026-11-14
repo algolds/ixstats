@@ -200,10 +200,10 @@ const tile = (label: string) =>
     screen.getByText(label).parentElement)! as HTMLElement;
 
 describe("Economy report", () => {
-  it("shows the engine's growth, a dash for unrecorded unemployment and wealth shares from classes", () => {
+  it("shows the engine's growth, plain reason for unrecorded unemployment and wealth shares from classes", () => {
     render(<EconomyDrillDown countryId="c1" onDeclare={jest.fn()} />);
     expect(within(tile("GDP growth")).getByText("2.10%")).toBeInTheDocument();
-    expect(within(tile("Unemployment")).getByText("–")).toBeInTheDocument();
+    expect(within(tile("Unemployment")).getByText("Not recorded")).toBeInTheDocument();
     expect(within(tile("Top 10% wealth share")).getByText("50.0%")).toBeInTheDocument();
     expect(within(tile("Middle class share")).getByText("75.0%")).toBeInTheDocument();
     expect(

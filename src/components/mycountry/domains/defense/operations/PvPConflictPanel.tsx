@@ -29,7 +29,9 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useCanEdit } from "~/context/MyCountryEditModeContext";
 import { useNotify } from "~/hooks/useNotify";
 import { PVP_UNFOUGHT, isUnfoughtConflict } from "~/lib/military/pvp-proposals";
@@ -155,7 +157,7 @@ function conflictOutcome(c: Conflict, countryId: string) {
   }
   return c.winner === countryId
     ? {
-        icon: <Trophy aria-hidden="true" className="text-green h-3.5 w-3.5" />,
+        icon: <Trophy aria-hidden="true" className="text-success h-3.5 w-3.5" />,
         variant: "success" as const,
         label: "Victory",
       }
@@ -177,15 +179,28 @@ function ConflictGroup({ title, children }: { title: string; children: React.Rea
 
 function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; countryId: string }) {
   const outcome = conflictOutcome(c, countryId);
+  const opponent = opponentOf(c, countryId);
   // Casualties go to the conflict's parties only (undefined for anyone else).
   const casualties =
     (c.initiatorId === countryId ? c.initiatorCasualties : c.defenderCasualties) ?? 0;
   return (
-    <div className="border-separator rounded-control text-body border p-3">
+    <Card variant="well" padding="sm" className="text-body">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {outcome.icon}
-          <span>vs {opponentOf(c, countryId)?.name ?? "Unknown"}</span>
+          <span>
+            vs{" "}
+            {opponent ? (
+              <CountryLink
+                country={{ id: opponent.id, name: opponent.name }}
+                className="hover:underline"
+              >
+                {opponent.name}
+              </CountryLink>
+            ) : (
+              "Unknown"
+            )}
+          </span>
           <Badge variant={outcome.variant}>{outcome.label}</Badge>
         </div>
         {!c.outcomeBand && casualties > 0 && (
@@ -199,7 +214,7 @@ function PastConflictRow({ conflict: c, countryId }: { conflict: Conflict; count
         seed={c.seed}
         attacker={c.initiatorId === countryId}
       />
-    </div>
+    </Card>
   );
 }
 
@@ -321,7 +336,7 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-label text-headline flex items-center gap-2">
-          <Swords aria-hidden="true" className="text-red h-4 w-4" />
+          <Swords aria-hidden="true" className="text-label-secondary h-4 w-4" />
           Military conflicts
         </h3>
         {canEdit && (
@@ -409,29 +424,40 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       </div>
 
       {strikeResult && (
-        <div
+        <Card
+          variant="well"
+          padding="sm"
           role="status"
           className={cn(
-            "rounded-control text-body border p-3",
+            "text-body",
             strikeResult.won
-              ? "border-green/30 text-green"
+              ? "border-success/30 text-success"
               : "border-destructive/30 text-destructive"
           )}
         >
           {strikeResult.won
             ? `Your strike on ${strikeResult.target} took ground${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`
             : `Your strike on ${strikeResult.target} was repulsed${bandSuffix(strikeResult.band)}. See past conflicts for losses and the seed.`}
-        </div>
+        </Card>
       )}
 
       {pendingForMe.length > 0 && (
         <ConflictGroup title="Incoming challenges">
           {pendingForMe.map((c) => (
-            <Card variant="well" key={c.id} className="border-yellow/40 border p-3">
+            <Card variant="well" key={c.id} className="border-warning/40 border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="text-label text-body font-medium">
-                    {c.initiator?.name ?? "Unknown"}
+                    {c.initiator ? (
+                      <CountryLink
+                        country={{ id: c.initiator.id, name: c.initiator.name }}
+                        className="hover:underline"
+                      >
+                        {c.initiator.name}
+                      </CountryLink>
+                    ) : (
+                      "Unknown"
+                    )}
                   </span>
                   <span className="text-label-secondary text-footnote ml-2">challenges you</span>
                   {c.reason && (
@@ -468,35 +494,49 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
         <ConflictGroup title="Active conflicts">
           {activeConflicts
             .filter((c) => !pendingForMe.some((p) => p.id === c.id))
-            .map((c) => (
-              <Card variant="well" key={c.id} className="text-body p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Swords aria-hidden="true" className="text-red h-3.5 w-3.5" />
-                  <span>
-                    vs{" "}
-                    <span className="font-medium">
-                      {opponentOf(c, countryId)?.name ?? "Unknown"}
+            .map((c) => {
+              const opponent = opponentOf(c, countryId);
+              return (
+                <Card variant="well" key={c.id} className="text-body p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Swords aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
+                    <span>
+                      vs{" "}
+                      <span className="font-medium">
+                        {opponent ? (
+                          <CountryLink
+                            country={{ id: opponent.id, name: opponent.name }}
+                            className="hover:underline"
+                          >
+                            {opponent.name}
+                          </CountryLink>
+                        ) : (
+                          "Unknown"
+                        )}
+                      </span>
                     </span>
-                  </span>
-                  <Badge variant="outline">{CONFLICT_TYPE_LABELS[c.type] ?? c.type}</Badge>
-                  <Badge variant="outline" className="capitalize">
-                    {c.status}
-                  </Badge>
-                  {c.endsAt && concludeControl(c)}
-                  {c.status === "proposed" && c.initiatorId === countryId && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="ml-auto"
-                      onClick={() => withdrawMutation.mutate({ conflictId: c.id })}
-                      disabled={withdrawMutation.isPending}
-                    >
-                      Withdraw
-                    </Button>
-                  )}
-                </div>
-              </Card>
-            ))}
+                    <span className="text-label-secondary text-footnote">
+                      {CONFLICT_TYPE_LABELS[c.type] ?? c.type}
+                    </span>
+                    <Badge variant="outline" className="capitalize">
+                      {c.status}
+                    </Badge>
+                    {c.endsAt && concludeControl(c)}
+                    {c.status === "proposed" && c.initiatorId === countryId && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ml-auto"
+                        onClick={() => withdrawMutation.mutate({ conflictId: c.id })}
+                        disabled={withdrawMutation.isPending}
+                      >
+                        Withdraw
+                      </Button>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
         </ConflictGroup>
       )}
 
@@ -509,9 +549,12 @@ export function PvPConflictPanel({ countryId }: PvPConflictPanelProps) {
       )}
 
       {allConflicts.length === 0 && (
-        <p className="text-label-secondary text-footnote py-4 text-center">
-          No conflict history. Challenge other nations or engage NPC targets.
-        </p>
+        <EmptyState
+          compact
+          icon={<Swords />}
+          title="No conflict history"
+          message="Challenge other nations or engage NPC targets."
+        />
       )}
     </div>
   );

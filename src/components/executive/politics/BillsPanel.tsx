@@ -22,6 +22,8 @@ import {
 } from "~/components/ui/sheet";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { levelWord } from "~/lib/qualitative-rating";
 import { IDEOLOGY_OPTIONS } from "./ideologies";
 import { RepealPolicyButton } from "./RepealPolicyButton";
 
@@ -34,15 +36,15 @@ interface BillsPanelProps {
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   in_committee: {
     label: "In committee",
-    className: "bg-yellow/10 text-yellow-ink border-0",
+    className: "bg-warning/10 text-warning-ink border-0",
   },
   active: {
     label: "Passed",
-    className: "bg-green/10 text-green-ink border-0",
+    className: "bg-success/10 text-success-ink border-0",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-red/10 text-red-ink border-0",
+    className: "bg-destructive/10 text-destructive-ink border-0",
   },
   repealed: {
     label: "Repealed",
@@ -55,8 +57,8 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 const VOTE_ICON = {
-  yes: <Check className="text-green h-3 w-3" />,
-  no: <X className="text-red h-3 w-3" />,
+  yes: <Check className="text-success h-3 w-3" />,
+  no: <X className="text-destructive h-3 w-3" />,
   abstain: <Minus className="text-label-secondary h-3 w-3" />,
 } as const;
 
@@ -72,21 +74,23 @@ function WhipCount({ billId }: { billId: string }) {
     w.level === "greyed"
       ? "text-label-tertiary"
       : w.verdict === "pass" || w.verdict === "leaning_pass"
-        ? "text-green"
+        ? "text-success"
         : w.verdict === "too_close"
-          ? "text-yellow"
-          : "text-red";
+          ? "text-warning"
+          : "text-destructive";
   return (
-    <div className="rounded-control-sm bg-surface-secondary p-2">
+    <Card variant="well" padding="sm">
       <p className="text-caption flex items-center gap-2 font-semibold">
         <Gavel aria-hidden className="text-label-secondary h-3 w-3" /> Whip count
-        <span className="text-label-tertiary ml-auto font-normal">standing {data.standing}%</span>
+        <span className="text-label-tertiary ml-auto font-normal">
+          standing {levelWord(data.standing).toLowerCase()}
+        </span>
       </p>
       <p className={`text-footnote mt-1 ${color}`}>
         {w.caption}
         {w.yesSeats != null ? ` (${w.yesSeats}–${w.noSeats})` : ""}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -242,10 +246,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                   const result = bill.meta?.voteResult;
                   const isBillExpanded = expanded === bill.id;
                   return (
-                    <div
-                      key={bill.id}
-                      className="bg-fill-4 border-separator rounded-row border p-3"
-                    >
+                    <Card key={bill.id} variant="well" padding="sm">
                       <div className="flex items-center justify-between gap-2">
                         <button
                           type="button"
@@ -320,15 +321,17 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                         </div>
                       )}
-                    </div>
+                    </Card>
                   );
                 })}
               </div>
             ) : (
-              <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-8 text-center">
-                <p className="text-body">No bills before the legislature</p>
-                {canManage && <p className="text-footnote">Draft a bill and call it to a vote.</p>}
-              </div>
+              <EmptyState
+                compact
+                icon={<Gavel />}
+                title="No bills before the legislature"
+                message={canManage ? "Draft a bill and call it to a vote." : undefined}
+              />
             )}
           </div>
         </SheetContent>

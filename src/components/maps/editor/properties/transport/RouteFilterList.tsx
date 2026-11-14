@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { memo } from "react";
 import { Search, EditPencil as Pencil, Trash as Trash2 } from "iconoir-react";
 import { ROUTE_STYLES } from "~/lib/maps/map-config";
@@ -47,13 +48,13 @@ export const RouteFilterList = memo(function RouteFilterList({
   return (
     <div className="space-y-3">
       <div className="relative">
-        <Search className="text-label-secondary absolute top-3 left-3 h-3.5 w-3.5" />
-        <input
+        <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
+        <Input
           type="text"
           placeholder="Filter country routes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border py-2 pr-3 pl-8 focus:outline-none"
+          className="rounded-control-sm text-footnote h-8 pr-3 pl-8"
         />
       </div>
 
@@ -71,7 +72,7 @@ export const RouteFilterList = memo(function RouteFilterList({
             const isSelected = selectedRouteId === route.id;
             const style = ROUTE_STYLES[route.type] ?? {
               label: route.type,
-              color: "var(--color-slate-400)",
+              color: "var(--color-label-tertiary)",
             };
 
             const travelDuration =
@@ -89,10 +90,10 @@ export const RouteFilterList = memo(function RouteFilterList({
               <div
                 key={route.id}
                 onClick={() => onSelectRouteId?.(isSelected ? null : route.id)}
-                className={`group rounded-control-sm text-footnote flex cursor-pointer items-center justify-between border p-2 transition ${
+                className={`group rounded-control-sm text-footnote flex cursor-pointer items-center justify-between border p-2 transition-colors ${
                   isSelected
                     ? "border-tint bg-tint-fill text-label"
-                    : "border-separator bg-surface hover:bg-fill-4"
+                    : "border-separator bg-fill-4 hover:bg-fill-3"
                 }`}
               >
                 <div className="flex min-w-0 items-center gap-2">

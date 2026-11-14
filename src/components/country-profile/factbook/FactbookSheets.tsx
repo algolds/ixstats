@@ -3,10 +3,7 @@
 import Link from "next/link";
 import { Bank, Coins, Globe, NavArrowRight } from "iconoir-react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import {
-  formatBig,
-  formatPercent,
-} from "~/app/countries/[slug]/_utils/profileLayer";
+import { formatBig, formatPercent } from "~/app/countries/[slug]/_utils/profileLayer";
 import {
   FactbookMetricsProvider,
   useFactbookMetrics,
@@ -15,6 +12,7 @@ import { FactbookModals } from "~/components/mycountry/shared/modals/FactbookMod
 import { EconomyTab, GovernmentTab, LaborTab } from "~/components/mycountry/shared/tabs";
 import { Card } from "~/components/ui/card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Stat } from "~/components/ui/stat";
 import {
   Sheet,
   SheetContent,
@@ -27,10 +25,7 @@ import { stripHtml } from "~/lib/utils/sanitize-html";
 import { diplomaticMatrix } from "../derive";
 import { PublicRelationsList } from "./PublicRelationsList";
 
-const COPY: Record<
-  CountrySheet,
-  { title: string; description: string; icon: React.ReactNode }
-> = {
+const COPY: Record<CountrySheet, { title: string; description: string; icon: React.ReactNode }> = {
   economy: {
     title: "Economy & people",
     description: "The economy and the workforce in full.",
@@ -71,10 +66,10 @@ function sheetSummaryStats(
     const e = layer.state.election;
     const system = g?.type ?? layer.identity.governmentType;
     return [
-      { label: "System", value: system ? stripHtml(system) : "–" },
-      { label: "Legislature", value: g?.legislature ? stripHtml(g.legislature) : "–" },
-      { label: "Judiciary", value: g?.judiciary ? stripHtml(g.judiciary) : "–" },
-      { label: "Seats", value: e && e.totalSeats > 0 ? `${e.totalSeats}` : "–" },
+      { label: "System", value: system ? stripHtml(system) : "Not recorded" },
+      { label: "Legislature", value: g?.legislature ? stripHtml(g.legislature) : "Not recorded" },
+      { label: "Judiciary", value: g?.judiciary ? stripHtml(g.judiciary) : "Not recorded" },
+      { label: "Seats", value: e && e.totalSeats > 0 ? `${e.totalSeats}` : "Not recorded" },
     ];
   }
   const m = diplomaticMatrix(layer.world);
@@ -180,15 +175,18 @@ export function FactbookSheets({
               </div>
             </SheetHeader>
             {stats.length > 0 && (
-              <Card padding="sm" className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {stats.map((stat) => (
-                  <Card key={stat.label} padding="sm" className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-caption text-label-secondary truncate">{stat.label}</span>
-                    <span className="text-headline text-label truncate tabular-nums">
-                      {stat.value}
-                    </span>
-                  </Card>
-                ))}
+              <Card content="data" padding="md" className="mb-4">
+                <div className="divide-separator/60 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-0 sm:divide-x">
+                  {stats.map((stat) => (
+                    <Stat
+                      key={stat.label}
+                      size="sm"
+                      label={stat.label}
+                      value={stat.value}
+                      className="sm:px-3 sm:first:pl-0 sm:last:pr-0"
+                    />
+                  ))}
+                </div>
               </Card>
             )}
             <SheetBody layer={layer} open={open} onSegment={onSegment} />

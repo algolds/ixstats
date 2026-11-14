@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Page } from "iconoir-react";
+import { Page, WarningCircle } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { LensCard } from "~/components/ui/lens-card";
@@ -27,9 +28,11 @@ type Scope = "open" | "mine";
 export function ContractsCard({
   overview,
   onChanged,
+  primaryAction = true,
 }: {
   overview: Overview;
   onChanged: () => void;
+  primaryAction?: boolean;
 }) {
   const [scope, setScope] = useState<Scope>("open");
   const [posting, setPosting] = useState(false);
@@ -49,8 +52,8 @@ export function ContractsCard({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <CardTitle icon={<Page />}>Contracts</CardTitle>
-            {!contracts.isLoading && (
-              <Badge variant="secondary" className="font-mono tabular-nums">
+            {!contracts.isLoading && !contracts.error && (
+              <Badge variant="secondary" className="tabular-nums">
                 {rows.length}
               </Badge>
             )}
@@ -67,7 +70,9 @@ export function ContractsCard({
               ]}
             />
             {overview.isOpen && (
-              <Pill onClick={() => setPosting(true)}>Post a contract or tender</Pill>
+              <Pill tone={primaryAction ? "tint" : "plain"} onClick={() => setPosting(true)}>
+                Post a contract or tender
+              </Pill>
             )}
           </div>
         </div>
@@ -102,6 +107,21 @@ export function ContractsCard({
 
       {contracts.isLoading ? (
         <Skeleton className="h-24 w-full" />
+      ) : contracts.error && !contracts.data ? (
+        <LensCard app="exchange" padding="lg">
+          <EmptyState
+            role="alert"
+            compact
+            icon={<WarningCircle />}
+            title="Contracts did not load"
+            message={contracts.error.message}
+            action={
+              <Button size="sm" variant="secondary" onClick={() => void contracts.refetch?.()}>
+                Try again
+              </Button>
+            }
+          />
+        </LensCard>
       ) : rows.length === 0 ? (
         <LensCard app="exchange" padding="lg">
           <EmptyState

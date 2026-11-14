@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "motion/react";
 import {
   Lock,
@@ -23,6 +23,7 @@ import type { RouterOutputs } from "~/trpc/react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Progress } from "~/components/ui/progress";
 import { SearchField } from "~/components/ui/search-field";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
@@ -207,9 +208,9 @@ function GroupedSeriesCard({
             )}
 
             {isUltraRare && (
-              <Badge variant="info" className="tabular-nums">
+              <Badge variant="info">
                 <Diamond aria-hidden />
-                <span>{activeLevel.globalUnlockPercent}% ultra-rare</span>
+                <span>Ultra-rare</span>
               </Badge>
             )}
           </div>
@@ -319,12 +320,17 @@ function GroupedSeriesCard({
               </div>
             </div>
 
-            <span className="text-label-secondary text-footnote">
-              <span className="tabular-nums">
-                {item.unlockedCount} / {item.totalLevels}
-              </span>{" "}
-              mastered
+            <span className="text-label-secondary text-footnote tabular-nums">
+              {item.unlockedCount} of {item.totalLevels} mastered
             </span>
+
+            <Progress
+              value={item.unlockedCount}
+              max={item.totalLevels}
+              tone="success"
+              aria-label={`${item.seriesName || activeLevel.title} tier mastery`}
+              className="h-1.5 basis-full"
+            />
           </div>
         )}
 
@@ -336,7 +342,6 @@ function GroupedSeriesCard({
                 type="button"
                 variant="secondary"
                 size="icon-sm"
-                className="rounded-full"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleSecretReveal(activeLevel.key);
@@ -394,41 +399,34 @@ export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTa
   };
 
   // Grouped Series representation
-  const groupedItems = useMemo(() => {
-    return groupAchievements(achievements || []);
-  }, [achievements]);
+  const groupedItems = groupAchievements(achievements || []);
 
   // Counts per rarity for badges in toggle: active achievements only, Legacy counts in no total
-  const rarityCounts = useMemo(() => {
-    const active = groupedItems.filter((item) => !item.isLegacy);
-    const counts: Record<string, number> = { all: active.length };
-    for (const r of rarities) {
-      if (r === "all") continue;
-      counts[r] = active.filter((item) => item.levels.some((l) => l.rarity === r)).length;
+  const activeItems = groupedItems.filter((item) => !item.isLegacy);
+  const rarityCounts: Record<string, number> = { all: activeItems.length };
+  for (const r of rarities) {
+    if (r === "all") continue;
+    rarityCounts[r] = activeItems.filter((item) => item.levels.some((l) => l.rarity === r)).length;
+  }
+
+  const trimmedQuery = searchQuery.trim().toLowerCase();
+  const filteredGroupedItems = groupedItems.filter((item) => {
+    if (selectedRarity !== "all") {
+      const matchesRarity = item.levels.some((l) => l.rarity === selectedRarity);
+      if (!matchesRarity) return false;
     }
-    return counts;
-  }, [groupedItems]);
 
-  const filteredGroupedItems = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return groupedItems.filter((item) => {
-      // Rarity filter: match if any level in series has the selected rarity
-      if (selectedRarity !== "all") {
-        const matchesRarity = item.levels.some((l) => l.rarity === selectedRarity);
-        if (!matchesRarity) return false;
-      }
-
-      // Search filter
-      if (q) {
-        const nameMatch = item.seriesName?.toLowerCase().includes(q);
-        const levelMatch = item.levels.some(
-          (l) => l.title.toLowerCase().includes(q) || l.description.toLowerCase().includes(q)
-        );
-        return nameMatch || levelMatch;
-      }
-      return true;
-    });
-  }, [groupedItems, selectedRarity, searchQuery]);
+    if (trimmedQuery) {
+      const nameMatch = item.seriesName?.toLowerCase().includes(trimmedQuery);
+      const levelMatch = item.levels.some(
+        (l) =>
+          l.title.toLowerCase().includes(trimmedQuery) ||
+          l.description.toLowerCase().includes(trimmedQuery)
+      );
+      return nameMatch || levelMatch;
+    }
+    return true;
+  });
 
   return (
     <section aria-labelledby="achievement-catalogue-title" className="space-y-4">
@@ -514,6 +512,20 @@ export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTa
             icon={<Award />}
             title="No achievements match"
             message="Change the search or pick another rarity."
+            action={
+              searchQuery || selectedRarity !== "all" ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedRarity("all");
+                  }}
+                >
+                  Reset filters
+                </Button>
+              ) : undefined
+            }
           />
         </Card>
       )}

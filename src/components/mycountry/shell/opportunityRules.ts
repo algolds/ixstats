@@ -1,3 +1,4 @@
+import { getQualitativeRating } from "~/lib/qualitative-rating";
 import {
   ScaleFrameEnlarge as Scale,
   StatUp as TrendingUp,
@@ -82,10 +83,6 @@ const issueRule: Rule = ({ issues, isDismissed }) => {
 
 const civilServiceRule: Rule = ({ execBandwidth, isDismissed }) => {
   if (!execBandwidth?.overCapacity || isDismissed("civil-service-overcap")) return null;
-  const pct =
-    execBandwidth.capacity > 0
-      ? Math.round((execBandwidth.used / execBandwidth.capacity) * 100)
-      : null;
   return {
     id: "civil-service-overcap",
     domain: "politics",
@@ -94,7 +91,10 @@ const civilServiceRule: Rule = ({ execBandwidth, isDismissed }) => {
     description:
       "Executive bandwidth is over capacity. Retire a policy or let a directive settle before adding more.",
     metricLabel: "Executive bandwidth",
-    metricValue: pct === null ? `${execBandwidth.used} used` : `${pct}% used`,
+    metricValue:
+      execBandwidth.capacity > 0
+        ? `${Math.round(execBandwidth.used)} of ${Math.round(execBandwidth.capacity)} used`
+        : `${Math.round(execBandwidth.used)} used`,
     icon: Scale,
     tone: "warning",
     drillKind: { kind: "politics" },
@@ -135,7 +135,9 @@ const economyRule: Rule = ({ country, isDismissed }) => {
   // InternalStabilityMetrics.stabilityScore (0-100); omitted until it has been computed
   const stability = country?.stabilityMetrics?.stabilityScore;
   const stabilityNote =
-    typeof stability === "number" ? ` · ${Math.round(stability)}% stability` : "";
+    typeof stability === "number"
+      ? ` · stability ${getQualitativeRating(stability).label.toLowerCase()}`
+      : "";
   return {
     id: "economy-growth",
     domain: "economy",

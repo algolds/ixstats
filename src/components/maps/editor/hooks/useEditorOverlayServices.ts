@@ -19,6 +19,7 @@ import type { useBorderEditor } from "~/hooks/useBorderEditor";
 import type { useProvinceImporter } from "~/hooks/useProvinceImporter";
 import type { SelectedCountry } from "~/components/maps/core/IxWorldMap";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import type { useEditorGeoDataState, useEditorSelectionState, useEditorToolState } from "./state";
 
 type Editor = ReturnType<typeof useMapEditor>;
@@ -88,29 +89,74 @@ export function useEditorServerMutations(editor: Editor) {
   return { utils, generateTransport, recalculateGeo, simplifyAll };
 }
 
-/** Saves a city, POI, story pin or label's wiki link on its own row (null unlinks it). */
+/** Saves a map feature's wiki link + wiki source on its own row (null unlinks it). */
 export function useFeatureWikiLink(editor: Editor, activeCountryId: string | null) {
   const wikiLinkMutation = { onSuccess: () => editor.refetchFeatures() };
   const updateCityWiki = api.geoFeatures.updateCity.useMutation(wikiLinkMutation);
   const updatePOIWiki = api.geoFeatures.updatePOI.useMutation(wikiLinkMutation);
   const updateStoryPinWiki = api.geoFeatures.updateStoryPin.useMutation(wikiLinkMutation);
   const updateMapLabelWiki = api.geoFeatures.updateMapLabel.useMutation(wikiLinkMutation);
+  const updatePeakWiki = api.geoFeatures.updatePeak.useMutation(wikiLinkMutation);
+  const updateRiverWiki = api.geoFeatures.updateNamedRiver.useMutation(wikiLinkMutation);
+  const updateLakeWiki = api.geoFeatures.updateNamedLake.useMutation(wikiLinkMutation);
 
   return useCallback(
-    async (featureId: string, featureType: string, wikiPageTitle: string | null) => {
+    async (
+      featureId: string,
+      featureType: string,
+      wikiPageTitle: string | null,
+      rawWikiSource?: WikiSource | string | null
+    ) => {
       const countryId = activeCountryId;
       if (!countryId) return;
+      const wikiSource = wikiPageTitle
+        ? rawWikiSource
+          ? parseWikiSource(rawWikiSource)
+          : "ixwiki"
+        : null;
       const linkers: Partial<Record<string, () => Promise<unknown>>> = {
-        city: () => updateCityWiki.mutateAsync({ countryId, cityId: featureId, wikiPageTitle }),
-        poi: () => updatePOIWiki.mutateAsync({ countryId, poiId: featureId, wikiPageTitle }),
+        city: () =>
+          updateCityWiki.mutateAsync({ countryId, cityId: featureId, wikiPageTitle, wikiSource }),
+        poi: () =>
+          updatePOIWiki.mutateAsync({ countryId, poiId: featureId, wikiPageTitle, wikiSource }),
         storyPin: () =>
-          updateStoryPinWiki.mutateAsync({ countryId, pinId: featureId, wikiPageTitle }),
+          updateStoryPinWiki.mutateAsync({
+            countryId,
+            pinId: featureId,
+            wikiPageTitle,
+            wikiSource,
+          }),
         mapLabel: () =>
-          updateMapLabelWiki.mutateAsync({ countryId, labelId: featureId, wikiPageTitle }),
+          updateMapLabelWiki.mutateAsync({
+            countryId,
+            labelId: featureId,
+            wikiPageTitle,
+            wikiSource,
+          }),
+        peak: () =>
+          updatePeakWiki.mutateAsync({ countryId, peakId: featureId, wikiPageTitle, wikiSource }),
+        river: () =>
+          updateRiverWiki.mutateAsync({
+            countryId,
+            riverId: featureId,
+            wikiPageTitle,
+            wikiSource,
+          }),
+        lake: () =>
+          updateLakeWiki.mutateAsync({ countryId, lakeId: featureId, wikiPageTitle, wikiSource }),
       };
       await linkers[featureType]?.();
     },
-    [activeCountryId, updateCityWiki, updatePOIWiki, updateStoryPinWiki, updateMapLabelWiki]
+    [
+      activeCountryId,
+      updateCityWiki,
+      updatePOIWiki,
+      updateStoryPinWiki,
+      updateMapLabelWiki,
+      updatePeakWiki,
+      updateRiverWiki,
+      updateLakeWiki,
+    ]
   );
 }
 

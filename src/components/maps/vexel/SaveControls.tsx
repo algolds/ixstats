@@ -1,231 +1,226 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
-import { Button } from "~/components/ui/button";
 import { useState } from "react";
-import { notifyFromStore } from "~/hooks/useNotify";
-import { useVexelEditor } from "./VexelEditorProvider";
-import { api } from "~/trpc/react";
-import ExportDialog from "./ExportDialog";
+import { Download, MapPin, SystemRestart } from "iconoir-react";
+import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
-import { Card } from "~/components/ui/card";
+import { notifyFromStore } from "~/hooks/useNotify";
+import { api } from "~/trpc/react";
+import type { HeraldryComposition } from "~/lib/heraldry";
+import ExportDialog from "./ExportDialog";
+import { useVexelEditor } from "./VexelEditorProvider";
 
-export default function SaveControls() {
-  // oxlint-disable-next-line eslint/no-unused-vars
-  const { composition, achievementId, isDirty, setInitialState, markSaved } = useVexelEditor();
+type SubjectType = "COUNTRY" | "CHARACTER" | "INSTITUTION" | "DYNASTY";
 
-  const [title, setTitle] = useState("My Coat of Arms");
-  const [subjectType, setSubjectType] = useState<
-    "COUNTRY" | "CHARACTER" | "INSTITUTION" | "DYNASTY"
-  >("CHARACTER");
+const SUBJECT_TYPES: { value: SubjectType; label: string }[] = [
+  { value: "CHARACTER", label: "Character" },
+  { value: "COUNTRY", label: "Country" },
+  { value: "INSTITUTION", label: "Institution" },
+  { value: "DYNASTY", label: "Dynasty" },
+];
+
+function notifyError(title: string, err: { message: string }) {
+  notifyFromStore({ title, message: err.message, type: "error", priority: "high" });
+}
+
+/**
+ * The saved record behind the design: its title and subject, and the save, publish, attach and export actions.
+ * The editor calls it once and hands the result to the fields (over the canvas) and the actions (in the header).
+ */
+export function useArmsRecord() {
+  const { composition, achievementId, setInitialState, markSaved } = useVexelEditor();
+  const [title, setTitle] = useState("My coat of arms");
+  const [subjectType, setSubjectType] = useState<SubjectType>("CHARACTER");
   const [subjectId, setSubjectId] = useState<string | null>(null);
-
   const [isExportOpen, setIsExportOpen] = useState(false);
 
   const utils = api.useUtils();
-
   const { data: countriesData } = api.countries.getAll.useQuery(
     { limit: 100 },
     { enabled: subjectType === "COUNTRY" }
   );
-  const countries = countriesData?.countries ?? [];
-
-  const { data: currentAchievement } = api.heraldry.getAchievement.useQuery(
+  const { data: current } = api.heraldry.getAchievement.useQuery(
     { id: achievementId! },
     { enabled: !!achievementId }
   );
 
   // A loaded (or refetched) achievement fills the form, during render.
-  const [seededFrom, setSeededFrom] = useState<typeof currentAchievement>(undefined);
-  if (currentAchievement !== seededFrom) {
-    setSeededFrom(currentAchievement);
-    if (currentAchievement) {
-      setTitle(currentAchievement.title);
-      setSubjectType(currentAchievement.subjectType as typeof subjectType);
-      setSubjectId(currentAchievement.subjectId);
+  const [seededFrom, setSeededFrom] = useState<typeof current>(undefined);
+  if (current !== seededFrom) {
+    setSeededFrom(current);
+    if (current) {
+      setTitle(current.title);
+      setSubjectType(current.subjectType as SubjectType);
+      setSubjectId(current.subjectId);
     }
   }
 
-  const saveMutation = api.heraldry.saveAchievement.useMutation({
+  const save = api.heraldry.saveAchievement.useMutation({
     onSuccess: (data) => {
-      setInitialState(data.compositionData as any, data.id);
+      setInitialState(data.compositionData as unknown as HeraldryComposition, data.id);
       markSaved();
-      utils.heraldry.getAchievement.invalidate({ id: data.id });
-      utils.heraldry.getRegistry.invalidate();
+      void utils.heraldry.getAchievement.invalidate({ id: data.id });
+      void utils.heraldry.getRegistry.invalidate();
     },
+    onError: (err) => notifyError("Could not save coat of arms", err),
   });
-
   const refreshPublishState = () => {
-    utils.heraldry.getAchievement.invalidate({ id: achievementId! });
-    utils.heraldry.getRegistry.invalidate();
+    void utils.heraldry.getAchievement.invalidate({ id: achievementId! });
+    void utils.heraldry.getRegistry.invalidate();
   };
-  const publishMutation = api.heraldry.publishAchievement.useMutation({
+  const publish = api.heraldry.publishAchievement.useMutation({ onSuccess: refreshPublishState });
+  const unpublish = api.heraldry.unpublishAchievement.useMutation({
     onSuccess: refreshPublishState,
   });
-  const unpublishMutation = api.heraldry.unpublishAchievement.useMutation({
-    onSuccess: refreshPublishState,
-  });
-  const isPublishing = publishMutation.isPending || unpublishMutation.isPending;
-
-  const attachMutation = api.heraldry.attachToCountry.useMutation({
-    onSuccess: () => {
+  const attach = api.heraldry.attachToCountry.useMutation({
+    onSuccess: () =>
       notifyFromStore({
         title: "Coat of arms attached",
         message: "The country's political map layers will refresh with the new arms.",
         type: "success",
         priority: "medium",
-      });
-    },
-    onError: (err) => {
-      notifyFromStore({
-        title: "Could not attach coat of arms",
-        message: err.message,
-        type: "error",
-        priority: "high",
-      });
-    },
+      }),
+    onError: (err) => notifyError("Could not attach coat of arms", err),
+  });
+  // Saving renders the design to an image; a design saved before that has none, so render it first.
+  const render = api.heraldry.renderAchievementImage.useMutation({
+    onSuccess: () => utils.heraldry.getAchievement.invalidate({ id: achievementId! }),
+    onError: (err) => notifyError("Could not render coat of arms", err),
   });
 
   const handleSave = () => {
     const svgElement = document.getElementById("vexel-shield-canvas");
     const svgData = svgElement ? new XMLSerializer().serializeToString(svgElement) : undefined;
-
-    saveMutation.mutate({
+    save.mutate({
       id: achievementId || undefined,
       title,
       subjectType,
       subjectId: subjectId || null,
-      compositionData: composition as any,
+      compositionData: composition as never,
       svgData,
     });
   };
 
   const handlePublishToggle = () => {
     if (!achievementId) return;
-    const mutation = currentAchievement?.isPublished ? unpublishMutation : publishMutation;
-    mutation.mutate({ id: achievementId });
+    (current?.isPublished ? unpublish : publish).mutate({ id: achievementId });
   };
-
-  // Saving renders the design to an image; a design saved before that has none, so render it first.
-  const renderMutation = api.heraldry.renderAchievementImage.useMutation({
-    onSuccess: () => utils.heraldry.getAchievement.invalidate({ id: achievementId! }),
-    onError: (err) => {
-      notifyFromStore({
-        title: "Could not render coat of arms",
-        message: err.message,
-        type: "error",
-        priority: "high",
-      });
-    },
-  });
-  const isAttaching = renderMutation.isPending || attachMutation.isPending;
 
   const handleAttach = async () => {
     if (!achievementId || !subjectId) return;
-    if (!currentAchievement?.thumbnailUrl && !currentAchievement?.largeUrl) {
+    if (!current?.thumbnailUrl && !current?.largeUrl) {
       try {
-        await renderMutation.mutateAsync({ id: achievementId });
+        await render.mutateAsync({ id: achievementId });
       } catch {
-        return; // reported by renderMutation.onError
+        return; // reported by render.onError
       }
     }
-    attachMutation.mutate({ achievementId, countryId: subjectId });
+    attach.mutate({ achievementId, countryId: subjectId });
   };
 
+  return {
+    achievementId,
+    title,
+    setTitle,
+    subjectType,
+    setSubjectType: (next: SubjectType) => {
+      setSubjectType(next);
+      setSubjectId(null);
+    },
+    subjectId,
+    setSubjectId,
+    countries: countriesData?.countries ?? [],
+    isPublished: Boolean(current?.isPublished),
+    isSaving: save.isPending,
+    isPublishing: publish.isPending || unpublish.isPending,
+    isRendering: render.isPending,
+    isAttaching: render.isPending || attach.isPending,
+    isExportOpen,
+    setIsExportOpen,
+    handleSave,
+    handlePublishToggle,
+    handleAttach,
+  };
+}
+
+export type ArmsRecord = ReturnType<typeof useArmsRecord>;
+
+/** The record's title and subject, in the workspace toolbar over the canvas. */
+export function ArmsDetailsFields({ record }: { record: ArmsRecord }) {
   return (
-    <Card className="mb-6 shrink-0 overflow-hidden">
-      <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="flex flex-1 flex-wrap items-center gap-4">
-          <div className="flex min-w-[150px] flex-col gap-1">
-            <Eyebrow id="vexel-arms-title">Arms title</Eyebrow>
-            <Input
-              type="text"
-              aria-labelledby="vexel-arms-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <Eyebrow id="vexel-subject-type">Subject type</Eyebrow>
-            <OptionSelect
-              aria-labelledby="vexel-subject-type"
-              className="w-40"
-              value={subjectType}
-              onValueChange={(v) => {
-                setSubjectType(v as any);
-                setSubjectId(null);
-              }}
-              options={[
-                { value: "CHARACTER", label: "Character" },
-                { value: "COUNTRY", label: "Country" },
-                { value: "INSTITUTION", label: "Institution" },
-                { value: "DYNASTY", label: "Dynasty" },
-              ]}
-            />
-          </div>
-
-          {subjectType === "COUNTRY" && (
-            <div className="flex min-w-[150px] flex-col gap-1">
-              <Eyebrow id="vexel-subject-country">Select country</Eyebrow>
-              <OptionSelect
-                aria-labelledby="vexel-subject-country"
-                value={subjectId || ""}
-                onValueChange={(v) => setSubjectId(v || null)}
-                options={[
-                  { value: "", label: "Choose country..." },
-                  ...countries.map((c) => ({ value: c.id, label: c.name })),
-                ]}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {subjectType === "COUNTRY" && achievementId && subjectId && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void handleAttach()}
-              disabled={isAttaching}
-            >
-              {renderMutation.isPending
-                ? "Rendering..."
-                : attachMutation.isPending
-                  ? "Attaching..."
-                  : "Attach to map"}
-            </Button>
-          )}
-
-          {achievementId && (
-            <Button
-              variant={currentAchievement?.isPublished ? "outline" : "secondary"}
-              size="sm"
-              onClick={handlePublishToggle}
-              disabled={isPublishing}
-              className={currentAchievement?.isPublished ? "text-destructive" : undefined}
-            >
-              {currentAchievement?.isPublished ? "Unpublish" : "Publish"}
-            </Button>
-          )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSave}
-            disabled={saveMutation.isPending}
-          >
-            {saveMutation.isPending ? "Saving..." : "Save changes"}
-          </Button>
-
-          <Button variant="outline" size="sm" onClick={() => setIsExportOpen(true)}>
-            Export
-          </Button>
-        </div>
-
-        {isExportOpen && <ExportDialog onClose={() => setIsExportOpen(false)} />}
+    <div className="flex min-w-0 flex-1 flex-wrap items-end gap-3">
+      <label className="flex min-w-48 flex-1 flex-col gap-1">
+        <span className="text-subhead text-label-secondary">Title</span>
+        <Input type="text" value={record.title} onChange={(e) => record.setTitle(e.target.value)} />
+      </label>
+      <div className="flex flex-col gap-1">
+        <span id="vexel-subject-type" className="text-subhead text-label-secondary">
+          Bearer
+        </span>
+        <OptionSelect
+          aria-labelledby="vexel-subject-type"
+          className="w-40"
+          value={record.subjectType}
+          onValueChange={(v) => record.setSubjectType(v as SubjectType)}
+          options={SUBJECT_TYPES}
+        />
       </div>
-    </Card>
+      {record.subjectType === "COUNTRY" && (
+        <div className="flex min-w-48 flex-col gap-1">
+          <span id="vexel-subject-country" className="text-subhead text-label-secondary">
+            Country
+          </span>
+          <OptionSelect
+            aria-labelledby="vexel-subject-country"
+            value={record.subjectId || ""}
+            onValueChange={(v) => record.setSubjectId(v || null)}
+            options={[
+              { value: "", label: "Choose a country" },
+              ...record.countries.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The header actions. Save is the one primary; the rest are secondary. */
+export function ArmsActions({ record }: { record: ArmsRecord }) {
+  const canAttach = record.subjectType === "COUNTRY" && record.achievementId && record.subjectId;
+  return (
+    <>
+      {canAttach && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => void record.handleAttach()}
+          disabled={record.isAttaching}
+        >
+          <MapPin />
+          {record.isRendering ? "Rendering" : record.isAttaching ? "Attaching" : "Attach to map"}
+        </Button>
+      )}
+      {record.achievementId && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={record.handlePublishToggle}
+          disabled={record.isPublishing}
+        >
+          {record.isPublished ? "Unpublish" : "Publish"}
+        </Button>
+      )}
+      <Button variant="secondary" size="sm" onClick={() => record.setIsExportOpen(true)}>
+        <Download />
+        Export
+      </Button>
+      <Button size="sm" onClick={record.handleSave} disabled={record.isSaving}>
+        {record.isSaving && <SystemRestart className="animate-spin motion-reduce:animate-none" />}
+        {record.isSaving ? "Saving" : "Save"}
+      </Button>
+      {record.isExportOpen && <ExportDialog onClose={() => record.setIsExportOpen(false)} />}
+    </>
   );
 }

@@ -702,10 +702,11 @@
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Primary action: monochrome, flat gold inside MyCountry and the Builder, the Commons leather tint inside ThinkPages
-       (and ThinkTanks and Messages, which wear its scope) */
-    --primary-mono: #18181b;
-    --primary-mono-hover: #3f3f46;
+    /* Primary action: iron-gall ink (the default app tint's strong shade, its tint on hover), flat gold inside
+       MyCountry and the Builder, the Commons leather tint inside ThinkPages (and ThinkTanks and Messages, which
+       wear its scope) */
+    --primary-mono: #46372b;
+    --primary-mono-hover: #5a493d;
     --on-primary-mono: #fafafa;
     --gold: #f59e0b;
     --gold-hover: #fbbf24;
@@ -726,8 +727,8 @@
     --lens-frosted-fill: 80%;
     --overlay-fill: 90%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
-    --primary-mono: #e4e4e7;
-    --primary-mono-hover: #d4d4d8;
+    --primary-mono: #d7cbc2;
+    --primary-mono-hover: #c3b4a8;
     --on-primary-mono: #0f1114;
     --gold-accent: #f59e0b;
     --accent-fill-mix: 18%;

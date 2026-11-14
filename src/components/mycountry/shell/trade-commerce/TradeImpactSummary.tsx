@@ -1,8 +1,8 @@
 import React from "react";
 import { Globe as Globe2, DeliveryTruck as Ship, Percentage as Percent } from "iconoir-react";
-import { cn } from "~/lib/utils";
 import { formatCompact } from "./trade-commerce-types";
 import { Card } from "~/components/ui/card";
+import { Stat } from "~/components/ui/stat";
 
 interface TradeImpactSummaryProps {
   /** Planned tariff yield from the (unsaved) tariff planner; null when imports aren't recorded. */
@@ -16,14 +16,19 @@ interface TradeImpactSummaryProps {
   totalImports: number | null;
 }
 
+/** Missing figures render as a quiet plain reason rather than a tinted headline figure. */
+function unrecorded(reason = "Not recorded"): React.ReactNode {
+  return <span className="text-label-secondary text-callout font-normal">{reason}</span>;
+}
+
 /** Trade figures come from GDP, which is in US dollars, so they carry "$" (not the national symbol). */
-function money(value: number | null): string {
-  if (value == null) return "–";
+function money(value: number | null): string | null {
+  if (value == null) return null;
   const sign = value < 0 ? "-" : "";
   return `${sign}$${formatCompact(Math.abs(value))}`;
 }
 
-export const TradeImpactSummary = React.memo(function TradeImpactSummary({
+export function TradeImpactSummary({
   plannedTariffRevenue,
   plannedAverageTariff,
   revenueNetOfEfficiency,
@@ -31,84 +36,74 @@ export const TradeImpactSummary = React.memo(function TradeImpactSummary({
   totalExports,
   totalImports,
 }: TradeImpactSummaryProps) {
+  const plannedRevenueText = money(plannedTariffRevenue);
+  const balanceText = money(tradeBalance);
+  const exportsText = money(totalExports);
+  const importsText = money(totalImports);
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <ImpactTile
-        label="Planned tariff yield"
-        icon={Percent}
-        value={money(plannedTariffRevenue)}
-        note={
-          <>
-            {plannedAverageTariff != null
-              ? `Planner avg tariff: ${plannedAverageTariff.toFixed(2)}%`
-              : "No sectors in the planner"}
-            {plannedTariffRevenue != null &&
-              !revenueNetOfEfficiency &&
-              " · before collection losses"}
-          </>
-        }
-      />
+    <Card content="data" padding="md">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat
+          size="sm"
+          label="Planned tariff yield"
+          icon={<Percent />}
+          iconPlacement="trailing"
+          value={plannedRevenueText ?? unrecorded()}
+          hint={
+            <>
+              {plannedAverageTariff != null
+                ? `Planner avg tariff: ${plannedAverageTariff.toFixed(2)}%`
+                : "No sectors in the planner"}
+              {plannedTariffRevenue != null &&
+                !revenueNetOfEfficiency &&
+                " · before collection losses"}
+            </>
+          }
+        />
 
-      <ImpactTile
-        label="Trade balance"
-        icon={Ship}
-        valueClassName={
-          tradeBalance == null ? undefined : tradeBalance >= 0 ? "text-green" : "text-destructive"
-        }
-        value={
-          <>
-            {tradeBalance != null && tradeBalance > 0 && "+"}
-            {money(tradeBalance)}
-          </>
-        }
-        note={
-          tradeBalance == null
-            ? "No trade data recorded"
-            : tradeBalance >= 0
-              ? "Trade surplus"
-              : "Trade deficit"
-        }
-      />
+        <Stat
+          size="sm"
+          label="Trade balance"
+          icon={<Ship />}
+          iconPlacement="trailing"
+          value={
+            balanceText == null || tradeBalance == null ? (
+              unrecorded()
+            ) : (
+              <span className={tradeBalance >= 0 ? "text-success" : "text-destructive"}>
+                {tradeBalance > 0 && "+"}
+                {balanceText}
+              </span>
+            )
+          }
+          hint={
+            tradeBalance == null
+              ? "No trade data recorded"
+              : tradeBalance >= 0
+                ? "Trade surplus"
+                : "Trade deficit"
+          }
+        />
 
-      <ImpactTile
-        label="Annual gross exports"
-        icon={Globe2}
-        value={money(totalExports)}
-        note={totalExports != null ? "From your recorded exports (% of GDP)" : "Not recorded"}
-      />
+        <Stat
+          size="sm"
+          label="Annual gross exports"
+          icon={<Globe2 />}
+          iconPlacement="trailing"
+          value={exportsText ?? unrecorded()}
+          hint={totalExports != null ? "From your recorded exports (% of GDP)" : undefined}
+        />
 
-      <ImpactTile
-        label="Annual gross imports"
-        icon={Ship}
-        value={money(totalImports)}
-        note={totalImports != null ? "From your recorded imports (% of GDP)" : "Not recorded"}
-      />
-    </div>
-  );
-});
-
-/** One headline figure. Opaque: the trade tab also renders inside the drill sheet. */
-function ImpactTile({
-  label,
-  icon: Icon,
-  value,
-  valueClassName,
-  note,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  value: React.ReactNode;
-  valueClassName?: string;
-  note: React.ReactNode;
-}) {
-  return (
-    <Card className="rounded-card space-y-1 p-4">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-label-secondary text-footnote">{label}</span>
-        <Icon aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
+        <Stat
+          size="sm"
+          label="Annual gross imports"
+          icon={<Ship />}
+          iconPlacement="trailing"
+          value={importsText ?? unrecorded()}
+          hint={totalImports != null ? "From your recorded imports (% of GDP)" : undefined}
+        />
       </div>
-      <p className={cn("text-title-2 tabular-nums", valueClassName ?? "text-label")}>{value}</p>
-      <p className="text-label-secondary text-footnote">{note}</p>
     </Card>
   );
 }

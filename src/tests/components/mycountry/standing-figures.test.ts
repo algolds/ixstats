@@ -3,7 +3,11 @@
  */
 jest.mock("~/trpc/react", () => ({ api: {} }));
 
-import { deriveFigures } from "~/components/mycountry/shell/face/command-figures";
+import {
+  deriveFigures,
+  describeExecBandwidth,
+  slotPips,
+} from "~/components/mycountry/shell/face/command-figures";
 
 type Country = Parameters<typeof deriveFigures>[0];
 
@@ -28,4 +32,23 @@ it("reads the computed internal stability, with the stored row as the fallback",
   expect(deriveFigures(stored, 62.04).stabilityPct).toBe(62);
   expect(deriveFigures(stored, undefined).stabilityPct).toBe(48);
   expect(deriveFigures({ name: "Eldoria" } as Country, null).stabilityPct).toBeNull();
+});
+
+it("draws this week's directive slots as one pip each, used first", () => {
+  expect(slotPips({ used: 1, cap: 3 })).toEqual([true, false, false]);
+  expect(slotPips({ used: 5, cap: 3 })).toEqual([true, true, true]);
+  expect(slotPips(null)).toBeNull();
+  expect(slotPips({ used: 0, cap: 0 })).toBeNull();
+  // Too many to count at a glance: the band falls back to a plain meter.
+  expect(slotPips({ used: 2, cap: 12 })).toBeNull();
+});
+
+it("reads executive bandwidth as a count of its capacity", () => {
+  const reading = describeExecBandwidth(
+    { capacity: 158, used: 40.4, available: 118, overCapacity: false },
+    null
+  );
+  expect([reading.value, reading.detail]).toEqual(["40", "of 158"]);
+  expect(describeExecBandwidth(null, null).value).toBe("–");
+  expect(describeExecBandwidth(null, null).detail).toBeUndefined();
 });

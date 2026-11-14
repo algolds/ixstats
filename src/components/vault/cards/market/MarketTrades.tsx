@@ -3,11 +3,13 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Plus } from "iconoir-react";
+import { DataTransferBoth, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 import { TradeBuilderHost, type TradeAddress } from "~/components/cards/trade/TradeBuilderHost";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { tradeBuilderHref } from "~/lib/cards/hub-routes";
@@ -68,66 +70,81 @@ export function MarketTrades({ onOpenCard, trade, onCloseTrade }: MarketTradesPr
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <SegmentedControl
-          asTabs
-          aria-label="Trades"
-          value={view}
-          onValueChange={setView}
-          getTabPanelId={panelId}
-          options={[
-            {
-              value: "incoming",
-              label: "Incoming",
-              ...offerCount(incoming.length),
-            },
-            {
-              value: "sent",
-              label: "Sent",
-              ...offerCount(sent.length),
-            },
-            { value: "history", label: "History" },
-          ]}
-        />
-        <Button size="sm" asChild>
-          <Link href={tradeBuilderHref({})}>
-            <Plus aria-hidden />
-            New trade
-          </Link>
-        </Button>
-      </div>
+      <SegmentedControl
+        asTabs
+        size="sm"
+        aria-label="Trades"
+        value={view}
+        onValueChange={setView}
+        getTabPanelId={panelId}
+        options={[
+          {
+            value: "incoming",
+            label: "Incoming",
+            ...offerCount(incoming.length),
+          },
+          {
+            value: "sent",
+            label: "Sent",
+            ...offerCount(sent.length),
+          },
+          { value: "history", label: "History" },
+        ]}
+      />
 
       {view === "history" ? (
         <MarketHistory onOpenCard={onOpenCard} />
+      ) : active.isLoading ? (
+        <Skeleton className="rounded-card h-32" />
+      ) : active.isError && !active.data ? (
+        <Card>
+          <EmptyState
+            compact
+            role="alert"
+            icon={<WarningCircle />}
+            title="Your trades did not load"
+            message="Try loading your trade offers again."
+            action={
+              <Button variant="secondary" onClick={() => void active.refetch()}>
+                Try again
+              </Button>
+            }
+          />
+        </Card>
       ) : list.length === 0 ? (
-        <EmptyState
-          compact
-          title={view === "incoming" ? "No offers waiting for you" : "You have no offers out"}
-          message="Start one with New trade."
-        />
+        <Card>
+          <EmptyState
+            compact
+            icon={<DataTransferBoth />}
+            title={view === "incoming" ? "No offers waiting for you" : "You have no offers out"}
+            message="Start one with New trade."
+          />
+        </Card>
       ) : (
         <div role="tabpanel" id={panelId(view)} aria-label={VIEW_LABEL[view]}>
-          <ul className="divide-separator divide-y">
-            {list.map((item) => {
-              const partner =
-                item.initiator?.clerkUserId === userId ? item.recipient : item.initiator;
-              const partnerName =
-                partner?.displayName ?? (partner?.handle ? `@${partner.handle}` : "a player");
-              return (
-                <li key={item.id} className="flex items-center justify-between gap-3 py-3">
-                  <span className="min-w-0">
-                    <span className="text-callout block truncate">Trade with {partnerName}</span>
-                    <span className="text-footnote text-label-secondary block">
-                      {view === "incoming" ? "Your turn" : "Waiting on them"}
+          <Card content="data">
+            <ul className="divide-separator divide-y">
+              {list.map((item) => {
+                const partner =
+                  item.initiator?.clerkUserId === userId ? item.recipient : item.initiator;
+                const partnerName =
+                  partner?.displayName ?? (partner?.handle ? `@${partner.handle}` : "a player");
+                return (
+                  <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <span className="min-w-0">
+                      <span className="text-callout block truncate">Trade with {partnerName}</span>
+                      <span className="text-footnote text-label-secondary block">
+                        {view === "incoming" ? "Your turn" : "Waiting on them"}
+                      </span>
                     </span>
-                  </span>
-                  <Button size="sm" variant="secondary" asChild>
-                    <Link href={tradeBuilderHref({ tradeId: item.id })}>Open</Link>
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
+                    <Button size="sm" variant="secondary" asChild>
+                      <Link href={tradeBuilderHref({ tradeId: item.id })}>Open</Link>
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
         </div>
       )}
       <TradeBuilderHost address={trade} onClose={onCloseTrade} />

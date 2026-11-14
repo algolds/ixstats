@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/com
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Stat } from "~/components/ui/stat";
-import { Bank as Landmark, ArrowUpRight, Trophy, Sparks as Sparkles, Xmark } from "iconoir-react";
+import { Bank as Landmark, ArrowUpRight, Trophy, Star, Xmark } from "iconoir-react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "~/lib/utils";
 import { useNotify } from "~/hooks/useNotify";
@@ -239,7 +239,7 @@ export function SponsorWalletDeck({ team, refetchTeam }: SponsorWalletDeckProps)
     <Card className="flex flex-col gap-6 overflow-hidden py-6">
       <CardHeader>
         <CardTitle className="text-title-2 flex items-center gap-2">
-          <Sparkles className="text-tint size-5" aria-hidden />
+          <Star className="text-tint size-5" aria-hidden />
           Club command desk
         </CardTitle>
         <CardDescription>

@@ -21,8 +21,6 @@ jest.mock("~/trpc/react", () => ({
       getActivityRingsData: { useQuery: () => ({ data: undefined }) },
     },
     users: { getProfile: { useQuery: () => ({ data: undefined }) } },
-    thinkpages: { createPost: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) } },
-    achievements: { getRecentByCountry: { useQuery: () => ({ data: [] }) } },
   },
 }));
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
@@ -33,7 +31,6 @@ jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
 jest.mock("~/components/wiki-os/reader/WikiLinkPreview", () => ({
   WikiLinkPreview: ({ children }: { children: React.ReactNode }) => children,
 }));
-jest.mock("~/hooks/useViewerPostingAccount", () => ({ useViewerPostingAccount: () => null }));
 jest.mock("~/components/mycountry/dossier/useCountryDiplomacyActions", () => ({
   useCountryDiplomacyActions: () => ({
     isFollowing: false,
@@ -41,6 +38,7 @@ jest.mock("~/components/mycountry/dossier/useCountryDiplomacyActions", () => ({
     isEmbassyPending: false,
     isPending: false,
     crossRealm: mockCrossRealm,
+    standing: { hasEmbassy: false, policy: () => "open" },
     toggleFollow: jest.fn(),
     establishEmbassy: jest.fn(),
     proposeForeignPolicy: jest.fn(),
@@ -115,9 +113,9 @@ describe("the dossier", () => {
   it("turns embassy, summit and proposal actions off for a nation of another realm", () => {
     mockCrossRealm = true;
     renderMenu();
-    expect(screen.getByRole("button", { name: "Construct embassy" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Construct embassy/ })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Summit" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Propose free trade" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /^Propose free trade/ })).toBeDisabled();
     expect(screen.getByText(/Both nations must be in the same realm/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Follow" })).toBeEnabled();
   });
@@ -125,7 +123,7 @@ describe("the dossier", () => {
   it("keeps them on within one realm", () => {
     mockCrossRealm = false;
     renderMenu();
-    expect(screen.getByRole("button", { name: "Construct embassy" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^Construct embassy/ })).toBeEnabled();
     expect(screen.queryByText(/Both nations must be in the same realm/)).not.toBeInTheDocument();
   });
 });

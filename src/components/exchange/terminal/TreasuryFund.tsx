@@ -61,7 +61,7 @@ export function FundHoldings({ portfolio }: { portfolio: Portfolio }) {
               <TickerTile code={r.code} tone="neutral" />
               <span className="truncate font-medium">{r.label}</span>
             </span>
-            <span className="font-mono font-semibold tabular-nums">{sov(r.value)}</span>
+            <span className="text-headline tabular-nums">{sov(r.value)}</span>
           </>
         );
         return (
@@ -140,7 +140,6 @@ export function TreasuryFund({ countryId }: { countryId: string }) {
         <Button
           size="sm"
           variant="secondary"
-          className="rounded-full"
           disabled={!valid || withdraw.isPending}
           onClick={() => withdraw.mutate({ countryId, amount, requestId }, done)}
         >

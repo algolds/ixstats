@@ -27,8 +27,8 @@ import { Button } from "~/components/ui/button";
 // Custom node components for React Flow
 function CenterNode({ data }: { data: { label: string } }) {
   return (
-    <div className="text-label border-tint bg-tint/15 rounded-card shadow-floating flex min-w-[125px] flex-col items-center gap-0.5 border-2 px-5 py-3 text-center font-semibold select-none">
-      <span className="text-tint text-eyebrow">Active state</span>
+    <div className="text-label border-tint bg-tint/15 rounded-card shadow-floating flex min-w-[125px] flex-col items-center gap-0.5 border-2 px-5 py-3 text-center font-medium select-none">
+      <span className="text-tint text-caption">Active state</span>
       <span className="text-body font-mono leading-tight">{data.label || "[Start]"}</span>
       <Handle
         type="source"
@@ -71,8 +71,8 @@ function NeighborNode({
         onClick={data.onClick}
         className="relative min-w-[85px] justify-center font-mono"
       >
-        <span className="text-tint font-mono font-semibold">+{data.label}</span>
-        <span className="text-label-secondary text-caption font-sans font-semibold">
+        <span className="text-tint font-mono font-medium">+{data.label}</span>
+        <span className="text-label-secondary text-caption font-sans font-medium">
           ({(data.probability * 100).toFixed(0)}%)
         </span>
         <Handle
@@ -100,7 +100,7 @@ function EndNode({
         className="text-red relative min-w-[85px] justify-center"
       >
         <span>[End]</span>
-        <span className="text-caption text-red/80 font-sans font-semibold">
+        <span className="text-caption text-red/80 font-sans font-medium">
           ({(data.probability * 100).toFixed(0)}%)
         </span>
         <Handle
@@ -236,12 +236,11 @@ function MarkovVisualizerInner({
         animated: t.probability > 0.2,
         style: {
           strokeWidth: Math.max(1.2, t.probability * 6.5),
-          stroke: t.probability > 0.25 ? "#0091ff" : "var(--border)",
+          stroke: t.probability > 0.25 ? "var(--color-tint)" : "var(--border)",
         },
         labelStyle: {
           fill: "var(--foreground)",
-          fontWeight: "700",
-          fontSize: "9px",
+          fontSize: "12px",
           fontFamily: "monospace",
         },
         labelBgStyle: {
@@ -304,7 +303,7 @@ function MarkovVisualizerInner({
 
         {/* Input box showing active path */}
         <div className="flex max-w-sm flex-1 items-center gap-2 sm:justify-end">
-          <span className="text-label-secondary text-eyebrow hidden sm:inline">Path:</span>
+          <span className="text-label-secondary text-caption hidden sm:inline">Path:</span>
           <Input
             type="text"
             value={activePrefix}

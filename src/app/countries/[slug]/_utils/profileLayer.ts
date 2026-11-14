@@ -244,7 +244,7 @@ export function realNumber(value: unknown, { allowZero = false } = {}): number |
 }
 
 export function formatBig(value: number | null, { currency = false } = {}): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   const abs = Math.abs(value);
   const prefix = currency ? "$" : "";
   const sign = value < 0 ? "−" : "";
@@ -260,14 +260,14 @@ export function formatBig(value: number | null, { currency = false } = {}): stri
  * magnitude is treated as a fraction, matching the MyCountry formatters.
  */
 export function formatRate(value: number | null, { signed = true } = {}): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   const pct = Math.abs(value) < 1 ? value * 100 : value;
   const sign = signed && pct > 0 ? "+" : pct < 0 ? "−" : "";
   return `${sign}${Math.abs(pct).toFixed(1)}%`;
 }
 
 export function formatPercent(value: number | null, digits = 1): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   return `${value.toFixed(digits)}%`;
 }
 

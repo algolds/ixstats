@@ -1,6 +1,5 @@
 "use client";
 
-import { memo } from "react";
 import {
   StatUp as TrendingUp,
   Bank as Landmark,
@@ -14,10 +13,11 @@ import {
   FireFlame as Flame,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { useNationClock } from "~/hooks/useNationClock";
 import { CLOCK_PENDING, realMsUntil } from "~/lib/realms/nation-time";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
-import { Button } from "~/components/ui/button";
 
 interface IssueCardProps {
   issue: {
@@ -97,7 +97,7 @@ export function issueDeadlineOf(
   return { text: `${Math.ceil(days)}d left`, urgent: days < 3 };
 }
 
-function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
+export function IssueCard({ issue, onView, onDismiss, variant = "full" }: IssueCardProps) {
   const domainConfig = DOMAIN_CONFIG[issue.domain] ?? DOMAIN_CONFIG.economic!;
   const DomainIcon = domainConfig.icon;
   const badgeStyle = SEVERITY_BADGE[issue.severity] ?? SEVERITY_BADGE.medium!;
@@ -111,9 +111,11 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
   const isNew = issue.status === "pending";
 
   return (
-    <div
+    <Card
+      variant="well"
+      padding="sm"
       onClick={() => onView(issue.id)}
-      className="group rounded-control border-separator bg-fill-4/50 hover:bg-fill-4 w-full cursor-pointer border p-3 text-left transition-colors"
+      className="group hover:bg-fill-3 w-full cursor-pointer text-left transition-colors"
     >
       <div className="flex items-start gap-3">
         <div className={`bg-fill-4 mt-0.5 rounded-full p-2 ${domainConfig.color}`}>
@@ -126,9 +128,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
               {issue.title}
             </h4>
             {isNew && (
-              <Badge variant="warning" className="shrink-0">
-                New
-              </Badge>
+              <span className="text-warning-ink text-footnote shrink-0 font-medium">New</span>
             )}
           </div>
 
@@ -146,7 +146,7 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
 
             {hasDeadline && (
               <span
-                className={`text-footnote flex items-center gap-1 ${isUrgent ? "text-red" : "text-label-secondary"}`}
+                className={`text-footnote flex items-center gap-1 ${isUrgent ? "text-destructive" : "text-label-secondary"}`}
               >
                 {isUrgent ? <Flame className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                 {timeRemainingText}
@@ -177,11 +177,9 @@ function IssueCardInner({ issue, onView, onDismiss, variant = "full" }: IssueCar
         </div>
 
         {(issue.severity === "critical" || issue.severity === "CRITICAL") && (
-          <AlertTriangle className="text-red h-4 w-4 shrink-0" />
+          <AlertTriangle className="text-destructive h-4 w-4 shrink-0" />
         )}
       </div>
-    </div>
+    </Card>
   );
 }
-
-export const IssueCard = memo(IssueCardInner);

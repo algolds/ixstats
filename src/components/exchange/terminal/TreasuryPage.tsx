@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Coins, Crown, Wallet } from "iconoir-react";
+import { Coins, Crown, Wallet, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -140,7 +140,7 @@ function SovereignBondsCard({
       </div>
 
       <div className="border-separator space-y-2 border-t pt-3.5">
-        <p className="text-footnote text-label font-semibold">Your bonds</p>
+        <p className="text-subhead text-label">Your bonds</p>
         {bonds.length === 0 ? (
           <p className="text-footnote text-label-secondary py-1">No bonds issued yet.</p>
         ) : (
@@ -155,7 +155,7 @@ function SovereignBondsCard({
                       {bondStatusLabel(b.status)}
                     </span>
                   </span>
-                  <span className="font-mono font-semibold tabular-nums">
+                  <span className="text-subhead tabular-nums">
                     {b.unitsSold} of {b.unitsIssued} sold
                   </span>
                 </Link>
@@ -181,8 +181,34 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
   if (!isSignedIn)
     return <SignInPrompt title="Treasury" message="Sign in to run your nation's treasury." />;
   if (overview.isLoading) return <Skeleton className="h-64 w-full" />;
+  if (!overview.data)
+    return (
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role="alert"
+          compact
+          icon={<WarningCircle />}
+          title="Treasury did not load"
+          message={overview.error?.message ?? "Try again in a moment."}
+          action={
+            <Button size="sm" variant="secondary" onClick={() => void overview.refetch?.()}>
+              Try again
+            </Button>
+          }
+        />
+      </LensCard>
+    );
   if (!nation)
-    return <EmptyState title="Treasury" message="The Treasury is for a nation's owner." />;
+    return (
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          compact
+          icon={<Crown />}
+          title="Treasury"
+          message="The Treasury is for a nation's owner."
+        />
+      </LensCard>
+    );
 
   const balance = page.data?.treasury.balance ?? 0;
   const cap = page.data?.treasury.cap ?? 0;
@@ -224,13 +250,15 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
         </div>
         {cap > 0 && (
           <div className="space-y-1">
-            <div className="text-caption text-label-secondary flex items-center justify-between font-mono tabular-nums">
+            <div className="text-caption text-label-secondary flex items-center justify-between tabular-nums">
               <span>Reserve capacity</span>
-              <span>{fillPct}% utilized</span>
+              <span>
+                {sov(balance)} of {sov(cap)}
+              </span>
             </div>
             <div className="facet-recess h-2 w-full overflow-hidden rounded-full">
               <div
-                className="bg-tint h-full rounded-full transition-[width] duration-fast ease-out-facet"
+                className="bg-tint duration-fast ease-out-facet h-full rounded-full transition-[width]"
                 style={{ width: `${fillPct}%` }}
               />
             </div>
@@ -239,16 +267,32 @@ export function TreasuryPage({ realmId }: { realmId: string }) {
         {page.data && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card variant="well" padding="sm">
-              <Stat size="sm" label="Stipend earned" value={sov(page.data.treasury.lifetimeStipend)} />
+              <Stat
+                size="sm"
+                label="Stipend earned"
+                value={sov(page.data.treasury.lifetimeStipend)}
+              />
             </Card>
             <Card variant="well" padding="sm">
-              <Stat size="sm" label="Tax collected" value={sov(page.data.treasury.lifetimeTaxEarned)} />
+              <Stat
+                size="sm"
+                label="Tax collected"
+                value={sov(page.data.treasury.lifetimeTaxEarned)}
+              />
             </Card>
             <Card variant="well" padding="sm">
-              <Stat size="sm" label="Tariffs earned" value={sov(page.data.treasury.lifetimeTariffEarned)} />
+              <Stat
+                size="sm"
+                label="Tariffs earned"
+                value={sov(page.data.treasury.lifetimeTariffEarned)}
+              />
             </Card>
             <Card variant="well" padding="sm">
-              <Stat size="sm" label="Interest earned" value={sov(page.data.treasury.lifetimeInterestEarned)} />
+              <Stat
+                size="sm"
+                label="Interest earned"
+                value={sov(page.data.treasury.lifetimeInterestEarned)}
+              />
             </Card>
           </div>
         )}

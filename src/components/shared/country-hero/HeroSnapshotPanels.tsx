@@ -1,5 +1,6 @@
 "use client";
 
+import { getQualitativeRating } from "~/lib/qualitative-rating";
 import { memo } from "react";
 import { Coins, Group as Users, Activity, Heart, ScaleFrameEnlarge as Scale } from "iconoir-react";
 import { cn, formatCompactNumber } from "~/lib/utils";
@@ -32,16 +33,6 @@ export interface HeroSnapshotData {
     governmentalEfficiency?: number | null;
   };
 }
-
-const RATINGS = [
-  { min: 80, label: "Optimal", color: "text-success" },
-  { min: 65, label: "Strong", color: "text-success" },
-  { min: 45, label: "Stable", color: "text-teal" },
-  { min: 30, label: "Moderate", color: "text-caution" },
-];
-const VULNERABLE = { label: "Vulnerable", color: "text-destructive" };
-
-const getQualitativeRating = (score: number) => RATINGS.find((r) => score >= r.min) ?? VULNERABLE;
 
 const METRIC_COLORS = [
   { min: 80, color: "var(--color-green)" },
@@ -184,7 +175,7 @@ function HeroSnapshotPanelsComponent({
 
   const executive = [
     [Heart, "text-red", "Approval", approval],
-    [Scale, "text-indigo", "Stability", stability],
+    [Scale, "text-teal", "Stability", stability],
   ] as const;
 
   return (

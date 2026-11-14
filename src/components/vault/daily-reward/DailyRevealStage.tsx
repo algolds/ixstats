@@ -220,7 +220,7 @@ function CreditsClaimReveal({
         >
           <span>+</span>
           <IxCreditsSymbol decorative className="size-9 shrink-0" />
-          <NumberFlowDisplay value={shownPayout} duration={750} className="font-bold" />
+          <NumberFlowDisplay value={shownPayout} duration={750} />
         </div>
         <p className="text-subhead text-label-secondary">IxCredits added to your Vault</p>
       </div>
@@ -230,7 +230,7 @@ function CreditsClaimReveal({
           <span className="text-subhead text-label-secondary">Vault balance</span>
           <span className="text-headline text-label inline-flex items-center gap-1.5 tabular-nums">
             <IxCreditsSymbol decorative className="text-tint size-4 shrink-0" />
-            <NumberFlowDisplay value={shownBalance} duration={750} className="font-semibold" />
+            <NumberFlowDisplay value={shownBalance} duration={750} />
           </span>
         </div>
       )}

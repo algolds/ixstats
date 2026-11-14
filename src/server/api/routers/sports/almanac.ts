@@ -88,6 +88,7 @@ export const sportsAlmanacRouter = createTRPCRouter({
                 color: true,
                 logo: true,
                 wikiSlug: true,
+                wikiSource: true,
               },
             },
             standings: {
@@ -148,6 +149,7 @@ export const sportsAlmanacRouter = createTRPCRouter({
                   color: season.champion.color,
                   logo: season.champion.logo,
                   wikiSlug: season.champion.wikiSlug,
+                  wikiSource: season.champion.wikiSource,
                 }
               : null,
             runnerUp,

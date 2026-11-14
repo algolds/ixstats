@@ -13,7 +13,8 @@ interface EditorWorkspaceLayoutProps {
   isWorldMode: boolean;
   panelA: React.ReactNode;
   panelB: React.ReactNode;
-  children: React.ReactNode;
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
+  children?: React.ReactNode;
 }
 
 /** Drags a panel divider along one axis, keeping the split ratio between 15% and 85%. */
@@ -70,7 +71,7 @@ const STACK_STYLES: Record<"vertical" | "horizontal", StackStyle> = {
     first: "min-h-0 w-full shrink-0",
     size: (height) => ({ height }),
     divider:
-      "bg-separator hover:bg-blue/50 h-1 w-full shrink-0 cursor-row-resize transition-colors",
+      "bg-separator hover:bg-tint/50 h-1 w-full shrink-0 cursor-row-resize transition-colors",
     lockedDivider: "bg-separator h-px w-full shrink-0",
   },
   horizontal: {
@@ -85,7 +86,7 @@ const STACK_STYLES: Record<"vertical" | "horizontal", StackStyle> = {
     first: "h-full min-w-0 shrink-0",
     size: (width) => ({ width }),
     divider:
-      "bg-separator hover:bg-blue/50 h-full w-1 shrink-0 cursor-col-resize transition-colors",
+      "bg-separator hover:bg-tint/50 h-full w-1 shrink-0 cursor-col-resize transition-colors",
     lockedDivider: "bg-separator h-full w-px shrink-0",
   },
 };
@@ -159,6 +160,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   isWorldMode,
   panelA,
   panelB,
+  viewportRef,
   children,
 }: EditorWorkspaceLayoutProps) {
   const [splitRatios, setSplitRatios] = useState<Record<Placement, number>>({
@@ -212,7 +214,7 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
   };
 
   return (
-    <div className="relative flex h-full min-h-0 w-full flex-row overflow-hidden">
+    <div className="pointer-events-none relative flex h-full min-h-0 w-full flex-row overflow-hidden">
       {(!toolsDisabled || isWorldMode) && (
         <div
           ref={slotRefs.left}
@@ -223,8 +225,12 @@ export const EditorWorkspaceLayout = memo(function EditorWorkspaceLayout({
         </div>
       )}
 
-      <div className="relative flex h-full min-w-0 flex-1 flex-col">
-        <div className="relative min-h-0 min-w-0 flex-1" data-map-container>
+      <div className="pointer-events-none relative flex h-full min-w-0 flex-1 flex-col">
+        <div
+          ref={viewportRef}
+          className="pointer-events-none relative min-h-0 min-w-0 flex-1"
+          data-map-container
+        >
           {children}
         </div>
 

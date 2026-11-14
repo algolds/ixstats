@@ -34,7 +34,7 @@ import { formatStampAsClockDate } from "~/lib/realms/nation-time";
 
 /** Directive tier → semantic text tone (measured is calm, extreme is a warning sign). */
 const TIER_TONE: Record<string, string> = {
-  measured: "text-green",
+  measured: "text-success",
   moderate: STATUS_TEXT.warning,
   extreme: STATUS_TEXT.critical,
 };
@@ -42,11 +42,11 @@ const TIER_TONE: Record<string, string> = {
 /** Directive status → semantic dot. */
 function statusDot(status: string | null | undefined): string {
   return status === "completed"
-    ? "bg-green"
+    ? "bg-success"
     : status === "abandoned"
       ? "bg-destructive"
       : status === "active"
-        ? "bg-yellow"
+        ? "bg-warning"
         : "bg-label-tertiary";
 }
 
@@ -109,18 +109,24 @@ function IntentHeader({
   return (
     <Card className="rounded-card flex flex-col gap-3 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="outline"
-            className={cn("capitalize", TIER_TONE[intent.tier] ?? "text-label-secondary")}
+        <p className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <span
+            className={cn(
+              "font-medium capitalize",
+              TIER_TONE[intent.tier] ?? "text-label-secondary"
+            )}
           >
             {intent.tier} tier
-          </Badge>
-          <Badge variant="default" className="capitalize">
-            {intent.category}
-          </Badge>
-          {intent.target && <Badge variant="outline">Target: {intent.target}</Badge>}
-        </div>
+          </span>
+          <span aria-hidden="true">·</span>
+          <span className="capitalize">{intent.category}</span>
+          {intent.target && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>Target: {intent.target}</span>
+            </>
+          )}
+        </p>
 
         <Badge variant="outline" className="capitalize">
           <span
@@ -155,7 +161,7 @@ function IntentHeader({
               className={detailButton}
             >
               {copied ? (
-                <Check aria-hidden="true" className="text-green" />
+                <Check aria-hidden="true" className="text-success" />
               ) : (
                 <Share2 aria-hidden="true" />
               )}
@@ -201,8 +207,8 @@ const RESOLVED_STATUSES = ["responded", "auto_resolved", "dismissed"];
 const OPEN_RESISTANCE = new Set(["pending", "viewed"]);
 
 function issueDotTone(status: string): string {
-  if (RESOLVED_STATUSES.includes(status)) return "bg-green";
-  return status === "viewed" ? "bg-orange" : "bg-label-tertiary";
+  if (RESOLVED_STATUSES.includes(status)) return "bg-success";
+  return status === "viewed" ? "bg-warning" : "bg-label-tertiary";
 }
 
 function ResistanceProgress({ linked }: { linked: LinkedIssues }) {
@@ -212,9 +218,9 @@ function ResistanceProgress({ linked }: { linked: LinkedIssues }) {
       title="Resistance progress"
       icon={Shield}
       accessory={
-        <Badge variant="default" className="shrink-0 tabular-nums">
-          {linked?.resolvedCount ?? 0} / {linked?.totalCount ?? 0} resolved
-        </Badge>
+        <span className="text-label-secondary text-footnote shrink-0 tabular-nums">
+          {linked?.resolvedCount ?? 0} of {linked?.totalCount ?? 0} resolved
+        </span>
       }
     >
       <div
@@ -228,7 +234,7 @@ function ResistanceProgress({ linked }: { linked: LinkedIssues }) {
         <div
           className={cn(
             "h-full rounded-full",
-            progress >= 100 ? "bg-green" : progress > 0 ? "bg-yellow" : "bg-fill"
+            progress >= 100 ? "bg-success" : progress > 0 ? "bg-warning" : "bg-fill"
           )}
           style={{ width: `${progress}%` }}
         />
@@ -310,7 +316,11 @@ function AppliedLineItems({ changes }: { changes: ParsedChange[] }) {
     <SheetSection
       title="Applied line-items"
       icon={Sliders}
-      accessory={<Badge variant="default">{changes.length}</Badge>}
+      accessory={
+        <span className="text-label-secondary text-footnote shrink-0 tabular-nums">
+          {changes.length}
+        </span>
+      }
     >
       <ol className="divide-separator divide-y">
         {changes.map((change, idx) => (
@@ -328,7 +338,7 @@ function AppliedLineItems({ changes }: { changes: ParsedChange[] }) {
               <span
                 className={cn(
                   "shrink-0 font-semibold tabular-nums",
-                  change.deltaPercent > 0 ? "text-green" : "text-destructive"
+                  change.deltaPercent > 0 ? "text-success" : "text-destructive"
                 )}
               >
                 {change.deltaPercent > 0 ? "+" : ""}

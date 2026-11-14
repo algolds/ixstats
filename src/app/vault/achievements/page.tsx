@@ -3,6 +3,9 @@
 import React, { useEffect } from "react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { Card } from "~/components/ui/card";
+import { Progress } from "~/components/ui/progress";
 import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
 import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
 
@@ -12,11 +15,19 @@ export default function VaultAchievementsPage() {
   }, []);
 
   const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: !!user?.id }
+  );
 
   // Achievements belong to the account; the country (if any) only adds country achievements
   const hasProfile = !!userProfile;
-  const { data: achievements } = api.achievements.getAllWithStatus.useQuery(
+  const {
+    data: achievements,
+    isLoading: achievementsLoading,
+    isError: achievementsError,
+    refetch: refetchAchievements,
+  } = api.achievements.getAllWithStatus.useQuery(
     { countryId: userProfile?.countryId || undefined },
     { enabled: hasProfile }
   );
@@ -35,14 +46,45 @@ export default function VaultAchievementsPage() {
     }
   }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
+  const activeCatalogue = achievements?.filter((a) => !("isLegacy" in a && a.isLegacy)) ?? [];
+  const unlockedCount = activeCatalogue.filter((a) => a.isUnlocked).length;
+  const totalCount = activeCatalogue.length;
+  const totalPoints =
+    achievements?.filter((a) => a.isUnlocked).reduce((sum, a) => sum + (a.points ?? 0), 0) ?? 0;
+
   return (
-    // pt-14: the tabs are the first row and the page has no header toolbar, so it clears Halo's floating band itself.
-    <div className="space-y-6 pt-14">
-      {/* The page's title for assistive tech; the sidebar's Achievements row names it on screen. */}
-      <h1 className="sr-only">Achievements</h1>
+    <div className="space-y-4">
+      <PageHeader
+        title="Achievements"
+        subtitle="Collector, lore and nation milestones across your Vault."
+        back={{ href: "/vault", label: "Vault" }}
+        bleed
+      />
+
+      {user && achievements && totalCount > 0 && (
+        <Card padding="md" className="space-y-2.5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <span className="text-headline text-label tabular-nums">
+              {unlockedCount.toLocaleString()} of {totalCount.toLocaleString()} unlocked
+            </span>
+            <span className="text-footnote text-label-secondary tabular-nums">
+              {totalPoints.toLocaleString()} pts earned
+            </span>
+          </div>
+          <Progress
+            value={unlockedCount}
+            max={totalCount}
+            aria-label="Achievements unlocked"
+            className="h-1.5"
+          />
+        </Card>
+      )}
+
       <AchievementsTabs
         achievements={achievements}
-        isLoading={achievements === undefined}
+        isLoading={Boolean(user) && (profileLoading || achievementsLoading)}
+        isError={achievementsError}
+        onRetry={() => void refetchAchievements()}
         // Signed out, the catalogue never loads: no achievements rather than a skeleton that never ends.
         lorewardsPanel={<VaultLorewardsPanel achievements={user ? achievements : []} />}
       />

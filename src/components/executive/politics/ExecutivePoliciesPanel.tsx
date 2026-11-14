@@ -2,6 +2,7 @@
 
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { RepealPolicyButton } from "./RepealPolicyButton";
 
@@ -30,14 +31,16 @@ export function ExecutivePoliciesPanel({ countryId }: ExecutivePoliciesPanelProp
       </CardHeader>
       <CardContent className="space-y-3 pt-0">
         {isLoading ? (
-          <Skeleton className="rounded-row h-16" />
+          <Skeleton className="rounded-control h-16" />
         ) : policies.length === 0 ? (
-          <p className="text-label-secondary text-footnote">No executive policies in force.</p>
+          <EmptyState compact title="No executive policies in force" />
         ) : (
           policies.map((policy) => (
-            <div
+            <Card
               key={policy.id}
-              className="bg-fill-4 border-separator rounded-row flex items-center justify-between gap-3 border p-3"
+              variant="well"
+              padding="sm"
+              className="flex items-center justify-between gap-3"
             >
               <div className="min-w-0">
                 <p className="text-body truncate font-medium">{policy.name}</p>
@@ -53,7 +56,7 @@ export function ExecutivePoliciesPanel({ countryId }: ExecutivePoliciesPanelProp
                 policyName={policy.name}
                 onRepealed={() => void refetch()}
               />
-            </div>
+            </Card>
           ))
         )}
       </CardContent>

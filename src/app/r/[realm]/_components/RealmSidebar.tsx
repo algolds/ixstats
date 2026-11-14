@@ -1,5 +1,7 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
+import { PersonName } from "./RealmFounders";
 import { useState } from "react";
 import Link from "next/link";
 import { ChatLines, Internet, Link as LinkIcon, Map as MapIcon, OpenBook } from "iconoir-react";
@@ -42,24 +44,6 @@ function Panel({
       </div>
       {children}
     </section>
-  );
-}
-
-const nationHref = (nation: { slug: string | null; id: string }) =>
-  `/countries/${nation.slug ?? nation.id}`;
-
-type StaffPerson = Overview["officers"][number];
-
-/** A founder or officer: links to their passport when they have a handle, else to their nation here. */
-function StaffName({ person }: { person: Pick<StaffPerson, "name" | "handle" | "nation"> }) {
-  const href = person.handle
-    ? `/@${encodeURIComponent(person.handle)}`
-    : person.nation && nationHref(person.nation);
-  if (!href) return <>{person.name}</>;
-  return (
-    <Link href={href} className="hover:underline">
-      {person.name}
-    </Link>
   );
 }
 
@@ -116,7 +100,7 @@ export function OfficersPanel({ overview }: { overview: Overview }) {
               (listed ? (
                 <FounderNames founders={founders} />
               ) : founder ? (
-                <StaffName person={founder} />
+                <PersonName person={founder} />
               ) : (
                 "Administered by IxStates staff"
               ))}
@@ -129,7 +113,7 @@ export function OfficersPanel({ overview }: { overview: Overview }) {
           >
             <span className="text-label-secondary text-footnote truncate">{officer.title}</span>
             <span className="text-label text-body truncate">
-              <StaffName person={officer} />
+              <PersonName person={officer} />
             </span>
           </li>
         ))}
@@ -199,12 +183,12 @@ export function CensusPanel({ slug }: { slug: string }) {
               <span className="text-label-secondary text-footnote w-4 tabular-nums">
                 {index + 1}
               </span>
-              <Link
-                href={`/countries/${row.countryId}`}
+              <CountryLink
+                country={{ id: row.countryId, name: row.countryName }}
                 className="text-label text-body min-w-0 flex-1 truncate hover:underline"
               >
                 {row.countryName}
-              </Link>
+              </CountryLink>
               <span className="text-label-secondary text-footnote tabular-nums">
                 {censusValue(category.fmt, row.value)}
               </span>

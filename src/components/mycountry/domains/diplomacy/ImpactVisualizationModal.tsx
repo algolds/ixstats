@@ -1,5 +1,6 @@
 "use client";
 
+import { levelWord } from "~/lib/qualitative-rating";
 import { ArrowRight, ArrowUp, StatsReport, Check } from "iconoir-react";
 
 import React from "react";
@@ -63,17 +64,19 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
               <h4 className="text-label text-headline mb-4">Relationship state evolution</h4>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-center">
-                  <div className="text-label text-title-1 mb-1">{impact.currentState || "–"}</div>
+                  <div className="text-label text-title-1 mb-1">
+                    {impact.currentState || "Unrated"}
+                  </div>
                   <span className="text-caption text-label-secondary">Before</span>
                 </div>
                 <ArrowRight className="text-label-secondary h-6 w-6" />
                 <div className="text-center">
-                  <div className="text-label text-title-1 mb-1">{impact.newState || "–"}</div>
+                  <div className="text-label text-title-1 mb-1">{impact.newState || "Unrated"}</div>
                   <span className="text-caption text-label-secondary">After</span>
                 </div>
               </div>
               {impact.stateChanged && (
-                <p className="text-body text-green mt-4 flex items-center justify-center gap-2 font-medium">
+                <p className="text-body text-success mt-4 flex items-center justify-center gap-2 font-medium">
                   <Check className="h-4 w-4" />
                   Relationship state improved (
                   {Math.round((impact.transitionProbability || 0) * 100)}% probability)
@@ -116,9 +119,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                       <div key={effect.label}>
                         <div className="text-body mb-2 flex items-center justify-between">
                           <span className="text-label-secondary">{effect.label}</span>
-                          <span className="text-label font-medium tabular-nums">
-                            {effect.value}%
-                          </span>
+                          <span className="text-label font-medium">{levelWord(effect.value)}</span>
                         </div>
                         <Progress value={effect.value} className="h-2" />
                       </div>
@@ -133,7 +134,7 @@ export const ImpactVisualizationModal = React.memo<ImpactVisualizationModalProps
                 <ul className="space-y-2">
                   {impact.reasoning.map((reason, idx) => (
                     <li key={idx} className="text-label-secondary text-body flex items-start gap-2">
-                      <Check className="text-green mt-0.5 h-4 w-4 shrink-0" />
+                      <Check className="text-success mt-0.5 h-4 w-4 shrink-0" />
                       <span>{reason}</span>
                     </li>
                   ))}

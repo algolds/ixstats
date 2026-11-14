@@ -1,21 +1,25 @@
-/** Centered spinner with a caption, for a Vexel panel that is still fetching. */
+import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils";
+
+/** Placeholder tiles for a Vexel grid that is still fetching; `message` names what is loading. */
 export function LoadingBlock({
   message,
-  className = "py-32",
-  spinnerClassName = "h-8 w-8",
+  count = 8,
+  className,
 }: {
   message: string;
+  count?: number;
   className?: string;
-  spinnerClassName?: string;
 }) {
   return (
     <div
-      className={`text-label-secondary text-footnote flex flex-col items-center justify-center gap-3 ${className}`}
+      aria-busy="true"
+      aria-label={message}
+      className={cn("grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4", className)}
     >
-      <div
-        className={`border-tint animate-spin rounded-full border-2 border-t-transparent ${spinnerClassName}`}
-      />
-      <span>{message}</span>
+      {Array.from({ length: count }, (_, i) => (
+        <Skeleton key={i} className="rounded-card aspect-square w-full" />
+      ))}
     </div>
   );
 }

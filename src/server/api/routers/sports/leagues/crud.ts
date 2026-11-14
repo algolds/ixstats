@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import {
   createTRPCRouter,
   publicProcedure,
@@ -19,7 +20,8 @@ import {
   type SportPresetKey,
 } from "~/lib/sports";
 import { lockWallet } from "~/lib/vault/exchange-service";
-import { extractLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { extractLeagueTeams, storableLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import { isSystemOwner } from "~/lib/auth";
@@ -168,14 +170,16 @@ export const leaguesCrudRouter = createTRPCRouter({
         nationAffiliation: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()),
         isCanonical: z.boolean().optional().default(false),
-        /** The league's IxWiki article. */
+        /** The league's wiki article and source. */
         wikiSlug: z.string().max(500).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullable().optional(),
         /** Clubs imported from the wiki: one per `teamCount`, named and linked as given. */
         teams: z
           .array(
             z.object({
               name: z.string().min(1).max(200),
               wikiSlug: z.string().max(500).nullable(),
+              wikiSource: wikiSourceSchema.nullable().optional(),
             })
           )
           .max(MAX_LEAGUE_TEAMS)
@@ -226,6 +230,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             }
           }
 
+          const leagueSlug = toWikiSlug(input.wikiSlug);
           const league = await tx.sportLeague.create({
             data: {
               name: input.name,
@@ -234,7 +239,8 @@ export const leaguesCrudRouter = createTRPCRouter({
               teamCount: input.teamCount,
               nationAffiliation: input.nationAffiliation,
               isCanonical: canonical,
-              wikiSlug: toWikiSlug(input.wikiSlug),
+              wikiSlug: leagueSlug,
+              wikiSource: leagueSlug ? (input.wikiSource ?? "ixwiki") : null,
               settings: input.settings as any,
               createdByUserId: ctx.user.id,
               status: "active",
@@ -245,6 +251,7 @@ export const leaguesCrudRouter = createTRPCRouter({
           for (let i = 0; i < input.teamCount; i++) {
             const imported = input.teams?.[i];
             const teamName = imported?.name ?? `${input.name} Team ${i + 1}`;
+            const teamSlug = toWikiSlug(imported?.wikiSlug);
             const team = await tx.sportTeam.create({
               data: {
                 leagueId: league.id,
@@ -252,7 +259,10 @@ export const leaguesCrudRouter = createTRPCRouter({
                 shortName: `${teamName.slice(0, 3).toUpperCase()}${i + 1}`,
                 color: `hsl(${(i * 360) / input.teamCount}, 70%, 50%)`,
                 nationId: input.nationAffiliation ?? null,
-                wikiSlug: toWikiSlug(imported?.wikiSlug),
+                wikiSlug: teamSlug,
+                wikiSource: teamSlug
+                  ? (imported?.wikiSource ?? input.wikiSource ?? "ixwiki")
+                  : null,
               },
             });
 
@@ -320,13 +330,25 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  /** The teams a league's IxWiki article names, for the creator's import step. A missing page names none. */
+  /**
+   * The teams a league article names, for the creator's import step: an IxWiki page by default, or a page of a sister
+   * wiki (`wiki`). A missing page names none; a wiki that cannot answer is SERVICE_UNAVAILABLE with its own words.
+   */
   previewWikiTeams: readOnlyProcedure
-    .input(z.object({ wikiSlug: z.string().trim().min(1).max(500) }))
+    .use(iiwikiFeatureMiddleware("imports"))
+    .input(
+      z.object({
+        wikiSlug: z.string().trim().min(1).max(500),
+        wiki: wikiSourceSchema.default("ixwiki"),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      await assertTitleVisible(ctx, input.wikiSlug, "ixwiki");
-      const page = await getArticleWikitextShadow(input.wikiSlug, "ixwiki");
-      return extractLeagueTeams(page?.wikitext ?? "").slice(0, MAX_LEAGUE_TEAMS);
+      await assertTitleVisible(ctx, input.wikiSlug, input.wiki);
+      const page = await getArticleWikitextShadow(input.wikiSlug, input.wiki);
+      return storableLeagueTeams(extractLeagueTeams(page?.wikitext ?? ""), input.wiki).slice(
+        0,
+        MAX_LEAGUE_TEAMS
+      );
     }),
 
   /**
@@ -358,12 +380,13 @@ export const leaguesCrudRouter = createTRPCRouter({
         promotionCount: z.number().int().min(0).optional(),
         relegationCount: z.number().int().min(0).optional(),
         wikiSlug: z.string().max(500).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullable().optional(),
         isCanonical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { id, settings, wikiSlug, ...data } = input;
+        const { id, settings, wikiSlug, wikiSource, ...data } = input;
 
         const league = await ctx.db.sportLeague.findUnique({ where: { id } });
         if (!league) {
@@ -377,12 +400,23 @@ export const leaguesCrudRouter = createTRPCRouter({
             ? input.isCanonical && isSystemOwner(ctx.auth.userId)
             : league.isCanonical;
 
+        const nextWikiSlug = wikiSlug !== undefined ? toWikiSlug(wikiSlug) : league.wikiSlug;
+        const wikiUpdate =
+          wikiSlug !== undefined || wikiSource !== undefined
+            ? {
+                ...(wikiSlug !== undefined ? { wikiSlug: nextWikiSlug } : {}),
+                wikiSource: nextWikiSlug
+                  ? (wikiSource ?? league.wikiSource ?? "ixwiki")
+                  : null,
+              }
+            : {};
+
         return ctx.db.sportLeague.update({
           where: { id },
           data: {
             ...data,
             isCanonical,
-            ...(wikiSlug !== undefined ? { wikiSlug: toWikiSlug(wikiSlug) } : {}),
+            ...wikiUpdate,
             ...(settings !== undefined ? { settings: settings as any } : {}),
           },
         });

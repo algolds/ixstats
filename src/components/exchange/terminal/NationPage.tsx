@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Building, Coins, Crown, Journal, Wallet } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { EntityHeader } from "~/components/ui/entity-header";
@@ -40,18 +41,29 @@ function currencyLine(n: NationPageData): string | null {
 
 /** One nation on the Exchange: its treasury, its bonds, its companies and its business news. */
 export function NationPage({ countryId }: { countryId: string }) {
-  const { data, isLoading, error } = api.exchange.nationPage.useQuery({ countryId });
+  const { data, isLoading, error, refetch } = api.exchange.nationPage.useQuery({ countryId });
   if (isLoading) return <Skeleton className="h-80 w-full" />;
   if (!data)
     return (
-      <EmptyState title="Nation not found" message={error?.message ?? "Try another nation."} />
+      <LensCard app="exchange" padding="lg">
+        <EmptyState
+          role={error ? "alert" : undefined}
+          compact
+          icon={<Crown />}
+          title="Nation not found"
+          message={error?.message ?? "Try another nation."}
+          action={
+            error ? (
+              <Button size="sm" variant="secondary" onClick={() => void refetch?.()}>
+                Try again
+              </Button>
+            ) : undefined
+          }
+        />
+      </LensCard>
     );
   const flag = assetUrl(data.flagUrl);
   const currency = currencyLine(data);
-  const fillPct =
-    data.treasury.cap > 0
-      ? Math.min(100, Math.round((data.treasury.balance / data.treasury.cap) * 100))
-      : 0;
 
   return (
     <div className="space-y-4">
@@ -78,7 +90,7 @@ export function NationPage({ countryId }: { countryId: string }) {
             <Stat size="sm" label="Treasury" value={sov(data.treasury.balance)} />
           </Card>
           <Card variant="well" padding="sm">
-            <Stat size="sm" label="Reserve cap" value={`${sov(data.treasury.cap)} (${fillPct}%)`} />
+            <Stat size="sm" label="Reserve cap" value={sov(data.treasury.cap)} />
           </Card>
           <Card variant="well" padding="sm" className="col-span-2 sm:col-span-1">
             <Stat
@@ -96,7 +108,7 @@ export function NationPage({ countryId }: { countryId: string }) {
             <div className="flex items-center justify-between gap-2">
               <SectionTitle icon={<Coins />}>Bonds</SectionTitle>
               {data.bonds.length > 0 && (
-                <Badge variant="secondary" className="font-mono tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {data.bonds.length}
                 </Badge>
               )}
@@ -114,7 +126,7 @@ export function NationPage({ countryId }: { countryId: string }) {
                           {b.termWeeks}-week · {pct(b.couponRate)} · {bondStatusLabel(b.status)}
                         </span>
                       </span>
-                      <span className="font-mono font-semibold tabular-nums">{pct(b.yield)}</span>
+                      <span className="text-headline tabular-nums">{pct(b.yield)}</span>
                     </Link>
                   </li>
                 ))}
@@ -136,7 +148,7 @@ export function NationPage({ countryId }: { countryId: string }) {
             <div className="flex items-center justify-between gap-2">
               <SectionTitle icon={<Building />}>Companies based here</SectionTitle>
               {data.companies.length > 0 && (
-                <Badge variant="secondary" className="font-mono tabular-nums">
+                <Badge variant="secondary" className="tabular-nums">
                   {data.companies.length}
                 </Badge>
               )}
@@ -152,7 +164,7 @@ export function NationPage({ countryId }: { countryId: string }) {
                         <TickerTile code={symbolOf(c.name)} />
                         <span className="truncate font-medium">{c.name}</span>
                       </span>
-                      <span className="font-mono font-semibold tabular-nums">{sov(c.price)}</span>
+                      <span className="text-headline tabular-nums">{sov(c.price)}</span>
                     </Link>
                   </li>
                 ))}

@@ -5,7 +5,7 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (78 Routers, 1137 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1139 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
@@ -47,7 +47,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.geoEditor`** | 5 | 14 | 0 | **19** | `src/server/api/routers/geo/editor/index.ts` |
 | **`api.geoFeatures`** | 5 | 34 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
 | **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
-| **`api.geoWiki`** | 3 | 0 | 0 | **3** | `src/server/api/routers/geo/wiki.ts` |
+| **`api.geoWiki`** | 4 | 0 | 0 | **4** | `src/server/api/routers/geo/wiki.ts` |
 | **`api.government`** | 4 | 7 | 0 | **11** | `src/server/api/routers/government/index.ts` |
 | **`api.governmentComponents`** | 2 | 1 | 0 | **3** | `src/server/api/routers/governmentComponents/index.ts` |
 | **`api.heraldry`** | 6 | 6 | 0 | **12** | `src/server/api/routers/heraldry/index.ts` |
@@ -86,8 +86,8 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.users`** | 12 | 14 | 0 | **26** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 75 | 42 | 0 | **119** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **529** | **594** | **0** | **1137** | **78 registered namespaces** |
+| **`api.wikios`** | 76 | 42 | 0 | **120** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **531** | **594** | **0** | **1139** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.

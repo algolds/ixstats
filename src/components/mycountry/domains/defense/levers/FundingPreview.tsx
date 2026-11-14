@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import { Card } from "~/components/ui/card";
 import type { FundingReport } from "~/lib/military/model";
 import { formatCount, formatPercent } from "../forces/force-fields";
 
@@ -28,14 +28,9 @@ function Row({ label, value, was }: { label: string; value: string; was?: string
 }
 
 /** What a budget split or manpower model buys: headcount the pay supports, and how much of upkeep is funded. */
-export const FundingPreview = React.memo(function FundingPreview({
-  title,
-  funding,
-  current,
-  active,
-}: FundingPreviewProps) {
+export function FundingPreview({ title, funding, current, active }: FundingPreviewProps) {
   return (
-    <section aria-label={title} className="bg-fill-4 rounded-row px-4 py-3">
+    <Card variant="well" padding="sm" role="region" aria-label={title}>
       <h4 className="text-subhead text-label mb-1 font-medium">{title}</h4>
       <dl className="divide-separator divide-y">
         <Row
@@ -70,6 +65,6 @@ export const FundingPreview = React.memo(function FundingPreview({
           model, or longer service, enlarges the pool.
         </p>
       )}
-    </section>
+    </Card>
   );
-});
+}

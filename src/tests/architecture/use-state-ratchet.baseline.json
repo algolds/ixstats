@@ -35,7 +35,7 @@
   "src/app/admin/wiki/components/BulkScannerSection.tsx": 6,
   "src/app/admin/wiki/components/ManualLinkEditorSection.tsx": 7,
   "src/app/admin/wiki/components/SystemTuningSection.tsx": 7,
-  "src/app/builder/_founding/components/ImportSheet.tsx": 8,
+  "src/app/builder/_founding/components/ImportSheet.tsx": 7,
   "src/app/builder/_founding/FoundingFlow.tsx": 7,
   "src/app/labs/onoma/components/sections/CategoryDomainSection.tsx": 8,
   "src/app/labs/onoma/components/sections/EtymologySection.tsx": 13,

@@ -114,7 +114,8 @@ export function SynthesisResultsGrid({
   // Transform names array to full BatchNameResult objects
   const tableData: BatchNameResult[] = useMemo(() => {
     return generatedNames.map((name) => {
-      const resolvedCulture = !culture || culture === "any" ? classifyCulture(name).culture : culture;
+      const resolvedCulture =
+        !culture || culture === "any" ? classifyCulture(name).culture : culture;
       const ipa = resolveIpa(name, resolvedCulture);
       const syllables = tokenizeIntoSyllables(name).length;
       const naturalness = scoreNaturalness?.(name) ?? null;
@@ -367,11 +368,11 @@ export function SynthesisResultsGrid({
           <div className="border-separator bg-fill-4 text-tint rounded-card mb-3 flex h-12 w-12 items-center justify-center border">
             <OnomaGlyph name="emerge-synthesis" size="sm" className="text-tint" />
           </div>
-          <h4 className="text-label text-body font-semibold">Ready to generate</h4>
+          <h4 className="text-label text-headline">Ready to generate</h4>
           <p className="text-label-secondary text-footnote mt-1 max-w-sm leading-relaxed">
             Select a preset and culture above, then click{" "}
-            <span className="text-tint font-semibold">Generate names</span> to produce vocabulary
-            for this category.
+            <span className="text-tint font-medium">Generate names</span> to produce vocabulary for
+            this category.
           </p>
         </Card>
       )}
