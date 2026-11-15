@@ -17,15 +17,26 @@ import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 import { PreText } from "~/components/ui/pretext";
+import { IOSActivityIndicator } from "~/components/ui/loader";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { assetUrl } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 import { wikiAccent } from "~/components/halo/plugins/wiki/accent";
+
+function NavLoadingIcon({ className }: { className?: string }) {
+  return (
+    <span aria-hidden="true" className={cn("inline-flex items-center justify-center", className)}>
+      <IOSActivityIndicator size="sm" className="scale-75" />
+    </span>
+  );
+}
 
 function CompactViewComponent({
   mode,
   isSticky,
   isCollapsed: _isCollapsed,
+  isNavLoading = false,
   setIsCollapsed,
   setIsUserInteracting,
   onSwitchMode,
@@ -271,11 +282,16 @@ function CompactViewComponent({
             <div className="flex items-center gap-0.5">
               <HaloIconButton
                 label="Search"
-                icon={Search}
+                icon={isNavLoading ? NavLoadingIcon : Search}
                 onClick={() => {
                   onSwitchMode("search");
                 }}
               />
+              {isNavLoading && (
+                <span role="status" className="sr-only">
+                  Loading page…
+                </span>
+              )}
 
               {isLoaded && isSignedIn && (
                 <HaloIconButton

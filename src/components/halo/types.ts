@@ -66,6 +66,7 @@ export interface CompactViewProps {
   mode?: ViewMode;
   isSticky?: boolean;
   isCollapsed: boolean;
+  isNavLoading?: boolean;
   setIsCollapsed: (collapsed: boolean) => void;
   setIsUserInteracting: (interacting: boolean) => void;
   onSwitchMode: (mode: ViewMode) => void;

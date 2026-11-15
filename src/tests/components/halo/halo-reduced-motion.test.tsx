@@ -1,5 +1,6 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import { CommandPalette } from "~/components/halo";
 import { Halo, HaloContainer, HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { NavTray } from "~/components/halo/views/NavTray";
 import { REDUCED_MOTION_FADE, springSnappy } from "~/lib/design/motion";
@@ -12,6 +13,39 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/",
+}));
+
+jest.mock("~/trpc/react", () => ({
+  api: {
+    countries: { getSelectList: { useQuery: () => ({ data: undefined }) } },
+    wikios: { advancedSearch: { useQuery: () => ({ data: undefined }) } },
+    notifications: { getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) } },
+  },
+}));
+
+jest.mock("~/context/auth-context", () => ({
+  useUser: () => ({ user: null, isLoaded: true, isSignedIn: false }),
+  useAuth: () => ({ signOut: jest.fn() }),
+}));
+
+jest.mock("~/context/theme-context", () => ({
+  useTheme: () => ({ toggleTheme: jest.fn(), toggleCompactMode: jest.fn() }),
+}));
+
+jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => ({}) }));
+jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
+jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => false }));
+jest.mock("~/hooks/useContextHour", () => ({ useContextHour: () => 9 }));
+jest.mock("~/hooks/useMessageUnreadCount", () => ({
+  useMessageUnreadCount: () => ({ totalUnread: 0 }),
+}));
+jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
+  useWikiContext: () => ({
+    activeSectionId: null,
+    tocEntries: [],
+    narratorState: null,
+    themeColors: null,
+  }),
 }));
 
 jest.mock("~/components/ui/pretext", () => ({
@@ -125,5 +159,29 @@ describe("Halo under Reduce Motion", () => {
     for (const item of itemMotions) {
       expect(item.transition).toEqual(REDUCED_MOTION_FADE);
     }
+  });
+});
+
+describe("Halo navigation activity", () => {
+  it("keeps the compact island mounted with Search and announces loading status", () => {
+    reducedMotion = false;
+    render(<CommandPalette />);
+
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
+
+    act(() => {
+      window.dispatchEvent(new Event("ixstats-nav-start"));
+    });
+
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Loading page…");
+
+    act(() => {
+      window.dispatchEvent(new Event("ixstats-nav-end"));
+    });
+
+    expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });

@@ -11,7 +11,6 @@ import { useDynamicIslandState } from "./hooks";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
 import { springSnappy, tweenFast } from "~/lib/design/motion";
@@ -30,7 +29,6 @@ interface CommandPaletteProps {
 
 interface SizeInputs {
   isForumActive: boolean;
-  isNavLoading: boolean;
   isExpanded: boolean;
   expandedMode: string;
   isWikiActive: boolean;
@@ -80,8 +78,6 @@ function computePillSize(inputs: SizeInputs): SizePresets {
 
 /** The island preset for the current state. `prev` keeps a widened panel wide across mode changes. */
 function computeSize(prev: SizePresets, inputs: SizeInputs): SizePresets {
-  // compact loading pill size (180x40)
-  if (inputs.isNavLoading) return SIZE_PRESETS.WIKI_COMPACT;
   if (inputs.isExpanded) return computeExpandedSize(prev, inputs.expandedMode);
   return computePillSize(inputs);
 }
@@ -167,7 +163,6 @@ function CommandPaletteContent({
     setSize((prev) =>
       computeSize(prev, {
         isForumActive,
-        isNavLoading,
         isExpanded,
         expandedMode,
         isWikiActive,
@@ -184,7 +179,6 @@ function CommandPaletteContent({
     isWikiActive,
     isExpanded,
     expandedMode,
-    isNavLoading,
     hasActiveSection,
   ]);
 
@@ -264,20 +258,13 @@ function CommandPaletteContent({
           style={{ touchAction: "none" }}
         >
           <Halo id="command-palette">
-            {isNavLoading ? (
-              <div
-                key="loading"
-                className="text-label flex h-10 w-full items-center justify-center gap-2 px-3"
-              >
-                <IOSActivityIndicator size="sm" />
-                <span className="text-caption">Loading...</span>
-              </div>
-            ) : !isExpanded ? (
+            {!isExpanded ? (
               <div key="compact" className="h-full w-full">
                 <CompactView
                   mode={mode}
                   isSticky={activeIsSticky}
                   isCollapsed={isCollapsed}
+                  isNavLoading={isNavLoading}
                   setIsCollapsed={setIsCollapsed}
                   setIsUserInteracting={setIsUserInteracting}
                   onSwitchMode={switchMode}
