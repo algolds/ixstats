@@ -41,7 +41,7 @@ import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache, invalidateCache } from "~/lib/cache";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import { listRealmDirectory, searchDirectoryNations } from "./places";
+import { listRealmDirectory, listRealmSelectList, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
 import { realmMapRouter } from "./map";
@@ -359,6 +359,9 @@ export const realmsRouter = createTRPCRouter({
   directory: rateLimitedPublicProcedure.query(({ ctx }) =>
     listRealmDirectory(ctx.db, ctx.user?.id ?? null)
   ),
+
+  /** Lightweight open-realm select list for Halo command-palette search. */
+  getSelectList: rateLimitedPublicProcedure.query(({ ctx }) => listRealmSelectList(ctx.db)),
 
   /** A realm's map face for its directory card and page header: political SVG paths, cached an hour. */
   mapFace: rateLimitedPublicProcedure
