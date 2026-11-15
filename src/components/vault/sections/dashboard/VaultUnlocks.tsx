@@ -14,7 +14,8 @@ import { NavArrowRight, Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { focusRing, hitSlop } from "~/components/ui/button";
-import { CutoutCard, CutoutCardHeader } from "~/components/ui/cutout-card";
+import { CardTitle } from "~/components/ui/card";
+import { LensCard } from "~/components/ui/lens-card";
 import { AchievementIcon } from "~/components/achievements/AchievementDecorations";
 import {
   getAchievementIcon,
@@ -180,7 +181,7 @@ function MilestoneSlide({
 
 /**
  * Apple Fitness-inspired Awards Deck + Category Mastery Strip on `/vault`:
- * - Notched `CutoutCardHeader` tinted to the active slide's semantic domain colour (`--facet-accent`)
+ * - Lens glass card; "See all" ink follows the active slide's semantic domain colour (`--facet-accent`)
  * - 1:1 pointer-capture + momentum-projected flick carousel of newest earned & nearest upcoming medals
  * - Bottom category mastery strip organizing active domains by icon, semantic colour, and ratio
  */
@@ -314,41 +315,35 @@ export function VaultUnlocks() {
       data-slot="vault-unlocks"
       className="flex h-full flex-col"
     >
-      <CutoutCard
-        initial={false}
+      <LensCard
+        app="vault"
+        content="collectible"
         style={facetAccentStyle(activeTheme.accent)}
-        className="flex h-full flex-col justify-between"
+        className="flex h-full flex-1 flex-col justify-between overflow-hidden"
       >
-        <CutoutCardHeader
-          icon={
-            <span className="text-facet-accent-ink inline-flex">
-              <Trophy />
-            </span>
-          }
-          className="bg-facet-accent-fill duration-slow transition-colors"
-          trailing={
-            <span className="flex items-center gap-2">
-              {hasStandingRatio && (
-                <Badge variant="default" className="tabular-nums">
-                  {summary.unlocked}/{summary.activeTotal}
-                </Badge>
+        <div className="flex items-center justify-between gap-3 px-4 pt-4 md:px-5 md:pt-5">
+          <CardTitle id={titleId} icon={<Trophy />}>
+            Achievements
+          </CardTitle>
+          <span className="flex items-center gap-2">
+            {hasStandingRatio && (
+              <Badge variant="secondary" className="tabular-nums">
+                {summary.unlocked}/{summary.activeTotal}
+              </Badge>
+            )}
+            <Link
+              href="/vault/achievements"
+              className={cn(
+                focusRing,
+                hitSlop,
+                "text-footnote text-facet-accent-ink rounded-control-sm duration-fast inline-flex items-center gap-0.5 font-medium transition-colors"
               )}
-              <Link
-                href="/vault/achievements"
-                className={cn(
-                  focusRing,
-                  hitSlop,
-                  "text-footnote text-facet-accent-ink rounded-control-sm inline-flex items-center gap-0.5 font-medium transition-opacity hover:opacity-80"
-                )}
-              >
-                <span>See all</span>
-                <NavArrowRight aria-hidden className="size-3.5" />
-              </Link>
-            </span>
-          }
-        >
-          <span id={titleId}>Achievements</span>
-        </CutoutCardHeader>
+            >
+              <span>See all</span>
+              <NavArrowRight aria-hidden className="size-3.5" />
+            </Link>
+          </span>
+        </div>
 
         <div className="flex flex-1 flex-col justify-center">
           <div
@@ -500,7 +495,7 @@ export function VaultUnlocks() {
             )}
           </div>
         )}
-      </CutoutCard>
+      </LensCard>
     </section>
   );
 }
