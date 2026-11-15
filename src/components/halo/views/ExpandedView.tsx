@@ -6,8 +6,8 @@ import type { ExpandedViewProps, DIPlugin } from "../types";
 import { Button } from "~/components/ui/button";
 import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
 
-// The views are not needed until the Halo opens, so each is its own chunk fetched then (plan 457); the
-// fallback keeps the island's height stable while the chunk loads.
+// The views are not needed until the Halo opens, so each is its own chunk fetched then; the fallback
+// keeps the island's height stable while the chunk loads.
 const viewLoading = () => <div className="h-40" aria-busy="true" />;
 const SearchView = dynamic(() => import("./SearchView").then((m) => m.SearchView), {
   ssr: false,
