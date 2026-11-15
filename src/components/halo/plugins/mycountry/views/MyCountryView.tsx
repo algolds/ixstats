@@ -29,6 +29,8 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/comp
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
 import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
@@ -53,15 +55,20 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
     population: "total" as "total" | "density",
   });
 
-  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
-    undefined,
-    { enabled: !!user?.id }
-  );
+  const {
+    data: userProfile,
+    isLoading: profileLoading,
+    isError: profileError,
+    refetch: refetchProfile,
+  } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
 
   const setupStatus = (() => {
-    if (!isLoaded || profileLoading) return "loading";
+    if (!isLoaded) return "loading";
     if (!user) return "unauthenticated";
+    if (profileLoading) return "loading";
+    if (profileError) return "error";
     if (!userProfile?.countryId) return "needs-setup";
+    if (!userProfile.country) return "error";
     return "complete";
   })();
 
@@ -451,8 +458,39 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
             </Button>
           </div>
         </div>
+      ) : setupStatus === "loading" ? (
+        <div className="space-y-2 px-4 py-4" role="status" aria-label="Loading your profile">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      ) : setupStatus === "needs-setup" ? (
+        <EmptyState
+          compact
+          title="You don't have a nation yet"
+          message="Found one to unlock MyCountry."
+          action={
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() => handleNavigate("/builder")}
+            >
+              Found a nation
+            </Button>
+          }
+        />
+      ) : setupStatus === "error" ? (
+        <EmptyState
+          compact
+          title="Couldn't load your profile"
+          action={
+            <Button type="button" variant="default" size="sm" onClick={() => void refetchProfile()}>
+              Try again
+            </Button>
+          }
+        />
       ) : (
-        /* ── Unauthenticated / no country ────────────────── */
+        /* ── Unauthenticated ────────────────── */
         <div className="py-6 text-center">
           <div className="bg-fill-4 rounded-row p-6">
             <User className="text-label-secondary mx-auto mb-4 h-10 w-10" />
