@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 import type { DIPlugin } from "./types";
 
 // Plugin Registry (external store for React 19 concurrency safety)
@@ -46,23 +46,14 @@ class DIPluginRegistry {
 
 // Context
 
-interface DIPluginContextValue {
-  registry: DIPluginRegistry;
-}
-
-const DIPluginContext = createContext<DIPluginContextValue | null>(null);
+const DIPluginContext = createContext<DIPluginRegistry | null>(null);
 
 // Provider
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
-  const registryRef = useRef<DIPluginRegistry | null>(null);
-  // oxlint-disable-next-line
-  if (!registryRef.current) {
-    registryRef.current = new DIPluginRegistry();
-  }
+  const [registry] = useState(() => new DIPluginRegistry());
 
-  // oxlint-disable-next-line
-  return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
+  return <DIPluginContext value={registry}>{children}</DIPluginContext>;
 }
 
 const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
@@ -82,8 +73,7 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  * });
  */
 export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
+  const registry = useContext(DIPluginContext);
 
   React.useEffect(() => {
     if (!registry) return;
@@ -99,8 +89,7 @@ export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
  * Returns null if no plugins are registered.
  */
 export function useActiveDIPlugin(): DIPlugin | null {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
+  const registry = useContext(DIPluginContext);
   const plugins = useSyncExternalStore(
     registry?.subscribe ?? DUMMY_SUBSCRIBE,
     registry?.getSnapshot ?? DUMMY_SNAPSHOT,
