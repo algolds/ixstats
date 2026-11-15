@@ -7,12 +7,12 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy, tweenExit } from "~/lib/design/motion";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { useHydrated } from "~/hooks/useHydrated";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
 
@@ -152,84 +152,39 @@ const DynamicIslandContent = ({
   const dimensions = calculateDimensions(size, screenSize, currentSize);
 
   const isImpersonating = usePlayAsTarget() !== "";
-
-  const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = contentRef.current;
-    if (!element) return;
-
-    const observer = new ResizeObserver((entries) => {
-      if (!entries || entries.length === 0) return;
-      const entry = entries[0];
-      if (entry) {
-        const height = element.scrollHeight || entry.contentRect.height;
-        if (height > 0) {
-          requestAnimationFrame(() => {
-            setMeasuredHeight((prev) => {
-              if (prev !== null && Math.abs(prev - height) < 1.5) {
-                return prev;
-              }
-              return height;
-            });
-          });
-        }
-      }
-    });
-
-    observer.observe(element);
-    return () => {
-      observer.disconnect();
-    };
-    // The content element lives as long as the component, and the observer reports its resizes
-    // whatever the children or size are, so it is created once.
-  }, []);
-
-  const isAutoHeight = dimensions.height === "auto";
-  const targetHeight = isAutoHeight
-    ? "auto"
-    : measuredHeight !== null
-      ? measuredHeight
-      : dimensions.height;
+  const reduceMotion = useFacetReducedMotion();
 
   return (
     <div className="relative">
       <motion.div
         id={id}
+        layout
         data-expanded={!isCompact ? "true" : undefined}
+        data-reduced-motion={reduceMotion ? "true" : undefined}
         // Halo is the acrylic island: a pill, then a frosted sheet once `data-expanded` opens it
         // into a panel. Content inside stays on opaque roles.
         className={cn(
           "facet-chrome relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"
         )}
-        initial={{
-          width: dimensions.width,
-          height: targetHeight,
-          borderRadius: currentSize.borderRadius,
-        }}
-        animate={{
-          width: dimensions.width,
-          height: targetHeight,
-          borderRadius: currentSize.borderRadius,
-        }}
-        transition={springSnappy}
+        transition={reduceMotion ? { duration: 0 } : springSnappy}
         style={{
-          transform: "translateZ(0)",
+          width: dimensions.width,
+          height: "auto",
+          borderRadius: currentSize.borderRadius,
           WebkitFontSmoothing: "antialiased",
           MozOsxFontSmoothing: "grayscale",
           isolation: "isolate",
-          overflow: isAutoHeight ? "visible" : "hidden",
+          overflow: "hidden",
         }}
         {...props}
       >
-        <div
-          ref={contentRef}
-          className={`z-raised relative h-auto w-full ${isAutoHeight ? "overflow-visible" : "overflow-hidden"}`}
+        <motion.div
+          layout="position"
+          className="z-raised relative h-auto w-full overflow-hidden"
         >
           <AnimatePresence>{children}</AnimatePresence>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   );

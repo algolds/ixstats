@@ -1,4 +1,4 @@
-/** The island measures its content with one ResizeObserver and reads the admin play-as target from one hook. */
+/** The island morphs via compositor layout animation (no ResizeObserver) and reads the admin play-as target from one hook. */
 import { act, render, renderHook } from "@testing-library/react";
 import { Halo, HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
@@ -23,7 +23,7 @@ beforeEach(() => {
 });
 
 describe("Halo content measurement", () => {
-  it("creates one ResizeObserver however often the children change", () => {
+  it("constructs no ResizeObserver because layout animations measure natural height", () => {
     const tree = (label: string) => (
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <Halo id="x">
@@ -35,7 +35,7 @@ describe("Halo content measurement", () => {
     rerender(tree("b"));
     rerender(tree("c"));
     rerender(tree("d"));
-    expect(constructed).toHaveBeenCalledTimes(1);
+    expect(constructed).not.toHaveBeenCalled();
   });
 });
 
