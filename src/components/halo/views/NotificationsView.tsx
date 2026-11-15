@@ -417,9 +417,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                       {!isCollapsed && (
                         <motion.div
                           initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                          animate={
-                            reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }
-                          }
+                          animate={reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }}
                           exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
                           transition={reduceMotion ? REDUCED_MOTION_FADE : tweenFast}
                           className="space-y-1 overflow-hidden"

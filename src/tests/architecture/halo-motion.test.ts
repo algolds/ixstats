@@ -48,9 +48,6 @@ it("the Halo glow keyframes are gone", () => {
 });
 
 it("the island never animates width or height", () => {
-  const primitives = fs.readFileSync(
-    path.join(src, "components/halo/HaloPrimitives.tsx"),
-    "utf8"
-  );
+  const primitives = fs.readFileSync(path.join(src, "components/halo/HaloPrimitives.tsx"), "utf8");
   expect(primitives).not.toMatch(/animate=\{\{[^}]*\b(width|height)\b/);
 });

@@ -179,10 +179,7 @@ const DynamicIslandContent = ({
         }}
         {...props}
       >
-        <motion.div
-          layout="position"
-          className="z-raised relative h-auto w-full overflow-hidden"
-        >
+        <motion.div layout="position" className="z-raised relative h-auto w-full overflow-hidden">
           <AnimatePresence>{children}</AnimatePresence>
         </motion.div>
       </motion.div>
