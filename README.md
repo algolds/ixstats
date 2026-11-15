@@ -18,7 +18,6 @@
 
 ---
 
-
 ## For the Worldbuilder — A Nation That Breathes
 
 In traditional worldbuilding, lore is frozen in time. Numbers stay static until you manually edit them, and your civilization stops existing the moment you close the tab.
@@ -28,7 +27,7 @@ In traditional worldbuilding, lore is frozen in time. Numbers stay static until 
 - **Continuous Simulation**: Design your country once in the **Builder**. From that moment forward, its economy hums, tax dividends compound, populations shift across provinces, and international trade balances evolve automatically.
 - **Time is Everything (Temporal Engine)**: The universe breathes on a continuous timeline operating at 2x speed. Crises unfold, elections resolve, your economy grows or shrinks, and your stats organically sync in real time across the entire platform.
 - **Geography Is King**: Your nation is not an arbitrary shape on a flat image. It occupies real, physics-driven terrain on a 100,000-cell Voronoi mesh with tectonic elevations, Coriolis-modeled river networks, and 12 distinct climate biomes.
-- **MyCountry**:  Take the helm of your country. You will face complex decisions, navigate international relations, and manage your country's resources to ensure the prosperity and security of your people. Your choices will shape the future of your nation and its place in the world. 
+- **MyCountry**: Take the helm of your country. You will face complex decisions, navigate international relations, and manage your country's resources to ensure the prosperity and security of your people. Your choices will shape the future of your nation and its place in the world.
 
 ---
 
@@ -38,16 +37,16 @@ IxStates is a layered micro-OS: three **Apps** are the end-user surfaces, four *
 
 ### The Statecraft Loop — the gameplay grammar
 
-Domestic governance, diplomacy, and politics are the *same* loop — `IN → SEE → OUT → RIPPLE` — differing only in the counterparty and how commitments resolve:
+Domestic governance, diplomacy, and politics are the _same_ loop — `IN → SEE → OUT → RIPPLE` — differing only in the counterparty and how commitments resolve:
 
-| Beat | Domestic | Diplomacy | Politics |
-| :--- | :--- | :--- | :--- |
-| **IN** (stimulus) | National issue | Foreign overture / threat | Bill / coalition demand |
-| **SEE** (recon) | Minister's minutes | Ambassador's cable | Whip count |
-| **OUT** (commit) | Policy | Foreign policy / treaty | Bill vote |
-| **Resolves by** | Executive fiat | Foreign consent | Legislative vote |
+| Beat              | Domestic           | Diplomacy                 | Politics                |
+| :---------------- | :----------------- | :------------------------ | :---------------------- |
+| **IN** (stimulus) | National issue     | Foreign overture / threat | Bill / coalition demand |
+| **SEE** (recon)   | Minister's minutes | Ambassador's cable        | Whip count              |
+| **OUT** (commit)  | Policy             | Foreign policy / treaty   | Bill vote               |
+| **Resolves by**   | Executive fiat     | Foreign consent           | Legislative vote        |
 
-Play is two verbs — *See* (pay to look) and *Commit* (pay to act) — spent against three heterogeneous levers: **Capacity** (a *rate*: civil-service bandwidth), **Treasury** (a *stock*: the actual budget), and **Mandate** (a *standing*: legitimacy you risk, which abroad becomes Influence & Reputation). Over-extending Capacity or low government efficiency triggers **Information Fog** — the engine *never lies*, it withholds or qualifies (the *never-lie contract*). Today fog shows as warnings on previews; masking effects behind qualitative risk bands is designed but not yet built.
+Play is two verbs — _See_ (pay to look) and _Commit_ (pay to act) — spent against three heterogeneous levers: **Capacity** (a _rate_: civil-service bandwidth), **Treasury** (a _stock_: the actual budget), and **Mandate** (a _standing_: legitimacy you risk, which abroad becomes Influence & Reputation). Over-extending Capacity or low government efficiency triggers **Information Fog** — the engine _never lies_, it withholds or qualifies (the _never-lie contract_). Today fog shows as warnings on previews; masking effects behind qualitative risk bands is designed but not yet built.
 
 ### The Canonical Loop — Action → World Effect → Narrative → Ledger
 
@@ -55,12 +54,12 @@ Commitments produce a **bounded, clamped** world-state change and a narrative en
 
 ### System Engines
 
-| Engine | Role |
-| :--- | :--- |
-| **IxTime** (Temporal) | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps. |
-| **Statecraft** (MyCountry Engine v4) | Tracks executive bandwidth, applies clamped stat modifiers, classifies intent, and spawns resistance issues from domestic power brokers. |
-| **Concord** (Living-World, v2) | IxTime, diplomatic stance drift, and NPC personality traits (8 traits scored from live data). The crisis lifecycle (`BREWING → … → RESOLVED`), NPC trait drift and event-fatigue dampening are designed but not yet built; crisis events are read-only today. |
-| **Atlas** (Spatial, v5) | 66,626-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups. |
+| Engine                               | Role                                                                                                                                                                                                                                                          |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **IxTime** (Temporal)                | Continuous dilated clock (currently 2.0×) with piecewise-linear epoch math, automated drift correction, and a client-side interpolation store. Governs issue deadlines, elections, budget cycles, match clocks, and wiki timestamps.                          |
+| **Statecraft** (MyCountry Engine v4) | Tracks executive bandwidth, applies clamped stat modifiers, classifies intent, and spawns resistance issues from domestic power brokers.                                                                                                                      |
+| **Concord** (Living-World, v2)       | IxTime, diplomatic stance drift, and NPC personality traits (8 traits scored from live data). The crisis lifecycle (`BREWING → … → RESOLVED`), NPC trait drift and event-fatigue dampening are designed but not yet built; crisis events are read-only today. |
+| **Atlas** (Spatial, v5)              | 66,626-cell Voronoi procedural worldgen (tectonic plates, coastal hypsometric damping, Coriolis hydrology, 12 Trewartha biomes). PostGIS `ST_Touches` geometry is the Tier-0 source of truth for borders, neighbors, and regional rollups.                    |
 
 ### Apps & Core Systems
 
@@ -68,7 +67,7 @@ Commitments produce a **bounded, clamped** world-state change and a narrative en
 
 ### API, Data & Platform Infrastructure
 
-- **API**: <!-- BEGIN_DOCS:COUNT:routers -->78<!-- END_DOCS:COUNT:routers --> domain-split **tRPC routers** (<!-- BEGIN_DOCS:COUNT:procedures -->1,139<!-- END_DOCS:COUNT:procedures --> end-to-end typed procedures; per-router counts in [api-complete.md](docs/reference/api-complete.md), regenerated by `bun run docs:sync`) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
+- **API**: <!-- BEGIN_DOCS:COUNT:routers -->78<!-- END_DOCS:COUNT:routers --> domain-split **tRPC routers** (<!-- BEGIN_DOCS:COUNT:procedures -->1,141<!-- END_DOCS:COUNT:procedures --> end-to-end typed procedures; per-router counts in [api-complete.md](docs/reference/api-complete.md), regenerated by `bun run docs:sync`) composed via `mergeRouters`. All client data access goes through tRPC — never direct Prisma from components.
 - **Data**: PostgreSQL + PostGIS, <!-- BEGIN_DOCS:COUNT:models -->346<!-- END_DOCS:COUNT:models --> Prisma models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> schema files — spatial geometry, immutable financial ledgers, and event spines included.
 - **Realtime**: WebSockets served by `ws-backend.mjs` (Socket.IO for ThinkPages at `/ws/thinkpages`, plain `ws` for Market auctions at `/api/market-ws`) and Redis-backed caching + rate limiting with in-memory fallback.
 - **Design**: the **Facet** design system (glass materials, physics springs, 4-tier depth) and the **Halo** global overlay (context-aware dynamic action bar, notifications, command palette).
@@ -151,18 +150,16 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 - **⟨ONOMA⟩ Linguistics Studio (`systems.onoma` v4)**: Procedural phonology engine with Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries for conlangs.
 - **Vexel Heraldry**: Vector blazon generator creating heraldic shields, charges, and national flags adhering to classic tincture rules.
 
-
-
 ---
 
 ## Platform Utilities
 
-| Utility | Description |
-|---|---|
-| **IxTime** | The universal Temporal Engine operating on mathematical time dilation ($2.0\times$ modern era) with automated drift synchronization. Drives economic ticks, election cycles, card seasons, and wiki timestamps across the ecosystem. |
+| Utility     | Description                                                                                                                                                                                                                                  |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **IxTime**  | The universal Temporal Engine operating on mathematical time dilation ($2.0\times$ modern era) with automated drift synchronization. Drives economic ticks, election cycles, card seasons, and wiki timestamps across the ecosystem.         |
 | **IxnayID** | Unified authentication and identity layer bridging Clerk credentials, claimed old IxWiki names, verified sister-wiki accounts and Discord accounts into a single persona (old XenForo forum accounts are kept read-only for imported posts). |
-| **Facet** | The signature design system: volumetric glass surfaces, physical spring animations, edge-glare refraction, and a strict 4-tier Z-axis depth hierarchy. |
-| **Halo** | Context-aware dynamic action bar providing universal notifications, command palettes, and fast actions across all applications. |
+| **Facet**   | The signature design system: volumetric glass surfaces, physical spring animations, edge-glare refraction, and a strict 4-tier Z-axis depth hierarchy.                                                                                       |
+| **Halo**    | Context-aware dynamic action bar providing universal notifications, command palettes, and fast actions across all applications.                                                                                                              |
 
 ---
 
@@ -170,11 +167,11 @@ A modern, high-speed Next.js frontend for worldbuilding encyclopedias that headl
 
 Specialized creative toolkits and simulation sandboxes:
 
-| Laboratory | Route | Status | Focus Area |
-|---|---|:---:|---|
-| **⟨ONOMA⟩** | `/labs/onoma` | **Active** | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries. |
-| **Vexel** | `/labs/vexel` | **Preview** | Structured heraldry composer: vector blazon generation, tincture rules, gallery and revisions. Routable but not in the Labs menu; external ornaments and attach-to-country are unfinished. |
-| **Strata & Dynas** | — | *Roadmap* | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling. |
+| Laboratory         | Route         |   Status    | Focus Area                                                                                                                                                                                 |
+| ------------------ | ------------- | :---------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **⟨ONOMA⟩**        | `/labs/onoma` | **Active**  | Procedural phonology engine: Markov name synthesis, formant acoustic visualizers, historical sound shifts, and custom phonetic dictionaries.                                               |
+| **Vexel**          | `/labs/vexel` | **Preview** | Structured heraldry composer: vector blazon generation, tincture rules, gallery and revisions. Routable but not in the Labs menu; external ornaments and attach-to-country are unfinished. |
+| **Strata & Dynas** | —             |  _Roadmap_  | Planned laboratories for tectonic relief simulation and dynastic genealogy modeling.                                                                                                       |
 
 ---
 
@@ -183,24 +180,26 @@ Specialized creative toolkits and simulation sandboxes:
 IxStates follows an OS-inspired release model where all components read from a central Version Registry ([`src/lib/buildVersion.ts`](src/lib/buildVersion.ts)). See [`docs/reference/revision.md`](docs/reference/revision.md) for full specifications. Players see the public registry (`VERSIONS`): **1.0.0 "Lobster Crosby", Stable**, every app and system at v1. The matrix below is generated from the internal registry (`INTERNAL_VERSIONS`, platform 1.5.0); the engines are the same in both.
 
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
-| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
-| :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.5.5 "Lobster Crosby"** | **Release Candidate** |
-| **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
-| | WikiOS | v1 | Headless Wiki & Canvas Architecture |
-| | IxVault | v3 | Wallet, Achievements, Cards & Store |
-| **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
-| | Concord Engine | v2 | Living World Simulation & Events |
-| | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
-| **Systems** | MyCountry UI | v6 | 4-Tier Command Architecture |
-| | Nation Builder | v4 | Statecraft & Tax Builder Subsystems |
-| | ThinkPages | v3 | Social Knowledge & Feed Components |
-| | Achievements | v3 | Achievements, Lorewards & Legacy |
-| | Stash | v1 | Article Stashing (was LoreStash) |
-| | Repository | v2 | Commons Media Explorer |
-| | Halo | v6 | Contextual Overlay System |
-| | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v6 | Refraction / Depth Design System |
+
+| Capability Domain | Component / Layer             |     Version / Release      | Channel / Granularity               |
+| :---------------- | :---------------------------- | :------------------------: | :---------------------------------- |
+| **Platform**      | **IxStates (Lobster Crosby)** | **1.5.6 "Lobster Crosby"** | **Release Candidate**               |
+| **Apps**          | IxWorld                       |             v3             | Standalone & Embedded Maps Engine   |
+|                   | WikiOS                        |             v1             | Headless Wiki & Canvas Architecture |
+|                   | IxVault                       |             v3             | Wallet, Achievements, Cards & Store |
+| **Engines**       | MyCountry Engine              |             v4             | Deterministic Nation Simulation     |
+|                   | Concord Engine                |             v2             | Living World Simulation & Events    |
+|                   | Atlas Engine                  |             v5             | Spatial Math & Geometry Pipeline    |
+| **Systems**       | MyCountry UI                  |             v6             | 4-Tier Command Architecture         |
+|                   | Nation Builder                |             v4             | Statecraft & Tax Builder Subsystems |
+|                   | ThinkPages                    |             v3             | Social Knowledge & Feed Components  |
+|                   | Achievements                  |             v3             | Achievements, Lorewards & Legacy    |
+|                   | Stash                         |             v1             | Article Stashing (was LoreStash)    |
+|                   | Repository                    |             v2             | Commons Media Explorer              |
+|                   | Halo                          |             v7             | Contextual Overlay System           |
+|                   | Onoma                         |             v4             | Conlang & Linguistics Studio        |
+| **Design**        | Facet                         |             v6             | Refraction / Depth Design System    |
+
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ---
@@ -208,18 +207,20 @@ IxStates follows an OS-inspired release model where all components read from a c
 ## Technology Stack
 
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
-| Package / Layer | Version | Notes |
-| :--- | :---: | :--- |
-| **Next.js** | 16.4.6 | App Router architecture, Turbopack |
-| **React** | 19.3.1 | React 19 concurrent features |
-| **TypeScript** | 7.0.2 | Native Go Engine concurrency |
-| **Prisma** | 7.10.1 | Multi-file schema partitioning |
-| **tRPC** | 11.28.0 | Domain-split modular routers |
-| **Tailwind CSS** | 4.3.5 | v4 CSS-first theme configuration |
-| **Zod** | 4.6.7 | Schema validation |
-| **Oxlint** | 1.93.0 | Flat config, TS 7 native (50-100× faster) |
-| **Jest** | 30.4.2 | Unit and characterization suites |
-| **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
+
+| Package / Layer  | Version  | Notes                                     |
+| :--------------- | :------: | :---------------------------------------- |
+| **Next.js**      |  16.4.6  | App Router architecture, Turbopack        |
+| **React**        |  19.3.1  | React 19 concurrent features              |
+| **TypeScript**   |  7.0.2   | Native Go Engine concurrency              |
+| **Prisma**       |  7.10.1  | Multi-file schema partitioning            |
+| **tRPC**         | 11.28.0  | Domain-split modular routers              |
+| **Tailwind CSS** |  4.3.5   | v4 CSS-first theme configuration          |
+| **Zod**          |  4.6.7   | Schema validation                         |
+| **Oxlint**       |  1.93.0  | Flat config, TS 7 native (50-100× faster) |
+| **Jest**         |  30.4.2  | Unit and characterization suites          |
+| **Runtime**      | Bun 1.4+ | Native concurrency & virtual store        |
+
 <!-- END_DOCS:FRAMEWORK_MATRIX -->
 
 ---

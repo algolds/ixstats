@@ -5,11 +5,24 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.6 "Lobster Crosby"**, channel Stable, to players; internally 1.5.5, see
+**IxStates 1.0.7 "Lobster Crosby"**, channel Stable, to players; internally 1.5.6, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.5.6] — 2026-11-15 "Lobster Crosby" (public 1.0.7)
+
+### 🏝️ Halo 7: Island morph, nav-derived palette, "On this page" plugin commands & open-realm search (Halo 7, public 2)
+
+- **`HALO_VERSION` 7 (public 2).** End-to-end architecture, interaction, performance, and accessibility overhaul of the Halo contextual overlay and `Cmd+K` command palette (`src/components/halo/`, `src/lib/halo/`, [`docs/systems/halo.md`](./docs/systems/halo.md)).
+- **Derived from the sidebar nav model:** Command-palette navigation entries and the mobile `NavTray` now derive directly from `APPS` and `getVisibleApps()` (`src/lib/halo/commands-from-apps.ts`, `src/lib/navigation/app-sections.ts`), eliminating drift between `AppSidebar`, `TabBar`, `NavTray`, and `Cmd+K` while honoring realm context, sign-in state, nation ownership, and admin access.
+- **"On this page" plugin commands:** Active route plugins (`BuilderHalo`, `MyCountryHalo`, `WikiHalo`, and `SportsLiveHalo`) contribute contextual `PluginCommand` actions — editor/founding section jumps, MyCountry domain views, wiki article headings and narrator playback, and live match room navigation — ranked ahead of global navigation under an `"On this page"` badge.
+- **Open-realm search:** Added `realms.getSelectList` (`src/server/api/routers/realms/places.ts`) and lazy Halo search indexing so `PUBLIC` + `OPEN` realms appear under `"All"` with realm flags, nation counts, and direct `/realms/[slug]` navigation.
+- **Island morph, accessibility & keyboard fidelity:**
+  - Replaced manual `ResizeObserver` height plumbing with Motion layout morphing (`HaloPrimitives.tsx`), instant `prefers-reduced-motion` settling, and collapsed navigation-loading feedback.
+  - Non-modal dialog semantics (`role="dialog"`, `aria-modal="false"`), trigger focus restoration on close, native `<button>` / Next.js router navigation (no full-page reloads), and non-blocking global shortcuts (`Cmd/Ctrl+K`, `Escape`, `Tab`).
+  - Lazy-loaded expanded views, pure reducer state (`src/lib/halo/state.ts`) and pure search engine (`src/lib/halo/search.ts`), unified unread badges and truthful loading/empty/error states, shared view primitives, and zero React Compiler skips across Halo components.
 
 ## [1.5.5] — 2026-11-14 "Lobster Crosby" (public 1.0.6)
 

@@ -8,11 +8,11 @@ Halo is the contextual floating island and command palette for IxStates, providi
 
 ## Versions
 
-- **Last updated:** 2026-11-14
+- **Last updated:** 2026-11-15
 - **Version registry:** [`src/lib/buildVersion.ts`](../../src/lib/buildVersion.ts)
-  - **Halo:** `INTERNAL_VERSIONS.systems.halo = 6`, `VERSIONS.systems.halo = 1` (`HALO_VERSION = "1"`)
+  - **Halo:** `INTERNAL_VERSIONS.systems.halo = 7`, `VERSIONS.systems.halo = 2` (`HALO_VERSION = "2"`)
   - **Facet design system:** `INTERNAL_VERSIONS.design.facet = 6`, `VERSIONS.design.facet = 3` (`FACET_VERSION = "3"`)
-  - **Platform:** internal `1.5.5 "Lobster Crosby"` (Release Candidate), public `1.0.6 "Lobster Crosby"` (Stable)
+  - **Platform:** internal `1.5.6 "Lobster Crosby"` (Release Candidate), public `1.0.7 "Lobster Crosby"` (Stable)
 - **System status:** Live; see [SYSTEM_STATUS.md](./SYSTEM_STATUS.md)
 
 ## Files
@@ -165,12 +165,12 @@ flowchart TD
 
 ### Registered plugins
 
-| Plugin           | `id`            | Priority                                   | Expanded views                                                                                                                             | Notes                                                                                                                            |
-| ---------------- | --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | `mycountry` (`MyCountryActionsView`)                                                                                                       | Mounted on `/mycountry` routes; contributes `"Declare directive"` and MyCountry section commands (`MYCOUNTRY_PLUGIN_COMMANDS`)   |
-| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` when no `articleTitle`), `narrator` (`WikiNarratorView` when narrator access is enabled) | Contributes article heading jumps (`level <= 3`) and narrator toggle to Search; expanded views load lazily via `next/dynamic`    |
-| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                           | Mounted on `/builder` and `/mycountry/editor`; contributes `"Jump to <section>"` commands (`builderCommandsForSections`)         |
-| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                           | Mounted globally during live club matches; contributes `"Watch live"` (`plugin:sports-live`) and league standings commands       |
+| Plugin           | `id`            | Priority                                   | Expanded views                                                                                                                             | Notes                                                                                                                          |
+| ---------------- | --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | `mycountry` (`MyCountryActionsView`)                                                                                                       | Mounted on `/mycountry` routes; contributes `"Declare directive"` and MyCountry section commands (`MYCOUNTRY_PLUGIN_COMMANDS`) |
+| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` when no `articleTitle`), `narrator` (`WikiNarratorView` when narrator access is enabled) | Contributes article heading jumps (`level <= 3`) and narrator toggle to Search; expanded views load lazily via `next/dynamic`  |
+| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                           | Mounted on `/builder` and `/mycountry/editor`; contributes `"Jump to <section>"` commands (`builderCommandsForSections`)       |
+| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                           | Mounted globally during live club matches; contributes `"Watch live"` (`plugin:sports-live`) and league standings commands     |
 
 ## Command palette
 

@@ -29,7 +29,7 @@ export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
-    patch: 5,
+    patch: 6,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
@@ -57,7 +57,7 @@ export const INTERNAL_VERSIONS = {
     achievements: 3, // incl. LoreWards / Wiki Awards; v3: moved into the Vault, nation achievements rebuilt around live MyCountry systems (real-time floors), new Wiki, Community, Cards, Lorewards and cross-platform achievements, Legacy achievements, tiered Loreward payouts with trophy cards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 6, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution; v6: standard chrome glass with no glow
+    halo: 7, // global contextual overlay (was "Dynamic Island"); v7: layout-animated island morph with Reduce Motion and nav activity, sidebar-derived command palette and NavTray, "On this page" plugin commands, and open-realm search; v6: standard chrome glass with no glow; v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
@@ -81,7 +81,7 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 6,
+    patch: 7,
     release: "Lobster Crosby",
     channel: "Stable" as ReleaseChannel,
   },
@@ -94,7 +94,7 @@ export const VERSIONS = {
     achievements: 1,
     stash: 1,
     repository: 1,
-    halo: 1,
+    halo: 2,
     onoma: 1,
   },
   design: { facet: 3 },

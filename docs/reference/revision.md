@@ -2,7 +2,7 @@
 
 **Status:** Canonical Standard v2  
 **Platform Release:** IxStates 1.0.0 "Lobster Crosby" (Stable) to players; internal 1.5.0, on production since 2026-10-27 (see [§5](#5-public-and-internal-versions))  
-**Last Updated:** 2026-10-27  
+**Last Updated:** 2026-10-27
 
 ---
 
@@ -11,6 +11,7 @@
 IxStates is an integrated worldbuilding and nation-simulation operating system. It uses an **operating-system-style release model** structured into primary **First-Party Apps**, backend **Simulation Engines**, the **Facet UI Design System**, and an incubation **Labs Layer**.
 
 Versioning communicates:
+
 1. **Platform Evolution** — Operating system epochs, core framework upgrades, and ecosystem scale.
 2. **App Maturity** — Standalone product capability and user-facing boundaries.
 3. **Simulation Capability** — Deterministic engine calculus and living-world fidelity.
@@ -120,8 +121,8 @@ Versioning communicates:
  │ 8. 🎨 FACET UI DESIGN SYSTEM & AMBIENT RUNTIME                                                 │
  │    Visual, Motion & Tactile Foundation                                                         │
  ├────────────────────────────────────────────────────────────────────────────────────────────────┤
- │ • Facet (v4)               │ Layers, content types, tinted canvas, Radix slots.                │
- │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v6).│
+ │ • Facet (v6)               │ Layers, content types, tinted canvas, Radix slots, Lens.          │
+ │ • Halo Contextual Overlay  │ Floating header capsule, live telemetry, and `Cmd+K` palette (v7).│
  │ • Cuelume Audio Engine (v1)│ cuelume 0.2.8: 14 synthesized cues with emphasis (`soundCues`).   │
  └────────────────────────────────────────────────────────────────────────────────────────────────┘
 
@@ -147,10 +148,10 @@ Versioning communicates:
 The platform maintains strict separation between the **Platform SemVer Level** and the **Component Capability Integers**:
 
 1. **Platform**: `Major.Minor.Patch` + Permanent Epoch **Release Name** + **Channel**  
-   *Current:* **`IxStates 1.0.0 "Lobster Crosby"`** (Channel: *Stable*) publicly; internally **1.5.0** (channel *Release Candidate* in `INTERNAL_VERSIONS`).
+   _Current:_ **`IxStates 1.0.0 "Lobster Crosby"`** (Channel: _Stable_) publicly; internally **1.5.0** (channel _Release Candidate_ in `INTERNAL_VERSIONS`).
 2. **First-Party Apps**: A single monotonic capability integer (`IXWORLD_VERSION`, `WIKIOS_VERSION`, `IXVAULT_VERSION`, `EXCHANGE_VERSION`; public 1 each, internal 3, 1, 3 and 1).
 3. **Simulation Engines**: Internal capability integers surfaced only in the Developer Panel (`MYCOUNTRY_ENGINE_VERSION = 4`, `CONCORD_ENGINE_VERSION = 2`, `ATLAS_ENGINE_VERSION = 5`), identical in both registries.
-4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION` (incl. LoreWards / Wiki Awards), `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`, `ONOMA_VERSION`), the design system (`FACET_VERSION`) and the WikiOS sub-system `CANVAS_VERSION`: public 1 each (Facet 2); internal 6, 4, 3, 3, 1, 2, 6, 4, Facet 5 and Canvas 1.
+4. **UI / Feature Systems & Design**: Independent capability integers (`MYCOUNTRY_VERSION`, `BUILDER_VERSION`, `THINKPAGES_VERSION`, `ACHIEVEMENTS_VERSION` (incl. LoreWards / Wiki Awards), `STASH_VERSION`, `REPOSITORY_VERSION`, `HALO_VERSION`, `ONOMA_VERSION`), the design system (`FACET_VERSION`) and the WikiOS sub-system `CANVAS_VERSION`: public 1 each (Halo 2, Facet 3); internal 6, 4, 3, 3, 1, 2, 7, 4, Facet 6 and Canvas 1.
 5. **Inherited Components**: Components that do not version independently inherit the platform version: **IxForum** (`IXFORUM_VERSION`, the public `major.minor`: `1.0`), **IxTime / IxnayID**, **Labs**, and **Navigation Hubs**.
 
 ---
@@ -165,12 +166,12 @@ The single source of truth for all runtime version constants is [`src/lib/buildV
 
 Since the 1.0 reveal (October 2026), `src/lib/buildVersion.ts` holds two registries with the same shape:
 
-| Registry | Holds | Read by |
-|----------|-------|---------|
-| `VERSIONS` (public) | Platform **1.0.0 "Lobster Crosby"**, channel **Stable**; every app, system, design and sub-system number restarted at **1** | Every exported display constant (`APP_VERSION`, `PLATFORM_VERSION`, `RELEASE_NAME`, `CHANNEL`, `CHANNEL_SHORT`, `IXWORLD_VERSION` … `CANVAS_VERSION`, `IXFORUM_VERSION`), so every user-facing surface: the UI and the `/changelog` page |
+| Registry                       | Holds                                                                                                                                     | Read by                                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `VERSIONS` (public)            | Platform **1.0.0 "Lobster Crosby"**, channel **Stable**; every app, system, design and sub-system number restarted at **1**               | Every exported display constant (`APP_VERSION`, `PLATFORM_VERSION`, `RELEASE_NAME`, `CHANNEL`, `CHANNEL_SHORT`, `IXWORLD_VERSION` … `CANVAS_VERSION`, `IXFORUM_VERSION`), so every user-facing surface: the UI and the `/changelog` page                                                                                                                                       |
 | `INTERNAL_VERSIONS` (internal) | The numbers the platform actually reached: platform **1.5.0** (channel Release Candidate), IxWorld 3, IxVault 3, MyCountry UI 6 and so on | `INTERNAL_PLATFORM_VERSION` (diagnostics, never shown to players), `scripts/docs/sync-reference-docs.ts`, which writes the generated version matrix in the docs (for example [platform.md](../overview/platform.md)), and `start-production.sh`'s start banner, which takes the first `major`/`minor`/`patch` in the file (the internal registry's, `v1.5.0 "Lobster Crosby"`) |
 
-**The engines are identical** in both (`VERSIONS.engines` *is* `INTERNAL_VERSIONS.engines`) because they are
+**The engines are identical** in both (`VERSIONS.engines` _is_ `INTERNAL_VERSIONS.engines`) because they are
 functional, not cosmetic: stored data carries them. `ATLAS_ENGINE_VERSION` is stamped into world recipes and imports, and
 a stored recipe is validated against it, so restarting it at 1 would invalidate every stored recipe.
 
