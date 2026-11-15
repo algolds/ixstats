@@ -12,7 +12,7 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
-import { REDUCED_MOTION_FADE, tweenFast } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, tweenExit, tweenFast } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { HaloCloseButton, HaloEmpty, HaloWell } from "../shared/HaloViewParts";
 import { NationSide } from "./NationSide";
@@ -21,7 +21,7 @@ import { PassportSide } from "./PassportSide";
 type Side = "nation" | "passport";
 
 const SIDES = [
-  { value: "nation", label: "Nation" },
+  { value: "nation", label: "MyCountry" },
   { value: "passport", label: "Passport" },
 ] as const satisfies ReadonlyArray<{ value: Side; label: string }>;
 
@@ -94,54 +94,56 @@ export function AccountView({ onClose }: { onClose: () => void }) {
         <HaloCloseButton onClick={onClose} />
       </div>
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={side}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={reduceMotion ? REDUCED_MOTION_FADE : tweenFast}
-        >
-          {side === "passport" ? (
-            <PassportSide onClose={onClose} onNavigate={navigate} />
-          ) : !isLoaded || profileLoading ? (
-            <div className="space-y-2" role="status" aria-label="Loading your nation">
-              <Skeleton className="rounded-row h-40 w-full" />
-              <Skeleton className="rounded-row h-20 w-full" />
-            </div>
-          ) : profileError || (profile?.countryId && !profile.country) ? (
-            <HaloWell>
-              <HaloEmpty
-                title="Couldn't load your nation"
-                action={
-                  <Button type="button" size="sm" onClick={() => void refetch()}>
-                    Try again
-                  </Button>
-                }
+      <div className="relative">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={side}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: reduceMotion ? REDUCED_MOTION_FADE : tweenExit }}
+            transition={reduceMotion ? REDUCED_MOTION_FADE : tweenFast}
+          >
+            {side === "passport" ? (
+              <PassportSide onClose={onClose} onNavigate={navigate} />
+            ) : !isLoaded || profileLoading ? (
+              <div className="space-y-2" role="status" aria-label="Loading your nation">
+                <Skeleton className="rounded-row h-40 w-full" />
+                <Skeleton className="rounded-row h-20 w-full" />
+              </div>
+            ) : profileError || (profile?.countryId && !profile.country) ? (
+              <HaloWell>
+                <HaloEmpty
+                  title="Couldn't load your nation"
+                  action={
+                    <Button type="button" size="sm" onClick={() => void refetch()}>
+                      Try again
+                    </Button>
+                  }
+                />
+              </HaloWell>
+            ) : hasNation && profile.country ? (
+              <NationSide
+                country={{ id: profile.countryId!, name: profile.country.name }}
+                membershipTier={profile.membershipTier}
+                onNavigate={navigate}
+                onClose={onClose}
               />
-            </HaloWell>
-          ) : hasNation && profile.country ? (
-            <NationSide
-              country={{ id: profile.countryId!, name: profile.country.name }}
-              membershipTier={profile.membershipTier}
-              onNavigate={navigate}
-              onClose={onClose}
-            />
-          ) : (
-            <HaloWell>
-              <HaloEmpty
-                title="You don't have a nation yet"
-                message="Found one to unlock MyCountry."
-                action={
-                  <Button type="button" size="sm" onClick={() => navigate("/builder")}>
-                    Found a nation
-                  </Button>
-                }
-              />
-            </HaloWell>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            ) : (
+              <HaloWell>
+                <HaloEmpty
+                  title="You don't have a nation yet"
+                  message="Found one to unlock MyCountry."
+                  action={
+                    <Button type="button" size="sm" onClick={() => navigate("/builder")}>
+                      Found a nation
+                    </Button>
+                  }
+                />
+              </HaloWell>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

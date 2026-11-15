@@ -40,12 +40,12 @@ const EDIT_PILL =
 const SHARE_PILL =
   "bg-fill-3 text-label-secondary hover:bg-fill-2 hover:text-label duration-fast ease-out-facet relative inline-flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors [&_svg]:pointer-events-none [&_svg]:shrink-0 [:where(&)_svg]:size-4";
 
-/** Manage: one row of round tiles, each opening a MyCountry section. */
+/** Manage MyCountry: one row of round tiles, each opening a MyCountry section. */
 export function ManageGrid({ onNavigate }: { onNavigate: (path: string) => void }) {
   return (
     <section aria-labelledby="country-manage" className="space-y-2">
       <h3 id="country-manage" className="text-subhead text-label-secondary px-1">
-        Manage
+        Manage MyCountry
       </h3>
       <div className="grid grid-cols-4 gap-1">
         {MANAGE_LINKS.map(([icon, label, path, tone]) => (

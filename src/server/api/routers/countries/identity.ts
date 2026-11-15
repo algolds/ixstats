@@ -26,8 +26,8 @@ export const identityProcedures = {
           populationDensity: true,
           centroid: true,
           realmId: true,
-          // The country actions menu: its realm and its leader's passport (handles are public).
-          realm: { select: { slug: true, name: true } },
+          // The country actions menu: its realm (with logo) and its leader's passport (handles are public).
+          realm: { select: { slug: true, name: true, emblemUrl: true, thumbnail: true } },
           owner: { select: { handle: true } },
         },
       });

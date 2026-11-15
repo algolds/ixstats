@@ -56,7 +56,7 @@ Halo shows the [IxTime](/help/getting-started/ixtime) clock and a greeting, and 
 
 Global shortcuts use modifier keys (plus `Esc` when Halo is open) and never get in the way while you're typing in a text box; `Ctrl`/`Cmd` + `K` also works inside Halo's own search box.
 
-Some areas add their own controls to Halo. Selecting the greeting opens your **Account** panel, which switches between **Nation** (your nation's poster, vitality strip, **Edit** menu for the Country Editor and Map Editor, **Share**, **Manage** tiles, and **Open in** links) and **Passport** (your compact Passport card, **Play as** nation switcher when you hold multiple nations, saved Wiki drafts, shortcuts to Vault, Messages, and Settings, and sign out). MyCountry pages add quick statecraft actions, the Wiki adds reading progress, section jumps, and the article narrator, live sports matches show a live scoreboard, and founding a nation or using the Country Editor adds **Jump to section**.
+Some areas add their own controls to Halo. Selecting the greeting opens your **Account** panel, which switches between **MyCountry** (your nation's poster, vitality strip, **Edit** menu for the Country Editor and Map Editor, **Share**, **Manage MyCountry** tiles, and **Open in** links) and **Passport** (your compact Passport card, **Play as** nation switcher when you hold multiple nations, saved Wiki drafts, shortcuts to Vault, Messages, and Settings, and sign out). MyCountry pages add quick statecraft actions, the Wiki adds reading progress, section jumps, and the article narrator, live sports matches show a live scoreboard, and founding a nation or using the Country Editor adds **Jump to section**.
 
 On the [world map](/maps), Halo is replaced by the map's own floating bar.
 

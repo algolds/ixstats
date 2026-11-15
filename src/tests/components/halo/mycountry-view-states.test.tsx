@@ -1,4 +1,4 @@
-/** Halo AccountView: Nation | Passport switch, loading/signed-out/no-nation/error states, NationSide and PassportSide. */
+/** Halo AccountView: MyCountry | Passport switch, loading/signed-out/no-nation/error states, NationSide and PassportSide. */
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { AccountView } from "~/components/halo/views/account/AccountView";
@@ -139,7 +139,7 @@ describe("AccountView states", () => {
     expect(screen.queryByText("Sign in")).toBeNull();
   });
 
-  it("opens on Passport when signed in without a nation, and offers to found one on the Nation side", async () => {
+  it("opens on Passport when signed in without a nation, and offers to found one on the MyCountry side", async () => {
     mockUseUser.mockReturnValue(signedIn);
     mockProfileQuery.mockReturnValue({
       data: { countryId: null, country: null, role: { level: 100, displayName: "Member" } },
@@ -151,7 +151,7 @@ describe("AccountView states", () => {
     expect(screen.getByRole("radio", { name: "Passport" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("link", { name: "Your Passport, @ada" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: "Nation" }));
+    fireEvent.click(screen.getByRole("radio", { name: "MyCountry" }));
     expect(await screen.findByText("You don't have a nation yet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Found a nation" }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -169,7 +169,7 @@ describe("AccountView states", () => {
     expect(screen.queryByText("Sign in")).toBeNull();
   });
 
-  it("asks a signed-out visitor to sign in without rendering the Nation | Passport switch", () => {
+  it("asks a signed-out visitor to sign in without rendering the MyCountry | Passport switch", () => {
     mockUseUser.mockReturnValue({ user: null, isLoaded: true });
     mockProfileQuery.mockReturnValue({ data: undefined, isLoading: false, isError: false });
     renderView();
@@ -190,7 +190,10 @@ describe("AccountView states", () => {
     });
 
     const { unmount } = renderView();
-    expect(screen.getByRole("radio", { name: "Nation" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "MyCountry" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    );
     fireEvent.click(screen.getByRole("radio", { name: "Passport" }));
     expect(localStorage.getItem("ixstats.halo-account-side")).toBe("passport");
     unmount();
@@ -205,7 +208,7 @@ describe("NationSide", () => {
     mockUseUser.mockReturnValue(signedIn);
   });
 
-  it("shows membership tier, Edit menu (Country editor, Map editor), 4 Manage tiles, and Open in without Passport", () => {
+  it("shows Premium with MyCountry logo beside the country name, omits Your nation, labels Manage MyCountry, and keeps Open in without Passport", () => {
     mockProfileQuery.mockReturnValue({
       data: {
         countryId: "c1",
@@ -217,8 +220,19 @@ describe("NationSide", () => {
     });
     const { onClose } = renderView();
 
-    expect(screen.getByText("Premium")).toBeInTheDocument();
+    const heading = screen.getByRole("heading", { level: 2, name: "Caphiria" });
+    const premiumBadge = screen.getByText("Premium");
+    expect(heading.parentElement).toContainElement(premiumBadge);
+    expect(premiumBadge.querySelector("svg")).not.toBeNull();
+    expect(screen.queryByText("Your nation")).toBeNull();
+    expect(screen.queryByText("@ada")).toBeNull();
+
+    const realmLink = screen.getByRole("link", { name: "Ixnay" });
+    expect(realmLink.querySelector("img")).toHaveAttribute("src", "/images/ix-logo.svg");
+
     expect(screen.getByRole("button", { name: "Share Caphiria" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Manage MyCountry" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Manage" })).toBeNull();
 
     for (const tile of ["Dashboard", "Executive", "Diplomacy", "Politics"]) {
       expect(screen.getByRole("button", { name: tile })).toBeInTheDocument();
@@ -242,7 +256,7 @@ describe("NationSide", () => {
     expect(mockPush).toHaveBeenCalledWith("/mycountry/map-editor");
   });
 
-  it("labels non-premium membership as Basic", () => {
+  it("omits any membership badge for non-premium accounts and renders custom realm emblems or the Realms fallback mark", () => {
     mockProfileQuery.mockReturnValue({
       data: {
         countryId: "c1",
@@ -252,8 +266,37 @@ describe("NationSide", () => {
       isLoading: false,
       isError: false,
     });
+    mockCountryBasicQuery.mockReturnValue({
+      data: {
+        slug: "caphiria",
+        realm: { slug: "eurth", name: "Eurth", emblemUrl: "https://eurth.org/emblem.png" },
+        ownerHandle: "ada",
+        currentPopulation: 20_000_000,
+        currentTotalGdp: 800_000_000_000,
+      },
+    });
+    const { unmount } = renderView();
+    expect(screen.queryByText("Basic")).toBeNull();
+    expect(screen.queryByText("Premium")).toBeNull();
+
+    const eurthImg = screen.getByRole("link", { name: "Eurth" }).querySelector("img");
+    expect(eurthImg).toHaveAttribute("src", "https://eurth.org/emblem.png");
+    expect(eurthImg).toHaveAttribute("referrerpolicy", "no-referrer");
+    unmount();
+
+    mockCountryBasicQuery.mockReturnValue({
+      data: {
+        slug: "caphiria",
+        realm: { slug: "nova", name: "Nova", emblemUrl: null, thumbnail: null },
+        ownerHandle: "ada",
+        currentPopulation: 20_000_000,
+        currentTotalGdp: 800_000_000_000,
+      },
+    });
     renderView();
-    expect(screen.getByText("Basic")).toBeInTheDocument();
+    const novaLink = screen.getByRole("link", { name: "Nova" });
+    expect(novaLink.querySelector("img")).toBeNull();
+    expect(novaLink.querySelector("svg")).not.toBeNull();
   });
 });
 
@@ -263,7 +306,7 @@ describe("PassportSide", () => {
     mockUseUser.mockReturnValue(signedIn);
   });
 
-  it("renders the compact Passport link with Clerk name/avatar, role badge rules, shortcuts, Sign out, and no duplicate View Passport button", () => {
+  it("renders the compact Passport link on a Facet Lens monogram & guilloché stage with Clerk name/avatar, role badge rules, shortcuts, and Sign out", () => {
     mockProfileQuery.mockReturnValue({
       data: {
         countryId: "c1",
@@ -277,7 +320,17 @@ describe("PassportSide", () => {
 
     const passportLink = screen.getByRole("link", { name: "Your Passport, @ada" });
     expect(passportLink).toHaveAttribute("href", "/id/ada");
-    expect(passportLink.className).toContain("facet-well");
+    expect(passportLink.className).toContain("facet-press");
+    const lensStage = passportLink.querySelector('[data-slot="passport-lens-stage"]');
+    expect(lensStage).not.toBeNull();
+    expect(lensStage?.querySelector(".facet-monogram")).not.toBeNull();
+    expect(lensStage?.querySelectorAll("svg")).toHaveLength(2);
+    const lensSurface = passportLink.querySelector(
+      '[data-slot="facet-material"][data-layer="lens"]'
+    );
+    expect(lensSurface).not.toBeNull();
+    expect(lensSurface?.className).toContain("facet-lens");
+
     expect(screen.getByText("Ada Lovelace")).toBeInTheDocument();
     expect(screen.getByText("Administrator")).toBeInTheDocument();
     expect(screen.queryByText(/Founding member/i)).toBeNull();
@@ -296,7 +349,7 @@ describe("PassportSide", () => {
     expect(mockPush).toHaveBeenCalledWith("/vault");
     unmount();
 
-    // Base role ("Member", level 100) gets no role badge; chrome mode uses facet-lens on the card well.
+    // Base role ("Member", level 100) gets no role badge; Passport keeps its Lens surface across material modes.
     setHaloMaterial("chrome");
     mockProfileQuery.mockReturnValue({
       data: {
@@ -309,9 +362,11 @@ describe("PassportSide", () => {
     });
     renderView();
     expect(screen.queryByText("Member")).toBeNull();
-    expect(screen.getByRole("link", { name: "Your Passport, @ada" }).className).toContain(
-      "facet-lens"
-    );
+    expect(
+      screen
+        .getByRole("link", { name: "Your Passport, @ada" })
+        .querySelector('[data-slot="facet-material"][data-layer="lens"]')
+    ).not.toBeNull();
   });
 
   it("shows NationSwitcher when owning multiple nations and up to three Wiki drafts with Resume", () => {

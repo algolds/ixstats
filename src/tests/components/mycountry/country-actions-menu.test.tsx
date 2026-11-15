@@ -118,6 +118,9 @@ it("shows your own nation's management instead of diplomacy", () => {
   const editBtn = screen.getByRole("button", { name: "Edit" });
   expect(editBtn).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Share Beta" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Manage MyCountry" })).toBeInTheDocument();
+  expect(screen.queryByText("Your nation")).toBeNull();
+  expect(screen.queryByText("@beta_lead")).toBeNull();
   for (const tile of ["Dashboard", "Executive", "Diplomacy", "Politics"]) {
     expect(screen.getByRole("button", { name: tile })).toBeInTheDocument();
   }
@@ -131,9 +134,12 @@ it("shows your own nation's management instead of diplomacy", () => {
   expect(screen.getByRole("menuitem", { name: /^Map editor/ })).toBeInTheDocument();
 });
 
-it("shows the realm as a pill, and population and GDP under the quick actions", () => {
+it("shows the realm as a pill with its emblem, leader handle on other nations, and population and GDP under the quick actions", () => {
   renderMenu();
-  expect(screen.getByRole("link", { name: "Ixnay" })).toHaveAttribute("href", "/r/ixnay");
+  const realmLink = screen.getByRole("link", { name: "Ixnay" });
+  expect(realmLink).toHaveAttribute("href", "/r/ixnay");
+  expect(realmLink.querySelector("img")).toHaveAttribute("src", "/images/ix-logo.svg");
+  expect(screen.getByText("@beta_lead")).toBeInTheDocument();
   expect(screen.getByText(/^12(\.0)?M$/)).toBeInTheDocument();
   expect(screen.getByText(/^\$450/)).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Share Beta" })).toBeInTheDocument();

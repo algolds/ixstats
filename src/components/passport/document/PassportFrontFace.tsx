@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, Copy } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 import { CosmeticChatBadge } from "~/components/vault/CosmeticChatBadge";
 import { assetUrl } from "~/lib/base-path";
 import { REALM_ROLE_LABEL } from "~/lib/passport/passport-labels";
@@ -139,9 +140,12 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
   const bio = data.thinkpages.bio?.trim() || null;
 
   return (
-    <div className="rounded-t-card relative isolate overflow-hidden">
+    <div className="bg-surface rounded-t-card relative isolate overflow-hidden">
       <PassportGuilloche />
-      <div className="relative space-y-6 p-5 sm:p-7">
+      <FacetMaterial
+        layer="lens"
+        className="rounded-t-card space-y-6 rounded-b-none border-0 p-5 shadow-none sm:p-7"
+      >
         <PassportMasthead
           handle={handle}
           isOwner={isOwner}
@@ -194,7 +198,7 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
             {bio}
           </p>
         )}
-      </div>
+      </FacetMaterial>
     </div>
   );
 });
@@ -233,7 +237,7 @@ export const PassportCompactFace = React.memo(function PassportCompactFace({
   return (
     <>
       <PassportGuilloche />
-      <div className="relative space-y-3 p-3">
+      <FacetMaterial layer="lens" className="rounded-row space-y-3 p-3">
         <PassportMastheadBrand size="compact" />
         <div className="flex items-center gap-3">
           <PassportPortrait
@@ -263,7 +267,7 @@ export const PassportCompactFace = React.memo(function PassportCompactFace({
           nationCount={nationCount}
           joinedAt={joinedAt}
         />
-      </div>
+      </FacetMaterial>
     </>
   );
 });

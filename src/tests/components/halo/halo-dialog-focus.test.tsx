@@ -354,7 +354,7 @@ describe("Sign-out button, chapter tick tooltips, and metric aria-pressed (Step 
     expect(signOutBtn.tagName).toBe("BUTTON");
   });
 
-  it("switches Nation and Passport sides via SegmentedControl with zero nested buttons, and gates Halo material to admins", async () => {
+  it("switches MyCountry and Passport sides via SegmentedControl with zero nested buttons, and gates Halo material to admins", async () => {
     mockSignedIn = true;
     mockUserObj = { id: "u1", firstName: "Ada" };
     mockProfileData = {
@@ -368,6 +368,10 @@ describe("Sign-out button, chapter tick tooltips, and metric aria-pressed (Step 
 
     const { container, unmount } = render(<AccountView onClose={jest.fn()} />);
     expect(container.querySelectorAll("button button")).toHaveLength(0);
+    expect(screen.getByRole("radio", { name: "MyCountry" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    );
     expect(screen.getByText("Premium")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("radio", { name: "Passport" }));

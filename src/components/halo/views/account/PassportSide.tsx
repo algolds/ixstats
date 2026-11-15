@@ -87,8 +87,7 @@ export function PassportSide({ onClose, onNavigate }: PassportSideProps) {
           onClick={onClose}
           aria-label={`Your Passport, @${card.handle}`}
           className={cn(
-            WELL_MATERIAL[material],
-            "rounded-row relative isolate block overflow-hidden",
+            "bg-surface-elevated rounded-row facet-press relative isolate block overflow-hidden",
             focusRing
           )}
         >
@@ -126,7 +125,7 @@ export function PassportSide({ onClose, onNavigate }: PassportSideProps) {
                   type="button"
                   onClick={() => onNavigate(draftPath(draft))}
                   className={cn(
-                    "hover:bg-fill-4 rounded-control flex min-h-11 w-full items-center gap-3 px-2 text-left transition-colors",
+                    "hover:bg-fill-4 active:bg-fill-3 rounded-control duration-fast flex min-h-11 w-full items-center gap-3 px-2 text-left transition-colors",
                     focusRing
                   )}
                 >

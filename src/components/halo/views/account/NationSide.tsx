@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
+import { formatMembershipTier } from "~/lib/tier-utils";
 import {
   destinationsFor,
   OpenIn,
@@ -28,9 +30,9 @@ export interface NationSideProps {
 }
 
 /**
- * Halo's Nation side: the viewer's nation as the country actions sheet shows it (poster, vitality, Manage, Open in),
- * in Halo's size, with the membership tier on the poster. Passport is left out of Open in: it is the other side of
- * the switch.
+ * Halo's MyCountry side: the viewer's nation as the country actions sheet shows it (poster, vitality, Manage MyCountry,
+ * Open in), in Halo's size, with MyCountry Premium beside the nation's name when held. Passport is left out of Open in:
+ * it is the other side of the switch.
  */
 export function NationSide({ country, membershipTier, onNavigate, onClose }: NationSideProps) {
   const [detail, setDetail] = useState<HeroModal | null>(null);
@@ -42,7 +44,7 @@ export function NationSide({ country, membershipTier, onNavigate, onClose }: Nat
   const destinations = destinationsFor(country.id, country.name, facts ?? null).filter(
     (d) => d.label !== "Passport"
   );
-  const premium = membershipTier === "mycountry_premium";
+  const { isPremium } = formatMembershipTier(membershipTier);
 
   return (
     <div className="space-y-2">
@@ -53,8 +55,13 @@ export function NationSide({ country, membershipTier, onNavigate, onClose }: Nat
         enabled
         onNavigate={onClose}
         size="halo"
-        badges={
-          <Badge variant={premium ? "warning" : "default"}>{premium ? "Premium" : "Basic"}</Badge>
+        titleBadge={
+          isPremium ? (
+            <Badge variant="warning">
+              <MyCountryLogomark />
+              Premium
+            </Badge>
+          ) : undefined
         }
         corner={
           <>

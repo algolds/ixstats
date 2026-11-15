@@ -57,11 +57,11 @@ Lens. Every other expanded Halo panel takes the same frame.
 
 ## Approaches considered
 
-| | Approach | Trade-off |
-|---|---|---|
-| **A (picked)** | Shared parts in two sizes: the sheet's parts become shared components with a `sheet` and a `halo` size; the Passport front face gains a compact size; Halo composes them. | More careful work up front; the only option where cohesion holds over time. |
-| B | Halo-only copies that look like the sheet and the Passport. | Fastest; recreates the drift that made Halo incoherent. |
-| C | Drop the whole sheet body and Passport front face into Halo. | Most reuse on paper; those parts are sized for a full-height sheet and a page (bleeds, tall top padding), so they need wrappers. |
+|                | Approach                                                                                                                                                                  | Trade-off                                                                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **A (picked)** | Shared parts in two sizes: the sheet's parts become shared components with a `sheet` and a `halo` size; the Passport front face gains a compact size; Halo composes them. | More careful work up front; the only option where cohesion holds over time.                                                      |
+| B              | Halo-only copies that look like the sheet and the Passport.                                                                                                               | Fastest; recreates the drift that made Halo incoherent.                                                                          |
+| C              | Drop the whole sheet body and Passport front face into Halo.                                                                                                              | Most reuse on paper; those parts are sized for a full-height sheet and a page (bleeds, tall top padding), so they need wrappers. |
 
 Owner picked **A**, and asked for a second material version for comparison (Material, below).
 
@@ -138,7 +138,7 @@ Top to bottom:
    face's stat row (Lorewards standing, nations and realms held, join month). The compact page is a **static picture
    with one link**: the whole page opens the full Passport (`/@handle`). None of the front face's own controls appear
    in compact size (no @handle copy button, nation or realm links, Lorewards modal, or masthead Edit), and there is no
-   nation line (the Nation side shows it). *(Advisor's call.)*
+   nation line (the Nation side shows it). _(Advisor's call.)_
 2. **Play as** (well): `NationSwitcher` as it is (realm groups, active nation marked). Hidden when the viewer has one
    nation. Switching updates the Nation side and closes nothing.
 3. **Wiki drafts** (well): `listDrafts(owner)` from `src/lib/wiki-os/editor/draft-store.ts`, newest first, at most
@@ -146,9 +146,9 @@ Top to bottom:
    browser storage, so it renders after hydration and handles unavailable storage.
 4. **Account shortcuts:** three compact buttons: Vault (`/vault`), Messages (`/messages`), Settings (`/settings`).
 5. **Footer:** Sign out (Clerk `SignOutButton` with a ui `Button` child). No "View Passport" button: the Passport
-   page above already links there. *(Advisor's call.)*
+   page above already links there. _(Advisor's call.)_
 
-**Data** *(advisor's call)*: the full `ixnayid.getPassport` is too heavy to run on every open (Clerk lookup, forum
+**Data** _(advisor's call)_: the full `ixnayid.getPassport` is too heavy to run on every open (Clerk lookup, forum
 gateway, Lorewards, Vault and achievements showcases) and is keyed by a handle `users.getProfile` does not return.
 The compact page reads existing light sources: `users.getProfile` (name, handle, role, tier, join date), Clerk
 `useUser` (portrait), `ixnayid.getOwnPassportSettings` (signature), `realms.myNations` (nations and realms counts),
@@ -159,7 +159,7 @@ rather than the full `PassportFaceData`.
 
 Role: today's panel labels any role with `level <= 20` as "Founding member", but that level is the site-admin band
 (owner, admin, staff). This design shows `role.displayName` and drops the derived label. The base role ("Member",
-level 100) gets **no badge**, matching the Passport's own convention. *(Advisor's call.)* Realm founder credit (staff-chosen,
+level 100) gets **no badge**, matching the Passport's own convention. _(Advisor's call.)_ Realm founder credit (staff-chosen,
 `realms.founders`) is **not shown in Halo**; it stays on the realm page and the full Passport (owner decision).
 
 ### Country actions sheet (`CountryActionsMenu`)
@@ -227,3 +227,10 @@ notification).
 - Tests: component tests for both sides (signed out, no nation, one nation, several realms; drafts present/absent;
   tier and role), the sheet's own-nation layout, the pinned tray row (shown/hidden/count), the admin toggle gating, and
   the existing Halo guards.
+
+## Post-review refinements (2026-11-15)
+
+1. **MyCountry naming:** The Account switch labels the nation tab **MyCountry** (`MyCountry | Passport`, keeping `"nation"` as the stored key), and the shared `ManageGrid` heading is **Manage MyCountry**.
+2. **Realm pill & own-nation subtitle:** `"Your nation"` is omitted on own-nation headers (`@handle` remains on other nations). The realm pill renders the realm's `emblemUrl` / `thumbnail` (with Ixnay's `/images/ix-logo.svg` default and `<RealmsLogomark />` fallback) instead of a generic crown icon.
+3. **Premium badge placement & mark:** On Halo's MyCountry side, **Premium** sits inline beside the nation's name with `<MyCountryLogomark />`; non-premium accounts omit any `"Basic"` badge.
+4. **Passport Lens monogram & security-print stage:** `PassportGuilloche` composes `--tint-wash`, `<MonogramLayer>` (`/images/ix-monogram-wiki.svg`), and two pointer-parallax guilloché rosette planes (`guillochePlanePaths`) beneath `<FacetMaterial layer="lens">` on both `PassportFrontFace` and `PassportCompactFace` (stilled under Reduce Motion; hidden under Reduce Transparency and Increase Contrast).

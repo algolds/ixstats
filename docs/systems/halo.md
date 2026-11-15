@@ -60,9 +60,9 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/views/NotificationsView.tsx`: Alert and direct-message inbox tray with pinned pending national issues (`PendingIssuesRow`), unread counts, grouping, and swipe rows
 - `src/components/halo/views/SearchView.tsx`: Accessible combobox/listbox command palette and search view
 - `src/components/halo/views/SettingsView.tsx`: Quick settings panel on `HaloWell`s for appearance, sound, admin Halo material comparison, account settings, and Wiki reader preferences
-- `src/components/halo/views/account/AccountView.tsx`: Expanded account panel (`"mycountry"` mode) switching between `NationSide` and `PassportSide` with remembered side in `localStorage`
-- `src/components/halo/views/account/NationSide.tsx`: Shared `PosterHeader`, `VitalityStrip`, `EditNationMenu`, `ShareCountryButton`, 4-tile `ManageGrid`, and `OpenIn` for the viewer's nation
-- `src/components/halo/views/account/PassportSide.tsx`: Shared `PassportCompactFace` (`ixnayid.getMyPassportCard`), `NationSwitcher`, Wiki drafts, account shortcuts, and Sign out
+- `src/components/halo/views/account/AccountView.tsx`: Expanded account panel (`"mycountry"` mode) switching between `MyCountry` (`NationSide`) and `Passport` (`PassportSide`) with remembered side in `localStorage`
+- `src/components/halo/views/account/NationSide.tsx`: Shared `PosterHeader` (`MyCountryLogomark` Premium badge beside the country name, realm emblem pill), `VitalityStrip`, `EditNationMenu`, `ShareCountryButton`, 4-tile `ManageGrid` (`Manage MyCountry`), and `OpenIn` for the viewer's nation
+- `src/components/halo/views/account/PassportSide.tsx`: Shared `PassportCompactFace` on a Facet Lens monogram and guilloché stage (`ixnayid.getMyPassportCard`), `NationSwitcher`, Wiki drafts, account shortcuts, and Sign out
 - `src/components/halo/views/compact/HaloIconButton.tsx`: Compact pill icon button wrapping `Button` with tooltip and optional count dot
 - `src/components/halo/views/compact/NarratorProgress.tsx`: Compact pill narrator progress ring
 - `src/components/halo/views/index.ts`: Barrel export for `CompactView` and `ExpandedView`

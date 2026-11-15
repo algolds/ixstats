@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
-import { Page, BookStack, Map, ProfileCircle, GraphUp, Crown } from "iconoir-react";
+import React, { useState } from "react";
+import { Page, BookStack, Map, ProfileCircle, GraphUp } from "iconoir-react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
+import { assetUrl, withBasePath } from "~/lib/base-path";
+import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
+import { isIxnaySlug } from "~/lib/realms/realm-ids";
 import { cn, formatCompactNumber } from "~/lib/utils";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
@@ -106,6 +109,32 @@ export function ToneTile({
   );
 }
 
+/** A realm's emblem or thumbnail (Ixnay's laurel if unconfigured), falling back to the Realms mark. */
+function RealmIcon({
+  realm,
+}: {
+  realm: { slug: string; emblemUrl?: string | null; thumbnail?: string | null };
+}) {
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const logoUrl =
+    assetUrl(realm.emblemUrl ?? realm.thumbnail) ??
+    (isIxnaySlug(realm.slug) ? withBasePath("/images/ix-logo.svg") : null);
+
+  if (logoUrl && logoUrl !== failedSrc) {
+    return (
+      <img
+        src={logoUrl}
+        referrerPolicy="no-referrer"
+        alt=""
+        aria-hidden
+        onError={() => setFailedSrc(logoUrl)}
+        className="size-3.5 shrink-0 rounded-xs object-contain"
+      />
+    );
+  }
+  return <RealmsLogomark aria-hidden className="size-3.5 shrink-0" />;
+}
+
 /**
  * The poster: the flag fills the top of the sheet and fades into it behind the name, the realm pill,
  * the quick actions and the vitality strip, like a contact poster.
@@ -117,7 +146,7 @@ export function PosterHeader({
   enabled,
   onNavigate,
   size = "sheet",
-  badges,
+  titleBadge,
   corner,
   children,
 }: {
@@ -129,20 +158,17 @@ export function PosterHeader({
   onNavigate: () => void;
   /** `sheet` bleeds to a Sheet's edges and titles the dialog; `halo` is a rounded panel inside Halo's island. */
   size?: "sheet" | "halo";
-  /** Extra badges after the realm and leader (Halo shows the membership tier). */
-  badges?: React.ReactNode;
+  /** Badge rendered inline beside the country name (Halo shows MyCountry Premium). */
+  titleBadge?: React.ReactNode;
   /** Controls pinned to the poster's top corner (Halo's Edit and Share; the sheet keeps its own corner). */
   corner?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { data: country } = api.countries.getByIdBasic.useQuery({ id: countryId }, { enabled });
-  const leader = isOwnCountry
-    ? "Your nation"
-    : country?.ownerHandle
-      ? `@${country.ownerHandle}`
-      : null;
+  const leader = !isOwnCountry && country?.ownerHandle ? `@${country.ownerHandle}` : null;
 
   const inSheet = size === "sheet";
+  const hasMeta = Boolean(country?.realm || leader);
   const meta = (
     <div className="text-footnote text-label-secondary flex min-w-0 flex-wrap items-center gap-2">
       {/* A nation's realm is part of its identity, so it wears the ink like the passport's, not the Realms tint. */}
@@ -156,12 +182,11 @@ export function PosterHeader({
             focusRing
           )}
         >
-          <Crown aria-hidden className="size-3" />
+          <RealmIcon realm={country.realm} />
           {country.realm.name}
         </Link>
       )}
       {leader && <span className="truncate">{leader}</span>}
-      {badges}
     </div>
   );
 
@@ -195,15 +220,23 @@ export function PosterHeader({
       )}
       {inSheet ? (
         <SheetHeader data-content="entity" className="relative gap-1.5 text-left">
-          <SheetTitle className="text-title-1 truncate font-semibold tracking-tight">
-            {name}
-          </SheetTitle>
+          <div className="flex min-w-0 items-center gap-2">
+            <SheetTitle className="text-title-1 truncate font-semibold tracking-tight">
+              {name}
+            </SheetTitle>
+            {titleBadge}
+          </div>
           <SheetDescription asChild>{meta}</SheetDescription>
         </SheetHeader>
       ) : (
         <div data-content="entity" className="relative flex flex-col gap-1.5 text-left">
-          <h2 className="text-title-2 text-label truncate font-semibold tracking-tight">{name}</h2>
-          {meta}
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="text-title-2 text-label truncate font-semibold tracking-tight">
+              {name}
+            </h2>
+            {titleBadge}
+          </div>
+          {hasMeta && meta}
         </div>
       )}
       <div className="relative space-y-4">{children}</div>
@@ -305,7 +338,7 @@ function StripFigure({
       onClick={onClick}
       title={title}
       className={cn(
-        "hover:bg-fill-4 rounded-control duration-fast min-w-0 cursor-pointer space-y-1 p-1.5 text-left transition-colors",
+        "hover:bg-fill-4 active:bg-fill-3 rounded-control duration-fast min-w-0 cursor-pointer space-y-1 p-1.5 text-left transition-colors",
         focusRing
       )}
     >
@@ -367,7 +400,7 @@ export function OpenIn({
               href={d.href}
               onClick={onNavigate}
               className={cn(
-                "hover:bg-fill-4 rounded-control duration-fast flex flex-col items-center gap-1.5 px-1 py-2 transition-colors",
+                "hover:bg-fill-4 active:bg-fill-3 rounded-control duration-fast flex flex-col items-center gap-1.5 px-1 py-2 transition-colors",
                 focusRing
               )}
             >
