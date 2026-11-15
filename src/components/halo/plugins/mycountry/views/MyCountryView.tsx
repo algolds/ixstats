@@ -25,9 +25,8 @@ import { createAbsoluteUrl, getNationUrl, cn } from "~/lib/utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "~/components/ui/tooltip";
 import { PreText } from "~/components/ui/pretext";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -266,90 +265,75 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
               {/* Metric Cards */}
               {stats && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="mt-2 grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMetricView((v) => ({
-                              ...v,
-                              gdp: v.gdp === "perCapita" ? "total" : "perCapita",
-                            }));
-                          }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint facet-press p-2 text-center focus-visible:outline-2"
-                        >
-                          <PreText
-                            className="text-label-secondary text-caption"
-                            whiteSpace="nowrap"
-                          >
-                            {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
-                          </PreText>
-                          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                            <PreText
-                              className="text-label text-caption font-semibold"
-                              whiteSpace="nowrap"
-                            >
-                              {`$${
-                                metricView.gdp === "perCapita"
-                                  ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
-                                  : Math.round(stats.currentTotalGdp).toLocaleString("en-US")
-                              }`}
-                            </PreText>
-                            <GrowthArrow
-                              value={stats.gdpGrowth}
-                              size={8}
-                              className="text-footnote"
-                            />
-                          </div>
-                        </button>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={metricView.gdp === "total"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMetricView((v) => ({
+                        ...v,
+                        gdp: v.gdp === "perCapita" ? "total" : "perCapita",
+                      }));
+                    }}
+                    className={cn(
+                      "rounded-control bg-fill-4 hover:bg-fill-2 facet-press cursor-pointer p-2 text-center",
+                      focusRing
+                    )}
+                  >
+                    <PreText className="text-label-secondary text-caption" whiteSpace="nowrap">
+                      {metricView.gdp === "perCapita" ? "GDP/Cap" : "Total GDP"}
+                    </PreText>
+                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
+                      <PreText
+                        className="text-label text-caption font-semibold"
+                        whiteSpace="nowrap"
+                      >
+                        {`$${
+                          metricView.gdp === "perCapita"
+                            ? Math.round(stats.gdpPerCapita).toLocaleString("en-US")
+                            : Math.round(stats.currentTotalGdp).toLocaleString("en-US")
+                        }`}
+                      </PreText>
+                      <GrowthArrow value={stats.gdpGrowth} size={8} className="text-footnote" />
+                    </div>
+                  </button>
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMetricView((v) => ({
-                              ...v,
-                              population: v.population === "total" ? "density" : "total",
-                            }));
-                          }}
-                          className="rounded-control bg-fill-4 hover:bg-fill-2 focus-visible:outline-tint facet-press p-2 text-center focus-visible:outline-2"
-                        >
-                          <PreText
-                            className="text-label-secondary text-caption"
-                            whiteSpace="nowrap"
-                          >
-                            {metricView.population === "total" ? "Population" : "Density"}
-                          </PreText>
-                          <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
-                            <PreText
-                              className="text-label text-caption font-semibold"
-                              whiteSpace="nowrap"
-                            >
-                              {metricView.population === "total"
-                                ? Math.round(stats.population).toLocaleString("en-US")
-                                : stats.populationDensity
-                                  ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
-                                  : "N/A"}
-                            </PreText>
-                            {metricView.population === "total" && (
-                              <GrowthArrow
-                                value={stats.popGrowth}
-                                size={8}
-                                className="text-footnote"
-                              />
-                            )}
-                          </div>
-                        </button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="text-footnote px-2 py-1">
-                      <PreText whiteSpace="nowrap">Click metrics to toggle views</PreText>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                  <button
+                    type="button"
+                    aria-pressed={metricView.population === "density"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMetricView((v) => ({
+                        ...v,
+                        population: v.population === "total" ? "density" : "total",
+                      }));
+                    }}
+                    className={cn(
+                      "rounded-control bg-fill-4 hover:bg-fill-2 facet-press cursor-pointer p-2 text-center",
+                      focusRing
+                    )}
+                  >
+                    <PreText className="text-label-secondary text-caption" whiteSpace="nowrap">
+                      {metricView.population === "total" ? "Population" : "Density"}
+                    </PreText>
+                    <div className="mt-0.5 flex flex-wrap items-center justify-center gap-0.5">
+                      <PreText
+                        className="text-label text-caption font-semibold"
+                        whiteSpace="nowrap"
+                      >
+                        {metricView.population === "total"
+                          ? Math.round(stats.population).toLocaleString("en-US")
+                          : stats.populationDensity
+                            ? `${Math.round(stats.populationDensity).toLocaleString()}/km²`
+                            : "N/A"}
+                      </PreText>
+                      {metricView.population === "total" && (
+                        <GrowthArrow value={stats.popGrowth} size={8} className="text-footnote" />
+                      )}
+                    </div>
+                  </button>
+                </div>
               )}
             </div>
           </div>

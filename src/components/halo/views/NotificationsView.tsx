@@ -36,7 +36,7 @@ import {
 import { soundCues } from "~/lib/sound/cuelume";
 import { REDUCED_MOTION_FADE, tweenFast } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -394,7 +394,11 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                       type="button"
                       onClick={() => toggleGroup(group.label)}
                       aria-expanded={!isCollapsed}
-                      className="hover:bg-fill-4 rounded-control-sm focus-visible:outline-tint mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors focus-visible:outline-2"
+                      className={cn(
+                        "hover:bg-fill-4 rounded-control-sm relative mb-1 flex w-full cursor-pointer items-center justify-between px-1 py-0.5 transition-colors",
+                        focusRing,
+                        hitSlop
+                      )}
                     >
                       <div className="flex items-center gap-2">
                         <motion.div

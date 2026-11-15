@@ -7,7 +7,8 @@ import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { HighlightedSnippet } from "~/components/wiki-os/shared/HighlightedSnippet";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 interface WikiSearchDropdownProps {
   searchQuery: string;
@@ -61,7 +62,7 @@ export function WikiSearchDropdown({
               }
             }}
             placeholder="Search wiki articles..."
-            className="text-label placeholder:text-label-secondary text-body w-full bg-transparent py-2 outline-none"
+            className="text-label placeholder:text-label-secondary text-body focus-visible:outline-tint w-full bg-transparent py-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -98,7 +99,11 @@ export function WikiSearchDropdown({
                 key={result.title}
                 type="button"
                 onClick={() => onSelectArticle(result.title)}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-2 text-left transition-colors"
+                className={cn(
+                  "text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm relative flex w-full cursor-pointer flex-col px-2 py-2 text-left transition-colors",
+                  focusRing,
+                  hitSlop
+                )}
               >
                 <span className="text-body flex items-center gap-2">
                   <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">

@@ -289,21 +289,19 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                   <div />
                 )}
 
-                <Button
-                  asChild
-                  size="sm"
-                  variant="ghost"
-                  className="text-label-secondary hover:text-destructive hover:bg-destructive/10"
-                >
-                  <SignOutButton>
-                    <div className="flex cursor-pointer items-center gap-2">
-                      <LogOut className="h-3 w-3" />
-                      <PreText className="text-footnote" whiteSpace="nowrap">
-                        Sign out
-                      </PreText>
-                    </div>
-                  </SignOutButton>
-                </Button>
+                <SignOutButton>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="text-label-secondary hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut aria-hidden />
+                    <PreText className="text-inherit" whiteSpace="nowrap">
+                      Sign out
+                    </PreText>
+                  </Button>
+                </SignOutButton>
               </div>
             </>
           ) : (

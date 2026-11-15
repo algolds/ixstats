@@ -20,8 +20,9 @@ import { AudioPlayer, AudioPlayerControlBar, AudioPlayerButton } from "~/compone
 import { PlayPauseMorph } from "./PlayPauseMorph";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { Slider } from "~/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
@@ -294,35 +295,39 @@ export function WikiNarratorPlayer({
               const offset = sectionOffsets[entry.id] ?? 0;
               const isActive = activeSectionId === entry.id;
               return (
-                <button
-                  type="button"
-                  key={entry.id}
-                  aria-label={`Jump to ${entry.text}`}
-                  className="group/tick focus-visible:outline-tint pointer-events-auto absolute top-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full focus-visible:outline-2"
-                  style={{ left: `${offset}%` }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isNarratorActive && narratorActions) {
-                      narratorActions.jumpToSection(entry.id);
-                    } else {
-                      handleScrub(offset);
-                    }
-                  }}
-                >
-                  <div
-                    className={cn(
-                      "duration-fast rounded-full border transition-[color,background-color,border-color,width,height]",
-                      isActive
-                        ? "border-separator h-2 w-2"
-                        : "border-separator bg-fill-3 group-hover/tick:border-label h-1.5 w-1.5"
-                    )}
-                    style={isActive ? { backgroundColor: accentColor } : undefined}
-                  />
-                  {/* Tooltip */}
-                  <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating duration-fast pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity group-hover/tick:opacity-100">
-                    {entry.text}
-                  </span>
-                </button>
+                <Tooltip key={entry.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={entry.text}
+                      className={cn(
+                        "group/tick pointer-events-auto absolute top-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
+                        focusRing,
+                        hitSlop
+                      )}
+                      style={{ left: `${offset}%` }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isNarratorActive && narratorActions) {
+                          narratorActions.jumpToSection(entry.id);
+                        } else {
+                          handleScrub(offset);
+                        }
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "duration-fast rounded-full border transition-[color,background-color,border-color,width,height]",
+                          isActive
+                            ? "border-separator h-2 w-2"
+                            : "border-separator bg-fill-3 group-hover/tick:border-label h-1.5 w-1.5"
+                        )}
+                        style={isActive ? { backgroundColor: accentColor } : undefined}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{entry.text}</TooltipContent>
+                </Tooltip>
               );
             })}
           </div>

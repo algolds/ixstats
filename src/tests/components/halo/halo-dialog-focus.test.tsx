@@ -4,10 +4,17 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { CommandPalette } from "~/components/halo";
 import { HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { DIPluginProvider, useActiveDIPlugin } from "~/components/halo/plugin-context";
+import { MyCountryView } from "~/components/halo/plugins/mycountry/views/MyCountryView";
+import { WikiNarratorPlayer } from "~/components/halo/plugins/wiki/components/WikiNarratorPlayer";
 import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { CompactView } from "~/components/halo/views/CompactView";
 import { ExpandedView } from "~/components/halo/views/ExpandedView";
+import { SettingsView } from "~/components/halo/views/SettingsView";
 import type { ViewMode } from "~/components/halo/types";
+
+let mockSignedIn = false;
+let mockUserObj: { id: string; firstName?: string; imageUrl?: string } | null = null;
+let mockProfileData: unknown = null;
 
 let mockWikiContext: Record<string, unknown> = {
   articleTitle: null,
@@ -22,22 +29,58 @@ let mockHasNarratorAccess = true;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/",
+  useRouter: () => ({ push: jest.fn() }),
 }));
 jest.mock("~/trpc/react", () => ({
   api: {
-    countries: { getSelectList: { useQuery: () => ({ data: undefined }) } },
+    countries: {
+      getSelectList: { useQuery: () => ({ data: undefined }) },
+      getByIdBasic: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      flags: {
+        resolveBatch: { useQuery: () => ({ data: {}, isLoading: false, isError: false }) },
+      },
+    },
     wikios: { advancedSearch: { useQuery: () => ({ data: undefined }) } },
     notifications: { getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) } },
+    users: {
+      getProfile: {
+        useQuery: () => ({ data: mockProfileData, isLoading: false, isError: false }),
+      },
+    },
+    onoma: {
+      getSpeechConfig: { useQuery: () => ({ data: undefined }) },
+      getKokoroVoices: { useQuery: () => ({ data: undefined }) },
+    },
+    useUtils: () => ({
+      countries: { invalidate: jest.fn() },
+      notifications: { invalidate: jest.fn() },
+    }),
   },
 }));
 jest.mock("~/context/auth-context", () => ({
-  useUser: () => ({ user: null, isLoaded: true, isSignedIn: false }),
+  useUser: () => ({ user: mockUserObj, isLoaded: true, isSignedIn: mockSignedIn }),
   useAuth: () => ({ signOut: jest.fn() }),
+  SignOutButton: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 jest.mock("~/context/theme-context", () => ({
-  useTheme: () => ({ toggleTheme: jest.fn(), toggleCompactMode: jest.fn() }),
+  nextTheme: (t: string) => t,
+  useTheme: () => ({
+    theme: "dark",
+    effectiveTheme: "dark",
+    toggleTheme: jest.fn(),
+    compactMode: false,
+    toggleCompactMode: jest.fn(),
+  }),
 }));
-jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => ({}) }));
+jest.mock("~/components/wiki-os/shared/MediaThemeContext", () => ({
+  useWikiMediaTheme: () => ({ mediaThemeMode: "auto", setMediaThemeMode: jest.fn() }),
+}));
+jest.mock("~/components/shared/country-actions/CountryActionsProvider", () => ({
+  useOpenCountryActions: () => jest.fn(),
+}));
+jest.mock("~/hooks/useSoundSettings", () => ({
+  useSoundSettings: () => ({ enabled: true, setEnabled: jest.fn(), previewSound: jest.fn() }),
+}));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
 jest.mock("~/hooks/usePermissions", () => ({
   useCanOpenAdmin: () => false,
@@ -56,15 +99,6 @@ jest.mock("~/components/ui/pretext", () => ({
 jest.mock("~/hooks/usePlayAsTarget", () => ({
   usePlayAsTarget: () => "",
 }));
-jest.mock("~/components/halo/views/SettingsView", () => ({
-  SettingsView: ({ onClose }: { onClose: () => void }) => (
-    <div>
-      <button type="button" onClick={onClose}>
-        Close settings
-      </button>
-    </div>
-  ),
-}));
 jest.mock("~/components/halo/views/NotificationsView", () => ({
   NotificationsView: ({ onClose }: { onClose: () => void }) => (
     <div>
@@ -74,15 +108,21 @@ jest.mock("~/components/halo/views/NotificationsView", () => ({
     </div>
   ),
 }));
-jest.mock("~/components/halo/plugins/mycountry/views/MyCountryView", () => ({
-  MyCountryView: ({ onClose }: { onClose: () => void }) => (
-    <div>
-      <button type="button" onClick={onClose}>
-        Close account
-      </button>
-    </div>
-  ),
-}));
+
+beforeEach(() => {
+  mockSignedIn = false;
+  mockUserObj = null;
+  mockProfileData = null;
+  mockWikiContext = {
+    articleTitle: null,
+    activeSectionId: null,
+    tocEntries: [],
+    navigateToSection: jest.fn(),
+    narratorState: null,
+    narratorActions: null,
+    themeColors: null,
+  };
+});
 
 function renderExpanded(mode: ViewMode, activePlugin?: { id: string } | null) {
   return render(
@@ -158,7 +198,7 @@ describe("Trigger ARIA & focus return on close (Step 2)", () => {
     const dialog = await screen.findByRole("dialog", { name: "Quick settings" });
     expect(dialog).toHaveFocus();
 
-    const closeBtn = await screen.findByRole("button", { name: "Close settings" });
+    const closeBtn = await screen.findByRole("button", { name: "Close" });
     fireEvent.click(closeBtn);
 
     await act(async () => {
@@ -213,18 +253,6 @@ function ActivePluginCompactHarness({ isSticky = false }: { isSticky?: boolean }
 }
 
 describe("Pill centre real buttons & no nested buttons (Step 4)", () => {
-  afterEach(() => {
-    mockWikiContext = {
-      articleTitle: null,
-      activeSectionId: null,
-      tocEntries: [],
-      navigateToSection: jest.fn(),
-      narratorState: null,
-      narratorActions: null,
-      themeColors: null,
-    };
-  });
-
   it("renders WikiHalo section trigger beside the centre button with zero nested buttons", () => {
     mockWikiContext = {
       articleTitle: "Caphiria",
@@ -272,5 +300,72 @@ describe("Pill centre real buttons & no nested buttons (Step 4)", () => {
     const pauseBtn = screen.getByRole("button", { name: "Pause narration" });
     expect(pauseBtn.className).toContain("focus-visible:outline-tint");
     expect(pauseBtn.className).toContain("pointer-coarse:after:min-h-11");
+  });
+});
+
+describe("Sign-out button, chapter tick tooltips, and metric aria-pressed (Step 5)", () => {
+  it("renders SettingsView Sign out as a real <button>", () => {
+    mockSignedIn = true;
+    mockUserObj = { id: "u1", firstName: "Ada" };
+
+    render(
+      <HaloProvider initialSize={SIZE_PRESETS.MEDIUM}>
+        <SettingsView onClose={jest.fn()} />
+      </HaloProvider>
+    );
+
+    const signOutBtn = screen.getByRole("button", { name: /Sign out/i });
+    expect(signOutBtn.tagName).toBe("BUTTON");
+  });
+
+  it("wires aria-pressed on MyCountryView metric toggles without tooltip-only hint", () => {
+    mockSignedIn = true;
+    mockUserObj = { id: "u1", firstName: "Ada" };
+    mockProfileData = {
+      countryId: "c1",
+      country: {
+        id: "c1",
+        name: "Caphiria",
+        currentGdpPerCapita: 42000,
+        currentTotalGdp: 840000000000,
+        currentPopulation: 20000000,
+        populationDensity: 120,
+        adjustedGdpGrowth: 0.03,
+        populationGrowthRate: 0.01,
+      },
+    };
+
+    render(<MyCountryView onClose={jest.fn()} />);
+
+    const gdpToggle = screen.getByRole("button", { name: /GDP\/Cap/i });
+    expect(gdpToggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(gdpToggle);
+    expect(screen.getByRole("button", { name: /Total GDP/i })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(screen.queryByText(/Click metrics to toggle/i)).toBeNull();
+  });
+
+  it("renders WikiNarratorPlayer chapter ticks as labelled buttons without custom hover span", () => {
+    globalThis.ResizeObserver ??= class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as never;
+
+    const { container } = render(
+      <WikiNarratorPlayer
+        visibleToc={[{ id: "geo", text: "Geography", level: 2 }]}
+        sectionOffsets={{ geo: 25 }}
+        narratorState={{ isPlaying: false, activeBlockIndex: 0, totalBlocks: 4 }}
+        narratorActions={{ jumpToSection: jest.fn() }}
+      />
+    );
+
+    const tick = screen.getByRole("button", { name: "Geography" });
+    expect(tick.tagName).toBe("BUTTON");
+    expect(tick.getAttribute("data-slot")).toBe("tooltip-trigger");
+    expect(container.querySelector(".group-hover\\/tick\\:opacity-100")).toBeNull();
   });
 });
