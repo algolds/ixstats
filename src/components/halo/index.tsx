@@ -8,6 +8,7 @@ import { motion, type PanInfo } from "motion/react";
 import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { useDynamicIslandState } from "./hooks";
+import type { ViewMode } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useToastQueueStore } from "~/stores/toastQueueStore";
@@ -213,6 +214,23 @@ function CommandPaletteContent({
   }, [activeIsSticky, isForumActive, isUserInteracting, isCollapsed]);
 
   const prevToastIdRef = useRef<string | null>(null);
+  const lastTriggerRef = useRef<string | null>(null);
+
+  const openFromTrigger = (nextMode: ViewMode) => {
+    lastTriggerRef.current =
+      nextMode === "compact" ? null : nextMode.startsWith("plugin:") ? "plugin" : nextMode;
+    switchMode(nextMode);
+  };
+
+  const closeFromPanel = () => {
+    const fallback = expandedMode.startsWith("plugin:") ? "plugin" : expandedMode;
+    const target = lastTriggerRef.current ?? fallback;
+    lastTriggerRef.current = null;
+    switchMode("compact");
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(`[data-halo-trigger="${target}"]`)?.focus();
+    });
+  };
 
   // Briefly uncollapse sticky DI so the user sees the notification peek
   const peekForToast = useEffectEvent((toastId: string) => {
@@ -267,7 +285,7 @@ function CommandPaletteContent({
                   isNavLoading={isNavLoading}
                   setIsCollapsed={setIsCollapsed}
                   setIsUserInteracting={setIsUserInteracting}
-                  onSwitchMode={switchMode}
+                  onSwitchMode={openFromTrigger}
                   scrollY={scrollY}
                   activePlugin={activePlugin}
                   pluginCenter={activePlugin?.center}
@@ -279,7 +297,7 @@ function CommandPaletteContent({
               <div key="expanded" className="h-full w-full">
                 <ExpandedView
                   mode={expandedMode}
-                  onClose={() => switchMode("compact")}
+                  onClose={closeFromPanel}
                   onSwitchMode={switchMode}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}

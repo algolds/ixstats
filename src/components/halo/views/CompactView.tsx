@@ -158,6 +158,9 @@ function CompactViewComponent({
               <div
                 role="button"
                 tabIndex={0}
+                data-halo-trigger="plugin"
+                aria-expanded={mode === `plugin:${pluginViewKey}`}
+                aria-controls="halo-panel"
                 onClick={() => {
                   if (mode === `plugin:${pluginViewKey}`) {
                     onSwitchMode("compact");
@@ -224,6 +227,9 @@ function CompactViewComponent({
                       <div
                         role="button"
                         tabIndex={0}
+                        data-halo-trigger="plugin"
+                        aria-expanded={mode === `plugin:${pluginViewKey}`}
+                        aria-controls="halo-panel"
                         onClick={() => {
                           if (mode === `plugin:${pluginViewKey}`) {
                             onSwitchMode("compact");
@@ -254,6 +260,9 @@ function CompactViewComponent({
                   ) : (
                     <button
                       type="button"
+                      data-halo-trigger="mycountry"
+                      aria-expanded={mode === "mycountry"}
+                      aria-controls="halo-panel"
                       onClick={() => onSwitchMode("mycountry")}
                       className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
                     >
@@ -283,6 +292,8 @@ function CompactViewComponent({
               <HaloIconButton
                 label="Search"
                 icon={isNavLoading ? NavLoadingIcon : Search}
+                triggerFor="search"
+                expanded={mode === "search"}
                 onClick={() => {
                   onSwitchMode("search");
                 }}
@@ -299,6 +310,8 @@ function CompactViewComponent({
                   icon={Bell}
                   badge={totalUnreadCount}
                   iconClassName={totalUnreadCount > 0 ? "text-yellow" : undefined}
+                  triggerFor="notifications"
+                  expanded={mode === "notifications"}
                   onClick={() => {
                     soundCues.present("subtle");
                     onSwitchMode("notifications");
@@ -309,6 +322,8 @@ function CompactViewComponent({
               <HaloIconButton
                 label="Settings"
                 icon={Settings}
+                triggerFor="settings"
+                expanded={mode === "settings"}
                 onClick={() => {
                   soundCues.present("subtle");
                   onSwitchMode("settings");
