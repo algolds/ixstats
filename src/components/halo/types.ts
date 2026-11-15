@@ -9,7 +9,7 @@ export interface CommandPaletteProps {
 // Search Result interface
 export interface SearchResult {
   id: string;
-  type: "country" | "command" | "feature" | "wiki";
+  type: "country" | "realm" | "command" | "feature" | "wiki";
   title: string;
   description?: string;
   metadata?: Record<string, unknown>;
@@ -48,6 +48,21 @@ interface DIBadge {
   color: string;
 }
 
+/** A command contributed to Halo Search by the active page plugin ("On this page"). */
+export interface PluginCommand {
+  key: string;
+  title: string;
+  description?: string;
+  keywords?: readonly string[];
+  icon?: React.ComponentType<{ className?: string }>;
+  /** In-page stateful callback (e.g. BuilderHalo section jump, WikiHalo heading jump or narrator toggle). */
+  run?: () => void;
+  /** Same-origin route navigated via `navigateWithBasePath(path, router)`. */
+  path?: string;
+  /** Plugin expanded-view key opened as `plugin:${pluginView}` (e.g. `"sports-live"`). */
+  pluginView?: string;
+}
+
 /** A plugin registration object — pages call useDIPlugin() with this */
 export interface DIPlugin<F = unknown, C = unknown> {
   id: string;
@@ -58,6 +73,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
   expandedViews?: Record<string, React.ComponentType<DIViewProps<any, any>>>;
   badge?: DIBadge;
   actions?: DIAction[];
+  commands?: readonly PluginCommand[];
   accentColor?: string;
   filter?: F;
   context?: C;

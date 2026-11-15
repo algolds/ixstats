@@ -1,20 +1,43 @@
 import type { ComponentType } from "react";
-import { Book, Globe, LogIn, LogOut } from "iconoir-react";
+import { Book, Compass, Globe, LogIn, LogOut } from "iconoir-react";
 import {
   commandsFor,
   type CommandEntry,
   type FeatureEntry,
   type SystemActionId,
 } from "~/components/halo/halo-registry";
-import type { CountrySummary, SearchFilter } from "~/components/halo/types";
+import type { CountrySummary, PluginCommand, SearchFilter } from "~/components/halo/types";
 import { commandsFromVisibleApps } from "~/lib/halo/commands-from-apps";
 import type { AppDefinition } from "~/lib/navigation/app-sections";
 
 export type IndexedEntry<T> = T & { _lower: string };
 
+export type SearchablePluginCommand = Omit<PluginCommand, "run">;
+
+export interface IndexedPluginCommand extends SearchablePluginCommand {
+  _titleLower: string;
+  _lower: string;
+}
+
 export interface WikiSearchItem {
   title: string;
   snippet?: string | null;
+}
+
+export interface RealmSearchItem {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  thumbnail?: string | null;
+  tags?: readonly string[];
+  nationCount?: number;
+}
+
+export interface IndexedRealm extends RealmSearchItem {
+  _nameLower: string;
+  _slugLower: string;
+  _lower: string;
 }
 
 export interface SearchSources {
@@ -22,20 +45,24 @@ export interface SearchSources {
   commands: ReadonlyArray<IndexedEntry<CommandEntry>>;
   features: ReadonlyArray<IndexedEntry<FeatureEntry>>;
   wiki: ReadonlyArray<WikiSearchItem>;
+  pluginCommands?: ReadonlyArray<IndexedPluginCommand>;
+  realms?: ReadonlyArray<IndexedRealm>;
 }
 
 export interface CatalogDescriptor {
-  kind: "country" | "command" | "feature" | "wiki";
+  kind: "country" | "realm" | "command" | "feature" | "wiki";
   key: string;
   title: string;
   description: string;
   category: string;
   icon?: ComponentType<{ className?: string }>;
   flagUrl?: string;
+  thumbnail?: string;
   economicTier?: string;
   slug?: string;
   path?: string;
   actionId?: SystemActionId;
+  pluginCommandKey?: string;
 }
 
 export function buildIndex<
@@ -43,7 +70,7 @@ export function buildIndex<
     name: string;
     description?: string;
     category?: string;
-    keywords?: string[];
+    keywords?: readonly string[];
   },
 >(entries: readonly T[]): Array<IndexedEntry<T>> {
   return entries.map((entry) => {
@@ -56,6 +83,27 @@ export function buildIndex<
       : entry.name.toLowerCase();
     return { ...entry, _lower };
   });
+}
+
+export function indexPluginCommands(
+  commands: readonly SearchablePluginCommand[]
+): IndexedPluginCommand[] {
+  return commands.map((cmd) => ({
+    ...cmd,
+    _titleLower: cmd.title.toLowerCase(),
+    _lower:
+      `${cmd.title}\t${cmd.description ?? ""}\t${cmd.keywords?.join(" ") ?? ""}`.toLowerCase(),
+  }));
+}
+
+export function indexRealms(realms: readonly RealmSearchItem[]): IndexedRealm[] {
+  return realms.map((realm) => ({
+    ...realm,
+    _nameLower: realm.name.toLowerCase(),
+    _slugLower: realm.slug.toLowerCase(),
+    _lower:
+      `${realm.name}\t${realm.slug}\t${realm.description ?? ""}\t${realm.tags?.join(" ") ?? ""}`.toLowerCase(),
+  }));
 }
 
 export function commandEntriesFor({
@@ -117,6 +165,77 @@ export function commandEntriesFor({
 
   const baseCommands = searchApps ? commandsFromVisibleApps(searchApps) : commandsFor(isAdmin);
   return [...viewerEntries, ...baseCommands];
+}
+
+function rankText(primaryLower: string, altExactLower: string | null, needle: string): number {
+  if (primaryLower === needle || altExactLower === needle) return 0;
+  if (primaryLower.startsWith(needle)) return 1;
+  if (primaryLower.includes(needle)) return 2;
+  return 3;
+}
+
+function matchPluginCommands(
+  commands: ReadonlyArray<IndexedPluginCommand>,
+  pluginId: string,
+  needle: string,
+  limit: number
+): CatalogDescriptor[] {
+  const scored: Array<{ rank: number; order: number; entry: IndexedPluginCommand }> = [];
+  for (let i = 0; i < commands.length; i++) {
+    const entry = commands[i]!;
+    if (!entry._lower.includes(needle)) continue;
+    scored.push({ rank: rankText(entry._titleLower, null, needle), order: i, entry });
+  }
+  scored.sort((a, b) => a.rank - b.rank || a.order - b.order);
+
+  return scored.slice(0, limit).map(({ entry }) => ({
+    kind: "command",
+    key: `plugin-${pluginId}-${entry.key}`,
+    title: entry.title,
+    description: entry.description ?? "",
+    category: "On this page",
+    icon: entry.icon ?? Compass,
+    path: entry.path,
+    pluginCommandKey: entry.key,
+  }));
+}
+
+function formatRealmDescription(realm: RealmSearchItem): string {
+  if (typeof realm.nationCount === "number") {
+    const count = `${realm.nationCount} ${realm.nationCount === 1 ? "nation" : "nations"}`;
+    return realm.description ? `${count} · ${realm.description}` : count;
+  }
+  return realm.description || "Open realm";
+}
+
+function matchRealms(
+  realms: ReadonlyArray<IndexedRealm>,
+  needle: string,
+  limit: number
+): CatalogDescriptor[] {
+  const scored: Array<{ rank: number; order: number; realm: IndexedRealm }> = [];
+  for (let i = 0; i < realms.length; i++) {
+    const realm = realms[i]!;
+    if (!realm._lower.includes(needle)) continue;
+    scored.push({
+      rank: rankText(realm._nameLower, realm._slugLower, needle),
+      order: i,
+      realm,
+    });
+  }
+  scored.sort((a, b) => a.rank - b.rank || a.order - b.order);
+
+  return scored.slice(0, limit).map(({ realm }) => ({
+    kind: "realm",
+    key: `realm-${realm.id}`,
+    title: realm.name,
+    description: formatRealmDescription(realm),
+    category: "Realm",
+    icon: Globe,
+    slug: realm.slug,
+    path: `/r/${encodeURIComponent(realm.slug)}`,
+    thumbnail: realm.thumbnail ?? undefined,
+  }));
 }
 
 function matchCountries(
@@ -187,17 +306,32 @@ function matchWiki(wiki: ReadonlyArray<WikiSearchItem>, limit: number): CatalogD
   return out;
 }
 
+export interface SearchCatalogOptions {
+  wikiFirst: boolean;
+  pluginId?: string;
+}
+
 export function searchCatalog(
   query: string,
   filter: SearchFilter,
   sources: SearchSources,
-  opts: { wikiFirst: boolean }
+  opts: SearchCatalogOptions
 ): CatalogDescriptor[] {
   if (!query.trim()) return [];
 
   const needle = query.toLowerCase();
   const limit = filter === "all" ? 3 : 12;
 
+  const includePluginCommands =
+    filter === "all" || filter === "commands" || (filter === "wiki" && opts.pluginId === "wiki");
+  const pluginLimit = filter === "commands" ? 12 : 3;
+  const pluginMatches =
+    includePluginCommands && sources.pluginCommands?.length
+      ? matchPluginCommands(sources.pluginCommands, opts.pluginId ?? "active", needle, pluginLimit)
+      : [];
+
+  const realms =
+    filter === "all" && sources.realms?.length ? matchRealms(sources.realms, needle, 3) : [];
   const countries =
     filter === "all" || filter === "countries"
       ? matchCountries(sources.countries, needle, limit)
@@ -215,9 +349,21 @@ export function searchCatalog(
       ? matchWiki(sources.wiki, limit)
       : [];
 
+  if (filter === "commands") {
+    return [...pluginMatches, ...commands].slice(0, 12);
+  }
+  if (filter === "wiki") {
+    return [...pluginMatches, ...wiki].slice(0, 12);
+  }
   if (filter === "all" && opts.wikiFirst) {
-    return [...wiki, ...countries, ...commands, ...features].slice(0, 12);
+    return [...pluginMatches, ...wiki, ...realms, ...countries, ...commands, ...features].slice(
+      0,
+      12
+    );
   }
 
-  return [...countries, ...commands, ...features, ...wiki].slice(0, 12);
+  return [...pluginMatches, ...realms, ...countries, ...commands, ...features, ...wiki].slice(
+    0,
+    12
+  );
 }
