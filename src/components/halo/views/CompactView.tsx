@@ -87,17 +87,12 @@ function CompactViewComponent({
 
   const enhancedStats = useNotificationStore((s) => s.stats);
 
-  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
-    { limit: 5, unreadOnly: false },
-    {
-      enabled: !!user?.id,
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    }
-  );
+  // Shares the cache entry GameSidecar already polls every 30 s, so the badge adds no request
+  const { data: unreadData } = api.notifications.getUnreadCount.useQuery(undefined, {
+    enabled: !!user?.id,
+  });
 
-  const unreadNotifications = notificationsData?.unreadCount || 0;
+  const unreadNotifications = unreadData?.count ?? 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const notificationUnreadCount = unreadNotifications + enhancedUnreadCount;

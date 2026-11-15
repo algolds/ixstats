@@ -78,38 +78,19 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   // Refresh
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { refetch: refetchCountries } = api.countries.getAll.useQuery(undefined, {
-    staleTime: 10 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
-  });
+  const utils = api.useUtils();
 
-  const { refetch: refetchNotifications } = api.notifications.getUserNotifications.useQuery(
-    { limit: 5, unreadOnly: false },
-    {
-      enabled: !!user?.id,
-      staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnMount: false,
-    }
-  );
-
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const promises: Promise<unknown>[] = [refetchCountries()];
-      if (isSignedIn && user?.id) {
-        promises.push(refetchNotifications());
-      }
-      await Promise.allSettled(promises);
+      await Promise.allSettled([utils.countries.invalidate(), utils.notifications.invalidate()]);
     } catch (error) {
       console.error("Refresh failed:", error);
       soundCues.error();
     } finally {
       setIsRefreshing(false);
     }
-  }, [refetchCountries, refetchNotifications, isSignedIn, user?.id]);
+  };
 
   if (!isLoaded) {
     return (
