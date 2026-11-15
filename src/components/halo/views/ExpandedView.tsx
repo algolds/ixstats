@@ -1,13 +1,30 @@
 import { useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
-import { SearchView } from "./SearchView";
-import { NotificationsView } from "./NotificationsView";
-import { SettingsView } from "./SettingsView";
-import { MyCountryView } from "../plugins/mycountry";
+import dynamic from "next/dynamic";
 import type { ExpandedViewProps, DIPlugin } from "../types";
 import { Button } from "~/components/ui/button";
 import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
+
+// The views are not needed until the Halo opens, so each is its own chunk fetched then (plan 457); the
+// fallback keeps the island's height stable while the chunk loads.
+const viewLoading = () => <div className="h-40" aria-busy="true" />;
+const SearchView = dynamic(() => import("./SearchView").then((m) => m.SearchView), {
+  ssr: false,
+  loading: viewLoading,
+});
+const NotificationsView = dynamic(
+  () => import("./NotificationsView").then((m) => m.NotificationsView),
+  { ssr: false, loading: viewLoading }
+);
+const SettingsView = dynamic(() => import("./SettingsView").then((m) => m.SettingsView), {
+  ssr: false,
+  loading: viewLoading,
+});
+const MyCountryView = dynamic(
+  () => import("../plugins/mycountry/views/MyCountryView").then((m) => m.MyCountryView),
+  { ssr: false, loading: viewLoading }
+);
 
 const subscribeNever = () => () => {};
 /** The admin "play as" target, re-read on every render (each mode switch re-renders this). */

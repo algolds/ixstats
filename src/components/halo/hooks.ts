@@ -40,10 +40,14 @@ export function useDynamicIslandState() {
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
   const [isUserInteracting, setIsUserInteracting] = useState(false);
 
-  // Lazy-load countries only when expanded
+  // Countries are only needed while the search view can list them
+  const countriesEnabled =
+    isExpanded &&
+    expandedMode === "search" &&
+    (searchFilter === "all" || searchFilter === "countries");
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
     { limit: 500 },
-    { staleTime: 30 * 60 * 1000, enabled: isExpanded }
+    { staleTime: 30 * 60 * 1000, enabled: countriesEnabled }
   );
 
   // Wiki search query

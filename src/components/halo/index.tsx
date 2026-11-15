@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { motion, type PanInfo } from "motion/react";
@@ -13,10 +14,13 @@ import { useToastQueueStore } from "~/stores/toastQueueStore";
 import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
-import { HaloTourTooltip } from "./HaloTourTooltip";
 import { springSnappy, tweenFast } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import { useHydrated } from "~/hooks/useHydrated";
+
+const HaloTourTooltip = dynamic(() => import("./HaloTourTooltip").then((m) => m.HaloTourTooltip), {
+  ssr: false,
+});
 
 interface CommandPaletteProps {
   className?: string;
