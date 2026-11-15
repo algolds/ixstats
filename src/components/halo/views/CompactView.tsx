@@ -86,7 +86,6 @@ function CompactViewComponent({
   // Notification counts
 
   const enhancedStats = useNotificationStore((s) => s.stats);
-  const notifications = useNotificationStore((s) => s.notifications);
 
   const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
     { limit: 5, unreadOnly: false },
@@ -100,11 +99,8 @@ function CompactViewComponent({
 
   const unreadNotifications = notificationsData?.unreadCount || 0;
   const enhancedUnreadCount = enhancedStats.unread || 0;
-  const liveNotificationCount = notifications.filter(
-    (n) => n.status !== "read" && n.status !== "dismissed"
-  ).length;
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
-  const notificationUnreadCount = unreadNotifications + enhancedUnreadCount + liveNotificationCount;
+  const notificationUnreadCount = unreadNotifications + enhancedUnreadCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
 
   if (!mounted) return null;
