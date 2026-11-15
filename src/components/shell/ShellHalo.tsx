@@ -17,7 +17,7 @@ export function ShellHalo() {
       className="z-nav pointer-events-none fixed top-(--shell-page-top) right-(--shell-inspector-width) left-(--shell-sidebar-width) flex justify-center px-3"
     >
       <div className="pointer-events-auto max-w-full">
-        <CommandPalette isSticky={false} scrollY={0} />
+        <CommandPalette />
       </div>
     </div>
   );

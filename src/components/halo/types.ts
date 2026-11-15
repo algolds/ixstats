@@ -65,13 +65,8 @@ export interface DIPlugin<F = unknown, C = unknown> {
 // Component prop interfaces
 export interface CompactViewProps {
   mode?: ViewMode;
-  isSticky?: boolean;
-  isCollapsed: boolean;
   isNavLoading?: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
-  setIsUserInteracting: (interacting: boolean) => void;
   onSwitchMode: (mode: ViewMode) => void;
-  scrollY?: number;
   activePlugin?: DIPlugin | null;
   // Plugin system props
   pluginCenter?: React.ReactNode;

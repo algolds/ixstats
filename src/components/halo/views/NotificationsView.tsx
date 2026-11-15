@@ -388,14 +388,14 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
           <div className="space-y-2">
             {groups.length > 0 ? (
               groups.map((group) => {
-                const isCollapsed = collapsedGroups.has(group.label);
+                const groupCollapsed = collapsedGroups.has(group.label);
                 return (
                   <div key={group.label}>
                     {/* Group header */}
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.label)}
-                      aria-expanded={!isCollapsed}
+                      aria-expanded={!groupCollapsed}
                       className={cn(
                         "hover:bg-fill-4 rounded-control-sm relative mb-1 flex w-full cursor-pointer items-center justify-between px-1 py-0.5 transition-colors",
                         focusRing,
@@ -404,7 +404,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                     >
                       <div className="flex items-center gap-2">
                         <motion.div
-                          animate={{ rotate: isCollapsed ? 0 : 90 }}
+                          animate={{ rotate: groupCollapsed ? 0 : 90 }}
                           transition={reduceMotion ? { duration: 0 } : tweenFast}
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
@@ -420,7 +420,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
                     {/* Items */}
                     <AnimatePresence>
-                      {!isCollapsed && (
+                      {!groupCollapsed && (
                         <motion.div
                           initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
                           animate={reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }}

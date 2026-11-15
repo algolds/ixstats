@@ -33,13 +33,9 @@ function NavLoadingIcon({ className }: { className?: string }) {
   );
 }
 
-function CompactViewComponent({
+export function CompactView({
   mode,
-  isSticky,
-  isCollapsed: _isCollapsed,
   isNavLoading = false,
-  setIsCollapsed,
-  setIsUserInteracting,
   onSwitchMode,
   activePlugin,
   pluginCenter,
@@ -51,7 +47,7 @@ function CompactViewComponent({
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
-  const { activeSectionId, tocEntries, narratorState, themeColors } = useWikiContext();
+  const { narratorState, themeColors } = useWikiContext();
 
   const isNarratorActive = !!(
     narratorState &&
@@ -66,10 +62,6 @@ function CompactViewComponent({
   const narratorAccent = wikiAccent(themeColors);
 
   const hour = useContextHour();
-  const activeSectionName = activeSectionId
-    ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
-    : null;
-
   const mounted = useHydrated();
 
   const greeting = hour === null ? "Good morning" : greetingForHour(hour);
@@ -114,238 +106,160 @@ function CompactViewComponent({
   if (!mounted) return null;
 
   return (
-    <div
-      onMouseEnter={() => {
-        if (isSticky || activePlugin?.id === "forum") {
-          setIsCollapsed(false);
-          setIsUserInteracting(true);
-        }
-      }}
-      onMouseLeave={() => {
-        if (isSticky || activePlugin?.id === "forum") {
-          setIsUserInteracting(false);
-        }
-      }}
-    >
-      <div className="h-full w-full">
-        <HaloContainer
-          className={`duration-fast flex w-full items-center justify-center gap-1 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
-            isSticky ? "px-3 py-2" : "px-4 py-2"
-          }`}
-        >
-          {/* Sticky: peek text or wiki breadcrumb */}
-          {isSticky && peekText && (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key="sticky-peek"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={springSnappy}
-                className="flex items-center gap-2 px-2 py-0.5"
-              >
-                <Bell className="text-yellow h-3 w-3" />
-                <span className="text-label text-caption max-w-[160px] truncate whitespace-nowrap">
-                  <PreText whiteSpace="nowrap">{peekText}</PreText>
-                </span>
-              </motion.div>
-            </AnimatePresence>
-          )}
-
-          {isSticky && !peekText && activePlugin && pluginCenter && (
-            <div
-              className={`flex min-w-0 flex-1 items-center gap-1 ${
-                activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-              }`}
+    <div className="h-full w-full">
+      <HaloContainer className="duration-fast flex w-full items-center justify-center gap-1 px-4 py-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
+        <AnimatePresence mode="wait">
+          {peekText ? (
+            <motion.div
+              key="peek"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={springSnappy}
+              className="flex items-center gap-2 px-2 py-1"
             >
-              {pluginViewKey ? (
-                <button
-                  type="button"
-                  data-halo-trigger="plugin"
-                  aria-expanded={mode === `plugin:${pluginViewKey}`}
-                  aria-controls="halo-panel"
-                  onClick={() => {
-                    if (mode === `plugin:${pluginViewKey}`) {
-                      onSwitchMode("compact");
-                    } else {
-                      onSwitchMode(`plugin:${pluginViewKey}`);
-                    }
-                  }}
-                  className={cn(
-                    "rounded-control-sm hover:bg-fill-2 duration-fast flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2",
-                    focusRing
-                  )}
-                  title={`Open ${activePlugin.id} mode`}
-                >
-                  {pluginCenter}
-                </button>
-              ) : (
-                <div className="duration-fast flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
-                  {pluginCenter}
-                </div>
-              )}
-              {pluginCenterActions}
-            </div>
-          )}
-
-          {/* Non-sticky: peek or time/context */}
-          {!isSticky && (
-            <AnimatePresence mode="wait">
-              {peekText ? (
-                <motion.div
-                  key="peek"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={springSnappy}
-                  className="flex items-center gap-2 px-2 py-1"
-                >
-                  <Bell className="text-yellow h-3 w-3" />
-                  <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
-                    <PreText whiteSpace="nowrap">{peekText}</PreText>
-                  </span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="time-and-greeting"
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={springSnappy}
-                  className="flex items-center gap-1"
-                >
-                  {/* Context switcher / Plugin center */}
-                  {activePlugin && pluginCenter ? (
-                    <>
-                      {pluginViewKey ? (
-                        <button
-                          type="button"
-                          data-halo-trigger="plugin"
-                          aria-expanded={mode === `plugin:${pluginViewKey}`}
-                          aria-controls="halo-panel"
-                          onClick={() => {
-                            if (mode === `plugin:${pluginViewKey}`) {
-                              onSwitchMode("compact");
-                            } else {
-                              onSwitchMode(`plugin:${pluginViewKey}`);
-                            }
-                          }}
-                          className={cn(
-                            "rounded-control-sm hover:bg-fill-2 duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 sm:max-w-[200px]",
-                            focusRing
-                          )}
-                          title={`Open ${activePlugin.id} mode`}
-                        >
-                          {pluginCenter}
-                        </button>
-                      ) : (
-                        <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
-                          {pluginCenter}
-                        </div>
-                      )}
-                      {pluginCenterActions}
-                    </>
-                  ) : (
+              <Bell className="text-yellow h-3 w-3" />
+              <span className="text-label text-caption max-w-[200px] truncate whitespace-nowrap">
+                <PreText whiteSpace="nowrap">{peekText}</PreText>
+              </span>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="time-and-greeting"
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={springSnappy}
+              className="flex items-center gap-1"
+            >
+              {/* Context switcher / Plugin center */}
+              {activePlugin && pluginCenter ? (
+                <>
+                  {pluginViewKey ? (
                     <button
                       type="button"
-                      data-halo-trigger="mycountry"
-                      aria-expanded={mode === "mycountry"}
+                      data-halo-trigger="plugin"
+                      aria-expanded={mode === `plugin:${pluginViewKey}`}
                       aria-controls="halo-panel"
-                      onClick={() => onSwitchMode("mycountry")}
-                      className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
-                    >
-                      {user?.imageUrl ? (
-                        <img
-                          src={assetUrl(user.imageUrl) ?? undefined}
-                          alt=""
-                          className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
-                        />
-                      ) : (
-                        <ProfileCircle aria-hidden className="text-label-secondary size-4" />
+                      onClick={() => {
+                        if (mode === `plugin:${pluginViewKey}`) {
+                          onSwitchMode("compact");
+                        } else {
+                          onSwitchMode(`plugin:${pluginViewKey}`);
+                        }
+                      }}
+                      className={cn(
+                        "rounded-control-sm hover:bg-fill-2 duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 sm:max-w-[200px]",
+                        focusRing
                       )}
-                      <span className="sr-only sm:hidden">Open MyCountry</span>
-                      <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
-                        {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
-                      </PreText>
+                      title={`Open ${activePlugin.id} mode`}
+                    >
+                      {pluginCenter}
                     </button>
+                  ) : (
+                    <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
+                      {pluginCenter}
+                    </div>
                   )}
-                </motion.div>
+                  {pluginCenterActions}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  data-halo-trigger="mycountry"
+                  aria-expanded={mode === "mycountry"}
+                  aria-controls="halo-panel"
+                  onClick={() => onSwitchMode("mycountry")}
+                  className="text-label hover:bg-fill-4 hover:text-label rounded-control-sm text-caption focus-visible:outline-tint flex cursor-pointer items-center gap-2 px-2 py-0.5 transition-colors outline-none focus-visible:outline-2 focus-visible:-outline-offset-2"
+                >
+                  {user?.imageUrl ? (
+                    <img
+                      src={assetUrl(user.imageUrl) ?? undefined}
+                      alt=""
+                      className="ring-separator h-4 w-4 rounded-full object-cover ring-1"
+                    />
+                  ) : (
+                    <ProfileCircle aria-hidden className="text-label-secondary size-4" />
+                  )}
+                  <span className="sr-only sm:hidden">Open MyCountry</span>
+                  <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
+                    {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
+                  </PreText>
+                </button>
               )}
-            </AnimatePresence>
+            </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
-          <div className="relative flex shrink-0 flex-col items-center justify-center">
-            <div className="flex items-center gap-0.5">
+        {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
+        <div className="relative flex shrink-0 flex-col items-center justify-center">
+          <div className="flex items-center gap-0.5">
+            <HaloIconButton
+              label="Search"
+              icon={isNavLoading ? NavLoadingIcon : Search}
+              triggerFor="search"
+              expanded={mode === "search"}
+              onClick={() => {
+                onSwitchMode("search");
+              }}
+            />
+            {isNavLoading && (
+              <span role="status" className="sr-only">
+                Loading page…
+              </span>
+            )}
+
+            {isLoaded && isSignedIn && (
               <HaloIconButton
-                label="Search"
-                icon={isNavLoading ? NavLoadingIcon : Search}
-                triggerFor="search"
-                expanded={mode === "search"}
-                onClick={() => {
-                  onSwitchMode("search");
-                }}
-              />
-              {isNavLoading && (
-                <span role="status" className="sr-only">
-                  Loading page…
-                </span>
-              )}
-
-              {isLoaded && isSignedIn && (
-                <HaloIconButton
-                  label="Notifications"
-                  icon={Bell}
-                  badge={totalUnreadCount}
-                  iconClassName={totalUnreadCount > 0 ? "text-yellow" : undefined}
-                  triggerFor="notifications"
-                  expanded={mode === "notifications"}
-                  onClick={() => {
-                    soundCues.present("subtle");
-                    onSwitchMode("notifications");
-                  }}
-                />
-              )}
-
-              <HaloIconButton
-                label="Settings"
-                icon={Settings}
-                triggerFor="settings"
-                expanded={mode === "settings"}
+                label="Notifications"
+                icon={Bell}
+                badge={totalUnreadCount}
+                iconClassName={totalUnreadCount > 0 ? "text-yellow" : undefined}
+                triggerFor="notifications"
+                expanded={mode === "notifications"}
                 onClick={() => {
                   soundCues.present("subtle");
-                  onSwitchMode("settings");
+                  onSwitchMode("notifications");
                 }}
               />
+            )}
 
-              {/* Plugin-injected action buttons */}
-              {pluginActions?.map((action) => (
-                <HaloIconButton
-                  key={action.id}
-                  label={action.label}
-                  icon={action.icon}
-                  badge={action.badge}
-                  onClick={action.onClick}
-                />
-              ))}
+            <HaloIconButton
+              label="Settings"
+              icon={Settings}
+              triggerFor="settings"
+              expanded={mode === "settings"}
+              onClick={() => {
+                soundCues.present("subtle");
+                onSwitchMode("settings");
+              }}
+            />
 
-              {/* Plugin badge dot */}
-              {pluginBadge && (
-                <div
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: pluginBadge.color }}
-                />
-              )}
-            </div>
+            {/* Plugin-injected action buttons */}
+            {pluginActions?.map((action) => (
+              <HaloIconButton
+                key={action.id}
+                label={action.label}
+                icon={action.icon}
+                badge={action.badge}
+                onClick={action.onClick}
+              />
+            ))}
 
-            {isNarratorActive && (
-              <NarratorProgress value={narratorProgressPercent} color={narratorAccent} />
+            {/* Plugin badge dot */}
+            {pluginBadge && (
+              <div
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: pluginBadge.color }}
+              />
             )}
           </div>
-        </HaloContainer>
-      </div>
+
+          {isNarratorActive && (
+            <NarratorProgress value={narratorProgressPercent} color={narratorAccent} />
+          )}
+        </div>
+      </HaloContainer>
     </div>
   );
 }
-
-export const CompactView = React.memo(CompactViewComponent);

@@ -205,10 +205,6 @@ describe("unread count", () => {
     render(
       <CompactView
         mode="compact"
-        isSticky={false}
-        isCollapsed={false}
-        setIsCollapsed={jest.fn()}
-        setIsUserInteracting={jest.fn()}
         onSwitchMode={jest.fn()}
         activePlugin={null}
         pluginCenter={null}

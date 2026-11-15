@@ -231,16 +231,12 @@ describe("Outside pointerdown closes Halo (Step 3)", () => {
   });
 });
 
-function ActivePluginCompactHarness({ isSticky = false }: { isSticky?: boolean }) {
+function ActivePluginCompactHarness() {
   const activePlugin = useActiveDIPlugin();
   return (
     <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
       <CompactView
         mode="compact"
-        isSticky={isSticky}
-        isCollapsed={false}
-        setIsCollapsed={jest.fn()}
-        setIsUserInteracting={jest.fn()}
         onSwitchMode={jest.fn()}
         activePlugin={activePlugin}
         pluginCenter={activePlugin?.center}
@@ -292,7 +288,7 @@ describe("Pill centre real buttons & no nested buttons (Step 4)", () => {
     const { container } = render(
       <DIPluginProvider>
         <WikiHalo />
-        <ActivePluginCompactHarness isSticky />
+        <ActivePluginCompactHarness />
       </DIPluginProvider>
     );
 

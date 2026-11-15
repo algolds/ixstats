@@ -1,4 +1,4 @@
-import { useState, useEffect, useEffectEvent, useRef } from "react";
+import { useState, useEffect, useEffectEvent } from "react";
 import { Book, Globe, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -15,24 +15,6 @@ import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { commandsFor, CORE_FEATURES } from "./halo-registry";
-
-/**
- * Returns a function that (re)starts a countdown to `onExpire`; unmounting cancels it. The timer id
- * lives in a ref owned by this hook, so callers stay free of ref access that the React Compiler
- * would refuse to optimize.
- */
-function useRestartableTimeout(onExpire: () => void, ms: number) {
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-
-  useEffect(() => {
-    return () => clearTimeout(timeoutRef.current);
-  }, []);
-
-  return () => {
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(onExpire, ms);
-  };
-}
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -58,7 +40,6 @@ export function useDynamicIslandState() {
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 150);
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
-  const [isUserInteracting, setIsUserInteracting] = useState(false);
 
   // Countries are only needed while the search view can list them
   const countriesEnabled =
@@ -80,16 +61,13 @@ export function useDynamicIslandState() {
   const isSearchPending =
     searchQuery !== debouncedSearchQuery || countriesLoading || (wikiEnabled && wikiFetching);
 
-  const restartInteractionTimer = useRestartableTimeout(() => setIsUserInteracting(false), 30000);
   // Undefined at first, so a plugin active on mount counts as a change
   const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
 
   // Mode switching with auto-expand management
   const switchMode = (newMode: ViewMode) => {
     setMode(newMode);
-    setIsUserInteracting(true);
     window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
-    restartInteractionTimer();
 
     const isExpandedMode =
       newMode === "search" ||
@@ -518,7 +496,6 @@ export function useDynamicIslandState() {
     searchQuery,
     debouncedSearchQuery,
     searchFilter,
-    isUserInteracting,
     searchResults,
     isSearchPending,
     countriesData,
@@ -527,7 +504,6 @@ export function useDynamicIslandState() {
     setExpandedMode,
     setSearchQuery,
     setSearchFilter,
-    setIsUserInteracting,
     switchMode,
   };
 }

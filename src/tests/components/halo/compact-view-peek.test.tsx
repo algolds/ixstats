@@ -26,6 +26,10 @@ jest.mock("~/hooks/useMessageUnreadCount", () => ({
 jest.mock("~/components/ui/pretext", () => ({
   PreText: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }));
+jest.mock("motion/react", () => ({
+  ...jest.requireActual<typeof import("motion/react")>("motion/react"),
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
 
 beforeEach(() => {
   jest.useFakeTimers();
@@ -41,10 +45,6 @@ describe("CompactView toast peek", () => {
     render(
       <CompactView
         mode="compact"
-        isSticky
-        isCollapsed={false}
-        setIsCollapsed={jest.fn()}
-        setIsUserInteracting={jest.fn()}
         onSwitchMode={jest.fn()}
         activePlugin={null}
         pluginCenter={null}
@@ -79,10 +79,6 @@ describe("CompactView toast peek", () => {
     render(
       <CompactView
         mode="compact"
-        isSticky
-        isCollapsed={false}
-        setIsCollapsed={jest.fn()}
-        setIsUserInteracting={jest.fn()}
         onSwitchMode={jest.fn()}
         activePlugin={null}
         pluginCenter={null}
