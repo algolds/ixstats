@@ -104,14 +104,14 @@ export function MessageTrayItem({
         <SwipeableRow.Trailing
           commit={{
             action: () => onDismiss(conversation),
-            label: "Close",
+            label: "Hide",
             color: "var(--color-label-secondary)",
           }}
         >
           <SwipeActionButton
             id="close-msg"
             icon={X}
-            label="Close"
+            label="Hide"
             onClick={() => onDismiss(conversation)}
             color="var(--color-label-secondary)"
           />

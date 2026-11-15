@@ -37,6 +37,18 @@ import { soundCues } from "~/lib/sound/cuelume";
 import { tweenFast } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
+
+function TrayLoading({ label }: { label: string }) {
+  return (
+    <div className="space-y-2" role="status" aria-label={label}>
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  );
+}
 
 function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const notify = useNotify();
@@ -57,7 +69,12 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const dismissEnhanced = useNotificationStore((s) => s.dismissNotification);
 
   const utils = api.useUtils();
-  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
+  const {
+    data: notificationsData,
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+    refetch: refetchNotifications,
+  } = api.notifications.getUserNotifications.useQuery(
     { limit: 8, unreadOnly: false },
     {
       enabled: !!user?.id,
@@ -67,15 +84,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     }
   );
 
-  const { data: messagesData, refetch: refetchMessages } =
-    api.messages.getConversationsByFolder.useQuery(
-      { folder: "inbox", limit: 8 },
-      {
-        enabled: !!user?.id,
-        staleTime: 30 * 1000,
-        refetchOnWindowFocus: false,
-      }
-    );
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    isError: messagesError,
+    refetch: refetchMessages,
+  } = api.messages.getConversationsByFolder.useQuery(
+    { folder: "inbox", limit: 8 },
+    {
+      enabled: !!user?.id,
+      staleTime: 30 * 1000,
+      refetchOnWindowFocus: false,
+    }
+  );
 
   // No input → invalidates every getUserNotifications list size (Halo, dashboard, messages).
   const invalidateNotifications = () => {
@@ -196,11 +217,16 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     });
   };
 
-  const handleMarkAllRead = () => {
-    if (user?.id && unreadNotifications > 0) markAllAsReadMutation.mutate({ userId: user.id });
+  const handleMarkAllRead = async () => {
+    const pending: Promise<unknown>[] = [];
+    if (user?.id && unreadNotifications > 0) {
+      pending.push(markAllAsReadMutation.mutateAsync({ userId: user.id }));
+    }
     if (enhancedUnreadCount > 0) markAllEnhancedAsRead();
-    if (messageUnreadCount > 0) markAllMessagesMutation.mutate();
-    notify.success("All notifications and messages marked as read");
+    if (messageUnreadCount > 0) pending.push(markAllMessagesMutation.mutateAsync());
+    const results = await Promise.allSettled(pending);
+    if (results.every((r) => r.status === "fulfilled")) notify.success("All marked as read");
+    else notify.error("Couldn't mark everything as read");
   };
 
   const handleClick = (n: NotificationItem) => {
@@ -252,7 +278,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={handleMarkAllRead}
+              onClick={() => void handleMarkAllRead()}
               disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
               className="text-label-secondary hover:text-label"
               title="Mark all notifications and messages as read"
@@ -321,6 +347,23 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   />
                 ))}
               </div>
+            ) : messagesLoading ? (
+              <TrayLoading label="Loading messages" />
+            ) : messagesError ? (
+              <EmptyState
+                compact
+                title="Couldn't load messages"
+                action={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => void refetchMessages()}
+                  >
+                    Try again
+                  </Button>
+                }
+              />
             ) : (
               <div className="py-10 text-center">
                 <MessageCircle className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
@@ -410,6 +453,23 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                   </div>
                 );
               })
+            ) : notificationsLoading ? (
+              <TrayLoading label="Loading notifications" />
+            ) : notificationsError ? (
+              <EmptyState
+                compact
+                title="Couldn't load notifications"
+                action={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => void refetchNotifications()}
+                  >
+                    Try again
+                  </Button>
+                }
+              />
             ) : (
               <div className="py-10 text-center">
                 <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
