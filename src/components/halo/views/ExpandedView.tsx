@@ -3,7 +3,7 @@ import { HaloContainer } from "../HaloPrimitives";
 import dynamic from "next/dynamic";
 import type { ExpandedViewProps, DIPlugin, ViewMode } from "../types";
 import { Button } from "~/components/ui/button";
-import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
+import { setPlayAsCookie } from "~/lib/auth/play-as-cookie";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
 
 function dialogLabelForMode(mode: ViewMode, activePlugin?: DIPlugin | null): string {

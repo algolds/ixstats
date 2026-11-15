@@ -1,4 +1,4 @@
-import { PLAY_AS_COOKIE, setPlayAsCookie, syncPlayAsCookie } from "../play-as-cookie";
+import { PLAY_AS_COOKIE, setPlayAsCookie, syncPlayAsCookie } from "~/lib/auth/play-as-cookie";
 
 describe("setPlayAsCookie", () => {
   afterEach(() => {

@@ -2,7 +2,7 @@ import "server-only";
 
 import { auth } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
-import { PLAY_AS_COOKIE } from "~/app/admin/users/play-as-cookie";
+import { PLAY_AS_COOKIE } from "~/lib/auth/play-as-cookie";
 import { getSignedInCountryId } from "~/lib/auth/signed-in-country.server";
 import { signedInApi } from "~/trpc/server";
 
