@@ -117,6 +117,7 @@ beforeEach(() => {
 
 describe("Halo views router navigation (Step 3)", () => {
   it("uses router.push for relative notification and message URLs and hard navigation for external URLs", () => {
+    const nowIso = new Date().toISOString();
     mockNotifications = [
       {
         id: "n-rel",
@@ -124,7 +125,7 @@ describe("Halo views router navigation (Step 3)", () => {
         message: "Internal link",
         href: "/mycountry/diplomacy",
         read: true,
-        createdAt: new Date().toISOString(),
+        createdAt: nowIso,
       },
       {
         id: "n-ext",
@@ -132,7 +133,7 @@ describe("Halo views router navigation (Step 3)", () => {
         message: "External link",
         href: "https://ixwiki.com/wiki/Main_Page",
         read: true,
-        createdAt: new Date().toISOString(),
+        createdAt: nowIso,
       },
     ];
     mockConversations = [

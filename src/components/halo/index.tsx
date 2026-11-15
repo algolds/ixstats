@@ -66,7 +66,6 @@ function CommandPaletteContent({
   isTourActive?: boolean;
 }) {
   const { setSize } = useHaloSize();
-  const mounted = useHydrated();
   // The pathname the tray was opened on; navigating elsewhere closes it without an effect
   const [navTrayAt, setNavTrayAt] = useState<{ path: string | null } | null>(null);
   const [pillBounce, setPillBounce] = useState(false);
@@ -156,8 +155,6 @@ function CommandPaletteContent({
       document.querySelector<HTMLElement>(`[data-halo-trigger="${target}"]`)?.focus();
     });
   };
-
-  if (!mounted) return null;
 
   return (
     <div className="relative">

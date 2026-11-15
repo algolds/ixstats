@@ -12,7 +12,6 @@ import { greetingForHour } from "~/lib/time/greeting";
 import { api } from "~/trpc/react";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useMessageUnreadCount } from "~/hooks/useMessageUnreadCount";
-import { useHydrated } from "~/hooks/useHydrated";
 import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
@@ -62,7 +61,6 @@ export function CompactView({
   const narratorAccent = wikiAccent(themeColors);
 
   const hour = useContextHour();
-  const mounted = useHydrated();
 
   const greeting = hour === null ? "Good morning" : greetingForHour(hour);
 
@@ -102,8 +100,6 @@ export function CompactView({
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const notificationUnreadCount = unreadNotifications + enhancedUnreadCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
-
-  if (!mounted) return null;
 
   return (
     <div className="h-full w-full">

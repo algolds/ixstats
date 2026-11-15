@@ -13,15 +13,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { REDUCED_MOTION_FADE, springSnappy, tweenExit } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
-import { useHydrated } from "~/hooks/useHydrated";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
+import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
 const MAX_HEIGHT_MOBILE_ULTRA = 400;
-const MAX_HEIGHT_MOBILE_MASSIVE = 700;
-
-import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
 
 export * from "./presets";
 
@@ -54,6 +51,7 @@ export const useHaloSize = () => {
   }
   return context;
 };
+
 const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
   return <div className="z-raised flex h-full w-full items-center justify-center">{children}</div>;
 };
@@ -61,17 +59,7 @@ const HaloOuterWrapper = ({ children }: { children: ReactNode }) => {
 const isCompactSize = (size: SizePresets | undefined): boolean => {
   if (!size) return true;
   return (
-    size === "compact" ||
-    size === "compactLong" ||
-    size === "compactMedium" ||
-    size === "compactTall" ||
-    size === "minimalLeading" ||
-    size === "minimalTrailing" ||
-    size === "wikiCompact" ||
-    size === "wikiInline" ||
-    size === "default" ||
-    size === "reset" ||
-    size === "empty"
+    size === "compactLong" || size === "compactTall" || size === "wikiInline" || size === "default"
   );
 };
 
@@ -82,45 +70,11 @@ const calculateDimensions = (
 ): { width: string; height: number | string } => {
   const resolvedSize = currentSize ?? DynamicIslandSizePresets.default;
 
-  const isMassiveOnMobile = size === "massive" && screenSize === "mobile";
-  const isUltraOnMobile = size === "ultra" && screenSize === "mobile";
-  const isWideOnMobile = (size === "extraWide" || size === "fullWidth") && screenSize === "mobile";
-  const isWideOnTablet = (size === "extraWide" || size === "fullWidth") && screenSize === "tablet";
-
-  if (isMassiveOnMobile) {
-    return { width: "350px", height: MAX_HEIGHT_MOBILE_MASSIVE };
-  }
-
-  if (isUltraOnMobile) {
+  if (size === "ultra" && screenSize === "mobile") {
     return { width: "350px", height: MAX_HEIGHT_MOBILE_ULTRA };
   }
 
-  if (isWideOnMobile) {
-    return { width: "95vw", height: 64 };
-  }
-
-  if (isWideOnTablet) {
-    return { width: "90vw", height: 72 };
-  }
-
-  if (size === "extraWide") {
-    return { width: "min(1200px, 80vw)", height: 64 };
-  }
-
-  if (size === "fullWidth") {
-    return { width: "min(1400px, 85vw)", height: 80 };
-  }
-
-  if (
-    size === "compact" ||
-    size === "compactLong" ||
-    size === "compactMedium" ||
-    size === "compactTall" ||
-    size === "wikiInline" ||
-    size === "wikiCompact" ||
-    size === "default" ||
-    size === "reset"
-  ) {
+  if (isCompactSize(size)) {
     return { width: "fit-content", height: "auto" };
   }
 
@@ -189,7 +143,6 @@ const DynamicIslandContent = ({
 
 export const Halo = ({ children, id, ...props }: { children: ReactNode; id: string }) => {
   const [screenSize, setScreenSize] = useState("desktop");
-  const mounted = useHydrated();
 
   useEffect(() => {
     // One measurement per frame; setScreenSize skips the re-render when the bucket is unchanged.
@@ -209,16 +162,6 @@ export const Halo = ({ children, id, ...props }: { children: ReactNode; id: stri
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
-  if (!mounted) {
-    return (
-      <HaloOuterWrapper>
-        <div className="facet-chrome relative isolate mx-auto h-11 items-center justify-center rounded-full px-4 text-center">
-          {children}
-        </div>
-      </HaloOuterWrapper>
-    );
-  }
 
   return (
     <HaloOuterWrapper>
