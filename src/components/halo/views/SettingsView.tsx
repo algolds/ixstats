@@ -10,7 +10,6 @@ import { useWikiMediaTheme } from "~/components/wiki-os/shared/MediaThemeContext
 import { cn } from "~/lib/utils";
 import {
   Settings,
-  Xmark as X,
   HalfMoon as Moon,
   SunLight as Sun,
   User,
@@ -37,6 +36,7 @@ import { soundCues } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
 import { useLocalPref, ToggleSwitch, SectionLabel } from "./settings/SettingsControls";
+import { HaloViewHeader } from "./shared/HaloViewParts";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
@@ -51,7 +51,7 @@ async function refreshAll(utils: ReturnType<typeof api.useUtils>) {
   }
 }
 
-function SettingsViewComponent({ onClose }: SettingsViewProps) {
+export function SettingsView({ onClose }: SettingsViewProps) {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
   const { theme, effectiveTheme, toggleTheme, compactMode, toggleCompactMode } = useTheme();
@@ -426,17 +426,17 @@ function SettingsHeader({
   isRefreshing?: boolean;
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <div className="text-label text-headline flex items-center gap-2">
-        {isOnWikiPage ? (
-          <BookOpen className="text-blue h-4 w-4" />
+    <HaloViewHeader
+      leading={
+        isOnWikiPage ? (
+          <BookOpen className="text-blue h-4 w-4 shrink-0" />
         ) : (
-          <Settings className="text-blue h-4 w-4" />
-        )}
-        <PreText whiteSpace="nowrap">{isOnWikiPage ? "Wiki settings" : "Settings"}</PreText>
-      </div>
-      <div className="flex items-center gap-1">
-        {onRefresh && (
+          <Settings className="text-blue h-4 w-4 shrink-0" />
+        )
+      }
+      title={isOnWikiPage ? "Wiki settings" : "Settings"}
+      trailing={
+        onRefresh ? (
           <Button
             type="button"
             variant="ghost"
@@ -449,22 +449,13 @@ function SettingsHeader({
           >
             <RefreshCw aria-hidden className={isRefreshing ? "animate-spin" : ""} />
           </Button>
-        )}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => {
-            soundCues.dismiss();
-            onClose();
-          }}
-          aria-label="Close"
-          className="text-label-secondary hover:text-label"
-        >
-          <X aria-hidden />
-        </Button>
-      </div>
-    </div>
+        ) : undefined
+      }
+      onClose={() => {
+        soundCues.dismiss();
+        onClose();
+      }}
+    />
   );
 }
 
@@ -522,5 +513,3 @@ function SettingsRow({
     </div>
   );
 }
-
-export const SettingsView = React.memo(SettingsViewComponent);

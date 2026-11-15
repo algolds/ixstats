@@ -1,16 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Crown, Globe, Shield, Xmark as X, Hammer as Gavel } from "iconoir-react";
+import { Crown, Globe, Shield, Hammer as Gavel } from "iconoir-react";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
-import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { HaloViewHeader } from "~/components/halo/views/shared/HaloViewParts";
 
 export function MyCountryActionsView({ onClose }: DIViewProps) {
   const router = useRouter();
@@ -50,27 +50,15 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
       transition={springSnappy}
       className="flex w-full flex-col p-4 text-left"
     >
-      <div className="mb-4 flex items-center justify-between">
-        <div className="text-headline text-yellow flex items-center gap-2">
-          <Crown className="h-4 w-4" />
-          <PreText className="text-inherit" whiteSpace="nowrap">
-            MyCountry quick actions
-          </PreText>
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          onClick={() => {
-            soundCues.dismiss();
-            onClose();
-          }}
-          className="text-label-secondary hover:text-label"
-          aria-label="Close quick actions"
-        >
-          <X aria-hidden />
-        </Button>
-      </div>
+      <HaloViewHeader
+        className="mb-4"
+        leading={<Crown className="text-yellow h-4 w-4 shrink-0" />}
+        title="MyCountry quick actions"
+        onClose={() => {
+          soundCues.dismiss();
+          onClose();
+        }}
+      />
 
       {/* Grid list */}
       <div className="grid grid-cols-2 gap-2">

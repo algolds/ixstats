@@ -12,7 +12,6 @@ import {
   Trophy,
   FireFlame as Flame,
   NavArrowRight as ChevronRight,
-  Xmark as X,
   Page as FileText,
   Crown,
   ClockRotateRight as History,
@@ -25,6 +24,11 @@ import {
   ScaleFrameEnlarge as Scale,
   ProfileCircle,
 } from "iconoir-react";
+import {
+  HaloCloseButton,
+  HaloEmpty,
+  HaloViewHeader,
+} from "~/components/halo/views/shared/HaloViewParts";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
@@ -133,16 +137,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   ]}
                 />
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={onClose}
-                aria-label="Close"
-                className="text-label-secondary hover:text-label"
-              >
-                <X aria-hidden />
-              </Button>
+              <HaloCloseButton onClick={onClose} />
             </div>
 
             {/* Content */}
@@ -156,15 +151,12 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   </div>
 
                   {pausedSessions.length === 0 ? (
-                    <div className="border-separator bg-fill-4 rounded-row flex flex-col items-center justify-center border px-4 py-8 text-center">
-                      <BookOpen className="text-label-tertiary mb-2 h-6 w-6" />
-                      <span className="text-label-secondary text-footnote">
-                        No paused sessions yet
-                      </span>
-                      <span className="text-label-secondary text-footnote mt-1">
-                        Your reading/editing progress will appear here.
-                      </span>
-                    </div>
+                    <HaloEmpty
+                      icon={<BookOpen />}
+                      title="No paused sessions yet"
+                      message="Your reading/editing progress will appear here."
+                      className="border-separator bg-fill-4 rounded-row border py-8"
+                    />
                   ) : (
                     <div className="space-y-2">
                       {pausedSessions.map((session) => (
@@ -327,9 +319,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   <div className="space-y-2">
                     <div className="text-subhead text-label-secondary">Recently visited pages</div>
                     {recentArticles.length === 0 ? (
-                      <div className="border-separator text-label-secondary rounded-control text-footnote border py-4 text-center">
-                        No pages visited recently
-                      </div>
+                      <HaloEmpty
+                        title="No pages visited recently"
+                        className="border-separator rounded-control border py-4"
+                      />
                     ) : (
                       <div className="space-y-1">
                         {recentArticles.slice(0, 3).map((page) => (
@@ -362,9 +355,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             exit={{ opacity: 0, y: -4 }}
             transition={tweenFast}
           >
-            {/* Country actions Header */}
-            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
-              <div className="flex items-center gap-2">
+            <HaloViewHeader
+              className="border-separator mb-4 border-b pb-3"
+              leading={
                 <Button
                   type="button"
                   variant="ghost"
@@ -375,25 +368,22 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 >
                   <ArrowLeft aria-hidden />
                 </Button>
-                <div className="flex flex-col">
-                  <h3 className="text-label text-headline flex items-center gap-2">
-                    <Crown className="text-yellow h-4 w-4" />
-                    Country Management
-                  </h3>
-                  <span className="text-label-secondary text-caption">{countryName}</span>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={onClose}
-                aria-label="Close"
-                className="text-label-secondary hover:text-label"
-              >
-                <X aria-hidden />
-              </Button>
-            </div>
+              }
+              title={
+                <span className="flex flex-col">
+                  <span className="inline-flex items-center gap-2">
+                    <Crown className="text-yellow h-4 w-4 shrink-0" />
+                    <span>Country Management</span>
+                  </span>
+                  {countryName && (
+                    <span className="text-label-secondary text-caption font-normal">
+                      {countryName}
+                    </span>
+                  )}
+                </span>
+              }
+              onClose={onClose}
+            />
 
             {/* Grid of Actions */}
             <div className="grid grid-cols-2 gap-3 py-1">

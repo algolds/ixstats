@@ -9,7 +9,6 @@ import {
   User,
   NavArrowRight as ChevronRight,
   LogOut,
-  Xmark as X,
   Shield,
   Map,
   ChatBubble as MessageSquare,
@@ -29,7 +28,7 @@ import { PreText } from "~/components/ui/pretext";
 import { Button, focusRing } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { EmptyState } from "~/components/ui/empty-state";
+import { HaloEmpty, HaloViewHeader } from "~/components/halo/views/shared/HaloViewParts";
 import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
@@ -103,9 +102,10 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
       exit={{ opacity: 0, y: -4 }}
       transition={springSnappy}
     >
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
-        <div className="flex items-center gap-2">
-          {user && (
+      <HaloViewHeader
+        className="mb-0 px-4 pt-3 pb-2"
+        leading={
+          user ? (
             <button
               type="button"
               onClick={() => navigateWithBasePath("/settings", router)}
@@ -113,7 +113,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               title="Account settings"
               aria-label="Account settings"
             >
-              {user?.imageUrl ? (
+              {user.imageUrl ? (
                 <img
                   src={assetUrl(user.imageUrl) ?? undefined}
                   alt=""
@@ -125,15 +125,11 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 </div>
               )}
             </button>
-          )}
-          <div>
-            <PreText className="text-label text-caption font-semibold" whiteSpace="nowrap">
-              {user?.firstName ? user.firstName : "My account"}
-            </PreText>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {country && (
+          ) : undefined
+        }
+        title={user?.firstName ? user.firstName : "My account"}
+        trailing={
+          country ? (
             <>
               <Button
                 type="button"
@@ -161,19 +157,10 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 <span>Map editor</span>
               </Button>
             </>
-          )}
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={onClose}
-            className="text-label-secondary hover:text-label"
-            title="Close expanded view"
-            aria-label="Close expanded view"
-          >
-            <X aria-hidden />
-          </Button>
-        </div>
-      </div>
+          ) : undefined
+        }
+        onClose={onClose}
+      />
 
       {setupStatus === "complete" && userProfile?.country ? (
         <div>
@@ -450,8 +437,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           <Skeleton className="h-10 w-full" />
         </div>
       ) : setupStatus === "needs-setup" ? (
-        <EmptyState
-          compact
+        <HaloEmpty
           title="You don't have a nation yet"
           message="Found one to unlock MyCountry."
           action={
@@ -466,8 +452,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           }
         />
       ) : setupStatus === "error" ? (
-        <EmptyState
-          compact
+        <HaloEmpty
           title="Couldn't load your profile"
           action={
             <Button type="button" variant="default" size="sm" onClick={() => void refetchProfile()}>

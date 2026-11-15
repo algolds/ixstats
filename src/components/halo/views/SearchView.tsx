@@ -7,6 +7,7 @@ import { Button } from "~/components/ui/button";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
+import { HaloEmpty } from "./shared/HaloViewParts";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -54,7 +55,7 @@ function shortcutHint(): string {
   return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K";
 }
 
-function SearchViewComponent({
+export function SearchView({
   searchQuery,
   setSearchQuery,
   searchFilter,
@@ -252,60 +253,48 @@ function SearchViewComponent({
           </div>
         ) : debouncedSearchQuery ? (
           /* ── No results ─────────────────────────────────────────── */
-          <div className="py-8 text-center">
-            <Search className="text-label-tertiary mx-auto mb-2 h-8 w-8" />
-            <div className="text-label-secondary text-body">
-              <PreText className="inline" whiteSpace="nowrap">
-                {`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
-              </PreText>
-              {searchFilter !== "all" && (
+          <HaloEmpty
+            icon={<Search />}
+            title={`Nothing found for "${debouncedSearchQuery}"${searchFilter !== "all" ? ` in ${searchFilter}.` : ""}`}
+            action={
+              searchFilter !== "all" ? (
                 <Button
                   type="button"
                   variant="link"
                   onClick={() => setSearchFilter?.("all")}
-                  className="ml-1 h-auto p-0"
+                  className="h-auto p-0"
                 >
-                  <PreText className="inline" whiteSpace="nowrap">
-                    Search all
-                  </PreText>
+                  Search all
                 </Button>
-              )}
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
-          <div className="py-10 text-center">
-            <PreText className="text-label-secondary text-body mb-3" whiteSpace="nowrap">
-              {`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
-            </PreText>
-            <div className="text-label-secondary text-footnote flex items-center justify-center gap-3">
-              <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">{shortcutHint()}</kbd>
-                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
-                  search
-                </PreText>
+          <HaloEmpty
+            title={`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
+            message={
+              <span className="text-label-secondary text-footnote inline-flex items-center justify-center gap-3">
+                <span className="flex items-center gap-1">
+                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">{shortcutHint()}</kbd>
+                  <span>search</span>
+                </span>
+                <span className="text-label-tertiary">·</span>
+                <span className="flex items-center gap-1">
+                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">←</kbd>
+                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">→</kbd>
+                  <span>filter</span>
+                </span>
+                <span className="text-label-tertiary">·</span>
+                <span className="flex items-center gap-1">
+                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Esc</kbd>
+                  <span>close</span>
+                </span>
               </span>
-              <span className="text-label-tertiary">·</span>
-              <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">←</kbd>
-                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">→</kbd>
-                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
-                  filter
-                </PreText>
-              </span>
-              <span className="text-label-tertiary">·</span>
-              <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Esc</kbd>
-                <PreText className="w-auto text-inherit" whiteSpace="nowrap">
-                  close
-                </PreText>
-              </span>
-            </div>
-          </div>
+            }
+          />
         )}
       </div>
     </div>
   );
 }
-
-export const SearchView = React.memo(SearchViewComponent);

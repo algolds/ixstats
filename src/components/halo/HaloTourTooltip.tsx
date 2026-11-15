@@ -134,7 +134,7 @@ export function HaloTourTooltip() {
               size="icon-sm"
               onClick={skipTour}
               className="text-label-secondary hover:text-label rounded-full"
-              aria-label="Close tour"
+              aria-label="Skip walkthrough"
             >
               <X aria-hidden />
             </Button>

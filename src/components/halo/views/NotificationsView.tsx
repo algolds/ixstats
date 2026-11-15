@@ -12,7 +12,6 @@ import { useUser } from "~/context/auth-context";
 import {
   Bell,
   BellNotification as BellRing,
-  Xmark as X,
   CheckCircle,
   NavArrowRight as ChevronRight,
   Expand as Maximize2,
@@ -40,7 +39,7 @@ import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig"
 import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
-import { EmptyState } from "~/components/ui/empty-state";
+import { HaloEmpty, HaloViewHeader } from "./shared/HaloViewParts";
 
 function TrayLoading({ label }: { label: string }) {
   return (
@@ -52,7 +51,7 @@ function TrayLoading({ label }: { label: string }) {
   );
 }
 
-function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
+export function NotificationsView({ onClose }: NotificationsViewProps) {
   const router = useRouter();
   const notify = useNotify();
   const { user } = useUser();
@@ -261,23 +260,25 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
   return (
     <div className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-label text-headline flex items-center gap-2">
-          <BellRing className="text-yellow h-4 w-4" />
-          <PreText className="text-inherit" whiteSpace="nowrap">
-            Notifications
-          </PreText>
-          {totalUnreadCount > 0 && (
-            <PreText
-              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
-              whiteSpace="nowrap"
-            >
-              {String(totalUnreadCount)}
+      <HaloViewHeader
+        leading={<BellRing className="text-yellow h-4 w-4 shrink-0" />}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <PreText className="text-inherit" whiteSpace="nowrap">
+              Notifications
             </PreText>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {totalUnreadCount > 0 && (
+            {totalUnreadCount > 0 && (
+              <PreText
+                className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
+                whiteSpace="nowrap"
+              >
+                {String(totalUnreadCount)}
+              </PreText>
+            )}
+          </span>
+        }
+        trailing={
+          totalUnreadCount > 0 ? (
             <Button
               type="button"
               variant="ghost"
@@ -292,23 +293,13 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 Read all
               </PreText>
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              soundCues.dismiss();
-              onClose();
-            }}
-            className="text-label-secondary hover:text-label"
-            title="Close tray"
-            aria-label="Close tray"
-          >
-            <X aria-hidden />
-          </Button>
-        </div>
-      </div>
+          ) : undefined
+        }
+        onClose={() => {
+          soundCues.dismiss();
+          onClose();
+        }}
+      />
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
       <SegmentedControl
@@ -354,8 +345,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             ) : messagesLoading ? (
               <TrayLoading label="Loading messages" />
             ) : messagesError ? (
-              <EmptyState
-                compact
+              <HaloEmpty
                 title="Couldn't load messages"
                 action={
                   <Button
@@ -369,18 +359,18 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 }
               />
             ) : (
-              <div className="py-10 text-center">
-                <MessageCircle className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
-                <p className="text-label-secondary text-caption font-semibold">
-                  No recent messages
-                </p>
-                <Link
-                  href="/messages"
-                  className="text-tint text-caption mt-2 inline-block font-semibold hover:underline"
-                >
-                  Start a conversation
-                </Link>
-              </div>
+              <HaloEmpty
+                icon={<MessageCircle />}
+                title="No recent messages"
+                action={
+                  <Link
+                    href="/messages"
+                    className="text-tint text-caption inline-block font-semibold hover:underline"
+                  >
+                    Start a conversation
+                  </Link>
+                }
+              />
             )}
           </div>
         ) : (
@@ -464,8 +454,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
             ) : notificationsLoading ? (
               <TrayLoading label="Loading notifications" />
             ) : notificationsError ? (
-              <EmptyState
-                compact
+              <HaloEmpty
                 title="Couldn't load notifications"
                 action={
                   <Button
@@ -479,12 +468,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                 }
               />
             ) : (
-              <div className="py-10 text-center">
-                <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
-                <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
-                  No notifications
-                </PreText>
-              </div>
+              <HaloEmpty icon={<Bell />} title="No notifications" />
             )}
           </div>
         )}
@@ -509,5 +493,3 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     </div>
   );
 }
-
-export const NotificationsView = React.memo(NotificationsViewComponent);

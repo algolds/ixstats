@@ -16,6 +16,7 @@ import { useDIPlugin } from "~/components/halo/plugin-context";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import { computeLiveMatchState } from "~/lib/sports/live-match";
+import { HaloEmpty } from "~/components/halo/views/shared/HaloViewParts";
 import type { DIViewProps } from "~/components/halo/types";
 
 type LiveActivityMatch = RouterOutputs["sports"]["getLiveActivities"][number];
@@ -73,7 +74,7 @@ function SportsLiveView({ context }: DIViewProps) {
   const match = ((context as any)?.match ?? null) as LiveActivityMatch | null;
   const state = useLiveMatchState(match);
   if (!match || !state) {
-    return <div className="text-label-secondary text-body p-6 text-center">No live match.</div>;
+    return <HaloEmpty title="No live match." />;
   }
 
   return (
