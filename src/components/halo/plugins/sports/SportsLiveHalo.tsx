@@ -157,10 +157,12 @@ function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
 
 export function SportsLiveHalo() {
   const { isSignedIn } = useUser();
-  const refetchInterval = useVisibleRefetch(30_000);
+  // Poll fast only while a match is live; the visibility hook pauses it entirely in a hidden tab
+  const visibleInterval = useVisibleRefetch(30_000);
   const { data } = api.sports.getLiveActivities.useQuery(undefined, {
     enabled: isSignedIn,
-    refetchInterval,
+    refetchInterval: (query) =>
+      visibleInterval === false ? false : query.state.data?.length ? 30_000 : 120_000,
     refetchOnWindowFocus: true,
   });
 
