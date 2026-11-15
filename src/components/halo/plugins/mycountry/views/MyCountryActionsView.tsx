@@ -1,46 +1,27 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Crown, Globe, Shield, Hammer as Gavel } from "iconoir-react";
+import { Crown } from "iconoir-react";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { cn } from "~/lib/utils";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";
+import { getCountryActions } from "~/components/halo/country-actions";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { HaloViewHeader } from "~/components/halo/views/shared/HaloViewParts";
 
+const QUICK_ACTIONS = getCountryActions(["diplomacy", "executive", "defense"]);
+
 export function MyCountryActionsView({ onClose }: DIViewProps) {
   const router = useRouter();
 
-  const navigateToSection = (section: string) => {
+  const handleAction = (path: string) => {
     onClose();
-    navigateWithBasePath(section === "overview" ? "/mycountry" : `/mycountry/${section}`, router);
+    navigateWithBasePath(path, router);
   };
-
-  const quickActions = [
-    {
-      label: "Diplomacy",
-      icon: Globe,
-      iconClass: "text-teal",
-      action: () => navigateToSection("diplomacy"),
-    },
-    {
-      label: "Domestic policy",
-      icon: Gavel,
-      iconClass: "text-indigo",
-      action: () => navigateToSection("executive"),
-    },
-    {
-      label: "Operations",
-      icon: Shield,
-      iconClass: "text-red",
-      action: () => navigateToSection("defense"),
-      isPremium: true,
-    },
-  ];
 
   return (
     <motion.div
@@ -62,15 +43,15 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
 
       {/* Grid list */}
       <div className="grid grid-cols-2 gap-2">
-        {quickActions.map((item, idx) => {
+        {QUICK_ACTIONS.map((item, idx) => {
           const Icon = item.icon;
-          const isLast = idx === quickActions.length - 1;
+          const isLast = idx === QUICK_ACTIONS.length - 1;
           return (
             <Button
-              key={idx}
+              key={item.id}
               type="button"
               variant="secondary"
-              onClick={item.action}
+              onClick={() => handleAction(item.path)}
               className={cn("w-full justify-start", isLast && "col-span-2")}
             >
               <Icon aria-hidden className={item.iconClass} />

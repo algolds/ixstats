@@ -1,4 +1,3 @@
-import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState } from "react";
 import { useUser } from "~/context/auth-context";
 import { api } from "~/trpc/react";
@@ -16,19 +15,15 @@ import {
   Crown,
   ClockRotateRight as History,
   ArrowLeft,
-  City as Building2,
-  Page as ScrollText,
-  Community as Handshake,
-  Map,
-  Wallet,
-  ScaleFrameEnlarge as Scale,
   ProfileCircle,
 } from "iconoir-react";
+import { getCountryActions } from "~/components/halo/country-actions";
 import {
   HaloCloseButton,
   HaloEmpty,
   HaloViewHeader,
 } from "~/components/halo/views/shared/HaloViewParts";
+import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
 import { AvatarGlow } from "~/components/vault/AvatarGlow";
 import { NeonFrameOverlay } from "~/components/vault/NeonFrameOverlay";
@@ -387,83 +382,35 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
             {/* Grid of Actions */}
             <div className="grid grid-cols-2 gap-3 py-1">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref("/mycountry"), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <Building2 className="text-yellow h-5 w-5" />
-                <span>MyCountry Dashboard</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref("/mycountry/executive"), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <ScrollText className="text-indigo h-5 w-5" />
-                <span>Executive actions</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref("/mycountry/diplomacy"), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <Handshake className="text-teal h-5 w-5" />
-                <span>Manage diplomacy</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref(MYCOUNTRY_MAP_EDITOR_PATH), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <Map className="text-blue h-5 w-5" />
-                <span>Map and editor</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref("/vault"), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <Wallet data-app="vault" className="text-tint h-5 w-5" />
-                <span>IxVault Cards</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => {
-                  onClose();
-                  navigateWithBasePath(ixstatesHref("/mycountry/politics"), router);
-                }}
-                className="h-auto w-full flex-col gap-2 p-4 text-center"
-              >
-                <Scale className="text-indigo h-5 w-5" />
-                <span>Politics and elections</span>
-              </Button>
+              {getCountryActions([
+                "overview",
+                "executive",
+                "diplomacy",
+                "map-editor",
+                "vault",
+                "politics",
+              ]).map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={action.id}
+                    type="button"
+                    variant="secondary"
+                    onClick={() => {
+                      onClose();
+                      navigateWithBasePath(ixstatesHref(action.path), router);
+                    }}
+                    className="h-auto w-full flex-col gap-2 p-4 text-center"
+                  >
+                    <Icon
+                      aria-hidden
+                      data-app={action.dataApp}
+                      className={cn(action.iconClass, "h-5 w-5")}
+                    />
+                    <span>{action.label}</span>
+                  </Button>
+                );
+              })}
             </div>
           </motion.div>
         )}

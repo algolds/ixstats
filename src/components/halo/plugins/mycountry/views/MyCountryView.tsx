@@ -1,7 +1,6 @@
 "use client";
 
 import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
-import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import React, { useState } from "react";
 import {
   Crown,
@@ -10,17 +9,17 @@ import {
   NavArrowRight as ChevronRight,
   LogOut,
   Shield,
-  Map,
-  ChatBubble as MessageSquare,
-  Community as Handshake,
   OpenBook as BookOpen,
-  ScaleFrameEnlarge as Scale,
-  EditPencil as Edit3,
 } from "iconoir-react";
+import {
+  countryProfilePath,
+  getCountryAction,
+  getCountryActions,
+} from "~/components/halo/country-actions";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { GrowthArrow } from "~/components/ui/GrowthArrow";
-import { createAbsoluteUrl, getNationUrl, cn } from "~/lib/utils";
+import { createAbsoluteUrl, cn } from "~/lib/utils";
 import { useUser, SignOutButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { isStandaloneClient } from "~/lib/system/standalone-detection";
@@ -94,6 +93,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
   /** Country action tiles: neutral gray buttons; the icon carries each section's system colour. */
   const ACTION_BUTTON = "w-full justify-start";
+  const mapEditorAction = getCountryAction("map-editor");
+  const MapEditorIcon = mapEditorAction.icon;
+  const gridActions = getCountryActions(["editor", "economy", "politics", "diplomacy", "messages"]);
 
   return (
     <motion.div
@@ -136,8 +138,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  const slug = country.slug || country.name.replace(/\s+/g, "_");
-                  navigateWithBasePath(`/countries/${slug}`, router);
+                  handleNavigate(countryProfilePath(country));
                 }}
                 title="Public country profile"
               >
@@ -149,12 +150,12 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  navigateWithBasePath(MYCOUNTRY_MAP_EDITOR_PATH, router);
+                  handleNavigate(mapEditorAction.path);
                 }}
                 title="Open MyCountry map editor"
               >
-                <Edit3 aria-hidden className="text-yellow size-3.5" />
-                <span>Map editor</span>
+                <MapEditorIcon aria-hidden className={cn(mapEditorAction.iconClass, "size-3.5")} />
+                <span>{mapEditorAction.label}</span>
               </Button>
             </>
           ) : undefined
@@ -331,55 +332,21 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           <div className="px-3 py-2">
             <p className="text-subhead text-label-secondary px-1 pb-2">Country actions</p>
             <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleNavigate(editorHref("identity"))}
-                className={ACTION_BUTTON}
-              >
-                <Edit3 aria-hidden className="text-yellow" />
-                <span className="truncate">Country editor</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleNavigate("/mycountry/map-editor")}
-                className={ACTION_BUTTON}
-              >
-                <Map aria-hidden className="text-teal" />
-                <span className="truncate">Map editor</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleNavigate("/mycountry/politics")}
-                className={ACTION_BUTTON}
-              >
-                <Scale aria-hidden className="text-indigo" />
-                <span className="truncate">Politics</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleNavigate("/messages")}
-                className={ACTION_BUTTON}
-              >
-                <MessageSquare aria-hidden className="text-blue" />
-                <span className="truncate">Messages</span>
-              </Button>
-
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => handleNavigate("/mycountry/diplomacy")}
-                className={ACTION_BUTTON}
-              >
-                <Handshake aria-hidden className="text-teal" />
-                <span className="truncate">Diplomacy</span>
-              </Button>
+              {gridActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={action.id}
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleNavigate(action.path)}
+                    className={ACTION_BUTTON}
+                  >
+                    <Icon aria-hidden className={action.iconClass} />
+                    <span className="truncate">{action.label}</span>
+                  </Button>
+                );
+              })}
 
               <Button
                 type="button"
@@ -419,9 +386,9 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
               variant="ghost"
               size="sm"
               onClick={() =>
-                userProfile?.country?.name && handleNavigate(getNationUrl(userProfile.country.name))
+                userProfile?.country && handleNavigate(countryProfilePath(userProfile.country))
               }
-              disabled={!userProfile?.country?.name}
+              disabled={!userProfile?.country}
               className="text-label-secondary hover:text-label"
             >
               <Globe aria-hidden />

@@ -35,6 +35,7 @@ import {
   StatUp,
   HelpCircle,
 } from "iconoir-react";
+import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { FORUM_HOME, newThreadHref } from "~/lib/thinkpages-forum/links";
 
 export type CommandCategory =
@@ -158,7 +159,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Territory and borders editor",
-    path: "/mycountry/map-editor",
+    path: MYCOUNTRY_MAP_EDITOR_PATH,
     icon: Map,
     category: "Statecraft",
     description: "Draw national boundaries and provincial subdivisions",
