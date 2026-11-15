@@ -2,8 +2,9 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { createAbsoluteUrl } from "~/lib/utils";
+import { navigateWithBasePath } from "~/lib/base-path";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -52,6 +53,7 @@ function TrayLoading({ label }: { label: string }) {
 }
 
 function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
+  const router = useRouter();
   const notify = useNotify();
   const { user } = useUser();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -235,12 +237,12 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     const isRead = n.status === "read" || n.read;
     if (!isRead) handleMarkRead(n);
     const targetUrl = n.actionUrl || n.href;
-    if (targetUrl) window.location.href = createAbsoluteUrl(targetUrl);
+    if (targetUrl) navigateWithBasePath(targetUrl, router);
     if (n.source === "enhanced") recordEngagement(n.id, "click");
   };
 
   const handleMessageClick = (conv: MessageTrayConversation) => {
-    window.location.href = createAbsoluteUrl(`/messages?conversation=${conv.id}`);
+    navigateWithBasePath(`/messages?conversation=${conv.id}`, router);
   };
 
   const toggleGroup = (key: string) => {

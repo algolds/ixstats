@@ -8,6 +8,10 @@ const mockProfileQuery = jest.fn();
 jest.mock("~/trpc/react", () => ({
   api: { users: { getProfile: { useQuery: (...args: unknown[]) => mockProfileQuery(...args) } } },
 }));
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  usePathname: () => "/",
+}));
 jest.mock("~/context/auth-context", () => ({
   useUser: () => mockUseUser(),
   SignOutButton: ({ children }: { children: React.ReactNode }) => <>{children}</>,

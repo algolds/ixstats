@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
+import { navigateWithBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { nextTheme, useTheme } from "~/context/theme-context";
 import { SignOutButton, useUser } from "~/context/auth-context";
@@ -256,7 +257,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
               <FacetList variant="plain">
                 <FacetListSection aria-label="Account">
                   <FacetRow
-                    onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
+                    onClick={() => navigateWithBasePath("/settings", router)}
                     leading={
                       <span className="rounded-control-sm bg-blue/15 block p-2">
                         <User className="text-blue size-3.5" />
@@ -279,7 +280,7 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
                     className="text-label-secondary hover:bg-red/10 hover:text-red"
                     onClick={() => {
                       onClose();
-                      window.location.href = createAbsoluteUrl("/admin");
+                      navigateWithBasePath("/admin", router);
                     }}
                   >
                     <Settings aria-hidden className="text-red" />

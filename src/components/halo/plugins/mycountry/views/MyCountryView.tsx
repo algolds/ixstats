@@ -34,7 +34,8 @@ import { motion } from "motion/react";
 import type { ViewMode } from "~/components/halo/types";
 import { springSnappy } from "~/lib/design/motion";
 import { effectiveGrowthOf } from "~/lib/economy/effective-growth";
-import { assetUrl } from "~/lib/base-path";
+import { assetUrl, navigateWithBasePath } from "~/lib/base-path";
+import { useRouter } from "next/navigation";
 
 /** A decimal rate (0.03) as the signed percent GrowthArrow shows (3). */
 const asPercent = (rate: number | null | undefined) =>
@@ -48,6 +49,7 @@ interface MyCountryViewProps {
 }
 
 export function MyCountryView({ onClose }: MyCountryViewProps) {
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const [metricView, setMetricView] = useState({
     gdp: "perCapita" as "perCapita" | "total",
@@ -88,7 +90,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
 
   const handleNavigate = (path: string) => {
     onClose();
-    window.location.href = createAbsoluteUrl(path);
+    navigateWithBasePath(path, router);
   };
 
   /** Country action tiles: neutral gray buttons; the icon carries each section's system colour. */
@@ -106,7 +108,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
           {user && (
             <button
               type="button"
-              onClick={() => (window.location.href = createAbsoluteUrl("/settings"))}
+              onClick={() => navigateWithBasePath("/settings", router)}
               className="group focus-visible:outline-tint relative flex-shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2"
               title="Account settings"
               aria-label="Account settings"
@@ -139,7 +141,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 size="sm"
                 onClick={() => {
                   const slug = country.slug || country.name.replace(/\s+/g, "_");
-                  window.location.href = createAbsoluteUrl(`/countries/${slug}`);
+                  navigateWithBasePath(`/countries/${slug}`, router);
                 }}
                 title="Public country profile"
               >
@@ -151,7 +153,7 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
                 variant="secondary"
                 size="sm"
                 onClick={() => {
-                  window.location.href = createAbsoluteUrl(MYCOUNTRY_MAP_EDITOR_PATH);
+                  navigateWithBasePath(MYCOUNTRY_MAP_EDITOR_PATH, router);
                 }}
                 title="Open MyCountry map editor"
               >

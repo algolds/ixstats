@@ -50,6 +50,10 @@ jest.mock("~/trpc/react", () => ({
     },
   },
 }));
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+  usePathname: () => "/",
+}));
 jest.mock("~/context/auth-context", () => ({
   useUser: () => ({ user: { id: "u1" }, isLoaded: true, isSignedIn: true }),
 }));
