@@ -1,5 +1,4 @@
 import { useState, useEffect, useEffectEvent } from "react";
-import { Book, Globe, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useAuth, useUser } from "~/context/auth-context";
@@ -14,7 +13,13 @@ import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./type
 import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
-import { commandsFor, CORE_FEATURES } from "./halo-registry";
+import { CORE_FEATURES, type SystemActionId } from "./halo-registry";
+import {
+  buildIndex,
+  commandEntriesFor,
+  searchCatalog,
+  type CatalogDescriptor,
+} from "~/lib/halo/search";
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -100,258 +105,113 @@ export function useDynamicIslandState() {
     }
   };
 
-  // Pre-compute lowercase command index with category & keywords
-  const commandIndex = (() => {
-    const ctx = commandsFor(isAdmin);
-    if (!isSignedIn || !user) {
-      ctx.push(
-        {
-          name: "Sign in",
-          path: "/sign-in",
-          icon: LogIn,
-          category: "System",
-          description: "Sign in to your IxStates account",
-          keywords: ["login", "auth", "signin", "session"],
-        },
-        {
-          name: "Sign up",
-          path: "/sign-up",
-          icon: LogIn,
-          category: "System",
-          description: "Create a new IxStates account",
-          keywords: ["register", "signup", "join", "new account"],
-        }
-      );
-    } else {
-      ctx.push({
-        name: "Sign out",
-        actionId: "sign-out",
-        icon: LogOut,
-        category: "System",
-        description: "Sign out of your account",
-        keywords: ["logout", "exit", "signoff"],
-      });
-    }
-
-    if (pathname?.includes("/countries/") && !pathname?.includes("/countries/new")) {
-      const cid = pathname.split("/countries/")[1]?.split("/")[0];
-      if (cid) {
-        ctx.push({
-          name: "Country profile",
-          path: `/countries/${cid}`,
-          icon: Globe,
-          category: "Geography",
-          description: "View detailed country profile and economy",
-          keywords: ["profile", "showcase", "country"],
-        });
-      }
-    }
-
-    return ctx.map((c) => ({
-      ...c,
-      _lower:
-        `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
-    }));
-  })();
-
-  const featureIndex = CORE_FEATURES.map((f) => ({
-    ...f,
-    _lower:
-      `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
-  }));
-
-  const countryIndex = extractCountriesList(countriesData as CountriesData | undefined).map(
-    (c) => ({ ...c, _lower: c.name.toLowerCase() })
+  const commandIndex = buildIndex(
+    commandEntriesFor({
+      isAdmin,
+      signedIn: Boolean(isSignedIn && user),
+      pathname,
+    })
   );
+  const featureIndex = buildIndex(CORE_FEATURES);
+  const countryIndex = buildIndex(extractCountriesList(countriesData as CountriesData | undefined));
 
-  // Combined and filtered search results
-  const gatherSearchResults = (): SearchResult[] => {
-    if (!debouncedSearchQuery.trim()) return [];
-
-    const query = debouncedSearchQuery.toLowerCase();
-    const matchedCountries: SearchResult[] = [];
-    const matchedCommands: SearchResult[] = [];
-    const matchedFeatures: SearchResult[] = [];
-    const matchedWiki: SearchResult[] = [];
-
-    const handleExecute = (actionId?: string, targetPath?: string) => {
-      if (actionId) {
-        switch (actionId) {
-          case "toggle-theme": {
-            toggleTheme();
-            return;
-          }
-          case "toggle-sound": {
-            const next = !soundSettings.enabled;
-            soundSettings.setEnabled(next);
-            return;
-          }
-          case "toggle-compact": {
-            toggleCompactMode();
-            return;
-          }
-          case "mark-all-read": {
-            markAllNotificationsAsRead();
-            notify.success("All notifications marked as read");
-            return;
-          }
-          case "reload-data": {
-            window.location.reload();
-            return;
-          }
-          case "random-wiki": {
-            navigateWithBasePath("/util/random", router);
-            return;
-          }
-          case "sign-out": {
-            void signOut().finally(() => {
-              window.location.href = createAbsoluteUrl("/");
-            });
-            return;
-          }
-          case "random-country": {
-            if (countryIndex.length > 0) {
-              const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
-              const slug = random?.slug ?? random?.id;
-              if (slug) navigateWithBasePath(`/countries/${slug}`, router);
-            }
-            return;
-          }
-        }
-      }
-      if (targetPath === "#search") {
-        switchMode("search");
-        return;
-      }
-      if (targetPath === "#notifications") {
-        switchMode("notifications");
-        return;
-      }
-      if (targetPath === "#settings") {
-        switchMode("settings");
-        return;
-      }
-      if (targetPath) {
-        navigateWithBasePath(targetPath, router);
-      }
-    };
-
-    // 1. Gather Countries
-    if (searchFilter === "all" || searchFilter === "countries") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const country of countryIndex) {
-        if (country._lower.includes(query)) {
-          const slug = country.slug ?? country.id;
-          matchedCountries.push({
-            id: `country-${country.id}`,
-            type: "country",
-            title: country.name,
-            description: country.economicTier
-              ? `Tier: ${country.economicTier}`
-              : "View country profile",
-            metadata: {
-              countryName: country.name,
-              category: "Country",
-              flagUrl: country.flagUrl || country.flag || undefined,
-              economicTier: country.economicTier,
-            },
-            action: () => navigateWithBasePath(`/countries/${slug}`, router),
+  const executeCommand = (actionId?: SystemActionId, targetPath?: string) => {
+    if (actionId) {
+      switch (actionId) {
+        case "toggle-theme":
+          toggleTheme();
+          return;
+        case "toggle-sound":
+          soundSettings.setEnabled(!soundSettings.enabled);
+          return;
+        case "toggle-compact":
+          toggleCompactMode();
+          return;
+        case "mark-all-read":
+          markAllNotificationsAsRead();
+          notify.success("All notifications marked as read");
+          return;
+        case "reload-data":
+          window.location.reload();
+          return;
+        case "random-wiki":
+          navigateWithBasePath("/util/random", router);
+          return;
+        case "sign-out":
+          void signOut().finally(() => {
+            window.location.href = createAbsoluteUrl("/");
           });
+          return;
+        case "random-country": {
+          if (countryIndex.length > 0) {
+            const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
+            const slug = random?.slug ?? random?.id;
+            if (slug) navigateWithBasePath(`/countries/${slug}`, router);
+          }
+          return;
         }
-        if (matchedCountries.length >= limit) break;
       }
     }
-
-    // 2. Gather Commands
-    if (searchFilter === "all" || searchFilter === "commands") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const cmd of commandIndex) {
-        if (cmd._lower.includes(query)) {
-          // oxlint-disable-next-line
-          matchedCommands.push({
-            id: `command-${cmd.actionId ?? cmd.path ?? cmd.name}`,
-            type: "command",
-            title: cmd.name,
-            description: cmd.description,
-            icon: cmd.icon,
-            metadata: {
-              category: cmd.category,
-            },
-            action: () => handleExecute(cmd.actionId, cmd.path),
-          });
-        }
-        if (matchedCommands.length >= limit) break;
-      }
+    if (targetPath === "#search") {
+      switchMode("search");
+      return;
     }
-
-    // 3. Gather Features
-    if (searchFilter === "all" || searchFilter === "features") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const feat of featureIndex) {
-        if (feat._lower.includes(query)) {
-          // oxlint-disable-next-line
-          matchedFeatures.push({
-            id: `feature-${feat.actionId ?? feat.path ?? feat.name}`,
-            type: "feature",
-            title: feat.name,
-            description: feat.description,
-            icon: feat.icon,
-            metadata: {
-              category: feat.category,
-            },
-            action: () => handleExecute(feat.actionId, feat.path),
-          });
-        }
-        if (matchedFeatures.length >= limit) break;
-      }
+    if (targetPath === "#notifications") {
+      switchMode("notifications");
+      return;
     }
-
-    // 4. Gather Wiki Articles
-    if (searchFilter === "all" || searchFilter === "wiki") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const article of wikiSearchData?.results ?? []) {
-        matchedWiki.push({
-          id: `wiki-${article.title}`,
-          type: "wiki",
-          title: article.title,
-          description: article.snippet
-            ? article.snippet.replace(/<[^>]*>/g, "").slice(0, 120)
-            : "Wiki article",
-          icon: Book,
-          metadata: {
-            category: "Wiki",
-          },
-          action: () => {
-            navigateWithBasePath(
-              `/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`,
-              router
-            );
-          },
-        });
-        if (matchedWiki.length >= limit) break;
-      }
+    if (targetPath === "#settings") {
+      switchMode("settings");
+      return;
     }
-
-    // Combine results
-    if (searchFilter === "all") {
-      if (isWikiActive) {
-        return [...matchedWiki, ...matchedCountries, ...matchedCommands, ...matchedFeatures].slice(
-          0,
-          12
-        );
-      }
-      return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
-        0,
-        12
-      );
+    if (targetPath) {
+      navigateWithBasePath(targetPath, router);
     }
-
-    return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
-      0,
-      12
-    );
   };
-  const searchResults = gatherSearchResults();
+
+  const toSearchResult = (descriptor: CatalogDescriptor): SearchResult => {
+    if (descriptor.kind === "country") {
+      return {
+        id: descriptor.key,
+        type: "country",
+        title: descriptor.title,
+        description: descriptor.description,
+        metadata: {
+          countryName: descriptor.title,
+          category: descriptor.category,
+          flagUrl: descriptor.flagUrl,
+          economicTier: descriptor.economicTier,
+        },
+        action: () => {
+          if (descriptor.path) navigateWithBasePath(descriptor.path, router);
+        },
+      };
+    }
+
+    return {
+      id: descriptor.key,
+      type: descriptor.kind,
+      title: descriptor.title,
+      description: descriptor.description,
+      icon: descriptor.icon,
+      metadata: {
+        category: descriptor.category,
+      },
+      action: () => executeCommand(descriptor.actionId, descriptor.path),
+    };
+  };
+
+  const searchResults: SearchResult[] = searchCatalog(
+    debouncedSearchQuery,
+    searchFilter,
+    {
+      countries: countryIndex,
+      commands: commandIndex,
+      features: featureIndex,
+      wiki: wikiSearchData?.results ?? [],
+    },
+    { wikiFirst: isWikiActive }
+  ).map(toSearchResult);
 
   // Plugin view sync: a newly active plugin's first view becomes the expanded view, and a plugin
   // view left open after its plugin goes away falls back to compact

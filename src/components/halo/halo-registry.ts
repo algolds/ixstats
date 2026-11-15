@@ -37,10 +37,10 @@ import {
 } from "iconoir-react";
 import { FORUM_HOME, newThreadHref } from "~/lib/thinkpages-forum/links";
 
-type CommandCategory =
+export type CommandCategory =
   "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
-type SystemActionId =
+export type SystemActionId =
   | "toggle-theme"
   | "toggle-sound"
   | "toggle-compact"
@@ -50,7 +50,7 @@ type SystemActionId =
   | "random-country"
   | "sign-out";
 
-interface CommandEntry {
+export interface CommandEntry {
   name: string;
   path?: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -62,7 +62,7 @@ interface CommandEntry {
   adminOnly?: boolean;
 }
 
-interface FeatureEntry {
+export interface FeatureEntry {
   name: string;
   path?: string;
   icon: React.ComponentType<{ className?: string }>;

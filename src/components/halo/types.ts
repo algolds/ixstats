@@ -73,7 +73,7 @@ export interface CompactViewProps {
   pluginBadge?: DIBadge;
 }
 
-type CountrySummary = {
+export type CountrySummary = {
   id: string;
   name: string;
   slug?: string;
