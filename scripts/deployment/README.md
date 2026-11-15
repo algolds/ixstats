@@ -26,7 +26,7 @@ The repository consolidates production deployment tooling behind a single canoni
    - Env files: `server.mjs`, `ws-backend.mjs` and `cron-runner.mjs` load them through `load-env.mjs` in the order `.env.production.local`, `.env.local`, `.env.production`, `.env` (first file to set a key wins; real env vars always win). `start-production.sh` sources `.env.production` and then `.env.production.local`, so the secrets file wins there too.
 
 3. **Schema Migration Strategy**:
-   - Schema deployment runs through explicit, guarded operations: the additive step, the hand-written idempotent SQL files `deploy-production.sh` names, then `prisma db push` without `--accept-data-loss`. `SKIP_SCHEMA_SYNC=1` skips all three (rollbacks). When the push stops only on unique constraints, check each for duplicates, then apply it by hand with `bunx prisma db push --accept-data-loss --skip-generate` and run the deploy again ([release guide A4](../../docs/operations/release-guide.md#a4-build-and-deploy)).
+   - Schema deployment runs through explicit, guarded operations: the additive step, the hand-written idempotent SQL files `deploy-production.sh` names, then `prisma db push` without `--accept-data-loss`. `SKIP_SCHEMA_SYNC=1` skips all three (rollbacks). When the push stops only on unique constraints, check each for duplicates, then apply it by hand with `bunx prisma db push --accept-data-loss` and run the deploy again ([release guide A4](../../docs/operations/release-guide.md#a4-build-and-deploy)).
    - Destructive database writes (`db:reset`, unconfirmed schema drops) are permanently blocked in scripts.
 
 4. **Prod-Clone / E2E Verification Workflow**:

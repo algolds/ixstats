@@ -121,7 +121,7 @@ Exchange is closed. A manual run follows the steps in order.
 1. **Close the Exchange (maintenance mode):**
    `assertExchangeOpen` (`src/lib/exchange/guards.ts`) checks `getVaultConfig(db)` for `vault_isMaintenanceMode` (`cfg.isMaintenanceMode`) and `vault_isExchangeEnabled` (`cfg.isExchangeEnabled`). Close the Exchange before running the migration:
    ```sql
-   INSERT INTO "system_config" ("id", "key", "value", "updatedAt")
+   INSERT INTO "SystemConfig" ("id", "key", "value", "updatedAt")
    VALUES ('cfg_exchange_enabled', 'vault_isExchangeEnabled', 'false', NOW())
    ON CONFLICT ("key") DO UPDATE SET "value" = 'false', "updatedAt" = NOW();
    ```
@@ -184,7 +184,7 @@ Exchange is closed. A manual run follows the steps in order.
 
 7. **Re-open the Exchange:**
    ```sql
-   UPDATE "system_config" SET "value" = 'true', "updatedAt" = NOW()
+   UPDATE "SystemConfig" SET "value" = 'true', "updatedAt" = NOW()
    WHERE "key" = 'vault_isExchangeEnabled';
    ```
 

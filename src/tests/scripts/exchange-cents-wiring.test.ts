@@ -37,7 +37,7 @@ describe("the integer-cents migration", () => {
     "runs in %s before the first db push",
     (path) => {
       const script = readFileSync(path, "utf8");
-      const centsAt = script.indexOf(`prisma db execute --schema prisma/schema --file ${CENTS_FILE}`);
+      const centsAt = script.indexOf(`prisma db execute --file ${CENTS_FILE}`);
       const pushAt = script.indexOf("bun run db:push:force");
       expect(centsAt).toBeGreaterThan(-1);
       expect(pushAt).toBeGreaterThan(-1);

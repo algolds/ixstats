@@ -14,7 +14,7 @@ const script = readFileSync("scripts/deploy-production.sh", "utf8");
 /** Data SQL that waits for the new server: the old build cannot read the triggers' `rank` conditions. */
 const ISSUE_TRIGGERS = "scripts/migrations/2026-10-stress/t-issue-template-triggers.sql";
 const runs = [
-  ...script.matchAll(/prisma db execute --schema prisma\/schema --file (\S+\.sql)(.*)/g),
+  ...script.matchAll(/prisma db execute --file (\S+\.sql)(.*)/g),
 ].map((m) => ({
   file: m[1]!,
   rest: m[2]!,
@@ -155,7 +155,7 @@ describe("the SQL the deploy runs", () => {
 
 /** Each step that must run before db push: a hand-written SQL file, the cards backfill or the IxWiki link conversion. */
 const STEP =
-  /bunx prisma db execute --schema prisma\/schema --file (\S+\.sql)|bun (scripts\/(?:cards\/backfill-cards-refresh|identity\/convert-wiki-name-claims)\.ts --apply)/g;
+  /bunx prisma db execute --file (\S+\.sql)|bun (scripts\/(?:cards\/backfill-cards-refresh|identity\/convert-wiki-name-claims)\.ts --apply)/g;
 const beforePush = (text: string) => {
   const pushAt = text.indexOf("bun run db:push:force");
   return [...text.matchAll(STEP)].filter((m) => m.index < pushAt).map((m) => (m[1] ?? m[2])!);

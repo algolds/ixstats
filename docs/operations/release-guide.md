@@ -37,7 +37,7 @@ Branches: `rose-garden` (nightly) → `development` (stable-experimental) → `m
       with the release checked out (A3) and the production env loaded
       (`set -a; source .env.production; source .env.production.local; set +a`):
       ```bash
-      bunx prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel prisma/schema --script > /tmp/prod-schema-diff.sql
+      bunx prisma migrate diff --from-config-datasource --to-schema prisma/schema --script > /tmp/prod-schema-diff.sql
       grep -nE '^(ALTER TABLE|CREATE|DROP)' /tmp/prod-schema-diff.sql
       bun scripts/deployment/apply-additive-schema.ts      # dry run: writes nothing
       ```
@@ -181,7 +181,7 @@ below).
 4. `bun run db:backup` — aborts the deploy if the dump fails; on success it appends the time, commit and dump to
    `backups/deploy-history.log`.
 5. **[schema] The additive step:** `bun scripts/deployment/apply-additive-schema.ts --apply`. It applies, in one
-   transaction, only the purely additive part of `prisma migrate diff --from-url` (new enums and enum values, new
+   transaction, only the purely additive part of `prisma migrate diff --from-config-datasource` (new enums and enum values, new
    tables with their indexes and foreign keys between them, nullable columns or columns with a default). It leaves to
    the SQL and the push everything else, every table, column and type a deploy SQL file creates or converts, and
    `wiki_revisions.origin` (whose labelling only runs when the WikiOS SQL adds it). The SQL below reads tables and
@@ -211,7 +211,7 @@ below).
    any data-loss warning instead of prompting. **If it stops, read the message**; never add `--accept-data-loss`
    blindly. When every warning is a unique constraint, the push can only fail on duplicates, never drop data: check
    each one it names (`SELECT <columns>, count(*) FROM <table> WHERE <columns> IS NOT NULL GROUP BY <columns> HAVING
-   count(*) > 1;` must be empty), apply it with `bunx prisma db push --accept-data-loss --skip-generate`, then run the
+   count(*) > 1;` must be empty), apply it with `bunx prisma db push --accept-data-loss`, then run the
    deploy again (every SQL file is a no-op and the push has nothing left). A warning that drops a column or table
    with data means a step was skipped: stop. Then the post-push SQL: `20261019120000_rename_ixworld_realm_ixnay`, `20261021120000_atlas_r0`,
    `20261022120000_atlas_ra`. Prisma 6.19's push never reads partial indexes, triggers or rules, so the ones the SQL
