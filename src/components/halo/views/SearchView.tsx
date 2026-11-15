@@ -86,12 +86,6 @@ function SearchViewComponent({
     } else if (count > 0 && e.key === "ArrowUp") {
       e.preventDefault();
       moveTo((activeIndex - 1 + count) % count);
-    } else if (count > 0 && e.key === "Home") {
-      e.preventDefault();
-      moveTo(0);
-    } else if (count > 0 && e.key === "End") {
-      e.preventDefault();
-      moveTo(count - 1);
     } else if (count > 0 && e.key === "Enter" && !e.nativeEvent.isComposing) {
       e.preventDefault();
       const chosen = searchResults[activeIndex];
@@ -124,7 +118,7 @@ function SearchViewComponent({
             type="search"
             role="combobox"
             aria-expanded={searchResults.length > 0}
-            aria-controls={listId}
+            aria-controls={searchResults.length > 0 ? listId : undefined}
             aria-activedescendant={activeId}
             aria-autocomplete="list"
             aria-label="Search IxStates"

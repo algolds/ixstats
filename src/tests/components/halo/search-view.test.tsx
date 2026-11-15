@@ -200,6 +200,25 @@ describe("SearchView", () => {
     expect(screen.getByRole("listbox").id).toBe(input.getAttribute("aria-controls"));
   });
 
+  it("sets aria-controls only while the listbox is rendered", () => {
+    const { unmount } = renderView();
+    expect(screen.getByRole("combobox").hasAttribute("aria-controls")).toBe(false);
+    unmount();
+    renderView({ searchResults: [makeResult("command-a", "Alpha")] });
+    expect(screen.getByRole("combobox").getAttribute("aria-controls")).toBe(
+      screen.getByRole("listbox").id
+    );
+  });
+
+  it("leaves Home and End to the text caret", () => {
+    renderView({
+      searchResults: [makeResult("command-a", "Alpha"), makeResult("command-b", "Beta")],
+    });
+    const input = screen.getByRole("combobox");
+    expect(fireEvent.keyDown(input, { key: "Home" })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "End" })).toBe(true);
+  });
+
   it("announces the result count", () => {
     renderView({
       searchResults: [makeResult("command-a", "Alpha"), makeResult("command-b", "Beta")],
