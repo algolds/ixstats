@@ -26,7 +26,9 @@ describe("the integer-cents migration", () => {
     const guardAt = sql.indexOf(GUARD);
     const endIfAt = sql.lastIndexOf("END IF;");
     const alters = [...sql.matchAll(/ALTER TABLE "(\w+)"/g)];
-    expect(alters).toHaveLength(19);
+    expect(alters).toHaveLength(20);
+    // companyCreditCap is an R2 column: a pre-R2 database lacks it until db push.
+    expect(sql).toMatch(/IF EXISTS \(SELECT 1 FROM information_schema\.columns\s+WHERE table_name = 'exchange_nation_treasuries' AND column_name = 'companyCreditCap'\) THEN/);
     for (const alter of alters) {
       expect(alter.index).toBeGreaterThan(guardAt);
       expect(alter.index).toBeLessThan(endIfAt);

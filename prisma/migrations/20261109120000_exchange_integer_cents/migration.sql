@@ -45,10 +45,16 @@ BEGIN
       ALTER COLUMN "lifetimeInterestEarned" SET DEFAULT 0,
       ALTER COLUMN "lifetimeSpent" DROP DEFAULT,
       ALTER COLUMN "lifetimeSpent" TYPE bigint USING round("lifetimeSpent" * 100)::bigint,
-      ALTER COLUMN "lifetimeSpent" SET DEFAULT 0,
-      ALTER COLUMN "companyCreditCap" DROP DEFAULT,
-      ALTER COLUMN "companyCreditCap" TYPE bigint USING round("companyCreditCap" * 100)::bigint,
-      ALTER COLUMN "companyCreditCap" SET DEFAULT 25000000;
+      ALTER COLUMN "lifetimeSpent" SET DEFAULT 0;
+
+    -- Exchange R2 column: a database that predates R2 has none yet, and db push then creates it as bigint cents.
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'exchange_nation_treasuries' AND column_name = 'companyCreditCap') THEN
+      ALTER TABLE "exchange_nation_treasuries"
+        ALTER COLUMN "companyCreditCap" DROP DEFAULT,
+        ALTER COLUMN "companyCreditCap" TYPE bigint USING round("companyCreditCap" * 100)::bigint,
+        ALTER COLUMN "companyCreditCap" SET DEFAULT 25000000;
+    END IF;
 
     ALTER TABLE "exchange_nation_treasury_entries"
       ALTER COLUMN "amount" TYPE bigint USING round("amount" * 100)::bigint,
