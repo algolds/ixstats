@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import { navigateWithBasePath } from "~/lib/base-path";
+import { PendingIssuesRow } from "./tray/PendingIssuesRow";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -39,7 +40,7 @@ import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig"
 import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
-import { HaloEmpty, HaloViewHeader } from "./shared/HaloViewParts";
+import { HaloEmpty, HaloViewHeader, HaloWell } from "./shared/HaloViewParts";
 
 function TrayLoading({ label }: { label: string }) {
   return (
@@ -259,7 +260,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   ];
 
   return (
-    <div className="p-4">
+    <div className="space-y-3 p-3">
       <HaloViewHeader
         leading={<BellRing className="text-yellow h-4 w-4 shrink-0" />}
         title={
@@ -278,22 +279,37 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
           </span>
         }
         trailing={
-          totalUnreadCount > 0 ? (
+          <>
+            {totalUnreadCount > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void handleMarkAllRead()}
+                disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
+                className="text-label-secondary hover:text-label"
+                title="Mark all notifications and messages as read"
+              >
+                <CheckCircle aria-hidden className="text-green" />
+                <PreText className="text-inherit" whiteSpace="nowrap">
+                  Read all
+                </PreText>
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              onClick={() => void handleMarkAllRead()}
-              disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
+              size="icon-sm"
+              onClick={() => {
+                setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
+              }}
               className="text-label-secondary hover:text-label"
-              title="Mark all notifications and messages as read"
+              title={isUltra ? "Standard view" : "Expanded view"}
+              aria-label={isUltra ? "Standard view" : "Expanded view"}
             >
-              <CheckCircle aria-hidden className="text-green" />
-              <PreText className="text-inherit" whiteSpace="nowrap">
-                Read all
-              </PreText>
+              {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
             </Button>
-          ) : undefined
+          </>
         }
         onClose={() => {
           soundCues.dismiss();
@@ -307,7 +323,6 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
         asTabs
         fullWidth
         size="sm"
-        className="mb-3"
         value={activeTab}
         onValueChange={setActiveTab}
         options={tabs.map((tab) => {
@@ -329,7 +344,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
       >
         {activeTab === "messages" ? (
           /* Messages View */
-          <div className="space-y-2">
+          <HaloWell className="p-2">
             {conversationsList.length > 0 ? (
               <div className="space-y-1">
                 {conversationsList.map((conv) => (
@@ -372,22 +387,28 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                 }
               />
             )}
-          </div>
+          </HaloWell>
         ) : (
           /* Notifications View */
           <div className="space-y-2">
+            <PendingIssuesRow
+              onOpen={() => {
+                onClose();
+                navigateWithBasePath("/mycountry/executive", router);
+              }}
+            />
             {groups.length > 0 ? (
               groups.map((group) => {
                 const groupCollapsed = collapsedGroups.has(group.label);
                 return (
-                  <div key={group.label}>
+                  <HaloWell key={group.label} className="space-y-1 p-2">
                     {/* Group header */}
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.label)}
                       aria-expanded={!groupCollapsed}
                       className={cn(
-                        "hover:bg-fill-4 rounded-control-sm relative mb-1 flex w-full cursor-pointer items-center justify-between px-1 py-0.5 transition-colors",
+                        "hover:bg-fill-4 rounded-control-sm relative flex w-full cursor-pointer items-center justify-between px-1 py-0.5 transition-colors",
                         focusRing,
                         hitSlop
                       )}
@@ -448,47 +469,36 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </HaloWell>
                 );
               })
             ) : notificationsLoading ? (
-              <TrayLoading label="Loading notifications" />
+              <HaloWell className="p-2">
+                <TrayLoading label="Loading notifications" />
+              </HaloWell>
             ) : notificationsError ? (
-              <HaloEmpty
-                title="Couldn't load notifications"
-                action={
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={() => void refetchNotifications()}
-                  >
-                    Try again
-                  </Button>
-                }
-              />
+              <HaloWell>
+                <HaloEmpty
+                  title="Couldn't load notifications"
+                  action={
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={() => void refetchNotifications()}
+                    >
+                      Try again
+                    </Button>
+                  }
+                />
+              </HaloWell>
             ) : (
-              <HaloEmpty icon={<Bell />} title="No notifications" />
+              <HaloWell>
+                <HaloEmpty icon={<Bell />} title="No notifications" />
+              </HaloWell>
             )}
           </div>
         )}
-      </div>
-
-      {/* Expand / Minimize DI Size Toggle */}
-      <div className="border-separator mt-3 flex justify-center border-t pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          onClick={() => {
-            setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
-          }}
-          className="text-label-secondary hover:text-label rounded-full"
-          title={isUltra ? "Standard view" : "Expanded view"}
-          aria-label={isUltra ? "Standard view" : "Expanded view"}
-        >
-          {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
-        </Button>
       </div>
     </div>
   );

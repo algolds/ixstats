@@ -16,10 +16,13 @@ import { useDIPlugin } from "~/components/halo/plugin-context";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import { computeLiveMatchState } from "~/lib/sports/live-match";
-import { HaloEmpty } from "~/components/halo/views/shared/HaloViewParts";
+import { HaloEmpty, HaloViewHeader, HaloWell } from "~/components/halo/views/shared/HaloViewParts";
 import type { DIViewProps, PluginCommand } from "~/components/halo/types";
 
 type LiveActivityMatch = RouterOutputs["sports"]["getLiveActivities"][number];
+interface SportsLiveContext {
+  match?: LiveActivityMatch | null;
+}
 
 const ACCENT = "var(--color-red)"; // live red
 
@@ -70,24 +73,38 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   );
 }
 
-function SportsLiveView({ context }: DIViewProps) {
-  const match = ((context as any)?.match ?? null) as LiveActivityMatch | null;
+function SportsLiveView({ onClose, context }: DIViewProps<unknown, SportsLiveContext>) {
+  const match = context?.match ?? null;
   const state = useLiveMatchState(match);
   if (!match || !state) {
-    return <HaloEmpty title="No live match." />;
+    return (
+      <div className="space-y-3 p-3">
+        <HaloViewHeader
+          leading={<Radio className="text-red size-4 shrink-0" aria-hidden />}
+          title="Live match"
+          onClose={onClose}
+        />
+        <HaloWell>
+          <HaloEmpty title="No live match." />
+        </HaloWell>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4">
-      <div className="bg-fill-4 rounded-row space-y-4 p-4">
-        <div className="flex items-center justify-between">
-          <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
-            <Radio className="h-2.5 w-2.5" />
+    <div className="space-y-3 p-3">
+      <HaloViewHeader
+        leading={<Radio className="text-red size-4 shrink-0" aria-hidden />}
+        title={match.leagueName}
+        trailing={
+          <span className="bg-red text-caption text-on-red flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold">
             {state.isFinal ? "Full time" : "Live"}
           </span>
-          <span className="text-label-secondary text-footnote truncate">{match.leagueName}</span>
-        </div>
+        }
+        onClose={onClose}
+      />
 
+      <HaloWell className="space-y-4">
         <div className="flex items-center justify-around">
           <TeamBadge team={match.homeTeam} />
           <div className="space-y-1 text-center">
@@ -114,7 +131,7 @@ function SportsLiveView({ context }: DIViewProps) {
         <p className="text-label-secondary text-footnote min-h-[2rem] leading-relaxed italic">
           {state.lastEvent?.description ?? "Kickoff. The match is underway."}
         </p>
-      </div>
+      </HaloWell>
     </div>
   );
 }

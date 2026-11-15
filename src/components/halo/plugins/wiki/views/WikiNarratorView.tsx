@@ -5,7 +5,7 @@
 
 import { Headset as Headphones, OpenBook as BookOpen, ShieldAlert } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { HaloViewHeader } from "~/components/halo/views/shared/HaloViewParts";
+import { HaloViewHeader, HaloWell } from "~/components/halo/views/shared/HaloViewParts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { WikiNarratorPlayer } from "../components";
@@ -24,27 +24,28 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
 
   if (!hasNarratorAccess) {
     return (
-      <div className="flex w-full flex-col gap-3 p-4 select-none">
+      <div className="space-y-3 p-3 select-none">
         <HaloViewHeader
-          className="mb-0"
           leading={<ShieldAlert className="text-yellow h-4 w-4 shrink-0" />}
           title="Early access feature"
           onClose={onClose}
         />
-        <p className="text-label-secondary text-footnote">
-          The WikiOS audio narrator is limited to system owners, administrators and beta testers.
-        </p>
-        {onSwitchMode && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onSwitchMode("plugin:wiki")}
-            className="border-separator w-full"
-          >
-            <BookOpen className="h-3.5 w-3.5" />
-            Go to wiki workspace
-          </Button>
-        )}
+        <HaloWell className="space-y-3">
+          <p className="text-label-secondary text-footnote">
+            The WikiOS audio narrator is limited to system owners, administrators and beta testers.
+          </p>
+          {onSwitchMode && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => onSwitchMode("plugin:wiki")}
+              className="w-full"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              Go to wiki workspace
+            </Button>
+          )}
+        </HaloWell>
       </div>
     );
   }
@@ -55,10 +56,9 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
       : 0;
 
   return (
-    <div className="flex w-full flex-col gap-2 p-3 select-none">
+    <div className="space-y-3 p-3 select-none">
       {/* Top Header with Quick Action to Switch to Wiki Workspace */}
       <HaloViewHeader
-        className="mb-0 px-1 pb-1"
         leading={
           <div
             className="rounded-control flex h-7 w-7 shrink-0 items-center justify-center border"
@@ -80,7 +80,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         trailing={
           <>
             {narratorState && narratorState.totalBlocks > 0 && (
-              <div className="text-label-secondary bg-fill-4 border-separator rounded-control-sm text-footnote flex items-center gap-1 border px-2 py-0.5 tabular-nums">
+              <div className="text-label-secondary bg-fill-4 rounded-control-sm text-footnote flex items-center gap-1 px-2 py-0.5 tabular-nums">
                 <span>
                   {narratorState.activeBlockIndex + 1}/{narratorState.totalBlocks}
                 </span>
@@ -88,12 +88,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
               </div>
             )}
             {onSwitchMode && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onSwitchMode("plugin:wiki")}
-                className="border-separator hover:bg-fill-4"
-              >
+              <Button size="sm" variant="secondary" onClick={() => onSwitchMode("plugin:wiki")}>
                 <BookOpen className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Workspace</span>
               </Button>
@@ -103,8 +98,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
         onClose={onClose}
       />
 
-      {/* Seamless Full-Feature Audio-UI Player (No Inner Card) */}
-      <div className="w-full">
+      <HaloWell>
         <WikiNarratorPlayer
           visibleToc={visibleToc}
           activeSectionId={activeSectionId}
@@ -113,7 +107,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
           narratorActions={narratorActions}
           showHeader={false}
         />
-      </div>
+      </HaloWell>
     </div>
   );
 }

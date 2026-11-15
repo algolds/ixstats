@@ -3,7 +3,7 @@ import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { MyCountryActionsView } from "~/components/halo/plugins/mycountry/views/MyCountryActionsView";
-import { MyCountryView } from "~/components/halo/plugins/mycountry/views/MyCountryView";
+import { AccountView } from "~/components/halo/views/account/AccountView";
 import { NotificationsView } from "~/components/halo/views/NotificationsView";
 import { SettingsView } from "~/components/halo/views/SettingsView";
 
@@ -50,6 +50,41 @@ jest.mock("~/trpc/react", () => ({
       },
       markAllAsRead: { useMutation: () => ({ mutateAsync: jest.fn(), isPending: false }) },
     },
+    nationalIssues: {
+      getPendingCount: {
+        useQuery: () => ({ data: { total: 0, urgent: 0 }, isLoading: false }),
+      },
+    },
+    countries: {
+      getByIdBasic: {
+        useQuery: () => ({
+          data: {
+            slug: "caphiria",
+            realm: { slug: "ixnay", name: "Ixnay" },
+            ownerHandle: "ada",
+            currentPopulation: 20_000_000,
+            currentTotalGdp: 800_000_000_000,
+          },
+          isLoading: false,
+        }),
+      },
+      getByIdAtTime: {
+        useQuery: () => ({
+          data: { id: "c1", name: "Caphiria" },
+          isLoading: false,
+        }),
+      },
+      getActivityRingsData: { useQuery: () => ({ data: undefined, isLoading: false }) },
+    },
+    ixnayid: {
+      getMyPassportCard: { useQuery: () => ({ data: undefined, isLoading: true }) },
+    },
+    realms: {
+      myNations: { useQuery: () => ({ data: undefined, isLoading: false }) },
+    },
+    vault: {
+      getEquippedCosmeticsFor: { useQuery: () => ({ data: undefined }) },
+    },
     users: {
       getProfile: {
         useQuery: () => ({
@@ -69,6 +104,7 @@ jest.mock("~/trpc/react", () => ({
           refetch: jest.fn(),
         }),
       },
+      setActiveNation: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
     },
   },
 }));
@@ -104,6 +140,9 @@ jest.mock("~/components/shared/country-actions/CountryActionsProvider", () => ({
 }));
 jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
   UnifiedCountryFlag: () => null,
+}));
+jest.mock("~/components/shared/country-hero/CountryHeroCard", () => ({
+  HeroDetailModal: () => null,
 }));
 jest.mock("~/components/ui/pretext", () => ({
   PreText: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
@@ -176,7 +215,8 @@ describe("Halo views router navigation (Step 3)", () => {
     }
   });
 
-  it("uses router.push in SettingsView and MyCountryView", () => {
+  it("uses router.push in SettingsView and AccountView", () => {
+    localStorage.clear();
     const onClose = jest.fn();
     const { unmount } = render(
       <HaloProvider initialSize={SIZE_PRESETS.MEDIUM}>
@@ -187,12 +227,18 @@ describe("Halo views router navigation (Step 3)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Admin/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith("/admin");
+
+    mockPush.mockReset();
+    onClose.mockReset();
+    fireEvent.click(screen.getByRole("button", { name: /Account settings/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith("/settings");
     unmount();
 
     mockPush.mockReset();
     onClose.mockReset();
-    render(<MyCountryView onClose={onClose} />);
-    fireEvent.click(screen.getByRole("button", { name: /Diplomacy/i }));
+    render(<AccountView onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: "Diplomacy" }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith("/mycountry/diplomacy");
   });

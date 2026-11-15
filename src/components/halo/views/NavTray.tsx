@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { MoreHoriz as MoreHorizontal } from "iconoir-react";
 import { useUser } from "~/context/auth-context";
 import { stripBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 import {
   getVisibleAppForPath,
   getVisibleApps,
@@ -18,6 +19,8 @@ import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motio
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
+import { useHaloMaterial } from "../halo-material";
+import { HaloWell } from "./shared/HaloViewParts";
 
 /**
  * Splits visible non-footer sidebar apps into the 6 primary grid items and optional secondary row,
@@ -57,6 +60,7 @@ export interface NavTrayProps {
 
 export function NavTray({ isOpen, onClose, apps }: NavTrayProps) {
   const pathname = usePathname();
+  const material = useHaloMaterial();
   const normalized = stripBasePath(pathname || "/");
   const trayRef = React.useRef<HTMLDivElement>(null);
   const reduceMotion = useFacetReducedMotion();
@@ -100,14 +104,17 @@ export function NavTray({ isOpen, onClose, apps }: NavTrayProps) {
           }
           transition={reduceMotion ? REDUCED_MOTION_FADE : springSmooth}
         >
-          {/* The island's expanded acrylic sheet. */}
+          {/* The island's material: Lens, frosted so app names hold over the page (Chrome for the comparison). */}
           <FacetMaterial
-            layer="chrome"
+            layer={material === "lens" ? "lens" : "chrome"}
             data-expanded="true"
-            className="rounded-card isolate overflow-hidden"
+            className={cn(
+              "rounded-sheet isolate space-y-2 overflow-hidden p-2",
+              material === "lens" && "facet-lens-frosted"
+            )}
           >
             {/* Primary nav grid */}
-            <div className="grid grid-cols-2 gap-1 p-2">
+            <HaloWell className="grid grid-cols-2 gap-1 p-1.5">
               {primary.map((item, i) => {
                 const Icon = item.icon;
                 const active = item.id === activeAppId;
@@ -166,39 +173,34 @@ export function NavTray({ isOpen, onClose, apps }: NavTrayProps) {
                   </motion.div>
                 );
               })}
-            </div>
+            </HaloWell>
 
             {/* Secondary nav — compact row when >6 apps are visible */}
             {secondary.length > 0 && (
-              <div className="border-separator border-t px-3 py-2">
-                <div className="flex items-center gap-1">
-                  <MoreHorizontal
-                    className="text-label-secondary mr-1 size-3.5"
-                    aria-hidden="true"
-                  />
-                  {secondary.map((item) => {
-                    const active = item.id === activeAppId;
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.href}
-                        data-app={item.tint}
-                        onClick={onClose}
-                        aria-current={active ? "page" : undefined}
-                        className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${focusRing} ${
-                          active
-                            ? "bg-fill-3 text-label"
-                            : "text-label-secondary hover:bg-fill-4 hover:text-label"
-                        }`}
-                      >
-                        <PreText className="text-inherit" whiteSpace="nowrap">
-                          {item.label}
-                        </PreText>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
+              <HaloWell className="flex items-center gap-1 px-2.5 py-1.5">
+                <MoreHorizontal className="text-label-secondary mr-1 size-3.5" aria-hidden="true" />
+                {secondary.map((item) => {
+                  const active = item.id === activeAppId;
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      data-app={item.tint}
+                      onClick={onClose}
+                      aria-current={active ? "page" : undefined}
+                      className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${focusRing} ${
+                        active
+                          ? "bg-fill-3 text-label"
+                          : "text-label-secondary hover:bg-fill-4 hover:text-label"
+                      }`}
+                    >
+                      <PreText className="text-inherit" whiteSpace="nowrap">
+                        {item.label}
+                      </PreText>
+                    </Link>
+                  );
+                })}
+              </HaloWell>
             )}
           </FacetMaterial>
         </motion.nav>

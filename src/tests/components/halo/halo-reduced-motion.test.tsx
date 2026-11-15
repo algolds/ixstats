@@ -62,6 +62,8 @@ type CapturedMotion = {
   animate?: unknown;
   exit?: unknown;
   transition?: unknown;
+  onLayoutAnimationStart?: () => void;
+  onLayoutAnimationComplete?: () => void;
 };
 
 const captured: CapturedMotion[] = [];
@@ -78,6 +80,8 @@ jest.mock("motion/react", () => {
           animate,
           exit,
           transition,
+          onLayoutAnimationStart,
+          onLayoutAnimationComplete,
           drag: _drag,
           dragConstraints: _dc,
           dragElastic: _de,
@@ -95,6 +99,8 @@ jest.mock("motion/react", () => {
           animate,
           exit,
           transition,
+          onLayoutAnimationStart: onLayoutAnimationStart as (() => void) | undefined,
+          onLayoutAnimationComplete: onLayoutAnimationComplete as (() => void) | undefined,
         });
         return ReactActual.createElement(tag, { ...rest, ref }, children as React.ReactNode);
       }
@@ -131,9 +137,9 @@ describe("Halo under Reduce Motion", () => {
     expect(islandMotion?.transition).toEqual({ duration: 0 });
   });
 
-  it("uses springSnappy on the island when reduced motion is off", () => {
+  it("uses springSnappy on the island when reduced motion is off and suppresses refraction during layout morph", () => {
     reducedMotion = false;
-    render(
+    const { container } = render(
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
         <Halo id="island">
           <span>Hello</span>
@@ -141,8 +147,14 @@ describe("Halo under Reduce Motion", () => {
       </HaloProvider>
     );
 
+    const islandEl = container.querySelector<HTMLElement>("#island");
     const islandMotion = captured.find((c) => c.id === "island");
     expect(islandMotion?.transition).toEqual(springSnappy);
+
+    islandMotion?.onLayoutAnimationStart?.();
+    expect(islandEl?.style.getPropertyValue("--lens-refraction")).toBe("brightness(1)");
+    islandMotion?.onLayoutAnimationComplete?.();
+    expect(islandEl?.style.getPropertyValue("--lens-refraction")).toBe("");
   });
 
   it("replaces HaloContainer transform entrance with an opacity cross-fade", () => {

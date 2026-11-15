@@ -37,19 +37,19 @@ export const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 9999,
   },
   [SIZE_PRESETS.MEDIUM]: {
-    width: 371,
-    aspectRatio: 210 / 371,
-    borderRadius: 22,
+    width: 396,
+    aspectRatio: 210 / 396,
+    borderRadius: 24,
   },
   [SIZE_PRESETS.TALL]: {
-    width: 371,
-    aspectRatio: 210 / 371,
-    borderRadius: 42,
+    width: 396,
+    aspectRatio: 210 / 396,
+    borderRadius: 24,
   },
   [SIZE_PRESETS.ULTRA]: {
     width: 630,
     aspectRatio: 630 / 800,
-    borderRadius: 42,
+    borderRadius: 24,
   },
   [SIZE_PRESETS.WIKI_INLINE]: {
     width: 260,

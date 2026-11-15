@@ -20,6 +20,7 @@ import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
 import { Badge } from "~/components/ui/badge";
 import { focusRing, hitSlop } from "~/components/ui/button";
+import { HaloWell } from "~/components/halo/views/shared/HaloViewParts";
 import { cn } from "~/lib/utils";
 
 interface WikiWorkspaceTabProps {
@@ -143,7 +144,7 @@ export function WikiWorkspaceTab({
 
       {/* Page Actions — contextual to current article */}
       {articleTitle && !isMainPage && (
-        <div className="border-separator mb-3 border-b pb-3">
+        <HaloWell className="space-y-1">
           <SectionHeader label="This page" />
           <div className="space-y-0.5">
             {wikiSource === "ixwiki" ? (
@@ -163,7 +164,7 @@ export function WikiWorkspaceTab({
               />
             )}
           </div>
-        </div>
+        </HaloWell>
       )}
     </>
   );
@@ -210,7 +211,7 @@ function IxWikiPageActions({
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-label-secondary text-subhead mb-2">
+    <div className="text-label-secondary text-subhead px-2">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -232,13 +233,13 @@ export function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-separator mb-3 border-b pb-3">
+    <HaloWell className="space-y-1">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         className={cn(
-          "text-label-secondary hover:text-label text-subhead relative mb-1 flex w-full cursor-pointer items-center justify-between",
+          "text-label-secondary hover:text-label text-subhead relative flex w-full cursor-pointer items-center justify-between px-1",
           focusRing,
           hitSlop
         )}
@@ -257,7 +258,7 @@ export function CollapsibleSection({
         )}
       </button>
       {open && children}
-    </div>
+    </HaloWell>
   );
 }
 
@@ -290,7 +291,7 @@ function QuickAction({
       </span>
       {shortcut && (
         <PreText
-          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-2 py-0.5"
+          className="bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 px-2 py-0.5"
           whiteSpace="nowrap"
         >
           {shortcut}

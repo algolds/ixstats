@@ -2,9 +2,9 @@
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { CommandPalette } from "~/components/halo";
-import { HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
+import { Halo, HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
 import { DIPluginProvider, useActiveDIPlugin } from "~/components/halo/plugin-context";
-import { MyCountryView } from "~/components/halo/plugins/mycountry/views/MyCountryView";
+import { AccountView } from "~/components/halo/views/account/AccountView";
 import { WikiNarratorPlayer } from "~/components/halo/plugins/wiki/components/WikiNarratorPlayer";
 import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { CompactView } from "~/components/halo/views/CompactView";
@@ -26,6 +26,7 @@ let mockWikiContext: Record<string, unknown> = {
   themeColors: null,
 };
 let mockHasNarratorAccess = true;
+let mockCanOpenAdmin = false;
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/",
@@ -36,17 +37,45 @@ jest.mock("~/trpc/react", () => ({
     countries: {
       getSelectList: { useQuery: () => ({ data: undefined }) },
       getByIdBasic: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      getActivityRingsData: { useQuery: () => ({ data: undefined, isLoading: false }) },
       flags: {
         resolveBatch: { useQuery: () => ({ data: {}, isLoading: false, isError: false }) },
       },
     },
     wikios: { advancedSearch: { useQuery: () => ({ data: undefined }) } },
-    realms: { getSelectList: { useQuery: () => ({ data: undefined, isLoading: false }) } },
+    realms: {
+      getSelectList: { useQuery: () => ({ data: undefined, isLoading: false }) },
+      myNations: { useQuery: () => ({ data: undefined, isLoading: false }) },
+    },
     notifications: { getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) } },
+    ixnayid: {
+      getMyPassportCard: {
+        useQuery: () => ({
+          data: {
+            preview: true,
+            handle: "ada",
+            displayName: "Ada",
+            avatarUrl: null,
+            primaryNation: null,
+            lorewards: null,
+            realmCount: 1,
+            nationCount: 1,
+            joinedAt: "2025-01-01T00:00:00Z",
+            signature: null,
+            bio: null,
+          },
+          isLoading: false,
+        }),
+      },
+    },
+    vault: {
+      getEquippedCosmeticsFor: { useQuery: () => ({ data: undefined }) },
+    },
     users: {
       getProfile: {
         useQuery: () => ({ data: mockProfileData, isLoading: false, isError: false }),
       },
+      setActiveNation: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
     },
     onoma: {
       getSpeechConfig: { useQuery: () => ({ data: undefined }) },
@@ -55,6 +84,8 @@ jest.mock("~/trpc/react", () => ({
     useUtils: () => ({
       countries: { invalidate: jest.fn() },
       notifications: { invalidate: jest.fn() },
+      users: { getProfile: { invalidate: jest.fn() } },
+      realms: { myNations: { invalidate: jest.fn() } },
     }),
   },
 }));
@@ -84,8 +115,14 @@ jest.mock("~/hooks/useSoundSettings", () => ({
 }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
 jest.mock("~/hooks/usePermissions", () => ({
-  useCanOpenAdmin: () => false,
+  useCanOpenAdmin: () => mockCanOpenAdmin,
   useHasNarratorAccess: () => mockHasNarratorAccess,
+}));
+jest.mock("~/components/shared/country-hero/CountryHeroCard", () => ({
+  HeroDetailModal: () => null,
+}));
+jest.mock("~/components/shared/flags/UnifiedCountryFlag", () => ({
+  UnifiedCountryFlag: () => null,
 }));
 jest.mock("~/hooks/useContextHour", () => ({ useContextHour: () => 9 }));
 jest.mock("~/hooks/useMessageUnreadCount", () => ({
@@ -114,6 +151,8 @@ beforeEach(() => {
   mockSignedIn = false;
   mockUserObj = null;
   mockProfileData = null;
+  mockCanOpenAdmin = false;
+  localStorage.clear();
   mockWikiContext = {
     articleTitle: null,
     activeSectionId: null,
@@ -315,33 +354,49 @@ describe("Sign-out button, chapter tick tooltips, and metric aria-pressed (Step 
     expect(signOutBtn.tagName).toBe("BUTTON");
   });
 
-  it("wires aria-pressed on MyCountryView metric toggles without tooltip-only hint", () => {
+  it("switches Nation and Passport sides via SegmentedControl with zero nested buttons, and gates Halo material to admins", async () => {
     mockSignedIn = true;
     mockUserObj = { id: "u1", firstName: "Ada" };
     mockProfileData = {
       countryId: "c1",
+      membershipTier: "mycountry_premium",
       country: {
         id: "c1",
         name: "Caphiria",
-        currentGdpPerCapita: 42000,
-        currentTotalGdp: 840000000000,
-        currentPopulation: 20000000,
-        populationDensity: 120,
-        adjustedGdpGrowth: 0.03,
-        populationGrowthRate: 0.01,
       },
     };
 
-    render(<MyCountryView onClose={jest.fn()} />);
+    const { container, unmount } = render(<AccountView onClose={jest.fn()} />);
+    expect(container.querySelectorAll("button button")).toHaveLength(0);
+    expect(screen.getByText("Premium")).toBeInTheDocument();
 
-    const gdpToggle = screen.getByRole("button", { name: /GDP\/Cap/i });
-    expect(gdpToggle).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(gdpToggle);
-    expect(screen.getByRole("button", { name: /Total GDP/i })).toHaveAttribute(
-      "aria-pressed",
-      "true"
+    fireEvent.click(screen.getByRole("radio", { name: "Passport" }));
+    expect(await screen.findByRole("link", { name: "Your Passport, @ada" })).toBeInTheDocument();
+    expect(container.querySelectorAll("button button")).toHaveLength(0);
+    unmount();
+
+    // Non-admin does not see Halo material toggle in SettingsView
+    const { unmount: unmountSettings } = render(
+      <HaloProvider initialSize={SIZE_PRESETS.MEDIUM}>
+        <SettingsView onClose={jest.fn()} />
+      </HaloProvider>
     );
-    expect(screen.queryByText(/Click metrics to toggle/i)).toBeNull();
+    expect(screen.queryByRole("radiogroup", { name: "Halo material" })).toBeNull();
+    unmountSettings();
+
+    // Admin sees Halo material toggle and can switch between Lens and Chrome + Lens
+    mockCanOpenAdmin = true;
+    const { container: haloContainer } = render(
+      <HaloProvider initialSize={SIZE_PRESETS.MEDIUM}>
+        <Halo id="dynamic-island-halo">
+          <SettingsView onClose={jest.fn()} />
+        </Halo>
+      </HaloProvider>
+    );
+    const island = haloContainer.querySelector("#dynamic-island-halo");
+    expect(island?.className).toContain("facet-lens");
+    fireEvent.click(screen.getByRole("radio", { name: "Chrome, Lens inside" }));
+    expect(island?.className).toContain("facet-chrome");
   });
 
   it("renders WikiNarratorPlayer chapter ticks as labelled buttons without custom hover span", () => {

@@ -34,10 +34,10 @@ const SettingsView = dynamic(() => import("./SettingsView").then((m) => m.Settin
   ssr: false,
   loading: viewLoading,
 });
-const MyCountryView = dynamic(
-  () => import("../plugins/mycountry/views/MyCountryView").then((m) => m.MyCountryView),
-  { ssr: false, loading: viewLoading }
-);
+const AccountView = dynamic(() => import("./account/AccountView").then((m) => m.AccountView), {
+  ssr: false,
+  loading: viewLoading,
+});
 
 export function ExpandedView({
   mode,
@@ -97,7 +97,7 @@ export function ExpandedView({
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
-        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
+        <div className="bg-red/10 text-footnote text-red rounded-row mx-3 mt-3 flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2 font-medium">
             <span className="bg-red size-2 rounded-full" />
             <span>
@@ -136,7 +136,7 @@ export function ExpandedView({
         )}
         {mode === "mycountry" && (
           <HaloContainer key="mycountry" className="w-full">
-            <MyCountryView onClose={onClose} />
+            <AccountView onClose={onClose} />
           </HaloContainer>
         )}
 

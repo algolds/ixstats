@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, Bell, Settings, Bookmark, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { HaloViewHeader } from "~/components/halo/views/shared/HaloViewParts";
+import { HaloViewHeader, HaloWell } from "~/components/halo/views/shared/HaloViewParts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
@@ -163,7 +163,7 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   }, [visibleToc]);
 
   return (
-    <div className="p-4">
+    <div className="space-y-3 p-3">
       <HaloViewHeader
         leading={
           themeColors ? (
@@ -255,7 +255,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
           asTabs
           fullWidth
           size="sm"
-          className="mb-3"
           value={wikiTab}
           onValueChange={setWikiTab}
           options={[
@@ -272,15 +271,17 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {/* Tab 1: Narrator Player Focus (Restricted) */}
       {hasNarratorAccess && wikiTab === "narrator" && (
-        <WikiNarratorPlayer
-          visibleToc={visibleToc}
-          activeSectionId={activeSectionId}
-          themeColors={themeColors}
-          scrollPercent={scrollPercent}
-          sectionOffsets={sectionOffsets}
-          narratorState={narratorState}
-          narratorActions={narratorActions}
-        />
+        <HaloWell>
+          <WikiNarratorPlayer
+            visibleToc={visibleToc}
+            activeSectionId={activeSectionId}
+            themeColors={themeColors}
+            scrollPercent={scrollPercent}
+            sectionOffsets={sectionOffsets}
+            narratorState={narratorState}
+            narratorActions={narratorActions}
+          />
+        </HaloWell>
       )}
 
       {/* Tab 2: Workspace View */}

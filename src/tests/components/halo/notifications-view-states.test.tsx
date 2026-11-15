@@ -20,6 +20,9 @@ const idle = (): QueryState => ({
 
 let notificationsQuery: QueryState = idle();
 let messagesQuery: QueryState = idle();
+let mockCountry: { id: string; name: string } | null = null;
+let mockPendingTotal = 0;
+const mockPush = jest.fn();
 const markAllAsReadAsync = jest.fn();
 const markAllMessagesAsync = jest.fn();
 const mockNotify = { success: jest.fn(), error: jest.fn() };
@@ -42,6 +45,11 @@ jest.mock("~/trpc/react", () => ({
         useMutation: () => ({ mutateAsync: markAllAsReadAsync, isPending: false }),
       },
     },
+    nationalIssues: {
+      getPendingCount: {
+        useQuery: () => ({ data: { total: mockPendingTotal, urgent: 0 }, isLoading: false }),
+      },
+    },
     messages: {
       getConversationsByFolder: { useQuery: () => messagesQuery },
       markAllAsRead: {
@@ -51,8 +59,11 @@ jest.mock("~/trpc/react", () => ({
   },
 }));
 jest.mock("next/navigation", () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => ({ push: mockPush }),
   usePathname: () => "/",
+}));
+jest.mock("~/hooks/useUserCountry", () => ({
+  useUserCountry: () => ({ country: mockCountry }),
 }));
 jest.mock("~/context/auth-context", () => ({
   useUser: () => ({ user: { id: "u1" }, isLoaded: true, isSignedIn: true }),
@@ -82,13 +93,16 @@ jest.mock("~/components/ui/pretext", () => ({
 function resetStore() {
   useNotificationStore.setState({
     notifications: [],
-    stats: useNotificationStore.getState().stats,
+    stats: { ...useNotificationStore.getState().stats, unread: 0 },
   });
 }
 
 beforeEach(() => {
   notificationsQuery = idle();
   messagesQuery = idle();
+  mockCountry = null;
+  mockPendingTotal = 0;
+  mockPush.mockReset();
   mockMessageUnread = 0;
   markAllAsReadAsync.mockReset();
   markAllMessagesAsync.mockReset();
@@ -213,5 +227,54 @@ describe("unread count", () => {
       />
     );
     expect(screen.getByRole("button", { name: "Notifications, 1 unread" })).toBeInTheDocument();
+  });
+});
+
+describe("pinned national issues row", () => {
+  beforeEach(() => {
+    notificationsQuery = { ...idle(), data: { notifications: [], unreadCount: 0 } };
+    messagesQuery = { ...idle(), data: { conversations: [] } };
+  });
+
+  it("stays hidden when the viewer has no nation or zero pending issues", () => {
+    mockCountry = null;
+    mockPendingTotal = 4;
+    const { unmount } = render(<NotificationsView onClose={jest.fn()} />);
+    expect(screen.queryByText(/national issues? (is|are) waiting/i)).toBeNull();
+    unmount();
+
+    mockCountry = { id: "c1", name: "Caphiria" };
+    mockPendingTotal = 0;
+    render(<NotificationsView onClose={jest.fn()} />);
+    expect(screen.queryByText(/national issues? (is|are) waiting/i)).toBeNull();
+  });
+
+  it("pins pending issues above notifications, opens Executive on click, and does not inflate unread count", () => {
+    mockCountry = { id: "c1", name: "Caphiria" };
+    mockPendingTotal = 3;
+    const onClose = jest.fn();
+
+    render(<NotificationsView onClose={onClose} />);
+    const row = screen.getByRole("button", { name: "3 national issues are waiting" });
+    expect(row).toHaveAttribute("data-slot", "pending-issues-row");
+    fireEvent.click(row);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith("/mycountry/executive");
+
+    openMessagesTab();
+    expect(screen.queryByRole("button", { name: "3 national issues are waiting" })).toBeNull();
+
+    render(
+      <CompactView
+        mode="compact"
+        onSwitchMode={jest.fn()}
+        activePlugin={null}
+        pluginCenter={null}
+        pluginActions={undefined}
+        pluginBadge={undefined}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Notifications" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /unread/i })).toBeNull();
   });
 });

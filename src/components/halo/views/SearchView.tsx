@@ -8,7 +8,7 @@ import { Button } from "~/components/ui/button";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
-import { HaloEmpty } from "./shared/HaloViewParts";
+import { HaloEmpty, HaloViewHeader, HaloWell } from "./shared/HaloViewParts";
 
 const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
@@ -129,9 +129,15 @@ export function SearchView({
   }, []);
 
   return (
-    <div className="p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <div className="relative flex-1">
+    <div className="space-y-3 p-3">
+      <HaloViewHeader
+        leading={<Search className="text-tint size-4 shrink-0" aria-hidden />}
+        title="Search"
+        onClose={closeDropdown}
+      />
+
+      <HaloWell className="space-y-2">
+        <div className="relative">
           <Search className="text-label-tertiary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
           <input
             ref={searchInputRef}
@@ -147,7 +153,7 @@ export function SearchView({
             value={searchQuery || ""}
             onChange={(e) => setSearchQuery?.(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="text-label placeholder:text-label-tertiary rounded-row border-separator bg-fill-4 text-body focus-visible:outline-tint w-full border py-2 pr-14 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-search-cancel-button]:appearance-none"
+            className="text-label placeholder:text-label-tertiary rounded-control border-separator bg-fill-4 text-body focus-visible:outline-tint w-full border py-2 pr-10 pl-9 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-search-cancel-button]:appearance-none"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -157,23 +163,23 @@ export function SearchView({
               size="icon-sm"
               onClick={() => setSearchQuery?.("")}
               aria-label="Clear search"
-              className="text-label-secondary hover:text-label absolute top-1/2 right-2 -translate-y-1/2"
+              className="text-label-secondary hover:text-label absolute top-1/2 right-1.5 -translate-y-1/2"
             >
               <Xmark aria-hidden />
             </Button>
           )}
         </div>
-      </div>
 
-      {/* Filter pills */}
-      <SegmentedControl
-        aria-label="Search in"
-        size="sm"
-        className="mb-3"
-        value={searchFilter}
-        onValueChange={(value) => setSearchFilter?.(value)}
-        options={FILTERS}
-      />
+        {/* Filter pills */}
+        <SegmentedControl
+          aria-label="Search in"
+          size="sm"
+          fullWidth
+          value={searchFilter}
+          onValueChange={(value) => setSearchFilter?.(value)}
+          options={FILTERS}
+        />
+      </HaloWell>
 
       {/* Results list */}
       {hasQuery && !isSearchPending && (
@@ -181,7 +187,7 @@ export function SearchView({
           {searchResults.length === 1 ? "1 result" : `${searchResults.length} results`}
         </p>
       )}
-      <div className="max-h-[380px] overflow-y-auto" style={{ scrollbarWidth: "thin" }}>
+      <HaloWell className="max-h-[380px] overflow-y-auto p-2">
         {searchResults.length > 0 ? (
           <div role="listbox" id={listId} aria-label="Results" className="space-y-1">
             {searchResults.map((result, i) => {
@@ -307,7 +313,7 @@ export function SearchView({
             }
           />
         )}
-      </div>
+      </HaloWell>
     </div>
   );
 }

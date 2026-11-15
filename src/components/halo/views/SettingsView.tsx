@@ -30,14 +30,20 @@ import {
 import type { SettingsViewProps } from "../types";
 import { useActiveDIPlugin } from "../plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { setHaloMaterial, useHaloMaterial, type HaloMaterial } from "../halo-material";
 import { PreText } from "~/components/ui/pretext";
 import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { soundCues } from "~/lib/sound/cuelume";
 import { Switch } from "~/components/ui/switch";
 import { useHaloSize, SIZE_PRESETS } from "../HaloPrimitives";
 import { useLocalPref, ToggleSwitch, SectionLabel } from "./settings/SettingsControls";
-import { HaloViewHeader } from "./shared/HaloViewParts";
+import { HaloViewHeader, HaloWell } from "./shared/HaloViewParts";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+const HALO_MATERIAL_OPTIONS = [
+  { value: "lens", label: "Lens" },
+  { value: "chrome", label: "Chrome, Lens inside" },
+] as const satisfies ReadonlyArray<{ value: HaloMaterial; label: string }>;
 
 const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
 
@@ -60,6 +66,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
   const activePlugin = useActiveDIPlugin();
   const isOnWikiPage = activePlugin?.id === "wiki";
   const isAdmin = useCanOpenAdmin();
+  const material = useHaloMaterial();
 
   // Dynamic Island Popover Width Sizing via Apple HIG physics
   const { setSize } = useHaloSize();
@@ -95,19 +102,19 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
   if (!isLoaded) {
     return (
-      <div className="p-4">
+      <div className="space-y-3 p-3">
         <SettingsHeader onClose={onClose} isOnWikiPage={isOnWikiPage} />
-        <div className="py-8 text-center">
+        <HaloWell className="py-6 text-center">
           <PreText className="text-label-secondary text-body" whiteSpace="nowrap">
             Loading…
           </PreText>
-        </div>
+        </HaloWell>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
+    <div className="space-y-3 p-3">
       <SettingsHeader
         onClose={onClose}
         isOnWikiPage={isOnWikiPage}
@@ -117,171 +124,195 @@ export function SettingsView({ onClose }: SettingsViewProps) {
 
       <div
         className={cn(
-          "grid gap-4",
+          "grid gap-3",
           morePrefsExpanded ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
         )}
       >
         {/* Primary Left Column (Always persistent in the same place) */}
-        <div className="min-w-0 space-y-1">
+        <div className="min-w-0 space-y-2">
           {/* Appearance */}
-          <SectionLabel>Appearance</SectionLabel>
-          <FacetList variant="plain">
-            <FacetListSection aria-label="Appearance">
-              <FacetRow
-                leading={
-                  <span className="bg-tint/15 rounded-control-sm block p-2">
-                    {effectiveTheme === "dark" ? (
-                      <Moon className="text-tint size-3.5" />
-                    ) : (
-                      <Sun className="text-tint size-3.5" />
-                    )}
-                  </span>
-                }
-                title="Theme"
-                subtitle={theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
-                trailing={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={toggleTheme}
-                    aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
-                  >
-                    {effectiveTheme === "dark" ? <Sun /> : <Moon />}
-                  </Button>
-                }
-              />
-
-              <FacetRow
-                leading={
-                  <span className="bg-indigo/15 rounded-control-sm block p-2">
-                    <Layout className="text-indigo size-3.5" />
-                  </span>
-                }
-                title="Compact mode"
-                subtitle="Denser UI layout"
-                trailing={
-                  <ToggleSwitch
-                    enabled={compactMode}
-                    onToggle={() => {
-                      toggleCompactMode();
-                    }}
-                  />
-                }
-              />
-
-              <FacetRow
-                leading={
-                  soundEnabled ? (
-                    <button
-                      type="button"
-                      onClick={() => previewSound("ready")}
-                      title="Tap to test the notification sound"
-                      aria-label="Tap to test the notification sound"
-                      className="rounded-control-sm bg-green/15 focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2"
-                    >
-                      <SoundHigh className="text-green size-3.5" />
-                    </button>
-                  ) : (
-                    <span className="bg-fill-4 rounded-control-sm block p-2">
-                      <SoundOff className="text-label-secondary size-3.5" />
-                    </span>
-                  )
-                }
-                title="Sound"
-                subtitle={soundEnabled ? "Enabled" : "Muted"}
-                trailing={
-                  <ToggleSwitch
-                    enabled={soundEnabled}
-                    onToggle={() => {
-                      setSoundEnabled(!soundEnabled);
-                    }}
-                  />
-                }
-              />
-
-              {isOnWikiPage && effectiveTheme === "dark" && (
+          <HaloWell className="space-y-1 p-2">
+            <SectionLabel>Appearance</SectionLabel>
+            <FacetList variant="plain">
+              <FacetListSection aria-label="Appearance">
                 <FacetRow
                   leading={
-                    <span
-                      className={cn(
-                        "rounded-control-sm block p-2",
-                        mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"
-                      )}
-                    >
-                      {mediaThemeMode === "plinth" ? (
-                        <Square className="text-green size-3.5" />
+                    <span className="bg-tint/15 rounded-control-sm block p-2">
+                      {effectiveTheme === "dark" ? (
+                        <Moon className="text-tint size-3.5" />
                       ) : (
-                        <SunMoon className="text-teal size-3.5" />
+                        <Sun className="text-tint size-3.5" />
                       )}
                     </span>
                   }
-                  title="Image appearance"
-                  subtitle={mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive dark"}
+                  title="Theme"
+                  subtitle={theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
                   trailing={
-                    <Switch
-                      checked={mediaThemeMode === "plinth"}
-                      onCheckedChange={(checked) => {
-                        setMediaThemeMode(checked ? "plinth" : "auto");
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={toggleTheme}
+                      aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
+                    >
+                      {effectiveTheme === "dark" ? <Sun /> : <Moon />}
+                    </Button>
+                  }
+                />
+
+                <FacetRow
+                  leading={
+                    <span className="bg-indigo/15 rounded-control-sm block p-2">
+                      <Layout className="text-indigo size-3.5" />
+                    </span>
+                  }
+                  title="Compact mode"
+                  subtitle="Denser UI layout"
+                  trailing={
+                    <ToggleSwitch
+                      enabled={compactMode}
+                      onToggle={() => {
+                        toggleCompactMode();
                       }}
                     />
                   }
                 />
-              )}
 
-              {isOnWikiPage && (
                 <FacetRow
-                  onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
-                  selected={morePrefsExpanded}
-                  selectionStyle="tint"
-                  aria-current={false}
                   leading={
-                    <span
-                      className={cn(
-                        "rounded-control-sm block p-2",
-                        morePrefsExpanded ? "bg-blue/20" : "bg-blue/15"
-                      )}
-                    >
-                      <BookOpen className="text-blue size-3.5" />
-                    </span>
+                    soundEnabled ? (
+                      <button
+                        type="button"
+                        onClick={() => previewSound("ready")}
+                        title="Tap to test the notification sound"
+                        aria-label="Tap to test the notification sound"
+                        className="rounded-control-sm bg-green/15 focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2"
+                      >
+                        <SoundHigh className="text-green size-3.5" />
+                      </button>
+                    ) : (
+                      <span className="bg-fill-4 rounded-control-sm block p-2">
+                        <SoundOff className="text-label-secondary size-3.5" />
+                      </span>
+                    )
                   }
-                  title={morePrefsExpanded ? "Reader preferences" : "More preferences"}
-                  subtitle={morePrefsExpanded ? undefined : "Citations, contents, search and links"}
-                  accessory={
-                    <ChevronRight
-                      aria-hidden
-                      className={cn(
-                        "duration-fast ease-out-facet size-4 transition-transform",
-                        morePrefsExpanded ? "text-tint rotate-90" : "text-label-tertiary"
-                      )}
+                  title="Sound"
+                  subtitle={soundEnabled ? "Enabled" : "Muted"}
+                  trailing={
+                    <ToggleSwitch
+                      enabled={soundEnabled}
+                      onToggle={() => {
+                        setSoundEnabled(!soundEnabled);
+                      }}
                     />
                   }
                 />
-              )}
-            </FacetListSection>
-          </FacetList>
+
+                {isOnWikiPage && effectiveTheme === "dark" && (
+                  <FacetRow
+                    leading={
+                      <span
+                        className={cn(
+                          "rounded-control-sm block p-2",
+                          mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"
+                        )}
+                      >
+                        {mediaThemeMode === "plinth" ? (
+                          <Square className="text-green size-3.5" />
+                        ) : (
+                          <SunMoon className="text-teal size-3.5" />
+                        )}
+                      </span>
+                    }
+                    title="Image appearance"
+                    subtitle={mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive dark"}
+                    trailing={
+                      <Switch
+                        checked={mediaThemeMode === "plinth"}
+                        onCheckedChange={(checked) => {
+                          setMediaThemeMode(checked ? "plinth" : "auto");
+                        }}
+                      />
+                    }
+                  />
+                )}
+
+                {isOnWikiPage && (
+                  <FacetRow
+                    onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
+                    selected={morePrefsExpanded}
+                    selectionStyle="tint"
+                    aria-current={false}
+                    leading={
+                      <span
+                        className={cn(
+                          "rounded-control-sm block p-2",
+                          morePrefsExpanded ? "bg-blue/20" : "bg-blue/15"
+                        )}
+                      >
+                        <BookOpen className="text-blue size-3.5" />
+                      </span>
+                    }
+                    title={morePrefsExpanded ? "Reader preferences" : "More preferences"}
+                    subtitle={
+                      morePrefsExpanded ? undefined : "Citations, contents, search and links"
+                    }
+                    accessory={
+                      <ChevronRight
+                        aria-hidden
+                        className={cn(
+                          "duration-fast ease-out-facet size-4 transition-transform",
+                          morePrefsExpanded ? "text-tint rotate-90" : "text-label-tertiary"
+                        )}
+                      />
+                    }
+                  />
+                )}
+              </FacetListSection>
+            </FacetList>
+          </HaloWell>
+
+          {/* Temporary: admins compare the two island materials; remove once one is chosen. */}
+          {isAdmin && (
+            <HaloWell className="space-y-2 p-2">
+              <SectionLabel>Halo material</SectionLabel>
+              <SegmentedControl
+                aria-label="Halo material"
+                size="sm"
+                fullWidth
+                value={material}
+                onValueChange={setHaloMaterial}
+                options={HALO_MATERIAL_OPTIONS}
+              />
+            </HaloWell>
+          )}
 
           {/* Account */}
           {isSignedIn ? (
             <>
-              <SectionLabel>Account</SectionLabel>
-              <FacetList variant="plain">
-                <FacetListSection aria-label="Account">
-                  <FacetRow
-                    onClick={() => navigateWithBasePath("/settings", router)}
-                    leading={
-                      <span className="rounded-control-sm bg-blue/15 block p-2">
-                        <User className="text-blue size-3.5" />
-                      </span>
-                    }
-                    title="Account settings"
-                    subtitle="Profile, preferences and security"
-                    accessory="chevron"
-                  />
-                </FacetListSection>
-              </FacetList>
+              <HaloWell className="space-y-1 p-2">
+                <SectionLabel>Account</SectionLabel>
+                <FacetList variant="plain">
+                  <FacetListSection aria-label="Account">
+                    <FacetRow
+                      onClick={() => {
+                        onClose();
+                        navigateWithBasePath("/settings", router);
+                      }}
+                      leading={
+                        <span className="rounded-control-sm bg-blue/15 block p-2">
+                          <User className="text-blue size-3.5" />
+                        </span>
+                      }
+                      title="Account settings"
+                      subtitle="Profile, preferences and security"
+                      accessory="chevron"
+                    />
+                  </FacetListSection>
+                </FacetList>
+              </HaloWell>
 
               {/* Footer Actions: Admin (left) + Sign Out (right) */}
-              <div className="border-separator mt-1 flex items-center justify-between border-t pt-2">
+              <div className="flex items-center justify-between pt-1">
                 {isAdmin ? (
                   <Button
                     type="button"
@@ -316,7 +347,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               </div>
             </>
           ) : (
-            <div className="border-separator mt-3 border-t pt-4 text-center">
+            <HaloWell className="p-2">
               <Button
                 size="sm"
                 onClick={() =>
@@ -327,13 +358,13 @@ export function SettingsView({ onClose }: SettingsViewProps) {
               >
                 Sign in
               </Button>
-            </div>
+            </HaloWell>
           )}
         </div>
 
         {/* Additive 2nd Column (Smoothly reveals alongside on More Preferences) */}
         {morePrefsExpanded && (
-          <div className="border-separator min-w-0 space-y-1 border-t pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
+          <HaloWell className="min-w-0 space-y-1 self-start p-2">
             <SectionLabel>Reader preferences</SectionLabel>
             <FacetList variant="plain">
               <FacetListSection aria-label="Reader preferences">
@@ -425,7 +456,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 />
               </FacetListSection>
             </FacetList>
-          </div>
+          </HaloWell>
         )}
       </div>
     </div>

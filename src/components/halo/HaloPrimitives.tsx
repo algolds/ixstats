@@ -7,6 +7,7 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
@@ -14,6 +15,7 @@ import { cn } from "~/lib/utils/cn";
 import { REDUCED_MOTION_FADE, springSnappy, tweenExit } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
+import { ISLAND_MATERIAL, useHaloMaterial } from "./halo-material";
 import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets } from "./presets";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
@@ -70,8 +72,10 @@ const calculateDimensions = (
   const resolvedSize = currentSize ?? DynamicIslandSizePresets.default;
 
   // Height always follows the content; expanded views scroll inside their own max height.
-  if (size === "ultra" && screenSize === "mobile") return { width: "350px" };
   if (isCompactSize(size)) return { width: "fit-content" };
+  if (screenSize === "mobile") {
+    return { width: `min(${resolvedSize.width}px, calc(100vw - 24px))` };
+  }
   return { width: `${resolvedSize.width}px` };
 };
 
@@ -98,23 +102,38 @@ const DynamicIslandContent = ({
 
   const isImpersonating = usePlayAsTarget() !== "";
   const reduceMotion = useFacetReducedMotion();
+  const material = useHaloMaterial();
+  const islandRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className="relative">
       <motion.div
+        ref={islandRef}
         id={id}
         layout
+        // Motion's FLIP morph scales the island box up to ~15x vertically between pill and panel, which would stretch
+        // #facet-lens's objectBoundingBox displacement map mid-spring. Replacing --lens-refraction with a no-op filter
+        // function keeps the 12px frost valid during the morph and restores rim refraction once the box settles.
+        onLayoutAnimationStart={() => {
+          islandRef.current?.style.setProperty("--lens-refraction", "brightness(1)");
+        }}
+        onLayoutAnimationComplete={() => {
+          islandRef.current?.style.removeProperty("--lens-refraction");
+        }}
         data-expanded={!isCompact ? "true" : undefined}
         data-reduced-motion={reduceMotion ? "true" : undefined}
-        // Halo is the acrylic island: a pill, then a frosted sheet once `data-expanded` opens it
-        // into a panel. Content inside stays on opaque roles.
+        data-material={material}
+        // Halo is Facet's one Chrome surface made of Lens: liquid glass refracting the page, frosted so text
+        // holds over anything. Sections inside sit on solid wells. (`chrome` is the admins' comparison.)
         className={cn(
-          "facet-chrome relative mx-auto items-center justify-center text-center",
+          ISLAND_MATERIAL[material],
+          "relative mx-auto items-center justify-center text-center",
           isImpersonating && "ring-destructive ring-2"
         )}
         transition={reduceMotion ? { duration: 0 } : springSnappy}
         style={{
           width: dimensions.width,
+          maxWidth: isCompact ? undefined : "calc(100vw - 24px)",
           height: "auto",
           borderRadius: currentSize.borderRadius,
           WebkitFontSmoothing: "antialiased",

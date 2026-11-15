@@ -22,6 +22,7 @@ import {
   HaloCloseButton,
   HaloEmpty,
   HaloViewHeader,
+  HaloWell,
 } from "~/components/halo/views/shared/HaloViewParts";
 import { cn } from "~/lib/utils";
 import { useActiveCosmetics } from "~/hooks/useActiveCosmetics";
@@ -108,7 +109,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
   };
 
   return (
-    <div className="overflow-hidden p-4">
+    <div className="overflow-hidden p-3">
       <AnimatePresence mode="wait">
         {view === "tabs" ? (
           <motion.div
@@ -117,8 +118,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={tweenFast}
+            className="space-y-3"
           >
-            <div className="border-separator mb-4 flex items-center justify-between border-b pb-3">
+            <div className="flex items-center justify-between gap-2 pl-1">
               <div className="flex items-center gap-3">
                 <SegmentedControl
                   aria-label="Wiki panel"
@@ -137,9 +139,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
 
             {/* Content */}
             {activeTab === "workspace" && (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {/* Left Column: Paused/Saved Sessions */}
-                <div className="space-y-3">
+                <HaloWell className="space-y-3">
                   <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <History className="h-3 w-3" />
                     <span>Saved and paused sessions</span>
@@ -150,14 +152,14 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       icon={<BookOpen />}
                       title="No paused sessions yet"
                       message="Your reading/editing progress will appear here."
-                      className="border-separator bg-fill-4 rounded-row border py-8"
+                      className="py-6"
                     />
                   ) : (
                     <div className="space-y-2">
                       {pausedSessions.map((session) => (
                         <div
                           key={pageRefPath(session)}
-                          className="border-separator bg-fill-4 hover:bg-fill-3 rounded-row flex flex-col gap-2 border p-3 transition-colors"
+                          className="bg-fill-4 hover:bg-fill-3 rounded-control flex flex-col gap-2 p-3 transition-colors"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-label text-caption truncate font-semibold">
@@ -188,10 +190,10 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       ))}
                     </div>
                   )}
-                </div>
+                </HaloWell>
 
                 {/* Right Column: Quick Notes / Scratchpad */}
-                <div className="flex flex-col space-y-2">
+                <HaloWell className="flex flex-col space-y-2">
                   <div className="text-label-secondary text-footnote flex items-center gap-2">
                     <FileText className="h-3 w-3" />
                     <span>Wiki scratchpad</span>
@@ -201,18 +203,18 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       value={scratchpad}
                       onChange={handleScratchpadChange}
                       placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here… (auto-saves)"
-                      className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote focus-visible:outline-tint min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+                      className="bg-fill-4 text-label placeholder:text-label-tertiary focus:bg-fill-3 rounded-control text-footnote focus-visible:outline-tint min-h-[140px] w-full resize-none p-3 transition-[color,background-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                       style={{ scrollbarWidth: "thin" }}
                     />
                   </div>
-                </div>
+                </HaloWell>
               </div>
             )}
 
             {activeTab === "profile" && (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {/* Wiki Profile Stats */}
-                <div className="border-separator bg-fill-4 rounded-row relative flex flex-wrap items-center justify-between gap-4 overflow-hidden border p-4">
+                <HaloWell className="relative flex flex-wrap items-center justify-between gap-4 overflow-hidden p-4">
                   {/* Neon Frame Overlay */}
                   <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
 
@@ -249,7 +251,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   </div>
 
                   {lorewardStats && (
-                    <div className="border-separator z-raised relative flex gap-4 border-l pl-4">
+                    <div className="z-raised relative flex gap-4">
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2">
                           <Trophy className="text-yellow h-4 w-4" />
@@ -270,11 +272,11 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                       </div>
                     </div>
                   )}
-                </div>
+                </HaloWell>
 
                 {/* Quick actions & Recent */}
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <HaloWell className="space-y-2">
                     <div className="text-subhead text-label-secondary">Quick actions</div>
                     <div className="space-y-1">
                       {handle && (
@@ -309,15 +311,12 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                         </Button>
                       )}
                     </div>
-                  </div>
+                  </HaloWell>
 
-                  <div className="space-y-2">
+                  <HaloWell className="space-y-2">
                     <div className="text-subhead text-label-secondary">Recently visited pages</div>
                     {recentArticles.length === 0 ? (
-                      <HaloEmpty
-                        title="No pages visited recently"
-                        className="border-separator rounded-control border py-4"
-                      />
+                      <HaloEmpty title="No pages visited recently" className="py-4" />
                     ) : (
                       <div className="space-y-1">
                         {recentArticles.slice(0, 3).map((page) => (
@@ -337,7 +336,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </HaloWell>
                 </div>
               </div>
             )}
@@ -349,9 +348,9 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={tweenFast}
+            className="space-y-3"
           >
             <HaloViewHeader
-              className="border-separator mb-4 border-b pb-3"
               leading={
                 <Button
                   type="button"
@@ -381,37 +380,39 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
             />
 
             {/* Grid of Actions */}
-            <div className="grid grid-cols-2 gap-3 py-1">
-              {getCountryActions([
-                "overview",
-                "executive",
-                "diplomacy",
-                "map-editor",
-                "vault",
-                "politics",
-              ]).map((action) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={action.id}
-                    type="button"
-                    variant="secondary"
-                    onClick={() => {
-                      onClose();
-                      navigateWithBasePath(ixstatesHref(action.path), router);
-                    }}
-                    className="h-auto w-full flex-col gap-2 p-4 text-center"
-                  >
-                    <Icon
-                      aria-hidden
-                      data-app={action.dataApp}
-                      className={cn(action.iconClass, "h-5 w-5")}
-                    />
-                    <span>{action.label}</span>
-                  </Button>
-                );
-              })}
-            </div>
+            <HaloWell>
+              <div className="grid grid-cols-2 gap-2">
+                {getCountryActions([
+                  "overview",
+                  "executive",
+                  "diplomacy",
+                  "map-editor",
+                  "vault",
+                  "politics",
+                ]).map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <Button
+                      key={action.id}
+                      type="button"
+                      variant="secondary"
+                      onClick={() => {
+                        onClose();
+                        navigateWithBasePath(ixstatesHref(action.path), router);
+                      }}
+                      className="h-auto w-full flex-col gap-2 p-4 text-center"
+                    >
+                      <Icon
+                        aria-hidden
+                        data-app={action.dataApp}
+                        className={cn(action.iconClass, "h-5 w-5")}
+                      />
+                      <span>{action.label}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </HaloWell>
           </motion.div>
         )}
       </AnimatePresence>
