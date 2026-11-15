@@ -1,11 +1,12 @@
 "use client";
 
 import React, {
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,6 +14,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
 import { springSnappy, tweenExit } from "~/lib/design/motion";
 import { useHydrated } from "~/hooks/useHydrated";
+import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
@@ -25,7 +27,7 @@ export * from "./presets";
 
 type HaloSizeContextType = {
   size: SizePresets;
-  setSize: (size: SizePresets) => void;
+  setSize: Dispatch<SetStateAction<SizePresets>>;
 };
 
 const HaloSizeContext = createContext<HaloSizeContextType | undefined>(undefined);
@@ -41,9 +43,8 @@ export const HaloProvider: React.FC<HaloProviderProps> = ({
 }) => {
   // useState skips the re-render when the size is unchanged, so setSize needs no guard.
   const [size, setSize] = useState(initialSize);
-  const contextValue = useMemo(() => ({ size, setSize }), [size]);
 
-  return <HaloSizeContext.Provider value={contextValue}>{children}</HaloSizeContext.Provider>;
+  return <HaloSizeContext.Provider value={{ size, setSize }}>{children}</HaloSizeContext.Provider>;
 };
 
 export const useHaloSize = () => {
@@ -150,23 +151,7 @@ const DynamicIslandContent = ({
 
   const dimensions = calculateDimensions(size, screenSize, currentSize);
 
-  const [isImpersonating, setIsImpersonating] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-    const checkPlayAs = () => {
-      setIsImpersonating(!!localStorage.getItem("ixstats.play_as_user"));
-    };
-    checkPlayAs();
-    window.addEventListener("storage", checkPlayAs);
-    window.addEventListener("ixstats-play-as-change", checkPlayAs);
-    return () => {
-      window.removeEventListener("storage", checkPlayAs);
-      window.removeEventListener("ixstats-play-as-change", checkPlayAs);
-    };
-  }, []);
+  const isImpersonating = usePlayAsTarget() !== "";
 
   const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -197,8 +182,9 @@ const DynamicIslandContent = ({
     return () => {
       observer.disconnect();
     };
-    // oxlint-disable-next-line
-  }, [size, children]);
+    // The content element lives as long as the component, and the observer reports its resizes
+    // whatever the children or size are, so it is created once.
+  }, []);
 
   const isAutoHeight = dimensions.height === "auto";
   const targetHeight = isAutoHeight

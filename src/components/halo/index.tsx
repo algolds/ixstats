@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useEffectEvent, useRef } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
@@ -28,6 +28,64 @@ interface CommandPaletteProps {
   scrollY?: number;
 }
 
+interface SizeInputs {
+  isForumActive: boolean;
+  isNavLoading: boolean;
+  isExpanded: boolean;
+  expandedMode: string;
+  isWikiActive: boolean;
+  activeIsSticky: boolean;
+  isCollapsed: boolean;
+  hasActiveSection: boolean;
+}
+
+function computeExpandedSize(prev: SizePresets, expandedMode: string): SizePresets {
+  if (expandedMode === "search") return SIZE_PRESETS.ULTRA; // 630px wide
+  if (expandedMode === "notifications") {
+    return prev === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
+  }
+  if (expandedMode === "settings") {
+    return prev === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
+  }
+  if (expandedMode === "mycountry") return SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
+  if (expandedMode.startsWith("plugin:")) return SIZE_PRESETS.ULTRA; // 630px wide
+  return SIZE_PRESETS.MEDIUM;
+}
+
+function computeWikiPillSize(
+  activeIsSticky: boolean,
+  isCollapsed: boolean,
+  hasActiveSection: boolean
+): SizePresets {
+  if (activeIsSticky && isCollapsed) {
+    return hasActiveSection ? SIZE_PRESETS.COMPACT : SIZE_PRESETS.WIKI_COMPACT; // 170x32 -> 200x36
+  }
+  if (activeIsSticky) {
+    return hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.COMPACT; // 200x36 -> 300x44
+  }
+  return hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE; // 280x38 -> 300x44
+}
+
+function computePillSize(inputs: SizeInputs): SizePresets {
+  const { isWikiActive, isForumActive, activeIsSticky, isCollapsed, hasActiveSection } = inputs;
+  if (isWikiActive) return computeWikiPillSize(activeIsSticky, isCollapsed, hasActiveSection);
+  if (isForumActive) {
+    // 180x32 compact forum text mode, or 300x40 for hover state and expanded full text
+    return isCollapsed ? SIZE_PRESETS.WIKI_COMPACT : SIZE_PRESETS.COMPACT_LONG;
+  }
+  if (activeIsSticky && isCollapsed) return SIZE_PRESETS.COMPACT; // 200x36 pill
+  if (activeIsSticky) return SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
+  return SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
+}
+
+/** The island preset for the current state. `prev` keeps a widened panel wide across mode changes. */
+function computeSize(prev: SizePresets, inputs: SizeInputs): SizePresets {
+  // compact loading pill size (180x40)
+  if (inputs.isNavLoading) return SIZE_PRESETS.WIKI_COMPACT;
+  if (inputs.isExpanded) return computeExpandedSize(prev, inputs.expandedMode);
+  return computePillSize(inputs);
+}
+
 function CommandPaletteContent({
   isSticky = false,
   scrollY = 0,
@@ -39,10 +97,11 @@ function CommandPaletteContent({
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
 }) {
-  const { size: haloSize, setSize } = useHaloSize();
+  const { setSize } = useHaloSize();
   const mounted = useHydrated();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [navTrayOpen, setNavTrayOpen] = useState(false);
+  // The pathname the tray was opened on; navigating elsewhere closes it without an effect
+  const [navTrayAt, setNavTrayAt] = useState<{ path: string | null } | null>(null);
   const [pillBounce, setPillBounce] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
 
@@ -92,6 +151,7 @@ function CommandPaletteContent({
   } = diState;
 
   const diPathname = usePathname();
+  const navTrayOpen = navTrayAt !== null && navTrayAt.path === diPathname;
 
   // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
@@ -102,83 +162,42 @@ function CommandPaletteContent({
   const hasActiveSection = !!(activeSectionId && tocEntries.some((e) => e.id === activeSectionId));
 
   // Dynamic size based on sticky/collapsed state + wiki/forum context + expanded state
+  const isForumActive = activePlugin?.id === "forum";
   useEffect(() => {
-    let newSize: SizePresets;
-    const isForumActive = activePlugin?.id === "forum";
-
-    if (isNavLoading) {
-      newSize = SIZE_PRESETS.WIKI_COMPACT; // compact loading pill size (180x40)
-    } else if (isExpanded) {
-      if (expandedMode === "search") {
-        newSize = SIZE_PRESETS.ULTRA; // 630px wide
-      } else if (expandedMode === "notifications") {
-        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
-      } else if (expandedMode === "settings") {
-        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
-      } else if (expandedMode === "mycountry") {
-        newSize = SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
-      } else if (expandedMode.startsWith("plugin:")) {
-        newSize = SIZE_PRESETS.ULTRA; // 630px wide
-      } else {
-        newSize = SIZE_PRESETS.MEDIUM;
-      }
-    } else {
-      if (isWikiActive) {
-        if (activeIsSticky && isCollapsed) {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT : SIZE_PRESETS.WIKI_COMPACT; // 170x32 -> 200x36
-        } else if (activeIsSticky) {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.COMPACT; // 200x36 -> 300x44
-        } else {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE; // 280x38 -> 300x44
-        }
-      } else if (isForumActive) {
-        if (isCollapsed) {
-          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32, compact forum text mode
-        } else {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40, hover state and expanded full text
-        }
-      } else {
-        if (activeIsSticky && isCollapsed) {
-          newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
-        } else if (activeIsSticky && !isCollapsed) {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
-        } else {
-          newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
-        }
-      }
-    }
-    setSize(newSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSize((prev) =>
+      computeSize(prev, {
+        isForumActive,
+        isNavLoading,
+        isExpanded,
+        expandedMode,
+        isWikiActive,
+        activeIsSticky,
+        isCollapsed,
+        hasActiveSection,
+      })
+    );
   }, [
     setSize,
+    isForumActive,
     activeIsSticky,
     isCollapsed,
     isWikiActive,
-    activePlugin?.id,
     isExpanded,
     expandedMode,
     isNavLoading,
     hasActiveSection,
   ]);
 
-  // Close nav tray when navigating
-  useEffect(() => {
-    setNavTrayOpen(false);
-  }, [diPathname]);
-
   // Swipe-up gesture handler
-  const handleDragEnd = useCallback(
-    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (info.offset.y < -30 || info.velocity.y < -200) {
-        if (!isExpanded) {
-          setPillBounce(true);
-          setTimeout(() => setPillBounce(false), 300);
-          setNavTrayOpen(true);
-        }
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.y < -30 || info.velocity.y < -200) {
+      if (!isExpanded) {
+        setPillBounce(true);
+        setTimeout(() => setPillBounce(false), 300);
+        setNavTrayAt({ path: diPathname });
       }
-    },
-    [isExpanded]
-  );
+    }
+  };
 
   // Initialize notification store
   const initialize = useNotificationStore((state) => state.initialize);
@@ -187,47 +206,40 @@ function CommandPaletteContent({
     initialize().catch(console.error);
   }, [initialize]);
 
-  // Auto-collapse when sticky and not interacting - optimized with proper cleanup
-  const collapseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  // Auto-collapse when sticky and not interacting
+  // Not sticky and not forum: the pill is never collapsed, so a leftover collapse is dropped now
+  if (!(activeIsSticky || isForumActive) && isCollapsed) setIsCollapsed(false);
 
   useEffect(() => {
-    // Clear existing timeout
-    if (collapseTimeoutRef.current) {
-      clearTimeout(collapseTimeoutRef.current);
-    }
-
-    const isForumActive = activePlugin?.id === "forum";
-
     if ((activeIsSticky || isForumActive) && !isUserInteracting && !isCollapsed) {
-      collapseTimeoutRef.current = setTimeout(() => setIsCollapsed(true), 1200);
-    } else if (!(activeIsSticky || isForumActive) && isCollapsed) {
-      // Immediately expand when not sticky and not forum
-      setIsCollapsed(false);
+      const id = setTimeout(() => setIsCollapsed(true), 1200);
+      return () => clearTimeout(id);
     }
+    return;
+  }, [activeIsSticky, isForumActive, isUserInteracting, isCollapsed]);
 
-    return () => {
-      if (collapseTimeoutRef.current) {
-        clearTimeout(collapseTimeoutRef.current);
-      }
-    };
-  }, [activeIsSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
-
-  const toastQueue = useToastQueueStore((s) => s.queue);
   const prevToastIdRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    const latest = toastQueue[0];
-    if (!latest || latest.id === prevToastIdRef.current) return;
-    prevToastIdRef.current = latest.id;
-
-    // Briefly uncollapse sticky DI so the user sees the notification peek
+  // Briefly uncollapse sticky DI so the user sees the notification peek
+  const peekForToast = useEffectEvent((toastId: string) => {
+    if (toastId === prevToastIdRef.current) return;
+    prevToastIdRef.current = toastId;
     if (activeIsSticky && isCollapsed) {
       setIsCollapsed(false);
       setIsUserInteracting(true);
       // Let the auto-collapse timer re-engage after 3s
       setTimeout(() => setIsUserInteracting(false), 3000);
     }
-  }, [toastQueue, activeIsSticky, isCollapsed, setIsUserInteracting]);
+  });
+
+  useEffect(() => {
+    // A toast already queued on mount has been seen
+    prevToastIdRef.current = useToastQueueStore.getState().queue[0]?.id ?? null;
+    return useToastQueueStore.subscribe((state) => {
+      const latest = state.queue[0];
+      if (latest) peekForToast(latest.id);
+    });
+  }, []);
 
   if (!mounted) return null;
 
@@ -308,7 +320,7 @@ function CommandPaletteContent({
         </motion.div>
 
         {/* Nav tray dropdown */}
-        <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayOpen(false)} />
+        <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayAt(null)} />
 
         {/* Walkthrough tooltip overlay */}
         <HaloTourTooltip />

@@ -1,10 +1,10 @@
-import { useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 import dynamic from "next/dynamic";
 import type { ExpandedViewProps, DIPlugin } from "../types";
 import { Button } from "~/components/ui/button";
 import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
+import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
 
 // The views are not needed until the Halo opens, so each is its own chunk fetched then; the fallback
 // keeps the island's height stable while the chunk loads.
@@ -26,16 +26,6 @@ const MyCountryView = dynamic(
   { ssr: false, loading: viewLoading }
 );
 
-const subscribeNever = () => () => {};
-/** The admin "play as" target, re-read on every render (each mode switch re-renders this). */
-const readPlayAs = () => {
-  try {
-    return localStorage.getItem("ixstats.play_as_user") ?? "";
-  } catch {
-    return "";
-  }
-};
-
 export function ExpandedView({
   mode,
   onClose,
@@ -49,7 +39,7 @@ export function ExpandedView({
   isSearchPending,
   activePlugin,
 }: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
-  const targetUser = useSyncExternalStore(subscribeNever, readPlayAs, () => "");
+  const targetUser = usePlayAsTarget();
   const isImpersonating = targetUser !== "";
 
   const handleStopImpersonating = () => {
