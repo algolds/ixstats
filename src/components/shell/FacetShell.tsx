@@ -85,24 +85,8 @@ export function FacetShell() {
         }
       : { signedIn: false, isAdmin: false }
   );
-  // Signed-out search still offers public/auth-redirected app destinations while respecting admin tab toggles and roles.
-  const searchApps = withCountryRows(
-    getVisibleApps(
-      hydrated
-        ? {
-            signedIn: true,
-            isAdmin,
-            canOpenAdmin,
-            hasLabsAccess,
-            hasMycountryPremium,
-            forumModerator,
-            ownsNation: Boolean(country),
-            navigationSettings: navSettings,
-          }
-        : { signedIn: true, isAdmin: false }
-    ),
-    countryHref
-  );
+  // Search lists exactly what the sidebar shows this viewer, plus the nation's profile and editor rows.
+  const searchApps = withCountryRows(apps, countryHref);
 
   return (
     <>

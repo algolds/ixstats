@@ -61,7 +61,9 @@ const derivedCommands = commandsFromApps({
   ownsNation: true,
   countryHref: "/countries/aphis",
 });
-const tray = splitNavTrayApps(getVisibleApps({ signedIn: true, isAdmin: true, canOpenAdmin: true }));
+const tray = splitNavTrayApps(
+  getVisibleApps({ signedIn: true, isAdmin: true, canOpenAdmin: true })
+);
 
 const paletteRaw = [...derivedCommands, ...CORE_FEATURES].map((entry) => entry.path);
 const navRaw = [...tray.primary, ...tray.secondary].map((item) => item.href);

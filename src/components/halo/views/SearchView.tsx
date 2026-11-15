@@ -215,7 +215,7 @@ export function SearchView({
                       />
                     ) : result.type === "realm" && result.metadata?.thumbnail ? (
                       <img
-                        src={assetUrl(result.metadata.thumbnail as string)}
+                        src={assetUrl(result.metadata.thumbnail as string) ?? undefined}
                         alt=""
                         className="rounded-control-sm h-6 w-6 object-cover"
                       />

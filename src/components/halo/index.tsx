@@ -231,11 +231,7 @@ export function CommandPalette({ className, trayApps, searchApps }: CommandPalet
   return (
     <HaloTourProvider>
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper
-          className={className}
-          trayApps={trayApps}
-          searchApps={searchApps}
-        />
+        <CommandPaletteWrapper className={className} trayApps={trayApps} searchApps={searchApps} />
       </HaloProvider>
     </HaloTourProvider>
   );
@@ -292,11 +288,7 @@ function CommandPaletteWrapper({ className, trayApps, searchApps }: CommandPalet
       className={`z-nav pointer-events-none relative flex w-full max-w-full items-center justify-center ${className || ""}`}
     >
       <div className="pointer-events-auto">
-        <CommandPaletteContent
-          diState={diState}
-          isTourActive={isTourActive}
-          trayApps={trayApps}
-        />
+        <CommandPaletteContent diState={diState} isTourActive={isTourActive} trayApps={trayApps} />
       </div>
     </div>
   );

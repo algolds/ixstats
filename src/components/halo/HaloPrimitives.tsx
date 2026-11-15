@@ -18,7 +18,6 @@ import { type SizePresets, type Preset, SIZE_PRESETS, DynamicIslandSizePresets }
 
 // The island morphs with the snappy spring: it answers a press directly, at the same settle
 // speed as the controls inside it.
-const MAX_HEIGHT_MOBILE_ULTRA = 400;
 
 export * from "./presets";
 
@@ -67,21 +66,13 @@ const calculateDimensions = (
   size: SizePresets,
   screenSize: string,
   currentSize: Preset | undefined
-): { width: string; height: number | string } => {
+): { width: string } => {
   const resolvedSize = currentSize ?? DynamicIslandSizePresets.default;
 
-  if (size === "ultra" && screenSize === "mobile") {
-    return { width: "350px", height: MAX_HEIGHT_MOBILE_ULTRA };
-  }
-
-  if (isCompactSize(size)) {
-    return { width: "fit-content", height: "auto" };
-  }
-
-  return {
-    width: `${resolvedSize.width}px`,
-    height: resolvedSize.aspectRatio * resolvedSize.width,
-  };
+  // Height always follows the content; expanded views scroll inside their own max height.
+  if (size === "ultra" && screenSize === "mobile") return { width: "350px" };
+  if (isCompactSize(size)) return { width: "fit-content" };
+  return { width: `${resolvedSize.width}px` };
 };
 
 interface DynamicIslandContentProps extends Omit<

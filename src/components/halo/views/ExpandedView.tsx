@@ -5,6 +5,7 @@ import type { ExpandedViewProps, DIPlugin, ViewMode } from "../types";
 import { Button } from "~/components/ui/button";
 import { setPlayAsCookie } from "~/lib/auth/play-as-cookie";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
+import { withBasePath } from "~/lib/base-path";
 
 function dialogLabelForMode(mode: ViewMode, activePlugin?: DIPlugin | null): string {
   if (mode === "search") return "Search";
@@ -57,7 +58,7 @@ export function ExpandedView({
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
     setPlayAsCookie(false);
-    window.location.href = "/admin/users";
+    window.location.href = withBasePath("/admin/users");
   };
 
   // Don't render if mode is compact

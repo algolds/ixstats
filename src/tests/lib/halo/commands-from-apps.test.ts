@@ -6,6 +6,14 @@ import {
 } from "~/lib/halo/commands-from-apps";
 
 describe("commandsFromApps", () => {
+  it("lists no sign-in-gated app for a signed-out viewer", () => {
+    const signedOut = commandsFromApps({ signedIn: false, isAdmin: false });
+    const paths = signedOut.map((entry) => entry.path);
+    const gated = APPS.filter((app) => app.requiresAuth).map((app) => app.href);
+    expect(gated.length).toBeGreaterThan(0);
+    for (const href of gated) expect(paths).not.toContain(href);
+  });
+
   it("derives unique routed destinations and system actions for non-admin and admin viewers", () => {
     const nonAdmin = commandsFromApps({
       signedIn: true,
@@ -17,7 +25,7 @@ describe("commandsFromApps", () => {
 
     const nonAdminPaths = nonAdmin
       .map((entry) => entry.path)
-      .filter((path): path is string => Boolean(path) && !path.startsWith("#"));
+      .filter((path): path is string => typeof path === "string" && !path.startsWith("#"));
     expect(new Set(nonAdminPaths).size).toBe(nonAdminPaths.length);
     expect(nonAdminPaths).toEqual(
       expect.arrayContaining([

@@ -3,14 +3,7 @@ import { commandsFromApps } from "~/lib/halo/commands-from-apps";
 import type { NavigationVisibilitySettings } from "~/lib/navigation/app-sections";
 
 export type CommandCategory =
-  | "Statecraft"
-  | "Vault"
-  | "Geography"
-  | "Knowledge"
-  | "Community"
-  | "Sports"
-  | "Labs"
-  | "System";
+  "Statecraft" | "Vault" | "Geography" | "Knowledge" | "Community" | "Sports" | "Labs" | "System";
 
 export type SystemActionId =
   | "toggle-theme"

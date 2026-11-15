@@ -186,13 +186,13 @@ describe("ExpandedView dialog semantics & focus (Step 1)", () => {
 });
 
 describe("Trigger ARIA & focus return on close (Step 2)", () => {
-  it("wires aria-expanded, aria-controls, and returns focus to the Settings trigger on close", async () => {
+  it("marks the Settings trigger as a dialog trigger and returns focus to it on close", async () => {
     render(<CommandPalette />);
     await act(async () => {});
 
     const settingsBtn = screen.getByRole("button", { name: "Settings" });
-    expect(settingsBtn).toHaveAttribute("aria-expanded", "false");
-    expect(settingsBtn).toHaveAttribute("aria-controls", "halo-panel");
+    expect(settingsBtn).toHaveAttribute("aria-haspopup", "dialog");
+    expect(settingsBtn).not.toHaveAttribute("aria-controls");
     expect(settingsBtn).toHaveAttribute("data-halo-trigger", "settings");
 
     fireEvent.click(settingsBtn);

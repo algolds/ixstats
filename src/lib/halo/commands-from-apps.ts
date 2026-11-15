@@ -502,9 +502,7 @@ function buildAppRootEntry(app: AppDefinition): CommandEntry {
 function buildSectionEntry(app: AppDefinition, section: Section): CommandEntry {
   const meta = NAV_COMMAND_META[`${app.id}:${section.id}`];
   const fallbackName =
-    app.id === "settings" || app.id === "admin"
-      ? `${app.label}: ${section.label}`
-      : section.label;
+    app.id === "settings" || app.id === "admin" ? `${app.label}: ${section.label}` : section.label;
   const fallbackDescription = section.group
     ? `${app.label} · ${section.group}`
     : `Open ${section.label} in ${app.label}`;
@@ -544,7 +542,7 @@ export function commandsFromVisibleApps(
   const visibleIds = new Set<AppId>(visibleApps.map((app) => app.id));
 
   const pushUnique = (entry: CommandEntry) => {
-    const dedupeKey = entry.actionId ? `action:${entry.actionId}` : entry.path ?? entry.name;
+    const dedupeKey = entry.actionId ? `action:${entry.actionId}` : (entry.path ?? entry.name);
     if (seenPaths.has(dedupeKey)) return;
     seenPaths.add(dedupeKey);
     entries.push(entry);

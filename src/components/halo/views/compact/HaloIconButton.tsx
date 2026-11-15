@@ -16,8 +16,8 @@ interface HaloIconButtonProps {
   onClick: () => void;
   badge?: number;
   iconClassName?: string;
+  /** The view this button opens; marks it as a dialog trigger and the target for focus return. */
   triggerFor?: string;
-  expanded?: boolean;
 }
 
 /** A compact Halo action: 28px on fine pointers, 44px wide on touch so neighbouring hit areas meet without overlap. */
@@ -28,7 +28,6 @@ export function HaloIconButton({
   badge,
   iconClassName,
   triggerFor,
-  expanded,
 }: HaloIconButtonProps) {
   const unread = badge ?? 0;
   const hasBadge = unread > 0;
@@ -41,8 +40,7 @@ export function HaloIconButton({
           size="icon-sm"
           onClick={onClick}
           aria-label={hasBadge ? `${label}, ${unread} unread` : label}
-          aria-expanded={triggerFor ? Boolean(expanded) : undefined}
-          aria-controls={triggerFor ? "halo-panel" : undefined}
+          aria-haspopup={triggerFor ? "dialog" : undefined}
           data-halo-trigger={triggerFor}
           className="text-label-secondary hover:text-label hover:bg-fill-4 focus-visible:-outline-offset-2 pointer-coarse:w-11"
         >
