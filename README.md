@@ -180,26 +180,24 @@ Specialized creative toolkits and simulation sandboxes:
 IxStates follows an OS-inspired release model where all components read from a central Version Registry ([`src/lib/buildVersion.ts`](src/lib/buildVersion.ts)). See [`docs/reference/revision.md`](docs/reference/revision.md) for full specifications. Players see the public registry (`VERSIONS`): **1.0.0 "Lobster Crosby", Stable**, every app and system at v1. The matrix below is generated from the internal registry (`INTERNAL_VERSIONS`, platform 1.5.0); the engines are the same in both.
 
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
-
-| Capability Domain | Component / Layer             |     Version / Release      | Channel / Granularity               |
-| :---------------- | :---------------------------- | :------------------------: | :---------------------------------- |
-| **Platform**      | **IxStates (Lobster Crosby)** | **1.5.6 "Lobster Crosby"** | **Release Candidate**               |
-| **Apps**          | IxWorld                       |             v3             | Standalone & Embedded Maps Engine   |
-|                   | WikiOS                        |             v1             | Headless Wiki & Canvas Architecture |
-|                   | IxVault                       |             v3             | Wallet, Achievements, Cards & Store |
-| **Engines**       | MyCountry Engine              |             v4             | Deterministic Nation Simulation     |
-|                   | Concord Engine                |             v2             | Living World Simulation & Events    |
-|                   | Atlas Engine                  |             v5             | Spatial Math & Geometry Pipeline    |
-| **Systems**       | MyCountry UI                  |             v6             | 4-Tier Command Architecture         |
-|                   | Nation Builder                |             v4             | Statecraft & Tax Builder Subsystems |
-|                   | ThinkPages                    |             v3             | Social Knowledge & Feed Components  |
-|                   | Achievements                  |             v3             | Achievements, Lorewards & Legacy    |
-|                   | Stash                         |             v1             | Article Stashing (was LoreStash)    |
-|                   | Repository                    |             v2             | Commons Media Explorer              |
-|                   | Halo                          |             v7             | Contextual Overlay System           |
-|                   | Onoma                         |             v4             | Conlang & Linguistics Studio        |
-| **Design**        | Facet                         |             v6             | Refraction / Depth Design System    |
-
+| Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
+| :--- | :--- | :---: | :--- |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.6 "Lobster Crosby"** | **Release Candidate** |
+| **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
+| | WikiOS | v1 | Headless Wiki & Canvas Architecture |
+| | IxVault | v3 | Wallet, Achievements, Cards & Store |
+| **Engines** | MyCountry Engine | v4 | Deterministic Nation Simulation |
+| | Concord Engine | v2 | Living World Simulation & Events |
+| | Atlas Engine | v5 | Spatial Math & Geometry Pipeline |
+| **Systems** | MyCountry UI | v6 | 4-Tier Command Architecture |
+| | Nation Builder | v4 | Statecraft & Tax Builder Subsystems |
+| | ThinkPages | v3 | Social Knowledge & Feed Components |
+| | Achievements | v3 | Achievements, Lorewards & Legacy |
+| | Stash | v1 | Article Stashing (was LoreStash) |
+| | Repository | v2 | Commons Media Explorer |
+| | Halo | v7 | Contextual Overlay System |
+| | Onoma | v4 | Conlang & Linguistics Studio |
+| **Design** | Facet | v6 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ---
@@ -207,20 +205,18 @@ IxStates follows an OS-inspired release model where all components read from a c
 ## Technology Stack
 
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
-
-| Package / Layer  | Version  | Notes                                     |
-| :--------------- | :------: | :---------------------------------------- |
-| **Next.js**      |  16.4.6  | App Router architecture, Turbopack        |
-| **React**        |  19.3.1  | React 19 concurrent features              |
-| **TypeScript**   |  7.0.2   | Native Go Engine concurrency              |
-| **Prisma**       |  7.10.1  | Multi-file schema partitioning            |
-| **tRPC**         | 11.28.0  | Domain-split modular routers              |
-| **Tailwind CSS** |  4.3.5   | v4 CSS-first theme configuration          |
-| **Zod**          |  4.6.7   | Schema validation                         |
-| **Oxlint**       |  1.93.0  | Flat config, TS 7 native (50-100× faster) |
-| **Jest**         |  30.4.2  | Unit and characterization suites          |
-| **Runtime**      | Bun 1.4+ | Native concurrency & virtual store        |
-
+| Package / Layer | Version | Notes |
+| :--- | :---: | :--- |
+| **Next.js** | 16.4.6 | App Router architecture, Turbopack |
+| **React** | 19.3.1 | React 19 concurrent features |
+| **TypeScript** | 7.0.2 | Native Go Engine concurrency |
+| **Prisma** | 7.10.1 | Multi-file schema partitioning |
+| **tRPC** | 11.28.0 | Domain-split modular routers |
+| **Tailwind CSS** | 4.3.5 | v4 CSS-first theme configuration |
+| **Zod** | 4.6.7 | Schema validation |
+| **Oxlint** | 1.93.0 | Flat config, TS 7 native (50-100× faster) |
+| **Jest** | 30.4.2 | Unit and characterization suites |
+| **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
 <!-- END_DOCS:FRAMEWORK_MATRIX -->
 
 ---

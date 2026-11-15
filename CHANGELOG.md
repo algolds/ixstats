@@ -2054,7 +2054,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Phase 4: Wiki-OS, Achievements, Diplomatic Network & Subsystems (12 Components)**:
   - **Wiki-OS & MediaWiki**: Aligned [ArticleRenderer.tsx](src/components/wiki-os/reader/ArticleRenderer.tsx) and `RepositoryWelcomeModal.tsx`.
   - **Diplomatic Network**: Aligned `EmbassyCard.tsx`.
-  - **Achievements & WikiLore**: Aligned `WikiLoreDayModal.tsx`, `WikiLoreTab.tsx`, [AllAchievementsTab.tsx](src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx), [ShowcaseTab.tsx](src/components/achievements/tabs/ShowcaseTab.tsx), `QuestPathCard.tsx`, and `ForumRibbonRack.tsx`.
+  - **Achievements & WikiLore**: Aligned `WikiLoreDayModal.tsx`, `WikiLoreTab.tsx`, [AllAchievementsTab.tsx](src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx), `ShowcaseTab.tsx`, `QuestPathCard.tsx`, and `ForumRibbonRack.tsx`.
   - **Defense & MyClub**: Aligned `ReadinessOverviewCard.tsx` and `ClubResultsCard.tsx`.
 
 - **Verification**:
@@ -2069,7 +2069,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Modernized high-traffic components to semantic design tokens:
     - [src/components/ui/select.tsx](src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
     - `src/components/profile/WikiPreferencesCard.tsx`: Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
-    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx). `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
+    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, `VaultParticleExplosionModal.tsx`. `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
     - ThinkPages composer & social cards: [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), `MentionMenuPortal.tsx`, `WikiAndStashPopovers.tsx`.
     - Maps & navigation HUDs: [TourHUD.tsx](src/components/maps/core/components/TourHUD.tsx), `NotificationsView.tsx`, `MatchDetailModal.tsx`, [DevCountryViewToolbar.tsx](src/components/dev/DevCountryViewToolbar.tsx).
     - Sports widgets: `PlayerCard1.tsx`, `Scoreboard1.tsx`, `Standings1.tsx`, `LatestResults1.tsx`, `PlayerStats1.tsx`, `MatchSchedule1.tsx`.
