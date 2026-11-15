@@ -96,6 +96,7 @@ describe("NS import flow steps", () => {
     globalThis.IntersectionObserver = class {
       readonly root = null;
       readonly rootMargin = "";
+      readonly scrollMargin = "";
       readonly thresholds = [];
       observe() {}
       unobserve() {}

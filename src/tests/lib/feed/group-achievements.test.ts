@@ -1,10 +1,16 @@
-import { groupAchievements } from "~/lib/feed/group-achievements";
+import { groupAchievements, type AchievementFeedLike } from "~/lib/feed/group-achievements";
 import { getActivityLabel } from "~/lib/feed/activity-labels";
 
 const BASE_MS = new Date("2026-11-11T16:00:00.000Z").getTime();
 const minsAgo = (mins: number) => new Date(BASE_MS - mins * 60_000);
 
-function unlock(id: string, countryName: string, achievementName: string, mins: number, key = id) {
+function unlock(
+  id: string,
+  countryName: string,
+  achievementName: string,
+  mins: number,
+  key = id
+): AchievementFeedLike {
   return {
     id,
     type: "achievement",
@@ -40,7 +46,7 @@ describe("getActivityLabel for achievements", () => {
 
 describe("groupAchievements", () => {
   it("folds achievement bursts within 2 hours across nations and intervening posts into the newest slot", () => {
-    const post = {
+    const post: AchievementFeedLike = {
       id: "post-1",
       source: "thinkpages",
       content: { title: "Hello world" },
@@ -96,7 +102,7 @@ describe("groupAchievements", () => {
 
   it("keeps achievements in separate time windows apart when real posts sit between them, and leaves singletons ungrouped", () => {
     const singleNew = unlock("a1", "Caphiria", "First Step", 10);
-    const post = {
+    const post: AchievementFeedLike = {
       id: "post-1",
       source: "thinkpages",
       content: { title: "Midday dispatch" },

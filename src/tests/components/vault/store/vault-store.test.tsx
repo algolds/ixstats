@@ -114,6 +114,7 @@ describe("IxVault Store (Facet 5 + Apple Storefront)", () => {
     class MockIntersectionObserver {
       readonly root = null;
       readonly rootMargin = "";
+      readonly scrollMargin = "";
       readonly thresholds = [];
       observe() {}
       unobserve() {}
@@ -284,20 +285,18 @@ describe("IxVault Store (Facet 5 + Apple Storefront)", () => {
     jest.mocked(api.vault.getPurchasedItems.useQuery).mockReturnValue({
       data: { purchasedItemIds: [], purchaseCounts: { [SAMPLE_UPGRADE.id]: 2 } },
     } as never);
-    jest
-      .mocked(api.cardPacks.purchasePack.useMutation)
-      .mockImplementation(
-        (opts?: { onSuccess?: (data: { userPack: { id: string; pack: PackItem } }) => void }) => {
-          onPackSuccess = opts?.onSuccess;
-          return { mutate: mutatePack, isPending: false } as never;
-        }
-      );
-    jest
-      .mocked(api.vault.purchaseStoreItem.useMutation)
-      .mockImplementation((opts?: { onSuccess?: () => void }) => {
-        onStoreItemSuccess = opts?.onSuccess;
-        return { mutate: mutateStoreItem, isPending: false } as never;
-      });
+    jest.mocked(api.cardPacks.purchasePack.useMutation).mockImplementation(((opts?: {
+      onSuccess?: (data: { userPack: { id: string; pack: PackItem } }) => void;
+    }) => {
+      onPackSuccess = opts?.onSuccess;
+      return { mutate: mutatePack, isPending: false };
+    }) as never);
+    jest.mocked(api.vault.purchaseStoreItem.useMutation).mockImplementation(((opts?: {
+      onSuccess?: () => void;
+    }) => {
+      onStoreItemSuccess = opts?.onSuccess;
+      return { mutate: mutateStoreItem, isPending: false };
+    }) as never);
 
     render(<VaultStoreTab />);
 

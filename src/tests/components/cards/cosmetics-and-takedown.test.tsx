@@ -76,10 +76,12 @@ describe("CosmeticParticlesCanvas and shared cosmetics reduced-motion stillness"
     mockReduceMotion = true;
     const { container } = render(
       <div>
-        <AvatarGlow avatarGlow={{ enabled: true, style: "imperial" }}>
+        <AvatarGlow
+          avatarGlow={{ enabled: true, color: "gold", intensity: "medium", style: "imperial" }}
+        >
           <span>Avatar</span>
         </AvatarGlow>
-        <NeonFrameOverlay neonFrame={{ enabled: true, style: "ruby" }} />
+        <NeonFrameOverlay neonFrame={{ enabled: true, color: "ruby", style: "ruby" }} />
       </div>
     );
 

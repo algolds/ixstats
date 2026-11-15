@@ -49,6 +49,7 @@ describe("Wallet Dashboard (/vault, Facet 5 + Apple Wallet)", () => {
     class MockIntersectionObserver {
       readonly root = null;
       readonly rootMargin = "";
+      readonly scrollMargin = "";
       readonly thresholds = [];
       observe() {}
       unobserve() {}

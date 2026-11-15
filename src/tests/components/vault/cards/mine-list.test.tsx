@@ -47,6 +47,7 @@ function makeRow(args: {
     isBound: false,
     importDiscounted: false,
     inscription: null,
+    acquiredAt: new Date("2026-01-01T00:00:00.000Z"),
   };
 }
 

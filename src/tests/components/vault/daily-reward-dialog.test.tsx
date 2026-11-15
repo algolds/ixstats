@@ -111,14 +111,13 @@ describe("DailyRewardProvider & DailyRewardDialog", () => {
         getTodayEarnings: { invalidate: jest.fn() },
       },
     } as never);
-    jest
-      .mocked(api.vault.claimCombinedDailyClaim.useMutation)
-      .mockImplementation(
-        (opts?: { onSuccess?: (data: ClaimResult) => void; onError?: (err: Error) => void }) => {
-          mutationHandlers = opts ?? {};
-          return { mutate: mutateMock } as never;
-        }
-      );
+    jest.mocked(api.vault.claimCombinedDailyClaim.useMutation).mockImplementation(((opts?: {
+      onSuccess?: (data: ClaimResult) => void;
+      onError?: (err: Error) => void;
+    }) => {
+      mutationHandlers = opts ?? {};
+      return { mutate: mutateMock };
+    }) as never);
   });
 
   it("auto-opens with live IxCredits and Card pull choices and zero streak counters", () => {
