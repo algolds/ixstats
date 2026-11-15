@@ -1,6 +1,6 @@
 "use client";
 // src/components/halo/plugins/wiki/components/WikiWorkspaceTab.tsx
-// Quick actions, drafts manager, paused reading sessions, and recent changes feed for Halo Wiki mode.
+// Quick actions, drafts manager, and paused reading sessions for Halo Wiki mode.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,6 @@ import {
 } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { timeAgo } from "~/lib/format/compact";
 import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
@@ -30,11 +29,6 @@ interface WikiWorkspaceTabProps {
   slug?: string | null;
   localDrafts: LocalDraft[];
   pausedSessions: PausedSession[];
-  recentChanges?: Array<{
-    title?: string | null;
-    user?: string | null;
-    timestamp?: string | null;
-  }> | null;
   onClose: () => void;
   /** Opens the page on its own wiki (the wiki when none is given) */
   onNavigateToArticle: (title: string, source?: WikiSource) => void;
@@ -48,14 +42,12 @@ export function WikiWorkspaceTab({
   slug,
   localDrafts,
   pausedSessions,
-  recentChanges,
   onClose,
   onNavigateToArticle,
 }: WikiWorkspaceTabProps) {
   const router = useRouter();
   const [draftsOpen, setDraftsOpen] = useState(true);
   const [sessionsOpen, setSessionsOpen] = useState(true);
-  const [recentOpen, setRecentOpen] = useState(false);
 
   return (
     <>
@@ -136,40 +128,6 @@ export function WikiWorkspaceTab({
               </button>
             ))}
           </div>
-        </CollapsibleSection>
-      )}
-
-      {/* Recent Activity — collapsible feed (shown when on wiki index/search) */}
-      {!articleTitle && (
-        <CollapsibleSection
-          label="Recent activity"
-          icon={<Clock className="h-3 w-3" />}
-          open={recentOpen}
-          onToggle={() => setRecentOpen(!recentOpen)}
-        >
-          {recentChanges && recentChanges.length > 0 ? (
-            <div className="space-y-0.5">
-              {recentChanges.map((rc, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => onNavigateToArticle(rc.title ?? "")}
-                  className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-1 text-left transition-colors"
-                >
-                  <PreText className="text-callout truncate text-inherit" whiteSpace="nowrap">
-                    {rc.title}
-                  </PreText>
-                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
-                    {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
-                  </PreText>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <PreText className="text-label-secondary text-footnote px-2" whiteSpace="nowrap">
-              Loading...
-            </PreText>
-          )}
         </CollapsibleSection>
       )}
 
