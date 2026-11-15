@@ -35,6 +35,7 @@ jest.mock("~/trpc/react", () => ({
     }),
     notifications: {
       getUserNotifications: { useQuery: () => notificationsQuery },
+      getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) },
       markAsRead: { useMutation: () => ({ mutate: jest.fn() }) },
       dismissNotification: { useMutation: () => ({ mutate: jest.fn() }) },
       markAllAsRead: {
