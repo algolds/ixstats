@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { Book, Globe, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
@@ -14,6 +14,24 @@ import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { commandsFor, CORE_FEATURES } from "./halo-registry";
+
+/**
+ * Returns a function that (re)starts a countdown to `onExpire`; unmounting cancels it. The timer id
+ * lives in a ref owned by this hook, so callers stay free of ref access that the React Compiler
+ * would refuse to optimize.
+ */
+function useRestartableTimeout(onExpire: () => void, ms: number) {
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    return () => clearTimeout(timeoutRef.current);
+  }, []);
+
+  return () => {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(onExpire, ms);
+  };
+}
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -60,55 +78,48 @@ export function useDynamicIslandState() {
   const isSearchPending =
     searchQuery !== debouncedSearchQuery || countriesLoading || (wikiEnabled && wikiFetching);
 
-  const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const restartInteractionTimer = useRestartableTimeout(() => setIsUserInteracting(false), 30000);
   // Undefined at first, so a plugin active on mount counts as a change
   const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
 
   // Mode switching with auto-expand management
-  const switchMode = useCallback(
-    (newMode: ViewMode) => {
-      setMode(newMode);
-      setIsUserInteracting(true);
-      window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
+  const switchMode = (newMode: ViewMode) => {
+    setMode(newMode);
+    setIsUserInteracting(true);
+    window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
+    restartInteractionTimer();
 
-      if (interactionTimeoutRef.current) {
-        clearTimeout(interactionTimeoutRef.current);
+    const isExpandedMode =
+      newMode === "search" ||
+      newMode === "notifications" ||
+      newMode === "settings" ||
+      newMode === "mycountry" ||
+      newMode.startsWith("plugin:");
+
+    if (isExpandedMode) {
+      setIsExpanded(true);
+      setExpandedMode(newMode);
+    } else {
+      setIsExpanded(false);
+    }
+
+    if (newMode === "search") {
+      let isDynamicWikiSearchEnabled = true;
+      try {
+        const stored = localStorage.getItem("wikios:dynamicSearchWiki");
+        if (stored !== null) {
+          isDynamicWikiSearchEnabled = stored === "true";
+        }
+      } catch {
+        // SSR fallback
       }
-      interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
-
-      const isExpandedMode =
-        newMode === "search" ||
-        newMode === "notifications" ||
-        newMode === "settings" ||
-        newMode === "mycountry" ||
-        newMode.startsWith("plugin:");
-
-      if (isExpandedMode) {
-        setIsExpanded(true);
-        setExpandedMode(newMode);
+      if (isDynamicWikiSearchEnabled && isWikiActive) {
+        setSearchFilter("wiki");
       } else {
-        setIsExpanded(false);
+        setSearchFilter("all");
       }
-
-      if (newMode === "search") {
-        let isDynamicWikiSearchEnabled = true;
-        try {
-          const stored = localStorage.getItem("wikios:dynamicSearchWiki");
-          if (stored !== null) {
-            isDynamicWikiSearchEnabled = stored === "true";
-          }
-        } catch {
-          // SSR fallback
-        }
-        if (isDynamicWikiSearchEnabled && isWikiActive) {
-          setSearchFilter("wiki");
-        } else {
-          setSearchFilter("all");
-        }
-      }
-    },
-    [isWikiActive, setSearchFilter]
-  );
+    }
+  };
 
   // Listen to external mode change triggers
   useEffect(() => {
@@ -125,7 +136,7 @@ export function useDynamicIslandState() {
   }, [switchMode]);
 
   // Pre-compute lowercase command index with category & keywords
-  const commandIndex = useMemo(() => {
+  const commandIndex = (() => {
     const ctx = commandsFor(isAdmin);
     if (!isSignedIn || !user) {
       ctx.push(
@@ -176,25 +187,20 @@ export function useDynamicIslandState() {
       _lower:
         `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
     }));
-  }, [isSignedIn, user, pathname, isAdmin]);
+  })();
 
-  const featureIndex = useMemo(
-    () =>
-      CORE_FEATURES.map((f) => ({
-        ...f,
-        _lower:
-          `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
-      })),
-    []
+  const featureIndex = CORE_FEATURES.map((f) => ({
+    ...f,
+    _lower:
+      `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
+  }));
+
+  const countryIndex = extractCountriesList(countriesData as CountriesData | undefined).map(
+    (c) => ({ ...c, _lower: c.name.toLowerCase() })
   );
 
-  const countryIndex = useMemo(() => {
-    const list = extractCountriesList(countriesData as CountriesData | undefined);
-    return list.map((c) => ({ ...c, _lower: c.name.toLowerCase() }));
-  }, [countriesData]);
-
   // Combined and filtered search results
-  const searchResults: SearchResult[] = useMemo(() => {
+  const gatherSearchResults = (): SearchResult[] => {
     if (!debouncedSearchQuery.trim()) return [];
 
     const query = debouncedSearchQuery.toLowerCase();
@@ -379,22 +385,8 @@ export function useDynamicIslandState() {
       0,
       12
     );
-  }, [
-    debouncedSearchQuery,
-    searchFilter,
-    countryIndex,
-    commandIndex,
-    featureIndex,
-    switchMode,
-    wikiSearchData,
-    isWikiActive,
-    toggleTheme,
-    soundSettings,
-    toggleCompactMode,
-    markAllNotificationsAsRead,
-    notify,
-    signOut,
-  ]);
+  };
+  const searchResults = gatherSearchResults();
 
   // Plugin view sync: a newly active plugin's first view becomes the expanded view, and a plugin
   // view left open after its plugin goes away falls back to compact
@@ -411,78 +403,78 @@ export function useDynamicIslandState() {
   }
 
   // Global Keyboard Shortcuts (Cmd+K, Cmd+comma, Esc). Never preventDefault keys we do not handle.
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Holding a toggle chord must not flip the mode on every auto-repeat
-      if (e.repeat && (e.metaKey || e.ctrlKey || e.key === "Escape")) return;
+  const onKey = useEffectEvent((e: KeyboardEvent) => {
+    // Holding a toggle chord must not flip the mode on every auto-repeat
+    if (e.repeat && (e.metaKey || e.ctrlKey || e.key === "Escape")) return;
 
-      const activeElement = document.activeElement as HTMLElement | null;
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.getAttribute("contenteditable") === "true" ||
-        activeElement?.closest('[contenteditable="true"]') != null ||
-        activeElement?.closest(".cm-editor") != null ||
-        activeElement?.closest("[data-slate-editor]") != null;
+    const activeElement = document.activeElement as HTMLElement | null;
+    const isInputFocused =
+      activeElement?.tagName === "INPUT" ||
+      activeElement?.tagName === "TEXTAREA" ||
+      activeElement?.getAttribute("contenteditable") === "true" ||
+      activeElement?.closest('[contenteditable="true"]') != null ||
+      activeElement?.closest(".cm-editor") != null ||
+      activeElement?.closest("[data-slate-editor]") != null;
 
-      const isOurSearchInput =
-        activeElement?.closest("[data-command-palette-search]") ||
-        activeElement?.closest("[data-command-palette]");
-      const hasSearchAttribute = activeElement?.hasAttribute("data-command-palette-search");
+    const isOurSearchInput =
+      activeElement?.closest("[data-command-palette-search]") ||
+      activeElement?.closest("[data-command-palette]");
+    const hasSearchAttribute = activeElement?.hasAttribute("data-command-palette-search");
 
-      if ((isOurSearchInput || hasSearchAttribute) && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        return;
+    if ((isOurSearchInput || hasSearchAttribute) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      return;
+    }
+
+    // Cmd+K / Ctrl+K
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if (!isInputFocused || isOurSearchInput) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (mode === "search") {
+          switchMode("compact");
+        } else {
+          switchMode("search");
+        }
       }
+      return;
+    }
 
-      // Cmd+K / Ctrl+K
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        if (!isInputFocused || isOurSearchInput) {
+    if (isInputFocused && !isOurSearchInput && e.key !== "Escape") {
+      return;
+    }
+
+    // Secondary shortcuts
+    if (e.metaKey || e.ctrlKey) {
+      switch (e.key) {
+        case ",":
           e.preventDefault();
           e.stopPropagation();
-
-          if (mode === "search") {
-            switchMode("compact");
-          } else {
-            switchMode("search");
-          }
-        }
-        return;
+          switchMode(mode === "settings" ? "compact" : "settings");
+          break;
       }
+    }
 
-      if (isInputFocused && !isOurSearchInput && e.key !== "Escape") {
-        return;
+    // Escape to close. Only claim the event when Halo has something to close, so that other
+    // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
+    if (e.key === "Escape" && !isInputFocused && mode !== "compact") {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (mode === "search" && searchQuery) {
+        setSearchQuery("");
+        setSearchFilter("all");
+      } else {
+        switchMode("compact");
       }
+    }
+  });
 
-      // Secondary shortcuts
-      if (e.metaKey || e.ctrlKey) {
-        switch (e.key) {
-          case ",":
-            e.preventDefault();
-            e.stopPropagation();
-            switchMode(mode === "settings" ? "compact" : "settings");
-            break;
-        }
-      }
-
-      // Escape to close. Only claim the event when Halo has something to close, so that other
-      // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
-      if (e.key === "Escape" && !isInputFocused && mode !== "compact") {
-        if (e.defaultPrevented) return;
-        e.preventDefault();
-        if (mode === "search" && searchQuery) {
-          setSearchQuery("");
-          setSearchFilter("all");
-        } else {
-          switchMode("compact");
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
+  useEffect(() => {
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("keydown", handleKeyPress);
+      window.removeEventListener("keydown", onKey);
     };
-  }, [mode, switchMode, searchQuery]);
+  }, []);
 
   // Tour step transitions
   useEffect(() => {
@@ -515,13 +507,6 @@ export function useDynamicIslandState() {
       window.removeEventListener("ix:halo-tour-step", handleTourStep);
     };
   }, [switchMode]);
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (interactionTimeoutRef.current) clearTimeout(interactionTimeoutRef.current);
-    };
-  }, []);
 
   return {
     mode,
