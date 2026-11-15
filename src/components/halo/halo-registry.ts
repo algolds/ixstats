@@ -28,6 +28,12 @@ import {
   BookmarkBook,
   DiceFive,
   TriangleFlag,
+  Wallet,
+  Album,
+  Database,
+  Folder,
+  StatUp,
+  HelpCircle,
 } from "iconoir-react";
 import { FORUM_HOME, newThreadHref } from "~/lib/thinkpages-forum/links";
 
@@ -80,12 +86,12 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["overview", "executive", "vitality", "stats", "kpi", "government", "president"],
   },
   {
-    name: "Executive council and Directives",
+    name: "Executive and Directives",
     path: "/mycountry/executive",
     icon: CheckCircle,
     category: "Statecraft",
-    description: "Issue Directives, executive orders and cabinet meetings",
-    keywords: ["directives", "decrees", "orders", "cabinet", "meetings", "executive", "council"],
+    description: "Issue Directives and executive orders",
+    keywords: ["directives", "decrees", "orders", "executive", "council"],
   },
   {
     name: "Country editor",
@@ -121,15 +127,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     icon: Shield,
     category: "Statecraft",
     description: "Force readiness, defense posture and military operations",
-    keywords: ["military", "army", "navy", "air force", "war", "defense", "security", "readiness"],
-  },
-  {
-    name: "Intelligence and recon",
-    path: "/mycountry/intelligence",
-    icon: Compass,
-    category: "Statecraft",
-    description: "Signals intelligence, economic trends and forecasts",
-    keywords: ["intel", "recon", "spy", "signals", "projections", "forecasts", "trends"],
+    keywords: ["military", "army", "navy", "air force", "war", "defense", "security", "readiness", "intel", "recon", "spy", "signals"],
   },
   {
     name: "Fiscal and economic policy",
@@ -156,9 +154,17 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
   },
 
-  // 2. Economy, Cards & IxVault
+  // 2. Economy, Cards & Vault
   {
-    name: "IxVault cards",
+    name: "Wallet",
+    path: "/vault",
+    icon: Wallet,
+    category: "Vault",
+    description: "Your IxC balance and Vault activity",
+    keywords: ["wallet", "balance", "credits", "ixc", "funds", "vault"],
+  },
+  {
+    name: "My cards",
     path: "/vault/cards/mine",
     icon: MultiplePages,
     category: "Vault",
@@ -166,8 +172,24 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["cards", "mine", "showcase", "binder", "inventory", "collection", "deck", "tcg"],
   },
   {
-    name: "Open card packs",
-    path: "/vault/store?view=packs",
+    name: "Card sets",
+    path: "/vault/cards/sets",
+    icon: Album,
+    category: "Vault",
+    description: "Your card sets and how far each one is complete",
+    keywords: ["sets", "album", "complete", "completion", "collection", "binder"],
+  },
+  {
+    name: "Lorewards",
+    path: "/vault/achievements?tab=lorewards",
+    icon: Medal,
+    category: "Vault",
+    description: "Loreward trophies and their progress",
+    keywords: ["lorewards", "trophies", "rewards", "lore", "progress", "medals"],
+  },
+  {
+    name: "Store and card packs",
+    path: "/vault/store",
     icon: Page,
     category: "Vault",
     description: "Buy and open card packs in the Store",
@@ -208,12 +230,29 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["atlas", "globe", "terrain", "geography", "world", "continents", "map"],
   },
   {
-    name: "Explore countries",
+    name: "My realm",
     path: "/countries",
     icon: Globe,
     category: "Geography",
-    description: "Directory and profiles of every nation",
-    keywords: ["browse", "directory", "nations", "search countries", "states", "world"],
+    description: "Your realm's nations",
+    keywords: ["browse", "directory", "nations", "search countries", "states", "world", "realm"],
+  },
+  {
+    name: "Explore realms",
+    path: "/realms",
+    icon: Globe,
+    category: "Geography",
+    description: "Browse every realm and what it holds",
+    keywords: ["realms", "explore", "browse", "regions", "worlds", "realm list"],
+  },
+  {
+    name: "Random country",
+    path: "#random-country",
+    icon: DiceFive,
+    category: "Geography",
+    actionId: "random-country",
+    description: "Open a random nation's profile",
+    keywords: ["random", "surprise", "nation"],
   },
   {
     name: "Leaderboards",
@@ -232,13 +271,13 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
   },
 
-  // 4. Knowledge & WikiOS
+  // 4. Knowledge & Wiki
   {
     name: "Wiki main page",
     path: "/wiki/Main_Page",
     icon: Book,
     category: "Knowledge",
-    description: "The WikiOS knowledge base and articles",
+    description: "The Wiki knowledge base and articles",
     keywords: ["wiki", "encyclopedia", "articles", "lore", "reading", "docs"],
   },
   {
@@ -248,6 +287,30 @@ export const CORE_COMMANDS: CommandEntry[] = [
     category: "Knowledge",
     description: "Recent article edits, revisions and lore updates",
     keywords: ["history", "diffs", "edits", "recent", "activity", "log"],
+  },
+  {
+    name: "Search the wiki",
+    path: "/util/search",
+    icon: Search,
+    category: "Knowledge",
+    description: "Find articles and pages across the wiki",
+    keywords: ["search wiki", "find article", "lookup", "articles", "search", "find page"],
+  },
+  {
+    name: "Wiki categories",
+    path: "/util/categories",
+    icon: Folder,
+    category: "Knowledge",
+    description: "Browse the wiki's article categories",
+    keywords: ["categories", "topics", "tags", "browse", "sections"],
+  },
+  {
+    name: "Wiki repository",
+    path: "/util/repository",
+    icon: Database,
+    category: "Knowledge",
+    description: "Files, media and other shared wiki resources",
+    keywords: ["repository", "files", "media", "uploads", "images", "resources"],
   },
   {
     name: "Random wiki article",
@@ -260,14 +323,14 @@ export const CORE_COMMANDS: CommandEntry[] = [
   },
   {
     name: "Create wiki article",
-    path: "/wiki/new",
+    path: "/wiki?create=true",
     icon: EditPencil,
     category: "Knowledge",
     description: "Draft and publish a new article",
     keywords: ["new article", "write", "publish", "author", "compose"],
   },
   {
-    name: "Lore stashes",
+    name: "Stash",
     path: "/stashes",
     icon: BookmarkBook,
     category: "Knowledge",
@@ -277,7 +340,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
 
   // 5. Social & Community
   {
-    name: "ThinkShare messages",
+    name: "Messages",
     path: "/messages",
     icon: MessageText,
     category: "Community",
@@ -290,7 +353,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     icon: MessageText,
     category: "Community",
     description: "The forum: sitewide boards and a section for every realm",
-    keywords: ["forum", "boards", "threads", "discussions", "thinkpages"],
+    keywords: ["forum", "boards", "threads", "discussions", "thinkpages", "debates", "topics"],
   },
   {
     name: "Home",
@@ -325,14 +388,6 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["thinktanks", "groups", "teams", "collaboration", "alliances"],
   },
   {
-    name: "Forum",
-    path: FORUM_HOME,
-    icon: MessageText,
-    category: "Community",
-    description: "Discussion boards, proposals, roleplay and debates",
-    keywords: ["forum", "boards", "threads", "discussions", "debates", "topics"],
-  },
-  {
     name: "Start forum thread",
     path: newThreadHref({ key: "general" }),
     icon: EditPencil,
@@ -344,7 +399,7 @@ export const CORE_COMMANDS: CommandEntry[] = [
     name: "Achievements and trophies",
     path: "/vault/achievements",
     icon: Medal,
-    category: "Community",
+    category: "Vault",
     description: "Milestones, badges and Loreward trophies",
     keywords: ["trophies", "badges", "rewards", "lorewards", "quests", "achievements"],
   },
@@ -375,6 +430,30 @@ export const CORE_COMMANDS: CommandEntry[] = [
     category: "Labs",
     description: "Generate languages, loanwords and names",
     keywords: ["onoma", "language", "names", "linguistics", "phonetics", "words"],
+  },
+  {
+    name: "Exchange",
+    path: "/exchange",
+    icon: StatUp,
+    category: "Labs",
+    description: "Companies, tenders, treasuries and the market",
+    keywords: ["exchange", "companies", "tenders", "treasury", "trade", "business"],
+  },
+  {
+    name: "Exchange markets",
+    path: "/exchange/markets",
+    icon: Shop,
+    category: "Labs",
+    description: "Prices and listings on the exchange",
+    keywords: ["markets", "prices", "listings", "exchange", "trading"],
+  },
+  {
+    name: "Exchange portfolio",
+    path: "/exchange/portfolio",
+    icon: Coins,
+    category: "Labs",
+    description: "Your holdings on the exchange",
+    keywords: ["portfolio", "holdings", "stakes", "investments", "exchange"],
   },
   {
     name: "Vexel flag studio",
@@ -431,6 +510,14 @@ export const CORE_COMMANDS: CommandEntry[] = [
     keywords: ["settings", "account", "profile", "password", "security", "preferences"],
   },
   {
+    name: "Help",
+    path: "/help",
+    icon: HelpCircle,
+    category: "System",
+    description: "Guides and answers to common questions",
+    keywords: ["help", "guide", "support", "faq", "how to", "docs"],
+  },
+  {
     name: "Changelog",
     path: "/changelog",
     icon: Page,
@@ -458,30 +545,6 @@ export function commandsFor(isAdmin: boolean): CommandEntry[] {
  * Feature shortcuts and quick interactive actions.
  */
 export const CORE_FEATURES: FeatureEntry[] = [
-  {
-    name: "Economic dashboard",
-    path: "/dashboard",
-    icon: Coins,
-    category: "Statecraft",
-    description: "Economic metrics, GDP per capita and projections",
-    keywords: ["economy", "gdp", "vitality", "analytics"],
-  },
-  {
-    name: "Global rankings",
-    path: "/leaderboards",
-    icon: Trophy,
-    category: "Geography",
-    description: "Compare countries by economic tier and vitality",
-    keywords: ["rankings", "leaderboards", "top"],
-  },
-  {
-    name: "Map viewer",
-    path: "/maps",
-    icon: Compass,
-    category: "Geography",
-    description: "Geography and political boundaries",
-    keywords: ["maps", "atlas", "globe"],
-  },
   {
     name: "Refresh data",
     path: "#reload-data",

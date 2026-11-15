@@ -71,12 +71,11 @@ describe("Halo search results (hook)", () => {
     return hook;
   }
 
-  it("gives two entries named Home distinct ids", () => {
+  it("gives every search result a distinct id", () => {
     const { result } = searchFor("home");
-    const homes = result.current.searchResults.filter((r) => r.title === "Home");
-    expect(homes.length).toBeGreaterThanOrEqual(2);
-    const ids = result.current.searchResults.map((r) => r.id);
-    expect(new Set(ids).size).toBe(ids.length);
+    const results = result.current.searchResults;
+    expect(results.some((r) => r.title === "Home")).toBe(true);
+    expect(new Set(results.map((r) => r.id)).size).toBe(results.length);
   });
 
   it("opens notifications after the palette closes", () => {

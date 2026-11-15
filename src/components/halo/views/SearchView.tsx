@@ -34,6 +34,20 @@ const CATEGORY_APP: Record<string, string> = {
   Wiki: "wiki",
 };
 
+/** Badge text: the app name users see in the sidebar, in place of the internal category. */
+const CATEGORY_LABEL: Record<string, string> = {
+  Statecraft: "MyCountry",
+  Geography: "Maps",
+  Knowledge: "Wiki",
+  Community: "Community",
+  Sports: "Sports",
+  Labs: "Labs",
+  Vault: "Vault",
+  System: "System",
+  Country: "Country",
+  Wiki: "Wiki",
+};
+
 /** The palette shortcut as this platform writes it. Halo renders client-side only, so `navigator` exists. */
 function shortcutHint(): string {
   if (typeof navigator === "undefined") return "Ctrl K";
@@ -210,7 +224,7 @@ function SearchViewComponent({
                         {result.title}
                       </PreText>
                       <Badge variant={badgeVariant} data-app={categoryApp}>
-                        {cat}
+                        {CATEGORY_LABEL[cat] ?? cat}
                       </Badge>
                     </div>
                     {result.description && (

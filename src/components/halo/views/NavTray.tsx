@@ -26,16 +26,16 @@ interface NavTrayItem {
   app?: string;
 }
 
-const PRIMARY_NAV: NavTrayItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
+export const PRIMARY_NAV: NavTrayItem[] = [
+  { name: "Home", href: "/dashboard", icon: BarChart3 },
   { name: "MyCountry", href: "/mycountry", icon: MyCountryLogomark, app: "mycountry" },
   { name: "Realms", href: "/realms", icon: RealmsLogomark, app: "realms" },
-  { name: "Wiki", href: "/w", icon: WikiOSLogomark, app: "wiki" },
+  { name: "Wiki", href: "/wiki", icon: WikiOSLogomark, app: "wiki" },
   { name: "Maps", href: "/maps", icon: SolidCompass, app: "maps" },
-  { name: "Forum", href: FORUM_HOME, icon: SolidMultiBubble, app: "thinkpages" },
+  { name: "ThinkPages", href: FORUM_HOME, icon: SolidMultiBubble, app: "thinkpages" },
 ];
 
-const SECONDARY_NAV: { name: string; href: string }[] = [
+export const SECONDARY_NAV: { name: string; href: string }[] = [
   { name: "Vault", href: "/vault" },
   { name: "Labs", href: "/labs/onoma" },
   { name: "Help", href: "/help" },

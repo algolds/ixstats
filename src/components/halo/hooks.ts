@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Book, Globe, HomeSimple, LogIn, LogOut } from "iconoir-react";
+import { Book, Globe, LogIn, LogOut } from "iconoir-react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useAuth, useUser } from "~/context/auth-context";
@@ -150,17 +150,6 @@ export function useDynamicIslandState() {
         category: "System",
         description: "Sign out of your account",
         keywords: ["logout", "exit", "signoff"],
-      });
-    }
-
-    if (pathname !== "/") {
-      ctx.unshift({
-        name: "Home",
-        path: "/",
-        icon: HomeSimple,
-        category: "System",
-        description: "Return to IxStates homepage",
-        keywords: ["home", "landing", "main"],
       });
     }
 

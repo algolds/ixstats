@@ -3,7 +3,6 @@
 import React, { useCallback } from "react";
 import {
   Crown,
-  Suitcase as Briefcase,
   Globe,
   Shield,
   Xmark as X,
@@ -38,20 +37,7 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
 
   const quickActions = [
     {
-      label: "Meetings",
-      icon: Briefcase,
-      iconClass: "text-yellow",
-      // Cabinet meetings live in Politics, next to the cabinet.
-      action: () => navigateToSection("politics"),
-    },
-    {
-      label: "Embassies",
-      icon: Globe,
-      iconClass: "text-teal",
-      action: () => navigateToSection("diplomacy"),
-    },
-    {
-      label: "Foreign policy",
+      label: "Diplomacy",
       icon: Globe,
       iconClass: "text-teal",
       action: () => navigateToSection("diplomacy"),
