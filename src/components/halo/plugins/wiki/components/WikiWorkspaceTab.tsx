@@ -214,7 +214,6 @@ function IxWikiPageActions({
         <QuickAction
           icon={<FileEdit />}
           label="Edit"
-          shortcut="Tab Tab"
           onClick={() => {
             onClose();
             navigateWithBasePath(`/wiki/${slug}?action=edit`, router);

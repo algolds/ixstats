@@ -1,7 +1,7 @@
 "use client";
 // Keyboard shortcuts for WikiOS.
-// Listens for the "wikios:edit" custom event (dispatched by Dynamic Island on double-Tab)
-// to navigate to editor mode.
+// Listens for the "wikios:edit" custom event to navigate to editor mode. Nothing currently
+// dispatches it (the Dynamic Island double-Tab shortcut was removed).
 
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -16,7 +16,7 @@ export function useWikiOSShortcuts(readOnly?: boolean) {
   const pathname = usePathname();
   const { isSignedIn } = useWikiAuth();
 
-  // Listen for "wikios:edit" event from Dynamic Island double-Tab
+  // Listen for the "wikios:edit" event (no dispatcher at present)
   useEffect(() => {
     const handleEdit = () => {
       const path = stripBasePath(pathname).match(/^\/wiki\/(.+)$/)?.[1];

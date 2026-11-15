@@ -50,6 +50,16 @@ export function WikiSearchDropdown({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                if (searchQuery) {
+                  onSearchChange("");
+                } else {
+                  e.currentTarget.blur();
+                }
+              }
+            }}
             placeholder="Search wiki articles..."
             className="text-label placeholder:text-label-secondary text-body w-full bg-transparent py-2 outline-none"
             data-command-palette-search="true"

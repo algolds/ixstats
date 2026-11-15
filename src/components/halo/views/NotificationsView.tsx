@@ -47,18 +47,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const { size: haloSize, setSize } = useHaloSize();
   const isUltra = haloSize === SIZE_PRESETS.ULTRA;
 
-  // ESC to close
-  React.useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
-
   // Data sources
 
   const enhancedNotifications = useNotificationStore((s) => s.notifications);

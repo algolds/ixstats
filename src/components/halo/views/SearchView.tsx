@@ -210,7 +210,8 @@ function SearchViewComponent({
               </span>
               <span className="text-label-tertiary">·</span>
               <span className="flex items-center gap-1">
-                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Tab</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">←</kbd>
+                <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">→</kbd>
                 <PreText className="w-auto text-inherit" whiteSpace="nowrap">
                   filter
                 </PreText>

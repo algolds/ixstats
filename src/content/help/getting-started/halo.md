@@ -48,19 +48,18 @@ Halo shows the [IxTime](/help/getting-started/ixtime) clock and a greeting, and 
 | Shortcut | What it does |
 | --- | --- |
 | `Ctrl` + `K` (`Cmd` + `K` on Mac) | Open or close **search** |
-| `Ctrl` + `N` (`Cmd` + `N`) | Open **notifications and messages** |
 | `Ctrl` + `,` (`Cmd` + `,`) | Open **quick settings** |
 | `Esc` | Clear the search, or close the view |
 
 Shortcuts don't fire while you're typing in a text box, except `Ctrl`/`Cmd` + `K` in Halo's own search box.
 
-Some areas add their own controls to Halo. For example, MyCountry adds your nation's key figures and actions, the wiki adds reading progress and the article narrator, and founding a nation and the Country Editor add **Jump to section**. On the wiki, `Tab` opens and closes the wiki view.
+Some areas add their own controls to Halo. For example, MyCountry adds your nation's key figures and actions, the wiki adds reading progress and the article narrator, and founding a nation and the Country Editor add **Jump to section**.
 
 On the [world map](/maps), Halo is replaced by the map's own floating bar.
 
 ### Search
 
-Search finds countries, pages and features, wiki articles and commands. Press `Tab` to cycle the filter: all, countries, commands, features, wiki. Typing a command such as "Toggle dark or light theme", "Toggle sound effects" or "Mark all notifications read" runs it straight away. You can turn wiki results off with **Wiki results in search** in [Settings](/help/getting-started/settings#wikios).
+Search finds countries, pages and features, wiki articles and commands. Use the filter buttons (or the arrow keys on them) to search all, wiki, countries, commands or features. Typing a command such as "Toggle dark or light theme", "Toggle sound effects" or "Mark all notifications read" runs it straight away. You can turn wiki results off with **Wiki results in search** in [Settings](/help/getting-started/settings#wikios).
 
 ### Notifications and messages
 

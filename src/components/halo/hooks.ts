@@ -56,10 +56,6 @@ export function useDynamicIslandState() {
     }
   );
 
-  // Shortcut debounce refs
-  const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
-  const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastTabTimestampRef = useRef<number>(0);
   const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   // Undefined at first, so a plugin active on mount counts as a change
   const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
@@ -423,13 +419,11 @@ export function useDynamicIslandState() {
     setIsExpanded(false);
   }
 
-  // Global Keyboard Shortcuts (Cmd+K, Tab, Esc)
+  // Global Keyboard Shortcuts (Cmd+K, Cmd+comma, Esc). Never preventDefault keys we do not handle.
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (isProcessingShortcut) {
-        e.preventDefault();
-        return;
-      }
+      // Holding a toggle chord must not flip the mode on every auto-repeat
+      if (e.repeat && (e.metaKey || e.ctrlKey || e.key === "Escape")) return;
 
       const activeElement = document.activeElement as HTMLElement | null;
       const isInputFocused =
@@ -455,19 +449,11 @@ export function useDynamicIslandState() {
           e.preventDefault();
           e.stopPropagation();
 
-          if (isProcessingShortcut) return;
-          setIsProcessingShortcut(true);
-
           if (mode === "search") {
             switchMode("compact");
           } else {
             switchMode("search");
           }
-
-          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-          shortcutTimeoutRef.current = setTimeout(() => {
-            setIsProcessingShortcut(false);
-          }, 300);
         }
         return;
       }
@@ -479,85 +465,33 @@ export function useDynamicIslandState() {
       // Secondary shortcuts
       if (e.metaKey || e.ctrlKey) {
         switch (e.key) {
-          case "n":
-            e.preventDefault();
-            e.stopPropagation();
-            setIsProcessingShortcut(true);
-            switchMode(mode === "notifications" ? "compact" : "notifications");
-            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-            shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
-            break;
           case ",":
             e.preventDefault();
             e.stopPropagation();
-            setIsProcessingShortcut(true);
             switchMode(mode === "settings" ? "compact" : "settings");
-            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-            shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
             break;
         }
-      }
-
-      // Tab filter cycling
-      if (e.key === "Tab" && mode === "search" && !isProcessingShortcut && !isInputFocused) {
-        e.preventDefault();
-        const filters: SearchFilter[] = ["all", "countries", "commands", "features", "wiki"];
-        const currentIndex = filters.indexOf(searchFilter);
-        const nextIndex = (currentIndex + 1) % filters.length;
-        const nextFilter = filters[nextIndex];
-        if (nextFilter) setSearchFilter(nextFilter);
-      }
-
-      // Wiki mode toggle
-      if (
-        e.key === "Tab" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !isInputFocused &&
-        mode !== "search" &&
-        !isProcessingShortcut &&
-        isWikiActive
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const now = Date.now();
-        const timeSinceLastTab = now - (lastTabTimestampRef.current ?? 0);
-        lastTabTimestampRef.current = now;
-
-        setIsProcessingShortcut(true);
-        if (timeSinceLastTab < 400 && mode === "plugin:wiki") {
-          switchMode("compact");
-        } else {
-          switchMode(mode === "plugin:wiki" ? "compact" : "plugin:wiki");
-        }
-        if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-        shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
       }
 
       // Escape to close. Only claim the event when Halo has something to close, so that other
       // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
-      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused && mode !== "compact") {
+      if (e.key === "Escape" && !isInputFocused && mode !== "compact") {
+        if (e.defaultPrevented) return;
         e.preventDefault();
         if (mode === "search" && searchQuery) {
           setSearchQuery("");
           setSearchFilter("all");
         } else {
-          setIsProcessingShortcut(true);
           switchMode("compact");
-          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-          shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
         }
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress, { capture: true, passive: false });
+    window.addEventListener("keydown", handleKeyPress);
     return () => {
-      window.removeEventListener("keydown", handleKeyPress, { capture: true });
-      if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+      window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut, isWikiActive]);
+  }, [mode, switchMode, searchQuery]);
 
   // Tour step transitions
   useEffect(() => {
@@ -595,7 +529,6 @@ export function useDynamicIslandState() {
   useEffect(() => {
     return () => {
       if (interactionTimeoutRef.current) clearTimeout(interactionTimeoutRef.current);
-      if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
     };
   }, []);
 
