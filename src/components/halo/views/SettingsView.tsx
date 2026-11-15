@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { navigateWithBasePath } from "~/lib/base-path";
 import { createAbsoluteUrl } from "~/lib/utils";
@@ -76,13 +76,6 @@ export function SettingsView({ onClose }: SettingsViewProps) {
     setMorePrefsExpanded(expanded);
     setSize(expanded ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM);
   };
-
-  // Clean up size on unmount
-  useEffect(() => {
-    return () => {
-      setSize(SIZE_PRESETS.MEDIUM);
-    };
-  }, [setSize]);
 
   // Reader inline preferences
   const [showCiteTooltips, setShowCiteTooltips] = useLocalPref("wikios:showCitationTooltips", true);
@@ -411,7 +404,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                     </span>
                   }
                   title="Quick search"
-                  subtitle="Index wiki articles in search"
+                  subtitle="Start Halo search on Wiki tab"
                   trailing={
                     <ToggleSwitch
                       enabled={dynamicSearchWiki}
@@ -443,7 +436,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                 <FacetRow
                   onClick={() => {
                     onClose();
-                    router.push("/settings#wiki-settings");
+                    navigateWithBasePath("/settings?tab=wikios", router);
                   }}
                   leading={
                     <span className="rounded-control-sm bg-indigo/15 block p-2">

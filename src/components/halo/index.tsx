@@ -9,7 +9,7 @@ import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from 
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { useDynamicIslandState } from "./hooks";
 import type { CommandPaletteProps, ViewMode } from "./types";
-import type { AppDefinition } from "~/lib/navigation/app-sections";
+import { isChromelessPath, type AppDefinition } from "~/lib/navigation/app-sections";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -25,33 +25,29 @@ const HaloTourTooltip = dynamic(() => import("./HaloTourTooltip").then((m) => m.
 interface SizeInputs {
   isExpanded: boolean;
   expandedMode: string;
-  isWikiActive: boolean;
+  ownsWikiCenter: boolean;
   hasActiveSection: boolean;
 }
 
-function computeExpandedSize(prev: SizePresets, expandedMode: string): SizePresets {
+function computeExpandedSize(expandedMode: string): SizePresets {
   if (expandedMode === "search") return SIZE_PRESETS.ULTRA; // 630px wide
-  if (expandedMode === "notifications") {
-    return prev === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
-  }
-  if (expandedMode === "settings") {
-    return prev === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
-  }
+  if (expandedMode === "notifications") return SIZE_PRESETS.TALL;
+  if (expandedMode === "settings") return SIZE_PRESETS.MEDIUM;
   if (expandedMode === "mycountry") return SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
   if (expandedMode.startsWith("plugin:")) return SIZE_PRESETS.ULTRA; // 630px wide
   return SIZE_PRESETS.MEDIUM;
 }
 
 function computePillSize(inputs: SizeInputs): SizePresets {
-  if (inputs.isWikiActive) {
+  if (inputs.ownsWikiCenter) {
     return inputs.hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE;
   }
   return SIZE_PRESETS.COMPACT_TALL;
 }
 
-/** The island preset for the current state. `prev` keeps a widened panel wide across mode changes. */
-function computeSize(prev: SizePresets, inputs: SizeInputs): SizePresets {
-  if (inputs.isExpanded) return computeExpandedSize(prev, inputs.expandedMode);
+/** Deterministic island preset per mode so switching panels never races stale size state. */
+function computeSize(inputs: SizeInputs): SizePresets {
+  if (inputs.isExpanded) return computeExpandedSize(inputs.expandedMode);
   return computePillSize(inputs);
 }
 
@@ -99,34 +95,37 @@ function CommandPaletteContent({
   } = diState;
 
   const diPathname = usePathname();
-  const navTrayOpen = navTrayAt !== null && navTrayAt.path === diPathname;
+  const normalizedDiPath = stripBasePath(diPathname || "/");
+  const isChromeless = isChromelessPath(normalizedDiPath);
+  const navTrayOpen = isChromeless && navTrayAt !== null && navTrayAt.path === diPathname;
 
   // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
-  const isWikiActive = activePlugin?.id === "wiki";
+  const ownsWikiCenter = activePlugin?.id === "wiki" && Boolean(activePlugin.center);
 
   const { activeSectionId, tocEntries } = useWikiContext();
   const hasActiveSection = !!(activeSectionId && tocEntries.some((e) => e.id === activeSectionId));
 
   useEffect(() => {
-    setSize((prev) =>
-      computeSize(prev, {
+    setSize(
+      computeSize({
         isExpanded,
         expandedMode,
-        isWikiActive,
+        ownsWikiCenter,
         hasActiveSection,
       })
     );
-  }, [setSize, isWikiActive, isExpanded, expandedMode, hasActiveSection]);
+  }, [setSize, ownsWikiCenter, isExpanded, expandedMode, hasActiveSection]);
 
-  // Swipe-up gesture handler
+  // Downward pull gesture opens NavTray below the island on chromeless routes
   const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.y < -30 || info.velocity.y < -200) {
-      if (!isExpanded) {
-        setPillBounce(true);
-        setTimeout(() => setPillBounce(false), 300);
-        setNavTrayAt({ path: diPathname });
-      }
+    if (!isChromeless || isExpanded) return;
+    if (info.offset.y > 30 || info.velocity.y > 200) {
+      setPillBounce(true);
+      setTimeout(() => setPillBounce(false), 300);
+      setNavTrayAt({ path: diPathname });
+    } else if (navTrayOpen && (info.offset.y < -20 || info.velocity.y < -150)) {
+      setNavTrayAt(null);
     }
   };
 
@@ -139,9 +138,12 @@ function CommandPaletteContent({
 
   const lastTriggerRef = useRef<string | null>(null);
 
-  const openFromTrigger = (nextMode: ViewMode) => {
+  const openFromTrigger = (nextMode: ViewMode, triggerOverride?: string) => {
+    setNavTrayAt(null);
     lastTriggerRef.current =
-      nextMode === "compact" ? null : nextMode.startsWith("plugin:") ? "plugin" : nextMode;
+      nextMode === "compact"
+        ? null
+        : (triggerOverride ?? (nextMode.startsWith("plugin:") ? "plugin" : nextMode));
     switchMode(nextMode);
   };
 
@@ -151,28 +153,30 @@ function CommandPaletteContent({
     lastTriggerRef.current = null;
     switchMode("compact");
     requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>(`[data-halo-trigger="${target}"]`)?.focus();
+      (
+        document.querySelector<HTMLElement>(`[data-halo-trigger="${target}"]`) ??
+        document.querySelector<HTMLElement>(`[data-halo-trigger="${fallback}"]`)
+      )?.focus();
     });
   };
 
   return (
     <div className="relative">
-      {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
-          a static tint ring instead of a looping pulse. It has no movement, so it is the same
-          under Reduce Motion. */}
+      {/* DI pill — chromeless routes allow a downward pull for the quick-navigation tray. During the
+          walkthrough the island carries a static tint ring instead of a looping pulse. */}
       <motion.div
         data-tour-highlight={isTourActive ? "true" : undefined}
         className={cn("rounded-full", isTourActive && "ring-tint/50 ring-2")}
         animate={{
-          y: pillBounce ? -4 : 0,
+          y: pillBounce ? 4 : 0,
         }}
         transition={springSnappy}
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={0.15}
+        drag={isChromeless ? "y" : false}
+        dragConstraints={isChromeless ? { top: 0, bottom: 0 } : undefined}
+        dragElastic={isChromeless ? 0.15 : undefined}
         dragMomentum={false}
-        onDragEnd={handleDragEnd}
-        style={{ touchAction: "none" }}
+        onDragEnd={isChromeless ? handleDragEnd : undefined}
+        style={isChromeless ? { touchAction: "none" } : undefined}
       >
         <Halo id="command-palette">
           {!isExpanded ? (
@@ -186,6 +190,13 @@ function CommandPaletteContent({
                 pluginCenterActions={activePlugin?.centerActions}
                 pluginActions={activePlugin?.actions}
                 pluginBadge={activePlugin?.badge}
+                showNavTrayTrigger={isChromeless}
+                navTrayOpen={navTrayOpen && !isExpanded}
+                onToggleNavTray={() =>
+                  setNavTrayAt((prev) =>
+                    prev !== null && prev.path === diPathname ? null : { path: diPathname }
+                  )
+                }
               />
             </div>
           ) : (
@@ -208,12 +219,14 @@ function CommandPaletteContent({
         </Halo>
       </motion.div>
 
-      {/* Nav tray dropdown */}
-      <NavTray
-        isOpen={navTrayOpen && !isExpanded}
-        onClose={() => setNavTrayAt(null)}
-        apps={trayApps}
-      />
+      {/* Quick navigation tray (chromeless routes only, where AppSidebar / TabBar are absent) */}
+      {isChromeless && (
+        <NavTray
+          isOpen={navTrayOpen && !isExpanded}
+          onClose={() => setNavTrayAt(null)}
+          apps={trayApps}
+        />
+      )}
 
       {/* Walkthrough tooltip overlay */}
       <HaloTourTooltip />

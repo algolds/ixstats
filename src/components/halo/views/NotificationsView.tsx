@@ -119,6 +119,7 @@ export function NotificationsView({ onClose }: NotificationsViewProps) {
   const markAllMessagesMutation = api.messages.markAllAsRead.useMutation({
     onSuccess: () => {
       void refetchMessages();
+      void utils.messages.getFolderCounts?.invalidate?.();
     },
   });
 

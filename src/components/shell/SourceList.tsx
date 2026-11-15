@@ -70,6 +70,8 @@ interface SourceListProps {
   app?: AppDefinition;
   /** The user's public country profile; MyCountry lists it, and the editor, as rows once it is known. */
   countryHref?: string;
+  /** Return destination for `All apps` when inside Settings or Admin. */
+  backHref?: string;
 }
 
 type Ctx = Pick<SourceListProps, "badges" | "onAction" | "onNavigate" | "expanded" | "onToggle"> & {
@@ -405,6 +407,7 @@ export function SourceList({
   searchParams,
   apps: appList,
   countryHref,
+  backHref = "/dashboard",
   expanded,
   onToggle,
   badges,
@@ -443,7 +446,7 @@ export function SourceList({
     return (
       <nav aria-label="App navigation" data-slot="source-list" data-mode="area">
         <Link
-          href="/dashboard"
+          href={backHref}
           onClick={onNavigate}
           className={cn(sourceRowClassName, focusRing, "text-label-secondary hover:bg-fill-4")}
         >

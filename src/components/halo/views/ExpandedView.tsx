@@ -12,6 +12,7 @@ function dialogLabelForMode(mode: ViewMode, activePlugin?: DIPlugin | null): str
   if (mode === "notifications") return "Notifications and messages";
   if (mode === "settings") return "Quick settings";
   if (mode === "mycountry") return "Account";
+  if (mode === "plugin:profile") return "Wiki workspace";
   if (mode.startsWith("plugin:")) {
     const raw = activePlugin?.id || mode.slice(7);
     return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Plugin";
@@ -109,7 +110,7 @@ export function ExpandedView({
           </Button>
         </div>
       )}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout" initial={false}>
         {mode === "search" && (
           <HaloContainer key="search" className="w-full">
             <SearchView

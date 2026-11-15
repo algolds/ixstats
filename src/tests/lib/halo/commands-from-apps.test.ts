@@ -31,9 +31,11 @@ describe("commandsFromApps", () => {
       expect.arrayContaining([
         "/dashboard",
         "/messages",
+        "/@me",
         "/mycountry",
         "/countries/aphis",
         "/mycountry/editor",
+        "/mycountry/map-editor",
         "/mycountry/executive",
         "/maps",
         "/vault",
@@ -55,12 +57,16 @@ describe("commandsFromApps", () => {
     );
     expect(nonAdmin.map((e) => e.actionId).filter(Boolean)).toEqual(
       expect.arrayContaining([
+        "daily-reward",
         "random-country",
         "random-wiki",
+        "reload-data",
+        "toggle-sidebar",
         "toggle-theme",
         "toggle-sound",
         "toggle-compact",
         "mark-all-read",
+        "open-feedback",
       ])
     );
     expect(nonAdmin.some((e) => e.path?.startsWith("/admin"))).toBe(false);

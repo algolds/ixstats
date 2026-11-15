@@ -1,4 +1,3 @@
-import { Compass, RefreshDouble, Search } from "iconoir-react";
 import { commandsFromApps } from "~/lib/halo/commands-from-apps";
 import type { NavigationVisibilitySettings } from "~/lib/navigation/app-sections";
 
@@ -9,6 +8,9 @@ export type SystemActionId =
   | "toggle-theme"
   | "toggle-sound"
   | "toggle-compact"
+  | "toggle-sidebar"
+  | "daily-reward"
+  | "open-feedback"
   | "mark-all-read"
   | "reload-data"
   | "random-wiki"
@@ -27,16 +29,6 @@ export interface CommandEntry {
   adminOnly?: boolean;
 }
 
-export interface FeatureEntry {
-  name: string;
-  path?: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
-  category: CommandCategory;
-  keywords?: string[];
-  actionId?: SystemActionId;
-}
-
 /** The commands this viewer may see, derived from the sidebar navigation model. */
 export function commandsFor(
   isAdmin: boolean,
@@ -49,34 +41,3 @@ export function commandsFor(
     navigationSettings,
   });
 }
-
-/**
- * Feature shortcuts and quick interactive actions.
- */
-export const CORE_FEATURES: FeatureEntry[] = [
-  {
-    name: "Refresh data",
-    path: "#reload-data",
-    icon: RefreshDouble,
-    category: "System",
-    actionId: "reload-data",
-    description: "Reload the latest data",
-    keywords: ["refresh", "reload", "sync"],
-  },
-  {
-    name: "Notifications",
-    path: "#notifications",
-    icon: Compass,
-    category: "System",
-    description: "Open notifications and the diplomatic inbox",
-    keywords: ["notifications", "alerts", "inbox"],
-  },
-  {
-    name: "Search",
-    path: "#search",
-    icon: Search,
-    category: "System",
-    description: "Find a country, command or wiki article",
-    keywords: ["search", "find", "lookup"],
-  },
-];

@@ -9,7 +9,7 @@ export interface CommandPaletteProps {
 // Search Result interface
 export interface SearchResult {
   id: string;
-  type: "country" | "realm" | "command" | "feature" | "wiki";
+  type: "country" | "realm" | "command" | "wiki";
   title: string;
   description?: string;
   metadata?: Record<string, unknown>;
@@ -22,7 +22,7 @@ type BuiltinViewMode = "compact" | "search" | "notifications" | "settings" | "my
 type PluginViewMode = `plugin:${string}`;
 export type ViewMode = BuiltinViewMode | PluginViewMode;
 
-export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
+export type SearchFilter = "all" | "wiki" | "countries" | "realms" | "commands";
 
 // Plugin System Types
 
@@ -35,11 +35,13 @@ export interface DIViewProps<F = unknown, C = unknown> {
 }
 
 /** An action button a plugin can inject into the pill */
-interface DIAction {
+export interface DIAction {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  /** Opens `plugin:${pluginView}` when clicked if `onClick` is omitted. */
+  pluginView?: string;
   badge?: number;
 }
 
@@ -85,13 +87,17 @@ export interface DIPlugin<F = unknown, C = unknown> {
 export interface CompactViewProps {
   mode?: ViewMode;
   isNavLoading?: boolean;
-  onSwitchMode: (mode: ViewMode) => void;
+  onSwitchMode: (mode: ViewMode, triggerOverride?: string) => void;
   activePlugin?: DIPlugin | null;
   // Plugin system props
   pluginCenter?: React.ReactNode;
   pluginCenterActions?: React.ReactNode;
   pluginActions?: DIAction[];
   pluginBadge?: DIBadge;
+  // Chromeless quick-navigation tray trigger
+  showNavTrayTrigger?: boolean;
+  navTrayOpen?: boolean;
+  onToggleNavTray?: () => void;
 }
 
 export type CountrySummary = {

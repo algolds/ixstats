@@ -27,7 +27,7 @@ import {
 } from "~/components/ui/sheet";
 import { springSnappy } from "~/lib/design/motion";
 import { FacetMaterial } from "~/components/ui/facet";
-import { SourceList } from "./SourceList";
+import { SourceList, isPending } from "./SourceList";
 import {
   getVisibleAppForPath,
   splitTabBarApps,
@@ -49,6 +49,8 @@ interface TabBarProps {
   onToggle: (id: string) => void;
   badges: NavBadges;
   onAction?: (action: NavAction) => void;
+  countryHref?: string;
+  backHref?: string;
   /** The account (`AccountMenu layout="sheet"`), listed at the end of the More sheet. */
   account?: React.ReactNode;
   className?: string;
@@ -59,6 +61,19 @@ const tabClassName =
 
 /** The tab focus ring, drawn just inside the tab (around the current-tab indicator). */
 const tabFocusRing = cn(focusRing, "focus-visible:-outline-offset-2");
+
+function appBadgeState(app: AppDefinition, badges: NavBadges): { count: number; showDot: boolean } {
+  const own = app.badge ? badges[app.badge] : undefined;
+  let count = own?.kind === "count" ? own.value : 0;
+  for (const section of app.sections) {
+    const b = section.badge ? badges[section.badge] : undefined;
+    if (b?.kind === "count") count += b.value;
+  }
+  const hasAnyPending =
+    isPending(own) ||
+    app.sections.some((section) => section.badge && isPending(badges[section.badge]));
+  return { count, showDot: count === 0 && hasAnyPending };
+}
 
 function TabIndicator() {
   return (
@@ -71,10 +86,39 @@ function TabIndicator() {
   );
 }
 
-function TabLabel({ icon: Icon, label }: { icon: NavIcon; label: string }) {
+function TabLabel({
+  icon: Icon,
+  label,
+  count = 0,
+  showDot = false,
+}: {
+  icon: NavIcon;
+  label: string;
+  count?: number;
+  showDot?: boolean;
+}) {
   return (
     <>
-      <Icon aria-hidden className="relative size-5 shrink-0" />
+      <span className="relative inline-flex shrink-0 items-center justify-center">
+        <Icon aria-hidden className="size-5" />
+        {count > 0 ? (
+          <span
+            aria-hidden
+            data-slot="tab-bar-badge"
+            className="bg-tint text-caption ring-background text-on-tint absolute -top-1 -right-2.5 min-w-4 rounded-full px-1 text-center leading-4 font-medium tabular-nums ring-2"
+          >
+            {count > 99 ? "99+" : count}
+          </span>
+        ) : (
+          showDot && (
+            <span
+              aria-hidden="true"
+              data-slot="tab-bar-dot"
+              className="bg-tint ring-background absolute -top-0.5 -right-1 size-2 rounded-full ring-2"
+            />
+          )
+        )}
+      </span>
       <span className="relative max-w-full truncate">{label}</span>
     </>
   );
@@ -88,14 +132,20 @@ export function TabBar({
   onToggle,
   badges,
   onAction,
+  countryHref,
+  backHref,
   account,
   className,
 }: TabBarProps) {
   const [moreOpen, setMoreOpen] = React.useState(false);
-  const { primary } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
+  const { primary, more } = splitTabBarApps(apps.filter((app) => app.id !== "settings"));
   const current = getVisibleAppForPath(pathname, apps);
   const tint = current?.tint;
   const currentIsPrimary = primary.some((app) => app.id === current?.id);
+  const moreHasPending = more.some((app) => {
+    const state = appBadgeState(app, badges);
+    return state.count > 0 || state.showDot;
+  });
   const close = () => setMoreOpen(false);
 
   return (
@@ -113,11 +163,13 @@ export function TabBar({
           <ul className="relative flex h-14 items-stretch gap-1 px-1">
             {primary.map((app) => {
               const active = app.id === current?.id;
+              const { count, showDot } = appBadgeState(app, badges);
               return (
-                <li key={app.id} className="flex min-w-0 flex-1">
+                <li key={app.id} data-app={app.tint} className="flex min-w-0 flex-1">
                   <Link
                     href={app.href}
                     aria-current={active ? "page" : undefined}
+                    aria-label={count > 0 ? `${app.label}, ${count} unread` : app.label}
                     className={cn(
                       tabClassName,
                       tabFocusRing,
@@ -125,7 +177,7 @@ export function TabBar({
                     )}
                   >
                     {active && <TabIndicator />}
-                    <TabLabel icon={app.icon} label={app.label} />
+                    <TabLabel icon={app.icon} label={app.label} count={count} showDot={showDot} />
                   </Link>
                 </li>
               );
@@ -133,6 +185,7 @@ export function TabBar({
             <li className="flex min-w-0 flex-1">
               <button
                 type="button"
+                aria-label={moreHasPending ? "More, updates available" : "More"}
                 aria-haspopup="dialog"
                 aria-expanded={moreOpen}
                 onClick={() => setMoreOpen(true)}
@@ -147,7 +200,7 @@ export function TabBar({
                 )}
               >
                 {!currentIsPrimary && current && <TabIndicator />}
-                <TabLabel icon={MoreHoriz} label="More" />
+                <TabLabel icon={MoreHoriz} label="More" showDot={moreHasPending} />
               </button>
             </li>
           </ul>
@@ -173,6 +226,8 @@ export function TabBar({
                 onToggle={onToggle}
                 badges={badges}
                 onAction={onAction}
+                countryHref={countryHref}
+                backHref={backHref}
                 onNavigate={close}
               />
             </div>

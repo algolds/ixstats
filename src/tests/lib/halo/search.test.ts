@@ -1,9 +1,11 @@
-import { CORE_FEATURES } from "~/components/halo/halo-registry";
 import type { CountrySummary, SearchFilter } from "~/components/halo/types";
 import {
   buildIndex,
   commandEntriesFor,
+  indexPluginCommands,
+  indexRealms,
   searchCatalog,
+  type RealmSearchItem,
   type SearchSources,
   type WikiSearchItem,
 } from "~/lib/halo/search";
@@ -30,23 +32,35 @@ function buildWiki(count: number): WikiSearchItem[] {
   }));
 }
 
+function buildRealms(count = 3): RealmSearchItem[] {
+  return Array.from({ length: count }, (_, index) => ({
+    id: `r${index}`,
+    slug: `starlight-${index}`,
+    name: `Starlight ${index}`,
+    description: "Concord world",
+    nationCount: index + 2,
+  }));
+}
+
 function makeSources({
   isAdmin = false,
   signedIn = false,
   pathname = "/",
   countries = buildCountries(),
+  realms = buildRealms(3),
   wiki = buildWiki(5),
 }: {
   isAdmin?: boolean;
   signedIn?: boolean;
   pathname?: string | null;
   countries?: CountrySummary[];
+  realms?: RealmSearchItem[];
   wiki?: WikiSearchItem[];
 } = {}): SearchSources {
   return {
     countries: buildIndex(countries),
+    realms: indexRealms(realms),
     commands: buildIndex(commandEntriesFor({ isAdmin, signedIn, pathname })),
-    features: buildIndex(CORE_FEATURES),
     wiki,
   };
 }
@@ -55,35 +69,47 @@ const titles = (items: Array<{ title: string }>) => items.map((i) => i.title);
 const kinds = (items: Array<{ kind: string }>) => items.map((i) => i.kind);
 
 describe("Halo pure search (src/lib/halo/search)", () => {
-  it("returns empty array for empty or whitespace queries", () => {
-    const sources = makeSources();
-    expect(searchCatalog("", "all", sources, { wikiFirst: false })).toEqual([]);
-    expect(searchCatalog("   ", "all", sources, { wikiFirst: false })).toEqual([]);
+  it("surfaces curated zero-query launcher items for empty or whitespace queries across filters", () => {
+    const sources: SearchSources = {
+      ...makeSources({ signedIn: true, realms: buildRealms(14) }),
+      pluginCommands: indexPluginCommands([
+        { key: "jump-top", title: "Jump to Overview", description: "Section" },
+      ]),
+    };
+
+    const allZero = searchCatalog("", "all", sources, { wikiFirst: false, pluginId: "wiki" });
+    expect(allZero.length).toBeGreaterThan(0);
+    expect(allZero.length).toBeLessThanOrEqual(10);
+    expect(allZero[0]?.title).toBe("Jump to Overview");
+    expect(titles(allZero)).toEqual(expect.arrayContaining(["Home", "MyCountry overview"]));
+
+    expect(searchCatalog("   ", "countries", sources, { wikiFirst: false })).toHaveLength(12);
+    expect(searchCatalog("", "realms", sources, { wikiFirst: false })).toHaveLength(12);
+    expect(searchCatalog("", "commands", sources, { wikiFirst: false })).toHaveLength(12);
+
+    const wikiZero = searchCatalog("", "wiki", sources, { wikiFirst: true, pluginId: "wiki" });
+    expect(wikiZero[0]?.title).toBe("Jump to Overview");
+    expect(titles(wikiZero)).toContain("Wiki main page");
   });
 
-  it("returns nothing when no entry matches and wiki is empty", () => {
-    const sources = makeSources({ wiki: [] });
+  it("returns nothing when a non-empty query matches no entry and wiki is empty", () => {
+    const sources = makeSources({ wiki: [], realms: [] });
     expect(searchCatalog("zzzzqq", "all", sources, { wikiFirst: false })).toEqual([]);
   });
 
-  it("limits each type to 3 under filter 'all' in order countries, commands, features, wiki", () => {
+  it("limits each type to 3 under filter 'all' in order realms, countries, commands, wiki", () => {
     const results = searchCatalog("st", "all", makeSources(), { wikiFirst: false });
     expect(results).toHaveLength(12);
     expect(kinds(results)).toEqual([
+      ...Array(3).fill("realm"),
       ...Array(3).fill("country"),
       ...Array(3).fill("command"),
-      ...Array(3).fill("feature"),
       ...Array(3).fill("wiki"),
     ]);
     expect(titles(results.filter((r) => r.kind === "country"))).toEqual([
       "Eastmark 0",
       "Eastmark 1",
       "Eastmark 2",
-    ]);
-    expect(titles(results.filter((r) => r.kind === "feature"))).toEqual([
-      "Refresh data",
-      "Notifications",
-      "Search",
     ]);
     expect(titles(results.filter((r) => r.kind === "wiki"))).toEqual([
       "Stonebridge 0",
@@ -97,18 +123,18 @@ describe("Halo pure search (src/lib/halo/search)", () => {
     expect(results).toHaveLength(12);
     expect(kinds(results)).toEqual([
       ...Array(3).fill("wiki"),
+      ...Array(3).fill("realm"),
       ...Array(3).fill("country"),
       ...Array(3).fill("command"),
-      ...Array(3).fill("feature"),
     ]);
   });
 
   it("lists up to 12 entries of a single type under dedicated filters", () => {
-    const sources = makeSources({ wiki: buildWiki(15) });
+    const sources = makeSources({ wiki: buildWiki(15), realms: buildRealms(15) });
     for (const [filter, expectedKind, expectedCount] of [
       ["countries", "country", 12],
+      ["realms", "realm", 12],
       ["commands", "command", 12],
-      ["features", "feature", 3],
       ["wiki", "wiki", 12],
     ] as Array<[SearchFilter, string, number]>) {
       const results = searchCatalog("st", filter, sources, { wikiFirst: false });
@@ -155,7 +181,7 @@ describe("Halo pure search (src/lib/halo/search)", () => {
   });
 
   it("surfaces Sign in under filter 'all' for signed-out viewer typing 'sign'", () => {
-    const sources = makeSources({ signedIn: false, countries: [], wiki: [] });
+    const sources = makeSources({ signedIn: false, countries: [], realms: [], wiki: [] });
     const results = searchCatalog("sign", "all", sources, { wikiFirst: false });
     expect(titles(results)).toContain("Sign in");
     expect(titles(results)).toContain("Sign up");
@@ -163,7 +189,7 @@ describe("Halo pure search (src/lib/halo/search)", () => {
   });
 
   it("offers Sign out when signed in, gates Admin panel on isAdmin, and adds Country profile on /countries/<id>", () => {
-    const signedInSources = makeSources({ signedIn: true, countries: [], wiki: [] });
+    const signedInSources = makeSources({ signedIn: true, countries: [], realms: [], wiki: [] });
     expect(titles(searchCatalog("sign", "all", signedInSources, { wikiFirst: false }))).toContain(
       "Sign out"
     );
@@ -195,8 +221,8 @@ describe("Halo pure search (src/lib/halo/search)", () => {
   });
 
   it("generates unique keys within 'all' and single-type filter results", () => {
-    const sources = makeSources({ wiki: buildWiki(15) });
-    for (const filter of ["all", "countries", "commands", "wiki"] as const) {
+    const sources = makeSources({ wiki: buildWiki(15), realms: buildRealms(15) });
+    for (const filter of ["all", "countries", "realms", "commands", "wiki"] as const) {
       const keys = searchCatalog("st", filter, sources, { wikiFirst: false }).map((r) => r.key);
       expect(keys.length).toBeGreaterThan(0);
       expect(new Set(keys).size).toBe(keys.length);

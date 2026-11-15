@@ -1,17 +1,25 @@
 import {
+  Bell,
   BookmarkBook,
   Building,
+  ChatBubble,
   CheckCircle,
   Coins,
   DiceFive,
   EditPencil,
+  Gift,
   Globe,
   HalfMoon,
   LayoutLeft,
   Map as MapIcon,
+  ProfileCircle,
+  RefreshDouble,
+  Settings,
   Shield,
   Shop,
+  SidebarCollapse,
   SoundHigh,
+  User,
 } from "iconoir-react";
 import type { CommandCategory, CommandEntry } from "~/components/halo/halo-registry";
 import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
@@ -94,6 +102,11 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
       "institutions",
       "population",
     ],
+  },
+  "mycountry:map-editor": {
+    name: "Map editor",
+    description: "Draw national boundaries and provincial subdivisions",
+    keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
   },
   "app:maps": {
     name: "World map",
@@ -362,7 +375,7 @@ export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
     keywords: ["politics", "parliament", "congress", "voting", "parties", "elections", "senate"],
   },
   {
-    name: "Territory and borders editor",
+    name: "Map editor",
     path: MYCOUNTRY_MAP_EDITOR_PATH,
     parentAppId: "mycountry",
     icon: MapIcon,
@@ -372,6 +385,15 @@ export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
   },
 
   // In-app / flow deep links not listed as top-level sidebar rows
+  {
+    name: "Passport",
+    path: "/@me",
+    parentAppId: "home",
+    icon: User,
+    category: "Community",
+    description: "Your public player passport, realms and showcased cards",
+    keywords: ["passport", "profile", "handle", "identity", "@me", "bio"],
+  },
   {
     name: "Found a nation",
     path: "/builder",
@@ -426,7 +448,43 @@ export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
     keywords: ["portfolio", "holdings", "stakes", "investments", "exchange"],
   },
 
-  // System actions (non-route actions executed by Halo)
+  // System & Halo actions (non-route actions executed by Halo or shell)
+  {
+    name: "Account",
+    path: "#mycountry",
+    parentAppId: "home",
+    icon: ProfileCircle,
+    category: "System",
+    description: "Open the Halo Account panel for MyCountry and Passport",
+    keywords: ["account", "panel", "halo", "mycountry", "passport"],
+  },
+  {
+    name: "Notifications",
+    path: "#notifications",
+    parentAppId: "home",
+    icon: Bell,
+    category: "System",
+    description: "Open notifications and the diplomatic inbox",
+    keywords: ["notifications", "alerts", "inbox", "bell"],
+  },
+  {
+    name: "Quick settings",
+    path: "#settings",
+    icon: Settings,
+    category: "System",
+    description: "Open Halo appearance, sound and reader preferences",
+    keywords: ["quick settings", "preferences", "appearance", "halo settings"],
+  },
+  {
+    name: "Claim daily reward",
+    path: "#daily-reward",
+    parentAppId: "vault",
+    icon: Gift,
+    category: "Vault",
+    actionId: "daily-reward",
+    description: "Open today's Vault streak and daily reward",
+    keywords: ["daily", "reward", "streak", "bonus", "claim", "ixc"],
+  },
   {
     name: "Random country",
     path: "#random-country",
@@ -445,6 +503,24 @@ export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
     actionId: "random-wiki",
     description: "Jump to a random nation or lore article",
     keywords: ["shuffle", "random", "surprise", "dice", "random wiki"],
+  },
+  {
+    name: "Refresh data",
+    path: "#reload-data",
+    icon: RefreshDouble,
+    category: "System",
+    actionId: "reload-data",
+    description: "Reload the latest data",
+    keywords: ["refresh", "reload", "sync"],
+  },
+  {
+    name: "Toggle sidebar",
+    path: "#toggle-sidebar",
+    icon: SidebarCollapse,
+    category: "System",
+    actionId: "toggle-sidebar",
+    description: "Collapse or expand the navigation sidebar",
+    keywords: ["sidebar", "collapse", "expand", "navigation", "rail"],
   },
   {
     name: "Toggle dark or light theme",
@@ -476,11 +552,22 @@ export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
   {
     name: "Mark all notifications read",
     path: "#mark-all-read",
+    parentAppId: "home",
     icon: CheckCircle,
     category: "System",
     actionId: "mark-all-read",
-    description: "Clear all unread notification badges",
+    description: "Clear all unread notification and message badges",
     keywords: ["read all", "clear notifications", "dismiss alerts", "inbox clean"],
+  },
+  {
+    name: "Send feedback",
+    path: "#open-feedback",
+    parentAppId: "home",
+    icon: ChatBubble,
+    category: "System",
+    actionId: "open-feedback",
+    description: "Report an issue or share product feedback",
+    keywords: ["feedback", "bug", "report", "suggestion", "support"],
   },
 ];
 

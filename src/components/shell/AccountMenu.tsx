@@ -1,34 +1,21 @@
 "use client";
 
 /**
- * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
- * name and country; your country (its public page), your Passport (`/@me`) and Stash, the nation
- * switcher, Passport settings (IxnayID & passport), the external account manager and sign out. Signed out, it
- * is the sign-in button.
+ * The signed-in player's account in the shell: Clerk portrait, display name and linked nation;
+ * direct links to MyCountry (`/mycountry`), Passport (`/@me`) and Stash (`/stashes`), the nation
+ * switcher, the external account manager and sign out. Halo's `AccountView` owns the rich
+ * two-sided MyCountry | Passport poster and quick Settings owns appearance toggles.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
  * same panel inline in the TabBar's More sheet.
  */
 
-import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import * as React from "react";
 import Link from "next/link";
-import {
-  Bookmark,
-  Fingerprint,
-  HalfMoon,
-  Laptop,
-  LogOut,
-  Settings,
-  SunLight,
-  User,
-  UserCircle,
-  WarningCircle,
-} from "iconoir-react";
+import { Bookmark, LogOut, Settings, User, UserCircle, WarningCircle } from "iconoir-react";
 
 import { useAuth, useUser, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
@@ -39,7 +26,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { CollapsedTooltip, rowBase } from "./AppSidebar";
 import { assetUrl } from "~/lib/base-path";
-import { useTheme, type Theme } from "~/context/theme-context";
 
 interface AccountMenuProps {
   layout: "sidebar" | "sheet";
@@ -52,24 +38,6 @@ const itemClass = cn(
   focusRing
 );
 
-const THEME_ROW: Record<Theme, { label: string; Icon: typeof SunLight }> = {
-  light: { label: "Light", Icon: SunLight },
-  dark: { label: "Dark", Icon: HalfMoon },
-  system: { label: "System", Icon: Laptop },
-};
-
-/** Cycles the sitewide theme preference (light, dark, system); the wiki follows it. */
-function ThemeRow() {
-  const { theme, toggleTheme } = useTheme();
-  const { label, Icon } = THEME_ROW[theme];
-  return (
-    <button type="button" onClick={toggleTheme} className={cn(itemClass, "cursor-pointer")}>
-      <Icon aria-hidden className="size-4 shrink-0" />
-      {`Theme: ${label}`}
-    </button>
-  );
-}
-
 function useAccount() {
   const { user } = useUser();
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
@@ -77,13 +45,11 @@ function useAccount() {
     staleTime: 60_000,
   });
   const country = profile?.country ?? null;
-  const { flag } = useCountryFlag(country?.name ?? "");
   const name = user?.firstName || user?.username || "Account";
   return {
     user,
     name,
     countryName: country?.name ?? null,
-    flagUrl: country ? (flag?.flagUrl ?? null) : null,
     needsSetup: Boolean(user) && profile !== undefined && !profile?.countryId,
   };
 }
@@ -98,7 +64,7 @@ function Avatar({
   className: string;
 }) {
   if (imageUrl) {
-    // Clerk avatar or flag URL; next/image would need its host allow-listed.
+    // Clerk portrait URL; next/image would need its host allow-listed.
     return (
       <img
         src={assetUrl(imageUrl) ?? undefined}
@@ -120,7 +86,7 @@ function Avatar({
   );
 }
 
-/** Your country, passport and wiki profile: what the per-app player and wiki widgets offered. */
+/** Direct identity destinations: MyCountry, Passport and Stash. */
 function IdentityLinks({ onClose }: { onClose?: () => void }) {
   const { country } = useUserCountry();
   const done = () => onClose?.();
@@ -129,11 +95,7 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
     <ul className="flex flex-col gap-0.5 pb-1">
       {country && (
         <li>
-          <CountryLink
-            country={{ id: country.id, name: country.name }}
-            onClick={done}
-            className={itemClass}
-          >
+          <Link href="/mycountry" onClick={done} className={itemClass}>
             <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
               <UnifiedCountryFlag
                 countryName={country.name}
@@ -142,8 +104,8 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
                 showTooltip={false}
               />
             </span>
-            <span className="min-w-0 flex-1 truncate">{country.name}</span>
-          </CountryLink>
+            <span className="min-w-0 flex-1 truncate">MyCountry</span>
+          </Link>
         </li>
       )}
       <li>
@@ -163,19 +125,21 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
   );
 }
 
-function AccountPanel({ onClose }: { onClose?: () => void }) {
+function AccountPanel({
+  onClose,
+  showLegalLinks = false,
+}: {
+  onClose?: () => void;
+  showLegalLinks?: boolean;
+}) {
   const { signOut } = useAuth();
-  const { user, name, countryName, flagUrl, needsSetup } = useAccount();
+  const { user, name, countryName, needsSetup } = useAccount();
   const done = () => onClose?.();
 
   return (
     <div data-slot="account-panel" className="flex flex-col gap-1">
       <div className="flex items-center gap-3 px-2.5 pt-1 pb-2">
-        <Avatar
-          imageUrl={flagUrl ?? user?.imageUrl}
-          name={name}
-          className="text-headline size-10"
-        />
+        <Avatar imageUrl={user?.imageUrl} name={name} className="text-headline size-10" />
         <div className="min-w-0">
           <p className="text-headline text-label truncate">{name}</p>
           <p className="text-footnote text-label-secondary truncate">
@@ -197,15 +161,6 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
             </Link>
           </li>
         )}
-        <li>
-          <ThemeRow />
-        </li>
-        <li>
-          <Link href="/settings?tab=account" onClick={done} className={itemClass}>
-            <Fingerprint aria-hidden className="size-4 shrink-0" />
-            Passport settings
-          </Link>
-        </li>
         <li>
           <a
             href="https://accounts.ixwiki.com/user"
@@ -233,22 +188,24 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
         </li>
       </ul>
 
-      {/* The sidebar's footer links hide while it is collapsed and the phone tab bar has none. */}
-      <p className="border-separator text-caption text-label-secondary flex items-center gap-3 border-t px-2.5 pt-2 pb-1">
-        <Link href="/privacy" onClick={done} className="hover:text-label hover:underline">
-          Privacy
-        </Link>
-        <Link href="/terms" onClick={done} className="hover:text-label hover:underline">
-          Terms
-        </Link>
-      </p>
+      {/* Shown when SidebarFooterLinks is hidden (mobile More sheet or collapsed desktop rail). */}
+      {showLegalLinks && (
+        <p className="border-separator text-caption text-label-secondary flex items-center gap-3 border-t px-2.5 pt-2 pb-1">
+          <Link href="/privacy" onClick={done} className="hover:text-label hover:underline">
+            Privacy
+          </Link>
+          <Link href="/terms" onClick={done} className="hover:text-label hover:underline">
+            Terms
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
 
 export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
   const [open, setOpen] = React.useState(false);
-  const { user, name, flagUrl } = useAccount();
+  const { user, name } = useAccount();
 
   if (!user) {
     return (
@@ -264,7 +221,7 @@ export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
     );
   }
 
-  if (layout === "sheet") return <AccountPanel />;
+  if (layout === "sheet") return <AccountPanel showLegalLinks />;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -276,11 +233,7 @@ export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
             aria-haspopup="dialog"
             className={cn(rowBase, focusRing, "text-label hover:bg-fill-4 cursor-pointer")}
           >
-            <Avatar
-              imageUrl={flagUrl ?? user.imageUrl}
-              name={name}
-              className="text-caption size-6"
-            />
+            <Avatar imageUrl={user.imageUrl} name={name} className="text-caption size-6" />
             <span className="sidebar-collapsed:sr-only min-w-0 flex-1 truncate text-left">
               {name}
             </span>
@@ -288,7 +241,7 @@ export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
         </PopoverTrigger>
       </CollapsedTooltip>
       <PopoverContent side="right" align="end" className="w-64 p-2">
-        <AccountPanel onClose={() => setOpen(false)} />
+        <AccountPanel onClose={() => setOpen(false)} showLegalLinks={Boolean(collapsed)} />
       </PopoverContent>
     </Popover>
   );

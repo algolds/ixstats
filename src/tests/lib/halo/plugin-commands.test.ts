@@ -1,4 +1,3 @@
-import { CORE_FEATURES } from "~/components/halo/halo-registry";
 import { builderCommandsForSections } from "~/components/halo/plugins/builder/BuilderHalo";
 import type { BuilderHaloSection } from "~/components/halo/plugins/builder/types";
 import { MYCOUNTRY_PLUGIN_COMMANDS } from "~/components/halo/plugins/mycountry/MyCountryHalo";
@@ -45,7 +44,6 @@ describe("Halo plugin commands and open realm search", () => {
       commands: buildIndex(
         commandEntriesFor({ isAdmin: false, signedIn: true, pathname: "/mycountry/editor" })
       ),
-      features: buildIndex(CORE_FEATURES),
       wiki: [{ title: "Flags of IxWorld", snippet: "Armorial and national flags" }],
     };
 
@@ -72,7 +70,6 @@ describe("Halo plugin commands and open realm search", () => {
       commands: buildIndex(
         commandEntriesFor({ isAdmin: false, signedIn: true, pathname: "/mycountry" })
       ),
-      features: buildIndex(CORE_FEATURES),
       wiki: [{ title: "Executive Directive", snippet: "Legal instrument" }],
     };
 
@@ -89,7 +86,7 @@ describe("Halo plugin commands and open realm search", () => {
     });
   });
 
-  it("WikiHalo: ranks 'Jump to History' #1 under both 'all' and 'wiki' filters and runs section + narrator callbacks", () => {
+  it("WikiHalo: ranks 'Jump to History' #1 under both 'all' and 'wiki' filters, exposes Wiki workspace, and runs callbacks", () => {
     const onJumpSection = jest.fn();
     const onToggleNarrator = jest.fn();
     const pluginCommands = wikiCommandsForArticle({
@@ -110,7 +107,6 @@ describe("Halo plugin commands and open realm search", () => {
       commands: buildIndex(
         commandEntriesFor({ isAdmin: false, signedIn: true, pathname: "/wiki/Aphis" })
       ),
-      features: buildIndex(CORE_FEATURES),
       wiki: [{ title: "History of Aphis", snippet: "Early history" }],
     };
 
@@ -137,6 +133,13 @@ describe("Halo plugin commands and open realm search", () => {
     expect(narrateResults[0]?.title).toBe("Narrate article");
     pluginCommands.find((c) => c.key === "narrator-toggle")?.run?.();
     expect(onToggleNarrator).toHaveBeenCalledTimes(1);
+
+    const workspaceResults = searchCatalog("scratchpad", "wiki", sources, {
+      wikiFirst: true,
+      pluginId: "wiki",
+    });
+    expect(workspaceResults[0]?.title).toBe("Open wiki workspace");
+    expect(pluginCommands.find((c) => c.key === "wiki-workspace")?.pluginView).toBe("profile");
   });
 
   it("SportsLiveHalo: ranks 'Watch live: APH vs VAL' #1 for 'live' and exposes standings route", () => {
@@ -150,7 +153,6 @@ describe("Halo plugin commands and open realm search", () => {
       pluginCommands: indexPluginCommands(pluginCommands),
       countries: [],
       commands: buildIndex(commandEntriesFor({ isAdmin: false, signedIn: true, pathname: "/" })),
-      features: buildIndex(CORE_FEATURES),
       wiki: [{ title: "Live television", snippet: "Broadcasting" }],
     };
 
@@ -169,7 +171,7 @@ describe("Halo plugin commands and open realm search", () => {
     expect(pluginCommands[1]?.path).toBe("/myleague");
   });
 
-  it("indexes and matches open realms by name, slug, tag, and description under 'all' only", () => {
+  it("indexes and matches open realms by name, slug, tag, and description under 'all' and 'realms'", () => {
     const realms = indexRealms([
       {
         id: "r-1",
@@ -194,7 +196,6 @@ describe("Halo plugin commands and open realm search", () => {
       realms,
       countries: [],
       commands: buildIndex(commandEntriesFor({ isAdmin: false, signedIn: true, pathname: "/" })),
-      features: buildIndex(CORE_FEATURES),
       wiki: [],
     };
 
@@ -209,11 +210,11 @@ describe("Halo plugin commands and open realm search", () => {
       thumbnail: "/uploads/aurora.png",
     });
 
-    const byTag = searchCatalog("archipelago", "all", sources, { wikiFirst: false });
-    expect(byTag.map((r) => r.title)).toEqual(["Aurora Reach", "Solitary Atoll"]);
-    expect(byTag[1]?.description).toBe("1 nation");
+    const underRealms = searchCatalog("archipelago", "realms", sources, { wikiFirst: false });
+    expect(underRealms.map((r) => r.title)).toEqual(["Aurora Reach", "Solitary Atoll"]);
+    expect(underRealms[1]?.description).toBe("1 nation");
 
-    for (const filter of ["countries", "commands", "features", "wiki"] as const) {
+    for (const filter of ["countries", "commands", "wiki"] as const) {
       const scoped = searchCatalog("aurora", filter, sources, { wikiFirst: false });
       expect(scoped.some((r) => r.kind === "realm")).toBe(false);
     }

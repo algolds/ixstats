@@ -8,9 +8,11 @@
  * full-screen map editors) get no sidebar or tab bar.
  */
 
+import * as React from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useUser } from "~/context/auth-context";
+import { Dialog, DialogContent } from "~/components/ui/dialog";
 import { useCanOpenAdmin, useHasPermission, useIsAdmin } from "~/hooks/usePermissions";
 import { useHasMycountryPremium } from "~/hooks/useHasMycountryPremium";
 import { useUserCountry } from "~/hooks/useUserCountry";
@@ -20,15 +22,20 @@ import { stripBasePath } from "~/lib/base-path";
 import {
   getVisibleApps,
   isChromelessPath,
+  matchesPrefix,
   withCountryRows,
   type NavAction,
   type NavigationVisibilitySettings,
 } from "~/lib/navigation/app-sections";
 import { useDailyReward } from "~/components/vault/DailyRewardProvider";
-import { useSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
+import {
+  toggleSidebarCollapsed,
+  useSidebarCollapsed,
+} from "~/lib/navigation/use-sidebar-collapsed";
 import { useNavExpanded } from "~/lib/navigation/use-nav-expanded";
 import { AccountMenu } from "./AccountMenu";
 import { AppSidebar } from "./AppSidebar";
+import { FeedbackModal } from "./FeedbackModal";
 import { SidebarVaultCard } from "./SidebarVaultCard";
 import { TabBar } from "./TabBar";
 import { ShellHalo } from "./ShellHalo";
@@ -56,11 +63,60 @@ export function FacetShell() {
   const { collapsed, setCollapsed } = useSidebarCollapsed();
   const { expanded, toggle } = useNavExpanded();
   const { open: openDailyReward } = useDailyReward();
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false);
+  const [backHref, setBackHref] = React.useState("/dashboard");
+  const chromeless = isChromelessPath(pathname);
+  const isAreaRoute = matchesPrefix(pathname, "/settings") || matchesPrefix(pathname, "/admin");
+  if (!chromeless && !isAreaRoute && pathname !== backHref) {
+    setBackHref(pathname);
+  }
+
   const onAction = (action: NavAction) => {
     if (action === "daily-reward") openDailyReward();
   };
 
   const signedIn = Boolean(user);
+
+  const onShellKeyDown = React.useEffectEvent((event: KeyboardEvent) => {
+    if (chromeless || event.repeat) return;
+    if (
+      (event.metaKey || event.ctrlKey) &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key === "\\"
+    ) {
+      const active = document.activeElement as HTMLElement | null;
+      const inEditor =
+        active?.tagName === "INPUT" ||
+        active?.tagName === "TEXTAREA" ||
+        active?.getAttribute("contenteditable") === "true" ||
+        active?.closest('[contenteditable="true"]') != null ||
+        active?.closest(".cm-editor") != null ||
+        active?.closest("[data-slate-editor]") != null;
+      if (inEditor && !active?.hasAttribute("data-command-palette-search")) return;
+      event.preventDefault();
+      toggleSidebarCollapsed();
+    }
+  });
+
+  const onDailyRewardEvent = React.useEffectEvent(() => {
+    if (signedIn) openDailyReward();
+  });
+
+  const onFeedbackEvent = React.useEffectEvent(() => {
+    if (signedIn) setFeedbackOpen(true);
+  });
+
+  React.useEffect(() => {
+    window.addEventListener("keydown", onShellKeyDown);
+    window.addEventListener("ix:open-daily-reward", onDailyRewardEvent);
+    window.addEventListener("ix:open-feedback", onFeedbackEvent);
+    return () => {
+      window.removeEventListener("keydown", onShellKeyDown);
+      window.removeEventListener("ix:open-daily-reward", onDailyRewardEvent);
+      window.removeEventListener("ix:open-feedback", onFeedbackEvent);
+    };
+  }, []);
   // The server renders the nav knowing nothing (signed out, no queries); the hydrating pass matches it even when a
   // query already answered (a late or retried hydration), and the live nav follows right after.
   const hydrated = useHydrated();
@@ -90,7 +146,7 @@ export function FacetShell() {
 
   return (
     <>
-      {!isChromelessPath(pathname) && (
+      {!chromeless && (
         <>
           <AppSidebar
             pathname={pathname}
@@ -103,7 +159,9 @@ export function FacetShell() {
             badges={badges}
             onAction={onAction}
             countryHref={countryHref}
+            backHref={backHref}
             signedIn={signedIn}
+            onOpenFeedback={() => setFeedbackOpen(true)}
             vaultCard={
               signedIn ? (
                 <SidebarVaultCard
@@ -122,11 +180,20 @@ export function FacetShell() {
             onToggle={toggle}
             badges={badges}
             onAction={onAction}
+            countryHref={countryHref}
+            backHref={backHref}
             account={<AccountMenu layout="sheet" />}
           />
         </>
       )}
       <ShellHalo trayApps={apps} searchApps={searchApps} />
+      {signedIn && (
+        <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+          <DialogContent>
+            <FeedbackModal onClose={() => setFeedbackOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

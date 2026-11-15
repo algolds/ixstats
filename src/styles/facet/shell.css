@@ -30,8 +30,9 @@
                            phoneOnly={false}), so the title is never shown twice.
    ========================================================================== */
 
-/* AppSidebar collapsed to icons. */
+/* AppSidebar collapsed to icons, and smooth width glide while toggling. */
 @custom-variant sidebar-collapsed (&:where([data-sidebar="collapsed"] *));
+@custom-variant sidebar-animating (&:where([data-sidebar-animating] *));
 
 @layer base {
   :root {
@@ -104,6 +105,17 @@
     padding-left: var(--shell-sidebar-width);
     padding-right: var(--shell-inspector-width);
     padding-bottom: var(--shell-tabbar-height);
+  }
+
+  /* User-initiated sidebar collapse/expand glides smoothly while keeping first paint instant. */
+  @media (prefers-reduced-motion: no-preference) {
+    :root[data-sidebar-animating] [data-slot="app-sidebar"] {
+      transition: width var(--duration-slow) var(--ease-out-facet);
+    }
+
+    :root[data-sidebar-animating] [data-shell-main] {
+      transition: padding-left var(--duration-slow) var(--ease-out-facet);
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { Globe, Search, Xmark, NavArrowRight } from "iconoir-react";
+import { Search, Xmark, NavArrowRight } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
 import { assetUrl } from "~/lib/base-path";
 import type { SearchViewProps, SearchFilter, SearchResult } from "../types";
 import { PreText } from "~/components/ui/pretext";
@@ -14,8 +15,8 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "wiki", label: "Wiki" },
   { value: "countries", label: "Countries" },
+  { value: "realms", label: "Realms" },
   { value: "commands", label: "Commands" },
-  { value: "features", label: "Features" },
 ];
 
 /** Result category → Badge colour: system colours for categories that span several apps. */
@@ -54,10 +55,14 @@ const CATEGORY_LABEL: Record<string, string> = {
   Wiki: "Wiki",
 };
 
+function isApplePlatform(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+}
+
 /** The palette shortcut as this platform writes it. Halo renders client-side only, so `navigator` exists. */
 function shortcutHint(): string {
-  if (typeof navigator === "undefined") return "Ctrl K";
-  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘K" : "Ctrl K";
+  return isApplePlatform() ? "⌘K" : "Ctrl K";
 }
 
 export function SearchView({
@@ -80,6 +85,8 @@ export function SearchView({
   const activeIndex = active.forResults === searchResults ? active.index : 0;
   const activeId = searchResults.length > 0 ? `${listId}-${activeIndex}` : undefined;
   const hasQuery = searchQuery.trim().length > 0;
+  const hasDebouncedQuery = debouncedSearchQuery.trim().length > 0;
+  const appleKeys = isApplePlatform();
 
   const run = (chosen: SearchResult) => {
     closeDropdown();
@@ -91,8 +98,20 @@ export function SearchView({
     document.getElementById(`${listId}-${index}`)?.scrollIntoView?.({ block: "nearest" });
   };
 
+  const cycleFilter = (delta: 1 | -1) => {
+    if (!setSearchFilter) return;
+    const currentIndex = FILTERS.findIndex((item) => item.value === searchFilter);
+    const nextIndex =
+      ((currentIndex === -1 ? 0 : currentIndex) + delta + FILTERS.length) % FILTERS.length;
+    const next = FILTERS[nextIndex];
+    if (next) setSearchFilter(next.value);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const count = searchResults.length;
+    const canCycleFilterPlain = searchQuery.length === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+    const canCycleFilterAlt = e.altKey && !e.metaKey && !e.ctrlKey && !e.shiftKey;
+
     if (e.key === "Escape") {
       e.preventDefault();
       if (searchQuery) {
@@ -100,6 +119,12 @@ export function SearchView({
       } else {
         closeDropdown();
       }
+    } else if (e.key === "ArrowRight" && (canCycleFilterAlt || canCycleFilterPlain)) {
+      e.preventDefault();
+      cycleFilter(1);
+    } else if (e.key === "ArrowLeft" && (canCycleFilterAlt || canCycleFilterPlain)) {
+      e.preventDefault();
+      cycleFilter(-1);
     } else if (count > 0 && e.key === "ArrowDown") {
       e.preventDefault();
       moveTo((activeIndex + 1) % count);
@@ -226,7 +251,7 @@ export function SearchView({
                         className="rounded-control-sm h-6 w-6 object-cover"
                       />
                     ) : result.type === "realm" ? (
-                      <Globe className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
+                      <RealmsLogomark className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
                     ) : Icon ? (
                       <Icon className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
                     ) : (
@@ -263,14 +288,14 @@ export function SearchView({
               );
             })}
           </div>
-        ) : hasQuery && isSearchPending ? (
-          /* ── Still searching ────────────────────────────────────── */
+        ) : isSearchPending ? (
+          /* ── Still searching / loading filter list ─────────────── */
           <div className="space-y-1" aria-busy="true">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
-        ) : debouncedSearchQuery ? (
+        ) : hasDebouncedQuery ? (
           /* ── No results ─────────────────────────────────────────── */
           <HaloEmpty
             icon={<Search />}
@@ -289,31 +314,43 @@ export function SearchView({
             }
           />
         ) : (
-          /* ── Empty state ────────────────────────────────────────── */
+          /* ── Empty state (when a filter catalog has no items) ──── */
           <HaloEmpty
-            title={`Type to search ${searchFilter === "all" ? "realms, countries, commands, and features" : searchFilter}`}
-            message={
-              <span className="text-label-secondary text-footnote inline-flex items-center justify-center gap-3">
-                <span className="flex items-center gap-1">
-                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">{shortcutHint()}</kbd>
-                  <span>search</span>
-                </span>
-                <span className="text-label-tertiary">·</span>
-                <span className="flex items-center gap-1">
-                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">←</kbd>
-                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">→</kbd>
-                  <span>filter</span>
-                </span>
-                <span className="text-label-tertiary">·</span>
-                <span className="flex items-center gap-1">
-                  <kbd className="bg-fill-4 rounded-control-sm px-2 py-0.5">Esc</kbd>
-                  <span>close</span>
-                </span>
-              </span>
-            }
+            title={`Type to search ${searchFilter === "all" ? "realms, countries, wiki, and commands" : searchFilter}`}
           />
         )}
       </HaloWell>
+
+      {/* Quiet keyboard legend */}
+      <div className="text-label-secondary text-footnote flex flex-wrap items-center justify-between gap-2 px-1">
+        <span className="inline-flex items-center gap-2">
+          <span className="inline-flex items-center gap-1">
+            <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">↑</kbd>
+            <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">↓</kbd>
+            <span>navigate</span>
+          </span>
+          <span className="text-label-tertiary">·</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">↵</kbd>
+            <span>open</span>
+          </span>
+          <span className="text-label-tertiary">·</span>
+          <span className="inline-flex items-center gap-1">
+            <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">
+              {hasQuery ? (appleKeys ? "⌥←" : "Alt ←") : "←"}
+            </kbd>
+            <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">
+              {hasQuery ? (appleKeys ? "⌥→" : "Alt →") : "→"}
+            </kbd>
+            <span>filter</span>
+          </span>
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">{shortcutHint()}</kbd>
+          <span className="text-label-tertiary">·</span>
+          <kbd className="bg-fill-4 rounded-control-sm px-1.5 py-0.5">Esc</kbd>
+        </span>
+      </div>
     </div>
   );
 }

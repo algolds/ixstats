@@ -20,7 +20,7 @@ export function ShellHalo({ trayApps, searchApps }: ShellHaloProps = {}) {
   return (
     <div
       data-slot="shell-halo"
-      className="z-nav pointer-events-none fixed top-(--shell-page-top) right-(--shell-inspector-width) left-(--shell-sidebar-width) flex justify-center px-3"
+      className="z-nav motion-safe:sidebar-animating:transition-[left] motion-safe:sidebar-animating:duration-slow motion-safe:sidebar-animating:ease-out-facet pointer-events-none fixed top-(--shell-page-top) right-(--shell-inspector-width) left-(--shell-sidebar-width) flex justify-center px-3"
     >
       <div className="pointer-events-auto max-w-full">
         <CommandPalette trayApps={trayApps} searchApps={searchApps} />

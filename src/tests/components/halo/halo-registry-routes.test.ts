@@ -5,7 +5,6 @@
  */
 import { readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { CORE_FEATURES } from "~/components/halo/halo-registry";
 import { splitNavTrayApps } from "~/components/halo/views/NavTray";
 import { commandsFromApps } from "~/lib/halo/commands-from-apps";
 import { getVisibleApps } from "~/lib/navigation/app-sections";
@@ -45,7 +44,12 @@ function routeMatchers(): RegExp[] {
 }
 
 const matchers = routeMatchers();
-const resolves = (path: string) => matchers.some((matcher) => matcher.test(path));
+// Normalize `next.config.js` handle rewrite (`/@:username` -> `/id/:username`) before matching `src/app`.
+const normalizeRewrite = (path: string) => path.replace(/^\/@([^/]+)$/, "/id/$1");
+const resolves = (path: string) => {
+  const normalized = normalizeRewrite(path);
+  return matchers.some((matcher) => matcher.test(normalized));
+};
 
 /** Internal actions (`#...`) and external links have no page to check. */
 const routedPaths = (paths: (string | undefined)[]) =>
@@ -65,7 +69,7 @@ const tray = splitNavTrayApps(
   getVisibleApps({ signedIn: true, isAdmin: true, canOpenAdmin: true })
 );
 
-const paletteRaw = [...derivedCommands, ...CORE_FEATURES].map((entry) => entry.path);
+const paletteRaw = derivedCommands.map((entry) => entry.path);
 const navRaw = [...tray.primary, ...tray.secondary].map((item) => item.href);
 
 describe("halo registry and nav tray routes", () => {

@@ -24,22 +24,20 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/HaloTourTooltip.tsx`: Anchored onboarding tooltip callout with skip and next controls
 - `src/components/halo/country-actions.ts`: Shared `COUNTRY_ACTIONS` table and `countryProfilePath` helper used across country views
 - `src/components/halo/halo-material.ts`: `HaloMaterial`, `useHaloMaterial`, `setHaloMaterial`, `ISLAND_MATERIAL`, and `WELL_MATERIAL` helpers for the Lens island and admin material comparison toggle
-- `src/components/halo/halo-registry.ts`: Command types, `CORE_FEATURES`, and `commandsFor` wrapper over `commandsFromApps`
-- `src/components/halo/hooks.ts`: `useDynamicIslandState` hook wiring `haloReducer`, debounced queries, `searchCatalog`, and global shortcuts
-- `src/components/halo/index.tsx`: `CommandPalette` root component, dialog focus management, outside-pointer dismiss, and size sync
+- `src/components/halo/halo-registry.ts`: Command types, `SystemActionId`, and `commandsFor` wrapper over `commandsFromApps`
+- `src/components/halo/hooks.ts`: `useDynamicIslandState` hook wiring `haloReducer`, debounced queries, `searchCatalog`, server-synced `mark-all-read`, and global shortcuts
+- `src/components/halo/index.tsx`: `CommandPalette` root component, chromeless `NavTray` gating, dialog focus management, outside-pointer dismiss, and deterministic size sync
 - `src/components/halo/plugin-context.tsx`: `DIPluginRegistry` external store (`useSyncExternalStore`), `useDIPlugin`, and `useActiveDIPlugin`
 - `src/components/halo/plugins/builder/BuilderHalo.tsx`: Plugin for `/builder` and `/mycountry/editor` exposing section jumps
 - `src/components/halo/plugins/builder/index.ts`: Barrel export for `BuilderHalo` and builder plugin types
 - `src/components/halo/plugins/builder/types.ts`: `BuilderHaloSection` and `BuilderHaloContext` interfaces
 - `src/components/halo/plugins/builder/views/JumpToSectionView.tsx`: Expanded list of founding steps or editor anchors
 - `src/components/halo/plugins/builder/views/index.ts`: Barrel export for `JumpToSectionView`
-- `src/components/halo/plugins/mycountry/MyCountryHalo.tsx`: Plugin for `/mycountry` routes registering quick country actions
-- `src/components/halo/plugins/mycountry/index.ts`: Barrel export for `MyCountryHalo` and MyCountry Halo views
-- `src/components/halo/plugins/mycountry/views/MyCountryActionsView.tsx`: Quick-action grid for Diplomacy, Executive, and Defense
-- `src/components/halo/plugins/mycountry/views/index.ts`: Barrel export for `MyCountryActionsView`
+- `src/components/halo/plugins/mycountry/MyCountryHalo.tsx`: Plugin for `/mycountry` routes contributing contextual statecraft commands (`MYCOUNTRY_PLUGIN_COMMANDS`) to Halo Search while keeping Halo's center greeting wired to `AccountView`
+- `src/components/halo/plugins/mycountry/index.ts`: Barrel export for `MyCountryHalo` and `MYCOUNTRY_PLUGIN_COMMANDS`
 - `src/components/halo/plugins/sports/SportsLiveHalo.tsx`: Live match scoreboard pill and expanded broadcast view
 - `src/components/halo/plugins/sports/index.ts`: Barrel export for `SportsLiveHalo`
-- `src/components/halo/plugins/wiki/WikiHalo.tsx`: Wiki article breadcrumb, section jump popover, narrator controls, and lazy view registration
+- `src/components/halo/plugins/wiki/WikiHalo.tsx`: Wiki article breadcrumb, section jump popover, narrator controls, non-article Wiki workspace action, and lazy view registration
 - `src/components/halo/plugins/wiki/accent.ts`: Contrast-safe Wiki accent colour resolver (`wikiAccent`, `accentMix`)
 - `src/components/halo/plugins/wiki/components/PlayPauseMorph.tsx`: SVG play/pause icon morph for narrator transport controls
 - `src/components/halo/plugins/wiki/components/WikiNarratorPlayer.tsx`: Audio narrator transport, chapter scrubber, and voice/speed/volume wells
@@ -49,14 +47,14 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/plugins/wiki/index.ts`: Barrel export for `WikiHalo` and Wiki plugin views
 - `src/components/halo/plugins/wiki/types.ts`: Narrator engine/voice constants, `LocalDraft`, and `PausedSession` types
 - `src/components/halo/plugins/wiki/views/WikiNarratorView.tsx`: Dedicated Now Playing narrator expanded view
-- `src/components/halo/plugins/wiki/views/WikiProfileView.tsx`: Tabbed Wiki workspace/scratchpad, Lorewards profile stats, and country actions
+- `src/components/halo/plugins/wiki/views/WikiProfileView.tsx`: Focused Wiki workspace panel for paused sessions, recent pages, and auto-saving scratchpad notes
 - `src/components/halo/plugins/wiki/views/WikiView.tsx`: Primary expanded Wiki workspace and narrator switcher view
 - `src/components/halo/plugins/wiki/views/index.ts`: Barrel export for Wiki expanded views
 - `src/components/halo/presets.ts`: Capsule `SizePresets` union, `SIZE_PRESETS`, and `DynamicIslandSizePresets` geometry table
 - `src/components/halo/types.ts`: `DIPlugin`, `DIViewProps`, `ViewMode`, `SearchFilter`, `SearchResult`, and view prop interfaces
-- `src/components/halo/views/CompactView.tsx`: Collapsed pill with center button, `pluginCenterActions` slot, toast peek, and right action rail
-- `src/components/halo/views/ExpandedView.tsx`: Lazy-loaded view router (`next/dynamic`) switching built-in (`SearchView`, `NotificationsView`, `SettingsView`, `AccountView`) and `plugin:*` views
-- `src/components/halo/views/NavTray.tsx`: Secondary quick-navigation popover tray derived from `getVisibleApps` and `TAB_BAR_PRIORITY` on `FacetMaterial` + `HaloWell`
+- `src/components/halo/views/CompactView.tsx`: Collapsed pill with center button, persistent right-rail Account trigger when a plugin owns center, chromeless `Apps` trigger, toast peek, and right action rail
+- `src/components/halo/views/ExpandedView.tsx`: Lazy-loaded view router (`next/dynamic`, `AnimatePresence mode="popLayout"`) switching built-in (`SearchView`, `NotificationsView`, `SettingsView`, `AccountView`) and `plugin:*` views
+- `src/components/halo/views/NavTray.tsx`: Chromeless quick-navigation popover tray derived from `getVisibleApps` and `TAB_BAR_PRIORITY` on `FacetMaterial` + `HaloWell`
 - `src/components/halo/views/NotificationsView.tsx`: Alert and direct-message inbox tray with pinned pending national issues (`PendingIssuesRow`), unread counts, grouping, and swipe rows
 - `src/components/halo/views/SearchView.tsx`: Accessible combobox/listbox command palette and search view
 - `src/components/halo/views/SettingsView.tsx`: Quick settings panel on `HaloWell`s for appearance, sound, admin Halo material comparison, account settings, and Wiki reader preferences
@@ -108,11 +106,12 @@ export interface DIViewProps<F = unknown, C = unknown> {
   context?: C;
 }
 
-interface DIAction {
+export interface DIAction {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  pluginView?: string;
   badge?: number;
 }
 
@@ -169,37 +168,41 @@ flowchart TD
 
 ### Registered plugins
 
-| Plugin           | `id`            | Priority                                   | Expanded views                                                                                                                             | Notes                                                                                                                          |
-| ---------------- | --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | `mycountry` (`MyCountryActionsView`)                                                                                                       | Mounted on `/mycountry` routes; contributes `"Declare directive"` and MyCountry section commands (`MYCOUNTRY_PLUGIN_COMMANDS`) |
-| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` when no `articleTitle`), `narrator` (`WikiNarratorView` when narrator access is enabled) | Contributes article heading jumps (`level <= 3`) and narrator toggle to Search; expanded views load lazily via `next/dynamic`  |
-| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                           | Mounted on `/builder` and `/mycountry/editor`; contributes `"Jump to <section>"` commands (`builderCommandsForSections`)       |
-| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                           | Mounted globally during live club matches; contributes `"Watch live"` (`plugin:sports-live`) and league standings commands     |
+| Plugin           | `id`            | Priority                                   | Expanded views                                                                                                                     | Notes                                                                                                                                                             |
+| ---------------- | --------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | —                                                                                                                                  | Mounted on `/mycountry` routes; contributes `"Declare directive"` and MyCountry section commands (`MYCOUNTRY_PLUGIN_COMMANDS`) while keeping `AccountView` center |
+| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` Wiki workspace), `narrator` (`WikiNarratorView` when narrator access is enabled) | Claims center pill only on specific articles or active narration; on non-article Wiki pages yields center to `AccountView` and exposes `"Wiki workspace"` action  |
+| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                   | Mounted on `/builder` and `/mycountry/editor`; contributes `"Jump to <section>"` commands (`builderCommandsForSections`)                                          |
+| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                   | Mounted globally during live club matches; contributes `"Watch live"` (`plugin:sports-live`) and league standings commands                                        |
+
+Whenever an active plugin claims Halo's `center` slot (`WikiHalo` on an article, `BuilderHalo`, or `SportsLiveHalo`), `CompactView` renders a compact `Account` button on Halo's right action rail so `AccountView` (`MyCountry | Passport`) remains 1 click away on every route. `NavTray` and its `Apps` (`ViewGrid`) pill trigger + downward pull gesture mount only on chromeless routes where Halo renders without `AppSidebar` / `TabBar` (`/mycountry/map-editor`, `/admin/maps/*`).
 
 ## Command palette
 
-Command entries derive from the sidebar navigation model (`APPS` and `getVisibleApps` in [`src/lib/navigation/app-sections.ts`](../../src/lib/navigation/app-sections.ts)) via [`src/lib/halo/commands-from-apps.ts`](../../src/lib/halo/commands-from-apps.ts) (`NAV_COMMAND_META` + `EXTRA_HALO_COMMANDS`), while `CORE_FEATURES` lives in [`src/components/halo/halo-registry.ts`](../../src/components/halo/halo-registry.ts). `FacetShell` passes `trayApps` (strict viewer visibility for `NavTray`) and `searchApps` (respecting admin tab toggles and role gates) down through `ShellHalo` into `CommandPalette`. Pure indexing and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts) (`buildIndex`, `indexPluginCommands`, `indexRealms`, `commandEntriesFor`, `searchCatalog`):
+Command entries derive from the sidebar navigation model (`APPS` and `getVisibleApps` in [`src/lib/navigation/app-sections.ts`](../../src/lib/navigation/app-sections.ts)) via [`src/lib/halo/commands-from-apps.ts`](../../src/lib/halo/commands-from-apps.ts) (`NAV_COMMAND_META` + `EXTRA_HALO_COMMANDS`). `FacetShell` passes `trayApps` (strict viewer visibility for chromeless `NavTray`) and `searchApps` (respecting admin tab toggles and role gates) down through `ShellHalo` into `CommandPalette`. Pure indexing, zero-query launcher curation, and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts) (`buildIndex`, `indexPluginCommands`, `indexRealms`, `commandEntriesFor`, `searchCatalog`):
 
+- **Zero-query launcher:** Opening `SearchView` (`⌘K`) with an empty query immediately surfaces active `"On this page"` plugin commands plus curated primary destinations and actions under `All` (up to 10 items), Wiki page actions + `Knowledge` navigation under `Wiki`, and up to 12 browsable entries under `Countries`, `Realms`, and `Commands`.
 - **Active plugin commands first (`"On this page"`):** Commands exposed on `activePlugin.commands` rank at the top of `"all"` (limit 3), `"commands"` (limit 12), and `"wiki"` when `WikiHalo` is active (limit 3), keyed as `plugin-${pluginId}-${key}` and badged `"On this page"`.
-- **Open realm search (`"Realm"`):** Under `"all"`, `hooks.ts` lazily fetches `api.realms.getSelectList` (1 query over `DIRECTORY_REALM_WHERE`, `staleTime: 30 * 60_000`) and matches up to 3 open realms by name, slug, tags, or description, routing to `/r/<slug>` with a `data-app="realms"` badge.
+- **Open realm search (`"Realm"`):** Under `"all"` and `"realms"`, `hooks.ts` lazily fetches `api.realms.getSelectList` (1 query over `DIRECTORY_REALM_WHERE`, `staleTime: 30 * 60_000`) and matches open realms by name, slug, tags, or description (limit 3 under `"all"`, limit 12 under `"realms"`), routing to `/r/<slug>` with a `data-app="realms"` badge.
 - **Viewer commands:** `commandEntriesFor({ isAdmin, signedIn, pathname, searchApps })` prepends viewer-specific entries (`Sign in` and `Sign up` when signed out, `Sign out` when signed in, plus `Country profile` when viewing `/countries/<slug>`) ahead of `commandsFromVisibleApps(searchApps)` (or `commandsFor(isAdmin)`) so they are not truncated under the 3-per-category `"all"` cap.
-- **Per-filter limits and ordering:** `searchCatalog(query, filter, sources, { wikiFirst, pluginId })` returns up to 3 matches per source when `filter === "all"` and up to 12 when a single filter is selected (capped at 12 total). Under `"all"`, results are ordered `[pluginMatches, realms, countries, commands, features, wiki]` by default, or `[pluginMatches, wiki, realms, countries, commands, features]` when `wikiFirst` is true (active Wiki plugin). Wiki queries run once the debounced query is at least 2 characters.
+- **Per-filter limits and ordering:** `searchCatalog(query, filter, sources, { wikiFirst, pluginId })` returns up to 3 matches per source when `filter === "all"` and up to 12 when a single filter is selected (`All | Wiki | Countries | Realms | Commands`, capped at 12 total). Under `"all"`, results are ordered `[pluginMatches, realms, countries, commands, wiki]` by default, or `[pluginMatches, wiki, realms, countries, commands]` when `wikiFirst` is true (active Wiki plugin). Wiki queries run once the debounced query is at least 2 characters.
 - **Initial filter on Wiki pages:** Opening Search checks `localStorage["wikios:dynamicSearchWiki"]` (default `true`); when enabled on a Wiki page, Search starts on the `"wiki"` filter, otherwise `"all"`.
-- **Execution:** Plugin commands execute `cmd.run()`, open `plugin:${cmd.pluginView}`, or navigate to `cmd.path`; realm, country, and route entries navigate client-side via `navigateWithBasePath(path, router)` (preserving React state and Halo's layout morph); `#search`, `#notifications`, and `#settings` switch Halo views; `actionId` entries (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `sign-out`, `random-country`) run only when activated via `Enter` or click.
+- **Execution:** Plugin commands execute `cmd.run()`, open `plugin:${cmd.pluginView}`, or navigate to `cmd.path`; realm, country, and route entries navigate client-side via `navigateWithBasePath(path, router)` (preserving React state and Halo's layout morph); `#mycountry`, `#notifications`, and `#settings` switch Halo views; `actionId` entries (`toggle-theme`, `toggle-sound`, `toggle-compact`, `toggle-sidebar`, `daily-reward`, `open-feedback`, `mark-all-read`, `reload-data`, `random-wiki`, `sign-out`, `random-country`) run when activated via `Enter` or click (`mark-all-read` clears client store + server notifications/messages and invalidates unread counts across both Halo and Sidebar/TabBar).
 - **Route verification:** [`src/tests/components/halo/halo-registry-routes.test.ts`](../../src/tests/components/halo/halo-registry-routes.test.ts) verifies that every derived palette and `NavTray` path resolves to a real `src/app/**/page.tsx` route without duplicates.
 
 ## Keyboard
 
-Global shortcuts in `hooks.ts` listen only for modifier chords (plus `Escape` when Halo is open) and never call `preventDefault()` on unhandled keys, so page typing and `Tab` focus traversal are never blocked. Auto-repeated `keydown` events (`e.repeat`) on toggle chords and `Escape` are ignored.
+Global shortcuts in `hooks.ts` and `FacetShell.tsx` listen only for modifier chords (plus `Escape` when Halo is open) and never call `preventDefault()` on unhandled keys, so page typing and `Tab` focus traversal are never blocked. Auto-repeated `keydown` events (`e.repeat`) on toggle chords and `Escape` are ignored.
 
-| Key or chord               | Scope                                          | Behaviour                                                                             |
-| -------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `Cmd+K` / `Ctrl+K`         | Global (outside inputs, or inside Halo search) | Opens Search, or closes Halo if Search is already open                                |
-| `Cmd+,` / `Ctrl+,`         | Global (outside text inputs)                   | Toggles Halo quick settings (`"settings"`)                                            |
-| `Escape`                   | Search input or open Halo view                 | Clears non-empty search query first; otherwise closes Halo and restores trigger focus |
-| `ArrowDown` / `ArrowUp`    | Search input (`role="combobox"`)               | Cycles `aria-activedescendant` across result options and scrolls active row into view |
-| `Enter`                    | Search input (when not IME-composing)          | Closes Halo and executes or navigates to the active search result                     |
-| `ArrowLeft` / `ArrowRight` | Search filter `SegmentedControl`               | Moves between `All`, `Wiki`, `Countries`, `Commands`, and `Features` filters          |
+| Key or chord                                       | Scope                                          | Behaviour                                                                             |
+| -------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `Cmd+K` / `Ctrl+K`                                 | Global (outside inputs, or inside Halo search) | Opens Search, or closes Halo if Search is already open                                |
+| `Cmd+,` / `Ctrl+,`                                 | Global (outside text inputs)                   | Toggles Halo quick settings (`"settings"`)                                            |
+| `Cmd+\` / `Ctrl+\`                                 | Global on shell routes (outside text editors)  | Smoothly collapses or expands `AppSidebar`                                            |
+| `Escape`                                           | Search input or open Halo view                 | Clears non-empty search query first; otherwise closes Halo and restores trigger focus |
+| `ArrowDown` / `ArrowUp`                            | Search input (`role="combobox"`)               | Cycles `aria-activedescendant` across result options and scrolls active row into view |
+| `Enter`                                            | Search input (when not IME-composing)          | Closes Halo and executes or navigates to the active search result                     |
+| `Alt+ArrowLeft` / `Alt+ArrowRight` (`←`/`→` empty) | Search input or filter `SegmentedControl`      | Cycles `All`, `Wiki`, `Countries`, `Realms`, and `Commands` filters                   |
 
 ## Motion
 

@@ -1,6 +1,6 @@
 /**
- * Characterizes Halo search: which results appear, in which order, under which filter, and how the
- * viewer (signed in, admin, current page, active plugin) changes the command list.
+ * Characterizes Halo search: zero-query launcher, debounced query matching, filter ordering,
+ * viewer scoping, active plugin commands, and server-synced system actions.
  */
 import { act, renderHook } from "@testing-library/react";
 import { useDynamicIslandState } from "~/components/halo/hooks";
@@ -32,6 +32,9 @@ const mockSignedIn = { user: { id: "user-1" }, isLoaded: true, isSignedIn: true 
 const mockAuth = { signOut: jest.fn() };
 const mockTheme = { toggleTheme: jest.fn(), toggleCompactMode: jest.fn() };
 const mockPush = jest.fn();
+const mockMarkAllNotifsMutate = jest.fn();
+const mockMarkAllMessagesMutate = jest.fn();
+const mockInvalidateFolderCounts = jest.fn();
 let mockUser: typeof mockSignedOut | typeof mockSignedIn = mockSignedOut;
 let mockIsAdmin = false;
 let mockPathname = "/";
@@ -42,6 +45,26 @@ let mockWikiResults: MockWikiResult[] = [];
 
 jest.mock("~/trpc/react", () => ({
   api: {
+    useUtils: () => ({
+      notifications: {
+        getUserNotifications: { invalidate: jest.fn() },
+        getUnreadCount: { invalidate: jest.fn() },
+      },
+      messages: {
+        getConversationsByFolder: { invalidate: jest.fn() },
+        getFolderCounts: { invalidate: mockInvalidateFolderCounts },
+      },
+    }),
+    notifications: {
+      markAllAsRead: {
+        useMutation: () => ({ mutate: mockMarkAllNotifsMutate }),
+      },
+    },
+    messages: {
+      markAllAsRead: {
+        useMutation: () => ({ mutate: mockMarkAllMessagesMutate }),
+      },
+    },
     countries: {
       getSelectList: {
         useQuery: (_input: unknown, options: { enabled?: boolean }) => ({
@@ -74,7 +97,7 @@ jest.mock("~/context/auth-context", () => ({
 }));
 jest.mock("~/context/theme-context", () => ({ useTheme: () => mockTheme }));
 jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => ({}) }));
-jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
+jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({ success: jest.fn() }) }));
 jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => mockIsAdmin }));
 jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
@@ -124,6 +147,9 @@ function buildRealms(): MockRealm[] {
 beforeEach(() => {
   jest.useFakeTimers();
   mockPush.mockReset();
+  mockMarkAllNotifsMutate.mockReset();
+  mockMarkAllMessagesMutate.mockReset();
+  mockInvalidateFolderCounts.mockReset();
   mockUser = mockSignedOut;
   mockIsAdmin = false;
   mockPathname = "/";
@@ -163,27 +189,35 @@ const titles = (results: Array<{ title: string }>) => results.map((r) => r.title
 const types = (results: Array<{ type: string }>) => results.map((r) => r.type);
 
 describe("Halo search results", () => {
-  it("returns nothing for an empty or whitespace query", () => {
+  it("immediately surfaces curated zero-query launcher items when opened with an empty query", () => {
     const hook = openSearch();
-    expect(search(hook, "")).toEqual([]);
-    expect(search(hook, "   ")).toEqual([]);
+    const zeroAll = search(hook, "");
+    expect(zeroAll.length).toBeGreaterThan(0);
+    expect(titles(zeroAll)).toContain("Home");
+
+    const zeroRealms = search(hook, "   ", "realms");
+    expect(titles(zeroRealms)).toEqual(["Aurora Reach"]);
+
+    const zeroCountries = search(hook, "", "countries");
+    expect(zeroCountries).toHaveLength(12);
+    expect(zeroCountries[0]?.title).toBe("Eastmark 0");
   });
 
-  it("waits for the 150 ms debounce before searching", () => {
+  it("waits for the 150 ms debounce before switching from zero-query suggestions to query matches", () => {
     const hook = openSearch();
     act(() => {
-      hook.result.current.setSearchQuery("st");
+      hook.result.current.setSearchQuery("eastmark");
     });
-    expect(hook.result.current.searchResults).toEqual([]);
     expect(hook.result.current.isSearchPending).toBe(true);
+    expect(titles(hook.result.current.searchResults)).not.toContain("Eastmark 0");
     act(() => {
       jest.advanceTimersByTime(149);
     });
-    expect(hook.result.current.searchResults).toEqual([]);
+    expect(titles(hook.result.current.searchResults)).not.toContain("Eastmark 0");
     act(() => {
       jest.advanceTimersByTime(1);
     });
-    expect(hook.result.current.searchResults.length).toBeGreaterThan(0);
+    expect(titles(hook.result.current.searchResults)).toContain("Eastmark 0");
     expect(hook.result.current.isSearchPending).toBe(false);
   });
 
@@ -193,24 +227,18 @@ describe("Halo search results", () => {
     expect(search(hook, "zzzzqq")).toEqual([]);
   });
 
-  it("limits each type to 3 under the all filter, ordered countries, commands, features, wiki", () => {
+  it("limits each type to 3 under the all filter, ordered countries, commands, wiki (plus realms when matched)", () => {
     const results = search(openSearch(), "st");
-    expect(results).toHaveLength(12);
+    expect(results).toHaveLength(9);
     expect(types(results)).toEqual([
       ...Array(3).fill("country"),
       ...Array(3).fill("command"),
-      ...Array(3).fill("feature"),
       ...Array(3).fill("wiki"),
     ]);
     expect(titles(results.filter((r) => r.type === "country"))).toEqual([
       "Eastmark 0",
       "Eastmark 1",
       "Eastmark 2",
-    ]);
-    expect(titles(results.filter((r) => r.type === "feature"))).toEqual([
-      "Refresh data",
-      "Notifications",
-      "Search",
     ]);
     expect(titles(results.filter((r) => r.type === "wiki"))).toEqual([
       "Stonebridge 0",
@@ -223,12 +251,11 @@ describe("Halo search results", () => {
     mockPlugin = { id: "wiki" };
     const hook = openSearch();
     const results = search(hook, "st");
-    expect(results).toHaveLength(12);
+    expect(results).toHaveLength(9);
     expect(types(results)).toEqual([
       ...Array(3).fill("wiki"),
       ...Array(3).fill("country"),
       ...Array(3).fill("command"),
-      ...Array(3).fill("feature"),
     ]);
   });
 
@@ -254,13 +281,13 @@ describe("Halo search results", () => {
     expect(titles(results)).not.toContain("Brava");
   });
 
-  it("lists up to 12 entries of a single type under the other filters", () => {
+  it("lists up to 12 entries of a single type under commands, realms, and wiki filters", () => {
     mockWikiResults = buildWiki(15);
     const hook = openSearch();
     expect(search(hook, "st", "commands")).toHaveLength(12);
     expect(new Set(types(hook.result.current.searchResults))).toEqual(new Set(["command"]));
-    expect(search(hook, "st", "features")).toHaveLength(3);
-    expect(new Set(types(hook.result.current.searchResults))).toEqual(new Set(["feature"]));
+    expect(search(hook, "aurora", "realms")).toHaveLength(1);
+    expect(new Set(types(hook.result.current.searchResults))).toEqual(new Set(["realm"]));
     expect(search(hook, "st", "wiki")).toHaveLength(12);
     expect(new Set(types(hook.result.current.searchResults))).toEqual(new Set(["wiki"]));
   });
@@ -320,6 +347,29 @@ describe("Halo search commands by viewer", () => {
     expect(found).not.toContain("Sign up");
   });
 
+  it("syncs mark-all-read to server notifications and messages mutations and invalidates folder counts", () => {
+    mockUser = mockSignedIn;
+    mockMarkAllMessagesMutate.mockImplementation(
+      (_input: unknown, opts?: { onSettled?: () => void }) => {
+        opts?.onSettled?.();
+      }
+    );
+
+    const hook = openSearch();
+    const entry = search(hook, "mark all", "commands").find(
+      (r) => r.title === "Mark all notifications read"
+    );
+    expect(entry).toBeDefined();
+    entry!.action();
+
+    expect(mockMarkAllNotifsMutate).toHaveBeenCalledWith(
+      { userId: "user-1" },
+      expect.objectContaining({ onSettled: expect.any(Function) })
+    );
+    expect(mockMarkAllMessagesMutate).toHaveBeenCalledTimes(1);
+    expect(mockInvalidateFolderCounts).toHaveBeenCalledTimes(1);
+  });
+
   it("hides the Admin panel from non-admins", () => {
     expect(titles(search(openSearch(), "admin"))).not.toContain("Admin panel");
   });
@@ -352,8 +402,8 @@ describe("Halo search result ids", () => {
   it("are unique within the largest single-type lists", () => {
     mockWikiResults = buildWiki(15);
     const hook = openSearch();
-    for (const filter of ["countries", "commands", "wiki"] as const) {
-      const ids = search(hook, "st", filter).map((r) => r.id);
+    for (const filter of ["countries", "realms", "commands", "wiki"] as const) {
+      const ids = search(hook, filter === "realms" ? "aurora" : "st", filter).map((r) => r.id);
       expect(ids.length).toBeGreaterThan(0);
       expect(new Set(ids).size).toBe(ids.length);
     }
@@ -375,7 +425,7 @@ describe("Halo search result router navigation", () => {
     }
   });
 
-  it("matches open realms under all and routes to /r/<slug>", () => {
+  it("matches open realms under all and realms filters and routes to /r/<slug>", () => {
     const results = search(openSearch(), "aurora");
     const realm = results.find((r) => r.type === "realm");
     expect(realm).toMatchObject({

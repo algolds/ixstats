@@ -93,15 +93,15 @@ describe("Halo search results (hook)", () => {
     expect(result.current.mode).toBe("notifications");
   });
 
-  it("keeps the palette on search when the Search entry runs", () => {
-    const { result } = searchFor("lookup");
-    const entry = result.current.searchResults.find((r) => r.title === "Search");
+  it("opens Account view when the Account command runs", () => {
+    const { result } = searchFor("account");
+    const entry = result.current.searchResults.find((r) => r.title === "Account");
     expect(entry).toBeDefined();
     act(() => {
       result.current.switchMode("compact");
       entry?.action();
     });
-    expect(result.current.mode).toBe("search");
+    expect(result.current.mode).toBe("mycountry");
   });
 
   it("is pending while the query is still debouncing", () => {
@@ -239,5 +239,37 @@ describe("SearchView", () => {
     Object.defineProperty(navigator, "platform", { value: "MacIntel", configurable: true });
     renderView({ searchQuery: "", debouncedSearchQuery: "" });
     expect(screen.getByText("⌘K")).toBeTruthy();
+  });
+
+  it("cycles filters with ArrowRight/ArrowLeft when query is empty and Alt+Arrow when query is non-empty", () => {
+    const setSearchFilter = jest.fn();
+    const { rerender } = renderView({
+      searchQuery: "",
+      debouncedSearchQuery: "",
+      searchFilter: "all",
+      setSearchFilter,
+    });
+    const input = screen.getByRole("combobox");
+    fireEvent.keyDown(input, { key: "ArrowRight" });
+    expect(setSearchFilter).toHaveBeenCalledWith("wiki");
+
+    setSearchFilter.mockClear();
+    rerender(
+      <SearchView
+        searchQuery="aphis"
+        debouncedSearchQuery="aphis"
+        searchFilter="countries"
+        setSearchFilter={setSearchFilter}
+        searchResults={[]}
+        closeDropdown={jest.fn()}
+      />
+    );
+    // Plain ArrowRight leaves caret movement untouched when query has text
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "ArrowRight" });
+    expect(setSearchFilter).not.toHaveBeenCalled();
+
+    // Alt+ArrowRight cycles to Realms
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "ArrowRight", altKey: true });
+    expect(setSearchFilter).toHaveBeenCalledWith("realms");
   });
 });

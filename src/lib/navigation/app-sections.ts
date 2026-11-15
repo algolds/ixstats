@@ -40,7 +40,6 @@ import {
   Compass,
   Component,
   Cpu,
-  Crown,
   Database,
   Download,
   EditPencil,
@@ -569,7 +568,7 @@ export const APPS: readonly AppDefinition[] = [
         id: "country",
         label: "MyCountry",
         href: "/settings?tab=country",
-        icon: Crown,
+        icon: MyCountryLogomark,
         group: "Profile",
       },
       {
@@ -710,7 +709,18 @@ export function withCountryRows(
               href: countryHref,
               icon: ProfileCircle,
             },
-            { id: "editor", label: "Editor", href: "/mycountry/editor", icon: EditPencil },
+            {
+              id: "editor",
+              label: "Country editor",
+              href: "/mycountry/editor",
+              icon: EditPencil,
+            },
+            {
+              id: "map-editor",
+              label: "Map editor",
+              href: "/mycountry/map-editor",
+              icon: MapIcon,
+            },
           ],
         }
       : app

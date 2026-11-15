@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 
 import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { Search, Bell, Settings, ProfileCircle } from "iconoir-react";
+import { Search, Bell, Settings, ProfileCircle, ViewGrid } from "iconoir-react";
 import { HaloIconButton } from "./compact/HaloIconButton";
 import { NarratorProgress } from "./compact/NarratorProgress";
 import { useUser } from "~/context/auth-context";
@@ -32,6 +32,11 @@ function NavLoadingIcon({ className }: { className?: string }) {
   );
 }
 
+function isApplePlatform(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+}
+
 export function CompactView({
   mode,
   isNavLoading = false,
@@ -41,8 +46,12 @@ export function CompactView({
   pluginCenterActions,
   pluginActions,
   pluginBadge,
+  showNavTrayTrigger = false,
+  navTrayOpen = false,
+  onToggleNavTray,
 }: CompactViewProps) {
   const { user, isLoaded, isSignedIn } = useUser();
+  const hasPluginCenter = Boolean(activePlugin && pluginCenter);
   const pluginViewKey = activePlugin?.expandedViews
     ? Object.keys(activePlugin.expandedViews)[0]
     : null;
@@ -63,6 +72,7 @@ export function CompactView({
   const hour = useContextHour();
 
   const greeting = hour === null ? "Good morning" : greetingForHour(hour);
+  const appleKeys = isApplePlatform();
 
   // Notification peek
 
@@ -100,6 +110,7 @@ export function CompactView({
   const { totalUnread: messageUnreadCount } = useMessageUnreadCount();
   const notificationUnreadCount = unreadNotifications + enhancedUnreadCount;
   const totalUnreadCount = notificationUnreadCount + messageUnreadCount;
+  const portraitSrc = user?.imageUrl ? assetUrl(user.imageUrl) : undefined;
 
   return (
     <div className="h-full w-full">
@@ -129,7 +140,7 @@ export function CompactView({
               className="flex items-center gap-1"
             >
               {/* Context switcher / Plugin center */}
-              {activePlugin && pluginCenter ? (
+              {hasPluginCenter && activePlugin ? (
                 <>
                   {pluginViewKey ? (
                     <button
@@ -140,7 +151,7 @@ export function CompactView({
                         if (mode === `plugin:${pluginViewKey}`) {
                           onSwitchMode("compact");
                         } else {
-                          onSwitchMode(`plugin:${pluginViewKey}`);
+                          onSwitchMode(`plugin:${pluginViewKey}`, "plugin");
                         }
                       }}
                       className={cn(
@@ -175,7 +186,7 @@ export function CompactView({
                   ) : (
                     <ProfileCircle aria-hidden className="text-label-secondary size-4" />
                   )}
-                  <span className="sr-only sm:hidden">Open MyCountry</span>
+                  <span className="sr-only sm:hidden">Account</span>
                   <PreText className="hidden text-inherit sm:inline" whiteSpace="nowrap">
                     {`${greeting}${user?.firstName ? `, ${user.firstName}` : ""}`}
                   </PreText>
@@ -188,10 +199,21 @@ export function CompactView({
         {/* Right-Side Action Icons Group with Optional Narrator Progress Underneath */}
         <div className="relative flex shrink-0 flex-col items-center justify-center">
           <div className="flex items-center gap-0.5">
+            {showNavTrayTrigger && onToggleNavTray && (
+              <HaloIconButton
+                label="Apps"
+                icon={ViewGrid}
+                triggerFor="nav-tray"
+                expanded={navTrayOpen}
+                onClick={onToggleNavTray}
+              />
+            )}
+
             <HaloIconButton
               label="Search"
               icon={isNavLoading ? NavLoadingIcon : Search}
               triggerFor="search"
+              shortcut={appleKeys ? "⌘K" : "Ctrl K"}
               onClick={() => {
                 onSwitchMode("search");
               }}
@@ -220,22 +242,52 @@ export function CompactView({
               label="Settings"
               icon={Settings}
               triggerFor="settings"
+              shortcut={appleKeys ? "⌘," : "Ctrl ,"}
               onClick={() => {
                 soundCues.present("subtle");
                 onSwitchMode("settings");
               }}
             />
 
-            {/* Plugin-injected action buttons */}
-            {pluginActions?.map((action) => (
+            {/* Keep Account 1 click away whenever a plugin claims Halo's center slot */}
+            {hasPluginCenter && (
               <HaloIconButton
-                key={action.id}
-                label={action.label}
-                icon={action.icon}
-                badge={action.badge}
-                onClick={action.onClick}
+                label="Account"
+                icon={ProfileCircle}
+                iconSrc={portraitSrc}
+                triggerFor="mycountry"
+                onClick={() => {
+                  soundCues.present("subtle");
+                  onSwitchMode("mycountry");
+                }}
               />
-            ))}
+            )}
+
+            {/* Plugin-injected action buttons */}
+            {pluginActions?.map((action) => {
+              const pluginMode = action.pluginView
+                ? (`plugin:${action.pluginView}` as const)
+                : null;
+              return (
+                <HaloIconButton
+                  key={action.id}
+                  label={action.label}
+                  icon={action.icon}
+                  badge={action.badge}
+                  triggerFor={pluginMode ?? undefined}
+                  onClick={() => {
+                    if (action.onClick) {
+                      action.onClick();
+                      return;
+                    }
+                    if (pluginMode) {
+                      soundCues.present("subtle");
+                      onSwitchMode(pluginMode, pluginMode);
+                    }
+                  }}
+                />
+              );
+            })}
 
             {/* Plugin badge dot */}
             {pluginBadge && (

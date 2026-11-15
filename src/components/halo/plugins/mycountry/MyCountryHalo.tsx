@@ -1,19 +1,17 @@
 "use client";
 
 /**
- * MyCountryHalo — Halo overlay plugin for /mycountry routes.
+ * MyCountryHalo — Halo plugin for /mycountry routes.
  *
- * Provides national executive indicators, alert status, and expanded
- * quick actions for domestic and foreign policy, diplomacy, and defense.
+ * Contributes contextual "On this page" commands for MyCountry sections to Halo Search
+ * while leaving Halo's center capsule greeting connected to AccountView.
  */
 
-import React, { useMemo } from "react";
-import { Crown } from "iconoir-react";
+import type * as React from "react";
+import { useMemo } from "react";
 import { getCountryActions, type CountryActionId } from "~/components/halo/country-actions";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { PluginCommand } from "~/components/halo/types";
-import { PreText } from "~/components/ui/pretext";
-import { MyCountryActionsView } from "./views";
 
 const ACTION_META: Record<
   Exclude<CountryActionId, "profile" | "overview" | "vault" | "messages">,
@@ -76,26 +74,11 @@ export const MYCOUNTRY_PLUGIN_COMMANDS: readonly PluginCommand[] = getCountryAct
   };
 });
 
-function MyCountryLabel() {
-  return (
-    <span className="flex items-center gap-2">
-      <Crown className="text-yellow h-3 w-3 shrink-0 opacity-70" />
-      <PreText className="text-label text-caption" whiteSpace="nowrap">
-        MyCountry
-      </PreText>
-    </span>
-  );
-}
-
 export function MyCountryHalo() {
   const plugin = useMemo(
     () => ({
       id: "mycountry",
       priority: 5,
-      center: <MyCountryLabel />,
-      expandedViews: {
-        mycountry: MyCountryActionsView,
-      },
       commands: MYCOUNTRY_PLUGIN_COMMANDS,
       accentColor: "var(--color-yellow)",
     }),

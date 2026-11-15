@@ -90,7 +90,7 @@ describe("Halo countries query gating", () => {
     expect(lastEnabled()).toBe(false);
   });
 
-  it("enables realms.getSelectList only in search with the all filter", () => {
+  it("enables realms.getSelectList in search with the all or realms filter", () => {
     const { result } = renderHook(() => useDynamicIslandState());
     expect(lastRealmsEnabled()).toBe(false);
 
@@ -108,5 +108,10 @@ describe("Halo countries query gating", () => {
       result.current.setSearchFilter("countries");
     });
     expect(lastRealmsEnabled()).toBe(false);
+
+    act(() => {
+      result.current.setSearchFilter("realms");
+    });
+    expect(lastRealmsEnabled()).toBe(true);
   });
 });

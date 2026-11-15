@@ -248,6 +248,20 @@ describe("Trigger ARIA & focus return on close (Step 2)", () => {
     const restoredSettingsBtn = screen.getByRole("button", { name: "Settings" });
     expect(restoredSettingsBtn).toHaveFocus();
   });
+
+  it("preserves 630px ULTRA width when switching directly from SettingsView to SearchView via Cmd+K", async () => {
+    const { container } = render(<CommandPalette />);
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(await screen.findByRole("dialog", { name: "Quick settings" })).toBeInTheDocument();
+
+    fireEvent.keyDown(window, { key: "k", metaKey: true });
+    expect(await screen.findByRole("dialog", { name: "Search" })).toBeInTheDocument();
+
+    const island = container.querySelector<HTMLElement>("#command-palette");
+    expect(island?.style.width).toBe("630px");
+  });
 });
 
 describe("Outside pointerdown closes Halo (Step 3)", () => {
@@ -289,7 +303,7 @@ function ActivePluginCompactHarness() {
 }
 
 describe("Pill centre real buttons & no nested buttons (Step 4)", () => {
-  it("renders WikiHalo section trigger beside the centre button with zero nested buttons", () => {
+  it("renders WikiHalo section trigger beside the centre button with zero nested buttons and keeps Account 1 click away", () => {
     mockWikiContext = {
       articleTitle: "Caphiria",
       activeSectionId: "history",
@@ -312,6 +326,38 @@ describe("Pill centre real buttons & no nested buttons (Step 4)", () => {
     const sectionBtn = screen.getByRole("button", { name: "Early history" });
     expect(sectionBtn.className).toContain("focus-visible:outline-tint");
     expect(sectionBtn.className).toContain("pointer-coarse:after:min-h-11");
+    expect(screen.getByRole("button", { name: "Account" })).toHaveAttribute(
+      "data-halo-trigger",
+      "mycountry"
+    );
+  });
+
+  it("yields Halo's center to the Account greeting on non-article Wiki routes and exposes a Wiki workspace action", () => {
+    mockWikiContext = {
+      articleTitle: "Main Page",
+      activeSectionId: null,
+      tocEntries: [],
+      navigateToSection: jest.fn(),
+      narratorState: null,
+      narratorActions: null,
+      themeColors: null,
+    };
+
+    render(
+      <DIPluginProvider>
+        <WikiHalo />
+        <ActivePluginCompactHarness />
+      </DIPluginProvider>
+    );
+
+    expect(screen.getByRole("button", { name: /Account/i })).toHaveAttribute(
+      "data-halo-trigger",
+      "mycountry"
+    );
+    expect(screen.getByRole("button", { name: "Wiki workspace" })).toHaveAttribute(
+      "data-halo-trigger",
+      "plugin:profile"
+    );
   });
 
   it("renders WikiHalo narrator play/pause beside the centre button with aria-label and zero nested buttons", () => {

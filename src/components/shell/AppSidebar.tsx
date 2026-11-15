@@ -63,12 +63,20 @@ interface AppSidebarProps {
   onToggle: (id: string) => void;
   badges: NavBadges;
   onAction?: (action: NavAction) => void;
+  onOpenFeedback?: () => void;
   /** The user's public country profile (MyCountry's profile and editor buttons). */
   countryHref?: string;
+  /** Return destination for `All apps` when viewing Settings or Admin. */
+  backHref?: string;
   className?: string;
 }
 
 const APP_SIDEBAR_ID = "facet-app-sidebar";
+
+function sidebarShortcutHint(): string {
+  if (typeof navigator === "undefined") return "Ctrl \\";
+  return /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘\\" : "Ctrl \\";
+}
 
 export const rowBase = cn(
   sourceRowClassName,
@@ -294,7 +302,9 @@ export function AppSidebar({
   onToggle,
   badges,
   onAction,
+  onOpenFeedback,
   countryHref,
+  backHref,
   className,
 }: AppSidebarProps) {
   const current = getVisibleAppForPath(pathname, apps);
@@ -303,7 +313,17 @@ export function AppSidebar({
   const isCollapsed = collapsed ?? false;
   const mainApps = apps.filter((app) => app.placement !== "footer");
   const footerApps = apps.filter((app) => app.placement === "footer");
-  const list = { pathname, searchParams, apps, expanded, onToggle, badges, onAction, countryHref };
+  const list = {
+    pathname,
+    searchParams,
+    apps,
+    expanded,
+    onToggle,
+    badges,
+    onAction,
+    countryHref,
+    backHref,
+  };
 
   return (
     <aside
@@ -361,11 +381,15 @@ export function AppSidebar({
           {vaultCard && <div className="sidebar-collapsed:hidden pb-1">{vaultCard}</div>}
           {signedIn && <RailWallet claimable={isPending(badges["daily-reward"])} />}
           {account && <div className="sidebar-collapsed:justify-center flex">{account}</div>}
-          <CollapsedTooltip collapsed={collapsed} label="Expand sidebar">
+          <CollapsedTooltip
+            collapsed={collapsed}
+            label={`Expand sidebar (${sidebarShortcutHint()})`}
+          >
             <button
               type="button"
               aria-controls={APP_SIDEBAR_ID}
               aria-expanded={!isCollapsed}
+              aria-keyshortcuts="Meta+\ Control+\"
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               onClick={() => onCollapsedChange(!isCollapsed)}
               className={cn(
@@ -382,9 +406,21 @@ export function AppSidebar({
               <span className="sidebar-collapsed:sr-only min-w-0 flex-1 truncate text-left">
                 Collapse
               </span>
+              {collapsed === false && (
+                <kbd
+                  aria-hidden
+                  className="sidebar-collapsed:hidden text-caption text-label-tertiary shrink-0"
+                >
+                  {sidebarShortcutHint()}
+                </kbd>
+              )}
             </button>
           </CollapsedTooltip>
-          <SidebarFooterLinks signedIn={signedIn} className="sidebar-collapsed:hidden" />
+          <SidebarFooterLinks
+            signedIn={signedIn}
+            onOpenFeedback={onOpenFeedback}
+            className="sidebar-collapsed:hidden"
+          />
         </div>
       </FacetMaterial>
     </aside>

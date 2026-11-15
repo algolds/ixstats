@@ -154,7 +154,7 @@ export function SidebarVaultCard({ expanded, onToggle, className }: SidebarVault
             </Button>
           </CollapsibleTrigger>
         </div>
-        <DailyRewardStatus />
+        <DailyRewardStatus hideWhenClaimed={!expanded} />
         <CollapsibleContent>
           <OpenPanel />
         </CollapsibleContent>

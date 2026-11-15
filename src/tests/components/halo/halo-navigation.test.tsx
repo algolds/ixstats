@@ -2,7 +2,8 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
-import { MyCountryActionsView } from "~/components/halo/plugins/mycountry/views/MyCountryActionsView";
+import { DIPluginProvider } from "~/components/halo/plugin-context";
+import { WikiHalo } from "~/components/halo/plugins/wiki/WikiHalo";
 import { AccountView } from "~/components/halo/views/account/AccountView";
 import { NotificationsView } from "~/components/halo/views/NotificationsView";
 import { SettingsView } from "~/components/halo/views/SettingsView";
@@ -125,10 +126,24 @@ jest.mock("~/context/theme-context", () => ({
 jest.mock("~/components/wiki-os/shared/MediaThemeContext", () => ({
   useWikiMediaTheme: () => ({ mediaThemeMode: "auto", setMediaThemeMode: jest.fn() }),
 }));
+jest.mock("~/components/wiki-os/shared/WikiContext", () => ({
+  useWikiContext: () => ({
+    articleTitle: "Caphiria",
+    activeSectionId: null,
+    tocEntries: [],
+    navigateToSection: jest.fn(),
+    narratorState: null,
+    narratorActions: null,
+    themeColors: null,
+  }),
+}));
 jest.mock("~/hooks/useSoundSettings", () => ({
   useSoundSettings: () => ({ enabled: true, setEnabled: jest.fn(), previewSound: jest.fn() }),
 }));
-jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => true }));
+jest.mock("~/hooks/usePermissions", () => ({
+  useCanOpenAdmin: () => true,
+  useHasNarratorAccess: () => false,
+}));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
@@ -244,13 +259,23 @@ describe("Halo views router navigation (Step 3)", () => {
   });
 });
 
-describe("MyCountryActionsView router navigation (Step 4)", () => {
-  it("navigates quick actions via router.push without synthetic PopStateEvent", () => {
+describe("SettingsView Wiki preferences navigation (Step 4)", () => {
+  it("routes Wiki system settings to /settings?tab=wikios and clarifies Quick search subtitle", () => {
     const onClose = jest.fn();
-    render(<MyCountryActionsView onClose={onClose} />);
+    render(
+      <DIPluginProvider>
+        <WikiHalo />
+        <HaloProvider initialSize={SIZE_PRESETS.MEDIUM}>
+          <SettingsView onClose={onClose} />
+        </HaloProvider>
+      </DIPluginProvider>
+    );
 
-    fireEvent.click(screen.getByRole("button", { name: /Diplomacy/i }));
+    fireEvent.click(screen.getByRole("button", { name: /More preferences/i }));
+    expect(screen.getByText("Start Halo search on Wiki tab")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Wiki system settings/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith("/mycountry/diplomacy");
+    expect(mockPush).toHaveBeenCalledWith("/settings?tab=wikios");
   });
 });

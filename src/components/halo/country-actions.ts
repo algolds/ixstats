@@ -1,6 +1,5 @@
 import type * as React from "react";
 import {
-  City as Building2,
   Coins,
   Community as Handshake,
   EditPencil as Edit3,
@@ -12,6 +11,7 @@ import {
   User,
   Wallet,
 } from "iconoir-react";
+import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
 import {
   MYCOUNTRY_ECONOMY_PATH,
   MYCOUNTRY_EDITOR_PATH,
@@ -59,7 +59,7 @@ export const COUNTRY_ACTIONS: readonly CountryAction[] = [
     id: "overview",
     label: "MyCountry",
     path: MYCOUNTRY_PATH,
-    icon: Building2,
+    icon: MyCountryLogomark,
     iconClass: "text-yellow",
   },
   {

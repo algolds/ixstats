@@ -34,35 +34,36 @@ The sidebar on the left lists the areas ("apps") of IxStates. Selecting one open
 
 Some apps only appear when they apply to you. Home, MyCountry, Vault, Labs, and Settings need you to be signed in; Admin is for administrators only. ThinkPages shows its section rows while you are inside ThinkPages. Administrators can also hide Wiki, Maps, Labs, or Help sitewide; Labs stays visible to administrators and members with Labs access.
 
-The collapse button at the bottom of the sidebar shrinks it to a strip of icons; select an icon to see that app's sections. Your choice is remembered. A dot on an app means it has something new, and a marker on Vault shows when your daily reward is ready.
+The collapse button at the bottom of the sidebar (`Ctrl` + `\` or `Cmd` + `\`) shrinks it to a strip of icons; select an icon to see that app's sections. Your choice is remembered. A dot or unread count on an app means it has something new, and a marker on Vault shows when your daily reward is ready.
 
-Your **account** sits at the bottom of the sidebar: your nation (its public page), your **Passport**, your [Stash](/help/wiki/stash), **Passport settings** (IxnayID & Passport), and sign out. If you own more than one nation, choose which one you're playing as there.
+Your **account** sits at the bottom of the sidebar with your portrait: **MyCountry**, your **Passport**, your [Stash](/help/wiki/stash), **Manage account**, and sign out. If you own more than one nation, choose which one you're playing as there.
 
 ## The tab bar on phones
 
-On a narrow screen the sidebar becomes a bar at the bottom with four apps and **More**. **More** opens a sheet with the current app's sections, every other app, and your account.
+On a narrow screen the sidebar becomes a bar at the bottom with four apps and **More** (each showing unread counts or update dots when something needs your attention). **More** opens a sheet with the current app's sections, every other app, and your account.
 
 ## Halo
 
-Halo shows the [IxTime](/help/getting-started/ixtime) clock and a greeting, and expands into different views:
+Halo shows a personal greeting (or the current article / activity) and expands into different views:
 
-| Shortcut                          | What it does                                                               |
-| --------------------------------- | -------------------------------------------------------------------------- |
-| `Ctrl` + `K` (`Cmd` + `K` on Mac) | Open or close **search**                                                   |
-| `Ctrl` + `,` (`Cmd` + `,`)        | Open or close **quick settings**                                           |
-| `Esc`                             | Clear the search box, or close the open view                               |
-| `Up` / `Down` and `Enter`         | Highlight a search result and open or run it                               |
-| `Left` / `Right`                  | Switch search filters (`All`, `Wiki`, `Countries`, `Commands`, `Features`) |
+| Shortcut                                 | What it does                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------------ |
+| `Ctrl` + `K` (`Cmd` + `K` on Mac)        | Open or close **search**                                                 |
+| `Ctrl` + `,` (`Cmd` + `,`)               | Open or close **quick settings**                                         |
+| `Ctrl` + `\` (`Cmd` + `\`)               | Collapse or expand the **sidebar**                                       |
+| `Esc`                                    | Clear the search box, or close the open view                             |
+| `Up` / `Down` and `Enter`                | Highlight a search result and open or run it                             |
+| `Left` / `Right` (`Alt` + arrows typing) | Switch search filters (`All`, `Wiki`, `Countries`, `Realms`, `Commands`) |
 
 Global shortcuts use modifier keys (plus `Esc` when Halo is open) and never get in the way while you're typing in a text box; `Ctrl`/`Cmd` + `K` also works inside Halo's own search box.
 
-Some areas add their own controls to Halo. Selecting the greeting opens your **Account** panel, which switches between **MyCountry** (your nation's poster, vitality strip, **Edit** menu for the Country Editor and Map Editor, **Share**, **Manage MyCountry** tiles, and **Open in** links) and **Passport** (your compact Passport card, **Play as** nation switcher when you hold multiple nations, saved Wiki drafts, shortcuts to Vault, Messages, and Settings, and sign out). MyCountry pages add quick statecraft actions, the Wiki adds reading progress, section jumps, and the article narrator, live sports matches show a live scoreboard, and founding a nation or using the Country Editor adds **Jump to section**.
+Some areas add their own controls to Halo. Selecting the greeting (or the compact **Account** button when an article, editor, or live match occupies Halo's centre) opens your **Account** panel, which switches between **MyCountry** (your nation's poster, vitality strip, **Edit** menu for the Country Editor and Map Editor, **Share**, **Manage MyCountry** tiles, and **Open in** links) and **Passport** (your compact Passport card, **Play as** nation switcher when you hold multiple nations, saved Wiki drafts, shortcuts to Vault, Messages, and Settings, and sign out). MyCountry pages add quick statecraft actions to search, Wiki articles add reading progress, section jumps, and the article narrator (while non-article Wiki pages add a **Wiki workspace** scratchpad button), live sports matches show a live scoreboard, and founding a nation or using the Country Editor adds **Jump to section**.
 
-On the [world map](/maps), Halo is replaced by the map's own floating bar.
+On full-screen editors without a sidebar (such as the Map Editor), Halo adds an **Apps** button (or a downward pull on the bar) for quick navigation. On the [world map](/maps), Halo is replaced by the map's own floating bar.
 
 ### Search
 
-Search finds open realms, countries, commands, features, Wiki articles, and actions on the current page (badged **On this page**, such as jumping to a Country Editor section or Wiki heading, declaring a directive in MyCountry, or opening a live sports match). Use the filter buttons (`All`, `Wiki`, `Countries`, `Commands`, or `Features`) or the `Left` and `Right` arrow keys on them to narrow results, move through the list with the `Up` and `Down` arrow keys, and press `Enter` (or select a row) to open a page or run a command such as "Toggle dark or light theme", "Toggle sound effects", or "Mark all notifications read". When you open Search on the Wiki, **Wiki results in search** in [Settings](/help/getting-started/settings#wikios) (also called **Quick search** in Halo's Wiki settings) controls whether Search starts on the **Wiki** filter or **All**.
+Opening Search (`Ctrl`/`Cmd` + `K`) immediately shows actions on the current page and key destinations before you even type, and finds open realms, countries, Wiki articles, and commands as you type (page-specific actions are badged **On this page**, such as jumping to a Country Editor section or Wiki heading, declaring a directive in MyCountry, opening your Wiki workspace, or watching a live sports match). Use the filter buttons (`All`, `Wiki`, `Countries`, `Realms`, or `Commands`) or `Left` and `Right` (with `Alt` while typing) to narrow results, move through the list with the `Up` and `Down` arrow keys, and press `Enter` (or select a row) to open a page or run a command such as "Toggle dark or light theme", "Toggle sidebar", "Claim daily reward", or "Mark all notifications read". When you open Search on the Wiki, **Quick search** in Halo's Wiki settings controls whether Search starts on the **Wiki** filter or **All**.
 
 ### Notifications and messages
 

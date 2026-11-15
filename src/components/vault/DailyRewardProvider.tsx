@@ -56,7 +56,11 @@ export function DailyRewardProvider({
 }
 
 /** The claimable button, or the "Daily claimed" row once today's reward is taken. */
-export function DailyRewardStatus() {
+export function DailyRewardStatus({
+  hideWhenClaimed = false,
+}: {
+  hideWhenClaimed?: boolean;
+} = {}) {
   const { userId } = useAuth();
   const { open, isOpen } = useDailyRewardContext();
   const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(undefined, {
@@ -64,11 +68,12 @@ export function DailyRewardStatus() {
   });
 
   if (!userId) return null;
-  if (isLoading) return <Skeleton className="h-8 w-full" />;
+  if (isLoading) return hideWhenClaimed ? null : <Skeleton className="h-8 w-full" />;
 
   const canClaim = balanceData?.canClaimDailyBonus ?? false;
 
   if (!canClaim && !isOpen) {
+    if (hideWhenClaimed) return null;
     return (
       <div
         data-slot="daily-reward-claimed"

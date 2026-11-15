@@ -74,6 +74,8 @@ export function NavTray({ isOpen, onClose, apps }: NavTrayProps) {
   React.useEffect(() => {
     if (!isOpen) return;
     const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.('[data-halo-trigger="nav-tray"]')) return;
       if (trayRef.current && !trayRef.current.contains(event.target as Node)) onClose();
     };
     const onKeyDown = (event: KeyboardEvent) => {

@@ -12,9 +12,10 @@ import { navigateWithBasePath } from "~/lib/base-path";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
 import type { AppDefinition } from "~/lib/navigation/app-sections";
+import { toggleSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
-import { CORE_FEATURES, type SystemActionId } from "./halo-registry";
+import type { SystemActionId } from "./halo-registry";
 import { haloReducer, INITIAL_HALO_STATE } from "~/lib/halo/halo-state";
 import {
   buildIndex,
@@ -24,6 +25,12 @@ import {
   searchCatalog,
   type CatalogDescriptor,
 } from "~/lib/halo/search";
+
+// Safe module-level hook wrappers so isolated unit tests with partial `~/trpc/react` mocks still run.
+const useTrpcUtilsSafe = typeof api.useUtils === "function" ? api.useUtils : () => null;
+const useMarkAllNotificationsMutationSafe =
+  api.notifications?.markAllAsRead?.useMutation ?? (() => null);
+const useMarkAllMessagesMutationSafe = api.messages?.markAllAsRead?.useMutation ?? (() => null);
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
@@ -37,6 +44,9 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
   const soundSettings = useSoundSettings();
   const notify = useNotify();
   const markAllNotificationsAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const trpcUtils = useTrpcUtilsSafe();
+  const markAllServerNotifications = useMarkAllNotificationsMutationSafe();
+  const markAllServerMessages = useMarkAllMessagesMutationSafe();
   const pathname = usePathname();
   const router = useRouter();
   const activePlugin = useActiveDIPlugin();
@@ -76,7 +86,10 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     { staleTime: 30 * 60 * 1000, enabled: countriesEnabled }
   );
 
-  const realmsEnabled = isExpanded && expandedMode === "search" && searchFilter === "all";
+  const realmsEnabled =
+    isExpanded &&
+    expandedMode === "search" &&
+    (searchFilter === "all" || searchFilter === "realms");
   const { data: realmsData, isLoading: realmsLoading } = api.realms.getSelectList.useQuery(
     undefined,
     { staleTime: 30 * 60 * 1000, enabled: realmsEnabled }
@@ -84,9 +97,9 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
 
   // Wiki search query
   const wikiEnabled =
-    debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki");
+    debouncedSearchQuery.trim().length >= 2 && (searchFilter === "all" || searchFilter === "wiki");
   const { data: wikiSearchData, isFetching: wikiFetching } = api.wikios.advancedSearch.useQuery(
-    { query: debouncedSearchQuery, limit: searchFilter === "wiki" ? 12 : 5 },
+    { query: debouncedSearchQuery.trim(), limit: searchFilter === "wiki" ? 12 : 5 },
     { enabled: wikiEnabled, staleTime: 60_000 }
   );
   const isSearchPending =
@@ -128,7 +141,6 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
       searchApps: options?.searchApps,
     })
   );
-  const featureIndex = buildIndex(CORE_FEATURES);
   const countryIndex = buildIndex(extractCountriesList(countriesData as CountriesData | undefined));
   const pluginCommandIndex = indexPluginCommands(activePlugin?.commands ?? []);
   const realmIndex = indexRealms(realmsData ?? []);
@@ -145,9 +157,37 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
         case "toggle-compact":
           toggleCompactMode();
           return;
+        case "toggle-sidebar":
+          toggleSidebarCollapsed();
+          return;
+        case "daily-reward":
+          window.dispatchEvent(new CustomEvent("ix:open-daily-reward"));
+          return;
+        case "open-feedback":
+          window.dispatchEvent(new CustomEvent("ix:open-feedback"));
+          return;
         case "mark-all-read":
           markAllNotificationsAsRead();
-          notify.success("All notifications marked as read");
+          if (user?.id && markAllServerNotifications) {
+            markAllServerNotifications.mutate(
+              { userId: user.id },
+              {
+                onSettled: () => {
+                  void trpcUtils?.notifications?.getUserNotifications?.invalidate?.();
+                  void trpcUtils?.notifications?.getUnreadCount?.invalidate?.();
+                },
+              }
+            );
+          }
+          if (user?.id && markAllServerMessages) {
+            markAllServerMessages.mutate(undefined, {
+              onSettled: () => {
+                void trpcUtils?.messages?.getConversationsByFolder?.invalidate?.();
+                void trpcUtils?.messages?.getFolderCounts?.invalidate?.();
+              },
+            });
+          }
+          notify.success?.("All notifications marked as read");
           return;
         case "reload-data":
           window.location.reload();
@@ -180,6 +220,10 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     }
     if (targetPath === "#settings") {
       switchMode("settings");
+      return;
+    }
+    if (targetPath === "#mycountry") {
+      switchMode("mycountry");
       return;
     }
     if (targetPath) {
@@ -270,7 +314,6 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
       realms: realmIndex,
       countries: countryIndex,
       commands: commandIndex,
-      features: featureIndex,
       wiki: wikiSearchData?.results ?? [],
     },
     { wikiFirst: isWikiActive, pluginId: activePlugin?.id }

@@ -3,31 +3,27 @@
 /**
  * WikiHalo — Apple Design Halo overlay plugin for wiki pages.
  *
- * Renders the wiki breadcrumb in the capsule center and exposes
- * WikiNarratorView, WikiView, and WikiProfileView as dedicated expanded views.
+ * Claims Halo's center capsule only while reading a specific article or actively narrating.
+ * On non-article Wiki routes (/wiki, /util/*, /stashes, /blurbs), Halo's center keeps the
+ * standard personal greeting -> AccountView and exposes Wiki workspace as a dedicated action.
  */
 
 import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import { List, ProfileCircle, SoundHigh } from "iconoir-react";
+import { List, Page as FileText, SoundHigh } from "iconoir-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
-import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
-import { useContextHour } from "~/hooks/useContextHour";
-import { greetingForHour } from "~/lib/time/greeting";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps, PluginCommand } from "~/components/halo/types";
 import { PlayPauseMorph } from "./components/PlayPauseMorph";
 import { focusRing, hitSlop } from "~/components/ui/button";
-import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
-import { assetUrl } from "~/lib/base-path";
 import { accentMix, wikiAccent } from "./accent";
 
 // The plugin's metadata (id, priority, breadcrumb, accent) is synchronous; its expanded views are not needed
 // until the Halo opens, so each is its own chunk fetched then (plan 415, F19): the narrator player and the
-// profile view stay out of every article page's first load.
+// workspace view stay out of every article page's first load.
 const WikiView = dynamic(() => import("./views/WikiView").then((m) => m.WikiView), { ssr: false });
 const WikiProfileView = dynamic(
   () => import("./views/WikiProfileView").then((m) => m.WikiProfileView),
@@ -38,16 +34,12 @@ const WikiNarratorView = dynamic(
   { ssr: false }
 );
 
+export function hasSpecificWikiArticleTitle(articleTitle: string | null | undefined): boolean {
+  return Boolean(articleTitle && articleTitle !== "IxWiki" && articleTitle !== "Main Page");
+}
+
 function WikiBreadcrumb() {
-  const { user } = useUser();
-  const hour = useContextHour();
   const { articleTitle, activeSectionId, tocEntries, narratorState } = useWikiContext();
-
-  const greetingText = useMemo(() => {
-    const timeGreeting = hour === null ? "Welcome" : greetingForHour(hour);
-    return `${timeGreeting}${user?.firstName ? `, ${user.firstName}` : ""}`;
-  }, [hour, user?.firstName]);
-
   const hasNarratorAccess = useHasNarratorAccess();
 
   const isNarratorActive = !!(
@@ -57,9 +49,7 @@ function WikiBreadcrumb() {
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
   );
 
-  const hasSpecificTitle = Boolean(
-    articleTitle && articleTitle !== "IxWiki" && articleTitle !== "Main Page"
-  );
+  const hasSpecificTitle = hasSpecificWikiArticleTitle(articleTitle);
 
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
@@ -83,32 +73,11 @@ function WikiBreadcrumb() {
     );
   }
 
-  // Default Reading / Profile Breadcrumb (section popover lives in WikiCenterActions)
   return (
     <div className="flex max-w-[120px] min-w-0 items-center gap-2 sm:max-w-[150px]">
-      {hasSpecificTitle ? (
-        <span className="text-label text-caption max-w-[90px] truncate font-semibold sm:max-w-[120px]">
-          {articleTitle}
-        </span>
-      ) : (
-        <span className="flex min-w-0 items-center gap-2">
-          {user?.imageUrl ? (
-            <img
-              src={assetUrl(user.imageUrl) ?? undefined}
-              alt=""
-              className="ring-separator h-4 w-4 shrink-0 rounded-full object-cover ring-1"
-            />
-          ) : (
-            <ProfileCircle aria-hidden className="text-label-secondary size-4 shrink-0" />
-          )}
-          <PreText
-            className="text-label text-caption max-w-[100px] truncate sm:max-w-[130px]"
-            whiteSpace="nowrap"
-          >
-            {greetingText}
-          </PreText>
-        </span>
-      )}
+      <span className="text-label text-caption max-w-[90px] truncate font-semibold sm:max-w-[120px]">
+        {articleTitle}
+      </span>
     </div>
   );
 }
@@ -156,9 +125,7 @@ function WikiCenterActions() {
     );
   }
 
-  const hasSpecificTitle = Boolean(
-    articleTitle && articleTitle !== "IxWiki" && articleTitle !== "Main Page"
-  );
+  const hasSpecificTitle = hasSpecificWikiArticleTitle(articleTitle);
   const activeSectionName = activeSectionId
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
@@ -263,6 +230,14 @@ export function wikiCommandsForArticle({
       run: () => onJumpSection(entry.id),
     });
   }
+  commands.push({
+    key: "wiki-workspace",
+    title: "Open wiki workspace",
+    description: "Scratchpad, paused sessions, and recent pages",
+    keywords: ["workspace", "scratchpad", "notes", "sessions", "recent"],
+    icon: FileText,
+    pluginView: "profile",
+  });
   return commands;
 }
 
@@ -283,6 +258,7 @@ export function WikiHalo() {
     narratorState &&
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
   );
+  const ownsCenter = hasSpecificWikiArticleTitle(articleTitle) || isNarrating;
 
   const tocKey = JSON.stringify(
     (tocEntries ?? []).filter((e) => e.level <= 3).map((e) => ({ id: e.id, text: e.text }))
@@ -294,13 +270,24 @@ export function WikiHalo() {
     const parsedToc = JSON.parse(tocKey) as Array<{ id: string; text: string }>;
     return {
       id: "wiki",
-      // When narrating or playing audio, boost priority to 100 so it takes over the Dynamic Island / Halo like a live activity
+      // When narrating or playing audio, boost priority to 100 so it takes over Halo like a live activity
       priority: isPlaying ? 100 : isNarrating ? 50 : 10,
-      center: <WikiBreadcrumb />,
-      centerActions: <WikiCenterActions />,
-      expandedViews: (articleTitle
+      center: ownsCenter ? <WikiBreadcrumb /> : undefined,
+      centerActions: ownsCenter ? <WikiCenterActions /> : undefined,
+      actions: ownsCenter
+        ? undefined
+        : [
+            {
+              id: "wiki-workspace",
+              icon: FileText,
+              label: "Wiki workspace",
+              pluginView: "profile",
+            },
+          ],
+      expandedViews: (ownsCenter
         ? {
             wiki: WikiView,
+            profile: WikiProfileView,
             ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }
         : {
@@ -324,6 +311,7 @@ export function WikiHalo() {
     };
   }, [
     articleTitle,
+    ownsCenter,
     hasNarratorAccess,
     canNarrate,
     isPlaying,
