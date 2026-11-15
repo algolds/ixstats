@@ -633,7 +633,7 @@ export const APPS: readonly AppDefinition[] = [
 ];
 
 /** Order in which apps claim the TabBar's four slots (the fifth is "More"). */
-const TAB_BAR_PRIORITY: readonly AppId[] = [
+export const TAB_BAR_PRIORITY: readonly AppId[] = [
   "home",
   "mycountry",
   "maps",
@@ -814,7 +814,7 @@ export function groupSections(
   return runs;
 }
 
-interface AppVisibilityContext {
+export interface AppVisibilityContext {
   signedIn: boolean;
   /** Role level 10 or less (admin and above): the Labs bypass of `showLabsTab`, matching the Labs server gate. */
   isAdmin: boolean;
