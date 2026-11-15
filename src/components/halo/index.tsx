@@ -80,6 +80,7 @@ function CommandPaletteContent({
     searchFilter,
     isUserInteracting,
     searchResults,
+    isSearchPending,
     setSearchQuery,
     setSearchFilter,
     setIsUserInteracting,
@@ -283,6 +284,7 @@ function CommandPaletteContent({
                   setSearchFilter={setSearchFilter}
                   debouncedSearchQuery={debouncedSearchQuery}
                   searchResults={searchResults}
+                  isSearchPending={isSearchPending}
                   activePlugin={activePlugin}
                 />
               </div>

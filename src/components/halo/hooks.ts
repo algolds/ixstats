@@ -41,20 +41,20 @@ export function useDynamicIslandState() {
   const [isUserInteracting, setIsUserInteracting] = useState(false);
 
   // Lazy-load countries only when expanded
-  const { data: countriesData } = api.countries.getSelectList.useQuery(
+  const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
     { limit: 500 },
     { staleTime: 30 * 60 * 1000, enabled: isExpanded }
   );
 
   // Wiki search query
-  const { data: wikiSearchData } = api.wikios.advancedSearch.useQuery(
+  const wikiEnabled =
+    debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki");
+  const { data: wikiSearchData, isFetching: wikiFetching } = api.wikios.advancedSearch.useQuery(
     { query: debouncedSearchQuery, limit: searchFilter === "wiki" ? 12 : 5 },
-    {
-      enabled:
-        debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
-      staleTime: 60_000,
-    }
+    { enabled: wikiEnabled, staleTime: 60_000 }
   );
+  const isSearchPending =
+    searchQuery !== debouncedSearchQuery || countriesLoading || (wikiEnabled && wikiFetching);
 
   const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   // Undefined at first, so a plugin active on mount counts as a change
@@ -256,9 +256,7 @@ export function useDynamicIslandState() {
         }
       }
       if (targetPath === "#search") {
-        (
-          document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement
-        )?.focus();
+        switchMode("search");
         return;
       }
       if (targetPath === "#notifications") {
@@ -308,7 +306,7 @@ export function useDynamicIslandState() {
         if (cmd._lower.includes(query)) {
           // oxlint-disable-next-line
           matchedCommands.push({
-            id: `command-${cmd.name.toLowerCase().replace(/\s+/g, "-")}`,
+            id: `command-${cmd.actionId ?? cmd.path ?? cmd.name}`,
             type: "command",
             title: cmd.name,
             description: cmd.description,
@@ -330,7 +328,7 @@ export function useDynamicIslandState() {
         if (feat._lower.includes(query)) {
           // oxlint-disable-next-line
           matchedFeatures.push({
-            id: `feature-${feat.name.toLowerCase().replace(/\s+/g, "-")}`,
+            id: `feature-${feat.actionId ?? feat.path ?? feat.name}`,
             type: "feature",
             title: feat.name,
             description: feat.description,
@@ -541,6 +539,7 @@ export function useDynamicIslandState() {
     searchFilter,
     isUserInteracting,
     searchResults,
+    isSearchPending,
     countriesData,
     setMode,
     setIsExpanded,

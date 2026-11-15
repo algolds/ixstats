@@ -29,6 +29,7 @@ export function ExpandedView({
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
+  isSearchPending,
   activePlugin,
 }: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
   const targetUser = useSyncExternalStore(subscribeNever, readPlayAs, () => "");
@@ -73,6 +74,7 @@ export function ExpandedView({
               setSearchFilter={setSearchFilter}
               debouncedSearchQuery={debouncedSearchQuery}
               searchResults={searchResults}
+              isSearchPending={isSearchPending}
               closeDropdown={onClose}
             />
           </HaloContainer>

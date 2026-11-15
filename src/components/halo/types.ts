@@ -109,6 +109,8 @@ export interface SearchViewProps {
   setSearchFilter?: (filter: SearchFilter) => void;
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
+  /** True while a debounce, the countries list or the wiki query is still in flight. */
+  isSearchPending?: boolean;
   closeDropdown: () => void;
 }
 
@@ -130,6 +132,7 @@ export interface ExpandedViewProps {
   setSearchFilter: (filter: SearchFilter) => void;
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
+  isSearchPending?: boolean;
   countriesData?: CountriesData;
   activePlugin?: DIPlugin | null;
 }
