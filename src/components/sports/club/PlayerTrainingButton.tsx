@@ -81,7 +81,7 @@ export function PlayerTrainingButton({
                             : "default"
                     }
                   >
-                    {val ?? "—"}
+                    {val ?? "–"}
                   </Badge>
                   <span className="text-label-secondary text-footnote tabular-nums">25c</span>
                 </div>

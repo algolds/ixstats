@@ -136,7 +136,6 @@ export function PlateRawWikitextElement({
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"
-              data-cuelume-press="droplet"
               onClick={handleCopy}
               aria-label={`Copy the source of this ${label} block`}
               title="Copy the source"
@@ -147,7 +146,6 @@ export function PlateRawWikitextElement({
             {!readOnly && (
               <button
                 type="button"
-                data-cuelume-press="droplet"
                 onClick={() => setConfirmOpen(true)}
                 aria-label={`Remove this ${label} block`}
                 title="Remove this block"

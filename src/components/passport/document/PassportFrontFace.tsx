@@ -1,16 +1,18 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import { Check, Copy } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 import { CosmeticChatBadge } from "~/components/vault/CosmeticChatBadge";
 import { assetUrl } from "~/lib/base-path";
 import { REALM_ROLE_LABEL } from "~/lib/passport/passport-labels";
 import type { PublicCosmetics } from "~/lib/vault/public-cosmetics";
 import { PassportGuilloche } from "./PassportGuilloche";
-import { PassportMasthead } from "./PassportMasthead";
+import { PassportMasthead, PassportMastheadBrand } from "./PassportMasthead";
 import { PassportPortrait } from "./PassportPortrait";
 import { PassportStatRow } from "./PassportStatRow";
 
@@ -67,12 +69,12 @@ function NationLine({ nation }: { nation: PassportFaceNation }) {
           decoding="async"
         />
       )}
-      <Link
-        href={`/countries/${encodeURIComponent(nation.country.slug)}`}
+      <CountryLink
+        country={{ slug: nation.country.slug, name: nation.country.name.replace(/_/g, " ") }}
         className={`text-label font-medium ${LINK}`}
       >
         {nation.country.name.replace(/_/g, " ")}
-      </Link>
+      </CountryLink>
       <span aria-hidden>·</span>
       <Link href={`/r/${encodeURIComponent(nation.slug)}`} className={LINK}>
         {nation.name}
@@ -138,9 +140,12 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
   const bio = data.thinkpages.bio?.trim() || null;
 
   return (
-    <div className="rounded-t-card relative isolate overflow-hidden">
+    <div className="bg-surface rounded-t-card relative isolate overflow-hidden">
       <PassportGuilloche />
-      <div className="relative space-y-6 p-5 sm:p-7">
+      <FacetMaterial
+        layer="lens"
+        className="rounded-t-card space-y-6 rounded-b-none border-0 p-5 shadow-none sm:p-7"
+      >
         <PassportMasthead
           handle={handle}
           isOwner={isOwner}
@@ -193,7 +198,76 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
             {bio}
           </p>
         )}
-      </div>
+      </FacetMaterial>
     </div>
+  );
+});
+
+export interface PassportCompactFaceProps {
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+  cosmetics: PublicCosmetics | null;
+  /** Platform role display name when above the unlabelled base Member role. */
+  roleBadge?: string | null;
+  signature: string | null;
+  lorewards: { totalScore: number; rank: number | null } | null;
+  realmCount: number;
+  nationCount: number;
+  joinedAt: string | null;
+}
+
+/**
+ * Compact static Passport front face (Halo's Passport side). Shares the guilloché, masthead brand,
+ * portrait cosmetics, signature and stat row with `PassportFrontFace`, with no interactive children
+ * so the whole card can be one link to the holder's Passport.
+ */
+export const PassportCompactFace = React.memo(function PassportCompactFace({
+  handle,
+  displayName,
+  avatarUrl,
+  cosmetics,
+  roleBadge,
+  signature,
+  lorewards,
+  realmCount,
+  nationCount,
+  joinedAt,
+}: PassportCompactFaceProps) {
+  return (
+    <>
+      <PassportGuilloche />
+      <FacetMaterial layer="lens" className="rounded-row space-y-3 p-3">
+        <PassportMastheadBrand size="compact" />
+        <div className="flex items-center gap-3">
+          <PassportPortrait
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            cosmetics={cosmetics}
+            size="compact"
+          />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <span className="text-headline text-label truncate">{displayName}</span>
+              <CosmeticChatBadge badge={cosmetics?.chatBadge} className="size-4" />
+              {roleBadge && <Badge variant="secondary">{roleBadge}</Badge>}
+            </div>
+            <p className="text-footnote text-label-secondary truncate">@{handle}</p>
+            {signature && (
+              <p className="text-callout text-label truncate font-serif italic select-none">
+                {signature}
+              </p>
+            )}
+          </div>
+        </div>
+        <PassportStatRow
+          size="compact"
+          lorewards={lorewards}
+          realmCount={realmCount}
+          nationCount={nationCount}
+          joinedAt={joinedAt}
+        />
+      </FacetMaterial>
+    </>
   );
 });

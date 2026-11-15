@@ -600,6 +600,21 @@ export const helpSections: HelpSection[] = [
     ],
   },
   {
+    id: "exchange",
+    title: "Exchange",
+    description: "The market terminal: news, trading, bonds and treasuries.",
+    icon: "coins",
+    articles: [
+      {
+        id: "exchange-overview",
+        title: "The Exchange",
+        description: "Watch the market and business news, trade shares, bonds and funds, and issue bonds.",
+        path: "/help/exchange/overview",
+        tags: ["exchange", "sovereigns", "shares", "bonds", "funds", "treasury", "trading", "market"],
+      },
+    ],
+  },
+  {
     id: "admin",
     title: "For Admins",
     description: "Tools for the people who run the platform.",

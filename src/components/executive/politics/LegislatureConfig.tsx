@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button, buttonVariants } from "~/components/ui/button";
 import {
@@ -157,7 +157,7 @@ function DissolveConfirm({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button disabled={disabled} size="sm" className="w-full gap-2">
+        <Button disabled={disabled} className="w-full gap-2 sm:w-auto">
           <SaveLabel saved={saved} exists />
         </Button>
       </AlertDialogTrigger>
@@ -184,9 +184,6 @@ function DissolveConfirm({
   );
 }
 
-const CHAMBER_SELECT_TRIGGER =
-  "bg-surface-secondary text-footnote h-8 w-full min-w-0 overflow-hidden";
-
 function ChamberRow({
   index,
   chamber,
@@ -198,67 +195,70 @@ function ChamberRow({
   onChange: (field: keyof ChamberItem, value: string) => void;
   onSeatsBlur: (value: string) => void;
 }) {
-  const labelClass = "text-footnote text-label-secondary";
+  const idPrefix = `chamber-${index}`;
   return (
-    <div className="rounded-control border-separator bg-fill-2 grid grid-cols-1 gap-3 border p-3 sm:grid-cols-2 lg:grid-cols-4">
-      <div className="space-y-1">
-        <Label className={labelClass}>Chamber {index + 1} name</Label>
-        <Input
-          value={chamber.name}
-          onChange={(e) => onChange("name", e.target.value)}
-          placeholder={`Chamber ${index + 1}`}
-          className="bg-surface-secondary text-footnote h-8"
-        />
+    <Card variant="well" padding="md">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-name`}>Chamber {index + 1} name</Label>
+          <Input
+            id={`${idPrefix}-name`}
+            value={chamber.name}
+            onChange={(e) => onChange("name", e.target.value)}
+            placeholder={`Chamber ${index + 1}`}
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-seats`}>Seats (10 to 5,000)</Label>
+          <Input
+            id={`${idPrefix}-seats`}
+            type="number"
+            min={10}
+            max={5000}
+            value={chamber.seats}
+            onChange={(e) => onChange("seats", e.target.value)}
+            onBlur={(e) => onSeatsBlur(e.target.value)}
+            className="tabular-nums"
+          />
+        </div>
+        <div className="flex min-w-0 flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-system`}>Electoral system</Label>
+          <Select
+            value={chamber.electoralSystem}
+            onValueChange={(v) => onChange("electoralSystem", v)}
+          >
+            <SelectTrigger id={`${idPrefix}-system`} className="w-full min-w-0 overflow-hidden">
+              <SelectValue className="truncate" />
+            </SelectTrigger>
+            <SelectContent>
+              {ELECTORAL_SYSTEMS.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-selection`}>Selection method</Label>
+          <Select
+            value={chamber.selectionMethod || "elected"}
+            onValueChange={(v) => onChange("selectionMethod", v)}
+          >
+            <SelectTrigger id={`${idPrefix}-selection`} className="w-full min-w-0 overflow-hidden">
+              <SelectValue className="truncate" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label className={labelClass}>Seats (10 to 5,000)</Label>
-        <Input
-          type="number"
-          min={10}
-          max={5000}
-          value={chamber.seats}
-          onChange={(e) => onChange("seats", e.target.value)}
-          onBlur={(e) => onSeatsBlur(e.target.value)}
-          className="bg-surface-secondary text-footnote h-8"
-        />
-      </div>
-      <div className="min-w-0 space-y-1">
-        <Label className={labelClass}>Electoral system</Label>
-        <Select
-          value={chamber.electoralSystem}
-          onValueChange={(v) => onChange("electoralSystem", v)}
-        >
-          <SelectTrigger className={CHAMBER_SELECT_TRIGGER}>
-            <SelectValue className="truncate" />
-          </SelectTrigger>
-          <SelectContent>
-            {ELECTORAL_SYSTEMS.map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="min-w-0 space-y-1">
-        <Label className={labelClass}>Selection method</Label>
-        <Select
-          value={chamber.selectionMethod || "elected"}
-          onValueChange={(v) => onChange("selectionMethod", v)}
-        >
-          <SelectTrigger className={CHAMBER_SELECT_TRIGGER}>
-            <SelectValue className="truncate" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(SELECTION_METHOD_LABELS).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    </div>
+    </Card>
   );
 }
 
@@ -272,8 +272,8 @@ function ChamberLayout({
   onSeatsBlur: (index: number, value: string) => void;
 }) {
   return (
-    <div className="rounded-control border-separator bg-fill-2 space-y-3 border p-3">
-      <h4 className="text-eyebrow text-label-tertiary">Chamber layout and settings</h4>
+    <div className="space-y-3">
+      <h4 className="text-subhead text-label font-medium">Chamber layout and settings</h4>
       <div className="space-y-3">
         {chambers.map((chamber, index) => (
           <ChamberRow
@@ -293,11 +293,42 @@ const defaultChambers = (): ChamberItem[] => [
   { name: "National Assembly", seats: 100, electoralSystem: "proportional" },
 ];
 
-interface LegislatureConfigProps {
-  countryId: string;
+function serializeLegislature(
+  formData: {
+    name: string;
+    chamberType: ChamberType;
+    totalSeats: number;
+    electoralSystem: ElectoralSystem;
+    termLength: number;
+    electionCycle: "fixed" | "variable";
+  },
+  chambers: ChamberItem[]
+): string {
+  const serializedChambers = chambers
+    .map((c) => `${c.name}:${c.seats}:${c.electoralSystem}:${c.selectionMethod || "elected"}`)
+    .join(";");
+  return JSON.stringify({
+    name: formData.name,
+    chamberType: `${formData.chamberType}|${serializedChambers}`,
+    totalSeats: formData.totalSeats,
+    electoralSystem: formData.electoralSystem,
+    termLength: formData.termLength,
+    electionCycle: formData.electionCycle,
+  });
 }
 
-export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
+interface LegislatureConfigProps {
+  countryId: string;
+  /** When true, omits the outer Card frame so EditorSection supplies the Pane. */
+  embedded?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+}
+
+export function LegislatureConfig({
+  countryId,
+  embedded = false,
+  onDirtyChange,
+}: LegislatureConfigProps) {
   const [formData, setFormData] = useState({
     name: "National Assembly",
     chamberType: "unicameral" as ChamberType,
@@ -432,143 +463,194 @@ export function LegislatureConfig({ countryId }: LegislatureConfigProps) {
   }
 
   const isMultiChamber = formData.chamberType !== "unicameral";
+  const baselineSnapshot = legislature
+    ? serializeLegislature(
+        {
+          name: legislature.name,
+          chamberType: legislature.chamberType.split("|")[0] as ChamberType,
+          totalSeats: legislature.totalSeats,
+          electoralSystem: legislature.electoralSystem as ElectoralSystem,
+          termLength: legislature.termLength,
+          electionCycle: (legislature.electionCycle as "fixed" | "variable") ?? "fixed",
+        },
+        parseChambersClient(
+          legislature.chamberType,
+          legislature.name,
+          legislature.totalSeats,
+          legislature.electoralSystem
+        )
+      )
+    : serializeLegislature(
+        {
+          name: "National Assembly",
+          chamberType: "unicameral",
+          totalSeats: 100,
+          electoralSystem: "proportional",
+          termLength: 4,
+          electionCycle: "fixed",
+        },
+        defaultChambers()
+      );
+  const isDirty = serializeLegislature(formData, chambers) !== baselineSnapshot;
 
-  return (
-    <Card className="flex flex-col gap-6 py-6">
-      <CardHeader>
-        <CardTitle>Legislature configuration</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Legislature name</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => patchForm({ name: e.target.value })}
-                placeholder="e.g. National Assembly"
-              />
-            </div>
-            <div>
-              <Label>Chamber type</Label>
-              <Select value={formData.chamberType} onValueChange={handleChamberTypeChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHAMBER_TYPES.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <Label>Total seats</Label>
-              <Input
-                type="number"
-                min={1}
-                max={isMultiChamber ? 10000 : 5000}
-                value={formData.totalSeats}
-                disabled={isMultiChamber}
-                onChange={(e) => patchForm({ totalSeats: Number(e.target.value) || 0 })}
-                onBlur={(e) => patchForm({ totalSeats: clampSeats(Number(e.target.value)) })}
-              />
-              <p className="text-label-secondary text-footnote mt-1">
-                {isMultiChamber ? "Sum of all chambers, up to 10,000" : "1 to 5,000 seats"}
-              </p>
-            </div>
-            <div>
-              <Label>Electoral system</Label>
-              <Select
-                value={formData.electoralSystem}
-                disabled={isMultiChamber}
-                onValueChange={(v) => patchForm({ electoralSystem: v as ElectoralSystem })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ELECTORAL_SYSTEMS.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isMultiChamber && (
-                <p className="text-label-secondary text-footnote mt-1">Set per chamber below</p>
-              )}
-            </div>
-            <div>
-              <Label>Term length (years)</Label>
-              <Input
-                type="number"
-                min={1}
-                max={10}
-                value={formData.termLength}
-                onChange={(e) => patchForm({ termLength: Number(e.target.value) || 1 })}
-              />
-            </div>
-            <div>
-              <Label>Election cycle</Label>
-              <Select
-                value={formData.electionCycle}
-                onValueChange={(v) => patchForm({ electionCycle: v as "fixed" | "variable" })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ELECTION_CYCLES.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-label-secondary text-footnote mt-1">
-                Fixed follows a strict schedule. Variable lets parliament dissolve early.
-              </p>
-            </div>
-          </div>
+  const body = (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-name">Legislature name</Label>
+          <Input
+            id="legislature-name"
+            value={formData.name}
+            onChange={(e) => patchForm({ name: e.target.value })}
+            placeholder="e.g. National Assembly"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-chamber-type">Chamber type</Label>
+          <Select value={formData.chamberType} onValueChange={handleChamberTypeChange}>
+            <SelectTrigger id="legislature-chamber-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CHAMBER_TYPES.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
-          {isMultiChamber && chambers.length > 0 && (
-            <ChamberLayout
-              chambers={chambers}
-              onChange={updateChamber}
-              onSeatsBlur={handleBlurChamber}
-            />
-          )}
-
-          {legislature ? (
-            <>
-              <p className="text-label-secondary text-footnote">
-                Updating the legislature dissolves it: every seat becomes vacant and a snap election
-                is called.
-              </p>
-              <DissolveConfirm
-                disabled={!formData.name || configureLegislature.isPending}
-                saved={saved}
-                onConfirm={handleSave}
-              />
-            </>
-          ) : (
-            <Button
-              onClick={handleSave}
-              disabled={!formData.name || configureLegislature.isPending}
-              size="sm"
-              className="w-full gap-2"
-            >
-              <SaveLabel saved={saved} exists={false} />
-            </Button>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-total-seats">Total seats</Label>
+          <Input
+            id="legislature-total-seats"
+            type="number"
+            min={1}
+            max={isMultiChamber ? 10000 : 5000}
+            value={formData.totalSeats}
+            disabled={isMultiChamber}
+            onChange={(e) => patchForm({ totalSeats: Number(e.target.value) || 0 })}
+            onBlur={(e) => patchForm({ totalSeats: clampSeats(Number(e.target.value)) })}
+            className="tabular-nums"
+          />
+          <p className="text-label-secondary text-footnote">
+            {isMultiChamber ? "Sum of all chambers, up to 10,000" : "1 to 5,000 seats"}
+          </p>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-electoral-system">Electoral system</Label>
+          <Select
+            value={formData.electoralSystem}
+            disabled={isMultiChamber}
+            onValueChange={(v) => patchForm({ electoralSystem: v as ElectoralSystem })}
+          >
+            <SelectTrigger id="legislature-electoral-system">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ELECTORAL_SYSTEMS.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isMultiChamber && (
+            <p className="text-label-secondary text-footnote">Set per chamber below</p>
           )}
         </div>
-      </CardContent>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-term-length">Term length (years)</Label>
+          <Input
+            id="legislature-term-length"
+            type="number"
+            min={1}
+            max={10}
+            value={formData.termLength}
+            onChange={(e) => patchForm({ termLength: Number(e.target.value) || 1 })}
+            className="tabular-nums"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="legislature-election-cycle">Election cycle</Label>
+          <Select
+            value={formData.electionCycle}
+            onValueChange={(v) => patchForm({ electionCycle: v as "fixed" | "variable" })}
+          >
+            <SelectTrigger id="legislature-election-cycle">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ELECTION_CYCLES.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-label-secondary text-footnote">
+            Fixed follows a strict schedule. Variable lets parliament dissolve early.
+          </p>
+        </div>
+      </div>
+
+      {isMultiChamber && chambers.length > 0 && (
+        <ChamberLayout
+          chambers={chambers}
+          onChange={updateChamber}
+          onSeatsBlur={handleBlurChamber}
+        />
+      )}
+
+      {legislature ? (
+        <div className="space-y-3 pt-2">
+          <p className="text-label-secondary text-footnote">
+            Updating the legislature dissolves it: every seat becomes vacant and a snap election is
+            called.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <DissolveConfirm
+              disabled={!formData.name || configureLegislature.isPending || (embedded && !isDirty)}
+              saved={saved}
+              onConfirm={handleSave}
+            />
+            {embedded && isDirty && !configureLegislature.isPending && (
+              <span className="text-label-secondary text-footnote">Unsaved changes</span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-3 pt-2">
+          <Button
+            onClick={handleSave}
+            disabled={!formData.name || configureLegislature.isPending}
+            className="w-full gap-2 sm:w-auto"
+          >
+            <SaveLabel saved={saved} exists={false} />
+          </Button>
+          {embedded && isDirty && !configureLegislature.isPending && (
+            <span className="text-label-secondary text-footnote">Unsaved changes</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <Card content="input" padding="lg">
+      <CardHeader className="px-0 pb-4">
+        <CardTitle>Legislature configuration</CardTitle>
+      </CardHeader>
+      <CardContent className="px-0">{body}</CardContent>
     </Card>
   );
 }

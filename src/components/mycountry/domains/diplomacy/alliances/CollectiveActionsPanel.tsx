@@ -12,6 +12,8 @@ import {
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
@@ -41,9 +43,9 @@ interface CollectiveActionsPanelProps {
 }
 
 const STATUS_CONFIG: Record<string, { icon: typeof Clock; color: string }> = {
-  proposed: { icon: Clock, color: "text-yellow" },
+  proposed: { icon: Clock, color: "text-warning" },
   approved: { icon: CheckCircle2, color: "text-label" },
-  active: { icon: CheckCircle2, color: "text-green" },
+  active: { icon: CheckCircle2, color: "text-success" },
   rejected: { icon: XCircle, color: "text-destructive" },
   expired: { icon: MinusCircle, color: "text-label-secondary" },
 };
@@ -192,9 +194,11 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
       </div>
 
       {actions.length === 0 ? (
-        <p className="text-label-secondary text-footnote py-4 text-center">
-          No proposals yet. Members can propose collective actions for a vote.
-        </p>
+        <EmptyState
+          compact
+          title="No proposals yet"
+          message="Members can propose collective actions for a vote."
+        />
       ) : (
         <div className="space-y-2">
           {actions.slice(0, 5).map((action) => {
@@ -203,10 +207,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
             const isPending = action.status === "proposed";
 
             return (
-              <div
-                key={action.id}
-                className="border-separator bg-surface rounded-row text-body border p-3"
-              >
+              <Card key={action.id} variant="well" padding="sm" className="text-body">
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
@@ -229,7 +230,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="text-green hover:text-green h-8 w-8"
+                        className="text-success hover:text-success h-8 w-8"
                         aria-label="Vote for"
                         onClick={() => voteMutation.mutate({ actionId: action.id, vote: "for" })}
                         disabled={voteMutation.isPending}
@@ -263,7 +264,7 @@ export function CollectiveActionsPanel({ allianceId, myRole }: CollectiveActions
                     </div>
                   )}
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

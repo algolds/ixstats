@@ -56,6 +56,7 @@ const PUBLIC = [
   "realms.map.version",
   "realms.map.realmForWikiArticle",
   "realms.directory",
+  "realms.getSelectList",
   "realms.mapFace",
   "realms.mapGeo",
   "realms.searchNations",

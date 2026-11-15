@@ -54,6 +54,7 @@ export interface CityFormData {
   isSubdivisionCapital: boolean;
   subdivisionId?: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   elevation?: number;
   foundedYear?: number;
   coordinates?: [number, number];
@@ -68,6 +69,7 @@ export interface SubdivisionFormData {
   areaSqKm?: number;
   color?: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   geometry?: object;
 }
 
@@ -77,6 +79,7 @@ export interface POIFormData {
   description?: string;
   icon?: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   subdivisionId?: string;
   coordinates?: [number, number];
   // Story & Historical Lore attributes
@@ -124,6 +127,7 @@ export interface StoryPinFormData {
   ixTimeYear?: number;
   eraLabel?: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   photos?: string[];
   thumbnailUrl?: string;
   storylineId?: string;
@@ -143,6 +147,7 @@ export interface MapLabelFormData {
   minZoom: number;
   maxZoom: number;
   wikiPageTitle?: string;
+  wikiSource?: string;
   coordinates?: [number, number];
 }
 
@@ -152,12 +157,14 @@ export interface PeakFormData {
   prominence?: number;
   subdivisionId?: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   coordinates?: [number, number];
 }
 
 export interface NamedRiverFormData {
   name: string;
   wikiPageTitle?: string;
+  wikiSource?: string;
   geometry?: object;
 }
 
@@ -166,6 +173,7 @@ export interface NamedLakeFormData {
   waterType?: string;
   maxDepthM?: number;
   wikiPageTitle?: string;
+  wikiSource?: string;
   geometry?: object;
 }
 

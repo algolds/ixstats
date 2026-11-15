@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
@@ -44,12 +45,12 @@ export function MyClaims({ realmSlug }: { realmSlug?: string }) {
           <li key={claim.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0">
             <div className="flex flex-wrap items-center gap-2">
               {claim.country ? (
-                <Link
-                  href={`/countries/${claim.country.slug ?? claim.country.id}`}
+                <CountryLink
+                  country={{ id: claim.country.id, slug: claim.country.slug }}
                   className="text-label text-body font-medium hover:underline"
                 >
                   {claimName(claim)}
-                </Link>
+                </CountryLink>
               ) : (
                 <span className="text-label text-body font-medium">{claimName(claim)}</span>
               )}

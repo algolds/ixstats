@@ -1,3 +1,4 @@
+import { fromCarrierLat } from "~/lib/maps/flat-projection";
 import { coverView, heroNationHref, heroNationStatus } from "~/lib/realms/hero-map";
 
 describe("coverView", () => {
@@ -7,12 +8,13 @@ describe("coverView", () => {
     expect(view.center[1]).toBeCloseTo(0);
     // Width alone needs zoom 2 (180 degrees across 1024px); the thin band needs more, so the sides crop.
     expect(view.zoom).toBeGreaterThan(2);
-    expect(view.zoom).toBeCloseTo(Math.log2(256 / ((512 * 2 * 0.17543) / (2 * Math.PI))), 2);
+    // Plate Carrée: the 20-degree band is 20/360 of the world tall.
+    expect(view.zoom).toBeCloseTo(Math.log2(256 / ((512 * 20) / 360)), 6);
   });
 
-  it("centres latitude in Mercator, not halfway between the degrees", () => {
+  it("centres halfway between the degrees (Plate Carrée), handed to the map at its carrier latitude", () => {
     const { center } = coverView([0, 0, 10, 60], 400, 400, 0);
-    expect(center[1]).toBeGreaterThan(30);
+    expect(fromCarrierLat(center[1])).toBeCloseTo(30, 9);
   });
 
   it("never zooms below the whole world", () => {

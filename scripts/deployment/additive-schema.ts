@@ -1,5 +1,5 @@
 /**
- * Picks the additive part of `prisma migrate diff --from-url <db> --to-schema-datamodel prisma/schema --script`, for
+ * Picks the additive part of `prisma migrate diff --from-config-datasource --to-schema prisma/schema --script`, for
  * scripts/deployment/apply-additive-schema.ts. The deploy runs it after the backup and before the hand-written SQL,
  * because that SQL reads tables and columns only `db push` creates, while the push cannot run first (new required
  * columns without a default meet non-empty tables, and it would drop what the SQL still converts).

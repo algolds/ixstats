@@ -12,6 +12,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { ValueSelect } from "~/components/ui/value-select";
+import { WIKI_SOURCE_IDS, wikiSourceLabel } from "~/lib/wiki-os/wiki-source-availability";
 import {
   Table,
   TableBody,
@@ -29,6 +30,7 @@ interface LeagueTeamsTabProps {
 
 /** `Select` items cannot hold an empty value, so "no nation" is this. */
 const NO_NATION = "none";
+const WIKI_SOURCE_SELECT_OPTIONS = WIKI_SOURCE_IDS.map((id) => [id, wikiSourceLabel(id)] as const);
 
 /** Every team of the league in one table, saved together. */
 export function LeagueTeamsTab({ leagueId, teams, onOpenRoster }: LeagueTeamsTabProps) {
@@ -121,14 +123,23 @@ export function LeagueTeamsTab({ leagueId, teams, onOpenRoster }: LeagueTeamsTab
                 />
               </TableCell>
               <TableCell>
-                <Input
-                  value={row.wikiSlug}
-                  onChange={(e) => edit(row.id, "wikiSlug", e.target.value)}
-                  aria-label={`Wiki slug of ${row.name}`}
-                  placeholder="Real_Capital"
-                  maxLength={100}
-                  className="min-w-40"
-                />
+                <div className="flex items-center gap-2">
+                  <ValueSelect
+                    value={row.wikiSource}
+                    onValueChange={(source) => edit(row.id, "wikiSource", source)}
+                    options={WIKI_SOURCE_SELECT_OPTIONS}
+                    aria-label={`Wiki source of ${row.name}`}
+                    className="w-28 shrink-0"
+                  />
+                  <Input
+                    value={row.wikiSlug}
+                    onChange={(e) => edit(row.id, "wikiSlug", e.target.value)}
+                    aria-label={`Wiki slug of ${row.name}`}
+                    placeholder="Real_Capital"
+                    maxLength={100}
+                    className="min-w-40"
+                  />
+                </div>
               </TableCell>
               <TableCell pinned>
                 <Button

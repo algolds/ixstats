@@ -1,10 +1,11 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useState } from "react";
-import { City, Community, Language, WhiteFlag } from "iconoir-react";
+import { Fragment, useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { City, Community, Language, NavArrowLeft, WhiteFlag } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { FlagBanner, MonogramBanner } from "~/components/mycountry/shell/headers/FlagBanner";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Signal } from "~/components/ui/signal";
@@ -12,30 +13,40 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { BuilderHalo } from "~/components/halo/plugins/builder";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
+import { cn } from "~/lib/utils/cn";
 import {
   EDITOR_SECTION_TITLES,
   staleMessage,
   type EditorSectionId,
 } from "~/lib/mycountry/editor-fields";
-import type { EditorAnchor } from "~/lib/mycountry/routes";
+import {
+  MYCOUNTRY_PATH,
+  resolveEditorPane,
+  type EditorAnchor,
+  type EditorPane,
+} from "~/lib/mycountry/routes";
 import { EditorProvider, type EditorState } from "./editor-context";
 import { governmentFormOf, identityValuesOf, withSection } from "./editor-state";
-import { ElsewhereSection } from "./ElsewhereSection";
+import { ALL_STUDIO_PANES, EditorSidebar } from "./EditorSidebar";
+import { BudgetSection } from "./BudgetSection";
 import { FiguresSection } from "./FiguresSection";
+import { CabinetSection, LegislatureSection, PartiesSection } from "./GovernanceSections";
 import { GovernmentFormSection } from "./GovernmentFormSection";
 import { IdentitySection } from "./IdentitySection";
 import { InstitutionsSection } from "./InstitutionsSection";
 import { LeaveGuard } from "./LeaveGuard";
 import { NameSection } from "./NameSection";
 import { SizeSection } from "./SizeSection";
+import { TariffsSection } from "./TariffsSection";
+import { TaxesSection } from "./TaxesSection";
 
 export type { EditorState };
 
 /** The page column: the shell's content width, padded like the other MyCountry pages. */
 export const EDITOR_COLUMN = "mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-16 md:px-8";
 
-interface EditorGroup {
-  id: EditorAnchor;
+interface StudioPaneContent {
+  id: EditorPane;
   label: string;
   sections: Array<{ id: EditorAnchor; label: string; node: React.ReactNode }>;
 }
@@ -43,13 +54,11 @@ interface EditorGroup {
 /** How many times each section was reloaded after a conflict; part of its key. */
 export type SectionReloads = Partial<Record<EditorSectionId, number>>;
 
-/** One list drives the nav and the page. */
-export function editorGroups(state: EditorState, reloads: SectionReloads = {}): EditorGroup[] {
+/** Builds the 6 Facet Studio panes for one nation. */
+export function editorPanes(state: EditorState, reloads: SectionReloads = {}): StudioPaneContent[] {
   const identity = state.nationalIdentity;
   const governmentForm = governmentFormOf(state);
   const images = { flag: state.flag, coatOfArms: state.coatOfArms };
-  // A section remounts (starting over from its saved values) when its own values change, after
-  // its save or a reload. Keys never read another section's values, so that one keeps its edits.
   const k = (section: EditorSectionId, value: unknown) =>
     `${reloads[section] ?? 0}:${JSON.stringify(value)}`;
   const fieldsOf = (section: "language" | "culture" | "civic" | "symbols") =>
@@ -58,7 +67,7 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
   return [
     {
       id: "identity",
-      label: "Identity",
+      label: "Identity and symbols",
       sections: [
         {
           id: "name",
@@ -130,8 +139,8 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
       ],
     },
     {
-      id: "government",
-      label: "Government",
+      id: "constitution",
+      label: "Constitution and legislature",
       sections: [
         {
           id: "form",
@@ -139,6 +148,11 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
           node: (
             <GovernmentFormSection key={k("form", governmentForm)} government={governmentForm} />
           ),
+        },
+        {
+          id: "legislature",
+          label: "Legislature setup",
+          node: <LegislatureSection key={reloads.legislature ?? 0} />,
         },
         {
           id: "institutions",
@@ -155,15 +169,30 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
       ],
     },
     {
-      id: "size",
-      label: "Size",
+      id: "cabinet",
+      label: "Cabinet and parties",
+      sections: [
+        {
+          id: "cabinet",
+          label: "Cabinet",
+          node: <CabinetSection key={reloads.cabinet ?? 0} />,
+        },
+        {
+          id: "parties",
+          label: "Political parties",
+          node: <PartiesSection key={reloads.parties ?? 0} />,
+        },
+      ],
+    },
+    {
+      id: "scale",
+      label: "Population and baselines",
       sections: [
         {
           id: "population",
           label: "Population and wealth",
           node: (
             <SizeSection
-              // The stat progression moves the current figures; only a new baseline re-keys.
               key={k("population", [state.baselinePopulation, state.baselineGdpPerCapita])}
               population={state.currentPopulation}
               gdpPerCapita={state.currentGdpPerCapita}
@@ -196,61 +225,58 @@ export function editorGroups(state: EditorState, reloads: SectionReloads = {}): 
       ],
     },
     {
-      id: "elsewhere",
-      label: "Managed elsewhere",
+      id: "taxes",
+      label: "Taxes and tariffs",
       sections: [
-        { id: "consoles", label: "Consoles", node: <ElsewhereSection slug={state.slug} /> },
+        {
+          id: "taxes",
+          label: "National tax rates",
+          node: <TaxesSection key={reloads.taxes ?? 0} state={state} />,
+        },
+        {
+          id: "tariffs",
+          label: "Sector tariffs",
+          node: <TariffsSection key={reloads.tariffs ?? 0} state={state} />,
+        },
+      ],
+    },
+    {
+      id: "budget",
+      label: "Departments and budget",
+      sections: [
+        {
+          id: "budget",
+          label: "Departments and budget",
+          node: <BudgetSection key={reloads.budget ?? 0} state={state} />,
+        },
       ],
     },
   ];
 }
 
-/** Scrolls to a section and keeps the address on it without adding a history entry. */
-function jumpTo(id: string) {
-  document.getElementById(id)?.scrollIntoView({ block: "start" });
-  window.history.replaceState(window.history.state, "", `#${id}`);
+const hashWatchers = new Set<() => void>();
+
+function watchHash(notify: () => void) {
+  hashWatchers.add(notify);
+  window.addEventListener("hashchange", notify);
+  return () => {
+    hashWatchers.delete(notify);
+    window.removeEventListener("hashchange", notify);
+  };
 }
 
-function EditorNav({ groups }: { groups: EditorGroup[] }) {
-  return (
-    <nav
-      aria-label="Editor sections"
-      // One scrolling row on small screens; the grouped column from lg up.
-      className="flex gap-1 overflow-x-auto lg:sticky lg:top-24 lg:flex-col lg:gap-4 lg:self-start lg:overflow-visible"
-    >
-      {groups.map((group) => (
-        <div
-          key={group.id}
-          role="group"
-          aria-labelledby={`editor-nav-${group.id}`}
-          className="shrink-0"
-        >
-          <p
-            id={`editor-nav-${group.id}`}
-            className="text-footnote text-label hidden px-3 pb-1 font-semibold lg:block"
-          >
-            {group.label}
-          </p>
-          <ul className="flex gap-1 lg:flex-col">
-            {group.sections.map((s) => (
-              <li key={s.id}>
-                <a
-                  href={`#${s.id}`}
-                  onClick={(event) => {
-                    event.preventDefault();
-                    jumpTo(s.id);
-                  }}
-                  className="rounded-control text-footnote text-label-secondary hover:bg-fill-4 hover:text-label flex min-h-11 items-center px-3 whitespace-nowrap lg:min-h-0 lg:py-1"
-                >
-                  {s.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </nav>
-  );
+function readHashId(): string {
+  try {
+    return decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return "";
+  }
+}
+
+/** Updates the URL hash and notifies subscribers without pushing a new browser history entry. */
+function setLocationHash(id: string) {
+  window.history.replaceState(window.history.state, "", `#${id}`);
+  hashWatchers.forEach((notify) => notify());
 }
 
 export function EditorSkeleton() {
@@ -260,8 +286,8 @@ export function EditorSkeleton() {
         <Skeleton className="rounded-control h-10 w-16" />
         <Skeleton className="h-9 w-56" />
       </div>
-      <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-        <Skeleton className="rounded-card hidden h-80 lg:block" />
+      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <Skeleton className="rounded-card hidden h-96 lg:block" />
         <div className="flex flex-col gap-6">
           <Skeleton className="rounded-card h-48" />
           <Skeleton className="rounded-card h-96" />
@@ -301,20 +327,34 @@ function ConflictSignal({
 }
 
 /**
- * The country editor for one nation: identity, government and size, each section saved on its
- * own. Mounted per nation (keyed by its id), so switching nation starts a fresh editor.
+ * Country Editor Facet Studio: two-column Apple System Settings workspace for nation identity,
+ * constitution, cabinet, population baselines, tax rates, sector tariffs and department budgets.
  */
 export function CountryEditor({ countryId }: { countryId: string }) {
   const query = api.countries.getEditorState.useQuery(
     { countryId },
-    // The page keeps its own copy (below); a refetch only matters for Reload.
     { retry: false, refetchOnWindowFocus: false }
   );
-  // The page's copy of the nation: loaded once, then moved on by each section's save and by
-  // Reload, one section at a time.
   const [state, setState] = useState<EditorState | null>(null);
   const [reloads, setReloads] = useState<SectionReloads>({});
   const [conflicts, setConflicts] = useState<EditorSectionId[]>([]);
+
+  const activeHash = useSyncExternalStore(watchHash, readHashId, () => "");
+  const activePane = resolveEditorPane(activeHash);
+
+  const [visitedPanes, setVisitedPanes] = useState<ReadonlySet<EditorPane>>(
+    () => new Set([activePane])
+  );
+  if (!visitedPanes.has(activePane)) {
+    setVisitedPanes((prev) => new Set([...prev, activePane]));
+  }
+
+  const [mobileDrilledIn, setMobileDrilledIn] = useState(() => Boolean(activeHash));
+  const [prevHash, setPrevHash] = useState(activeHash);
+  if (activeHash !== prevHash) {
+    setPrevHash(activeHash);
+    if (activeHash) setMobileDrilledIn(true);
+  }
 
   useEffect(() => {
     if (query.data && !state) setState(query.data);
@@ -335,10 +375,23 @@ export function CountryEditor({ countryId }: { countryId: string }) {
 
   const loaded = !!state;
   useEffect(() => {
-    if (loaded && window.location.hash) {
-      document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
-    }
-  }, [loaded]);
+    if (!loaded || !activeHash) return;
+    document.getElementById(activeHash)?.scrollIntoView({ block: "start" });
+  }, [loaded, activeHash]);
+
+  const selectPane = useCallback((pane: EditorPane) => {
+    setMobileDrilledIn(true);
+    setLocationHash(pane);
+    window.scrollTo?.({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, []);
+
+  const jumpTo = useCallback((id: string) => {
+    setMobileDrilledIn(true);
+    setLocationHash(id);
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ block: "start" });
+    });
+  }, []);
 
   if (query.isError && !state) {
     return (
@@ -358,9 +411,9 @@ export function CountryEditor({ countryId }: { countryId: string }) {
   }
   if (!state) return <EditorSkeleton />;
 
-  const groups = editorGroups(state, reloads);
+  const panes = editorPanes(state, reloads);
+  const flagUrl = normalizeFlagUrl(state.flag);
 
-  // Takes the latest values for the sections in conflict only, and remounts just those.
   const reloadConflicts = async () => {
     const fresh = (await query.refetch()).data;
     if (!fresh) return;
@@ -386,46 +439,81 @@ export function CountryEditor({ countryId }: { countryId: string }) {
       <div className={EDITOR_COLUMN}>
         <PageHeader
           title={state.name}
+          back={{ href: MYCOUNTRY_PATH, label: "MyCountry" }}
+          bleed
+          className="group/hero"
+          backdrop={flagUrl ? <FlagBanner src={flagUrl} /> : <MonogramBanner />}
           leading={
             <UnifiedCountryFlag
               countryName={state.name}
-              flagUrl={normalizeFlagUrl(state.flag)}
+              flagUrl={flagUrl}
               size="xl"
               showTooltip={false}
               border
             />
           }
-          subtitle="Identity, government and size. Each section saves on its own."
+          subtitle="Identity, constitution, cabinet, taxes and budget. Each section saves on its own."
         />
 
         {conflicts.length > 0 && (
           <ConflictSignal conflicts={conflicts} onReload={() => void reloadConflicts()} />
         )}
 
-        <div className="grid gap-6 lg:grid-cols-[200px_minmax(0,1fr)]">
-          <EditorNav groups={groups} />
-          <div className="flex min-w-0 flex-col gap-6">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                id={group.id}
-                role="group"
-                aria-label={group.label}
-                className="flex scroll-mt-24 flex-col gap-6"
-              >
-                {group.sections.map((s) => (
-                  <Fragment key={s.id}>{s.node}</Fragment>
-                ))}
+        <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <EditorSidebar
+            activePane={activePane}
+            slug={state.slug}
+            onSelectPane={selectPane}
+            className={cn(mobileDrilledIn && "max-lg:hidden")}
+          />
+
+          <div className={cn("flex min-w-0 flex-col gap-6", !mobileDrilledIn && "max-lg:hidden")}>
+            {mobileDrilledIn && (
+              <div className="flex items-center lg:hidden">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileDrilledIn(false)}
+                  className="-ml-2 gap-1"
+                >
+                  <NavArrowLeft aria-hidden />
+                  All sections
+                </Button>
               </div>
-            ))}
+            )}
+
+            {panes.map((pane) => {
+              if (!visitedPanes.has(pane.id)) return null;
+              const isActive = pane.id === activePane;
+              return (
+                <div
+                  key={pane.id}
+                  id={pane.id}
+                  role="region"
+                  aria-label={pane.label}
+                  hidden={!isActive}
+                  className={cn("flex scroll-mt-24 flex-col gap-6", !isActive && "hidden")}
+                >
+                  {pane.sections.map((s) => (
+                    <Fragment key={s.id}>{s.node}</Fragment>
+                  ))}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
+
       <BuilderHalo
         label={state.name}
-        sections={groups.flatMap((group) =>
-          group.sections.map((s) => ({ id: s.id, label: s.label }))
-        )}
+        sections={ALL_STUDIO_PANES.map((pane) => ({
+          id: pane.id,
+          label: pane.title,
+          description: pane.subtitle,
+          keywords: pane.dirtySectionIds,
+        }))}
+        currentId={activePane}
         onJump={jumpTo}
       />
       <LeaveGuard />

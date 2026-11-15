@@ -73,7 +73,6 @@ import {
   Shield,
   ShieldCheck,
   ShoppingBag,
-  Sparks,
   StatDown,
   StatUp,
   Star,
@@ -171,7 +170,7 @@ export const ACHIEVEMENT_ICON_MAP: Record<IconKey, IconComponent> = {
   Shield,
   ShieldCheck,
   ShoppingBag,
-  Sparks,
+  Sparks: Flare,
   StatDown,
   StatUp,
   Star,
@@ -190,21 +189,24 @@ const isIconKey = (key: string): key is IconKey =>
 
 /**
  * Per-category styling: a system colour carries the category on its badge and icon pedestal, and
- * drives the card's aurora (`accent` / `accent2`). All are system colour roles, so they follow the theme.
+ * drives the card's accent (`accent` / `accent2`). All are system colour roles with `-ink` pairs,
+ * so they maintain ≥ 4.5:1 AA contrast across light and dark themes.
  */
 export interface CategoryTheme {
   name: string;
   icon: IconComponent;
   /** Category chip: a system-colour `Badge` variant (AA ink on a 15% fill). */
   badgeVariant: BadgeVariant;
-  /** Icon pedestal: a 15% wash of the category colour; the icon inherits its text colour. */
+  /** Icon pedestal and semantic category chip: 15% wash of the category colour with AA `-ink` text. */
   pedestal: string;
+  /** Solid progress fill in the category's system colour. */
+  bar: string;
+  /** Small indicator dot in the category's system colour. */
+  dot: string;
   cardBorderHover: string;
-  /**
-   * Category accent: the aurora colour of `AchievementCardBackdrop`.
-   */
+  /** Category accent (`--facet-accent`). */
   accent: FacetAccent;
-  /** The aurora's secondary hue. */
+  /** Secondary hue (`--facet-accent-2`). */
   accent2: FacetAccent;
 }
 
@@ -212,57 +214,77 @@ export interface CategoryTheme {
 const TONES = {
   green: {
     badgeVariant: "success",
-    pedestal: "bg-green/15 text-green",
+    pedestal: "bg-green/15 text-green-ink",
+    bar: "bg-green",
+    dot: "bg-green",
     cardBorderHover: "hover:border-green/40",
   },
   red: {
     badgeVariant: "destructive",
-    pedestal: "bg-red/15 text-red",
+    pedestal: "bg-red/15 text-red-ink",
+    bar: "bg-red",
+    dot: "bg-red",
     cardBorderHover: "hover:border-red/40",
   },
   teal: {
     badgeVariant: "info",
-    pedestal: "bg-teal/15 text-teal",
+    pedestal: "bg-teal/15 text-teal-ink",
+    bar: "bg-teal",
+    dot: "bg-teal",
     cardBorderHover: "hover:border-teal/40",
   },
   indigo: {
     badgeVariant: "secondary",
-    pedestal: "bg-indigo/15 text-indigo",
+    pedestal: "bg-indigo/15 text-indigo-ink",
+    bar: "bg-indigo",
+    dot: "bg-indigo",
     cardBorderHover: "hover:border-indigo/40",
   },
   blue: {
     badgeVariant: "info",
-    pedestal: "bg-blue/15 text-blue",
+    pedestal: "bg-blue/15 text-blue-ink",
+    bar: "bg-blue",
+    dot: "bg-blue",
     cardBorderHover: "hover:border-blue/40",
   },
   yellow: {
     badgeVariant: "warning",
-    pedestal: "bg-yellow/15 text-yellow",
+    pedestal: "bg-yellow/15 text-yellow-ink",
+    bar: "bg-yellow",
+    dot: "bg-yellow",
     cardBorderHover: "hover:border-yellow/40",
   },
   orange: {
     badgeVariant: "warning",
-    pedestal: "bg-orange/15 text-orange",
+    pedestal: "bg-orange/15 text-orange-ink",
+    bar: "bg-orange",
+    dot: "bg-orange",
     cardBorderHover: "hover:border-orange/40",
   },
   purple: {
     badgeVariant: "secondary",
-    pedestal: "bg-purple/15 text-purple",
+    pedestal: "bg-purple/15 text-purple-ink",
+    bar: "bg-purple",
+    dot: "bg-purple",
     cardBorderHover: "hover:border-purple/40",
   },
   pink: {
     badgeVariant: "default",
-    pedestal: "bg-pink/15 text-pink",
+    pedestal: "bg-pink/15 text-pink-ink",
+    bar: "bg-pink",
+    dot: "bg-pink",
     cardBorderHover: "hover:border-pink/40",
   },
   mint: {
     badgeVariant: "success",
-    pedestal: "bg-mint/15 text-mint",
+    pedestal: "bg-mint/15 text-mint-ink",
+    bar: "bg-mint",
+    dot: "bg-mint",
     cardBorderHover: "hover:border-mint/40",
   },
 } as const satisfies Record<
   string,
-  Pick<CategoryTheme, "badgeVariant" | "pedestal" | "cardBorderHover">
+  Pick<CategoryTheme, "badgeVariant" | "pedestal" | "bar" | "dot" | "cardBorderHover">
 >;
 
 function theme(
@@ -285,18 +307,41 @@ const CATEGORY_THEME_MAP: Record<string, CategoryTheme> = {
   Cards: theme("Cards", Archive, "pink", "orange"),
   Lorewards: theme("Lorewards", Medal, "mint", "yellow"),
   General: theme("General", Trophy, "yellow", "orange"),
-  // Categories of retired achievements: Legacy unlocks keep the category they were earned under
+  // Categories of retired or specialised achievements
   Economic: theme("Economic", StatUp, "green", "yellow"),
   Military: theme("Military", Shield, "red", "yellow"),
   Diplomatic: theme("Diplomatic", Globe, "teal", "blue"),
   Government: theme("Government", Bank, "indigo", "cyan"),
+  "Order of the Lore": theme("Order of the Lore", Medal, "mint", "yellow"),
+  "Wiki Milestones": theme("Wiki milestones", Page, "purple", "blue"),
+};
+
+const CATEGORY_NORMALIZED_LOOKUP: Record<string, CategoryTheme> = {
+  executive: CATEGORY_THEME_MAP.Executive,
+  politics: CATEGORY_THEME_MAP.Politics,
+  governance: CATEGORY_THEME_MAP.Government,
+  government: CATEGORY_THEME_MAP.Government,
+  diplomacy: CATEGORY_THEME_MAP.Diplomacy,
+  diplomatic: CATEGORY_THEME_MAP.Diplomatic,
+  defense: CATEGORY_THEME_MAP.Defense,
+  military: CATEGORY_THEME_MAP.Military,
+  nation: CATEGORY_THEME_MAP.Nation,
+  economic: CATEGORY_THEME_MAP.Economic,
+  social: CATEGORY_THEME_MAP.Social,
+  wiki: CATEGORY_THEME_MAP.Wiki,
+  "wiki milestones": CATEGORY_THEME_MAP["Wiki Milestones"],
+  cards: CATEGORY_THEME_MAP.Cards,
+  collection: CATEGORY_THEME_MAP.Cards,
+  lorewards: CATEGORY_THEME_MAP.Lorewards,
+  "order of the lore": CATEGORY_THEME_MAP["Order of the Lore"],
+  general: CATEGORY_THEME_MAP.General,
 };
 
 export function getCategoryTheme(category?: string): CategoryTheme {
-  if (category && CATEGORY_THEME_MAP[category]) {
-    return CATEGORY_THEME_MAP[category];
-  }
-  return CATEGORY_THEME_MAP.General;
+  if (!category) return CATEGORY_THEME_MAP.General;
+  if (CATEGORY_THEME_MAP[category]) return CATEGORY_THEME_MAP[category];
+  const normalized = category.trim().toLowerCase();
+  return CATEGORY_NORMALIZED_LOOKUP[normalized] ?? CATEGORY_THEME_MAP.General;
 }
 
 /** The icon component for an achievement's icon key; the category's icon when the key is unknown (old emoji rows). */

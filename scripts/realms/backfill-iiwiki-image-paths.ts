@@ -5,10 +5,11 @@
  * (realms.prefill.ts). Dry run by default; pass --apply to write. Idempotent.
  *   bun scripts/realms/backfill-iiwiki-image-paths.ts [--apply]
  */
-import { PrismaClient } from "@prisma/client";
-import { planIiwikiImagePaths } from "~/lib/flags/iiwiki-image-backfill";
 
-const db = new PrismaClient();
+import { planIiwikiImagePaths } from "~/lib/flags/iiwiki-image-backfill";
+import { createPrismaClient } from "~/server/prisma-client";
+
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 /** The database this run touches, without credentials: host, port and name. */

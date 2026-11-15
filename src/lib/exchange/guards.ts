@@ -26,3 +26,16 @@ export async function assertExchangeOpen(db: Db): Promise<void> {
     throw new ExchangeError("DISABLED", "The Exchange is closed right now.");
   }
 }
+
+/** The nation must be the caller's: they own it or play as it. */
+export async function requireCountryOwner(tx: Db, countryId: string, userId: string) {
+  const country = await tx.country.findUnique({
+    where: { id: countryId },
+    select: { id: true, name: true, ownerUserId: true, realmId: true },
+  });
+  if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
+  if (country.ownerUserId === userId) return country;
+  const user = await tx.user.findUnique({ where: { id: userId }, select: { countryId: true } });
+  if (user?.countryId === countryId) return country;
+  throw new ExchangeError("FORBIDDEN", "Only the nation's owner can act for its treasury");
+}

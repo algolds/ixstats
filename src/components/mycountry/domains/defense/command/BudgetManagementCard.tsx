@@ -185,9 +185,11 @@ function EmptyState({
 }) {
   const noStructure = line.kind === "no-structure";
   return (
-    <div
+    <Card
+      variant="well"
+      padding="sm"
       role="status"
-      className="rounded-control border-separator flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+      className="flex flex-wrap items-center justify-between gap-3"
     >
       <p className="text-label text-body">
         {noStructure
@@ -203,11 +205,11 @@ function EmptyState({
             Add a Defense department
           </Button>
         ))}
-    </div>
+    </Card>
   );
 }
 
-export const BudgetManagementCard = React.memo(function BudgetManagementCard({
+export function BudgetManagementCard({
   countryId,
   line,
   isLoading,
@@ -273,4 +275,4 @@ export const BudgetManagementCard = React.memo(function BudgetManagementCard({
       </CardContent>
     </Card>
   );
-});
+}

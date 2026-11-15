@@ -81,7 +81,11 @@ export function SizeSection({
         currentPopulation: number;
         currentGdpPerCapita: number;
       }
-    ) => ({ ...state, ...result }),
+    ) => ({
+      ...state,
+      ...result,
+      currentTotalGdp: result.currentPopulation * result.currentGdpPerCapita,
+    }),
   });
   const save = api.countries.saveSize.useMutation(handlers);
 
@@ -95,7 +99,7 @@ export function SizeSection({
       <Signal tone="warning" title="Saving rescales the economy">
         These figures become your nation&apos;s new starting point. Total GDP, its tiers and the
         workforce are recalculated from them and growth continues from today. Budgets and tax rates
-        stay as they are, so check them in their consoles afterwards.
+        stay as they are, so review them in Taxes and tariffs or Departments and budget afterwards.
       </Signal>
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField

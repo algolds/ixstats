@@ -13,7 +13,7 @@
  */
 
 import { readFileSync, existsSync } from "fs";
-import { PrismaClient } from "@prisma/client";
+
 import {
   getIxWikiPool,
   closeWikiBridge,
@@ -22,8 +22,9 @@ import { LinkGraphService } from "../../src/lib/wiki-os/core/link-graph-service"
 import { toArticleSlug } from "../../src/lib/wiki-os/core/domain-types";
 import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface PageRecord {
   page_id: number;

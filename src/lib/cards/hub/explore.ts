@@ -25,6 +25,8 @@ export const ExploreQuerySchema = z.object({
   types: z.array(z.enum(CardType)).max(5).optional(),
   categories: z.array(z.enum(CategoryFilter)).max(20).optional(),
   region: z.string().trim().min(1).max(100).optional(),
+  /** Cards tied to one nation (the country actions menu's Cards link). */
+  countryId: z.string().min(1).max(64).optional(),
   season: z.number().int().min(1).max(99).optional(),
   owned: z.enum(OWNED_FILTERS).default("all"),
   search: z.string().trim().min(1).max(100).optional(),
@@ -70,6 +72,7 @@ export function exploreWhere(query: ExploreQuery, viewerId: string): Prisma.Card
     // In an AND of its own: Uncategorised's OR must survive any other OR merged in here.
     ...(query.categories?.length ? { AND: [categoryWhere(query.categories)] } : {}),
     ...(query.season ? { season: query.season } : {}),
+    ...(query.countryId ? { countryId: query.countryId } : {}),
     ...(query.region ? { metadata: { path: ["nsData", "region"], equals: query.region } } : {}),
     ...(query.search
       ? { title: { contains: likeLiteral(query.search), mode: "insensitive" } }

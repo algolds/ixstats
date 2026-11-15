@@ -5,7 +5,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Trophy,
   Play,
@@ -156,7 +155,7 @@ export function LeagueOverviewTab({
           {/* Next Up / Simulation Card */}
           <Card padding="md" className="space-y-4">
             <div className="flex items-center justify-between">
-              <Eyebrow>Next round</Eyebrow>
+              <span className="text-caption text-label-secondary">Next round</span>
               <Badge variant={activeSeason ? "success" : "default"}>
                 {activeSeason ? `Round ${nextMatchDay ?? 1}` : "Completed"}
               </Badge>

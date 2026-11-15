@@ -13,8 +13,13 @@ import {
 import { api, type RouterOutputs } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "~/components/ui/chart";
-import { XAxis, YAxis, CartesianGrid, Area, Bar, Line, ComposedChart, Legend } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  FACET_AXIS_TICK,
+} from "~/components/ui/chart";
+import { XAxis, YAxis, CartesianGrid, Area, Bar, Line, ComposedChart } from "recharts";
 import { useNationClockFor } from "~/hooks/useNationClock";
 import { formatRealmMonth } from "~/lib/realms/nation-time";
 import type { RealmCalendar } from "~/lib/realms/realm-clock";
@@ -47,12 +52,13 @@ const GDP_TIERS = [
 ];
 
 const CHART_CONFIG = {
-  totalGdp: { label: "Total GDP (Trillions)", color: "var(--color-blue-500)" },
-  gdpPerCapita: { label: "GDP per capita", color: "var(--color-destructive)" },
-  gdpGrowth: { label: "GDP Growth %", color: "var(--chart-3)" },
+  totalGdp: { label: "Total GDP (Trillions)", color: "var(--color-chart-1)" },
+  gdpPerCapita: { label: "GDP per capita", color: "var(--color-chart-2)" },
+  gdpGrowth: { label: "GDP growth %", color: "var(--color-chart-3)" },
 };
 
-const AMBER = "var(--color-amber-500)";
+const GDP_SERIES_COLOR = "var(--color-chart-1)";
+const GROWTH_SERIES_COLOR = "var(--color-chart-3)";
 const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
 
 type CountryData = NonNullable<RouterOutputs["countries"]["getByIdWithEconomicData"]>;
@@ -136,16 +142,15 @@ function findTier(gdpPerCapita: number) {
 /** The trend chart in the chosen format; "composed" overlays growth-rate bars on a second axis. */
 function GdpTrendChart({ data, chartType }: { data: GdpPoint[]; chartType: ChartType }) {
   const isComposed = chartType === "composed";
-  const gradientColor = isComposed ? "var(--chart-1)" : AMBER;
   const series = {
     line: (
       <Line
         type="monotone"
         dataKey="totalGdp"
-        stroke={AMBER}
-        strokeWidth={3}
+        stroke={GDP_SERIES_COLOR}
+        strokeWidth={2.5}
         dot={false}
-        activeDot={{ r: 6 }}
+        activeDot={{ r: 4, fill: GDP_SERIES_COLOR, strokeWidth: 0 }}
         name="Total GDP (T)"
       />
     ),
@@ -153,21 +158,24 @@ function GdpTrendChart({ data, chartType }: { data: GdpPoint[]; chartType: Chart
       <Area
         type="monotone"
         dataKey="totalGdp"
-        stroke={AMBER}
+        stroke={GDP_SERIES_COLOR}
         strokeWidth={2.5}
         fillOpacity={1}
         fill="url(#gdpColor)"
         name="Total GDP (T)"
       />
     ),
-    bar: <Bar dataKey="totalGdp" fill={AMBER} name="Total GDP (T)" radius={[4, 4, 0, 0]} />,
+    bar: (
+      <Bar dataKey="totalGdp" fill={GDP_SERIES_COLOR} name="Total GDP (T)" radius={[4, 4, 0, 0]} />
+    ),
     composed: (
       <>
         <Area
           yAxisId="left"
           type="monotone"
           dataKey="totalGdp"
-          stroke="var(--chart-1)"
+          stroke={GDP_SERIES_COLOR}
+          strokeWidth={2.5}
           fillOpacity={1}
           fill="url(#gdpColor)"
           name="Total GDP (T)"
@@ -175,8 +183,8 @@ function GdpTrendChart({ data, chartType }: { data: GdpPoint[]; chartType: Chart
         <Bar
           yAxisId="right"
           dataKey="gdpGrowth"
-          fill={AMBER}
-          name="Growth Rate %"
+          fill={GROWTH_SERIES_COLOR}
+          name="Growth rate %"
           radius={[2, 2, 0, 0]}
         />
       </>
@@ -184,23 +192,33 @@ function GdpTrendChart({ data, chartType }: { data: GdpPoint[]; chartType: Chart
   };
 
   return (
-    <ComposedChart data={data}>
+    <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
       {(chartType === "area" || isComposed) && (
         <defs>
           <linearGradient id="gdpColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={gradientColor} stopOpacity={isComposed ? 0.2 : 0.25} />
-            <stop offset="95%" stopColor={gradientColor} stopOpacity={0} />
+            <stop offset="5%" stopColor={GDP_SERIES_COLOR} stopOpacity={0.2} />
+            <stop offset="95%" stopColor={GDP_SERIES_COLOR} stopOpacity={0} />
           </linearGradient>
         </defs>
       )}
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
-      <XAxis dataKey="date" stroke="var(--color-label-secondary)" />
-      <YAxis yAxisId={isComposed ? "left" : undefined} stroke="var(--color-label-secondary)" />
+      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--color-separator)" />
+      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={FACET_AXIS_TICK} />
+      <YAxis
+        yAxisId={isComposed ? "left" : undefined}
+        axisLine={false}
+        tickLine={false}
+        tick={FACET_AXIS_TICK}
+      />
       {isComposed && (
-        <YAxis yAxisId="right" orientation="right" stroke="var(--color-label-secondary)" />
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          axisLine={false}
+          tickLine={false}
+          tick={FACET_AXIS_TICK}
+        />
       )}
       <ChartTooltip content={<ChartTooltipContent />} />
-      {isComposed && <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />}
       {series[chartType]}
     </ComposedChart>
   );
@@ -556,7 +574,7 @@ export function GdpDetailsModal({ isOpen, onClose, countryId, countryName }: Gdp
       title="GDP analysis"
       description="Historical trends, projections and economic insights"
       icon={DollarSign}
-      iconColor="text-green"
+      iconColor="text-label-secondary"
       tabs={TABS}
       isLoading={isLoading}
       onRefresh={() => refetch()}

@@ -228,3 +228,58 @@ describe("getMatchPredictions", () => {
     expect(JSON.stringify(result)).not.toContain("user_a");
   });
 });
+
+describe("sports list and search bounds", () => {
+  it("caps getLeagues at 200 rows", async () => {
+    const db = createMockPrisma();
+    db.sportLeague.findMany.mockResolvedValue([]);
+
+    await createCaller(contextAs(null, db)).getLeagues({});
+
+    expect(db.sportLeague.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 200,
+        orderBy: { createdAt: "desc" },
+      })
+    );
+  });
+
+  it("rejects searchSportsEntities queries shorter than 2 trimmed chars or longer than 100 chars, and caps each scan at 20", async () => {
+    const db = createMockPrisma();
+    db.sportPlayer.findMany.mockResolvedValue([]);
+    db.sportTeam.findMany.mockResolvedValue([]);
+    db.sportLeague.findMany.mockResolvedValue([]);
+    const caller = createCaller(contextAs(null, db));
+
+    await expect(caller.searchSportsEntities({ query: "a" })).rejects.toThrow();
+    await expect(caller.searchSportsEntities({ query: " a " })).rejects.toThrow();
+    await expect(caller.searchSportsEntities({ query: "x".repeat(101) })).rejects.toThrow();
+    expect(db.sportPlayer.findMany).not.toHaveBeenCalled();
+
+    await caller.searchSportsEntities({ query: "  FC  " });
+
+    expect(db.sportPlayer.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 20,
+        where: {
+          OR: [
+            { firstName: { contains: "FC", mode: "insensitive" } },
+            { lastName: { contains: "FC", mode: "insensitive" } },
+          ],
+        },
+      })
+    );
+    expect(db.sportTeam.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 20,
+        where: { name: { contains: "FC", mode: "insensitive" } },
+      })
+    );
+    expect(db.sportLeague.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        take: 20,
+        where: { name: { contains: "FC", mode: "insensitive" } },
+      })
+    );
+  });
+});

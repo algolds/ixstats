@@ -8,11 +8,16 @@
  * Much lighter than MapContainer (2-4 sources vs 10+).
  */
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 
-import { geometryBounds } from "~/components/maps/widgets/embed-map-layers";
+import {
+  fitEmbedToCountry,
+  geometryBounds,
+  getEmbedFitSettled,
+} from "~/components/maps/widgets/embed-map-layers";
+import { toCarrierLngLat } from "~/lib/maps/flat-projection";
 import { useCountryMapEmbedState } from "~/components/maps/widgets/hooks/useCountryMapEmbedState";
 import { useCountryMapEmbedLayers } from "~/components/maps/widgets/hooks/useCountryMapEmbedLayers";
 
@@ -35,10 +40,14 @@ interface CountryMapEmbedProps {
   /** Fired when a city/subdivision feature is clicked. Enables click-to-manage. */
   onFeatureClick?: (feature: CountryMapFeature) => void;
   boundsPadding?: number;
+  /** Pixels of the map's right side covered by a floating panel. */
+  insetRight?: number;
   highlightCountryIds?: string[];
   highlightCountryNames?: string[];
   /** Fly the map to one subdivision (fit its bounds) or one point, once the map is ready. */
   focus?: MapFocus | null;
+  /** Shown instead of the "No map data available" note when the country has no territory yet. */
+  emptyFallback?: ReactNode;
 }
 
 export type MapFocus =
@@ -56,9 +65,11 @@ export function CountryMapEmbed({
   onNeighborClick,
   onFeatureClick,
   boundsPadding = 40,
+  insetRight,
   highlightCountryIds,
   highlightCountryNames,
   focus,
+  emptyFallback,
 }: CountryMapEmbedProps) {
   const state = useCountryMapEmbedState({
     countryId,
@@ -81,17 +92,31 @@ export function CountryMapEmbed({
 
   const reduceMotion = useReducedMotion();
   const { mapRef, mapReady, subdivisions } = state;
+
+  // ponytail: refits on every inset change, so a resize resets the user's pan
+  useEffect(() => {
+    const map = mapRef.current;
+    if (mapReady && map && fitEmbedToCountry(map, state, boundsPadding, insetRight)) {
+      const onFitSettled = getEmbedFitSettled(map);
+      map.once("idle", () => onFitSettled?.());
+    }
+  }, [mapReady, insetRight]);
   useEffect(() => {
     const map = mapRef.current;
     if (!focus || !map || !mapReady) return;
     const duration = reduceMotion ? 0 : 600;
     if (focus.kind === "point") {
-      map.flyTo({ center: [focus.lng, focus.lat], zoom: 7, duration });
+      map.flyTo({ center: toCarrierLngLat(focus.lng, focus.lat), zoom: 7, duration });
       return;
     }
     const sub = subdivisions.find((s) => s.id === focus.id);
     const bounds = sub?.geometry ? geometryBounds(sub.geometry) : null;
-    if (bounds) map.fitBounds(bounds, { padding: 40, duration });
+    if (bounds) {
+      map.fitBounds(
+        [toCarrierLngLat(bounds[0][0], bounds[0][1]), toCarrierLngLat(bounds[1][0], bounds[1][1])],
+        { padding: 40, duration }
+      );
+    }
   }, [focus, mapReady, mapRef, reduceMotion, subdivisions]);
 
   if (state.isLoading) {
@@ -103,6 +128,7 @@ export function CountryMapEmbed({
   }
 
   if (!state.hasGeometry) {
+    if (emptyFallback !== undefined) return <>{emptyFallback}</>;
     return (
       <div
         className={`bg-fill-3 flex flex-col items-center justify-center gap-2 ${height} ${className}`}

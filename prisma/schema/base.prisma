@@ -9,7 +9,5 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // Uncomment directUrl when using a connection pooler (PgBouncer/Prisma Accelerate):
-  // directUrl = env("DIRECT_URL")
+  // The URL lives in prisma.config.ts (Prisma 7); the app connects through the pg adapter in src/server/prisma-adapter.ts.
 }

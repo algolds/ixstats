@@ -34,7 +34,12 @@ import { STANDINGS_END, STANDINGS_START } from "~/lib/sports/standings-wikitext"
 
 const TITLE = "Varro League";
 
-function standing(teamName: string, points: number, wikiSlug: string | null = null) {
+function standing(
+  teamName: string,
+  points: number,
+  wikiSlug: string | null = null,
+  wikiSource: string | null = null
+) {
   return {
     id: `st-${teamName}`,
     teamId: `t-${teamName}`,
@@ -44,7 +49,7 @@ function standing(teamName: string, points: number, wikiSlug: string | null = nu
     points,
     pointsFor: points * 2,
     pointsAgainst: 3,
-    team: { id: `t-${teamName}`, name: teamName, wikiSlug },
+    team: { id: `t-${teamName}`, name: teamName, wikiSlug, wikiSource },
   };
 }
 
@@ -273,5 +278,31 @@ describe("publishLeagueStandings", () => {
       expect.objectContaining({ where: { seasonId: "s2" } })
     );
     expect(savedText()).toContain("season 2");
+  });
+
+  it("refuses to publish standings when the league's article is on a sister wiki", async () => {
+    const ctx = makeCtx({ wikiSource: "iiwiki" });
+
+    await expect(publishLeagueStandings(ctx, "lg1")).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      message: expect.stringContaining("not IIWiki"),
+    });
+    expect(mockAssertCanEdit).not.toHaveBeenCalled();
+    expect(mockSaveOrConflict).not.toHaveBeenCalled();
+  });
+
+  it("leaves a sister-wiki club unlinked in an IxWiki standings table instead of linking an IxWiki homonym", async () => {
+    const ctx = makeCtx();
+    ctx.db.sportStanding.findMany.mockResolvedValue([
+      standing("Varro FC", 9, "FC_Varro", "ixwiki"),
+      standing("IIWiki Rovers", 6, "Rovers_FC", "iiwiki"),
+    ]);
+
+    await publishLeagueStandings(ctx, "lg1");
+
+    const text = savedText();
+    expect(text).toContain("| 1 || [[:FC Varro|Varro FC]] ||");
+    expect(text).toContain("| 2 || IIWiki Rovers ||");
+    expect(text).not.toContain("Rovers FC");
   });
 });

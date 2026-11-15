@@ -43,6 +43,7 @@ export default function MyCountryMapEditorPage() {
   return (
     // Full-screen canvas above the global navigation bar (menus and dialogs still layer on top).
     <div
+      data-app="maps"
       className="bg-surface text-label fixed inset-0"
       style={{ zIndex: "calc(var(--z-index-nav) + 1)" }}
     >

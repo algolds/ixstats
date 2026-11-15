@@ -63,9 +63,7 @@
 }
 
 .cl-organizationPreviewSecondaryIdentifier,
-.cl-userPreviewSecondaryIdentifier,
-.cl-organizationPreviewAvatarBox + div span:last-child,
-.cl-userPreviewAvatarBox + div span:last-child {
+.cl-userPreviewSecondaryIdentifier {
   color: var(--color-text-muted) !important;
   font-size: 0.75rem !important;
 }
@@ -92,9 +90,7 @@
 }
 
 .cl-organizationSwitcherPopoverActionButtonIcon,
-.cl-userButtonPopoverActionButtonIcon,
-.cl-organizationSwitcherPopoverActionButtonIcon svg,
-.cl-userButtonPopoverActionButtonIcon svg {
+.cl-userButtonPopoverActionButtonIcon {
   color: var(--color-text-muted) !important;
   stroke: currentColor !important;
 }

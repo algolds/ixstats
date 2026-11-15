@@ -38,7 +38,10 @@ import {
   previewWikiCompany,
   syncCompanyFromWiki,
   toCompanyWikiSlug,
+  unreadCompanyWikiData,
 } from "~/lib/exchange/company-wiki";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import { getExchangeOverview, listContracts } from "~/lib/exchange/queries";
 import { SUB_INDUSTRY_KEYS } from "~/lib/exchange/taxonomy";
 import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
@@ -46,6 +49,7 @@ import { guard } from "./_errors";
 import { exchangeAdminRouter } from "./admin";
 import { exchangeGovernanceRouter } from "./governance";
 import { exchangeMarketsRouter } from "./markets";
+import { exchangeTerminalRouter } from "./terminal";
 import { exchangeTreasuryRouter } from "./treasury";
 
 const requestId = z.string().min(8).max(64);
@@ -77,22 +81,25 @@ const exchangeUserRouter = createTRPCRouter({
       guard("list companies", () => listCompanies(ctx.db, input?.limit ?? 50, input?.realmId))
     ),
 
-  /** Preview company lore, logo, sector/sub-industry, and HQ nation from a WikiOS page. */
+  /** Preview company lore, logo, sector/sub-industry, and HQ nation from a wiki page (IxWiki or a sister wiki). */
   previewWikiCompany: protectedProcedure
+    .use(iiwikiFeatureMiddleware("imports"))
     .input(
       z.object({
         wikiTitle: z.string().trim().min(1).max(200),
+        wiki: wikiSourceSchema.default("ixwiki"),
         realmId: id.optional(),
       })
     )
     .query(({ ctx, input }) =>
       guard("preview the WikiOS company page", () =>
-        previewWikiCompany(ctx, input.wikiTitle, input.realmId ?? DEFAULT_REALM_ID)
+        previewWikiCompany(ctx, input.wikiTitle, input.realmId ?? DEFAULT_REALM_ID, input.wiki)
       )
     ),
 
-  /** Sync an existing company's lore and metadata from a WikiOS article. */
+  /** Sync an existing company's lore and metadata from its wiki article, on the wiki the page is on. */
   syncCompanyWiki: rateLimitedMutationProcedure
+    .use(iiwikiFeatureMiddleware("imports"))
     .input(
       z.object({
         companyId: id,
@@ -113,6 +120,7 @@ const exchangeUserRouter = createTRPCRouter({
     ),
 
   foundCompany: rateLimitedMutationProcedure
+    .use(iiwikiFeatureMiddleware("imports"))
     .input(
       z.object({
         name: z.string().trim().min(3).max(60),
@@ -120,12 +128,15 @@ const exchangeUserRouter = createTRPCRouter({
         subIndustryKey: z.enum(SUB_INDUSTRY_KEYS).optional(),
         hqCountryId: id.nullable().optional(),
         wikiSlug: z.string().trim().max(200).nullable().optional(),
+        /** The wiki `wikiSlug` is a page of; kept in the company's `wikiData`. */
+        wikiSource: wikiSourceSchema.default("ixwiki"),
         realmId: id.optional(),
         requestId,
       })
     )
     .mutation(({ ctx, input }) =>
       guard("found the company", async () => {
+        const { wikiSource, ...charter } = input;
         const cleanSlug = toCompanyWikiSlug(input.wikiSlug);
         let wikiData: Record<string, string | null> | undefined;
         if (cleanSlug) {
@@ -133,16 +144,20 @@ const exchangeUserRouter = createTRPCRouter({
             const preview = await previewWikiCompany(
               ctx,
               cleanSlug,
-              input.realmId ?? DEFAULT_REALM_ID
+              input.realmId ?? DEFAULT_REALM_ID,
+              wikiSource
             );
             wikiData = { ...preview.wikiData };
           } catch {
-            // If the linked wiki page does not exist yet, still link the slug for future sync.
+            // If the linked wiki page does not exist yet (or its wiki cannot answer), still link the slug for a
+            // future sync, with the wiki it is on.
+            const unread = unreadCompanyWikiData(cleanSlug, wikiSource);
+            wikiData = unread ? { ...unread } : undefined;
           }
         }
         return foundCompany(ctx.db, {
           userId: ctx.user.id,
-          ...input,
+          ...charter,
           wikiSlug: cleanSlug,
           wikiData,
         });
@@ -249,5 +264,6 @@ export const exchangeRouter = mergeRouters(
   exchangeMarketsRouter,
   exchangeGovernanceRouter,
   exchangeTreasuryRouter,
-  exchangeAdminRouter
+  exchangeAdminRouter,
+  exchangeTerminalRouter
 );

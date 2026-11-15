@@ -14,7 +14,7 @@ export default function VexelRegistryDetailPage({ params }: VexelRegistryDetailP
   const { id } = use(params);
 
   return (
-    <div className="bg-grouped text-label min-h-screen p-8 font-sans">
+    <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto max-w-6xl">
         <PageHeader
           title="Roll of arms"

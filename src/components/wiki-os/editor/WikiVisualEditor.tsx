@@ -202,7 +202,7 @@ export function WikiVisualEditor({
       );
       if (entries.length === 0) return;
       const [, path] = entries[0]!;
-      Transforms.setNodes(
+      Transforms.setNodes<import("slate").Descendant>(
         editor as unknown as import("slate").BaseEditor,
         { rawWikitext: wikitext, wikitext } as unknown as Partial<import("slate").Descendant>,
         { at: path }

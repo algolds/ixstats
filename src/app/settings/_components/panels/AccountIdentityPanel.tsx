@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -20,7 +21,7 @@ import {
   Crown,
   AtSign,
 } from "iconoir-react";
-import type { UserResource } from "@clerk/types";
+import type { UserResource } from "@clerk/nextjs/types";
 import { UserButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
@@ -82,9 +83,6 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
   const draftHandle = handleDraft.trim().replace(/^@/, "").toLowerCase();
   const canSaveHandle =
     canChangeHandle && !setHandle.isPending && draftHandle !== "" && draftHandle !== status?.handle;
-  const countryFactbookUrl = userProfile?.country?.slug
-    ? `/countries/${userProfile.country.slug}`
-    : null;
 
   const handleCopyPassport = (e: React.MouseEvent, url: string) => {
     e.preventDefault();
@@ -161,8 +159,11 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
 
               <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
                 {userProfile?.country ? (
-                  <Link
-                    href={countryFactbookUrl || "/mycountry"}
+                  <CountryLink
+                    country={{
+                      slug: userProfile.country.slug,
+                      name: userProfile.country.name,
+                    }}
                     className="text-label flex items-center gap-1.5 font-medium hover:underline"
                   >
                     <div className="border-separator h-3.5 w-5 overflow-hidden rounded-xs border">
@@ -173,7 +174,7 @@ export function AccountIdentityPanel({ user }: AccountIdentityPanelProps) {
                       />
                     </div>
                     <span>{userProfile.country.name}</span>
-                  </Link>
+                  </CountryLink>
                 ) : (
                   <Link href="/setup" className="text-tint font-medium hover:underline">
                     + Link country

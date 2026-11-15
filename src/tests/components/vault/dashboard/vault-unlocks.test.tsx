@@ -73,10 +73,47 @@ function drag(from: number, to: number) {
 }
 
 describe("VaultUnlocks", () => {
-  it("heads the deck Achievements, which names the carousel", () => {
+  it("heads the deck Achievements, renders semantic category chips, and lists category mastery links", () => {
+    jest.mocked(api.achievements.getMySummary.useQuery).mockReturnValue({
+      data: {
+        unlocked: 5,
+        activeTotal: 20,
+        categories: [
+          { category: "Cards", earned: 3, total: 8 },
+          { category: "Diplomacy", earned: 2, total: 6 },
+          { category: "Lorewards", earned: 0, total: 6 },
+        ],
+        recent: [
+          unlock("a", "Weekly Winner"),
+          { ...unlock("b", "Envoy Treaty"), category: "Diplomacy" },
+        ],
+      },
+    } as never);
+
     render(<VaultUnlocks />);
-    expect(screen.getByRole("region", { name: "Achievements" })).toBeInTheDocument();
+    const region = screen.getByRole("region", { name: "Achievements" });
+    expect(region).toBeInTheDocument();
     expect(screen.getByText("Achievements")).toBeVisible();
+    expect(screen.getByText("5/20")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "See all" })).toHaveAttribute(
+      "href",
+      "/vault/achievements"
+    );
+
+    // Slide category chips carry semantic domain washes ("collection" -> Cards in pink; Diplomacy in teal)
+    const chips = region.querySelectorAll("[data-slot='milestone-category-chip']");
+    expect(chips).toHaveLength(2);
+    expect(chips[0]).toHaveClass("bg-pink/15", "text-pink-ink");
+    expect(chips[1]).toHaveClass("bg-teal/15", "text-teal-ink");
+
+    // Bottom category mastery strip links each domain directly to /vault/achievements?category=...
+    const masteryStrip = region.querySelector(
+      "[data-slot='vault-unlocks-categories']"
+    ) as HTMLElement;
+    expect(masteryStrip).toBeInTheDocument();
+    const diplomacyLink = screen.getByRole("link", { name: /Diplomacy\s*2\/6/ });
+    expect(diplomacyLink).toHaveAttribute("href", "/vault/achievements?category=Diplomacy");
+    expect(diplomacyLink).toHaveClass("bg-teal/15", "text-teal-ink");
   });
 
   it("turns to the next slide when the mouse drags it left past a sixth of its width, and back when dragged right", () => {
@@ -103,5 +140,45 @@ describe("VaultUnlocks", () => {
     drag(250, 150);
     expect(fireEvent.click(link)).toBe(false);
     expect(fireEvent.click(link)).toBe(true);
+  });
+
+  it("projects velocity so a brisk short flick advances to the next slide without exceeding 1/6 width", () => {
+    let clock = 1000;
+    const nowSpy = jest.spyOn(performance, "now").mockImplementation(() => clock);
+    try {
+      render(<VaultUnlocks />);
+      const el = track() as HTMLElement;
+      fireEvent.pointerDown(el, { pointerType: "mouse", button: 0, clientX: 200, pointerId: 2 });
+      clock += 32;
+      fireEvent.pointerMove(el, { pointerType: "mouse", clientX: 170, pointerId: 2 });
+      clock += 8;
+      fireEvent.pointerUp(el, { pointerType: "mouse", clientX: 170, pointerId: 2 });
+      expect(scrollTo).toHaveBeenLastCalledWith({ left: WIDTH });
+    } finally {
+      nowSpy.mockRestore();
+    }
+  });
+
+  it("keeps tracking across pointerLeave while captured and snaps back cleanly on pointerCancel", () => {
+    const captureSpy = jest.fn();
+    HTMLElement.prototype.setPointerCapture = captureSpy;
+    render(<VaultUnlocks />);
+    const el = track() as HTMLElement;
+
+    fireEvent.pointerDown(el, { pointerType: "mouse", button: 0, clientX: 250, pointerId: 3 });
+    expect(captureSpy).toHaveBeenCalledWith(3);
+    fireEvent.pointerMove(el, { pointerType: "mouse", clientX: 220, pointerId: 3 });
+    fireEvent.pointerLeave(el, { pointerType: "mouse", clientX: 220, pointerId: 3 });
+    expect(scrollTo).not.toHaveBeenCalled();
+    fireEvent.pointerMove(el, { pointerType: "mouse", clientX: 150, pointerId: 3 });
+    fireEvent.pointerUp(el, { pointerType: "mouse", clientX: 150, pointerId: 3 });
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: WIDTH });
+
+    scrollTo.mockClear();
+    el.scrollLeft = 0;
+    fireEvent.pointerDown(el, { pointerType: "mouse", button: 0, clientX: 250, pointerId: 4 });
+    fireEvent.pointerMove(el, { pointerType: "mouse", clientX: 140, pointerId: 4 });
+    fireEvent.pointerCancel(el, { pointerType: "mouse", clientX: 140, pointerId: 4 });
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 0 });
   });
 });

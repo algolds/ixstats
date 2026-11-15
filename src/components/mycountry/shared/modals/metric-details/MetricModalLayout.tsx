@@ -6,7 +6,6 @@ import { ArrowUpRight, ArrowDownRight } from "iconoir-react";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
-import { Eyebrow } from "~/components/ui/eyebrow";
 
 export type MetricThemeVariant = "economy" | "social" | "demographics" | "labor" | "default";
 
@@ -36,14 +35,12 @@ const accent = (token: string) => ({
 
 const NEUTRAL_THEME = { cardClass: "bg-fill-3", textHighlight: "text-label-secondary" };
 
-// Economy carries the MyCountry accent; the rest stay neutral so the chart series, not the
-// chrome, carry colour.
 const THEMES: Record<MetricThemeVariant, ReturnType<typeof accent> & typeof NEUTRAL_THEME> = {
-  economy: { ...NEUTRAL_THEME, textHighlight: "text-yellow", ...accent("var(--color-amber-500)") },
-  social: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
-  demographics: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
-  labor: { ...NEUTRAL_THEME, ...accent("var(--color-blue-500)") },
-  default: { ...NEUTRAL_THEME, ...accent("var(--color-tint)") },
+  economy: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  social: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  demographics: { ...NEUTRAL_THEME, ...accent("var(--color-chart-2)") },
+  labor: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  default: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
 };
 
 export function getThemeClasses(variant: MetricThemeVariant) {
@@ -226,6 +223,7 @@ MetricModalLayout.SidePanel = function MetricModalSidePanel({
 const TILE_LABEL = {
   stat: "text-caption text-label-secondary mt-1 block",
   footnote: "text-label-secondary text-footnote mt-1",
+  eyebrow: "text-footnote text-label-secondary mt-1 block font-medium",
 } as const;
 
 MetricModalLayout.Tile = function MetricModalTile({
@@ -239,17 +237,15 @@ MetricModalLayout.Tile = function MetricModalTile({
   label: string;
   tone?: string;
   valueClassName?: string;
-  labelStyle?: keyof typeof TILE_LABEL | "eyebrow";
+  labelStyle?: keyof typeof TILE_LABEL;
 }) {
   return (
     <Card variant="well" padding="none" className="p-4 text-center">
       <div className={cn("text-title-3", tone, valueClassName)}>{value}</div>
-      {labelStyle === "eyebrow" ? (
-        <Eyebrow className="mt-1 block">{label}</Eyebrow>
-      ) : labelStyle === "stat" ? (
-        <span className={TILE_LABEL.stat}>{label}</span>
-      ) : (
+      {labelStyle === "footnote" ? (
         <div className={TILE_LABEL.footnote}>{label}</div>
+      ) : (
+        <span className={TILE_LABEL[labelStyle]}>{label}</span>
       )}
     </Card>
   );

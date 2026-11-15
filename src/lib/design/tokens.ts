@@ -130,6 +130,7 @@ export const APP_IDS = [
   "wiki",
   "realms",
   "labs",
+  "exchange",
   "admin",
 ] as const;
 type AppId = (typeof APP_IDS)[number];
@@ -156,8 +157,8 @@ interface TintSet {
  */
 export const APP_TINTS = {
   default: {
-    light: { tint: "#5a493d", strong: "#46372b", onTint: "#ffffff" },
-    dark: { tint: "#c3b4a8", strong: "#d7cbc2", onTint: "#0b0c0f" },
+    light: { tint: "#3f3f46", strong: "#27272a", onTint: "#ffffff" },
+    dark: { tint: "#b4b6be", strong: "#cfd1d8", onTint: "#0b0c0f" },
   },
   mycountry: {
     light: { tint: "#b45309", strong: "#92400e", onTint: "#ffffff" },
@@ -186,6 +187,11 @@ export const APP_TINTS = {
   vault: {
     light: { tint: "#851f47", strong: "#710637", onTint: "#ffffff" },
     dark: { tint: "#f3a3bd", strong: "#fcc2d4", onTint: "#0b0c0f" },
+  },
+  // Chase-style blue (owner 2026-11-06); the one palette exception, beside the Wiki navy (app-palette.test.ts).
+  exchange: {
+    light: { tint: "#0f70bb", strong: "#0b5ea8", onTint: "#ffffff" },
+    dark: { tint: "#5ea6ee", strong: "#8bbff2", onTint: "#0b0c0f" },
   },
 } as const satisfies Record<"default" | Exclude<AppId, "admin">, Record<Appearance, TintSet>>;
 /** Text styles: size / line height in px at a 16px root, before `--text-scale`. */
@@ -233,10 +239,17 @@ export const Z_INDEX = {
 /** `rounded-cutout` radius in px. */
 export const CUTOUT_RADIUS = 28;
 
-/** Monochrome primary (`Button variant="filled"`, `facet-primary`). `on` must hold 4.5:1 on `fill` and `hover`. */
+/**
+ * Monochrome primary (`Button variant="default"`, `facet-primary`): iron-gall ink, not zinc. The fill is the
+ * default app tint's strong shade and the hover its tint, in both themes. `on` must hold 4.5:1 on both.
+ */
 export const PRIMARY_MONO = {
-  light: { fill: "#18181b", hover: "#3f3f46", on: "#fafafa" },
-  dark: { fill: "#e4e4e7", hover: "#d4d4d8", on: "#0f1114" },
+  light: {
+    fill: APP_TINTS.default.light.strong,
+    hover: APP_TINTS.default.light.tint,
+    on: "#fafafa",
+  },
+  dark: { fill: APP_TINTS.default.dark.strong, hover: APP_TINTS.default.dark.tint, on: "#0f1114" },
 } as const satisfies Record<Appearance, { fill: string; hover: string; on: string }>;
 
 /**
@@ -280,22 +293,25 @@ export const ACCENT_FILL = { light: 0.14, dark: 0.18 } as const satisfies Record
  * Facet layer glass. `paneFill`: the surface over the canvas. `paneWash`: the tint at the pane's
  * strongest stop. `canvasWash`: the tint in the page background. `wellTint`: tint mixed into the
  * solid well. `chromeFill` / `overlayFill`: floating glass over arbitrary content.
+ * `lensFrostedFill`: the frosted Lens over art.
  */
 export const GLASS = {
   light: {
-    paneFill: 0.82,
-    paneWash: 0.1,
-    canvasWash: 0.07,
-    wellTint: 0.06,
+    paneFill: 0.88,
+    paneWash: 0,
+    canvasWash: 0.04,
+    wellTint: 0,
     chromeFill: 0.8,
+    lensFrostedFill: 0.8,
     overlayFill: 0.9,
   },
   dark: {
-    paneFill: 0.64,
-    paneWash: 0.08,
-    canvasWash: 0.1,
-    wellTint: 0.08,
+    paneFill: 0.72,
+    paneWash: 0,
+    canvasWash: 0.06,
+    wellTint: 0,
     chromeFill: 0.8,
+    lensFrostedFill: 0.8,
     overlayFill: 0.9,
   },
 } as const satisfies Record<Appearance, Record<string, number>>;

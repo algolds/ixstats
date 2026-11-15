@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { api } from "~/trpc/server";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 export async function POST(request: NextRequest) {
@@ -41,13 +42,6 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now(),
     });
   } catch (error) {
-    console.error("[InitFlags] Error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    return internalErrorResponse("InitFlags", error);
   }
 }

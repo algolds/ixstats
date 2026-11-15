@@ -2,23 +2,16 @@
 // src/components/halo/plugins/wiki/views/WikiView.tsx
 // Wiki mode for the Dynamic Island / Halo — search, collapsible TOC, narrator player, quick actions.
 
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  Search,
-  Xmark as X,
-  Bell,
-  Settings,
-  Bookmark,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { Search, Bell, Settings, Bookmark, SystemRestart as Loader2 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { HaloViewHeader, HaloWell } from "~/components/halo/views/shared/HaloViewParts";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useAuth } from "@clerk/nextjs";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { api } from "~/trpc/react";
 import { navigateWithBasePath } from "~/lib/base-path";
-import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import type { DIViewProps } from "~/components/halo/types";
 import { WikiNarratorPlayer, WikiWorkspaceTab, WikiSearchDropdown } from "../components";
@@ -97,13 +90,10 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
   const visibleToc = useMemo(() => tocEntries.filter((e) => e.level <= 3), [tocEntries]);
 
-  const handleNavigateToArticle = useCallback(
-    (title: string, source?: WikiSource) => {
-      onClose();
-      navigateWithBasePath(pageRefPath({ title, source }), router);
-    },
-    [router, onClose]
-  );
+  const handleNavigateToArticle = (title: string, source?: WikiSource) => {
+    onClose();
+    navigateWithBasePath(pageRefPath({ title, source }), router);
+  };
 
   const slug = articleTitle ? encodeURIComponent(articleTitle.replace(/ /g, "_")) : null;
 
@@ -173,95 +163,83 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
   }, [visibleToc]);
 
   return (
-    <div className="p-4">
-      {/* Top Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {themeColors && (
+    <div className="space-y-3 p-3">
+      <HaloViewHeader
+        leading={
+          themeColors ? (
             <span
-              className="h-2.5 w-2.5 rounded-full"
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
               style={{ backgroundColor: themeColors.primary }}
             />
-          )}
-          <PreText className="text-label text-headline max-w-[200px] truncate" whiteSpace="nowrap">
-            {articleTitle || "Wiki workspace"}
-          </PreText>
-        </div>
-
-        {/* Global actions */}
-        <div className="flex items-center gap-1">
-          {onSwitchMode && (
-            <>
+          ) : undefined
+        }
+        title={articleTitle || "Wiki workspace"}
+        trailing={
+          <>
+            {onSwitchMode && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  type="button"
+                  onClick={() => onSwitchMode("search")}
+                  className="text-label-secondary hover:text-label"
+                  title="Search"
+                  aria-label="Search"
+                >
+                  <Search aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  type="button"
+                  onClick={() => onSwitchMode("notifications")}
+                  className="text-label-secondary hover:text-label"
+                  title="Notifications"
+                  aria-label="Notifications"
+                >
+                  <Bell aria-hidden />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  type="button"
+                  onClick={() => onSwitchMode("settings")}
+                  className="text-label-secondary hover:text-label"
+                  title="Settings"
+                  aria-label="Settings"
+                >
+                  <Settings aria-hidden />
+                </Button>
+              </>
+            )}
+            {articleTitle && !isMainPage && isSignedIn && (
               <Button
                 variant="ghost"
+                onClick={handleToggleStash}
+                disabled={isStashPending}
                 size="icon-sm"
-                type="button"
-                onClick={() => onSwitchMode("search")}
-                className="text-label-secondary hover:text-label"
-                title="Search"
-                aria-label="Search"
+                aria-pressed={isStashed}
+                className={cn(
+                  "rounded-full",
+                  isStashed
+                    ? "text-yellow hover:text-yellow"
+                    : "text-label-secondary hover:text-label"
+                )}
+                title={isStashed ? "Remove from Stash" : "Save to Stash"}
+                aria-label={isStashed ? "Remove from Stash" : "Save to Stash"}
               >
-                <Search aria-hidden />
+                {isStashPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Bookmark className={cn("h-3.5 w-3.5", isStashed && "fill-current")} />
+                )}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                type="button"
-                onClick={() => onSwitchMode("notifications")}
-                className="text-label-secondary hover:text-label"
-                title="Notifications"
-                aria-label="Notifications"
-              >
-                <Bell aria-hidden />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                type="button"
-                onClick={() => onSwitchMode("settings")}
-                className="text-label-secondary hover:text-label"
-                title="Settings"
-                aria-label="Settings"
-              >
-                <Settings aria-hidden />
-              </Button>
-            </>
-          )}
-          {articleTitle && !isMainPage && isSignedIn && (
-            <Button
-              variant="ghost"
-              onClick={handleToggleStash}
-              disabled={isStashPending}
-              size="icon-sm"
-              aria-pressed={isStashed}
-              className={cn(
-                "rounded-full",
-                isStashed
-                  ? "text-yellow hover:text-yellow"
-                  : "text-label-secondary hover:text-label"
-              )}
-              title={isStashed ? "Remove from Stash" : "Save to Stash"}
-              aria-label={isStashed ? "Remove from Stash" : "Save to Stash"}
-            >
-              {isStashPending ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Bookmark className={cn("h-3.5 w-3.5", isStashed && "fill-current")} />
-              )}
-            </Button>
-          )}
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            onClick={onClose}
-            className="text-label-secondary hover:text-label"
-            title="Close"
-            aria-label="Close"
-          >
-            <X aria-hidden />
-          </Button>
-        </div>
-      </div>
+            )}
+          </>
+        }
+        onClose={onClose}
+      />
 
       {/* Full-text Wiki Article Search Dropdown */}
       <WikiSearchDropdown
@@ -277,7 +255,6 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
           asTabs
           fullWidth
           size="sm"
-          className="mb-3"
           value={wikiTab}
           onValueChange={setWikiTab}
           options={[
@@ -294,15 +271,17 @@ export function WikiView({ onClose, onSwitchMode }: WikiViewProps) {
 
       {/* Tab 1: Narrator Player Focus (Restricted) */}
       {hasNarratorAccess && wikiTab === "narrator" && (
-        <WikiNarratorPlayer
-          visibleToc={visibleToc}
-          activeSectionId={activeSectionId}
-          themeColors={themeColors}
-          scrollPercent={scrollPercent}
-          sectionOffsets={sectionOffsets}
-          narratorState={narratorState}
-          narratorActions={narratorActions}
-        />
+        <HaloWell>
+          <WikiNarratorPlayer
+            visibleToc={visibleToc}
+            activeSectionId={activeSectionId}
+            themeColors={themeColors}
+            scrollPercent={scrollPercent}
+            sectionOffsets={sectionOffsets}
+            narratorState={narratorState}
+            narratorActions={narratorActions}
+          />
+        </HaloWell>
       )}
 
       {/* Tab 2: Workspace View */}

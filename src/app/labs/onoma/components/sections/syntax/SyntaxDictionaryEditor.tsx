@@ -63,7 +63,7 @@ export function SyntaxDictionaryEditor({
             className="border-separator bg-fill-4 rounded-control-sm text-footnote flex items-center justify-between border px-3 py-2"
           >
             <span className="text-label-secondary">{eng}:</span>
-            <span className="text-label font-semibold">{con}</span>
+            <span className="text-label font-medium">{con}</span>
             <Button
               variant="ghost"
               size="icon-sm"

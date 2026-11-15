@@ -3,9 +3,11 @@
  */
 
 import { z } from "zod";
+import { iiwikiFeatureMiddleware } from "~/server/api/trpc/middleware";
 import {
   createTRPCRouter,
   publicProcedure,
+  rateLimitedPublicProcedure,
   readOnlyProcedure,
   rateLimitedMutationProcedure,
 } from "~/server/api/trpc";
@@ -18,7 +20,8 @@ import {
   type SportPresetKey,
 } from "~/lib/sports";
 import { lockWallet } from "~/lib/vault/exchange-service";
-import { extractLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { extractLeagueTeams, storableLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { assertTitleVisible } from "~/lib/wiki-os/permissions";
 import { isSystemOwner } from "~/lib/auth";
@@ -40,7 +43,7 @@ import { publishLeagueStandings } from "~/server/orchestration/league-wiki-expor
 const CHARTER_TRANSACTION = { timeout: 30_000, maxWait: 10_000 };
 
 export const leaguesCrudRouter = createTRPCRouter({
-  getLeagues: publicProcedure
+  getLeagues: rateLimitedPublicProcedure
     .input(
       z.object({
         sport: z.string().optional(),
@@ -62,6 +65,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             _count: { select: { teams: true, seasons: true } },
           },
           orderBy: { createdAt: "desc" },
+          take: 200,
         });
 
         return leagues.map((l) => ({
@@ -166,14 +170,16 @@ export const leaguesCrudRouter = createTRPCRouter({
         nationAffiliation: z.string().nullable().optional(),
         settings: z.record(z.string(), z.unknown()),
         isCanonical: z.boolean().optional().default(false),
-        /** The league's IxWiki article. */
+        /** The league's wiki article and source. */
         wikiSlug: z.string().max(500).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullable().optional(),
         /** Clubs imported from the wiki: one per `teamCount`, named and linked as given. */
         teams: z
           .array(
             z.object({
               name: z.string().min(1).max(200),
               wikiSlug: z.string().max(500).nullable(),
+              wikiSource: wikiSourceSchema.nullable().optional(),
             })
           )
           .max(MAX_LEAGUE_TEAMS)
@@ -224,6 +230,7 @@ export const leaguesCrudRouter = createTRPCRouter({
             }
           }
 
+          const leagueSlug = toWikiSlug(input.wikiSlug);
           const league = await tx.sportLeague.create({
             data: {
               name: input.name,
@@ -232,7 +239,8 @@ export const leaguesCrudRouter = createTRPCRouter({
               teamCount: input.teamCount,
               nationAffiliation: input.nationAffiliation,
               isCanonical: canonical,
-              wikiSlug: toWikiSlug(input.wikiSlug),
+              wikiSlug: leagueSlug,
+              wikiSource: leagueSlug ? (input.wikiSource ?? "ixwiki") : null,
               settings: input.settings as any,
               createdByUserId: ctx.user.id,
               status: "active",
@@ -243,6 +251,7 @@ export const leaguesCrudRouter = createTRPCRouter({
           for (let i = 0; i < input.teamCount; i++) {
             const imported = input.teams?.[i];
             const teamName = imported?.name ?? `${input.name} Team ${i + 1}`;
+            const teamSlug = toWikiSlug(imported?.wikiSlug);
             const team = await tx.sportTeam.create({
               data: {
                 leagueId: league.id,
@@ -250,7 +259,10 @@ export const leaguesCrudRouter = createTRPCRouter({
                 shortName: `${teamName.slice(0, 3).toUpperCase()}${i + 1}`,
                 color: `hsl(${(i * 360) / input.teamCount}, 70%, 50%)`,
                 nationId: input.nationAffiliation ?? null,
-                wikiSlug: toWikiSlug(imported?.wikiSlug),
+                wikiSlug: teamSlug,
+                wikiSource: teamSlug
+                  ? (imported?.wikiSource ?? input.wikiSource ?? "ixwiki")
+                  : null,
               },
             });
 
@@ -318,13 +330,25 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  /** The teams a league's IxWiki article names, for the creator's import step. A missing page names none. */
+  /**
+   * The teams a league article names, for the creator's import step: an IxWiki page by default, or a page of a sister
+   * wiki (`wiki`). A missing page names none; a wiki that cannot answer is SERVICE_UNAVAILABLE with its own words.
+   */
   previewWikiTeams: readOnlyProcedure
-    .input(z.object({ wikiSlug: z.string().trim().min(1).max(500) }))
+    .use(iiwikiFeatureMiddleware("imports"))
+    .input(
+      z.object({
+        wikiSlug: z.string().trim().min(1).max(500),
+        wiki: wikiSourceSchema.default("ixwiki"),
+      })
+    )
     .query(async ({ ctx, input }) => {
-      await assertTitleVisible(ctx, input.wikiSlug, "ixwiki");
-      const page = await getArticleWikitextShadow(input.wikiSlug, "ixwiki");
-      return extractLeagueTeams(page?.wikitext ?? "").slice(0, MAX_LEAGUE_TEAMS);
+      await assertTitleVisible(ctx, input.wikiSlug, input.wiki);
+      const page = await getArticleWikitextShadow(input.wikiSlug, input.wiki);
+      return storableLeagueTeams(extractLeagueTeams(page?.wikitext ?? ""), input.wiki).slice(
+        0,
+        MAX_LEAGUE_TEAMS
+      );
     }),
 
   /**
@@ -356,12 +380,13 @@ export const leaguesCrudRouter = createTRPCRouter({
         promotionCount: z.number().int().min(0).optional(),
         relegationCount: z.number().int().min(0).optional(),
         wikiSlug: z.string().max(500).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullable().optional(),
         isCanonical: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        const { id, settings, wikiSlug, ...data } = input;
+        const { id, settings, wikiSlug, wikiSource, ...data } = input;
 
         const league = await ctx.db.sportLeague.findUnique({ where: { id } });
         if (!league) {
@@ -375,12 +400,23 @@ export const leaguesCrudRouter = createTRPCRouter({
             ? input.isCanonical && isSystemOwner(ctx.auth.userId)
             : league.isCanonical;
 
+        const nextWikiSlug = wikiSlug !== undefined ? toWikiSlug(wikiSlug) : league.wikiSlug;
+        const wikiUpdate =
+          wikiSlug !== undefined || wikiSource !== undefined
+            ? {
+                ...(wikiSlug !== undefined ? { wikiSlug: nextWikiSlug } : {}),
+                wikiSource: nextWikiSlug
+                  ? (wikiSource ?? league.wikiSource ?? "ixwiki")
+                  : null,
+              }
+            : {};
+
         return ctx.db.sportLeague.update({
           where: { id },
           data: {
             ...data,
             isCanonical,
-            ...(wikiSlug !== undefined ? { wikiSlug: toWikiSlug(wikiSlug) } : {}),
+            ...wikiUpdate,
             ...(settings !== undefined ? { settings: settings as any } : {}),
           },
         });
@@ -467,11 +503,11 @@ export const leaguesCrudRouter = createTRPCRouter({
       }
     }),
 
-  searchSportsEntities: publicProcedure
-    .input(z.object({ query: z.string() }))
+  searchSportsEntities: rateLimitedPublicProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(100) }))
     .query(async ({ ctx, input }) => {
       try {
-        const players = await (ctx.db as any).sportPlayer.findMany({
+        const players = await ctx.db.sportPlayer.findMany({
           where: {
             OR: [
               { firstName: { contains: input.query, mode: "insensitive" } },
@@ -479,23 +515,23 @@ export const leaguesCrudRouter = createTRPCRouter({
             ],
           },
           include: { team: true, transferListing: true },
-          take: 5,
+          take: 20,
         });
         const teams = await ctx.db.sportTeam.findMany({
           where: {
             name: { contains: input.query, mode: "insensitive" },
           },
           include: { league: true },
-          take: 5,
+          take: 20,
         });
         const leagues = await ctx.db.sportLeague.findMany({
           where: {
             name: { contains: input.query, mode: "insensitive" },
           },
-          take: 5,
+          take: 20,
         });
         return {
-          players: players.map((p: any) => ({
+          players: players.map((p) => ({
             id: p.id,
             name: `${p.firstName} ${p.lastName}`,
             position: p.position,
@@ -508,12 +544,12 @@ export const leaguesCrudRouter = createTRPCRouter({
                 }
               : null,
           })),
-          teams: teams.map((t: any) => ({
+          teams: teams.map((t) => ({
             id: t.id,
             name: t.name,
             leagueName: t.league.name,
           })),
-          leagues: leagues.map((l: any) => ({
+          leagues: leagues.map((l) => ({
             id: l.id,
             name: l.name,
             sportPreset: l.sportPreset,

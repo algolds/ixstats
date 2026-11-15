@@ -10,6 +10,13 @@
  */
 
 import type { Feature, FeatureCollection, Polygon, MultiPolygon, Position } from "geojson";
+import { area } from "@turf/area";
+import { buffer } from "@turf/buffer";
+import { feature, featureCollection } from "@turf/helpers";
+import { kinks } from "@turf/kinks";
+import { simplify } from "@turf/simplify";
+import { union } from "@turf/union";
+import { unkinkPolygon } from "@turf/unkink-polygon";
 
 // TopoJSON packages are CommonJS — use require for compatibility
 const topoServer = require("topojson-server") as {
@@ -65,8 +72,6 @@ interface SimplifyResult {
 type AreaGeometry = Polygon | MultiPolygon;
 type SimplifyFeature = Feature<AreaGeometry>;
 
-// @turf/turf is heavy and optional here: load it per call and let callers fall back
-const loadTurf = () => require("@turf/turf");
 
 const ringsOf = (geometry: AreaGeometry): Position[][] =>
   geometry.type === "Polygon" ? geometry.coordinates : geometry.coordinates.flat();
@@ -106,11 +111,12 @@ function ensureRingsClosed(geometry: AreaGeometry): AreaGeometry {
 }
 
 /** Union the unkinked parts of a polygon back together, skipping parts that fail. */
-function unionParts(turf: any, parts: any[]): any {
-  let result = parts[0];
+function unionParts(parts: Feature<Polygon>[]): Feature<AreaGeometry> | null | undefined {
+  let result: Feature<AreaGeometry> | null | undefined = parts[0];
   for (const part of parts.slice(1)) {
+    if (!result) break;
     try {
-      result = turf.union(turf.featureCollection([result, part]));
+      result = union(featureCollection<AreaGeometry>([result, part]));
     } catch {
       // Skip invalid parts
     }
@@ -124,31 +130,25 @@ function unionParts(turf: any, parts: any[]): any {
  */
 function fixSelfIntersections(geometry: AreaGeometry): AreaGeometry {
   try {
-    const turf = loadTurf();
-    const feature = turf.feature(geometry);
-    if (!turf.kinks(feature).features?.length) return geometry;
+    const f = feature(geometry);
+    if (!kinks(f).features.length) return geometry;
 
     try {
-      const parts = turf.unkinkPolygon(feature).features;
-      return (parts.length === 1 ? parts[0] : unionParts(turf, parts))?.geometry ?? geometry;
+      const parts = unkinkPolygon(f).features;
+      return (parts.length === 1 ? parts[0] : unionParts(parts))?.geometry ?? geometry;
     } catch {
       // Fallback: buffer(0) trick forces validity
-      try {
-        return turf.buffer(feature, 0, { units: "degrees" })?.geometry ?? geometry;
-      } catch {
-        return geometry;
-      }
+      return buffer(f, 0, { units: "degrees" })?.geometry ?? geometry;
     }
   } catch {
-    return geometry; // If turf not available, return as-is
+    return geometry; // Geometry turf cannot read: keep it as-is
   }
 }
 
-/** Polygon area in square meters (0 if turf is unavailable). */
+/** Polygon area in square meters (0 if turf cannot read the geometry). */
 function computeArea(geometry: AreaGeometry): number {
   try {
-    const turf = loadTurf();
-    return turf.area(turf.feature(geometry));
+    return area(feature(geometry));
   } catch {
     return 0;
   }
@@ -184,13 +184,12 @@ function maxTopoImportance(topo: any): number {
  */
 function presimplifyLargeFeatures(features: SimplifyFeature[]): SimplifyFeature[] {
   try {
-    const turf = loadTurf();
     return features.map((f) => {
       if (countVertices(f.geometry) <= 500) return f;
       let tolerance = 0.001;
-      let simplified;
+      let simplified = f;
       for (let attempt = 0; attempt < 9; attempt++) {
-        simplified = turf.simplify(turf.feature(f.geometry), { tolerance, highQuality: true });
+        simplified = simplify(feature(f.geometry), { tolerance, highQuality: true });
         if (countVertices(simplified.geometry) <= 500) break;
         tolerance *= 2;
       }
@@ -226,10 +225,9 @@ function findMinWeight(topo: any, targetTotal: number): number {
 /** Per-province turf simplification until the geometry has at most `max` (and >= 4) vertices. */
 function capVertices(geo: AreaGeometry, max: number): AreaGeometry {
   try {
-    const turf = loadTurf();
     let tolerance = 0.001;
     for (let attempt = 0; attempt < 10; attempt++) {
-      const simplified = turf.simplify(turf.feature(geo), { tolerance, highQuality: true });
+      const simplified = simplify(feature(geo), { tolerance, highQuality: true });
       const count = countVertices(simplified.geometry);
       if (count >= 4 && count <= max) return simplified.geometry;
       if (count < 4) break; // Too aggressive, stop

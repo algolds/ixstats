@@ -81,11 +81,14 @@ interface GeoLandRow {
   geometry: string | null;
 }
 
-/** Web Mercator scaled so the world is 1000 units wide. */
+/** Faces are drawn in Plate Carrée (equirectangular), as the flat live hero map is (flat-projection.ts):
+ * no swelling toward the poles. On the Web Mercator sphere, so the world is 2πR wide like before. */
+const PLATE_CARREE = "+proj=eqc +R=6378137 +units=m +no_defs";
+/** Scaled so the world is 1000 units wide. */
 const SCALE = 1000 / 40_075_016.68;
-/** Faces are clipped to |latitude| <= 75 degrees, which Mercator inflates towards the poles. In scaled
- * units that is |y| <= SCALE * R * ln(tan(45deg + 75deg / 2)), with R = 6 378 137 m: about 322.7. */
-const CLIP_Y = SCALE * 6_378_137 * Math.log(Math.tan(Math.PI / 4 + (75 * Math.PI) / 360));
+/** Faces are a band of |latitude| <= 75 degrees, the framing card bands and the live map share (once a
+ * Mercator workaround, now only framing). In scaled units |y| <= SCALE * R * 75deg in radians: about 208.3. */
+const CLIP_Y = SCALE * 6_378_137 * ((75 * Math.PI) / 180);
 const CLIP_BOX = `ST_MakeEnvelope(-1000, ${-CLIP_Y}, 1000, ${CLIP_Y})`;
 /** Simplify tolerances in face units (the world is 1000 wide). Never above 1.0: 1.5 segfaulted Postgres. */
 const NATION_TOLERANCE = 0.6;
@@ -127,7 +130,7 @@ const layerGeometry = (layerType: string, also = "TRUE") => `
 
 /** A land row wholly inside a polar zone that also crosses the antimeridian is a polar ice cap. The
  * antimeridian split in `sourceGeometry` fails on it (a GEOS topology error that aborts the whole
- * query), and a cap is clipped away at Web Mercator's latitude limit and is not land worth drawing. */
+ * query), and a cap lies outside the faces' ±75° band anyway. */
 const NOT_POLAR_CAP = `NOT (ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180
   AND (ST_YMax(geom_postgis) < -50 OR ST_YMin(geom_postgis) > 50))`;
 
@@ -140,7 +143,7 @@ const POLITICAL_SQL = `
 WITH nations AS (
   SELECT ${STATUS_SQL} AS status,
          ST_ClipByBox2D(
-           ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8),
+           ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, '${PLATE_CARREE}'), $2::float8, $2::float8), $3::float8),
            ${CLIP_BOX}) AS g
   FROM (${layerGeometry("political")}) s
   LEFT JOIN "Country" c ON c.id = s."countryId"
@@ -154,7 +157,7 @@ const LAND_SQL = `
 WITH land AS (
   SELECT ST_UnaryUnion(ST_CollectionExtract(ST_Collect(
            ST_ClipByBox2D(
-             ST_MakeValid(ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, 3857), $2::float8, $2::float8), $3::float8)),
+             ST_MakeValid(ST_SimplifyPreserveTopology(ST_Scale(ST_Transform(s.g, '${PLATE_CARREE}'), $2::float8, $2::float8), $3::float8)),
              ${CLIP_BOX})), 3)) AS g
   FROM (${layerGeometry("climate", NOT_POLAR_CAP)}) s
   WHERE NOT ST_IsEmpty(s.g)

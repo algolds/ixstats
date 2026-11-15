@@ -1,6 +1,6 @@
 "use client";
 // src/components/halo/plugins/wiki/components/WikiWorkspaceTab.tsx
-// Quick actions, drafts manager, paused reading sessions, and recent changes feed for Halo Wiki mode.
+// Quick actions, drafts manager, and paused reading sessions for Halo Wiki mode.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -15,11 +15,13 @@ import {
 } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { navigateWithBasePath } from "~/lib/base-path";
-import { formatMWTimeAgo } from "~/lib/wiki-os/adapters/mediawiki/timestamp";
 import { timeAgo } from "~/lib/format/compact";
 import { getWikiBaseUrl, type WikiSource } from "~/lib/wiki-os/config";
 import { type LocalDraft, type PausedSession } from "../types";
 import { Badge } from "~/components/ui/badge";
+import { focusRing, hitSlop } from "~/components/ui/button";
+import { HaloWell } from "~/components/halo/views/shared/HaloViewParts";
+import { cn } from "~/lib/utils";
 
 interface WikiWorkspaceTabProps {
   articleTitle?: string | null;
@@ -30,11 +32,6 @@ interface WikiWorkspaceTabProps {
   slug?: string | null;
   localDrafts: LocalDraft[];
   pausedSessions: PausedSession[];
-  recentChanges?: Array<{
-    title?: string | null;
-    user?: string | null;
-    timestamp?: string | null;
-  }> | null;
   onClose: () => void;
   /** Opens the page on its own wiki (the wiki when none is given) */
   onNavigateToArticle: (title: string, source?: WikiSource) => void;
@@ -48,14 +45,12 @@ export function WikiWorkspaceTab({
   slug,
   localDrafts,
   pausedSessions,
-  recentChanges,
   onClose,
   onNavigateToArticle,
 }: WikiWorkspaceTabProps) {
   const router = useRouter();
   const [draftsOpen, setDraftsOpen] = useState(true);
   const [sessionsOpen, setSessionsOpen] = useState(true);
-  const [recentOpen, setRecentOpen] = useState(false);
 
   return (
     <>
@@ -80,7 +75,11 @@ export function WikiWorkspaceTab({
                     router
                   );
                 }}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
+                className={cn(
+                  "text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm relative flex w-full cursor-pointer items-center justify-between px-2 py-1 text-left transition-colors",
+                  focusRing,
+                  hitSlop
+                )}
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
@@ -117,7 +116,11 @@ export function WikiWorkspaceTab({
                 key={idx}
                 type="button"
                 onClick={() => onNavigateToArticle(session.title, session.source)}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm focus-visible:outline-tint flex w-full items-center justify-between px-2 py-1 text-left transition-colors focus-visible:outline-2"
+                className={cn(
+                  "text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm relative flex w-full cursor-pointer items-center justify-between px-2 py-1 text-left transition-colors",
+                  focusRing,
+                  hitSlop
+                )}
               >
                 <div className="flex min-w-0 flex-1 flex-col pr-2">
                   <PreText
@@ -139,43 +142,9 @@ export function WikiWorkspaceTab({
         </CollapsibleSection>
       )}
 
-      {/* Recent Activity — collapsible feed (shown when on wiki index/search) */}
-      {!articleTitle && (
-        <CollapsibleSection
-          label="Recent activity"
-          icon={<Clock className="h-3 w-3" />}
-          open={recentOpen}
-          onToggle={() => setRecentOpen(!recentOpen)}
-        >
-          {recentChanges && recentChanges.length > 0 ? (
-            <div className="space-y-0.5">
-              {recentChanges.map((rc, idx) => (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => onNavigateToArticle(rc.title ?? "")}
-                  className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-1 text-left transition-colors"
-                >
-                  <PreText className="text-callout truncate text-inherit" whiteSpace="nowrap">
-                    {rc.title}
-                  </PreText>
-                  <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
-                    {`${rc.user} · ${formatMWTimeAgo(rc.timestamp)}`}
-                  </PreText>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <PreText className="text-label-secondary text-footnote px-2" whiteSpace="nowrap">
-              Loading...
-            </PreText>
-          )}
-        </CollapsibleSection>
-      )}
-
       {/* Page Actions — contextual to current article */}
       {articleTitle && !isMainPage && (
-        <div className="border-separator mb-3 border-b pb-3">
+        <HaloWell className="space-y-1">
           <SectionHeader label="This page" />
           <div className="space-y-0.5">
             {wikiSource === "ixwiki" ? (
@@ -195,7 +164,7 @@ export function WikiWorkspaceTab({
               />
             )}
           </div>
-        </div>
+        </HaloWell>
       )}
     </>
   );
@@ -214,7 +183,6 @@ function IxWikiPageActions({
         <QuickAction
           icon={<FileEdit />}
           label="Edit"
-          shortcut="Tab Tab"
           onClick={() => {
             onClose();
             navigateWithBasePath(`/wiki/${slug}?action=edit`, router);
@@ -243,7 +211,7 @@ function IxWikiPageActions({
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <div className="text-label-secondary text-subhead mb-2">
+    <div className="text-label-secondary text-subhead px-2">
       <PreText whiteSpace="nowrap">{label}</PreText>
     </div>
   );
@@ -265,12 +233,16 @@ export function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border-separator mb-3 border-b pb-3">
+    <HaloWell className="space-y-1">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="text-label-secondary hover:text-label text-subhead focus-visible:outline-tint mb-1 flex w-full cursor-pointer items-center justify-between focus-visible:outline-2"
+        className={cn(
+          "text-label-secondary hover:text-label text-subhead relative flex w-full cursor-pointer items-center justify-between px-1",
+          focusRing,
+          hitSlop
+        )}
       >
         <span className="flex items-center gap-1">
           {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -286,7 +258,7 @@ export function CollapsibleSection({
         )}
       </button>
       {open && children}
-    </div>
+    </HaloWell>
   );
 }
 
@@ -305,7 +277,11 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body flex w-full items-center justify-between px-2 py-2 text-left transition-colors"
+      className={cn(
+        "text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm text-body relative flex w-full cursor-pointer items-center justify-between px-2 py-2 text-left transition-colors",
+        focusRing,
+        hitSlop
+      )}
     >
       <span className="flex items-center gap-2">
         <span className="text-label-secondary [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
@@ -315,7 +291,7 @@ function QuickAction({
       </span>
       {shortcut && (
         <PreText
-          className="border-separator bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 border px-2 py-0.5"
+          className="bg-fill-4 text-label-secondary rounded-control-sm text-footnote shrink-0 px-2 py-0.5"
           whiteSpace="nowrap"
         >
           {shortcut}

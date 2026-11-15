@@ -17,8 +17,11 @@ export function HypsometricElevationHUD({ onClose }: HypsometricElevationHUDProp
   if (!liveTerrain) return null;
 
   return (
-    <div className="absolute bottom-9 left-1/2 z-40 -translate-x-1/2">
-      <FacetMaterial layer="chrome" className="text-label rounded-row flex flex-col p-3">
+    <div className="pointer-events-auto absolute bottom-9 left-1/2 z-40 -translate-x-1/2">
+      <FacetMaterial
+        layer="chrome"
+        className="facet-chrome-subtle text-label rounded-row flex flex-col px-3 py-2"
+      >
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <Mountain className="text-label-secondary h-4 w-4" aria-hidden />

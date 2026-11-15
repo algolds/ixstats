@@ -16,9 +16,9 @@ export function EditorLoadingScreen({ countryName }: { countryName?: string | nu
     >
       <FacetMaterial
         layer="chrome"
-        className="rounded-card w-full max-w-xs space-y-4 p-6 text-center"
+        className="facet-chrome-subtle rounded-row w-full max-w-xs space-y-4 p-6 text-center"
       >
-        <Map className="text-label-secondary mx-auto h-6 w-6" aria-hidden />
+        <Map className="text-tint mx-auto h-6 w-6" aria-hidden />
         <div>
           <h2 className="text-label text-headline">Loading map editor…</h2>
           {countryName && <p className="text-label-secondary text-footnote mt-1">{countryName}</p>}

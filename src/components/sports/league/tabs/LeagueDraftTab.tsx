@@ -20,7 +20,7 @@ export function LeagueDraftTab({ picks, sportPreset, onTeamClick }: LeagueDraftT
     <Card className="relative space-y-6 overflow-hidden p-6 md:p-8">
       <div className="border-separator flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
+          <div className="bg-tint-fill text-tint-ink rounded-row flex size-9 items-center justify-center">
             <Trophy className="text-yellow h-5 w-5" />
           </div>
           <div>

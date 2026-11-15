@@ -20,11 +20,7 @@ export function Credits({
   return (
     <>
       <IxCreditsSymbol decorative className={`${symbolClassName} shrink-0`} />
-      {animate ? (
-        <NumberFlowDisplay value={Math.round(amount)} className="font-semibold" />
-      ) : (
-        formatCredits(amount)
-      )}
+      {animate ? <NumberFlowDisplay value={Math.round(amount)} /> : formatCredits(amount)}
     </>
   );
 }

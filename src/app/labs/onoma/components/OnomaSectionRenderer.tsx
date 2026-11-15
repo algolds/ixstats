@@ -3,9 +3,9 @@
 // src/app/labs/onoma/components/OnomaSectionRenderer.tsx
 // Dynamic loader and view dispatcher for active Onoma workspace sections (Product Model: CREATE · STUDIO · EXPLORE)
 
+import { Skeleton } from "~/components/ui/skeleton";
 import React from "react";
 import dynamic from "next/dynamic";
-import { SystemRestart as Loader2 } from "iconoir-react";
 import type { OnomaSection, StudioSubTab, ExploreSubTab } from "~/lib/onoma/types";
 
 // Standard synchronous core sections for instant transitions
@@ -14,8 +14,13 @@ import CategoryDomainSection from "./sections/CategoryDomainSection";
 
 // Suspense loading fallback
 const SectionLoadingFallback = () => (
-  <div className="flex h-64 w-full items-center justify-center">
-    <Loader2 className="text-tint h-6 w-6 animate-spin" />
+  <div className="space-y-4" aria-busy="true" aria-label="Loading section">
+    <Skeleton className="h-8 w-56" />
+    <Skeleton className="h-4 w-80 max-w-full" />
+    <div className="grid gap-4 md:grid-cols-2">
+      <Skeleton className="rounded-row h-40" />
+      <Skeleton className="rounded-row h-40" />
+    </div>
   </div>
 );
 

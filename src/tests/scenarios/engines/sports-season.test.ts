@@ -273,11 +273,12 @@ describe("sports-season (memory)", () => {
     ] as const) {
       const bet = bets.find((b) => b.userId === who.clerkUserId)!;
       const payout = sides[name] === outcome ? (opening[name] * 200) / winningPool : 0;
+      const walletPayout = Math.round(payout * 100) / 100;
       expect(bet).toMatchObject({ status: payout > 0 ? "won" : "lost", payout });
-      expect(paid[who.id]).toBe(staked[who.id]! + payout);
+      expect(paid[who.id]).toBe(staked[who.id]! + walletPayout);
       if (payout > 0) {
         expect((await sovereignLedgerOf(db as never, who.id)).at(-1)).toEqual({
-          sovereigns: payout,
+          sovereigns: walletPayout,
           type: "PREDICTION_PAYOUT",
           source: `PREDICTION_WIN:${bet.id}`,
         });
@@ -465,7 +466,7 @@ describe("sports-season (memory)", () => {
   // league never got its next season
   it("charters a league, claims a club, sells a player through escrow and upgrades a stadium, each fee once", async () => {
     const { ana, cleo, dev, ben } = w;
-    await db.exchangeWallet.create({ data: { userId: dev.id, sovereigns: 1000 } });
+    await db.exchangeWallet.create({ data: { userId: dev.id, sovereigns: 1000_00n } });
 
     // A charter costs 500 Sovereigns; one the wallet cannot pay founds nothing
     const charter = () =>
@@ -734,9 +735,9 @@ async function raceSettlement(w: World) {
   ]);
   // The pool of 200 goes to the home backers pro rata, once: Ana 100/140, Cleo 40/140
   expect(await sovereignsOf(w.db, [w.ana.id, w.ben.id, w.cleo.id])).toEqual({
-    [w.ana.id]: 500 + (100 * 200) / 140,
+    [w.ana.id]: 500 + Math.round(((100 * 200) / 140) * 100) / 100,
     [w.ben.id]: 500,
-    [w.cleo.id]: 500 + (40 * 200) / 140,
+    [w.cleo.id]: 500 + Math.round(((40 * 200) / 140) * 100) / 100,
   });
   const settled = await w.db.sportPrediction.findMany({ where: { matchId: match.id } });
   expect(settled.map((s) => s.status).sort()).toEqual(["lost", "won", "won"]);

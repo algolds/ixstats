@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { Signal } from "~/components/ui/signal";
 
 /** The next page's button, or why the next page did not load. */
 export function MoreCards(props: {
@@ -11,12 +12,14 @@ export function MoreCards(props: {
 }) {
   if (props.failed) {
     return (
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-callout text-label-secondary">More cards did not load.</p>
-        <Button size="sm" variant="secondary" onClick={props.onMore}>
-          Try again
-        </Button>
-      </div>
+      <Signal tone="destructive" title="More cards did not load">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span>Try loading the next page again.</span>
+          <Button size="sm" variant="secondary" onClick={props.onMore}>
+            Try again
+          </Button>
+        </div>
+      </Signal>
     );
   }
   if (!props.hasMore) return null;

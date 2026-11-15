@@ -1,7 +1,4 @@
 "use client";
-// src/app/labs/onoma/components/sections/LoanwordsSection.tsx
-// Onoma Lab — Loanword & Contact Registry Section
-// Philosophy: Historical Linguistics × Apple Design × Emil Design Engineering
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
@@ -300,21 +297,21 @@ export default function LoanwordsSection() {
               </div>
               <div className="text-footnote grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="space-y-1">
-                  <span className="text-label font-semibold">1. Contact Channels</span>
+                  <span className="text-label font-medium">1. Contact Channels</span>
                   <p className="text-label-secondary text-caption leading-relaxed">
                     Map relationships between Donor (L1) and Recipient (L2) languages across trade,
                     warfare, or academic domains.
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-semibold">2. Phonetic Shifts</span>
+                  <span className="text-label font-medium">2. Phonetic Shifts</span>
                   <p className="text-label-secondary text-caption leading-relaxed">
                     Loanwords mutate to match target phonology (e.g. Greek ⟨ph⟩ → Romance ⟨f⟩ or
                     Grimm&apos;s Consonant Shift).
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <span className="text-label font-semibold">3. Syllable Constraints</span>
+                  <span className="text-label font-medium">3. Syllable Constraints</span>
                   <p className="text-label-secondary text-caption leading-relaxed">
                     Use Coda Drop to strip illegal terminal consonants or Vowel Epenthesis (+V) to
                     maintain open syllable harmony.
@@ -376,7 +373,7 @@ export default function LoanwordsSection() {
                     selected={selectedContactId === c.id}
                     selectionStyle="tint"
                     title={
-                      <span className="text-footnote flex items-center gap-2 truncate font-semibold">
+                      <span className="text-footnote flex items-center gap-2 truncate font-medium">
                         <span className="truncate">{c.sourcePack?.name}</span>
                         <ArrowRight
                           aria-label="to"
@@ -403,7 +400,7 @@ export default function LoanwordsSection() {
                 <div className="flex items-center gap-2">
                   <h4 className="text-label text-subhead">Channel settings</h4>
                   {!selectedContactId && (
-                    <span className="text-tint bg-tint/10 border-tint/30 py-0.2 rounded-control-sm text-caption border px-2 font-mono font-semibold">
+                    <span className="text-tint bg-tint/10 border-tint/30 py-0.2 rounded-control-sm text-caption border px-2 font-mono font-medium">
                       New
                     </span>
                   )}
@@ -481,8 +478,8 @@ export default function LoanwordsSection() {
 
                 <div className="space-y-1">
                   <div className="text-caption flex items-center justify-between">
-                    <span className="text-label-secondary font-semibold">Intensity</span>
-                    <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-mono font-semibold">
+                    <span className="text-label-secondary font-medium">Intensity</span>
+                    <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-mono font-medium">
                       {Math.round(intensity * 100)}%
                     </span>
                   </div>
@@ -499,7 +496,7 @@ export default function LoanwordsSection() {
 
               <div className="border-separator space-y-2 border-t pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-label-secondary text-eyebrow">
+                  <span className="text-label-secondary text-caption">
                     Phonetic adaptation rules
                   </span>
                   <div className="flex items-center gap-1">
@@ -519,7 +516,10 @@ export default function LoanwordsSection() {
                 </div>
 
                 {/* Syllable Coda & Epenthesis Controls */}
-                <div className="border-separator bg-fill-4 rounded-row text-footnote flex flex-wrap items-center gap-3 border p-2">
+                <Card
+                  padding="none"
+                  className="text-footnote flex flex-wrap items-center gap-3 p-2"
+                >
                   <label className="text-label-secondary text-footnote flex cursor-pointer items-center gap-2 select-none">
                     <Checkbox
                       checked={codaDrop}
@@ -548,7 +548,7 @@ export default function LoanwordsSection() {
                       />
                     )}
                   </div>
-                </div>
+                </Card>
 
                 {/* Sound Shift Builder Input Strip */}
                 <div className="space-y-2">
@@ -590,7 +590,7 @@ export default function LoanwordsSection() {
                           }
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-tint/10 border-tint/25 text-tint rounded-control text-footnote inline-flex items-center gap-2 border px-2 py-0.5 font-mono font-semibold"
+                          className="bg-tint/10 border-tint/25 text-tint rounded-control text-footnote inline-flex items-center gap-2 border px-2 py-0.5 font-mono font-medium"
                         >
                           {shift.from} → {shift.to || "∅"}
                           <Button
@@ -683,7 +683,7 @@ export default function LoanwordsSection() {
             </div>
 
             <div className="border-separator bg-surface rounded-row overflow-hidden border shadow-inner">
-              <div className="bg-fill-4 text-label-secondary border-separator text-eyebrow grid grid-cols-12 gap-2 border-b px-4 py-2 select-none">
+              <div className="bg-fill-4 text-label-secondary border-separator text-caption grid grid-cols-12 gap-2 border-b px-4 py-2 select-none">
                 <span className="col-span-4">Donor Word (L1)</span>
                 <span className="col-span-4">Transformation pipeline</span>
                 <span className="col-span-4 text-right">Adapted Form (L2)</span>
@@ -701,7 +701,7 @@ export default function LoanwordsSection() {
                       >
                         {/* Column 1: Source Word & Meaning */}
                         <div className="col-span-4 flex flex-col">
-                          <span className="text-label text-footnote font-mono font-semibold">
+                          <span className="text-label text-footnote font-mono font-medium">
                             {res.original}
                           </span>
                           <span className="text-label-secondary text-caption truncate italic">
@@ -712,17 +712,17 @@ export default function LoanwordsSection() {
                         {/* Column 2: Applied Rules Breakdown */}
                         <div className="text-caption col-span-4 flex flex-wrap gap-1 font-mono">
                           {soundShifts.some((s) => res.original.toLowerCase().includes(s.from)) && (
-                            <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-semibold">
+                            <span className="text-tint bg-tint/10 py-0.2 rounded-control-sm px-2 font-medium">
                               shift
                             </span>
                           )}
                           {codaDrop && (
-                            <span className="py-0.2 rounded-control-sm bg-yellow/10 text-yellow px-2 font-semibold">
+                            <span className="py-0.2 rounded-control-sm bg-yellow/10 text-yellow px-2 font-medium">
                               -coda
                             </span>
                           )}
                           {vowelEpenthesis && (
-                            <span className="py-0.2 rounded-control-sm bg-indigo/10 text-indigo px-2 font-semibold">
+                            <span className="py-0.2 rounded-control-sm bg-indigo/10 text-indigo px-2 font-medium">
                               +{epentheticVowel}
                             </span>
                           )}
@@ -735,9 +735,7 @@ export default function LoanwordsSection() {
 
                         {/* Column 3: Adapted Result & Actions */}
                         <div className="col-span-4 flex items-center justify-end gap-2">
-                          <span className="text-tint text-body font-mono font-semibold">
-                            {adaptedWord}
-                          </span>
+                          <span className="text-tint text-headline font-mono">{adaptedWord}</span>
                           <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                             <Button
                               variant="ghost"

@@ -142,7 +142,7 @@ export function AuctionRow({ auction, onOpenCard, onShowSelling, ...bidding }: A
   const face = auction.face;
   const urgency = auctionUrgency(auction.endTime.getTime() - Date.now());
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li data-row className="flex flex-wrap items-center gap-3 px-4 py-3">
       {face && (
         <CardFace face={face} size="S" className="w-20" onOpen={() => onOpenCard(face.cardId)} />
       )}

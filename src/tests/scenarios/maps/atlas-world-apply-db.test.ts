@@ -15,8 +15,9 @@ jest.mock("~/env", () => ({
 }));
 jest.mock("~/server/db", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PrismaClient } = require("@prisma/client") as typeof import("@prisma/client");
-  return { db: new PrismaClient({ datasourceUrl: process.env.SCENARIOS_DATABASE_URL }) };
+  const { createPrismaClient } =
+    require("~/server/prisma-client") as typeof import("~/server/prisma-client");
+  return { db: createPrismaClient({ url: process.env.SCENARIOS_DATABASE_URL }) };
 });
 jest.mock("~/lib/cache", () => ({
   ...jest.requireActual("~/lib/cache"),

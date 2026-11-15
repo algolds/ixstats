@@ -4,10 +4,10 @@
  * Standalone seeding script for MyLeague sports leagues
  */
 
-import { PrismaClient } from "@prisma/client";
 import { seedSportsLeagues } from "../../src/lib/demo-seed/seed-sports";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function run() {
   try {

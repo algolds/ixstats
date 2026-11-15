@@ -32,6 +32,7 @@ import {
   fileLicenceTakedowns,
   type LicenceTakedownReport,
 } from "~/server/modules/cards/cards.compliance";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const BATCH = 500;
 /** One throttled client per wiki, replaced after a read it gave up on; this cap is far above a run's reads. */
@@ -199,7 +200,7 @@ export async function hideRestrictedArt(
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const takedowns = await backfillTakedowns(db, apply);
     console.log(`${takedowns} NationStates takedowns to bring into the queue.`);

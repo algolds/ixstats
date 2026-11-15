@@ -10,7 +10,7 @@ import { clientTransformer } from "./client-transformer";
 import { type AppRouter } from "~/server/api/root";
 import { createQueryClient } from "./query-client";
 import { useAuth } from "~/context/auth-context";
-import { syncPlayAsCookie } from "~/app/admin/users/play-as-cookie";
+import { syncPlayAsCookie } from "~/lib/auth/play-as-cookie";
 
 let clientQueryClientSingleton: QueryClient | undefined = undefined;
 const getQueryClient = () => {

@@ -10,8 +10,9 @@
  *
  * Idempotent: a place with a card is skipped, and a card granted before is never granted again.
  */
-import { PrismaClient } from "@prisma/client";
+
 import { backfillTrophyCards, type TrophyBackfillReport } from "~/lib/lorewards/trophy-cards";
+import { createPrismaClient } from "~/server/prisma-client";
 
 export function parseBackfillArgs(argv: string[]): { apply: boolean } {
   return { apply: argv.includes("--apply") && !argv.includes("--dry-run") };
@@ -37,7 +38,7 @@ export function backfillSummary(report: TrophyBackfillReport, apply: boolean): s
 
 async function main(): Promise<void> {
   const { apply } = parseBackfillArgs(process.argv.slice(2));
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     for (const line of backfillSummary(await backfillTrophyCards(db, apply), apply)) {
       console.log(line);

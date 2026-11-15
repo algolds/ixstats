@@ -55,6 +55,14 @@ describe("verification-gates", () => {
   describe("package.json verification scripts", () => {
     const pkg = JSON.parse(fs.readFileSync(path.resolve(rootDir, "package.json"), "utf-8"));
 
+    it("runs the quarantine runner without loading .env files, so test:ci matches plain jest", () => {
+      for (const name of ["test:ci", "test:quarantine:verify"]) {
+        expect(pkg.scripts[name]).toMatch(
+          /^bun --no-env-file scripts\/verification\/run-jest-with-quarantine\.ts/
+        );
+      }
+    });
+
     it("does not pipe typecheck scripts to tee or mask errors", () => {
       const scripts = pkg.scripts || {};
       for (const [name, cmd] of Object.entries(scripts)) {

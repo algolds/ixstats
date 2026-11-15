@@ -43,6 +43,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           isSubdivisionCapital: Boolean(p.isSubdivisionCapital),
           subdivisionId: getString(p.subdivisionId),
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           elevation: getNumber(p.elevation),
           foundedYear: getNumber(p.foundedYear),
           coordinates: feature.coordinates,
@@ -61,6 +62,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           areaSqKm: getNumber(p.areaSqKm),
           color: getString(p.color),
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           geometry: feature.geometry,
         },
       };
@@ -74,6 +76,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           description: getString(p.description),
           icon: getString(p.icon),
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           subdivisionId: getString(p.subdivisionId),
           coordinates: feature.coordinates,
           storyContent: getString(p.storyContent) || getString(p.content),
@@ -93,6 +96,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           description: getString(p.content) || getString(p.description),
           icon: getString(p.icon),
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           subdivisionId: getString(p.subdivisionId),
           coordinates: feature.coordinates,
           storyContent: getString(p.content),
@@ -115,6 +119,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           prominence: getNumber(p.prominence),
           subdivisionId: getString(p.subdivisionId),
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           coordinates: feature.coordinates,
         },
       };
@@ -125,6 +130,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
         riverForm: {
           name: feature.name,
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           geometry: feature.geometry,
         },
       };
@@ -136,6 +142,7 @@ export function mapFeatureToEditState(feature: EditorFeature): FeatureEditState 
           name: feature.name,
           waterType: getString(p.waterType) || "freshwater",
           wikiPageTitle: getString(p.wikiPageTitle),
+          wikiSource: getString(p.wikiSource),
           geometry: feature.geometry,
         },
       };

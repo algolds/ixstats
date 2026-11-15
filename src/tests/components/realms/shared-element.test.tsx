@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { render } from "@testing-library/react";
-import { SharedElement } from "~/components/ui/view-transition";
+import { countryTransitionName, SharedElement } from "~/components/ui/view-transition";
 
 let mockReduced = false;
 
@@ -35,5 +35,21 @@ describe("SharedElement", () => {
       </SharedElement>
     );
     expect(container.querySelector('[data-vt="realm-map-ixnay"]')?.textContent).toBe("face");
+  });
+
+  it("omits ViewTransition when name is null and sanitises country transition names", () => {
+    mockReduced = false;
+    expect(countryTransitionName("face", "new.caphiria")).toBe("country-face-new-caphiria");
+    expect(countryTransitionName("flag", "caphiria")).toBe("country-flag-caphiria");
+    expect(countryTransitionName("title", "   ")).toBeNull();
+    expect(countryTransitionName("title", null)).toBeNull();
+
+    const { container } = render(
+      <SharedElement name={countryTransitionName("flag", null)}>
+        <span>flag</span>
+      </SharedElement>
+    );
+    expect(container.querySelector("[data-vt]")).toBeNull();
+    expect(container.textContent).toBe("flag");
   });
 });

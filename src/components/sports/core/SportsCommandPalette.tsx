@@ -53,7 +53,7 @@ export function SportsCommandPalette({
       onOpenChange={setOpen}
       title="Sports command palette"
       description="Quick actions, navigation, and club search"
-      className="border-separator bg-surface rounded-sheet max-w-xl"
+      className="max-w-xl"
     >
       <CommandInput placeholder="Type a command or search a club (⌘K)..." />
       <CommandList className="max-h-80 overflow-y-auto p-2">

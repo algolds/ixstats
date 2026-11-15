@@ -3,7 +3,6 @@
 import { Globe, Plus, StatsReport, Trophy } from "iconoir-react";
 
 import React from "react";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import type { Achievement } from "./cultural-exchange-types";
 
@@ -51,19 +50,16 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
               Cross-cultural collaboration and diplomatic engagement for {primaryCountry.name}
             </p>
             {achievements.length > 0 && (
-              <div className="flex shrink-0 flex-wrap items-center gap-1">
-                {achievements.slice(0, 3).map((badge) => (
-                  <Badge key={badge.id} variant="outline" title={badge.description}>
-                    <Trophy className="text-yellow" />
-                    {badge.name}
-                  </Badge>
-                ))}
-                {achievements.length > 3 && (
-                  <span className="text-label-secondary text-footnote">
-                    +{achievements.length - 3} more
-                  </span>
-                )}
-              </div>
+              <p className="text-label-secondary text-footnote flex shrink-0 flex-wrap items-center gap-1.5">
+                <Trophy className="text-warning h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <span>
+                  {achievements
+                    .slice(0, 3)
+                    .map((b) => b.name)
+                    .join(" · ")}
+                </span>
+                {achievements.length > 3 && <span>+{achievements.length - 3} more</span>}
+              </p>
             )}
           </div>
         </div>
@@ -88,7 +84,7 @@ export const ExchangeHeader = React.memo<ExchangeHeaderProps>(
             </Button>
           )}
 
-          <Button size="sm" onClick={onCreateExchange}>
+          <Button variant="outline" size="sm" onClick={onCreateExchange}>
             <Plus aria-hidden="true" className="h-3.5 w-3.5" />
             Create exchange
           </Button>

@@ -12,6 +12,7 @@
 import { PrismaClient } from "@prisma/client";
 import { isSeedCard, SEED_CARD_DAY } from "~/lib/cards/seed-cards";
 import { recordCardAudit } from "~/server/modules/cards/cards.audit";
+import { createPrismaClient } from "~/server/prisma-client";
 
 type SeedCardDb = Pick<PrismaClient, "card" | "auditLog" | "$transaction">;
 
@@ -76,7 +77,7 @@ export async function retireSeedCards(db: SeedCardDb, apply: boolean): Promise<S
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const { found, retired } = await retireSeedCards(db, apply);
     console.log(`${found.length} February seed cards:`);

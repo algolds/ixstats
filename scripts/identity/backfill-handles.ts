@@ -11,7 +11,7 @@
  * existing handles, earlier picks in the same run and the old wiki names other accounts hold (which
  * `setUserHandle` refuses).
  */
-import { PrismaClient } from "@prisma/client";
+
 import { claimName, IXWIKI, namesOfUsers } from "~/lib/identity/wiki-names";
 import { PERSONAL_ACCOUNT_TYPE } from "~/server/shared/thinkpages-personal-account";
 import {
@@ -20,8 +20,9 @@ import {
   type BackfillSource,
 } from "~/server/modules/identity/identity.handle";
 import { primaryNationOf } from "~/server/modules/identity/identity.mappers";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 interface UserRow {

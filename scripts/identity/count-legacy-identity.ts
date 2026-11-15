@@ -8,6 +8,7 @@ import { PrismaClient } from "@prisma/client";
 import { countLegacyIdentity, heldLegacyNames } from "~/lib/identity/legacy-identity";
 import { normalizeWikiUsername } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
 import { loadLegacySnapshot } from "./legacy-snapshot";
+import { createPrismaClient } from "~/server/prisma-client";
 
 /** Distinct normalised Lorewards winner and runner-up names. */
 async function loadLorewardNames(db: PrismaClient): Promise<Set<string>> {
@@ -20,7 +21,7 @@ async function loadLorewardNames(db: PrismaClient): Promise<Set<string>> {
 }
 
 async function main(): Promise<void> {
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const snapshot = await loadLegacySnapshot(db);
     const held = heldLegacyNames(snapshot);

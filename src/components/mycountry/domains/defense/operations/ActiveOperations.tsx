@@ -28,8 +28,10 @@ import {
 } from "~/components/ui/alert-dialog";
 import { CombatResult } from "./CombatResult";
 import { api } from "~/trpc/react";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { formatCurrency } from "~/lib/utils/format-utils";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useNotify } from "~/hooks/useNotify";
 
 interface ActiveOperationsProps {
@@ -46,8 +48,8 @@ const OP_ICONS: Record<string, typeof Shield> = {
 
 /** Operation status → semantic outline-badge colour. */
 const STATUS_COLORS: Record<string, string> = {
-  planned: "border-yellow/30 text-yellow",
-  active: "border-green/30 text-green",
+  planned: "border-warning/30 text-warning",
+  active: "border-success/30 text-success",
   completed: "text-label-secondary",
   failed: "border-destructive/30 text-destructive",
   cancelled: "text-label-secondary",
@@ -75,20 +77,19 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
 
   if (!operations || operations.length === 0) {
     return (
-      <div className="border-separator rounded-control border border-dashed p-6 text-center">
-        <Shield aria-hidden="true" className="text-label-secondary mx-auto mb-3 h-8 w-8" />
-        <p className="text-label-secondary text-body">
-          No active operations. Deploy forces to begin a military operation.
-        </p>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-2"
-          onClick={() => setShowCompleted(!showCompleted)}
-        >
-          {showCompleted ? "Hide" : "Show"} past operations
-        </Button>
-      </div>
+      <Card>
+        <EmptyState
+          compact
+          icon={<Shield />}
+          title="No active operations"
+          message="Deploy forces to begin a military operation."
+          action={
+            <Button variant="ghost" size="sm" onClick={() => setShowCompleted(!showCompleted)}>
+              {showCompleted ? "Hide" : "Show"} past operations
+            </Button>
+          }
+        />
+      </Card>
     );
   }
 
@@ -119,19 +120,37 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               <div className="flex items-start gap-3">
                 <Icon aria-hidden="true" className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-label text-body font-medium">{op.name}</span>
-                    <Badge variant="outline" className={cn("capitalize", STATUS_COLORS[op.status])}>
-                      {op.status}
-                    </Badge>
+                    {op.successRating ? (
+                      <Badge
+                        variant={SUCCESS_RATING_BADGE[op.successRating] ?? "destructive"}
+                        className="capitalize"
+                      >
+                        {op.successRating}
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="outline"
+                        className={cn("capitalize", STATUS_COLORS[op.status])}
+                      >
+                        {op.status}
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-label-secondary text-footnote mt-1">
                     {op.operationType.replace("_", " ")}
+                    {op.successRating ? ` · ${op.status}` : ""}
                     {op.targetCountry && (
                       <>
                         {" "}
                         · Target:{" "}
-                        <span className="text-label font-medium">{op.targetCountry.name}</span>
+                        <CountryLink
+                          country={{ id: op.targetCountry.id, name: op.targetCountry.name }}
+                          className="text-label font-medium hover:underline"
+                        >
+                          {op.targetCountry.name}
+                        </CountryLink>
                       </>
                     )}
                   </p>
@@ -211,14 +230,6 @@ export function ActiveOperations({ countryId }: ActiveOperationsProps) {
               </div>
             )}
 
-            {op.successRating && (
-              <Badge
-                variant={SUCCESS_RATING_BADGE[op.successRating] ?? "destructive"}
-                className="mt-2 capitalize"
-              >
-                {op.successRating}
-              </Badge>
-            )}
             <CombatResult
               band={op.outcomeBand}
               days={null}

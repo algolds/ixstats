@@ -1,5 +1,6 @@
 "use client";
 
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
 import { useCallback, useState, type ReactNode } from "react";
 import { Badge, type BadgeVariant } from "~/components/ui/badge";
 import { Label } from "~/components/ui/label";
@@ -11,30 +12,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import {
-  CREDIT_RATINGS,
   SUB_INDUSTRIES,
-  borrowRateFor,
-  computeCompanyMetrics,
   subIndustriesOf,
-  type CompanyMetrics,
-  type CreditRating,
   type SubIndustry,
   type SubIndustryKey,
 } from "~/lib/exchange/taxonomy";
 import { formatSovereigns, round2 } from "~/lib/exchange/amounts";
 
 export { formatSovereigns, round2 };
-export {
-  CREDIT_RATINGS,
-  SUB_INDUSTRIES,
-  borrowRateFor,
-  computeCompanyMetrics,
-  subIndustriesOf,
-  type CompanyMetrics,
-  type CreditRating,
-  type SubIndustry,
-  type SubIndustryKey,
-};
+export { subIndustriesOf, type SubIndustryKey };
 
 export const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -49,7 +35,7 @@ export function sectorLabel(key: string): string {
   return SECTORS.find((s) => s.value === key)?.label ?? key;
 }
 
-export function subIndustryOf(key: string): SubIndustry | undefined {
+function subIndustryOf(key: string): SubIndustry | undefined {
   return SUB_INDUSTRIES.find((s) => s.key === key);
 }
 
@@ -227,6 +213,8 @@ export function parseDecimalAmount(raw: string): number {
 }
 
 export interface CompanyWikiData {
+  /** The wiki the page is on; a row that does not say is an IxWiki page. */
+  wikiSource: WikiSource;
   wikiSlug: string;
   pageTitle: string;
   logoUrl: string | null;
@@ -255,6 +243,7 @@ export function readCompanyWikiData(
   const pageTitle = strOrNull(r.pageTitle) ?? (wikiSlug ? wikiSlug.replace(/_/g, " ") : null);
   if (!wikiSlug || !pageTitle) return null;
   return {
+    wikiSource: parseWikiSource(strOrNull(r.wikiSource)),
     wikiSlug,
     pageTitle,
     logoUrl: strOrNull(r.logoUrl),
@@ -270,46 +259,8 @@ export function readCompanyWikiData(
   };
 }
 
-export interface FairValueBreakdown {
-  capital: number;
-  contracts: number;
-  standing: number;
-  sectorFactor: number;
-  decisions: number;
-  fairValue: number;
-}
-
-/** Client-safe valuation breakdown matching the server formula at default weights. */
-export function computeFairValue(
-  c: {
-    capital: number;
-    creditDrawn?: number;
-    contractsWonValue: number;
-    standing: number;
-    decisionValue?: number;
-  },
-  sectorIndexValue: number = 1000
-): FairValueBreakdown {
-  const netCapital = round2(Math.max(0, c.capital - (c.creditDrawn ?? 0)));
-  const contracts = round2(0.25 * c.contractsWonValue);
-  const standing = round2(100 * Math.max(0, c.standing));
-  const rawFactor = sectorIndexValue / 1000;
-  const sectorFactor = Math.round(Math.min(2, Math.max(0.5, rawFactor)) * 10_000) / 10_000;
-  const decisions = round2(c.decisionValue ?? 0);
-  const fairValue = round2((netCapital + contracts + standing) * sectorFactor + decisions);
-  return { capital: netCapital, contracts, standing, sectorFactor, decisions, fairValue };
-}
-
-/** Maximum Central Bank credit line available for a company's productive plant and contract record. */
-export function creditLimitFor(c: { decisionValue: number; contractsWonValue: number }): number {
-  return round2(Math.min(250_000, 0.5 * (c.decisionValue + 0.25 * c.contractsWonValue)));
-}
-
-/** Annualized Central Bank borrow rate for a company's HQ interest rate and credit rating. */
-export function borrowRateOf(hqRate: number | null, rating: string): number {
-  const r = CREDIT_RATINGS.find((x) => x === rating) ?? "D";
-  return borrowRateFor(hqRate, r) ?? borrowRateFor(hqRate, "CCC") ?? 0;
-}
+// One copy of the money math for the UI and the server.
+export { borrowRateOf, creditLimitFor } from "~/lib/exchange/valuation";
 
 /** Hours left in the 72-hour distress grace window before liquidation. */
 export function distressHoursLeft(distressedSinceIxTime: number | null): number {

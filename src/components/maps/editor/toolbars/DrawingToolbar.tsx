@@ -1,5 +1,6 @@
-import { FacetMaterial } from "~/components/ui/facet";
 import React from "react";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 
 interface DrawingToolbarProps {
   drawVertices: [number, number][];
@@ -19,10 +20,13 @@ export function DrawingToolbar({
   if (drawVertices.length === 0) return null;
 
   return (
-    <div className="absolute bottom-6 left-1/2 z-30 -translate-x-1/2 duration-200">
-      <FacetMaterial layer="chrome" className="flex items-center gap-3 rounded-full px-4 py-2">
-        <span className="text-label text-caption mr-2 font-semibold select-none">
-          Drawing Subdivision:{" "}
+    <div className="pointer-events-auto absolute bottom-6 left-1/2 z-30 -translate-x-1/2 duration-200">
+      <FacetMaterial
+        layer="chrome"
+        className="facet-chrome-subtle rounded-control flex items-center gap-2.5 px-3 py-1.5"
+      >
+        <span className="text-label text-caption mr-1 font-semibold select-none">
+          Drawing subdivision:{" "}
           <span className="text-tint font-semibold tabular-nums">{drawVertices.length}</span>{" "}
           {drawVertices.length === 1 ? "vertex" : "vertices"}
         </span>
@@ -38,17 +42,10 @@ export function DrawingToolbar({
         >
           Clear
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={saveDraw}
-          disabled={!canSaveDraw}
-          className="rounded-full"
-        >
+        <Button type="button" size="xs" onClick={saveDraw} disabled={!canSaveDraw}>
           Save shape
         </Button>
       </FacetMaterial>
     </div>
   );
 }
-import { Button } from "~/components/ui/button";

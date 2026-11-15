@@ -5,7 +5,7 @@
  * ("20 missions across 3 months") return the count only once the floor is met, and 0 before.
  */
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
+import { AGREEMENT_FP_TYPES, COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
 import type { MetricContext, MetricLoader } from "./registry";
 import { distinctBuckets, monthKey, MONTH_MS } from "../time-buckets";
 import { ownedMonths } from "./nation";
@@ -65,12 +65,12 @@ async function embassiesLasting(db: PrismaClient, countryId: string, now: Date):
   ).length;
 }
 
-/** Accepted cooperative actions toward nations that another player owns. */
+/** Accepted treaties toward nations that another player owns (summits have their own metric). */
 const cooperativeAccepted = (db: PrismaClient, countryId: string, userId: string) =>
   db.foreignPolicyAction.count({
     where: {
       initiatorId: countryId,
-      actionType: { in: [...COOPERATIVE_FP_TYPES] },
+      actionType: { in: [...AGREEMENT_FP_TYPES] },
       status: { in: ["active", "lifted"] },
       target: { AND: [{ ownerUserId: { not: null } }, { ownerUserId: { not: userId } }] },
     },

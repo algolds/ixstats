@@ -63,7 +63,21 @@ describe("updateTeams", () => {
     });
     expect(db.sportTeam.update).toHaveBeenCalledWith({
       where: { id: "t3" },
-      data: { wikiSlug: null, nationId: null },
+      data: { wikiSlug: null, wikiSource: null, nationId: null },
+    });
+  });
+
+  it("persists wikiSource alongside wikiSlug when linking a team to IIWiki", async () => {
+    const db = mockDb(["t1"]);
+
+    await callerAs(CREATOR_ID, db).updateTeams({
+      leagueId: "league_1",
+      teams: [{ id: "t1", wikiSlug: "FC_Lucrecia", wikiSource: "iiwiki" }],
+    });
+
+    expect(db.sportTeam.update).toHaveBeenCalledWith({
+      where: { id: "t1" },
+      data: { wikiSlug: "FC_Lucrecia", wikiSource: "iiwiki" },
     });
   });
 

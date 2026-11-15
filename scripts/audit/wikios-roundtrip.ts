@@ -34,7 +34,10 @@ import { parseArgs } from "node:util";
 import dotenv from "dotenv";
 import { z } from "zod";
 import { serializePlateToWikitext } from "../../src/components/wiki-os/editor/plate/wiki-wikitext";
-import { astToPlateNodes, wikitextToAst } from "../../src/lib/wiki-os/transformers/wiki-ast-converter";
+import {
+  astToPlateNodes,
+  wikitextToAst,
+} from "../../src/lib/wiki-os/transformers/wiki-ast-converter";
 import {
   CONSTRUCTS,
   classifyLine,
@@ -50,6 +53,7 @@ import {
   type Construct,
   type DiffLine,
 } from "../lib/wikios-harness";
+import { createPrismaClient } from "~/server/prisma-client";
 
 interface CommonConfig {
   limit: number;
@@ -62,7 +66,12 @@ type TitleList = { pages: string; namespaces: null };
 type DbSelection = TitleList | { pages: null; namespaces: number[] | "all" };
 
 type DbConfig = CommonConfig & DbSelection & { source: "db" };
-type MwConfig = CommonConfig & { source: "mw"; mwApi: string; pages: string | null; namespaces: null };
+type MwConfig = CommonConfig & {
+  source: "mw";
+  mwApi: string;
+  pages: string | null;
+  namespaces: null;
+};
 type Config = DbConfig | MwConfig;
 
 interface PageInput {
@@ -114,7 +123,9 @@ const mwContentSchema = z.object({
       z.object({
         title: z.string(),
         missing: z.boolean().optional(),
-        revisions: z.array(z.object({ slots: z.object({ main: z.object({ content: z.string() }) }) })).optional(),
+        revisions: z
+          .array(z.object({ slots: z.object({ main: z.object({ content: z.string() }) }) }))
+          .optional(),
       })
     ),
   }),
@@ -149,9 +160,11 @@ function parseConfig(argv: string[]): Config {
   const limit = Number.parseInt(values.limit ?? "50", 10);
   const intervalMs = Number.parseInt(values["interval-ms"] ?? "1000", 10);
   if (source !== "db" && source !== "mw") throw new Error("--source must be db or mw");
-  if (!(limit >= 1) || !(intervalMs >= 0)) throw new Error("--limit must be >= 1 and --interval-ms >= 0");
+  if (!(limit >= 1) || !(intervalMs >= 0))
+    throw new Error("--limit must be >= 1 and --interval-ms >= 0");
   const common = { limit, out: values.out ?? DEFAULT_OUT, intervalMs };
-  if (source === "db") return { ...common, ...dbSelection(values.pages, values.namespaces), source };
+  if (source === "db")
+    return { ...common, ...dbSelection(values.pages, values.namespaces), source };
   if (values.namespaces !== undefined) throw new Error(NAMESPACES_MISPLACED);
   const mwApi = parseHttpUrl(values["mw-api"], "--mw-api");
   return { ...common, source, mwApi, pages: values.pages ?? null, namespaces: null };
@@ -165,9 +178,9 @@ const sameTitle = (title: string): string => title.replace(/_/g, " ").trim();
 
 /** Reads wikitext from the local database only. Never writes. */
 async function loadFromDb(config: DbConfig): Promise<Loaded> {
-  dotenv.config({ path: ".env.local.dev" });
-  dotenv.config({ path: ".env.local" });
-  dotenv.config({ path: ".env" });
+  dotenv.config({ quiet: true, path: ".env.local.dev" });
+  dotenv.config({ quiet: true, path: ".env.local" });
+  dotenv.config({ quiet: true, path: ".env" });
   const databaseUrl = process.env.DATABASE_URL ?? "";
   if (!isLocalDatabaseUrl(databaseUrl)) {
     throw new Error(
@@ -175,7 +188,7 @@ async function loadFromDb(config: DbConfig): Promise<Loaded> {
     );
   }
   const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
+  const prisma = createPrismaClient({ url: databaseUrl });
   try {
     if (config.pages !== null) {
       const titles = loadPageList(config.pages);
@@ -193,12 +206,22 @@ async function loadFromDb(config: DbConfig): Promise<Loaded> {
     }
     const { namespaces } = config;
     const all = await prisma.wikiArticle.findMany({
-      where: { source: "ixwiki", ...(namespaces === "all" ? {} : { namespace: { in: namespaces } }) },
+      where: {
+        source: "ixwiki",
+        ...(namespaces === "all" ? {} : { namespace: { in: namespaces } }),
+      },
       select: { id: true },
       orderBy: { title: "asc" },
     });
     const pages = await prisma.wikiArticle.findMany({
-      where: { id: { in: samplePages(all.map((row) => row.id), config.limit) } },
+      where: {
+        id: {
+          in: samplePages(
+            all.map((row) => row.id),
+            config.limit
+          ),
+        },
+      },
       select: { title: true, wikitext: true },
       orderBy: { title: "asc" },
     });
@@ -225,7 +248,11 @@ async function fetchMwWikitext(title: string, config: MwConfig): Promise<MwFetch
     { headers: { accept: "application/json" } },
     { minIntervalMs: config.intervalMs }
   );
-  if (result.status !== 200) return { ok: false, reason: `fetch failed: HTTP ${result.status} ${result.error ?? ""}`.trim() };
+  if (result.status !== 200)
+    return {
+      ok: false,
+      reason: `fetch failed: HTTP ${result.status} ${result.error ?? ""}`.trim(),
+    };
   let payload: unknown;
   try {
     payload = JSON.parse(result.body);
@@ -236,7 +263,11 @@ async function fetchMwWikitext(title: string, config: MwConfig): Promise<MwFetch
   if (!parsed.success) return { ok: false, reason: "fetch failed: unexpected response shape" };
   const page = parsed.data.query.pages[0];
   const content = page?.revisions?.[0]?.slots.main.content;
-  if (content === undefined) return { ok: false, reason: page?.missing ? "page does not exist on MediaWiki" : "no wikitext returned" };
+  if (content === undefined)
+    return {
+      ok: false,
+      reason: page?.missing ? "page does not exist on MediaWiki" : "no wikitext returned",
+    };
   return { ok: true, page: { title, wikitext: content } };
 }
 
@@ -274,10 +305,18 @@ function countConstructs(changes: DiffLine[]): Partial<Record<Construct, Constru
 }
 
 /** The visual editor's load and save, with no edit in between. */
-function roundTrip(wikitext: string): { output: string; complete: boolean; parseConfidence: "full" | "partial" } {
+function roundTrip(wikitext: string): {
+  output: string;
+  complete: boolean;
+  parseConfidence: "full" | "partial";
+} {
   const ast = wikitextToAst(wikitext);
   const serialized = serializePlateToWikitext(astToPlateNodes(ast));
-  return { output: serialized.wikitext, complete: serialized.complete, parseConfidence: ast.parseConfidence };
+  return {
+    output: serialized.wikitext,
+    complete: serialized.complete,
+    parseConfidence: ast.parseConfidence,
+  };
 }
 
 function reportPage(page: PageInput): PageReport {
@@ -285,7 +324,9 @@ function reportPage(page: PageInput): PageReport {
   try {
     const { output, complete, parseConfidence } = roundTrip(page.wikitext);
     const identical = output === page.wikitext;
-    const { changes, truncated } = identical ? { changes: [], truncated: false } : lineDiff(page.wikitext, output);
+    const { changes, truncated } = identical
+      ? { changes: [], truncated: false }
+      : lineDiff(page.wikitext, output);
     return {
       title: page.title,
       inputBytes,
@@ -321,7 +362,8 @@ function reportPage(page: PageInput): PageReport {
 // Report
 // ---------------------------------------------------------------------------
 
-const percent = (part: number, whole: number): string => (whole === 0 ? "n/a" : `${((part / whole) * 100).toFixed(1)}%`);
+const percent = (part: number, whole: number): string =>
+  whole === 0 ? "n/a" : `${((part / whole) * 100).toFixed(1)}%`;
 
 function renderPage(report: PageReport): string {
   if (report.error !== undefined) return `ERROR ${report.title}: ${report.error}`;
@@ -339,21 +381,33 @@ function renderPage(report: PageReport): string {
 function renderSkipped(skipped: Skipped[]): string[] {
   const reasons = new Map<string, number>();
   for (const { reason } of skipped) reasons.set(reason, (reasons.get(reason) ?? 0) + 1);
-  return [`Skipped (not measured): ${skipped.length}`, ...[...reasons].map(([reason, n]) => `  ${reason}: ${n}`)];
+  return [
+    `Skipped (not measured): ${skipped.length}`,
+    ...[...reasons].map(([reason, n]) => `  ${reason}: ${n}`),
+  ];
 }
 
 function renderAggregate(reports: PageReport[], skipped: Skipped[]): string {
   const measured = reports.filter((report) => report.error === undefined);
-  const count = (predicate: (report: PageReport) => boolean): number => measured.filter(predicate).length;
-  const removed = (c: Construct): number => measured.reduce((sum, report) => sum + (report.constructs[c]?.removed ?? 0), 0);
-  const added = (c: Construct): number => measured.reduce((sum, report) => sum + (report.constructs[c]?.added ?? 0), 0);
+  const count = (predicate: (report: PageReport) => boolean): number =>
+    measured.filter(predicate).length;
+  const removed = (c: Construct): number =>
+    measured.reduce((sum, report) => sum + (report.constructs[c]?.removed ?? 0), 0);
+  const added = (c: Construct): number =>
+    measured.reduce((sum, report) => sum + (report.constructs[c]?.added ?? 0), 0);
   const lines = [
     "## Aggregate",
     "",
     `Pages: ${reports.length} (pipeline errors: ${reports.length - measured.length})`,
     ...renderSkipped(skipped),
-    `Byte-identical: ${count((r) => r.identical)}/${measured.length} (${percent(count((r) => r.identical), measured.length)})`,
-    `Identical ignoring leading/trailing whitespace: ${count((r) => r.identicalTrimmed)}/${measured.length} (${percent(count((r) => r.identicalTrimmed), measured.length)})`,
+    `Byte-identical: ${count((r) => r.identical)}/${measured.length} (${percent(
+      count((r) => r.identical),
+      measured.length
+    )})`,
+    `Identical ignoring leading/trailing whitespace: ${count((r) => r.identicalTrimmed)}/${measured.length} (${percent(
+      count((r) => r.identicalTrimmed),
+      measured.length
+    )})`,
     `Parse confidence partial: ${count((r) => r.parseConfidence === "partial")} pages`,
     `Serializer incomplete: ${count((r) => !r.complete)} pages`,
     `Diff truncated (LCS cap hit, changed-line counts are upper bounds): ${count((r) => r.diffTruncated)} pages`,
@@ -362,7 +416,10 @@ function renderAggregate(reports: PageReport[], skipped: Skipped[]): string {
   ];
   for (const construct of CONSTRUCTS) {
     const pages = count((r) => r.constructs[construct] !== undefined);
-    if (pages > 0) lines.push(`  ${construct.padEnd(12)} -${removed(construct)} / +${added(construct)}  on ${pages} pages`);
+    if (pages > 0)
+      lines.push(
+        `  ${construct.padEnd(12)} -${removed(construct)} / +${added(construct)}  on ${pages} pages`
+      );
   }
   return lines.join("\n");
 }
@@ -394,7 +451,11 @@ async function main(): Promise<void> {
   ensureParentDir(config.out);
   writeFileSync(
     config.out,
-    JSON.stringify({ meta: { ...config, generatedAt: new Date().toISOString() }, skipped, pages: reports }, null, 2)
+    JSON.stringify(
+      { meta: { ...config, generatedAt: new Date().toISOString() }, skipped, pages: reports },
+      null,
+      2
+    )
   );
   console.log(`\nFull results written to ${config.out}`);
 }

@@ -155,11 +155,11 @@ export function SyntaxSentenceBuilder({
       </h4>
 
       <div className="rounded-control border-indigo/20 bg-indigo/5 space-y-2 border p-4">
-        <div className="text-label-secondary text-footnote flex items-center gap-2 font-semibold">
+        <div className="text-label-secondary text-footnote flex items-center gap-2 font-medium">
           <span>Source (English):</span>
           <span className="text-label italic">{englishSentence}</span>
         </div>
-        <div className="text-label text-body flex items-center gap-2 font-semibold">
+        <div className="text-label text-headline flex items-center gap-2">
           <ArrowRight className="text-indigo h-4 w-4" />
           <span className="text-body text-indigo font-mono">{sentence}.</span>
         </div>
@@ -167,7 +167,7 @@ export function SyntaxSentenceBuilder({
 
       <div className="text-footnote grid grid-cols-1 gap-4 pt-2 md:grid-cols-3">
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Subject noun</span>
+          <span className="text-label block font-medium">Subject noun</span>
           <Input
             type="text"
             value={subject}
@@ -201,7 +201,7 @@ export function SyntaxSentenceBuilder({
         </div>
 
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Action verb</span>
+          <span className="text-label block font-medium">Action verb</span>
           <Input
             type="text"
             value={verb}
@@ -223,7 +223,7 @@ export function SyntaxSentenceBuilder({
         </div>
 
         <div className="border-separator bg-fill-4 rounded-control space-y-2 border p-3">
-          <span className="text-label block font-semibold">Object noun</span>
+          <span className="text-label block font-medium">Object noun</span>
           <Input
             type="text"
             value={object}

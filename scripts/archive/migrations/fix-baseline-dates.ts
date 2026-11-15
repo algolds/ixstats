@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Fix Baseline Dates Script
  *
@@ -16,9 +17,7 @@
 
 process.env.SKIP_ENV_VALIDATION = "1";
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // IxTime January 1, 2040 - the date the World-Roster data represents
 const IXTIME_2040 = new Date("2040-01-01T00:00:00.000Z");

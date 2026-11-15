@@ -8,7 +8,7 @@ type PremiumSection = "defense";
 
 /**
  * Whether the user gets MyCountry's premium tools: the premium ability (premium tier, owner,
- * admin, staff) or the beta-tester role. The one client check behind the Defense sidebar row
+ * admin, staff) or the beta-tester role. The one client check behind the Defense ribbon tab
  * and the Defense page lock; the server gate accepts the same users.
  */
 export function useHasMycountryPremium(section: PremiumSection): boolean {

@@ -25,13 +25,7 @@ export function SettingsSwitchRow({
 }: SettingsSwitchRowProps) {
   return (
     <SettingsRow label={label} description={description} icon={icon} glyphClass={glyphClass}>
-      <Switch
-        id={id}
-        checked={checked}
-        onCheckedChange={onCheckedChange}
-        disabled={disabled}
-        data-cuelume-press="soft"
-      />
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
     </SettingsRow>
   );
 }

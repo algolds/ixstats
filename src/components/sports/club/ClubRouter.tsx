@@ -8,7 +8,6 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
@@ -19,7 +18,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { assetUrl, withBasePath } from "~/lib/base-path";
+import { withBasePath } from "~/lib/base-path";
 import { SPORT_PRESETS } from "~/lib/sports/presets";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
@@ -28,8 +27,8 @@ import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { getSportTheme } from "~/lib/sports/theming";
 import { TeamSettingsModal } from "~/components/sports/league/TeamSettingsModal";
-import { SPORT_EMOJIS, type SportPresetKey } from "~/lib/sports/presets";
-import { ArrowLeft, Trophy, Shield, Settings, MapPin, WhiteFlag as Flag } from "iconoir-react";
+import { TeamCrest } from "~/components/sports/TeamCrest";
+import { ArrowLeft, Trophy, Shield, Settings } from "iconoir-react";
 
 // Modular Sections
 import { ClubOverviewSection } from "~/components/sports/club/sections/ClubOverviewSection";
@@ -166,31 +165,18 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
   }
 
   if (!overview && teamPublic) {
-    const publicEmoji =
-      SPORT_EMOJIS[(teamPublic.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
     const isClaimed = !!teamPublic.ownerUserId;
     const isOwnedByMe = isClaimed && teamPublic.ownerUserId === user?.id;
 
     return (
       <div className="container mx-auto max-w-2xl px-4 py-16">
         <Card padding="lg" className="text-center">
-          <div
-            className="border-separator bg-surface-secondary rounded-card text-large-title mx-auto mb-4 flex size-20 items-center justify-center overflow-hidden border"
-            style={teamPublic.color ? { borderColor: teamPublic.color } : undefined}
-          >
-            {teamPublic.logo ? (
-              <img
-                src={assetUrl(teamPublic.logo) ?? undefined}
-                alt={teamPublic.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              publicEmoji
-            )}
+          <div className="bg-tint-fill text-tint-ink rounded-card mx-auto mb-4 flex size-20 items-center justify-center p-3">
+            <TeamCrest src={teamPublic.logo} alt="" color={teamPublic.color ?? undefined} />
           </div>
           <h2 className="text-label text-title-1">{teamPublic.name}</h2>
           <p className="text-label-secondary text-footnote mt-1">
-            {teamPublic.league?.name} • {teamPublic.city ?? "Imperial League"}
+            {teamPublic.league?.name} · {teamPublic.city ?? "Imperial League"}
           </p>
 
           {!isClaimed ? (
@@ -204,7 +190,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
                 onClick={() => claimTeam.mutate({ teamId })}
                 disabled={claimTeam.isPending}
               >
-                {claimTeam.isPending ? "Claiming..." : "Claim Club"}
+                {claimTeam.isPending ? "Claiming..." : "Claim club"}
               </Button>
             </div>
           ) : isOwnedByMe ? (
@@ -255,68 +241,8 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
       (m: { homeTeamId: string; awayTeamId: string }) =>
         m.homeTeamId === teamId || m.awayTeamId === teamId
     ) ?? null;
-  const emoji = SPORT_EMOJIS[(team.league?.sportPreset ?? "") as SportPresetKey] ?? "🏆";
   const sportPresetAttrs =
     SPORT_PRESETS.find((p) => p.key === team.league?.sportPreset)?.ratingVector ?? [];
-
-  const heroSection = (
-    <Card className="overflow-hidden">
-      {team.coverImage && (
-        <div className="bg-fill-3 h-28 overflow-hidden">
-          <img src={withBasePath(team.coverImage)} alt="" className="h-full w-full object-cover" />
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-        <div className="flex items-center gap-4">
-          <div
-            className="border-separator bg-surface-secondary rounded-row text-large-title flex size-16 shrink-0 items-center justify-center overflow-hidden border"
-            style={team.color ? { borderColor: team.color } : undefined}
-          >
-            {team.logo ? (
-              <img
-                src={assetUrl(team.logo) ?? undefined}
-                alt={team.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              emoji
-            )}
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-label text-title-1">{team.name}</h2>
-              {team.shortName && <Badge variant="default">{team.shortName}</Badge>}
-            </div>
-            <div className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-3">
-              {team.city && (
-                <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {team.city}
-                </span>
-              )}
-              {team.league && (
-                <Link
-                  href={`/myleague/${team.leagueId}`}
-                  className="hover:text-label flex items-center gap-1 hover:underline"
-                >
-                  <Flag className="h-3.5 w-3.5" />
-                  <span>{team.league.name}</span>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true)}>
-            <Settings />
-            Manage club
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
 
   const renderSectionContent = () => {
     switch (activeSection) {
@@ -398,12 +324,48 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
         header={
           <PageHeader
             title={team.name}
-            subtitle={getSportTheme(team.league?.sportPreset).name}
+            leading={
+              <div className="bg-tint-fill text-tint-ink rounded-row flex size-14 shrink-0 items-center justify-center p-2">
+                <TeamCrest src={team.logo} alt="" color={team.color ?? undefined} />
+              </div>
+            }
+            subtitle={
+              <span className="flex flex-wrap items-center gap-x-1.5">
+                <span>{getSportTheme(team.league?.sportPreset).name}</span>
+                {team.shortName && <span>· {team.shortName}</span>}
+                {team.city && <span>· {team.city}</span>}
+                {team.league && (
+                  <span>
+                    ·{" "}
+                    <Link
+                      href={`/myleague/${team.leagueId}`}
+                      className="hover:text-label focus-visible:outline-tint rounded-control-sm underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+                    >
+                      {team.league.name}
+                    </Link>
+                  </span>
+                )}
+              </span>
+            }
             back={{ href: "/myclub", label: "MyClub" }}
+            backdrop={
+              team.coverImage ? (
+                <img
+                  src={withBasePath(team.coverImage)}
+                  alt=""
+                  className="absolute inset-0 size-full object-cover"
+                />
+              ) : undefined
+            }
+            actions={
+              <Button variant="secondary" size="sm" onClick={() => setSettingsOpen(true)}>
+                <Settings />
+                Manage club
+              </Button>
+            }
             bleed
           />
         }
-        heroSection={heroSection}
       >
         <SportsSectionTabs
           label="Club views"
@@ -453,7 +415,7 @@ export function ClubRouter({ teamId }: ClubRouterProps) {
               }}
               disabled={listPlayer.isPending}
             >
-              {listPlayer.isPending ? "Listing..." : "Confirm Listing"}
+              {listPlayer.isPending ? "Listing..." : "Confirm listing"}
             </Button>
           </div>
         </DialogContent>

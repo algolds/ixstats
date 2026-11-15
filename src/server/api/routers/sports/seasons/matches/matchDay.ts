@@ -12,6 +12,7 @@ import { TRPCError } from "@trpc/server";
 import { assertCanManageLeague } from "~/server/api/routers/sports/league-access";
 import { transitionToNextStage } from "~/lib/sports";
 import type { EventTraceStep } from "~/lib/sports/types";
+import { outcomeFromScores, resolveMatchPredictions } from "~/lib/sports/predictions";
 import type { MatchDayResultLine } from "~/lib/sports/feed-bulletins";
 import {
   SIM_MATCH_INCLUDE,
@@ -111,7 +112,10 @@ export const matchDaySimulationRouter = createTRPCRouter({
             select: { id: true, homeScore: true, awayScore: true, status: true, matchStats: true },
           });
 
-          if (existingMatches.length > 0 && existingMatches.every((m) => m.status === "completed")) {
+          if (
+            existingMatches.length > 0 &&
+            existingMatches.every((m) => m.status === "completed")
+          ) {
             return {
               matchDay: input.matchDay,
               results: existingMatches.map((m) => ({
@@ -174,8 +178,6 @@ export const matchDaySimulationRouter = createTRPCRouter({
         }
 
         // Settle matchday predictions on every match resolved this day.
-        const { resolveMatchPredictions, outcomeFromScores } =
-          await import("~/lib/sports/predictions");
         for (const res of results) {
           await resolveMatchPredictions(
             ctx.db,
@@ -241,8 +243,6 @@ export const matchDaySimulationRouter = createTRPCRouter({
           };
         }
 
-        const { resolveMatchPredictions, outcomeFromScores } =
-          await import("~/lib/sports/predictions");
         await resolveMatchPredictions(
           ctx.db,
           match.id,

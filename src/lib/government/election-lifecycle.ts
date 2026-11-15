@@ -162,7 +162,7 @@ export async function ensureUpcomingElection(
 export async function syncElectionCandidates(db: Db, electionId: string): Promise<number> {
   const election = await db.election.findUnique({
     where: { id: electionId },
-    select: { id: true, countryId: true, candidates: { select: { partyId: true } } },
+    select: { id: true, countryId: true, candidates: { select: { id: true, partyId: true } } },
   });
   if (!election) return 0;
 
@@ -172,12 +172,23 @@ export async function syncElectionCandidates(db: Db, electionId: string): Promis
     orderBy: { currentSupport: "desc" },
   });
   const activeIds = parties.map((p) => p.id);
+  const activeSet = new Set(activeIds);
 
   await db.electionCandidate.deleteMany({
     where: { electionId, partyId: { notIn: activeIds } },
   });
 
-  const existing = new Set(election.candidates.map((c) => c.partyId));
+  const existing = new Set<string>();
+  const duplicateIds: string[] = [];
+  for (const candidate of election.candidates) {
+    if (!activeSet.has(candidate.partyId)) continue;
+    if (existing.has(candidate.partyId)) duplicateIds.push(candidate.id);
+    else existing.add(candidate.partyId);
+  }
+  if (duplicateIds.length > 0) {
+    await db.electionCandidate.deleteMany({ where: { id: { in: duplicateIds } } });
+  }
+
   const missing = parties.filter((p) => !existing.has(p.id));
   if (missing.length > 0) {
     await db.electionCandidate.createMany({

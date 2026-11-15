@@ -12,7 +12,7 @@
  * the roster stops listing it (it is never turned back into lore).
  * Page content is never copied.
  */
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import {
   crawlRealmCategory,
   indexNations,
@@ -31,8 +31,9 @@ import {
   wikiQuery,
   type ProofSource,
 } from "~/lib/wiki-os/adapters/mediawiki/account-proof";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 const prune = process.argv.includes("--prune");
 
@@ -53,7 +54,8 @@ function arg(name: string): string {
 }
 
 function proofSource(source: string): ProofSource {
-  if (!isProofSource(source)) throw new Error(`--source must be one of ${PROOF_SOURCES.join(", ")} (got "${source}")`);
+  if (!isProofSource(source))
+    throw new Error(`--source must be one of ${PROOF_SOURCES.join(", ")} (got "${source}")`);
   return source;
 }
 
@@ -77,7 +79,13 @@ async function guardedTitles(client: Tx, realmId: string, titles: string[]): Pro
   ].filter((title): title is string => !!title);
 }
 
-async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, pages: string[], nations: Set<string>) {
+async function writeIndex(
+  tx: Tx,
+  realmId: string,
+  wikiSource: ProofSource,
+  pages: string[],
+  nations: Set<string>
+) {
   const kindOf = (title: string) => (nations.has(title) ? "nation" : "lore");
   const created = await tx.realmPage.createMany({
     data: pages.map((title) => ({ realmId, wikiSource, title, kind: kindOf(title) })),
@@ -86,7 +94,11 @@ async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, page
   // Rows from an earlier import keep their id; only their kind follows the new detection.
   const scope = { realmId, wikiSource };
   const toNation = await tx.realmPage.updateMany({
-    where: { ...scope, title: { in: pages.filter((t) => kindOf(t) === "nation") }, kind: { not: "nation" } },
+    where: {
+      ...scope,
+      title: { in: pages.filter((t) => kindOf(t) === "nation") },
+      kind: { not: "nation" },
+    },
     data: { kind: "nation" },
   });
   // A claimed or founded nation page stays a nation even when the roster no longer lists it.
@@ -95,12 +107,17 @@ async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, page
     select: { title: true },
   });
   const candidates = indexedNations.map((row) => row.title);
-  const { downgrade, kept } = loreDowngrades(candidates, await guardedTitles(tx, realmId, candidates));
+  const { downgrade, kept } = loreDowngrades(
+    candidates,
+    await guardedTitles(tx, realmId, candidates)
+  );
   const toLore = await tx.realmPage.updateMany({
     where: { ...scope, title: { in: downgrade }, kind: { not: "lore" } },
     data: { kind: "lore" },
   });
-  console.log(`written: ${created.count} new rows, ${toNation.count} → nation, ${toLore.count} → lore`);
+  console.log(
+    `written: ${created.count} new rows, ${toNation.count} → nation, ${toLore.count} → lore`
+  );
   if (kept.length > 0) console.log(`kept as nation (claimed or founded): ${kept.join(", ")}`);
 }
 
@@ -109,7 +126,10 @@ async function writeIndex(tx: Tx, realmId: string, wikiSource: ProofSource, page
  * those it keeps (a page with a pending or approved claim, or with a Country of this realm, is never deleted).
  */
 async function staleRows(client: Tx, realmId: string, wikiSource: ProofSource, pages: string[]) {
-  const indexed = await client.realmPage.findMany({ where: { realmId, wikiSource }, select: { title: true } });
+  const indexed = await client.realmPage.findMany({
+    where: { realmId, wikiSource },
+    select: { title: true },
+  });
   const current = new Set(pages);
   const stale = indexed.map((row) => row.title).filter((title) => !current.has(title));
   if (stale.length === 0) return { prune: [], kept: [] };
@@ -119,7 +139,10 @@ async function staleRows(client: Tx, realmId: string, wikiSource: ProofSource, p
 async function main() {
   nationMethod(optionalArg("nation-roster")); // refuses a retired roster before any request
   const slug = arg("realm");
-  const realm = await db.realm.findUnique({ where: { slug }, select: { id: true, name: true, settings: true } });
+  const realm = await db.realm.findUnique({
+    where: { slug },
+    select: { id: true, name: true, settings: true },
+  });
   if (!realm) {
     console.error(`no realm with slug "${slug}" — create it in /admin/realms first`);
     process.exitCode = 1;
@@ -141,16 +164,23 @@ async function main() {
   console.log(apply ? "APPLY mode — writing" : "DRY RUN — pass --apply to write");
   console.log(`realm ${realm.name} (${realm.id}) ← ${source}`);
   if (wiki?.source === source) {
-    console.log(`using ${options.category}, keyword ${options.keyword}, roster ${options.roster ?? "none"}`);
+    console.log(
+      `using ${options.category}, keyword ${options.keyword}, roster ${options.roster ?? "none"}`
+    );
   }
 
   const query: WikiQuery = (params, schema) => wikiQuery(source, params, schema);
-  const crawl = await crawlRealmCategory(query, { rootCategory: options.category, keyword: options.keyword });
+  const crawl = await crawlRealmCategory(query, {
+    rootCategory: options.category,
+    keyword: options.keyword,
+  });
   const { pages, nations } = await indexNations(query, crawl.pages, method);
   console.log(
     `pages ${pages.length} (crawled ${crawl.pages.length}), nations ${nations.size}, categories ${crawl.categoriesVisited.length}, truncated ${crawl.truncated ? "yes" : "no"}`
   );
-  console.log(`nation method: ${method.kind === "roster" ? `roster ${method.roster}` : "infobox heuristic"}`);
+  console.log(
+    `nation method: ${method.kind === "roster" ? `roster ${method.roster}` : "infobox heuristic"}`
+  );
   for (const title of [...nations].sort()) console.log(`  nation: ${title}`);
 
   if (method.kind === "roster") {
@@ -172,8 +202,14 @@ async function main() {
 
   const stale = await staleRows(db, realm.id, source, pages);
   if (stale.prune.length + stale.kept.length > 0) {
-    const verb = !prune ? "would stay (pass --prune to delete)" : apply ? "will be deleted" : "would be deleted";
-    console.log(`stale rows no longer in the index: ${stale.prune.length} ${verb}, ${stale.kept.length} kept (claimed or founded)`);
+    const verb = !prune
+      ? "would stay (pass --prune to delete)"
+      : apply
+        ? "will be deleted"
+        : "would be deleted";
+    console.log(
+      `stale rows no longer in the index: ${stale.prune.length} ${verb}, ${stale.kept.length} kept (claimed or founded)`
+    );
     for (const title of stale.prune) console.log(`  stale: ${title}`);
     for (const title of stale.kept) console.log(`  stale, kept: ${title}`);
   }

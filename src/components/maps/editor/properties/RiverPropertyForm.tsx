@@ -1,8 +1,9 @@
 "use client";
 import React, { useMemo } from "react";
 import type { NamedRiverFormData, EditorFeature } from "~/hooks/useMapEditor";
+import { Input } from "~/components/ui/input";
 import { polylineLengthKm } from "~/lib/maps/geo-math";
-import { GeometryStatus, inputClasses, WikiLinkField } from "./fields";
+import { GeometryStatus, WikiLinkField } from "./fields";
 
 interface RiverPropertyFormProps {
   form: NamedRiverFormData;
@@ -41,12 +42,12 @@ export const RiverPropertyForm = React.memo(function RiverPropertyForm({
 
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="River name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
 

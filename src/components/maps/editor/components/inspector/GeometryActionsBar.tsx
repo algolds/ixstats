@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useState } from "react";
 import {
@@ -157,7 +156,9 @@ export const GeometryActionsBar = React.memo(function GeometryActionsBar({
 
       {feature.type === "subdivision" && onPathfinderOperation && (
         <Card className="space-y-2 p-2">
-          <Eyebrow>Combine regions</Eyebrow>
+          <span className="text-caption text-label-secondary block font-medium">
+            Combine regions
+          </span>
           <div className="grid grid-cols-3 gap-1">
             {PATHFINDER_OPS.map(({ op, label }) => (
               <Button

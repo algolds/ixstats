@@ -1,5 +1,7 @@
-import { FacetMaterial } from "~/components/ui/facet";
 import React from "react";
+import { Compress } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 
 interface VertexEditingToolbarProps {
   isVertexEditing: boolean;
@@ -19,47 +21,38 @@ export function VertexEditingToolbar({
   if (!isVertexEditing) return null;
 
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetMaterial layer="chrome" className="flex items-center gap-2 rounded-full p-2">
-        <span className="text-label-secondary text-caption hidden px-3 sm:inline">
+    <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+      <FacetMaterial
+        layer="chrome"
+        className="facet-chrome-subtle rounded-control flex items-center gap-2 px-2.5 py-1.5"
+      >
+        <span className="text-label-secondary text-caption hidden px-2 sm:inline">
           Drag vertices · Midpoints to add · Right-click to remove
         </span>
         <div className="bg-separator hidden h-4 w-px sm:block" />
         <Button
           variant="secondary"
-          size="sm"
+          size="xs"
           onClick={handleSimplifyAndSave}
           title="Simplify vertices, snap to country border, and save"
         >
-          <svg
-            className="h-3 w-3"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M4 20L8 4" />
-            <path d="M20 20L16 4" />
-            <path d="M6 12h12" />
-          </svg>
+          <Compress className="h-3 w-3" aria-hidden />
           <span className="hidden sm:inline">Simplify</span>
         </Button>
         <Button
           variant="secondary"
-          size="sm"
+          size="xs"
           onClick={handleSave}
           title="Save the shape and keep reshaping (Ctrl+Z undoes the save)"
         >
           Save
         </Button>
-        <Button size="sm" onClick={finishVertexEdit} title="Save any changes and stop reshaping">
+        <Button size="xs" onClick={finishVertexEdit} title="Save any changes and stop reshaping">
           Done
         </Button>
         <Button
           variant="outline"
-          size="sm"
+          size="xs"
           onClick={cancelVertexEdit}
           title="Discard unsaved vertex changes"
         >
@@ -69,4 +62,3 @@ export function VertexEditingToolbar({
     </div>
   );
 }
-import { Button } from "~/components/ui/button";

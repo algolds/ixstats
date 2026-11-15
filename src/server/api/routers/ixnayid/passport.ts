@@ -8,6 +8,7 @@ import {
 import {
   getCountryRibbons,
   getHistory,
+  getOwnPassportCard,
   getOwnPassportSettings,
   getPassport,
   getRealms,
@@ -47,9 +48,11 @@ const settingsInput = z.object({
  * Sections the owner hides in their passport settings are stripped server-side from every read.
  */
 export const ixnayidPassportRouter = createTRPCRouter({
-  getPassport: publicProcedure.input(handleInput).query(({ ctx, input }) =>
-    getPassport({ handle: input.handle, viewerClerkId: ctx.auth?.userId ?? null }, forumGateway)
-  ),
+  getPassport: publicProcedure
+    .input(handleInput)
+    .query(({ ctx, input }) =>
+      getPassport({ handle: input.handle, viewerClerkId: ctx.auth?.userId ?? null }, forumGateway)
+    ),
 
   getRealms: publicProcedure
     .input(handleInput.extend({ realm: z.string().min(1).max(100).optional() }))
@@ -77,6 +80,9 @@ export const ixnayidPassportRouter = createTRPCRouter({
   getCountryRibbons: publicProcedure
     .input(z.object({ countrySlug: z.string().min(1).max(200) }))
     .query(({ input }) => getCountryRibbons(input.countrySlug)),
+
+  /** The signed-in user's own passport card: Halo's compact Passport page. */
+  getMyPassportCard: protectedProcedure.query(({ ctx }) => getOwnPassportCard(ctx.user)),
 
   /** The signed-in user's own passport settings and the ribbons they can pin. */
   getPassportSettings: protectedProcedure.query(({ ctx }) => getOwnPassportSettings(ctx.user)),

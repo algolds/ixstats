@@ -454,8 +454,8 @@ bun scripts/realms/build-realm-map.ts --realm eurth --steps flags --apply       
 ```
 
 Re-run `flags` after every source sync apply and after claim approvals (new nations get media proxy paths from their
-infobox); on production copy the new `public/flags/eurth--*` files and `metadata.json` to
-`.next/standalone/public/flags/` and restart ([realm-maps.md §7](../systems/realm-maps.md#7-production-notes)). Borders a source
+infobox). The main app serves them from `public/` as written; only a standalone build needs them copied to
+`.next/standalone/public/flags/` and a restart ([realm-maps.md §7](../systems/realm-maps.md#7-production-notes)). Borders a source
 sync writes are smoothed by the sync itself (Eurth's pipeline has `coverage`).
 
 **Local result (2026-10-07):** a dry run of every step against the stored map reports `unchanged` for physical

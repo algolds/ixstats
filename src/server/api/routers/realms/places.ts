@@ -127,6 +127,27 @@ export async function listRealmDirectory(db: PrismaClient, viewerUserId: string 
   }));
 }
 
+/** Lightweight open-realm list for Halo search: 1 query over DIRECTORY_REALM_WHERE, zero private/activity fields. */
+export async function listRealmSelectList(db: PrismaClient) {
+  const realms = await db.realm.findMany({
+    where: DIRECTORY_REALM_WHERE,
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      thumbnail: true,
+      tags: true,
+      _count: { select: { countries: { where: { claimable: true } } } },
+    },
+  });
+  return realms.map(({ _count, ...realm }) => ({
+    ...realm,
+    nationCount: _count.countries,
+  }));
+}
+
 /**
  * Nations whose name contains `query`, across the realms the directory lists (DIRECTORY_REALM_WHERE: never a draft,
  * generating or unlisted realm): countries, claimable when nobody owns them, and lore-index nation pages no country

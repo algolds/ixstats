@@ -148,11 +148,12 @@ export function GuidesSection({
                   className="group hover:bg-fill-3 rounded-control-sm flex items-center gap-2 px-2 py-1 pl-8"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                    <span className="text-label-secondary text-caption shrink-0 font-mono font-semibold">
+                    <span className="text-label-secondary text-caption shrink-0 font-semibold">
                       {guide.type === "h" ? "Lat" : "Lng"}
                     </span>
                     <span className="text-label text-footnote truncate">
-                      {guide.type === "h" ? "Horizontal" : "Vertical"}: {guide.value.toFixed(5)}°
+                      {guide.type === "h" ? "Horizontal" : "Vertical"}:{" "}
+                      <span className="font-data tabular-nums">{guide.value.toFixed(5)}°</span>
                     </span>
                   </div>
                   <IconButton

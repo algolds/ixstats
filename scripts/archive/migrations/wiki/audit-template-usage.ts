@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * audit-template-usage.ts — Article Template Transclusion Frequency & Canonical Set Auditor
  *
@@ -9,9 +10,7 @@
  *   bun run scripts/wiki/audit-template-usage.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface TemplateFrequency {
   name: string;

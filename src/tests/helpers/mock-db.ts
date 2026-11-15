@@ -24,6 +24,8 @@ export function createMockPrisma(overrides: Record<string, any> = {}): MockPrism
     ),
     // Advisory locks (pg_advisory_xact_lock) taken inside transactions
     $executeRaw: jest.fn().mockResolvedValue(0),
+    // Row locks (SELECT ... FOR UPDATE) taken inside transactions
+    $queryRaw: jest.fn().mockResolvedValue([]),
     ...overrides,
   };
 

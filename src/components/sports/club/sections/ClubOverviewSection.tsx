@@ -226,7 +226,7 @@ export function ClubOverviewSection({
                 <Stat label="Squad members" value={<>{team.players?.length ?? 0}</>} />
               </Card>
               <Card padding="md">
-                <Stat label="Avg roster OVR" value={<>{averageOverall ?? "—"}</>} />
+                <Stat label="Avg roster OVR" value={<>{averageOverall ?? "–"}</>} />
               </Card>
               <Card padding="md">
                 <Stat label="Available budget" value={<>₷{team.budget ?? 0}</>} />

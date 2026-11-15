@@ -10,6 +10,7 @@ import {
   releaseStaleCounts,
   resolveElection,
 } from "~/lib/government/election-lifecycle";
+import { collapseResultsByParty } from "~/lib/government/party-election-results";
 import { clockForCountry } from "~/server/shared/realm-time";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 
@@ -120,13 +121,15 @@ export const electionsElectionsRouter = createTRPCRouter({
               scheduledIxTime: last.scheduledIxTime,
               turnout: last.turnout,
               marginOfVictory: last.marginOfVictory,
-              results: last.results.map((r) => ({
-                partyId: r.candidate.party.id,
-                partyName: r.candidate.party.name,
-                color: r.candidate.party.color,
-                votePercentage: r.votePercentage,
-                seatsWon: r.seatsWon,
-              })),
+              results: collapseResultsByParty(
+                last.results.map((r) => ({
+                  partyId: r.candidate.party.id,
+                  partyName: r.candidate.party.name,
+                  color: r.candidate.party.color,
+                  votePercentage: r.votePercentage,
+                  seatsWon: r.seatsWon,
+                }))
+              ),
             }
           : null,
       };

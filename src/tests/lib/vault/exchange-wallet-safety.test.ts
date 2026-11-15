@@ -3,6 +3,7 @@
  * and then decrement, so two concurrent spends could both pass and overdraw the wallet.
  * It is now a conditional decrement, and moves with an idempotency key apply once.
  */
+import { centsOf, dbCents, fromCents, toCents } from "~/lib/exchange/amounts";
 import {
   exchangeService,
   getOrCreateWallet,
@@ -13,12 +14,23 @@ import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange
 
 let fake: FakeDb;
 
-function balance() {
-  return fake.tables.exchangeWallet![0]!.sovereigns as number;
+function balanceCents(): bigint {
+  return fake.tables.exchangeWallet![0]!.sovereigns as bigint;
 }
 
-function ledgerSum() {
-  return (fake.tables.exchangeTransaction ?? []).reduce((s, r) => s + r.sovereigns, 0);
+function balance(): number {
+  return fromCents(centsOf(balanceCents()));
+}
+
+function ledgerSumCents(): bigint {
+  return (fake.tables.exchangeTransaction ?? []).reduce(
+    (s: bigint, r) => s + (r.sovereigns as bigint),
+    0n
+  );
+}
+
+function ledgerSum(): number {
+  return fromCents(centsOf(ledgerSumCents()));
 }
 
 beforeEach(() => {
@@ -115,5 +127,35 @@ describe("idempotency", () => {
     await exchangeService.earn("u1", 50, "CONTRACT_PAYOUT", "X", fake.client, undefined, opts);
     await exchangeService.earn("u1", 50, "CONTRACT_PAYOUT", "X", fake.client, undefined, opts);
     expect(balance()).toBe(1050);
+    expect(balanceCents()).toBe(1050_00n);
+  });
+});
+
+describe("integer cents boundary helpers & drift prevention", () => {
+  it("converts between bigint cents, number cents and Sovereigns and rejects unsafe integers", () => {
+    expect(toCents(12.34)).toBe(1234);
+    expect(fromCents(1234)).toBe(12.34);
+    expect(dbCents(1234)).toBe(1234n);
+    expect(centsOf(1234n)).toBe(1234);
+    expect(centsOf(-500n)).toBe(-500);
+    expect(() => dbCents(1.5)).toThrow(RangeError);
+    expect(() => dbCents(Number.NaN)).toThrow(RangeError);
+    expect(() => centsOf(BigInt(Number.MAX_SAFE_INTEGER) + 1n)).toThrow(RangeError);
+  });
+
+  it("stores exact BigInt cents across 1,000 alternating ₷0.10 / ₷0.20 moves without float drift", async () => {
+    await getOrCreateWallet("u1", fake.client);
+    for (let i = 0; i < 500; i++) {
+      await exchangeService.spend("u1", 0.1, "CHARTER_FEE", `S1:${i}`, fake.client);
+      await exchangeService.spend("u1", 0.2, "CHARTER_FEE", `S2:${i}`, fake.client);
+      await exchangeService.earn("u1", 0.1, "CONTRACT_PAYOUT", `E1:${i}`, fake.client);
+      await exchangeService.earn("u1", 0.2, "CONTRACT_PAYOUT", `E2:${i}`, fake.client);
+    }
+    expect(balanceCents()).toBe(1000_00n);
+    expect(ledgerSumCents()).toBe(1000_00n);
+    // Spend the exact remaining balance down to 0
+    const all = await exchangeService.spend("u1", 1000, "CHARTER_FEE", "ALL", fake.client);
+    expect(all).toMatchObject({ success: true, newBalance: 0 });
+    expect(balanceCents()).toBe(0n);
   });
 });

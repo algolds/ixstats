@@ -325,6 +325,7 @@ model ThinkshareConversation {
   @@index([diplomaticClassification])
   @@index([source])
   @@index([source, sourceId])
+  @@index([source, lastActivity]) // folder lists by source, newest first
 }
 
 model ConversationParticipant {
@@ -346,6 +347,7 @@ model ConversationParticipant {
   @@index([conversationId])
   @@index([userId])
   @@index([userId, requestStatus])
+  @@index([userId, isActive, requestStatus]) // inbox, unread counts, room checks
 }
 
 model ThinkshareMessage {
@@ -384,6 +386,7 @@ model ThinkshareMessage {
   @@index([status])
   @@index([source])
   @@index([conversationId, ixTimeTimestamp])
+  @@index([userId, ixTimeTimestamp]) // pruneOldMessagesForUser on every send
   @@index([replyToId])
 }
 

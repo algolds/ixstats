@@ -24,7 +24,14 @@ export type BoardPreviewDb = AuthorsDb &
   Pick<PrismaClient, "forumThread" | "forumPost" | "realm" | "country">;
 
 export interface BoardPreview {
-  realm: { slug: string; name: string; emblemUrl: string | null; thumbnail: string | null };
+  realm: {
+    id: string;
+    slug: string;
+    name: string;
+    emblemUrl: string | null;
+    thumbnail: string | null;
+    bannerUrl: string | null;
+  };
   messages: BoardPreviewMessage[];
 }
 
@@ -41,10 +48,12 @@ const PREVIEW_SELECT = {
 /** The realm's newest board messages; the caller has checked the viewer may see the realm. */
 async function previewOf(db: BoardPreviewDb, realm: ForumRealmLook): Promise<BoardPreview> {
   const head = {
+    id: realm.id,
     slug: realm.slug,
     name: realm.name,
     emblemUrl: realm.emblemUrl,
     thumbnail: realm.thumbnail,
+    bannerUrl: realm.bannerUrl,
   };
   const board = await boardThreadOf(db, realm.id);
   if (!board) return { realm: head, messages: [] };

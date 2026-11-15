@@ -17,6 +17,7 @@ import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
 import { NumberFlowDisplay } from "~/components/ui/number-flow";
 import { cn } from "~/lib/utils";
+import { getQualitativeRating, levelWord } from "~/lib/qualitative-rating";
 import { getTrendDirection } from "~/hooks/useInternalStability";
 import { StabilityHelpDialog } from "./StabilityHelpDialog";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -63,26 +64,38 @@ function TrendGlyph({ trend }: { trend: string }) {
   );
 }
 
-/** Stability score → semantic status text colour (stable / strained / unstable). */
-function scoreTone(score: number): string {
-  if (score >= 60) return "text-green";
-  if (score >= 40) return "text-yellow";
-  return "text-destructive";
-}
+/** One 0 to 100 level read as a word (Very low to Very high) over its meter: a level, not a percentage. */
+function LevelMetric({
+  label,
+  value,
+  polarity = "positive",
+}: {
+  label: string;
+  value: number;
+  polarity?: "positive" | "risk";
+}) {
+  const tone =
+    polarity === "risk"
+      ? value >= 65
+        ? "destructive"
+        : value >= 45
+          ? "warning"
+          : "neutral"
+      : value >= 65
+        ? "success"
+        : value < 35
+          ? "destructive"
+          : "neutral";
 
-/** One labelled percentage with its bar. */
-function PercentMetric({ label, value }: { label: string; value: number }) {
   return (
     <div className="min-w-0 space-y-2">
       <div className="text-body flex items-center justify-between gap-2">
         <span className="text-label-secondary truncate" title={label}>
           {label}
         </span>
-        <span className="text-label shrink-0 font-medium tabular-nums">
-          <NumberFlowDisplay value={value} format="decimal" decimalPlaces={0} />%
-        </span>
+        <span className="text-label shrink-0 font-medium">{levelWord(value)}</span>
       </div>
-      <Progress value={value} className="h-1.5" />
+      <Progress value={value} tone={tone} aria-label={label} className="h-1.5" />
     </div>
   );
 }
@@ -109,17 +122,36 @@ function MetricSection({
 
 /** The full metric breakdown, shown once stability data has been recorded. */
 function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
+  const rating = getQualitativeRating(metrics.stabilityScore);
+  const overallTone =
+    metrics.stabilityScore >= 65
+      ? "success"
+      : metrics.stabilityScore >= 40
+        ? "neutral"
+        : "destructive";
   return (
     <>
       <div>
-        <div className="mb-2 flex items-end justify-between">
-          <span className="text-caption text-label-secondary">Overall stability score</span>
-          <span className={cn("text-title-1 tabular-nums", scoreTone(metrics.stabilityScore))}>
-            <NumberFlowDisplay value={metrics.stabilityScore} format="decimal" decimalPlaces={1} />
-            <span className="text-label-secondary text-body">/100</span>
+        <div className="mb-2 flex items-end justify-between gap-3">
+          <span className="text-caption text-label-secondary">Overall stability</span>
+          <span className="flex items-baseline gap-2">
+            <span className={cn("text-title-2", rating.color)}>{rating.label}</span>
+            <span className="text-label-secondary text-body tabular-nums">
+              <NumberFlowDisplay
+                value={metrics.stabilityScore}
+                format="decimal"
+                decimalPlaces={1}
+              />
+              /100
+            </span>
           </span>
         </div>
-        <Progress value={metrics.stabilityScore} className="h-2" />
+        <Progress
+          value={metrics.stabilityScore}
+          tone={overallTone}
+          aria-label="Overall stability"
+          className="h-2"
+        />
       </div>
 
       <MetricSection title="Crime & law enforcement" icon={Shield}>
@@ -145,12 +177,13 @@ function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
               </span>
             </div>
           </div>
-          <PercentMetric label="Organized crime" value={metrics.organizedCrimeLevel} />
-          <PercentMetric label="Policing effectiveness" value={metrics.policingEffectiveness} />
-          <PercentMetric
-            label="Justice system efficiency"
-            value={metrics.justiceSystemEfficiency}
+          <LevelMetric
+            label="Organized crime"
+            value={metrics.organizedCrimeLevel}
+            polarity="risk"
           />
+          <LevelMetric label="Policing effectiveness" value={metrics.policingEffectiveness} />
+          <LevelMetric label="Justice system efficiency" value={metrics.justiceSystemEfficiency} />
         </div>
       </MetricSection>
 
@@ -162,24 +195,32 @@ function StabilityBody({ metrics }: { metrics: StabilityMetrics }) {
               <NumberFlowDisplay value={metrics.protestFrequency} /> /year
             </span>
           </div>
-          <PercentMetric label="Riot risk" value={metrics.riotRisk} />
-          <PercentMetric label="Civil disobedience" value={metrics.civilDisobedience} />
+          <LevelMetric label="Riot risk" value={metrics.riotRisk} polarity="risk" />
+          <LevelMetric
+            label="Civil disobedience"
+            value={metrics.civilDisobedience}
+            polarity="risk"
+          />
         </div>
       </MetricSection>
 
       <MetricSection title="Social cohesion" icon={Heart}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PercentMetric label="Social cohesion" value={metrics.socialCohesion} />
-          <PercentMetric label="Ethnic tension" value={metrics.ethnicTension} />
-          <PercentMetric label="Political polarization" value={metrics.politicalPolarization} />
+          <LevelMetric label="Social cohesion" value={metrics.socialCohesion} />
+          <LevelMetric label="Ethnic tension" value={metrics.ethnicTension} polarity="risk" />
+          <LevelMetric
+            label="Political polarization"
+            value={metrics.politicalPolarization}
+            polarity="risk"
+          />
         </div>
       </MetricSection>
 
       <MetricSection title="Public confidence" icon={Eye}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <PercentMetric label="Trust in government" value={metrics.trustInGovernment} />
-          <PercentMetric label="Trust in police" value={metrics.trustInPolice} />
-          <PercentMetric label="Fear of crime" value={metrics.fearOfCrime} />
+          <LevelMetric label="Trust in government" value={metrics.trustInGovernment} />
+          <LevelMetric label="Trust in police" value={metrics.trustInPolice} />
+          <LevelMetric label="Fear of crime" value={metrics.fearOfCrime} polarity="risk" />
         </div>
       </MetricSection>
     </>
@@ -190,11 +231,11 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
   metrics,
 }: StabilityMetricsCardProps) {
   return (
-    <Card>
-      <CardHeader className="p-5 pb-3">
+    <Card content="data">
+      <CardHeader className="p-4 pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-label text-title-3 flex items-center gap-2">
-            <Users aria-hidden="true" className="text-red h-4 w-4" />
+          <h3 className="text-label text-headline flex items-center gap-2">
+            <Users aria-hidden="true" className="text-label-secondary h-4 w-4" />
             Internal stability
             <StabilityHelpDialog />
           </h3>
@@ -207,7 +248,7 @@ export const StabilityMetricsCard = React.memo(function StabilityMetricsCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 px-5 pb-5">
+      <CardContent className="space-y-4 px-4 pb-4">
         {metrics ? (
           <StabilityBody metrics={metrics} />
         ) : (

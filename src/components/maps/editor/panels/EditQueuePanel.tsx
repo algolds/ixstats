@@ -1,8 +1,8 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
 import { useState } from "react";
 import { api } from "~/trpc/react";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -87,12 +87,14 @@ export function EditQueuePanel() {
       ) : (
         <div className="space-y-3">
           {data.edits.map((edit: MapEditItem) => (
-            <div key={edit.id} className="border-separator bg-surface rounded-row border">
-              <button
+            <div key={edit.id} className="border-separator bg-fill-4 rounded-row border">
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
                 aria-expanded={expandedId === edit.id}
                 onClick={() => setExpandedId(expandedId === edit.id ? null : edit.id)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left"
+                className="flex h-auto w-full items-center justify-between px-4 py-3 text-left font-normal"
               >
                 <div className="flex items-center gap-3">
                   <OutlineBadge
@@ -109,26 +111,30 @@ export function EditQueuePanel() {
                   </div>
                 </div>
                 <OutlineBadge label={edit.status} className={STATUS_COLORS[edit.status]} />
-              </button>
+              </Button>
 
               {expandedId === edit.id && (
                 <div className="border-separator border-t px-4 py-3">
                   <div className="mb-3">
-                    <Eyebrow className="mb-1 block">Proposed changes</Eyebrow>
+                    <span className="text-caption text-label-secondary mb-1 block font-medium">
+                      Proposed changes
+                    </span>
                     <JsonViewer
                       data={edit.proposedData ?? null}
                       defaultExpanded={2}
-                      className="border-separator bg-surface"
+                      className="border-separator bg-fill-4"
                     />
                   </div>
 
                   {edit.currentData && (
                     <div className="mb-3">
-                      <Eyebrow className="mb-1 block">Current data</Eyebrow>
+                      <span className="text-caption text-label-secondary mb-1 block font-medium">
+                        Current data
+                      </span>
                       <JsonViewer
                         data={edit.currentData}
                         defaultExpanded={2}
-                        className="border-separator bg-surface"
+                        className="border-separator bg-fill-4"
                       />
                     </div>
                   )}
@@ -141,11 +147,10 @@ export function EditQueuePanel() {
 
                   {edit.status === "pending" && (
                     <div className="space-y-2">
-                      <textarea
+                      <Textarea
                         placeholder="Review note (optional)..."
                         value={reviewNote}
                         onChange={(e) => setReviewNote(e.target.value)}
-                        className="border-separator bg-surface text-label rounded-control text-body focus:border-blue w-full border px-3 py-2 focus:outline-none"
                         rows={2}
                       />
                       <div className="flex gap-2">

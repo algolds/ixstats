@@ -15,11 +15,5 @@ export default async function VaultStorePage({
   searchParams: Promise<PageQuery>;
 }) {
   const { view } = await searchParams;
-  return (
-    // pt-14: the shop's tabs are the first row and the page has no header toolbar, so it clears Halo's floating band.
-    <div className="pt-14">
-      <h1 className="sr-only">Store</h1>
-      <VaultStoreTab initialView={(Array.isArray(view) ? view[0] : view) ?? null} />
-    </div>
-  );
+  return <VaultStoreTab initialView={(Array.isArray(view) ? view[0] : view) ?? null} />;
 }

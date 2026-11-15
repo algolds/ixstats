@@ -32,6 +32,8 @@ interface DocumentRibbonProps<T extends string> {
   idBase: string;
   /** The tablist's accessible name ("Passport sections"). */
   label: string;
+  /** Trailing controls aligned opposite the section tabs (e.g. MyCountry's Edit and Declare actions). */
+  actions?: React.ReactNode;
 }
 
 /**
@@ -48,6 +50,7 @@ function DocumentRibbonComponent<T extends string>({
   counts = {},
   idBase,
   label,
+  actions,
 }: DocumentRibbonProps<T>) {
   const shouldReduceMotion = useReducedMotion();
   const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
@@ -80,12 +83,12 @@ function DocumentRibbonComponent<T extends string>({
   );
 
   return (
-    <div className="border-separator bg-surface-secondary border-y px-4 py-2 sm:px-6">
+    <div className="border-separator bg-surface-secondary flex flex-wrap items-center justify-between gap-2 border-y px-4 py-2 sm:px-6">
       <div
         role="tablist"
         aria-label={label}
         aria-orientation="horizontal"
-        className="-my-2 flex scrollbar-none items-center gap-1 overflow-x-auto py-2"
+        className="-my-2 flex min-w-0 scrollbar-none items-center gap-1 overflow-x-auto py-2"
       >
         {tabs.map((tab, idx) => {
           const isActive = activeTab === tab.id;
@@ -106,12 +109,12 @@ function DocumentRibbonComponent<T extends string>({
               onClick={() => onSelectTab(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, idx)}
               className={cn(
-                // The active tab is the inverted (primary) pill. The 28px pill keeps a 44pt hit
-                // area on touch screens (`hitSlop`).
+                // The active tab lifts as a crisp neutral thumb so primary actions (e.g. Declare Directive)
+                // own the sole accent fill on the ribbon. The 28px pill keeps a 44pt hit area (`hitSlop`).
                 hitSlop,
                 "rounded-control text-footnote focus-visible:outline-tint relative flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2",
                 isActive
-                  ? "bg-primary-fill text-on-primary shadow-card"
+                  ? "bg-control-thumb text-label ring-separator/60 shadow-card ring-1"
                   : "text-label-secondary hover:text-label hover:bg-fill-4"
               )}
             >
@@ -132,6 +135,7 @@ function DocumentRibbonComponent<T extends string>({
           );
         })}
       </div>
+      {actions != null && <div className="ml-auto flex shrink-0 items-center gap-2">{actions}</div>}
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import React, { memo, useState } from "react";
 import { Hexagon, Copy, Cut as Scissors, City, ControlSlider as Sliders } from "iconoir-react";
 import { Popover, PopoverTrigger } from "~/components/ui/popover";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Input } from "~/components/ui/input";
 import {
   SNAP_LAYER_TYPES,
   getDisabledSnapLayers,
@@ -11,7 +11,7 @@ import {
   type SnapLayerType,
 } from "~/lib/maps/editor-prefs";
 import { CityScatterPopover, TransformGeometryPopover } from "./ScatterToolOptions";
-import { ToolLabel, ToolbarButton, dividerClass, selectClass } from "./CoordinateSnappingControls";
+import { ToolLabel, ToolbarButton, dividerClass } from "./CoordinateSnappingControls";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 
 const SUBDIVISION_TYPES = [
@@ -44,7 +44,7 @@ function SnapLayerToggles() {
   return (
     <>
       <div className={dividerClass} />
-      <Eyebrow>Snap to</Eyebrow>
+      <span className="text-caption text-label-secondary">Snap to</span>
       {SNAP_LAYER_TYPES.map((layer) => {
         const on = !disabled.has(layer);
         const label = SNAP_LAYER_LABELS[layer];
@@ -52,7 +52,6 @@ function SnapLayerToggles() {
           <ToolbarButton
             tone={on ? "active" : "default"}
             key={layer}
-
             onClick={() => toggle(layer)}
             aria-pressed={on}
             title={`Snap to ${label.toLowerCase()} (when Snap is on and the layer is visible)`}
@@ -94,7 +93,7 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
   return (
     <>
       <ToolLabel icon={Hexagon} label="Region" />
-      <Eyebrow>Type</Eyebrow>
+      <span className="text-caption text-label-secondary">Type</span>
       <OptionSelect
         aria-label="Type"
         value={subdivisionType ?? "province"}
@@ -103,14 +102,14 @@ export const SubdivisionOptions = memo(function SubdivisionOptions({
         size="sm"
         className="w-full"
       />
-      <Eyebrow>Level</Eyebrow>
-      <input
+      <span className="text-caption text-label-secondary">Level</span>
+      <Input
         type="number"
         min={1}
         max={5}
         value={subdivisionLevel ?? 1}
         onChange={(e) => onSubdivisionLevelChange?.(parseInt(e.target.value) || 1)}
-        className={`${selectClass} w-12 text-center`}
+        className="text-footnote rounded-control-sm h-6 w-12 px-1.5 py-0 text-center tabular-nums"
       />
       <SnapLayerToggles />
 

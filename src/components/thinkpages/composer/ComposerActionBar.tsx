@@ -227,8 +227,9 @@ export function ComposerActionBar({
           </div>
 
           <Button
-            onClick={handleSubmit}
+            variant="glass"
             size="sm"
+            onClick={handleSubmit}
             disabled={
               isPending ||
               remainingChars < 0 ||

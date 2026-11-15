@@ -7,18 +7,30 @@
 
 import type { NationTreasury, Prisma } from "@prisma/client";
 import { refreshFairValue } from "./companies";
-import { formatSovereigns, round2 } from "./amounts";
-import type { Db } from "./guards";
-import { fromCents, lockCompany, toCents } from "./ownership";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
+import { requireCountryOwner, type Db } from "./guards";
+import { lockCompany } from "./ownership";
 import { ExchangeError, lockWallet, spendSovereignsTx } from "~/lib/vault/exchange-service";
 
-export type TreasuryInflowType = "TAX" | "TARIFF" | "INTEREST" | "LOBBY" | "B2G_ESCROW";
-export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND";
-type TreasuryEntryType = "STIPEND" | "B2G_REFUND" | TreasuryInflowType | TreasuryOutflowType;
+export type TreasuryInflowType =
+  | "TAX"
+  | "TARIFF"
+  | "INTEREST"
+  | "PRINCIPAL"
+  | "LOBBY"
+  | "B2G_ESCROW"
+  | "BOND_SALE";
+export type TreasuryOutflowType = "B2G_ESCROW" | "SPEND" | "BOND_COUPON" | "BOND_PRINCIPAL";
+type TreasuryEntryType =
+  | "STIPEND"
+  | "B2G_REFUND"
+  | "FUND_RETURN"
+  | "RECOVERY"
+  | TreasuryInflowType
+  | TreasuryOutflowType;
 
 export type TreasuryPayer =
-  | { kind: "COMPANY"; companyId: string }
-  | { kind: "WALLET"; userId: string };
+  { kind: "COMPANY"; companyId: string } | { kind: "WALLET"; userId: string };
 
 export interface StipendMintInput {
   countryId: string;
@@ -43,7 +55,7 @@ export interface TreasuryCreditInput {
   countryId: string;
   realmId: string;
   amount: number;
-  type: "B2G_REFUND";
+  type: "B2G_REFUND" | "FUND_RETURN" | "RECOVERY";
   source: string;
   key: string;
 }
@@ -111,7 +123,23 @@ export interface TreasurySummary {
 
 /** A nation's stipend for a tier. Unknown labels get the 1x base. */
 export function stipendFor(tier: string, baseStipend: number): number {
-  return round2(baseStipend * (TIER_MULTIPLIERS.get(tier) ?? 1));
+  return fromCents(toCents(baseStipend * (TIER_MULTIPLIERS.get(tier) ?? 1)));
+}
+
+/** True when `userId` owns `countryId`; rethrows unexpected DB errors instead of swallowing them. */
+export async function isCountryOwner(tx: Db, countryId: string, userId: string): Promise<boolean> {
+  try {
+    await requireCountryOwner(tx, countryId, userId);
+    return true;
+  } catch (error) {
+    if (
+      error instanceof ExchangeError &&
+      (error.code === "FORBIDDEN" || error.code === "NOT_FOUND")
+    ) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 /** Read the nation's treasury, creating it with zero balances if it does not exist yet. */
@@ -155,6 +183,15 @@ async function lockTreasuryFor(tx: Db, countryId: string, realmId: string) {
   return lockTreasuryRow(tx, id);
 }
 
+/** Row-lock a nation's treasury (creating it if it has none) and return it as it is under the lock. */
+export async function lockTreasuryTx(
+  tx: Db,
+  countryId: string,
+  realmId: string
+): Promise<NationTreasury> {
+  return lockTreasuryFor(tx, countryId, realmId);
+}
+
 async function alreadyApplied(tx: Db, key: string): Promise<boolean> {
   const entry = await tx.nationTreasuryEntry.findUnique({
     where: { idempotencyKey: key },
@@ -173,8 +210,8 @@ interface LedgerMove {
 async function writeEntry(
   tx: Db,
   countryId: string,
-  amount: number,
-  balanceAfter: number,
+  amount: bigint,
+  balanceAfter: bigint,
   move: LedgerMove
 ): Promise<void> {
   await tx.nationTreasuryEntry.create({
@@ -198,20 +235,20 @@ async function creditTreasury(
   move: LedgerMove,
   extra: Prisma.NationTreasuryUpdateManyMutationInput = {}
 ): Promise<number> {
-  const amount = fromCents(cents);
+  const delta = dbCents(cents);
   const data: Prisma.NationTreasuryUpdateManyMutationInput = {
     ...extra,
-    balance: { increment: amount },
+    balance: { increment: delta },
   };
   const counter = INFLOW_COUNTERS[move.type];
-  if (counter) data[counter] = { increment: amount };
+  if (counter) data[counter] = { increment: delta };
   const row = await tx.nationTreasury.update({
     where: { id: t.id },
     data,
     select: { balance: true },
   });
-  await writeEntry(tx, t.countryId, amount, row.balance, move);
-  return amount;
+  await writeEntry(tx, t.countryId, delta, row.balance, move);
+  return fromCents(cents);
 }
 
 /**
@@ -224,17 +261,18 @@ async function debitTreasury(
   cents: number,
   move: LedgerMove
 ): Promise<number> {
+  const delta = dbCents(cents);
   const amount = fromCents(cents);
   const { count } = await tx.nationTreasury.updateMany({
-    where: { id: t.id, balance: { gte: amount } },
-    data: { balance: { decrement: amount }, lifetimeSpent: { increment: amount } },
+    where: { id: t.id, balance: { gte: delta } },
+    data: { balance: { decrement: delta }, lifetimeSpent: { increment: delta } },
   });
-  if (count !== 1) throw insufficient("The treasury", t.balance, amount);
+  if (count !== 1) throw insufficient("The treasury", fromCents(centsOf(t.balance)), amount);
   const after = await tx.nationTreasury.findUniqueOrThrow({
     where: { id: t.id },
     select: { balance: true },
   });
-  await writeEntry(tx, t.countryId, -amount, after.balance, move);
+  await writeEntry(tx, t.countryId, dbCents(-cents), after.balance, move);
   return amount;
 }
 
@@ -250,27 +288,32 @@ async function lockPayer(tx: Db, from: TreasuryPayer): Promise<void> {
   await lockWallet(tx, from.userId);
 }
 
-async function debitCompanyCapital(tx: Db, companyId: string, amount: number): Promise<void> {
+async function debitCompanyCapital(tx: Db, companyId: string, cents: number): Promise<void> {
+  const delta = dbCents(cents);
   const { count } = await tx.company.updateMany({
-    where: { id: companyId, capital: { gte: amount } },
-    data: { capital: { decrement: amount } },
+    where: { id: companyId, capital: { gte: delta } },
+    data: { capital: { decrement: delta } },
   });
   if (count !== 1) {
     const company = await tx.company.findUnique({
       where: { id: companyId },
       select: { capital: true },
     });
-    throw insufficient("The company", company?.capital ?? 0, amount);
+    throw insufficient(
+      "The company",
+      company ? fromCents(centsOf(company.capital)) : 0,
+      fromCents(cents)
+    );
   }
   await refreshFairValue(tx, companyId);
 }
 
 async function debitPayer(tx: Db, input: TreasuryTransferInput, cents: number): Promise<void> {
-  const amount = fromCents(cents);
   if (input.from.kind === "COMPANY") {
-    await debitCompanyCapital(tx, input.from.companyId, amount);
+    await debitCompanyCapital(tx, input.from.companyId, cents);
     return;
   }
+  const amount = fromCents(cents);
   const spent = await spendSovereignsTx(tx, {
     userId: input.from.userId,
     amount,
@@ -297,7 +340,7 @@ function treasuryKey(key: string): string {
 export async function mintStipendTx(tx: Db, input: StipendMintInput): Promise<number> {
   const t = await lockTreasuryFor(tx, input.countryId, input.realmId);
   if (await alreadyApplied(tx, input.key)) return 0;
-  const room = Math.max(0, toCents(input.cap) - toCents(t.balance));
+  const room = Math.max(0, toCents(input.cap) - centsOf(t.balance));
   const cents = Math.min(toCents(input.amount), room);
   if (!(cents > 0)) return 0;
   return creditTreasury(
@@ -329,7 +372,7 @@ export async function transferToTreasuryTx(tx: Db, input: TreasuryTransferInput)
   });
 }
 
-/** Credit a treasury with no payer. Only refunds of an earlier B2G escrow use it. */
+/** Credit a treasury with no payer: refunds of an earlier B2G escrow, and ₷ returned from the wealth fund. */
 export async function creditTreasuryTx(tx: Db, input: TreasuryCreditInput): Promise<number> {
   const cents = positiveCents(input.amount);
   const t = await lockTreasuryFor(tx, input.countryId, input.realmId);
@@ -384,14 +427,18 @@ export async function treasurySummary(
     }),
   ]);
   return {
-    balance: row?.balance ?? 0,
+    balance: row ? fromCents(centsOf(row.balance)) : 0,
     cap,
-    lifetimeStipend: row?.lifetimeStipend ?? 0,
-    lifetimeTaxEarned: row?.lifetimeTaxEarned ?? 0,
-    lifetimeTariffEarned: row?.lifetimeTariffEarned ?? 0,
-    lifetimeInterestEarned: row?.lifetimeInterestEarned ?? 0,
-    lifetimeSpent: row?.lifetimeSpent ?? 0,
+    lifetimeStipend: row ? fromCents(centsOf(row.lifetimeStipend)) : 0,
+    lifetimeTaxEarned: row ? fromCents(centsOf(row.lifetimeTaxEarned)) : 0,
+    lifetimeTariffEarned: row ? fromCents(centsOf(row.lifetimeTariffEarned)) : 0,
+    lifetimeInterestEarned: row ? fromCents(centsOf(row.lifetimeInterestEarned)) : 0,
+    lifetimeSpent: row ? fromCents(centsOf(row.lifetimeSpent)) : 0,
     lastStipendIxTime: row?.lastStipendIxTime ?? null,
-    recent,
+    recent: recent.map((r) => ({
+      ...r,
+      amount: fromCents(centsOf(r.amount)),
+      balanceAfter: fromCents(centsOf(r.balanceAfter)),
+    })),
   };
 }

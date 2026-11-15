@@ -9,10 +9,10 @@
  *   --dry-run          Show what would be done without writing
  */
 
-import { PrismaClient } from "@prisma/client";
 import { readFileSync } from "fs";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function getArg(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);

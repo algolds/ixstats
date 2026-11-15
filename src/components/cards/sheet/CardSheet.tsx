@@ -7,6 +7,7 @@ import { Link as LinkIcon, LogIn } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "~/components/ui/sheet";
 import { Tooltip } from "~/components/ui/tooltip";
@@ -228,7 +229,10 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
            * scrolls under them, so they get a backing, and z-10 keeps the action bar's buttons (relative, later in
            * the page) from painting over them. The wishlist and the mute are the signed-in player's own.
            */}
-          <div className="max-md:bg-popover absolute top-4 right-14 z-10 flex items-center gap-1 max-md:rounded-full">
+          <FacetMaterial
+            layer="chrome"
+            className="absolute top-4 right-14 z-10 flex items-center gap-1 rounded-full px-1 py-0.5 md:border-0 md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-none"
+          >
             <Tooltip content="Copy link">
               <Button
                 size="icon-sm"
@@ -245,7 +249,7 @@ function SheetBody({ sheet }: { sheet: CardSheetData }) {
                 <MuteToggle cardId={card.id} />
               </>
             )}
-          </div>
+          </FacetMaterial>
         </header>
         {sheet.signedIn && (
           <CardSheetCopies

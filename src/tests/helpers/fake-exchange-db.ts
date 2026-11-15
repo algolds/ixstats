@@ -15,7 +15,7 @@ const UNIQUE: Record<string, string[][]> = {
   user: [["id"], ["clerkUserId"]],
   exchangeWallet: [["userId"]],
   exchangeTransaction: [["idempotencyKey"]],
-  company: [["realmId", "name"]],
+  company: [["realmId", "name"], ["thinkpagesAccountId"]],
   contract: [["idempotencyKey"]],
   contractBid: [["contractId", "companyId"]],
   shareholding: [["companyId", "ownerUserId"]],
@@ -25,45 +25,54 @@ const UNIQUE: Record<string, string[][]> = {
   sectorPosition: [["ownerUserId", "realmId", "sectorKey"]],
   myVault: [["userId"]],
   vaultTransaction: [["idempotencyKey"]],
-  nationTreasury: [["countryId"]],
+  nationTreasury: [["countryId"], ["fundUserId"]],
   nationTreasuryEntry: [["idempotencyKey"]],
   shareBuyOrder: [["idempotencyKey"]],
   companyProposal: [["idempotencyKey"]],
   companyVote: [["proposalId", "voterUserId"]],
+  nationBond: [["idempotencyKey"]],
+  bondHolding: [["bondId", "ownerUserId"]],
+  bondListing: [["idempotencyKey"]],
+  exchangeNewsItem: [["key"]],
+  exchangeNationSnapshot: [["countryId"]],
+  exchangeWatch: [["userId", "subjectKind", "subjectId"]],
 };
 
 const DEFAULTS: Record<string, () => Row> = {
-  exchangeWallet: () => ({ sovereigns: 0, lifetimeEarned: 0, lifetimeSpent: 0 }),
+  exchangeWallet: () => ({ sovereigns: 0n, lifetimeEarned: 0n, lifetimeSpent: 0n }),
   company: () => ({
     realmId: "default",
     hqCountryId: null,
+    thinkpagesAccountId: null,
     subIndustryKey: "software_media",
-    capital: 0,
+    capital: 0n,
     standing: 0,
-    fairValue: 0,
+    fairValue: 0n,
     sharesIssued: 0,
     sharesOutstanding: 0,
-    contractsWonValue: 0,
+    contractsWonValue: 0n,
     tradingOpen: false,
-    decisionValue: 0,
+    decisionValue: 0n,
     pricingStrategy: "balanced",
     lobbyBuffType: null,
     lobbyBuffUntilIxTime: null,
-    creditDrawn: 0,
+    creditDrawn: 0n,
     creditRating: "A",
     lastTradePrice: null,
     lastTradeIxTime: null,
-    lastTickRevenue: 0,
-    lastTickExpenses: 0,
-    lastTickTax: 0,
-    lastTickNetIncome: 0,
+    lastTickRevenue: 0n,
+    lastTickExpenses: 0n,
+    lastTickTax: 0n,
+    lastTickNetIncome: 0n,
     distressedSinceIxTime: null,
     status: "ACTIVE",
   }),
   contract: () => ({
     status: "OPEN",
     winnerCompanyId: null,
-    escrow: 0,
+    escrow: 0n,
+    tariffRate: 0,
+    tariffPaid: 0n,
     awardedBidId: null,
     issuerCompanyId: null,
     issuerUserId: null,
@@ -75,7 +84,7 @@ const DEFAULTS: Record<string, () => Row> = {
     closedIxTime: null,
   }),
   contractBid: () => ({ outcome: null, standingDelta: 0 }),
-  shareholding: () => ({ shares: 0, avgCost: 0 }),
+  shareholding: () => ({ shares: 0, avgCost: 0n }),
   shareListing: () => ({ status: "OPEN", sellerUserId: null, idempotencyKey: null }),
   sectorIndex: () => ({
     realmId: "default",
@@ -84,22 +93,49 @@ const DEFAULTS: Record<string, () => Row> = {
     dmModifier: 0,
     macroWeight: 0,
     computedIxTime: null,
-    fundSovereigns: 0,
+    fundSovereigns: 0n,
     unitsOutstanding: 0,
   }),
-  sectorPosition: () => ({ realmId: "default", units: 0, avgCost: 0 }),
+  sectorPosition: () => ({ realmId: "default", units: 0, avgCost: 0n }),
   nationTreasury: () => ({
     realmId: "default",
-    balance: 0,
-    lifetimeStipend: 0,
-    lifetimeTaxEarned: 0,
-    lifetimeTariffEarned: 0,
-    lifetimeInterestEarned: 0,
-    lifetimeSpent: 0,
+    balance: 0n,
+    lifetimeStipend: 0n,
+    lifetimeTaxEarned: 0n,
+    lifetimeTariffEarned: 0n,
+    lifetimeInterestEarned: 0n,
+    lifetimeSpent: 0n,
     corporateGdpShift: 0,
     lastStipendIxTime: null,
+    creditRating: "A",
+    bondBanUntil: null,
+    fundUserId: null,
+    lendingSpread: 0,
+    companyCreditCap: 25_000_000n,
   }),
-  shareBuyOrder: () => ({ status: "OPEN", escrow: 0, idempotencyKey: null }),
+  nationBond: () => ({
+    realmId: "default",
+    faceValue: 100_00n,
+    unitsSold: 0,
+    weeksPaid: 0,
+    status: "OPEN",
+    lastTradePrice: null,
+    issuedAt: new Date(),
+    idempotencyKey: null,
+  }),
+  bondHolding: () => ({ units: 0, avgCost: 0n }),
+  bondListing: () => ({ status: "OPEN", idempotencyKey: null }),
+  exchangeNewsItem: () => ({
+    realmId: "default",
+    sourceId: null,
+    body: null,
+    companyId: null,
+    bondId: null,
+    countryId: null,
+    contractId: null,
+    movePct: null,
+  }),
+  shareBuyOrder: () => ({ status: "OPEN", escrow: 0n, idempotencyKey: null }),
   companyDecision: () => ({ payload: null, effect: null, appliedIxTime: null }),
   myVault: () => ({
     credits: 0,
@@ -149,6 +185,9 @@ function matchValue(actual: any, cond: any): boolean {
     if (op === "startsWith" && !(typeof actual === "string" && actual.startsWith(v as string))) {
       return false;
     }
+    if (op === "contains" && !(typeof actual === "string" && norm(actual).includes(norm(v)))) {
+      return false;
+    }
   }
   return true;
 }
@@ -174,6 +213,7 @@ const OPS: Record<string, true> = {
   not: true,
   mode: true,
   startsWith: true,
+  contains: true,
 };
 
 function matches(row: Row, where: Row = {}): boolean {
@@ -187,12 +227,30 @@ function matches(row: Row, where: Row = {}): boolean {
   return true;
 }
 
+function isBigIntOp(cur: unknown, v: Row): boolean {
+  return (
+    typeof cur === "bigint" || typeof v.increment === "bigint" || typeof v.decrement === "bigint"
+  );
+}
+
 function applyData(row: Row, data: Row) {
   for (const [k, v] of Object.entries(data)) {
     if (isPlainObject(v) && ("increment" in v || "decrement" in v)) {
-      row[k] = (row[k] ?? 0) + (v.increment ?? 0) - (v.decrement ?? 0);
+      if (isBigIntOp(row[k], v)) {
+        row[k] = BigInt(row[k] ?? 0n) + BigInt(v.increment ?? 0n) - BigInt(v.decrement ?? 0n);
+      } else {
+        row[k] = (row[k] ?? 0) + (v.increment ?? 0) - (v.decrement ?? 0);
+      }
     } else if (v !== undefined) row[k] = v;
   }
+}
+
+function sumField(rows: Row[], f: string): number | bigint | null {
+  if (!rows.length) return null;
+  if (rows.some((r) => typeof r[f] === "bigint")) {
+    return rows.reduce((s, r) => s + BigInt(r[f] ?? 0n), 0n);
+  }
+  return rows.reduce((s, r) => s + (r[f] ?? 0), 0);
 }
 
 let idSeq = 0;
@@ -209,7 +267,9 @@ export interface FakeDb {
 
 export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
   const tables: Record<string, Row[]> = {};
-  for (const [m, rows] of Object.entries(seed)) tables[m] = rows.map((r) => ({ ...r }));
+  for (const [m, rows] of Object.entries(seed)) {
+    tables[m] = rows.map((r) => ({ ...(DEFAULTS[m]?.() ?? {}), ...r }));
+  }
   const table = (m: string) => (tables[m] ??= []);
   const locks = new Map<string, Promise<void>>();
 
@@ -267,7 +327,12 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
       record(() => {
         for (const [k, v] of Object.entries(data)) {
           if (isPlainObject(v) && ("increment" in v || "decrement" in v)) {
-            row[k] -= (v.increment ?? 0) - (v.decrement ?? 0);
+            if (isBigIntOp(row[k], v)) {
+              row[k] =
+                BigInt(row[k] ?? 0n) - BigInt(v.increment ?? 0n) + BigInt(v.decrement ?? 0n);
+            } else {
+              row[k] -= (v.increment ?? 0) - (v.decrement ?? 0);
+            }
           } else if (v !== undefined) row[k] = before[k];
         }
       });
@@ -360,7 +425,7 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
         const rows = table(model).filter((r) => matches(r, args.where));
         const _sum: Row = {};
         for (const f of Object.keys(args._sum ?? {})) {
-          _sum[f] = rows.length ? rows.reduce((s, r) => s + (r[f] ?? 0), 0) : null;
+          _sum[f] = sumField(rows, f);
         }
         return { _sum };
       },
@@ -377,7 +442,7 @@ export function createFakeExchangeDb(seed: Record<string, Row[]> = {}): FakeDb {
           for (const b of args.by as string[]) out[b] = g[0]![b];
           out._sum = {};
           for (const f of Object.keys(args._sum ?? {})) {
-            out._sum[f] = g.reduce((s, r) => s + (r[f] ?? 0), 0);
+            out._sum[f] = sumField(g, f) ?? 0;
           }
           return out;
         });

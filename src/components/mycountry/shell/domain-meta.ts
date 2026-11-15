@@ -56,6 +56,7 @@ export const DOMAIN_META: Record<
 export const DOMAIN_SECTIONS: ReadonlySet<string> = new Set([
   "diplomacy",
   "defense",
+  "intelligence",
   "politics",
   "economy",
   "executive",

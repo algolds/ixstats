@@ -20,7 +20,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "~/components/ui/dialog";
 import {
@@ -28,7 +27,6 @@ import {
   Search,
   Sparks as Sparkles,
   Group as Users,
-  Mail,
   EditPencil,
   Trash,
   Plus,
@@ -42,6 +40,13 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Card } from "~/components/ui/card";
 import { RoleEditorDialog, type EditableRole } from "./RoleEditorDialog";
+import { InviteUserDialog } from "./InviteUserDialog";
+
+/** Which dialog is open, and the role it acts on (none for invite or a new role). */
+interface PanelDialog {
+  open: "none" | "invite" | "editor" | "delete";
+  role: EditableRole | null;
+}
 
 function getLevelBadgeClass(level: number): string {
   if (level === 0) return "border-red/30 bg-red/10 text-footnote text-red";
@@ -57,22 +62,14 @@ export function UserRolesPanel() {
   const notify = useNotify();
   const ability = useAbility();
 
-  // Dialog states
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [roleEditorOpen, setRoleEditorOpen] = useState(false);
-  const [editingRole, setEditingRole] = useState<EditableRole | null>(null);
-  const [roleToDelete, setRoleToDelete] = useState<EditableRole | null>(null);
+  // One dialog at a time; the role outlives a close so the closing dialog keeps its content
+  const [dialog, setDialog] = useState<PanelDialog>({ open: "none", role: null });
+  const closeDialog = () => setDialog((d) => ({ ...d, open: "none" }));
 
   // Search & Filter states
   const [roleSearchTerm, setRoleSearchTerm] = useState("");
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
-
-  const [inviteForm, setInviteForm] = useState({
-    emailAddress: "",
-    reservedNationName: "",
-    role: "user" as "admin" | "user" | "owner",
-  });
 
   // Queries
   const {
@@ -102,26 +99,11 @@ export function UserRolesPanel() {
   const deleteRoleMutation = api.roles.deleteRole.useMutation({
     onSuccess: () => {
       notify.success("Role Deleted", "The role has been removed.");
-      setRoleToDelete(null);
+      closeDialog();
       void refetchRoles();
     },
     onError: (error) => {
       notify.error("Deletion Failed", error.message || "Failed to delete role.");
-    },
-  });
-
-  const inviteUserMutation = api.admin.inviteUserToBypassWaitlist.useMutation({
-    onSuccess: (result) => {
-      notify.success("Success", result.message || "Invitation sent successfully");
-      setShowInviteDialog(false);
-      setInviteForm({
-        emailAddress: "",
-        reservedNationName: "",
-        role: "user",
-      });
-    },
-    onError: (error: { message?: string }) => {
-      notify.error("Error", error.message || "Failed to send invitation");
     },
   });
 
@@ -135,22 +117,12 @@ export function UserRolesPanel() {
     },
   });
 
-  const handleSendInvite = () => {
-    if (!inviteForm.emailAddress || !inviteForm.reservedNationName) {
-      notify.error("Validation Error", "Email address and reserved nation name are required");
-      return;
-    }
-    inviteUserMutation.mutate(inviteForm);
-  };
-
   const handleOpenCreateRole = () => {
-    setEditingRole(null);
-    setRoleEditorOpen(true);
+    setDialog({ open: "editor", role: null });
   };
 
   const handleOpenEditRole = (role: EditableRole) => {
-    setEditingRole(role);
-    setRoleEditorOpen(true);
+    setDialog({ open: "editor", role });
   };
 
   const filteredRoles = roles?.filter((r) => {
@@ -231,82 +203,12 @@ export function UserRolesPanel() {
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
                     Create Role
                   </Button>
-                  <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        <Mail className="mr-1.5 h-3.5 w-3.5" />
-                        Invite VIP / Role
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-h-[85vh] max-w-md overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Send waitlist bypass invitation</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4 py-3">
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Email address</label>
-                          <Input
-                            type="email"
-                            value={inviteForm.emailAddress}
-                            onChange={(e) =>
-                              setInviteForm({ ...inviteForm, emailAddress: e.target.value })
-                            }
-                            placeholder="player@domain.com"
-                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Reserved nation name</label>
-                          <Input
-                            value={inviteForm.reservedNationName}
-                            onChange={(e) =>
-                              setInviteForm({ ...inviteForm, reservedNationName: e.target.value })
-                            }
-                            placeholder="Kingdom of Solaria"
-                            className="rounded-control-sm md:text-footnote h-(--control-height-sm)"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-label text-caption">Initial role</label>
-                          <Select
-                            value={inviteForm.role}
-                            onValueChange={(val: "admin" | "user" | "owner") =>
-                              setInviteForm({ ...inviteForm, role: val })
-                            }
-                          >
-                            <SelectTrigger size="sm">
-                              <SelectValue placeholder="Choose a role..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="user">Standard Player (User)</SelectItem>
-                              <SelectItem value="admin">Administrator (Admin)</SelectItem>
-                              <SelectItem value="owner">System Owner (Owner)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowInviteDialog(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={handleSendInvite}
-                          disabled={
-                            inviteUserMutation.isPending ||
-                            !inviteForm.emailAddress ||
-                            !inviteForm.reservedNationName
-                          }
-                        >
-                          {inviteUserMutation.isPending ? "Sending..." : "Send Invitation"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <InviteUserDialog
+                    open={dialog.open === "invite"}
+                    onOpenChange={(open) =>
+                      open ? setDialog((d) => ({ ...d, open: "invite" })) : closeDialog()
+                    }
+                  />
                 </Can>
               </div>
             </div>
@@ -345,14 +247,17 @@ export function UserRolesPanel() {
                         <span className="text-label text-caption font-semibold">
                           {role.displayName}
                         </span>
-                        <code className="text-label-secondary text-footnote rounded bg-fill-3 px-1.5 py-0.5 font-mono">
+                        <code className="text-label-secondary text-footnote bg-fill-3 rounded px-1.5 py-0.5 font-mono">
                           {role.name}
                         </code>
                         <Badge variant="outline" className={getLevelBadgeClass(role.level)}>
                           Level {role.level}
                         </Badge>
                         {role.isSystem && (
-                          <Badge variant="outline" className="border-teal/30 bg-teal/10 text-footnote text-teal">
+                          <Badge
+                            variant="outline"
+                            className="border-teal/30 bg-teal/10 text-footnote text-teal"
+                          >
                             System
                           </Badge>
                         )}
@@ -379,13 +284,13 @@ export function UserRolesPanel() {
                               <Badge
                                 key={perm.id}
                                 variant="outline"
-                                className="text-label-secondary font-mono text-[11px] py-0 px-1.5"
+                                className="text-label-secondary text-caption px-1.5 py-0 font-mono"
                               >
                                 {perm.name}
                               </Badge>
                             ))}
                             {role.permissions.length > 6 && (
-                              <Badge variant="outline" className="text-[11px] py-0 px-1.5">
+                              <Badge variant="outline" className="text-caption px-1.5 py-0">
                                 +{role.permissions.length - 6} more
                               </Badge>
                             )}
@@ -394,7 +299,7 @@ export function UserRolesPanel() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Can I="manage" a="Role">
                         <Button
                           variant="outline"
@@ -421,14 +326,17 @@ export function UserRolesPanel() {
                             size="sm"
                             className="text-destructive hover:bg-destructive/10 h-8 gap-1.5"
                             onClick={() =>
-                              setRoleToDelete({
-                                id: role.id,
-                                name: role.name,
-                                displayName: role.displayName,
-                                description: role.description,
-                                level: role.level,
-                                isSystem: role.isSystem,
-                                permissions: role.permissions,
+                              setDialog({
+                                open: "delete",
+                                role: {
+                                  id: role.id,
+                                  name: role.name,
+                                  displayName: role.displayName,
+                                  description: role.description,
+                                  level: role.level,
+                                  isSystem: role.isSystem,
+                                  permissions: role.permissions,
+                                },
                               })
                             }
                           >
@@ -498,7 +406,9 @@ export function UserRolesPanel() {
                 </div>
               ) : !filteredUsers || filteredUsers.length === 0 ? (
                 <Card className="p-8 text-center">
-                  <p className="text-label-secondary text-footnote">No accounts match the criteria.</p>
+                  <p className="text-label-secondary text-footnote">
+                    No accounts match the criteria.
+                  </p>
                 </Card>
               ) : (
                 filteredUsers.map((user) => (
@@ -508,7 +418,9 @@ export function UserRolesPanel() {
                   >
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-label text-caption font-mono">{user.clerkUserId}</span>
+                        <span className="text-label text-caption font-mono">
+                          {user.clerkUserId}
+                        </span>
                         {user.role ? (
                           <Badge variant="outline" className={getLevelBadgeClass(user.role.level)}>
                             {user.role.displayName}
@@ -526,9 +438,7 @@ export function UserRolesPanel() {
                               : "text-footnote"
                           }
                         >
-                          {user.membershipTier === "mycountry_premium"
-                            ? "Premium"
-                            : "Basic"}
+                          {user.membershipTier === "mycountry_premium" ? "Premium" : "Basic"}
                         </Badge>
                       </div>
                       <span className="text-label-secondary text-footnote mt-0.5 block">
@@ -651,27 +561,34 @@ export function UserRolesPanel() {
 
       {/* Role Editor Dialog */}
       <RoleEditorDialog
-        open={roleEditorOpen}
-        onOpenChange={setRoleEditorOpen}
-        role={editingRole}
+        open={dialog.open === "editor"}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+        role={dialog.role}
         onSuccess={() => void refetchRoles()}
       />
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={Boolean(roleToDelete)} onOpenChange={(open) => !open && setRoleToDelete(null)}>
+      <Dialog
+        open={dialog.open === "delete"}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Role</DialogTitle>
           </DialogHeader>
           <p className="text-label-secondary text-footnote py-2">
-            Are you sure you want to delete role &ldquo;{roleToDelete?.displayName}&rdquo;? This
+            Are you sure you want to delete role &ldquo;{dialog.role?.displayName}&rdquo;? This
             action cannot be undone. Roles assigned to active users cannot be deleted.
           </p>
           <DialogFooter>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setRoleToDelete(null)}
+              onClick={closeDialog}
               disabled={deleteRoleMutation.isPending}
             >
               Cancel
@@ -680,8 +597,8 @@ export function UserRolesPanel() {
               variant="destructive"
               size="sm"
               onClick={() => {
-                if (roleToDelete) {
-                  deleteRoleMutation.mutate({ roleId: roleToDelete.id });
+                if (dialog.role) {
+                  deleteRoleMutation.mutate({ roleId: dialog.role.id });
                 }
               }}
               disabled={deleteRoleMutation.isPending}

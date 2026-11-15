@@ -124,9 +124,7 @@ const popoverMotion = {
 ```
 
 ### 5.2 Haptic Sound Feedback
-Audio feedback is wired via the centralized `cuelume` sound system:
-- **Button Press & Tab Select**: `soundEffects.press()`
-- **Popover Dismiss & Item Delete**: `soundEffects.release()`
+Audio follows the app policy (`src/lib/sound/cuelume.ts`): button presses and tab switches are silent; outcomes sound through their toast, and popovers and sheets play present and dismiss themselves.
 
 ---
 

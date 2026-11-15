@@ -6,6 +6,7 @@
  */
 
 import { exit } from "process";
+import { createPrismaClient } from "~/server/prisma-client";
 
 // ANSI color codes
 const colors = {
@@ -361,7 +362,7 @@ async function testDatabaseConnection(): Promise<ValidationResult> {
 
   try {
     const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
 
     await prisma.$connect();
     print("✅ Database connection successful", "green");
@@ -480,7 +481,7 @@ async function testKokoroConnection(): Promise<ValidationResult> {
 
   try {
     const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
     const rows = await prisma.systemConfig.findMany({
       where: { key: { startsWith: "onoma.kokoro." } },
     });

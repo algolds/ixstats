@@ -210,7 +210,7 @@ export default function EtymologySection() {
           <div className="bg-fill-4 border-separator hover:bg-fill-4 rounded-control-sm hover:border-indigo/20 flex-1 border p-3 transition-colors">
             <div className="flex items-start justify-between">
               <div>
-                <span className="text-label font-semibold">{node.word}</span>
+                <span className="text-label font-medium">{node.word}</span>
                 {node.ipa && (
                   <span className="text-label-secondary text-caption ml-2">/{node.ipa}/</span>
                 )}
@@ -272,7 +272,7 @@ export default function EtymologySection() {
         {/* Left Column: Roots & Creation */}
         <div className="space-y-4 lg:col-span-4">
           <Card variant="well" padding="none" className="space-y-4 p-4">
-            <h3 className="text-label text-body flex items-center gap-2 font-semibold">
+            <h3 className="text-label text-headline flex items-center gap-2">
               <Network className="text-indigo h-4 w-4" />
               Roots directory
             </h3>
@@ -287,7 +287,7 @@ export default function EtymologySection() {
                   <GitFork className="h-4 w-4" />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-label font-semibold">No proto-roots yet</p>
+                  <p className="text-label font-medium">No proto-roots yet</p>
                   <p className="text-label-secondary text-caption leading-normal">
                     Create your first root word below to start branching derivations.
                   </p>
@@ -310,7 +310,7 @@ export default function EtymologySection() {
                     selectionStyle="tint"
                     title={
                       <span className="text-footnote">
-                        <span className="font-semibold">{r.root}</span>
+                        <span className="font-medium">{r.root}</span>
                         {r.ipa && (
                           <span className="text-label-secondary text-caption ml-2">/{r.ipa}/</span>
                         )}
@@ -402,7 +402,7 @@ export default function EtymologySection() {
               <Card variant="well" padding="none" className="p-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-label text-title-3 flex items-baseline gap-2 font-bold">
+                    <h3 className="text-label text-title-3 flex items-baseline gap-2">
                       {activeRoot.root}
                       {activeRoot.ipa && (
                         <span className="text-label-secondary text-footnote font-normal">
@@ -456,7 +456,7 @@ export default function EtymologySection() {
                 ) : (
                   <div className="space-y-2 select-none">
                     <div className="rounded-control-sm border-indigo/20 bg-indigo/5 inline-block border p-2">
-                      <span className="text-indigo font-semibold">{activeRoot.root}</span>
+                      <span className="text-indigo font-medium">{activeRoot.root}</span>
                       <span className="text-label-secondary text-caption ml-2">
                         /{activeRoot.ipa}/
                       </span>
@@ -598,7 +598,7 @@ export default function EtymologySection() {
                   <Network className="text-indigo h-7 w-7" />
                 </div>
                 <div className="max-w-sm space-y-1">
-                  <h4 className="text-label text-body font-semibold">Select or create a root</h4>
+                  <h4 className="text-label text-headline">Select or create a root</h4>
                   <p className="text-label-secondary text-footnote leading-relaxed">
                     Pick an etymology root word from the directory on the left to inspect its
                     morphological family tree, or create a new proto-root to begin branching

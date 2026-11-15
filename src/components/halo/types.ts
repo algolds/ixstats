@@ -1,12 +1,16 @@
-// Main CommandPalette props interface
-// Branded string type helper for plugin & view identifiers
-// User Profile interface
+import type { AppDefinition } from "~/lib/navigation/app-sections";
+
+export interface CommandPaletteProps {
+  className?: string;
+  trayApps?: readonly AppDefinition[];
+  searchApps?: readonly AppDefinition[];
+}
+
 // Search Result interface
 export interface SearchResult {
   id: string;
-  type: "country" | "command" | "feature" | "wiki";
+  type: "country" | "realm" | "command" | "wiki";
   title: string;
-  subtitle?: string;
   description?: string;
   metadata?: Record<string, unknown>;
   icon?: React.ComponentType<{ className?: string }>;
@@ -18,7 +22,7 @@ type BuiltinViewMode = "compact" | "search" | "notifications" | "settings" | "my
 type PluginViewMode = `plugin:${string}`;
 export type ViewMode = BuiltinViewMode | PluginViewMode;
 
-export type SearchFilter = "all" | "countries" | "commands" | "features" | "wiki";
+export type SearchFilter = "all" | "wiki" | "countries" | "realms" | "commands";
 
 // Plugin System Types
 
@@ -31,11 +35,13 @@ export interface DIViewProps<F = unknown, C = unknown> {
 }
 
 /** An action button a plugin can inject into the pill */
-interface DIAction {
+export interface DIAction {
   id: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  /** Opens `plugin:${pluginView}` when clicked if `onClick` is omitted. */
+  pluginView?: string;
   badge?: number;
 }
 
@@ -44,17 +50,33 @@ interface DIBadge {
   color: string;
 }
 
+/** A command contributed to Halo Search by the active page plugin ("On this page"). */
+export interface PluginCommand {
+  key: string;
+  title: string;
+  description?: string;
+  keywords?: readonly string[];
+  icon?: React.ComponentType<{ className?: string }>;
+  /** In-page stateful callback (e.g. BuilderHalo section jump, WikiHalo heading jump or narrator toggle). */
+  run?: () => void;
+  /** Same-origin route navigated via `navigateWithBasePath(path, router)`. */
+  path?: string;
+  /** Plugin expanded-view key opened as `plugin:${pluginView}` (e.g. `"sports-live"`). */
+  pluginView?: string;
+}
+
 /** A plugin registration object — pages call useDIPlugin() with this */
 export interface DIPlugin<F = unknown, C = unknown> {
   id: string;
   priority?: number;
   center?: React.ReactNode;
+  centerActions?: React.ReactNode;
   // oxlint-disable-next-line typescript/no-explicit-any
   expandedViews?: Record<string, React.ComponentType<DIViewProps<any, any>>>;
   badge?: DIBadge;
   actions?: DIAction[];
+  commands?: readonly PluginCommand[];
   accentColor?: string;
-  stickyLabel?: string;
   filter?: F;
   context?: C;
 }
@@ -64,20 +86,21 @@ export interface DIPlugin<F = unknown, C = unknown> {
 // Component prop interfaces
 export interface CompactViewProps {
   mode?: ViewMode;
-  isSticky?: boolean;
-  isCollapsed: boolean;
-  setIsCollapsed: (collapsed: boolean) => void;
-  setIsUserInteracting: (interacting: boolean) => void;
-  onSwitchMode: (mode: ViewMode) => void;
-  scrollY?: number;
+  isNavLoading?: boolean;
+  onSwitchMode: (mode: ViewMode, triggerOverride?: string) => void;
   activePlugin?: DIPlugin | null;
   // Plugin system props
   pluginCenter?: React.ReactNode;
+  pluginCenterActions?: React.ReactNode;
   pluginActions?: DIAction[];
   pluginBadge?: DIBadge;
+  // Chromeless quick-navigation tray trigger
+  showNavTrayTrigger?: boolean;
+  navTrayOpen?: boolean;
+  onToggleNavTray?: () => void;
 }
 
-type CountrySummary = {
+export type CountrySummary = {
   id: string;
   name: string;
   slug?: string;
@@ -109,6 +132,8 @@ export interface SearchViewProps {
   setSearchFilter?: (filter: SearchFilter) => void;
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
+  /** True while a debounce, the countries list or the wiki query is still in flight. */
+  isSearchPending?: boolean;
   closeDropdown: () => void;
 }
 
@@ -130,6 +155,7 @@ export interface ExpandedViewProps {
   setSearchFilter: (filter: SearchFilter) => void;
   debouncedSearchQuery: string;
   searchResults: SearchResult[];
+  isSearchPending?: boolean;
   countriesData?: CountriesData;
   activePlugin?: DIPlugin | null;
 }

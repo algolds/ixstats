@@ -2,10 +2,11 @@
  * Compare World Roster data to database
  * Identifies which countries are in World Roster vs database
  */
-import { PrismaClient } from "@prisma/client";
-import XLSX from "xlsx";
 
-const db = new PrismaClient();
+import XLSX from "xlsx";
+import { createPrismaClient } from "~/server/prisma-client";
+
+const db = createPrismaClient();
 const WORLD_ROSTER_PATH = "/ixwiki/public/projects/ixstats/public/World-Roster.xlsx";
 
 interface WorldRosterCountry {

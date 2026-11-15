@@ -1,8 +1,11 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Check } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Check, EditPencil, Trash } from "iconoir-react";
+import { Button } from "~/components/ui/button";
+import { CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { LensCard } from "~/components/ui/lens-card";
 import { useVexelEditor } from "../VexelEditorProvider";
 import { Input } from "~/components/ui/input";
 import { Slider } from "~/components/ui/slider";
@@ -27,7 +30,7 @@ import type {
   Attitude,
   HelmType,
 } from "~/lib/heraldry";
-import { Card } from "~/components/ui/card";
+import { chargeName } from "../builtin-charges";
 
 const parseIndex = (path: string) => {
   const match = path.match(/\[(\d+)\]/);
@@ -73,32 +76,36 @@ function TincturePicker({ value, onChange }: { value: Tincture; onChange: (t: Ti
   );
 }
 
+/** The selected layer's properties, in the Inspector under the layer tree. `onRemove` adds its one delete. */
 function PanelShell({
   title,
-  bodyClassName = "",
-  titleClassName = "",
+  onRemove,
   children,
 }: {
-  title: ReactNode;
-  bodyClassName?: string;
-  titleClassName?: string;
+  title: string;
+  onRemove?: () => void;
   children: ReactNode;
 }) {
   return (
-    <Card className="overflow-hidden">
-      <div className={`text-footnote flex flex-col gap-4 p-4 ${bodyClassName}`}>
-        <Eyebrow className={`border-separator block border-b pb-2 ${titleClassName}`}>
+    <LensCard content="input" padding="md" className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <CardTitle icon={<EditPencil />} className="min-w-0 truncate">
           {title}
-        </Eyebrow>
-        {children}
+        </CardTitle>
+        {onRemove && (
+          <Button variant="ghost" size="icon-sm" onClick={onRemove} aria-label={`Remove ${title}`}>
+            <Trash className="text-destructive" />
+          </Button>
+        )}
       </div>
-    </Card>
+      {children}
+    </LensCard>
   );
 }
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="space-y-1">
-    <label className="text-label-secondary font-medium">{label}</label>
+    <span className="text-subhead text-label-secondary block">{label}</span>
     {children}
   </div>
 );
@@ -115,7 +122,7 @@ const Section = ({
 function ShieldPanel() {
   const { composition, updateComposition } = useVexelEditor();
   return (
-    <PanelShell title="Shield properties">
+    <PanelShell title="Shield">
       <Field label="Shape">
         <OptionSelect
           aria-label="Shape"
@@ -155,7 +162,7 @@ function FieldPanel() {
   };
 
   return (
-    <PanelShell title="Field properties" bodyClassName="max-h-[400px] overflow-y-auto">
+    <PanelShell title="Field">
       <Field label="Division">
         <OptionSelect
           aria-label="Division"
@@ -175,12 +182,11 @@ function FieldPanel() {
       </Field>
 
       <Section className="space-y-3">
-        <span className="text-label-secondary block font-semibold">
-          Tinctures ({expectedCount})
-        </span>
         {Array.from({ length: expectedCount }).map((_, i) => (
           <div key={i} className="space-y-1">
-            <Eyebrow>Section {i + 1}</Eyebrow>
+            <span className="text-subhead text-label-secondary block">
+              {expectedCount > 1 ? `Tincture ${i + 1}` : "Tincture"}
+            </span>
             <TincturePicker
               value={field.tinctures[i] ?? "argent"}
               onChange={(tinc) => handleTinctureChange(i, tinc)}
@@ -193,12 +199,19 @@ function FieldPanel() {
 }
 
 function OrdinaryPanel({ index }: { index: number }) {
-  const { composition, updateOrdinary } = useVexelEditor();
+  const { composition, updateOrdinary, removeOrdinary, selectLayer } = useVexelEditor();
   const ord = composition.shield.ordinaries?.[index];
   if (!ord) return null;
+  const label = ORDINARIES.find((o) => o.value === ord.type)?.label ?? ord.type;
 
   return (
-    <PanelShell title={`Ordinary properties (${index + 1})`}>
+    <PanelShell
+      title={label}
+      onRemove={() => {
+        selectLayer(null);
+        removeOrdinary(index);
+      }}
+    >
       <Field label="Type">
         <OptionSelect
           aria-label="Type"
@@ -218,7 +231,7 @@ function OrdinaryPanel({ index }: { index: number }) {
       </Field>
 
       <Section>
-        <label className="text-label-secondary block font-medium">Tincture</label>
+        <span className="text-subhead text-label-secondary block">Tincture</span>
         <TincturePicker
           value={ord.tincture}
           onChange={(tinc) => updateOrdinary(index, { tincture: tinc })}
@@ -229,14 +242,20 @@ function OrdinaryPanel({ index }: { index: number }) {
 }
 
 function ChargePanel({ index }: { index: number }) {
-  const { composition, updateCharge } = useVexelEditor();
+  const { composition, updateCharge, removeCharge, selectLayer } = useVexelEditor();
   const charge = composition.shield.charges?.[index];
   if (!charge) return null;
 
   return (
-    <PanelShell title={`Charge properties: ${charge.chargeId}`} titleClassName="truncate">
+    <PanelShell
+      title={chargeName(charge.chargeId)}
+      onRemove={() => {
+        selectLayer(null);
+        removeCharge(index);
+      }}
+    >
       <div className="space-y-1">
-        <label id="vexel-charge-count" className="text-label-secondary font-medium">
+        <label id="vexel-charge-count" className="text-subhead text-label-secondary">
           Count ({charge.count})
         </label>
         <Slider
@@ -251,7 +270,7 @@ function ChargePanel({ index }: { index: number }) {
       </div>
 
       <div className="space-y-1">
-        <label id="vexel-charge-size" className="text-label-secondary font-medium">
+        <label id="vexel-charge-size" className="text-subhead text-label-secondary">
           Size ({charge.size.toFixed(2)}x)
         </label>
         <Slider
@@ -270,12 +289,12 @@ function ChargePanel({ index }: { index: number }) {
           aria-label="Attitude"
           value={charge.attitude || ""}
           onValueChange={(v) => updateCharge(index, { attitude: (v || undefined) as Attitude })}
-          options={[{ value: "", label: "Default (None)" }, ...ATTITUDES]}
+          options={[{ value: "", label: "Default" }, ...ATTITUDES]}
         />
       </Field>
 
       <Section className="flex items-center justify-between">
-        <label htmlFor="vexel-charge-mirrored" className="text-label-secondary font-medium">
+        <label htmlFor="vexel-charge-mirrored" className="text-subhead text-label-secondary">
           Mirrored
         </label>
         <Switch
@@ -286,7 +305,7 @@ function ChargePanel({ index }: { index: number }) {
       </Section>
 
       <Section>
-        <label className="text-label-secondary block font-medium">Tincture</label>
+        <span className="text-subhead text-label-secondary block">Tincture</span>
         <TincturePicker
           value={charge.tincture}
           onChange={(tinc) => updateCharge(index, { tincture: tinc })}
@@ -306,9 +325,9 @@ function ExternalsPanel() {
   const ext = composition.externals || {};
 
   return (
-    <PanelShell title="Ornament properties" bodyClassName="max-h-[80vh] overflow-y-auto">
+    <PanelShell title="Helm and motto">
       <div className="flex items-center justify-between">
-        <label htmlFor="vexel-include-helm" className="text-label-secondary font-medium">
+        <label htmlFor="vexel-include-helm" className="text-subhead text-label-secondary">
           Include helm
         </label>
         <Switch
@@ -325,7 +344,7 @@ function ExternalsPanel() {
 
       {ext.helm && (
         <div className="border-separator space-y-1 border-l pl-3">
-          <label className="text-label-secondary font-medium">Helm type</label>
+          <span className="text-subhead text-label-secondary block">Helm type</span>
           <OptionSelect
             aria-label="Helm type"
             value={ext.helm.type}
@@ -338,15 +357,15 @@ function ExternalsPanel() {
       )}
 
       <Section className="space-y-2">
-        <label className="text-label-secondary block font-semibold">Motto scroll</label>
+        <span className="text-subhead text-label block">Motto scroll</span>
         <div className="space-y-1">
-          <label htmlFor="vexel-motto-text" className="text-label-secondary">
+          <label htmlFor="vexel-motto-text" className="text-subhead text-label-secondary">
             Motto text
           </label>
           <Input
             id="vexel-motto-text"
             type="text"
-            placeholder="e.g. In Hoc Signo Vinces"
+            placeholder="In hoc signo vinces"
             value={ext.motto?.text || ""}
             onChange={(e) =>
               updateExternals({
@@ -361,7 +380,7 @@ function ExternalsPanel() {
 
         {ext.motto && (
           <div className="border-separator space-y-1 border-l pl-3">
-            <label className="text-label-secondary">Position</label>
+            <span className="text-subhead text-label-secondary block">Position</span>
             <OptionSelect
               aria-label="Motto position"
               value={ext.motto.position}
@@ -385,11 +404,14 @@ export default function PropertiesPanel() {
 
   if (!path) {
     return (
-      <Card className="h-full overflow-hidden">
-        <div className="text-label-secondary text-footnote flex h-full items-center justify-center p-6 text-center italic">
-          Select a layer from the tree to edit properties
-        </div>
-      </Card>
+      <LensCard>
+        <EmptyState
+          compact
+          icon={<EditPencil />}
+          title="No layer selected"
+          message="Pick a layer above, or click a part of the shield, to edit it."
+        />
+      </LensCard>
     );
   }
 

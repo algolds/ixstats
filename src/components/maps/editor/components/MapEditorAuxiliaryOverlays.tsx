@@ -130,7 +130,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
         <Button
           variant="outline"
           size="sm"
-          className="pointer-events-auto absolute right-3 bottom-20 z-20 rounded-full sm:hidden"
+          className="facet-chrome-subtle rounded-control pointer-events-auto absolute right-3 bottom-20 z-20 sm:hidden"
           type="button"
           onClick={() => setMobileListOpen(true)}
         >
@@ -173,7 +173,7 @@ export const MapEditorAuxiliaryOverlays = React.memo(function MapEditorAuxiliary
 
       {editor.selectedIds.size > 1 && (
         <div className="pointer-events-auto absolute bottom-10 left-1/2 z-30 max-w-[calc(100vw-2rem)] -translate-x-1/2">
-          <FacetMaterial layer="chrome" className="rounded-row overflow-hidden">
+          <FacetMaterial layer="chrome" className="facet-chrome-subtle rounded-row overflow-hidden">
             <BatchActionsBar
               selectedCount={editor.selectedIds.size}
               subdivisionCount={subdivisionCount}

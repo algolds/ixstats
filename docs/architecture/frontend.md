@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-10-05
 
-**Framework**: Next.js 16.4.3 App Router · React 19.2.8 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
+**Framework**: Next.js 16.4.6 App Router · React 19.3.1 · Tailwind CSS 4.3.3 · TypeScript 7.0.2  
 **Design System**: **Facet** (opaque cards, glass only for floating chrome)  
 **Location**: `src/app/` (180+ page routes, 40+ API route handlers) · `src/components/` (900+ `.tsx` components) · `src/hooks/` (95 hook and helper modules)
 
@@ -40,7 +40,7 @@ src/
 2. **`TRPCReactProvider`**: Client-side query client and cache manager wrapping tRPC hooks (`src/trpc/react.tsx`).
 3. **`ThemeProvider`** (`src/context/theme-context.tsx`): Theme and preference context (light / dark / system — default system; density, contrast, transparency, motion, text size), wrapped in a `MotionConfig reducedMotion="user"`. The same attributes are applied pre-paint by the inline script in the root layout (see [Tokens](#tokens)).
 4. **`AbilityProvider` → `IxTimeProvider` → `WikiContextProvider` → `LazyGameProviders`**: Permissions, IxTime clock, wiki context, and lazily loaded gameplay providers.
-5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio-tactile engine, delegates declarative `data-cuelume-*` listeners globally to the `document`, and plays subtle route transition cues (`soundEffects.arrival()`).
+5. **`CuelumeSoundProvider`**: Bootstraps the **Cuelume** audio engine with the stored mute and volume, and plays the subtle route-arrival cue (`soundCues.arrival("subtle")`).
 6. **`<AppShell>`** (`src/components/shell/AppShell.tsx`): the page frame. It renders `FacetShell` (the `AppSidebar` source list from 1024px up, the `TabBar` below that, and the Halo island, `ShellHalo`) and `<main>`, and paints the canvas in the current app's tint (`data-app`). The navigation source is `src/lib/navigation/app-sections.ts`.
 
 > See the **[Facet design system reference](../reference/facet-design-system.md)** for colour roles and app tints, text styles, radii, materials, z-index, motion, the primitives (Card, FacetList, controls, Sheet, dialogs), sound, appearance and accessibility preferences, and the guard tests.

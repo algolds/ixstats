@@ -25,6 +25,8 @@ export type ReliefImage = {
   height: number;
   /** Straight (not premultiplied) RGBA, north up */
   rgba: Uint8Array;
+  /** The same image before the warp: equirectangular, pole to pole, for a flat (Plate Carrée) map */
+  flat?: { width: number; height: number; rgba: Uint8Array };
 };
 
 /**
@@ -42,10 +44,13 @@ export function warpToMercator(source: RgbaImage, zoom: number): ReliefImage {
 }
 
 /** `cells` is packed `[lng, lat, h, ...]` as the generator returns it. */
-export function previewRelief(cells: Float32Array): ReliefImage {
+export function previewRelief(cells: Float32Array): Required<ReliefImage> {
   const grid = heightsFromCells(cells, PREVIEW_RELIEF_WIDTH);
   addDetail(grid, RUGGEDNESS);
   const shade = hillshade(grid);
   const data = new Uint8Array(shade.buffer, shade.byteOffset, shade.byteLength);
-  return warpToMercator({ width: grid.width, height: grid.height, data }, PREVIEW_ZOOM);
+  return {
+    ...warpToMercator({ width: grid.width, height: grid.height, data }, PREVIEW_ZOOM),
+    flat: { width: grid.width, height: grid.height, rgba: data },
+  };
 }

@@ -7,10 +7,10 @@
  * Usage: npx tsx scripts/migrations/enhance-altitude-metadata.ts [--dry-run]
  */
 
-import { PrismaClient } from "@prisma/client";
 import { ELEVATION_ZONES, getZoneByColor } from "../../src/lib/elevation-config";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const isDryRun = process.argv.includes("--dry-run");
 
 async function seedElevationZones() {

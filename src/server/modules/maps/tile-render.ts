@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { TiledLayer } from "~/lib/maps/decorative-tiles";
+import { flatTileBounds } from "~/lib/maps/flat-projection";
 
 /** Layers whose same-colour pieces are merged per tile, as `mergeFeaturesByColor` does for GeoJSON,
  * so adjacent shapes show no seams under a translucent fill. The union runs on tile-space geometry
@@ -29,8 +30,9 @@ const MERGED_ROWS = `SELECT min(_id) AS _id, "_fillColor", sum("_areaSqKm") AS "
  *   "repaired" as a planar polygon, which left long horizontal slivers that tiles draw as streaks;
  * - each part of it that crosses is split at 180°, as `splitCollectionAtAntimeridian` does per polygon
  *   (a part that legitimately straddles 0° is left alone);
- * - clipped to Web Mercator's latitude range, since transforming the poles to EPSG:3857 fails. */
-export const sourceGeometry = (kind: string) => {
+ * - clipped to Web Mercator's latitude range, since transforming the poles to EPSG:3857 fails (`maxLat`
+ *   90 for Plate Carrée, which has the poles). */
+export const sourceGeometry = (kind: string, maxLat = 85.0511) => {
   const wide = `ST_XMax(geom_postgis) - ST_XMin(geom_postgis) > 180`;
   const stored = `CASE WHEN ${wide} THEN ST_SetSRID(ST_GeomFromGeoJSON(geometry::text), 4326) ELSE geom_postgis END`;
   // Re-extracted after collecting: a split part is itself a multi, and mixing single and multi
@@ -38,33 +40,48 @@ export const sourceGeometry = (kind: string) => {
   const unwrapped = `ST_CollectionExtract((SELECT ST_Collect(CASE WHEN ST_XMax(d.geom) - ST_XMin(d.geom) > 180
       THEN ST_WrapX(ST_ShiftLongitude(d.geom), 180, -360) ELSE d.geom END)
     FROM ST_Dump(ST_CollectionExtract(${stored}, ${kind})) d), ${kind})`;
-  return `ST_ClipByBox2D(${unwrapped}, ST_MakeEnvelope(-180, -85.0511, 180, 85.0511, 4326))`;
+  return `ST_ClipByBox2D(${unwrapped}, ST_MakeEnvelope(-180, ${-maxLat}, 180, ${maxLat}, 4326))`;
 };
+
+/** Plate Carrée on the Web Mercator sphere: x is 3857's, y is R·latitude, so a flat map's tile is 3857's
+ * envelope for the same z/x/y (flat-projection.ts). */
+const PLATE_CARREE = "+proj=eqc +R=6378137 +units=m +no_defs";
+
+/** A flat tile's prefilter is its true bounds grown by this share of each side: the MVT buffer reaches past the tile. */
+const FLAT_PAD = 0.1;
 
 /** One Mapbox Vector Tile of a realm's decorative layer. Geometry is clipped to Web Mercator's
  * latitude range first, since transforming the poles to EPSG:3857 fails, then simplified to half a
- * screen pixel. Empty tile = empty bytes. */
+ * screen pixel. `flat`: the Plate Carrée tile (flat maps), which keeps the poles. Empty tile = empty bytes. */
 export async function buildTile(
   db: Pick<PrismaClient, "$queryRawUnsafe">,
   realmId: string,
   layer: TiledLayer,
   z: number,
   x: number,
-  y: number
+  y: number,
+  flat = false
 ): Promise<Uint8Array> {
+  const bounds = flat ? flatTileBounds(z, x, y) : null;
+  if (flat && !bounds) return new Uint8Array();
+  const geometry = flat
+    ? `ST_Transform(${sourceGeometry("$6::int", 90)}, '${PLATE_CARREE}')`
+    : `ST_Transform(${sourceGeometry("$6::int")}, 3857)`;
+  const within = flat
+    ? `ST_MakeEnvelope($8::float8, $9::float8, $10::float8, $11::float8, 4326)`
+    : `ST_Transform(bounds.env, 4326)`;
   const sql = `
     WITH bounds AS (SELECT ST_TileEnvelope($1::int, $2::int, $3::int) AS env),
     rows AS (
       SELECT "featureId" AS _id, properties->>'fill' AS "_fillColor", "areaSqKm" AS "_areaSqKm",
-             ST_AsMVTGeom(
-               ST_Simplify(ST_Transform(${sourceGeometry("$6::int")}, 3857), $7::float8),
-               bounds.env
-             ) AS geom
+             ST_AsMVTGeom(ST_Simplify(${geometry}, $7::float8), bounds.env) AS geom
       FROM map_layers, bounds
       WHERE "worldId" = $4 AND "layerType" = $5 AND "isActive"
-        AND geom_postgis && ST_Transform(bounds.env, 4326)
+        AND geom_postgis && ${within}
     )
     SELECT ST_AsMVT(t, $5) AS mvt FROM (${MERGED.has(layer) ? MERGED_ROWS : UNMERGED_ROWS}) t`;
+  const padX = bounds ? (bounds.east - bounds.west) * FLAT_PAD : 0;
+  const padY = bounds ? (bounds.north - bounds.south) * FLAT_PAD : 0;
   const [row] = await db.$queryRawUnsafe<Array<{ mvt: Uint8Array | null }>>(
     sql,
     z,
@@ -73,7 +90,15 @@ export async function buildTile(
     realmId,
     layer,
     GEOMETRY_KIND[layer],
-    (SIMPLIFY_UNITS * WORLD_METRES) / (TILE_EXTENT * 2 ** z)
+    (SIMPLIFY_UNITS * WORLD_METRES) / (TILE_EXTENT * 2 ** z),
+    ...(bounds
+      ? [
+          bounds.west - padX,
+          Math.max(bounds.south - padY, -90),
+          bounds.east + padX,
+          Math.min(bounds.north + padY, 90),
+        ]
+      : [])
   );
   return row?.mvt ?? new Uint8Array();
 }

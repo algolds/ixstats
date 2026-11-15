@@ -4,7 +4,7 @@ import { memo } from "react";
 import { Xmark } from "iconoir-react";
 import { dollars, StatRow } from "~/components/maps/editor/panels/WorldStatsSection";
 import { Button } from "~/components/ui/button";
-import { Card } from "~/components/ui/card";
+import { FacetMaterial } from "~/components/ui/facet";
 import { formatCompact } from "~/lib/format/compact";
 import { compact } from "~/lib/worldgen/calibration-format";
 import type { WorldSlot } from "~/lib/worldgen/v2/types";
@@ -18,11 +18,12 @@ export const StudioCountryCard = memo(function StudioCountryCard({
   onClose: () => void;
 }) {
   return (
-    <Card
-      content="entity"
-      padding="sm"
+    <FacetMaterial
+      as="section"
+      layer="chrome"
+      data-content="entity"
       aria-label={slot.name}
-      className="absolute bottom-3 left-3 w-64"
+      className="facet-chrome-subtle rounded-row pointer-events-auto absolute bottom-2 left-2 w-64 p-3"
     >
       <div className="flex items-center gap-2">
         <span
@@ -40,6 +41,6 @@ export const StudioCountryCard = memo(function StudioCountryCard({
         <StatRow label="Population" value={formatCompact(slot.population)} />
         <StatRow label="Income per person" value={dollars(slot.gdpPerCapita)} />
       </dl>
-    </Card>
+    </FacetMaterial>
   );
 });

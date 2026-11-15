@@ -9,5 +9,5 @@ export const DEFAULT_ENV_FILES = [".env.local.dev", ".env.local", ".env"] as con
 
 /** Loads each file relative to the working directory; a missing file is skipped. */
 export function loadEnvFiles(files: readonly string[]): void {
-  for (const path of files) dotenv.config({ path });
+  for (const path of files) dotenv.config({ quiet: true, path });
 }

@@ -17,6 +17,7 @@ import {
   loadPolicyMaintenance,
   removeDepartment,
   setDepartmentAllocation,
+  setDepartmentAllocations,
 } from "~/server/modules/government/government.budget";
 
 const countryInput = z.object({ countryId: z.string().min(1) });
@@ -41,6 +42,26 @@ export const governmentBudgetRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       await assertCountryWriteAccess(ctx, input.countryId);
       return setDepartmentAllocation(ctx.db, input);
+    }),
+
+  /** Set several department shares atomically in the Country Editor budget pane. */
+  setAllocations: rateLimitedMutationProcedure
+    .input(
+      countryInput.extend({
+        allocations: z
+          .array(
+            z.object({
+              departmentId: z.string().min(1),
+              allocatedPercent: z.number().finite().min(0).max(ALLOCATION_PERCENT_MAX),
+            })
+          )
+          .min(1)
+          .max(60),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertCountryWriteAccess(ctx, input.countryId);
+      return setDepartmentAllocations(ctx.db, input);
     }),
 
   addDepartment: rateLimitedMutationProcedure

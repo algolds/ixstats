@@ -114,7 +114,7 @@ export default function ExportDialog({ onClose }: ExportDialogProps) {
 
           {customChargesUsed.length > 0 && (
             <div className="rounded-row bg-yellow/15 text-footnote text-yellow-ink p-3 leading-relaxed">
-              <span className="mb-1 block font-semibold">Attribution required</span>
+              <span className="text-subhead mb-1 block">Attribution required</span>
               This composition includes charges imported from Wikimedia Commons:
               <ul className="text-label-secondary text-footnote mt-1 list-disc space-y-0.5 pl-4 font-mono">
                 {customChargesUsed.map((c, i) => (

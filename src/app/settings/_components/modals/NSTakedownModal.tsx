@@ -23,7 +23,7 @@ import {
   DialogDescription,
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 
 interface NSTakedownModalProps {
@@ -60,25 +60,22 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
 
   const hideMutation = api.nsImport.hideMyCard.useMutation({
     onSuccess: (res) => {
-      soundEffects.bloom();
       notify.success("Flag removed", res.message);
       setReason("");
       void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error("Takedown failed", err.message);
     },
   });
 
   const verifyClaimMutation = api.nsImport.requestSelfServiceTakedown.useMutation({
     onSuccess: (data) => {
-      soundEffects.bloom();
+      soundCues.success();
       setClaimSuccessMessage(data.message);
       void utils.nsImport.getMyNSCards.invalidate();
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error("Verification failed", err.message);
     },
   });
@@ -104,7 +101,6 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
 
   const handleVerifyClaim = () => {
     if (!claimNation.trim() || !claimChecksum.trim()) return;
-    soundEffects.press();
     // For general nation takedown, find an owned card or use first available
     const matchedCard = cards.find(
       (c) => (c.nation || "").toLowerCase() === claimNation.trim().toLowerCase()
@@ -142,7 +138,6 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
           fullWidth
           value={activeTab}
           onValueChange={(tab) => {
-            soundEffects.press();
             setActiveTab(tab);
           }}
           options={[
@@ -220,7 +215,6 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                               }
                               onClick={() => {
                                 if (card.nsCardId != null && card.nsSeason != null) {
-                                  soundEffects.press();
                                   hideMutation.mutate({
                                     nsCardId: card.nsCardId,
                                     nsSeason: card.nsSeason,
@@ -228,7 +222,6 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                                   });
                                 }
                               }}
-                              data-cuelume-press="soft"
                               variant={card.isHidden ? "secondary" : "outline"}
                               size="xs"
                               className={card.isHidden ? undefined : "text-destructive"}
@@ -266,13 +259,7 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                 </div>
                 <h4 className="text-foreground text-sm font-bold">Takedown request submitted</h4>
                 <p className="text-muted-foreground text-xs">{claimSuccessMessage}</p>
-                <Button
-                  type="button"
-                  onClick={handleClose}
-                  data-cuelume-press="soft"
-                  variant="default"
-                  size="sm"
-                >
+                <Button type="button" onClick={handleClose} variant="default" size="sm">
                   Done
                 </Button>
               </div>
@@ -330,7 +317,6 @@ export function NSTakedownModal({ isOpen, onClose, defaultNationName = "" }: NST
                     disabled={
                       !claimNation.trim() || !claimChecksum.trim() || verifyClaimMutation.isPending
                     }
-                    data-cuelume-press="soft"
                     variant="default"
                     size="sm"
                   >

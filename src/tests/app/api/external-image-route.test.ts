@@ -198,4 +198,17 @@ describe("POST /api/download/external-image", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
   });
+
+  it("does not echo the requested URL in an invalid file type response", async () => {
+    fetchMock.mockResolvedValueOnce(
+      new Response("plain", { status: 200, headers: { "content-type": "text/plain" } })
+    );
+
+    const res = await POST(postRequest(TRUSTED_URL));
+    const body = (await res.json()) as { error: string };
+
+    expect(res.status).toBe(400);
+    expect(body.error).toBe("Invalid file type: text/plain. Allowed types: PNG, JPG, GIF, WEBP");
+    expect(body.error).not.toContain(TRUSTED_URL);
+  });
 });

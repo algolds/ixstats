@@ -5,6 +5,7 @@ import { DeliveryTruck } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
 import {
   AlertDialog,
@@ -21,7 +22,7 @@ import { orderPaidShare, orderSlipMonths } from "~/lib/military/defense-console"
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import type { ProcurementOrderRow } from "~/hooks/useDefenseConsole";
 import { formatWhen } from "../clock-text";
-import { formatCount, formatPercent } from "../forces/force-fields";
+import { formatCount } from "../forces/force-fields";
 
 interface OpenOrdersProps {
   orders: readonly ProcurementOrderRow[];
@@ -33,7 +34,14 @@ interface OpenOrdersProps {
 }
 
 /** Orders in production: payments so far, delivery on the realm calendar, slips, and cancelling. */
-export function OpenOrders({ orders, branchNames, reader, nowClockMs, canEdit, onCancel }: OpenOrdersProps) {
+export function OpenOrders({
+  orders,
+  branchNames,
+  reader,
+  nowClockMs,
+  canEdit,
+  onCancel,
+}: OpenOrdersProps) {
   const [cancelling, setCancelling] = useState<ProcurementOrderRow | null>(null);
   return (
     <Card content="data">
@@ -42,9 +50,12 @@ export function OpenOrders({ orders, branchNames, reader, nowClockMs, canEdit, o
       </CardHeader>
       <CardContent className="px-5 pb-5">
         {orders.length === 0 ? (
-          <p className="text-label-secondary text-callout">
-            No orders in production. Order equipment from the catalog below.
-          </p>
+          <EmptyState
+            compact
+            icon={<DeliveryTruck />}
+            title="No orders in production"
+            message="Order equipment from the catalog below."
+          />
         ) : (
           <ul className="divide-separator divide-y">
             {orders.map((order) => (
@@ -118,7 +129,9 @@ function OrderRow({
             <span className="text-callout text-label font-medium">
               {formatCount(order.quantity)} × {order.name}
             </span>
-            <Badge variant="outline">{order.source === "import" ? "Import" : "Domestic"}</Badge>
+            <span className="text-label-secondary text-footnote">
+              {order.source === "import" ? "Import" : "Domestic"}
+            </span>
             {slip > 0 && (
               <Badge variant="warning">
                 Slipped {slip} {slip === 1 ? "month" : "months"}
@@ -130,16 +143,21 @@ function OrderRow({
           </div>
         </div>
         {canEdit && (
-          <Button size="sm" variant="ghost" onClick={onCancel} aria-label={`Cancel the order for ${order.name}`}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onCancel}
+            aria-label={`Cancel the order for ${order.name}`}
+          >
             Cancel
           </Button>
         )}
       </div>
       <Progress value={paid * 100} className="h-1" aria-label={`${order.name} paid`} />
       <p className="text-label-secondary text-footnote tabular-nums">
-        {formatCompactCurrency(order.paidSoFar)} of {formatCompactCurrency(order.totalCost)} paid (
-        {formatPercent(paid)})
-        {slip > 0 && ". The procurement line fell short, so delivery moved and the price rose 0.5% a month"}
+        {formatCompactCurrency(order.paidSoFar)} of {formatCompactCurrency(order.totalCost)} paid
+        {slip > 0 &&
+          ". The procurement line fell short, so delivery moved and the price rose 0.5% a month"}
       </p>
     </li>
   );

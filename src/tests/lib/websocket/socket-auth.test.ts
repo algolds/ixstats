@@ -175,8 +175,13 @@ describe("room membership", () => {
     await expect(canJoinConversation("user_1", "conv1")).resolves.toBe(true);
     await expect(canJoinConversation("user_2", "conv1")).resolves.toBe(false);
     expect(mockParticipantFindFirst).toHaveBeenCalledWith({
-      where: { conversationId: "conv1", userId: "user_2", isActive: true },
-      select: { id: true },
+      where: {
+        conversationId: "conv1",
+        userId: "user_2",
+        isActive: true,
+        requestStatus: { notIn: ["pending", "declined"] },
+      },
+      select: { id: true, conversation: { select: { source: true, sourceId: true } } },
     });
   });
 

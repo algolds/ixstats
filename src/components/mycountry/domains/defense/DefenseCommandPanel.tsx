@@ -5,12 +5,10 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
   Shield,
-  Archery as Target,
   Cart,
   Compass,
   FireFlame as Flame,
   Group,
-  Community as Users,
 } from "iconoir-react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -113,35 +111,35 @@ const DEFENSE_TABS = [
   "policy",
   "branches",
   "procurement",
-  "threats",
   "operations",
-  "stability",
 ] as const;
 type DefenseTab = (typeof DEFENSE_TABS)[number];
 
-const isDefenseTab = (value: string | null | undefined): value is DefenseTab =>
-  (DEFENSE_TABS as readonly string[]).includes(value ?? "");
+function defenseTabFromParam(value: string | null | undefined): DefenseTab {
+  if (value === "threats") return "operations";
+  if (value === "stability") return "overview";
+  if ((DEFENSE_TABS as readonly string[]).includes(value ?? "")) {
+    return value as DefenseTab;
+  }
+  return "overview";
+}
 
 const TABS = [
   { id: "overview" as const, label: "Overview", icon: Shield },
   { id: "policy" as const, label: "Budget and posture", icon: Compass },
   { id: "branches" as const, label: "Branches", icon: Group },
   { id: "procurement" as const, label: "Procurement", icon: Cart },
-  { id: "threats" as const, label: "Threats", icon: Target },
-  { id: "operations" as const, label: "Operations", icon: Flame },
-  { id: "stability" as const, label: "Internal stability", icon: Users },
+  { id: "operations" as const, label: "Operations & threats", icon: Flame },
 ];
 
 /**
- * The Defense page. The owner gets the console (overview, levers, branches, procurement, threats, operations,
- * stability); anyone else sees the nation's public order of battle.
+ * The Defense page. The owner gets the console (overview + stability, levers, branches, procurement,
+ * operations & border threats); anyone else sees the nation's public order of battle.
  */
 export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
   // `?tab=operations` (a PvP challenge notification) opens on that tab.
   const requestedTab = useSearchParams()?.get("tab");
-  const [activeTab, setActiveTab] = useState<DefenseTab>(() =>
-    isDefenseTab(requestedTab) ? requestedTab : "overview"
-  );
+  const [activeTab, setActiveTab] = useState<DefenseTab>(() => defenseTabFromParam(requestedTab));
   const { redacted, isLoading } = useDefenseOverview(countryId);
 
   if (isLoading) return <PanelSkeleton />;
@@ -156,13 +154,21 @@ export function DefenseCommandPanel({ countryId }: DefenseCommandPanelProps) {
         aria-label="Defense sections"
       />
 
-      {activeTab === "overview" && <OverviewPanel countryId={countryId} />}
+      {activeTab === "overview" && (
+        <div className="space-y-4">
+          <OverviewPanel countryId={countryId} />
+          <StabilityPanel countryId={countryId} />
+        </div>
+      )}
       {activeTab === "policy" && <PolicyPanel countryId={countryId} />}
       {activeTab === "branches" && <BranchesPanel countryId={countryId} />}
       {activeTab === "procurement" && <ProcurementPanel countryId={countryId} />}
-      {activeTab === "threats" && <BorderThreatPanel countryId={countryId} />}
-      {activeTab === "operations" && <OperationsPanel countryId={countryId} />}
-      {activeTab === "stability" && <StabilityPanel countryId={countryId} />}
+      {activeTab === "operations" && (
+        <div className="space-y-6">
+          <OperationsPanel countryId={countryId} />
+          <BorderThreatPanel countryId={countryId} />
+        </div>
+      )}
     </div>
   );
 }

@@ -48,6 +48,7 @@ const eventSchema = z.object({
   accountId: z.string(),
   content: z.string().optional(),
   timestamp: z.number(),
+  recipientIds: z.array(z.string()).optional(),
 });
 
 const evictionSchema = z.object({
@@ -129,7 +130,7 @@ export function createBroadcastSubscriber(
   const url = getEnabledRedisUrl();
   if (!url) return null;
   // Subscriber mode needs its own connection; SUBSCRIBE waits for the first connect.
-  const client = new Redis(url, { maxRetriesPerRequest: null });
+  const client = new Redis(url, { maxRetriesPerRequest: null, protocol: 2 });
   let lastError = "";
   client.on("error", (err: Error) => {
     if (err.message === lastError) return;

@@ -10,6 +10,7 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import { api } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 
 interface WikiMatch {
@@ -187,7 +188,11 @@ export function useWikiScanner(params: {
           try {
             const infobox = await utils.wikios.getInfobox.fetch({
               title: wikiTitle,
-              wiki: "ixwiki",
+              wiki: parseWikiSource(
+                typeof feature.properties.wikiSource === "string"
+                  ? feature.properties.wikiSource
+                  : undefined
+              ),
             });
 
             if (!infobox?.fields) return [];

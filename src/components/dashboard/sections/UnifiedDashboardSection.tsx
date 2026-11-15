@@ -3,15 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 
-import {
-  Group as Users,
-  RssFeed as Rss,
-  OpenBook as BookOpen,
-  Settings,
-  FireFlame as Flame,
-  StatsUpSquare,
-} from "iconoir-react";
-import { Card } from "~/components/ui/card";
+import { Globe } from "iconoir-react";
+import { LensCard } from "~/components/ui/lens-card";
+import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -64,22 +58,19 @@ const RepostModal = dynamic(
 );
 
 import { UnifiedFeedContent, FollowingFeedContent, type FeedHandlers } from "./UnifiedFeedContent";
-import { TrendingFeedContent } from "./TrendingFeedContent";
-import { TrendingSectionWidget } from "./TrendingSectionWidget";
+import { DailyBlurbCard } from "./BlurbSection";
 import { YourRealmPanel } from "./YourRealmPanel";
-import { BlurbSection } from "./BlurbSection";
 import { CountriesToExploreCard } from "./CountriesToExploreCard";
+import { RailColumn } from "./RailColumn";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Inspector } from "~/components/ui/inspector";
 import { feedShareCopy } from "~/lib/thinkpages/share-copy";
 
-type FeedTab = "all" | "following" | "trending" | "community";
+type FeedTab = "all" | "following";
 
-const BASE_TABS: { value: FeedTab; label: string; icon: React.ReactNode }[] = [
-  { value: "all", label: "All activity", icon: <Rss /> },
-  { value: "following", label: "Following", icon: <Users /> },
-  { value: "trending", label: "Trending", icon: <Flame /> },
-  { value: "community", label: "Community", icon: <BookOpen /> },
+const FEED_TABS: readonly { value: FeedTab; label: string }[] = [
+  { value: "all", label: "All activity" },
+  { value: "following", label: "Following" },
 ];
 
 // Likes and reactions are handled globally by PostActions.
@@ -97,6 +88,8 @@ interface UnifiedDashboardSectionProps {
   };
   /** Opens the Dashboard's Accounts section from the account manager. */
   onOpenAccounts?: () => void;
+  /** Whether the nation hero card is rendered above this column. */
+  heroVisible?: boolean;
 }
 
 function PostingAs({
@@ -124,7 +117,7 @@ function PostingAs({
 
 function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
   return (
-    <Card padding="md">
+    <LensCard padding="md">
       <h2 className="text-headline text-label mb-3">Economic tiers</h2>
       <div className="flex flex-wrap items-center gap-1">
         {Object.entries(tiers).map(([tier, count]) => (
@@ -134,7 +127,7 @@ function EconomicTiersCard({ tiers }: { tiers: Record<string, number> }) {
           </Badge>
         ))}
       </div>
-    </Card>
+    </LensCard>
   );
 }
 
@@ -152,10 +145,13 @@ function useViewerAccounts(userId: string | undefined) {
   );
 
   // Accounts the user owns, for posting.
-  const { data: accountsData } = api.thinkpages.getMyAccounts.useQuery(undefined, {
-    enabled: !!userId,
-    staleTime: 120_000,
-  });
+  const { data: accountsData, isLoading: accountsLoading } = api.thinkpages.getMyAccounts.useQuery(
+    undefined,
+    {
+      enabled: !!userId,
+      staleTime: 120_000,
+    }
+  );
   const accounts = useMemo(() => accountsData || [], [accountsData]);
   const hasCountry = !!countryId;
 
@@ -175,6 +171,7 @@ function useViewerAccounts(userId: string | undefined) {
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
@@ -184,6 +181,7 @@ function useViewerAccounts(userId: string | undefined) {
 export function UnifiedDashboardSection({
   globalStats: propGlobalStats,
   onOpenAccounts,
+  heroVisible = false,
 }: UnifiedDashboardSectionProps) {
   const { user, isSignedIn } = useUser();
   const notify = useNotify();
@@ -208,13 +206,14 @@ export function UnifiedDashboardSection({
     hasCountry,
     countryData,
     accounts,
+    accountsLoading,
     selectedAccount,
     setSelectedAccount,
     isCountryDataReady,
   } = useViewerAccounts(user?.id);
 
   // Anyone signed in can follow ThinkPages accounts, so Following no longer needs a country.
-  const tabs = isSignedIn ? BASE_TABS : BASE_TABS.filter((t) => t.value !== "following");
+  const tabs = isSignedIn ? FEED_TABS : FEED_TABS.filter((t) => t.value !== "following");
 
   const openAccountSettings = (account: ThinkpagesAccountItem) => setSettingsAccount(account);
   const openAccountCreation = () => setShowAccountCreation(true);
@@ -282,44 +281,15 @@ export function UnifiedDashboardSection({
         className="space-y-5 pb-16 sm:pb-20 md:space-y-7 md:pb-24"
       >
         <motion.div variants={staggerItem}>
-          <div className="flex min-w-0 flex-col space-y-5">
-            <motion.div variants={staggerItem} className="flex items-center gap-2">
-              {/* The flex item is the wrapper: with asTabs the control's className lands on the inner tab list. */}
-              <div className="min-w-0 flex-1">
-                <SegmentedControl
-                  options={tabs}
-                  value={activeTab}
-                  onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
-                  size="md"
-                  scrollable
-                  asTabs
-                />
-              </div>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setInspectorOpen(true)}
-                className="shrink-0 xl:hidden"
-              >
-                <StatsUpSquare className="size-4" />
-                Trends
-              </Button>
-              {isSignedIn && (
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={openAccountManager}
-                  className="shrink-0"
-                  title="Feed and account settings"
-                  aria-label="Feed and account settings"
-                >
-                  <Settings />
-                </Button>
-              )}
-            </motion.div>
-
-            {activeTab !== "community" && isSignedIn && (
-              <div className="mb-4 space-y-2">
+          {/* When no hero sits above the column, start below Halo's band, level with the Inspector. */}
+          <div
+            className={cn(
+              "flex min-w-0 flex-col space-y-5",
+              !heroVisible && "lg:pt-[calc(var(--shell-top-offset)-var(--shell-page-top))]"
+            )}
+          >
+            {isSignedIn && (
+              <div className="space-y-2">
                 <GlassCanvasComposer
                   account={selectedAccount}
                   onAccountSelect={setSelectedAccount}
@@ -331,6 +301,8 @@ export function UnifiedDashboardSection({
                   isSignedIn={isSignedIn}
                   hasCountry={hasCountry}
                   onCreateAccount={openAccountManager}
+                  onManageAccounts={openAccountManager}
+                  accountsLoading={accountsLoading}
                 />
                 {hasCountry && accounts.length > 1 && selectedAccount && (
                   <PostingAs account={selectedAccount} onSwitch={openAccountManager} />
@@ -338,13 +310,58 @@ export function UnifiedDashboardSection({
               </div>
             )}
 
-            {activeTab === "following" ? (
-              <FollowingFeedContent {...feedHandlers} />
-            ) : activeTab === "trending" ? (
-              <TrendingFeedContent {...feedHandlers} />
-            ) : (
-              <UnifiedFeedContent activeTab={activeTab} {...feedHandlers} />
-            )}
+            <section aria-labelledby="dashboard-activity-heading" className="space-y-3">
+              <h2 id="dashboard-activity-heading" className="sr-only">
+                Activity
+              </h2>
+              <div
+                className={cn(
+                  "flex flex-wrap items-center justify-end gap-2 px-1",
+                  tabs.length < 2 && "xl:hidden"
+                )}
+              >
+                {tabs.length > 1 && (
+                  <SegmentedControl
+                    aria-label="Activity feed"
+                    options={tabs}
+                    value={activeTab}
+                    onValueChange={(tabId) => setActiveTab(tabId as FeedTab)}
+                    size="sm"
+                    asTabs
+                    getTabPanelId={(tabId) => `dashboard-feed-panel-${tabId}`}
+                  />
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setInspectorOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={inspectorOpen}
+                  className="shrink-0 xl:hidden"
+                >
+                  <Globe aria-hidden className="size-4" />
+                  <span className="max-sm:sr-only">Around IxStates</span>
+                </Button>
+              </div>
+
+              <div
+                id={tabs.length > 1 ? `dashboard-feed-panel-${activeTab}` : undefined}
+                role={tabs.length > 1 ? "tabpanel" : undefined}
+                aria-label={
+                  tabs.length > 1
+                    ? activeTab === "following"
+                      ? "Following"
+                      : "All activity"
+                    : undefined
+                }
+              >
+                {activeTab === "following" ? (
+                  <FollowingFeedContent {...feedHandlers} />
+                ) : (
+                  <UnifiedFeedContent {...feedHandlers} />
+                )}
+              </div>
+            </section>
           </div>
         </motion.div>
 
@@ -390,14 +407,20 @@ export function UnifiedDashboardSection({
       </motion.div>
 
       {/* Outside the animated wrappers: a transformed ancestor would be the fixed aside's containing block. */}
-      <Inspector title="Around IxStates" open={inspectorOpen} onOpenChange={setInspectorOpen}>
-        <div className="flex flex-col space-y-4">
+      {/* Every card takes the page tint, so the rail reads as one quiet layer beside the feed (owner ruling 2026-11-13). */}
+      {/* Fixed with no scroll of its own: RailColumn drops the lowest cards that do not fit. */}
+      <Inspector
+        title="Around IxStates"
+        open={inspectorOpen}
+        onOpenChange={setInspectorOpen}
+        className="overflow-hidden"
+      >
+        <RailColumn>
           {isSignedIn && <YourRealmPanel />}
-          <TrendingSectionWidget />
-          <BlurbSection />
-          <CountriesToExploreCard currentUserCountryId={countryId} />
+          <DailyBlurbCard />
+          <CountriesToExploreCard />
           {tierDistribution && <EconomicTiersCard tiers={tierDistribution} />}
-        </div>
+        </RailColumn>
       </Inspector>
     </>
   );

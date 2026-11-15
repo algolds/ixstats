@@ -6,6 +6,10 @@
  *   bun scripts/verification/run-jest-with-quarantine.ts --verify-quarantine   # list quarantined files that now pass
  *
  * Any other argument is forwarded to Jest.
+ *
+ * Run it through the package scripts (`bun run test:ci`), which pass `--no-env-file`. Bun loads `.env*`
+ * into any `bun <file>` process (a script run via `bun run` does not get them), and Jest inherits that
+ * environment, so a local `.env` (NODE_ENV=development, PORT, IxWorld hosts) would leak into the suites.
  */
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

@@ -167,9 +167,15 @@ const asAnonymous = () => {
   auth.mockResolvedValue({ userId: null });
   userFind.mockResolvedValue(null);
 };
-/** A Clerk session whose role claim is `role`, as the admin route guard reads it. */
-const signedInAs = (userId: string, role: string) =>
+/** A Clerk session whose database role is `role`, as the admin route guard reads it. */
+const signedInAs = (userId: string, role: string) => {
   auth.mockResolvedValue({ userId, sessionClaims: { metadata: { role } } });
+  userFind.mockResolvedValue({
+    id: `db_${userId}`,
+    clerkUserId: userId,
+    role: { name: role, level: role === "admin" ? 10 : 100 },
+  });
+};
 const version = () => realms[0]!.mapVersion;
 
 let tiles: string;

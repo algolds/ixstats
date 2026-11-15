@@ -13,12 +13,13 @@
 import type { Company, CompanyProposal, Prisma } from "@prisma/client";
 import { earnSovereignsTx, ExchangeError } from "~/lib/vault/exchange-service";
 import { LIVE_CONTRACT_STATUSES, refreshFairValue, returnListedShares } from "./companies";
-import { formatSovereigns, round2 } from "./amounts";
+import { centsOf, dbCents, formatSovereigns } from "./amounts";
 import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
 import { fromCents, holdersOf, lockCompany, splitProRata, toCents, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
-import { transferToTreasuryTx } from "./treasury";
+import { creditTreasuryTx, transferToTreasuryTx } from "./treasury";
+import { publishNewsTx } from "./news";
 
 /** Share of the target's productive plant (decisionValue) the buyer takes over. */
 export const ACQUIRED_PLANT_SHARE = 0.8;
@@ -65,13 +66,17 @@ export async function acquisitionBlocker(
   return pending > 0 ? "That company has a decision pending" : null;
 }
 
-function targetProblem(target: Company, buyer: AcquisitionBuyer, offerAmount: number): string | null {
+function targetProblem(
+  target: Company,
+  buyer: AcquisitionBuyer,
+  offerAmount: number
+): string | null {
   if (target.realmId !== buyer.realmId) return "That company is in another realm";
   if (target.status !== "ACTIVE" && target.status !== "DISTRESSED") {
     return "That company can't be bought";
   }
   if (target.founderId === buyer.founderId) return "You already run that company";
-  if (target.creditDrawn > target.capital + offerAmount) {
+  if (centsOf(target.creditDrawn) > centsOf(target.capital) + toCents(offerAmount)) {
     return "The offer doesn't cover that company's credit line";
   }
   return null;
@@ -90,33 +95,35 @@ async function hasLiveContracts(tx: Db, companyId: string): Promise<boolean> {
 }
 
 /**
- * Hand an offer back to the buyer. An operating buyer gets it into capital; a buyer that has stopped
- * trading gets it in the founder's wallet. The caller guarantees the key is used once.
+ * Hand an offer back to the buyer's capital. If the buyer has already closed, credit the recovery to
+ * its HQ nation's treasury instead of a dead company record.
  */
 export async function returnOfferTx(
   tx: Db,
-  input: { companyId: string; founderId: string; amount: number; key: string }
+  input: { companyId: string; amount: number; key: string }
 ): Promise<void> {
   const buyer = await tx.company.findUniqueOrThrow({
     where: { id: input.companyId },
-    select: { status: true },
+    select: { status: true, hqCountryId: true, realmId: true },
   });
-  if (buyer.status === "ACTIVE" || buyer.status === "DISTRESSED") {
-    await tx.company.update({
-      where: { id: input.companyId },
-      data: { capital: { increment: input.amount } },
-    });
-    await refreshFairValue(tx, input.companyId);
+  if (buyer.status !== "ACTIVE" && buyer.status !== "DISTRESSED") {
+    if (buyer.hqCountryId) {
+      await creditTreasuryTx(tx, {
+        countryId: buyer.hqCountryId,
+        realmId: buyer.realmId,
+        amount: input.amount,
+        type: "RECOVERY",
+        source: `ACQUIRE_RETURN:${input.companyId}`,
+        key: input.key,
+      });
+    }
     return;
   }
-  await earnSovereignsTx(tx, {
-    userId: input.founderId,
-    amount: input.amount,
-    type: "COMPANY_WITHDRAW",
-    source: `ACQUIRE_RETURN:${input.companyId}`,
-    metadata: { companyId: input.companyId },
-    idempotencyKey: input.key,
+  await tx.company.update({
+    where: { id: input.companyId },
+    data: { capital: { increment: dbCents(toCents(input.amount)) } },
   });
+  await refreshFairValue(tx, input.companyId);
 }
 
 /**
@@ -141,7 +148,6 @@ export async function closeCompanyProposalsTx(
       const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
       await returnOfferTx(tx, {
         companyId: buyerCompanyId,
-        founderId: proposal.proposerUserId,
         amount: offerAmount,
         key: `exchange:acquire-return:${proposal.id}`,
       });
@@ -169,7 +175,7 @@ export async function executeAcquisition(
   const target = await tx.company.findUniqueOrThrow({ where: { id: proposal.companyId } });
   await tx.company.update({
     where: { id: target.id },
-    data: { capital: { increment: offerAmount } },
+    data: { capital: { increment: dbCents(toCents(offerAmount)) } },
   });
   await repayCreditTx(tx, target, proposal.id);
   await returnListedShares(tx, target.id);
@@ -187,10 +193,10 @@ export async function executeAcquisition(
     data: {
       status: "DELISTED",
       tradingOpen: false,
-      decisionValue: 0,
+      decisionValue: 0n,
       standing: 0,
-      contractsWonValue: 0,
-      creditDrawn: 0,
+      contractsWonValue: 0n,
+      creditDrawn: 0n,
       distressedSinceIxTime: null,
     },
   });
@@ -199,13 +205,29 @@ export async function executeAcquisition(
   await tx.company.update({
     where: { id: buyer.id },
     data: {
-      decisionValue: { increment: round2(ACQUIRED_PLANT_SHARE * target.decisionValue) },
-      standing: { increment: round2(ACQUIRED_STANDING_SHARE * Math.max(0, target.standing)) },
-      contractsWonValue: { increment: round2(ACQUIRED_STANDING_SHARE * target.contractsWonValue) },
+      decisionValue: {
+        increment: dbCents(Math.round(ACQUIRED_PLANT_SHARE * centsOf(target.decisionValue))),
+      },
+      standing: {
+        increment: Math.round(ACQUIRED_STANDING_SHARE * Math.max(0, target.standing) * 100) / 100,
+      },
+      contractsWonValue: {
+        increment: dbCents(Math.round(ACQUIRED_STANDING_SHARE * centsOf(target.contractsWonValue))),
+      },
     },
   });
   await refreshFairValue(tx, target.id);
   await refreshFairValue(tx, buyer.id);
+  await publishNewsTx(tx, {
+    realmId: target.realmId,
+    kind: "acquisition",
+    prominence: "HEADLINE",
+    sourceKind: "COMPANY",
+    sourceId: buyer.id,
+    headline: `${buyer.name} acquires ${target.name} for ${formatSovereigns(offerAmount)}`,
+    companyId: target.id,
+    key: `news:acquisition:${proposal.id}`,
+  });
   notices.push({
     userId: proposal.proposerUserId,
     title: `${target.name} is now part of ${buyer.name}`,
@@ -220,13 +242,14 @@ export async function executeAcquisition(
  * ledger has no debt type. A company with no HQ burns it, as it burns interest.
  */
 async function repayCreditTx(tx: Db, target: Company, proposalId: string): Promise<void> {
-  if (target.creditDrawn <= 0) return;
+  const drawnCents = centsOf(target.creditDrawn);
+  if (drawnCents <= 0) return;
   if (target.hqCountryId) {
     await transferToTreasuryTx(tx, {
       from: { kind: "COMPANY", companyId: target.id },
       countryId: target.hqCountryId,
       realmId: target.realmId,
-      amount: target.creditDrawn,
+      amount: fromCents(drawnCents),
       type: "TAX",
       source: `CREDIT_REPAYMENT:${target.id}`,
       key: `exchange:acquire-debt:${proposalId}`,
@@ -238,7 +261,7 @@ async function repayCreditTx(tx: Db, target: Company, proposalId: string): Promi
     });
     if (count !== 1) throw new ExchangeError("CONFLICT", "The company can't repay its credit line");
   }
-  await tx.company.update({ where: { id: target.id }, data: { creditDrawn: 0 } });
+  await tx.company.update({ where: { id: target.id }, data: { creditDrawn: 0n } });
 }
 
 /**
@@ -254,12 +277,12 @@ async function distributeTx(
     where: { id: target.id },
     select: { capital: true },
   });
-  const cents = toCents(capital);
+  const cents = centsOf(capital);
   if (cents > 0) {
-    const amount = fromCents(cents);
+    const delta = dbCents(cents);
     const { count } = await tx.company.updateMany({
-      where: { id: target.id, capital: { gte: amount } },
-      data: { capital: { decrement: amount } },
+      where: { id: target.id, capital: { gte: delta } },
+      data: { capital: { decrement: delta } },
     });
     if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
   }
@@ -267,7 +290,7 @@ async function distributeTx(
     if (cents > 0) {
       await tx.company.update({
         where: { id: buyerCompanyId },
-        data: { capital: { increment: fromCents(cents) } },
+        data: { capital: { increment: dbCents(cents) } },
       });
     }
     return [];
@@ -281,13 +304,14 @@ async function payOutTx(
 ): Promise<ExchangeNotice[]> {
   const { proposal, target, cents, holders } = input;
   const split = splitProRata(cents, holders);
-  const centsOf = new Map(split.payouts.map((p) => [p.userId, p.cents]));
+  const byHolder = new Map(split.payouts.map((p) => [p.userId, p.cents]));
   const [largest] = holders;
-  if (largest) centsOf.set(largest.userId, (centsOf.get(largest.userId) ?? 0) + split.remainderCents);
+  if (largest)
+    byHolder.set(largest.userId, (byHolder.get(largest.userId) ?? 0) + split.remainderCents);
 
   const notices: ExchangeNotice[] = [];
   for (const holder of holders) {
-    const holderCents = centsOf.get(holder.userId) ?? 0;
+    const holderCents = byHolder.get(holder.userId) ?? 0;
     if (holderCents <= 0) continue;
     const amount = fromCents(holderCents);
     await earnSovereignsTx(tx, {

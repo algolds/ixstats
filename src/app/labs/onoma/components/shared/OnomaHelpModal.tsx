@@ -154,7 +154,7 @@ function OnomaHelpModal({
                     “{currentWalkthrough.quote}”
                   </p>
                   {currentWalkthrough.progression && (
-                    <p className="text-tint text-caption font-mono font-semibold">
+                    <p className="text-tint text-caption font-mono font-medium">
                       {currentWalkthrough.progression}
                     </p>
                   )}
@@ -168,7 +168,7 @@ function OnomaHelpModal({
               <div className="bg-surface-secondary rounded-row space-y-2 p-4">
                 {currentWalkthrough.features.map((feat, idx) => (
                   <div key={idx} className="text-footnote flex items-start gap-2">
-                    <span className="text-tint shrink-0 font-semibold">›</span>
+                    <span className="text-tint shrink-0 font-medium">›</span>
                     <span className="text-label leading-relaxed font-medium">{feat}</span>
                   </div>
                 ))}
@@ -293,7 +293,7 @@ function OnomaHelpModal({
 
                 {currentGuide.formula && (
                   <div className="border-tint/20 bg-tint/5 rounded-row border p-3 text-center">
-                    <span className="text-tint text-caption font-mono font-semibold">
+                    <span className="text-tint text-caption font-mono font-medium">
                       {currentGuide.formula}
                     </span>
                   </div>
@@ -308,7 +308,7 @@ function OnomaHelpModal({
                   <div className="bg-surface-secondary rounded-row space-y-2 p-3">
                     {currentGuide.mechanics.map((m, idx) => (
                       <div key={idx} className="text-footnote space-y-0.5">
-                        <span className="text-label font-semibold">{m.label}: </span>
+                        <span className="text-label font-medium">{m.label}: </span>
                         <span className="text-label-secondary text-caption leading-relaxed">
                           {m.detail}
                         </span>
@@ -326,7 +326,7 @@ function OnomaHelpModal({
                           key={idx}
                           className="border-separator bg-fill-4 rounded-row text-footnote flex items-start gap-2 border p-3"
                         >
-                          <span className="text-tint mt-0.5 shrink-0 font-semibold">›</span>
+                          <span className="text-tint mt-0.5 shrink-0 font-medium">›</span>
                           <span className="text-label text-caption leading-relaxed">{tip}</span>
                         </div>
                       ))}

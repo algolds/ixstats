@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { useLoreTitleCheck, type LoreTitleCheck } from "~/hooks/lore/useLoreTitleCheck";
 import type { LoreType } from "~/lib/lore/lore-types";
@@ -41,7 +42,7 @@ function ExistingPage({
     setAdding(message === null);
   };
   return (
-    <div className="rounded-row border-separator bg-surface space-y-2 border p-3">
+    <Card variant="well" padding="sm" className="space-y-2">
       <p className="text-callout text-label">A page with this title exists.</p>
       <p className="text-footnote text-label-secondary">
         {isOwner
@@ -63,7 +64,7 @@ function ExistingPage({
           {failure}
         </p>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -112,14 +113,14 @@ export function LoreDetailsStep(props: LoreDetailsStepProps) {
         </div>
       </div>
       {props.carried && (
-        <div className="rounded-row border-separator bg-surface space-y-2 border p-3">
+        <Card variant="well" padding="sm" className="space-y-2">
           <p className="text-footnote text-label">
             Your text from the editor is kept and opens again. Changes here will not change it.
           </p>
           <Button size="sm" variant="outline" onClick={props.onStartAgain}>
             Start again from the form
           </Button>
-        </div>
+        </Card>
       )}
       <LoreFieldsForm type={props.type} fields={props.fields} onChange={props.onFieldsChange} />
       <div className="border-separator flex justify-between border-t pt-4">

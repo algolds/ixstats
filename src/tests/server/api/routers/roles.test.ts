@@ -167,6 +167,9 @@ describe("roles router", () => {
 
   describe("createRole", () => {
     it("creates a custom role with permissions and writes audit log", async () => {
+      await db.rolePermission.create({
+        data: { id: "rp_admin_um", roleId: "role_admin", permissionId: "perm_user_manage" },
+      });
       const caller = admin();
       const result = await caller.createRole({
         name: "moderator",
@@ -222,6 +225,9 @@ describe("roles router", () => {
 
   describe("updateRole", () => {
     it("updates role display name, description, and permissions", async () => {
+      await db.rolePermission.create({
+        data: { id: "rp_admin_labs", roleId: "role_admin", permissionId: "perm_labs_access" },
+      });
       const caller = admin();
       const updated = await caller.updateRole({
         roleId: "role_user",
@@ -375,6 +381,93 @@ describe("roles router", () => {
       expect(result.users).toHaveLength(1);
       expect(result.users[0].clerkUserId).toBe("player_1");
       expect(result.users[0].role?.name).toBe("user");
+    });
+  });
+
+  describe("rank checks", () => {
+    it("refuses staff editing a role that outranks them", async () => {
+      await expect(
+        staff().updateRole({ roleId: "role_admin", displayName: "Demoted" })
+      ).rejects.toThrow(/at or above your own rank/i);
+    });
+
+    it("refuses staff deactivating the admin role", async () => {
+      await expect(
+        staff().updateRole({ roleId: "role_admin", isActive: false })
+      ).rejects.toThrow(/at or above your own rank/i);
+    });
+
+    it("refuses an admin editing its own role", async () => {
+      await expect(
+        admin().updateRole({ roleId: "role_admin", displayName: "Self Edit" })
+      ).rejects.toThrow(/at or above your own rank/i);
+    });
+
+    it("refuses deleting custom roles at or above the caller and allows lower ones", async () => {
+      await db.role.create({
+        data: { id: "role_c5", name: "c5", displayName: "C5", level: 5, isSystem: false },
+      });
+      await db.role.create({
+        data: { id: "role_c20", name: "c20", displayName: "C20", level: 20, isSystem: false },
+      });
+      await db.role.create({
+        data: { id: "role_c50", name: "c50", displayName: "C50", level: 50, isSystem: false },
+      });
+      await expect(admin().deleteRole({ roleId: "role_c5" })).rejects.toThrow(
+        /at or above your own rank/i
+      );
+      await expect(admin().deleteRole({ roleId: "role_admin" })).rejects.toThrow(
+        /at or above your own rank/i
+      );
+      await expect(staff().deleteRole({ roleId: "role_c20" })).rejects.toThrow(
+        /at or above your own rank/i
+      );
+      const res = await admin().deleteRole({ roleId: "role_c50" });
+      expect(res.success).toBe(true);
+    });
+
+    it("refuses reassigning a user whose current role outranks the caller", async () => {
+      await expect(
+        staff().assignUserRole({ clerkUserId: "admin_1", roleId: "role_user" })
+      ).rejects.toThrow(/at or above your own rank/i);
+    });
+
+    it("refuses removing the role of a user who outranks the caller", async () => {
+      await expect(
+        staff().assignUserRole({ clerkUserId: "admin_1", roleId: null })
+      ).rejects.toThrow(/at or above your own rank/i);
+    });
+
+    it("refuses granting permissions the caller's role does not hold", async () => {
+      await expect(
+        admin().updateRole({ roleId: "role_user", permissionIds: ["perm_system_config"] })
+      ).rejects.toThrow(/only grant permissions/i);
+    });
+
+    it("lets the system owner edit the admin role and grant any permission", async () => {
+      const res = await systemOwner().updateRole({
+        roleId: "role_admin",
+        displayName: "Senior Admin",
+        permissionIds: ["perm_system_config", "perm_labs_access"],
+      });
+      expect(res.success).toBe(true);
+      const role = await db.role.findUnique({
+        where: { id: "role_admin" },
+        include: { rolePermissions: true },
+      });
+      expect(role?.displayName).toBe("Senior Admin");
+      expect(role?.rolePermissions).toHaveLength(2);
+    });
+
+    it("refuses creating a role with permissions the caller does not hold", async () => {
+      await expect(
+        admin().createRole({
+          name: "sneaky",
+          displayName: "Sneaky",
+          level: 15,
+          permissionIds: ["perm_system_config"],
+        })
+      ).rejects.toThrow(/only grant permissions/i);
     });
   });
 });

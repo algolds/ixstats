@@ -3,41 +3,27 @@
 import React, { useState } from "react";
 import {
   UserPlus,
-  UserXmark as UserMinus,
-  ChatBubble as MessageSquare,
-  City as Building2,
-  Heart,
-  Community as Handshake,
-  Shield,
-  ScaleFrameEnlarge as Scale,
-  Globe,
-  OpenNewWindow as ExternalLink,
-  ShareAndroid as Share2,
-  Copy,
-  Check,
-  Page as ScrollText,
-  Tournament as Swords,
-  Map,
-  Trophy,
+  UserXmark,
+  ChatBubble,
   Calendar,
-  EditPencil,
+  City,
+  Community,
+  Shield,
+  ScaleFrameEnlarge,
+  Tournament,
+  NavArrowDown,
+  NavArrowRight,
 } from "iconoir-react";
-import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
-import { api, type RouterInputs } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
+import { useRouter } from "next/navigation";
+import { api } from "~/trpc/react";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
 import { SAME_REALM_MESSAGE } from "~/lib/realms/same-realm";
-import { useViewerPostingAccount } from "~/hooks/useViewerPostingAccount";
 import { cn } from "~/lib/utils";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
-import { createUrl } from "~/lib/utils";
-import { WikiLinkPreview } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { Button, buttonVariants } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
-import dynamic from "next/dynamic";
-import { useMountOnFirstOpen } from "~/components/wiki-os/shared/useMountOnFirstOpen";
+import { ProposeSummitForm } from "./ProposeSummitForm";
+import type { HeroModal } from "~/components/shared/country-hero/HeroSnapshotPanels";
+import { HeroDetailModal } from "~/components/shared/country-hero/CountryHeroCard";
+import type { PolicyState } from "~/lib/diplomacy/pair-standing";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,28 +35,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { Sheet, SheetContent } from "~/components/ui/sheet";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "~/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select";
-import { Card } from "~/components/ui/card";
-
-// The scheduler is a dialog nobody has opened yet when the menu mounts: its chunk is fetched when it is first
-// opened (plan 415, F19), not with every page that shows the menu (the wiki's sidebar widget does).
-const MeetingScheduler = dynamic(
-  () => import("~/components/executive/actions/MeetingScheduler").then((m) => m.MeetingScheduler),
-  { ssr: false }
-);
+  destinationsFor,
+  type IconType,
+  OpenIn,
+  PosterHeader,
+  QuickAction,
+  type Tone,
+  ToneTile,
+  VitalityStrip,
+} from "./CountryActionsHeader";
+import { EditNationMenu, ManageGrid, ShareCountryButton } from "./CountryActionsParts";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -83,115 +60,80 @@ interface CountryActionsMenuProps {
   isOwnCountry?: boolean;
 }
 
-type IconType = React.ComponentType<{ className?: string }>;
 type DiplomacyActions = ReturnType<typeof useCountryDiplomacyActions>;
 type ForeignPolicy = Parameters<DiplomacyActions["proposeForeignPolicy"]>[0];
-type CongratulationPost = RouterInputs["thinkpages"]["createPost"];
 
-const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string]> = [
-  [Building2, "MyCountry dashboard", "/mycountry"],
-  [ScrollText, "Executive actions", "/mycountry/executive"],
-  [Handshake, "Manage diplomacy", "/mycountry/diplomacy"],
-  [EditPencil, "Country editor", editorHref("identity")],
-  [Map, "Map and territory editor", MYCOUNTRY_MAP_EDITOR_PATH],
-  [Scale, "Politics & elections", "/mycountry/politics"],
-];
+/** Where every act's result is kept: proposals, agreements, embassies and measures in force. */
+const DIPLOMACY_PATH = "/mycountry/diplomacy";
 
-const DIPLOMACY_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
-  [Handshake, "Propose free trade", "free_trade"],
-  [Shield, "Propose military alliance", "military_alliance"],
-];
-
-const HOSTILE_PROPOSALS: Array<[icon: IconType, label: string, policy: ForeignPolicy]> = [
-  [Scale, "Impose sanctions", "sanction"],
-  [Swords, "Declare embargo", "embargo"],
-];
-
-const profileUrl = (countryName: string) =>
-  `${window.location.origin}${createUrl(`/countries/${countryName.replace(/\s/g, "_")}`)}`;
-
-function followLabel(diplomacy: DiplomacyActions): string {
-  if (diplomacy.isFollowPending) return diplomacy.isFollowing ? "Unfollowing…" : "Following…";
-  return diplomacy.isFollowing ? "Unfollow Nation" : "Follow Nation";
+/**
+ * One act on another nation, as MyCountry keeps it. `area` names the MyCountry area its result lands
+ * in; `effect` is what the confirmation tells the player before they commit.
+ */
+interface Act {
+  policy: ForeignPolicy;
+  icon: IconType;
+  tone: Tone;
+  area: string;
+  /** "Free trade": the agreement's name, in a sentence's middle as lower case. */
+  noun: string;
+  /** The open row's verb: "Propose free trade". */
+  verb: string;
+  effect: string;
 }
 
-/** Pick a recent achievement and post a congratulation to the nation's feed. */
-function CongratulateRow({
-  targetCountryName,
-  achievements,
-  viewerCountryId,
-  postingAccountId,
-  disabled,
-  sending,
-  onSend,
-}: {
-  targetCountryName: string;
-  achievements: Array<{ id: string; title: string; description?: string | null }>;
-  viewerCountryId: string | undefined;
-  /** The viewer's ThinkPages account that posts for their nation. */
-  postingAccountId: string | null;
-  /** Another action in the menu is in flight (the row's own sending state is `sending`). */
-  disabled: boolean;
-  sending: boolean;
-  onSend: (post: CongratulationPost) => void;
-}) {
-  const notify = useNotify();
-  const [selected, setSelected] = useState("");
+const PROPOSALS: Act[] = [
+  {
+    policy: "free_trade",
+    icon: Community,
+    tone: "green",
+    area: "Economy",
+    noun: "Free trade",
+    verb: "Propose free trade",
+    effect:
+      "Their leader decides. If they accept, both economies grow, phased in over four years, and relations warm.",
+  },
+  {
+    policy: "military_alliance",
+    icon: Shield,
+    tone: "cyan",
+    area: "Diplomacy",
+    noun: "Military alliance",
+    verb: "Propose military alliance",
+    effect:
+      "Their leader decides. If they accept, relations rise sharply and both economies gain a small lift.",
+  },
+];
 
-  const congratulate = () => {
-    if (!viewerCountryId) {
-      notify.error("You need to sign in to send congratulations");
-      return;
-    }
-    if (!postingAccountId) {
-      notify.error("Create a ThinkPages account to post congratulations");
-      return;
-    }
-    if (!selected) {
-      notify.error("Please select an achievement to congratulate");
-      return;
-    }
-    const achievement = achievements.find((a) => a.id === selected);
-    if (!achievement) return;
+const PRESSURE_EFFECT =
+  "It takes effect at once, with no consent needed: both economies take the hit, phased in over four years, and relations cool. You can lift it later from your diplomacy inbox.";
 
-    onSend({
-      accountId: postingAccountId,
-      content:
-        `Congratulations to ${targetCountryName} on ${achievement.title}. ${achievement.description ?? ""}`.trim(),
-      visibility: "public" as const,
-      hashtags: ["achievement", targetCountryName.replace(/\s/g, "")],
-    });
-  };
+const PRESSURE: Act[] = [
+  {
+    policy: "sanction",
+    icon: ScaleFrameEnlarge,
+    tone: "red",
+    area: "Economy",
+    noun: "Sanctions",
+    verb: "Impose sanctions",
+    effect: PRESSURE_EFFECT,
+  },
+  {
+    policy: "embargo",
+    icon: Tournament,
+    tone: "red",
+    area: "Economy",
+    noun: "Embargo",
+    verb: "Declare embargo",
+    effect: PRESSURE_EFFECT,
+  },
+];
 
-  return (
-    <Card variant="well" padding="none" className="flex flex-wrap items-center gap-2 p-2 pl-4">
-      <Heart className="text-label-secondary h-4 w-4 shrink-0" />
-      <Select value={selected} onValueChange={setSelected}>
-        <SelectTrigger
-          size="sm"
-          className="text-footnote min-w-[140px] flex-1"
-          aria-label="Achievement to congratulate"
-        >
-          <SelectValue placeholder="Select achievement…" />
-        </SelectTrigger>
-        <SelectContent>
-          {achievements.map((achievement) => (
-            <SelectItem key={achievement.id} value={achievement.id}>
-              {achievement.title}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button
-        size="sm"
-        variant="secondary"
-        onClick={congratulate}
-        disabled={!viewerCountryId || disabled || sending || !selected}
-      >
-        {sending ? "Sending…" : "Congratulate"}
-      </Button>
-    </Card>
-  );
+/** What a row says once something already stands: each opens the diplomacy view where it is kept. */
+function standingLabel(act: Act, state: Exclude<PolicyState, "open">, targetName: string) {
+  if (state === "active") return `${act.noun} in force`;
+  if (state === "proposed") return `${act.noun} proposed`;
+  return `Answer ${targetName}'s ${act.noun.toLowerCase()} offer`;
 }
 
 export function CountryActionsMenu({
@@ -203,33 +145,24 @@ export function CountryActionsMenu({
   onClose,
   isOwnCountry = false,
 }: CountryActionsMenuProps) {
-  const notify = useNotify();
   const router = useRouter();
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [schedulerOpen, setSchedulerOpen] = useState(false);
-  const schedulerMounted = useMountOnFirstOpen(schedulerOpen);
+  const [summitOpen, setSummitOpen] = useState(false);
+  const [detail, setDetail] = useState<HeroModal | null>(null);
 
   const diplomacy = useCountryDiplomacyActions({
     viewerCountryId,
     targetCountryId,
     targetCountryName,
     targetRealmId,
-    followStatusEnabled: !!viewerCountryId,
-    onProposed: onClose,
+    // The sheet stays open after an act so its row shows the new standing.
+    followStatusEnabled: !!viewerCountryId && !isOwnCountry && isOpen,
   });
-
-  const congratulation = api.thinkpages.createPost.useMutation({
-    onSuccess: () => {
-      notify.success(`Congratulations sent to ${targetCountryName}`);
-      onClose();
-    },
-    onError: (error) => notify.error(`Failed to send congratulations: ${error.message}`),
-  });
-
-  const postingAccountId = useViewerPostingAccount(viewerCountryId, isOpen && !isOwnCountry);
-
-  const { data: recentAchievements } = api.achievements.getRecentByCountry.useQuery(
-    { countryId: targetCountryId, limit: 5 },
+  const { data: detailRings } = api.countries.getActivityRingsData.useQuery(
+    { countryId: targetCountryId },
+    { enabled: detail === "vitality", staleTime: 5 * 60_000 }
+  );
+  const { data: facts } = api.countries.getByIdBasic.useQuery(
+    { id: targetCountryId },
     { enabled: isOpen }
   );
 
@@ -238,199 +171,209 @@ export function CountryActionsMenu({
     onClose();
   };
 
-  const copyLink = () => {
-    void navigator.clipboard.writeText(profileUrl(targetCountryName)).then(() => {
-      setCopiedLink(true);
-      notify.success("Link copied to clipboard");
-      setTimeout(() => setCopiedLink(false), 2000);
-    });
-  };
-
-  const shareProfile = () => {
-    const url = profileUrl(targetCountryName);
-    if (navigator.share) {
-      void navigator.share({ title: targetCountryName, url });
-    } else {
-      void navigator.clipboard.writeText(url);
-      notify.success("Link copied");
-    }
-    onClose();
-  };
-
-  const requestMeeting = () => {
-    if (!viewerCountryId) {
-      notify.error("You must be logged in to request a meeting");
-      return;
-    }
-    setSchedulerOpen(true);
-  };
-
-  // A sending congratulation also locks the diplomacy rows so nothing is double-submitted.
-  const isBusy = diplomacy.isPending || congratulation.isPending;
-  const needsViewer = !viewerCountryId || isBusy;
-  // Country-to-country rows need both nations in one realm; following and messages stay open.
+  // An act in flight locks the rows so nothing is double-submitted.
+  const needsViewer = !viewerCountryId || diplomacy.isPending;
+  // Country-to-country actions need both nations in one realm; following and messages stay open.
   const needsSameRealm = needsViewer || diplomacy.crossRealm;
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isOwnCountry ? "Country Management" : "Country Actions"}</DialogTitle>
-            <DialogDescription>{targetCountryName}</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-5">
-            {isOwnCountry ? (
-              <ActionGroup label="Management">
-                {MANAGEMENT_LINKS.map(([icon, label, path]) => (
-                  <ActionRow key={path} icon={icon} label={label} onClick={() => go(path)} />
-                ))}
-              </ActionGroup>
-            ) : (
-              <>
-                <ActionGroup label="Social">
-                  <ActionRow
-                    icon={diplomacy.isFollowing ? UserMinus : UserPlus}
-                    label={followLabel(diplomacy)}
-                    onClick={diplomacy.toggleFollow}
-                    disabled={needsViewer}
-                  />
-                  <ActionRow
-                    icon={MessageSquare}
-                    label="Secure message"
-                    onClick={() => go(`/messages?country=${targetCountryId}`)}
-                    disabled={!viewerCountryId}
-                  />
-                  {recentAchievements && recentAchievements.length > 0 && (
-                    <CongratulateRow
-                      targetCountryName={targetCountryName}
-                      achievements={recentAchievements}
-                      viewerCountryId={viewerCountryId}
-                      postingAccountId={postingAccountId}
-                      disabled={isBusy}
-                      sending={congratulation.isPending}
-                      onSend={congratulation.mutate}
-                    />
-                  )}
-                </ActionGroup>
-
-                <ActionGroup label="Diplomacy">
-                  {diplomacy.crossRealm && (
-                    <p className="text-label-secondary text-footnote px-1">
-                      {SAME_REALM_MESSAGE} for embassies, meetings and proposals.
-                    </p>
-                  )}
-                  <ActionRow
-                    icon={Building2}
-                    label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct Embassy"}
-                    onClick={diplomacy.establishEmbassy}
-                    disabled={needsSameRealm}
-                  />
-                  <ActionRow
-                    icon={Calendar}
-                    label="Request meeting"
-                    onClick={requestMeeting}
-                    disabled={needsSameRealm}
-                  />
-                  {DIPLOMACY_PROPOSALS.map(([icon, label, policy]) => (
-                    <ActionRow
-                      key={policy}
-                      icon={icon}
-                      label={label}
-                      onClick={() => diplomacy.proposeForeignPolicy(policy)}
-                      disabled={needsSameRealm}
-                    />
-                  ))}
-                </ActionGroup>
-
-                <ActionGroup label="Foreign policy">
-                  {HOSTILE_PROPOSALS.map(([icon, label, policy]) => (
-                    <HostileActionRow
-                      key={policy}
-                      icon={icon}
-                      label={label}
-                      targetCountryName={targetCountryName}
-                      onConfirm={() => diplomacy.proposeForeignPolicy(policy)}
-                      disabled={needsSameRealm}
-                    />
-                  ))}
-                </ActionGroup>
-              </>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent className="flex flex-col gap-6 overflow-y-auto">
+          <PosterHeader
+            countryId={targetCountryId}
+            name={targetCountryName}
+            isOwnCountry={isOwnCountry}
+            enabled={isOpen}
+            onNavigate={onClose}
+          >
+            {!isOwnCountry && (
+              <div className="grid grid-cols-3 gap-1">
+                <QuickAction
+                  icon={diplomacy.isFollowing ? UserXmark : UserPlus}
+                  label={diplomacy.isFollowing ? "Unfollow" : "Follow"}
+                  tone={diplomacy.isFollowing ? "gray" : "blue"}
+                  onClick={diplomacy.toggleFollow}
+                  disabled={needsViewer}
+                />
+                <QuickAction
+                  icon={ChatBubble}
+                  label="Message"
+                  tone="teal"
+                  onClick={() => go(`/messages?country=${encodeURIComponent(targetCountryId)}`)}
+                  disabled={!viewerCountryId}
+                />
+                <QuickAction
+                  icon={Calendar}
+                  label="Summit"
+                  tone="yellow"
+                  onClick={() => setSummitOpen((open) => !open)}
+                  disabled={needsSameRealm}
+                  pressed={summitOpen}
+                />
+              </div>
             )}
+            <VitalityStrip countryId={targetCountryId} enabled={isOpen} onOpen={setDetail} />
+          </PosterHeader>
 
-            <ActionGroup label="Quick links">
-              <ActionRow
-                icon={Trophy}
-                label="Leaderboards"
-                onClick={() => go("/leaderboards")}
-              />
-              <WikiLinkPreview title={targetCountryName}>
-                <Link
-                  href={titleToWikiOSRoute(targetCountryName)}
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "lg" }),
-                    ACTION_ROW_CLASS
-                  )}
-                  onClick={onClose}
-                >
-                  <Globe className="text-label-secondary h-4 w-4" />
-                  View on the wiki
-                  <ExternalLink className="text-label-secondary ml-auto h-3.5 w-3.5" />
-                </Link>
-              </WikiLinkPreview>
-              <ActionRow
-                icon={copiedLink ? Check : Copy}
-                label={copiedLink ? "Link Copied" : "Copy Profile Link"}
-                onClick={copyLink}
-              />
-              <ActionRow icon={Share2} label="Share profile" onClick={shareProfile} />
-            </ActionGroup>
+          {/* Beside Close, in the sheet's own corner, as on a Maps place card; your own nation adds Edit. */}
+          <ShareCountryButton
+            name={targetCountryName}
+            slugOrId={facts?.slug ?? targetCountryId}
+            className="absolute top-4 right-13"
+          />
+          {isOwnCountry && <EditNationMenu onNavigate={go} className="absolute top-4 right-22" />}
 
-            {!viewerCountryId && !isOwnCountry && (
-              <p className="border-separator text-label-secondary text-footnote border-t pt-4 text-center">
-                Login required to perform diplomatic actions
-              </p>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-      {viewerCountryId && schedulerMounted && (
-        <MeetingScheduler
-          countryId={viewerCountryId}
-          open={schedulerOpen}
-          onOpenChange={setSchedulerOpen}
-          defaultTargetCountryId={targetCountryId}
-        />
-      )}
+          {summitOpen && !isOwnCountry && (
+            <ProposeSummitForm
+              targetCountryId={targetCountryId}
+              targetCountryName={targetCountryName}
+              onDone={() => setSummitOpen(false)}
+            />
+          )}
+
+          {isOwnCountry && <ManageGrid onNavigate={go} />}
+
+          <OpenIn
+            destinations={destinationsFor(targetCountryId, targetCountryName, facts ?? null)}
+            onNavigate={onClose}
+          />
+
+          {!isOwnCountry && (
+            <section aria-labelledby="country-mycountry" className="space-y-2">
+              <h3 id="country-mycountry" className="text-subhead text-label-secondary px-1">
+                MyCountry
+              </h3>
+              {diplomacy.crossRealm && (
+                <p className="text-label-secondary text-footnote px-1">
+                  {SAME_REALM_MESSAGE} for embassies, summits and proposals.
+                </p>
+              )}
+              {diplomacy.standing.hasEmbassy ? (
+                <StandingRow
+                  icon={City}
+                  tone="orange"
+                  label="Embassy open"
+                  area="Diplomacy"
+                  onClick={() => go(DIPLOMACY_PATH)}
+                />
+              ) : (
+                <ConfirmActionRow
+                  icon={City}
+                  tone="orange"
+                  label={diplomacy.isEmbassyPending ? "Constructing…" : "Construct embassy"}
+                  area="Diplomacy"
+                  title={`Open an embassy in ${targetCountryName}?`}
+                  description="It joins your embassy network in MyCountry Diplomacy, where you staff it and send its missions."
+                  confirmLabel="Construct embassy"
+                  onConfirm={diplomacy.establishEmbassy}
+                  disabled={needsSameRealm}
+                />
+              )}
+              {PROPOSALS.map((act) => (
+                <ActRow
+                  key={act.policy}
+                  act={act}
+                  state={diplomacy.standing.policy(act.policy)}
+                  targetCountryName={targetCountryName}
+                  title={`${act.verb} to ${targetCountryName}?`}
+                  confirmLabel="Propose"
+                  onConfirm={() => diplomacy.proposeForeignPolicy(act.policy)}
+                  onOpenStanding={() => go(DIPLOMACY_PATH)}
+                  disabled={needsSameRealm}
+                />
+              ))}
+              <PressureActions
+                targetCountryName={targetCountryName}
+                standing={diplomacy.standing.policy}
+                onConfirm={diplomacy.proposeForeignPolicy}
+                onOpenStanding={() => go(DIPLOMACY_PATH)}
+                disabled={needsSameRealm}
+              />
+            </section>
+          )}
+
+          {!viewerCountryId && !isOwnCountry && (
+            <p className="border-separator text-label-secondary text-footnote border-t pt-4 text-center">
+              Sign in with a nation to follow, message or open diplomacy.
+            </p>
+          )}
+
+          {/* Inside the sheet, so the sheet stays open beneath it. */}
+          {detail && (
+            <HeroDetailModal
+              modal={detail}
+              countryId={targetCountryId}
+              countryName={targetCountryName}
+              ringData={detailRings}
+              onClose={() => setDetail(null)}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
 
 /** Action rows: large (44px) bordered Facet buttons, label-aligned. */
-const ACTION_ROW_CLASS = "w-full justify-start gap-3";
+const ACTION_ROW_CLASS = "w-full justify-start gap-3 pl-2";
 
-/** A titled group of action rows. */
-function ActionGroup({ label, children }: { label: string; children: React.ReactNode }) {
+/** The MyCountry area the row's result lands in, as a trailing detail. */
+function AreaDetail({ area }: { area: string }) {
+  return <span className="text-footnote text-label-secondary ml-auto font-normal">{area}</span>;
+}
+
+/** Something already stands between the nations: the row says so and opens where MyCountry keeps it. */
+function StandingRow({
+  icon,
+  tone,
+  label,
+  area,
+  onClick,
+}: {
+  icon: IconType;
+  tone: Tone;
+  label: string;
+  area: string;
+  onClick: () => void;
+}) {
   return (
-    <section className="space-y-2" aria-label={label}>
-      <Eyebrow className="block px-1">{label}</Eyebrow>
-      {children}
-    </section>
+    <Button
+      type="button"
+      variant="outline"
+      size="lg"
+      onClick={onClick}
+      className={ACTION_ROW_CLASS}
+    >
+      <ToneTile icon={icon} tone={tone} />
+      {label}
+      <AreaDetail area={area} />
+      <NavArrowRight aria-hidden className="text-label-tertiary mr-1 size-4" />
+    </Button>
   );
 }
 
-/** A sanction or embargo takes effect at once, so its row asks first. */
-function HostileActionRow({
-  icon: Icon,
+/** An act that changes MyCountry: its row asks first, saying what will happen. */
+function ConfirmActionRow({
+  icon,
+  tone,
   label,
-  targetCountryName,
+  area,
+  title,
+  description,
+  confirmLabel,
+  destructive = false,
   onConfirm,
   disabled,
 }: {
   icon: IconType;
+  tone: Tone;
   label: string;
-  targetCountryName: string;
+  area: string;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  destructive?: boolean;
   onConfirm: () => void;
   disabled: boolean;
 }) {
@@ -442,29 +385,25 @@ function HostileActionRow({
           variant="outline"
           size="lg"
           disabled={disabled}
-          className={cn(ACTION_ROW_CLASS, "text-destructive")}
+          className={cn(ACTION_ROW_CLASS, destructive && "text-destructive")}
         >
-          <Icon className="text-destructive h-4 w-4" />
+          <ToneTile icon={icon} tone={tone} />
           {label}
+          <AreaDetail area={area} />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>
-            {label} on {targetCountryName}?
-          </AlertDialogTitle>
-          <AlertDialogDescription>
-            It takes effect at once, with no consent needed: both economies take the hit, phased in
-            over four years, and relations cool. You can lift it later from your diplomacy inbox.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            className={buttonVariants({ variant: "destructive" })}
+            className={buttonVariants({ variant: destructive ? "destructive" : "default" })}
             onClick={onConfirm}
           >
-            {label}
+            {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -472,31 +411,102 @@ function HostileActionRow({
   );
 }
 
-/** One full-width action: a plain icon and label on an opaque row (the dialog already blurs). */
-function ActionRow({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
+/** A foreign-policy act: offered while nothing stands, otherwise its standing. */
+function ActRow({
+  act,
+  state,
+  targetCountryName,
+  title,
+  confirmLabel,
   destructive,
+  onConfirm,
+  onOpenStanding,
+  disabled,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
+  act: Act;
+  state: PolicyState;
+  targetCountryName: string;
+  title: string;
+  confirmLabel: string;
   destructive?: boolean;
+  onConfirm: () => void;
+  onOpenStanding: () => void;
+  disabled: boolean;
+}) {
+  if (state !== "open") {
+    return (
+      <StandingRow
+        icon={act.icon}
+        tone={act.tone}
+        label={standingLabel(act, state, targetCountryName)}
+        area={act.area}
+        onClick={onOpenStanding}
+      />
+    );
+  }
+  return (
+    <ConfirmActionRow
+      icon={act.icon}
+      tone={act.tone}
+      label={act.verb}
+      area={act.area}
+      title={title}
+      description={act.effect}
+      confirmLabel={confirmLabel}
+      destructive={destructive}
+      onConfirm={onConfirm}
+      disabled={disabled}
+    />
+  );
+}
+
+/** Sanctions and embargoes sit one deliberate step deeper, and each still asks before it takes effect. */
+function PressureActions({
+  targetCountryName,
+  standing,
+  onConfirm,
+  onOpenStanding,
+  disabled,
+}: {
+  targetCountryName: string;
+  standing: (policy: ForeignPolicy) => PolicyState;
+  onConfirm: (policy: ForeignPolicy) => void;
+  onOpenStanding: () => void;
+  disabled: boolean;
 }) {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      size="lg"
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(ACTION_ROW_CLASS, destructive && "text-destructive")}
-    >
-      <Icon className={cn("h-4 w-4", destructive ? "text-destructive" : "text-label-secondary")} />
-      {label}
-    </Button>
+    <Collapsible className="group/pressure">
+      <CollapsibleTrigger
+        className={cn(
+          buttonVariants({ variant: "ghost", size: "lg" }),
+          ACTION_ROW_CLASS,
+          "text-label-secondary"
+        )}
+      >
+        <ToneTile icon={Tournament} tone="red" />
+        Pressure
+        <AreaDetail area="Economy" />
+        <NavArrowDown
+          aria-hidden
+          className="duration-fast size-4 transition-[rotate] group-data-[state=open]/pressure:rotate-180"
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-2 pt-2">
+        {PRESSURE.map((act) => (
+          <ActRow
+            key={act.policy}
+            act={act}
+            state={standing(act.policy)}
+            targetCountryName={targetCountryName}
+            title={`${act.verb} on ${targetCountryName}?`}
+            confirmLabel={act.verb}
+            destructive
+            onConfirm={() => onConfirm(act.policy)}
+            onOpenStanding={onOpenStanding}
+            disabled={disabled}
+          />
+        ))}
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

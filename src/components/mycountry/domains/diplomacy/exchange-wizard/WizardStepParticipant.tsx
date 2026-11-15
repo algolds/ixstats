@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Search } from "iconoir-react";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Input } from "~/components/ui/input";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
@@ -36,9 +38,9 @@ function CountryList({
 
   if (countries.length === 0) {
     return (
-      <div className="border-separator bg-surface rounded-row border p-6 text-center">
-        <p className="text-label-secondary text-body">No countries found</p>
-      </div>
+      <Card variant="well" padding="sm">
+        <EmptyState compact title="No countries found" />
+      </Card>
     );
   }
 

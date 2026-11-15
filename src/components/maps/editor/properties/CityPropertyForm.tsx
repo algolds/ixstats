@@ -7,9 +7,10 @@ import { ModernTv as Mountain, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { Checkbox } from "~/components/ui/checkbox";
+import { Input } from "~/components/ui/input";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { CITY_TYPE_OPTIONS } from "../optionLists";
-import { inputClasses, SubdivisionSelect, WikiLinkField, type PointFormProps } from "./fields";
+import { SubdivisionSelect, WikiLinkField, type PointFormProps } from "./fields";
 
 const CAPITAL_FLAGS = [
   { key: "isNationalCapital", label: "National capital" },
@@ -41,7 +42,7 @@ function ElevationField({
         )}
       </div>
       <div className="flex items-center gap-2">
-        <input
+        <Input
           type="number"
           placeholder="Elevation (m)"
           value={form.elevation ?? ""}
@@ -52,7 +53,7 @@ function ElevationField({
               elevation: e.target.value ? parseInt(e.target.value, 10) : undefined,
             })
           }
-          className={inputClasses}
+          className="text-footnote h-8 px-2.5 tabular-nums"
         />
         <Button
           variant="outline"
@@ -94,12 +95,12 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
 
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="City name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
       <OptionSelect
@@ -119,22 +120,25 @@ export const CityPropertyForm = React.memo(function CityPropertyForm({
         />
       )}
 
-      <input
+      <Input
         type="number"
         placeholder="Population (optional)"
         value={form.population ?? ""}
         onChange={(e) => setInt("population", e.target.value)}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5 tabular-nums"
       />
       <div className="grid grid-cols-2 gap-2">
         <ElevationField form={form} onChange={onChange} />
-        <input
-          type="number"
-          placeholder="Founded year"
-          value={form.foundedYear ?? ""}
-          onChange={(e) => setInt("foundedYear", e.target.value)}
-          className={inputClasses}
-        />
+        <div className="space-y-1">
+          <label className="text-label-secondary text-caption block">Founded year</label>
+          <Input
+            type="number"
+            placeholder="Founded year"
+            value={form.foundedYear ?? ""}
+            onChange={(e) => setInt("foundedYear", e.target.value)}
+            className="text-footnote h-8 px-2.5 tabular-nums"
+          />
+        </div>
       </div>
       <div className="space-y-1">
         {CAPITAL_FLAGS.map(({ key, label }) => (

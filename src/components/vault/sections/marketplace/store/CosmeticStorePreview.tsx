@@ -18,10 +18,10 @@ export function CosmeticStorePreview({ cosmetics }: { cosmetics: PublicCosmetics
     return (
       <div
         aria-hidden
-        className="bg-surface-secondary border-separator rounded-card relative flex h-20 w-16 items-center justify-center overflow-hidden border shadow-inner"
+        className="bg-surface-secondary border-separator rounded-row relative flex h-20 w-16 items-center justify-center overflow-hidden border"
       >
         <User className="text-label-tertiary size-7" />
-        <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />
+        <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
       </div>
     );
   }
@@ -39,7 +39,7 @@ export function CosmeticStorePreview({ cosmetics }: { cosmetics: PublicCosmetics
   return (
     <div aria-hidden className="flex h-20 flex-col items-center justify-center gap-2">
       <CosmeticChatBadge badge={chatBadge} className="size-8" />
-      <span className="bg-fill-3 border-separator text-caption text-label inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-semibold">
+      <span className="bg-fill-3 border-separator text-caption text-label inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium">
         Your name
         <CosmeticChatBadge badge={chatBadge} />
       </span>

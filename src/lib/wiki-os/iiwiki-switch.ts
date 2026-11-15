@@ -26,6 +26,8 @@ export const IIWIKI_FEATURES = {
   cards: "Lore cards (imports, discovery, excerpts, authors)",
   realms: "Realm tools (wiki discovery, map import, flag localisation, source sync)",
   identity: "Account proof (IxnayID wiki verification, page-creator checks)",
+  imports:
+    "Page imports (MyLeague teams from a league article, Exchange companies from a company page)",
 } as const;
 
 export type IiwikiFeature = keyof typeof IIWIKI_FEATURES;

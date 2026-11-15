@@ -32,7 +32,8 @@ import { INDEX_BASE, SECTOR_KEYS, type SectorKey } from "./companies";
 import { DAY_MS } from "./contracts";
 import { assertExchangeOpen, lockWallet, type Db } from "./guards";
 import { countryMacroOf } from "./macro";
-import { fromCents, toCents } from "./ownership";
+import { OPERATING_TICK_MS } from "./operations";
+import { centsOf, dbCents, fromCents, round2, toCents } from "./amounts";
 
 export const SECTOR_LABELS: Record<SectorKey, string> = {
   agriculture: "Agriculture",
@@ -60,8 +61,6 @@ export const DM_MODIFIER_MAX = 2;
 export const MACRO_NEUTRAL_WEIGHT = 0.25;
 const MACRO_TILT_SLOPE = 0.5;
 export const MACRO_TILT_LIMIT = 0.1;
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Row-lock a realm's sector indices (and so its funds) until the transaction ends. */
 async function lockRealmSectors(tx: Db, realmId: string): Promise<void> {
@@ -97,7 +96,7 @@ export function nextIndexValue(
     ((activity + ACTIVITY_FLOOR) / (base + ACTIVITY_FLOOR));
   const ratio = previous > 0 ? target / previous : 1;
   const step = Math.min(1 + MAX_STEP, Math.max(1 - MAX_STEP, ratio));
-  return Math.min(INDEX_MAX, Math.max(INDEX_MIN, round2(previous * step)));
+  return Math.min(INDEX_MAX, Math.max(INDEX_MIN, Math.round(previous * step * 100) / 100));
 }
 
 /** One nation's contribution to its realm's sector weights. */
@@ -201,8 +200,10 @@ export async function measureSectorActivity(
   const add = (key: string, n: number) => {
     if (key in activity) activity[key as SectorKey] += n;
   };
-  for (const c of companies) add(c.sectorKey, c.capital + 100 * Math.max(0, c.standing));
-  for (const k of contracts) add(k.sectorKey, k.value);
+  for (const c of companies) {
+    add(c.sectorKey, fromCents(centsOf(c.capital)) + 100 * Math.max(0, c.standing));
+  }
+  for (const k of contracts) add(k.sectorKey, fromCents(centsOf(k.value)));
   return activity;
 }
 
@@ -237,6 +238,16 @@ async function computeRealmSectorIndices(
     const rows = await tx.sectorIndex.findMany({
       where: { realmId, sectorKey: { in: [...SECTOR_KEYS] } },
     });
+    const tick = Math.floor(nowMs / OPERATING_TICK_MS);
+    if (
+      rows.some(
+        (row) =>
+          row.computedIxTime !== null &&
+          Math.floor(row.computedIxTime / OPERATING_TICK_MS) === tick
+      )
+    ) {
+      return [];
+    }
     const next = rows.map((row) => {
       const key = row.sectorKey as SectorKey;
       const a = activity[key] ?? 0;
@@ -255,20 +266,20 @@ async function computeRealmSectorIndices(
     const funds = rebalanceFunds(
       next.map((n) => ({
         sectorKey: n.row.sectorKey,
-        cents: toCents(n.row.fundSovereigns),
+        cents: centsOf(n.row.fundSovereigns),
         growth: n.growth,
       }))
     );
     const runs: IndexRun[] = [];
     for (const n of next) {
-      const fund = fromCents(funds.get(n.row.sectorKey) ?? toCents(n.row.fundSovereigns));
+      const fundCents = funds.get(n.row.sectorKey) ?? centsOf(n.row.fundSovereigns);
       await tx.sectorIndex.update({
         where: { id: n.row.id },
         data: {
           value: n.value,
           baseTotal: n.base,
           computedIxTime: nowMs,
-          fundSovereigns: fund,
+          fundSovereigns: dbCents(fundCents),
           macroWeight: n.macroWeight,
         },
       });
@@ -281,7 +292,7 @@ async function computeRealmSectorIndices(
         previous: n.row.value,
         value: n.value,
         activity: round2(n.activity),
-        fund,
+        fund: fromCents(fundCents),
       });
     }
     return runs;
@@ -330,14 +341,18 @@ export async function setSectorDmModifier(
         adminName: input.actorUserId,
       },
     });
-    return row;
+    return { ...row, fundSovereigns: fromCents(centsOf(row.fundSovereigns)) };
   });
 }
 
 /** What one unit of a fund is worth now. */
-export function unitPrice(fund: { fundSovereigns: number; unitsOutstanding: number }): number {
-  if (fund.unitsOutstanding > 1e-6 && fund.fundSovereigns > 0) {
-    return fund.fundSovereigns / fund.unitsOutstanding;
+export function unitPrice(fund: {
+  fundSovereigns: bigint | number;
+  unitsOutstanding: number;
+}): number {
+  const fundSovereigns = fromCents(centsOf(fund.fundSovereigns));
+  if (fund.unitsOutstanding > 1e-6 && fundSovereigns > 0) {
+    return fundSovereigns / fund.unitsOutstanding;
   }
   return UNIT_START_PRICE;
 }
@@ -357,7 +372,11 @@ async function appliedTrade(db: Db, key: string): Promise<FundTradeResult | null
   const row = await db.exchangeTransaction.findUnique({ where: { idempotencyKey: key } });
   if (!row) return null;
   const meta = (row.metadata ?? {}) as { units?: number };
-  return { units: meta.units ?? 0, sovereigns: Math.abs(row.sovereigns), alreadyApplied: true };
+  return {
+    units: meta.units ?? 0,
+    sovereigns: fromCents(Math.abs(centsOf(row.sovereigns))),
+    alreadyApplied: true,
+  };
 }
 
 async function keyed(
@@ -410,6 +429,7 @@ export async function buySectorUnits(
 
       const fund = await tx.sectorIndex.findUniqueOrThrow({ where: fundWhere });
       const units = input.amount / unitPrice(fund);
+      const amountCents = toCents(input.amount);
       await spendSovereignsTx(tx, {
         userId: input.userId,
         amount: input.amount,
@@ -421,7 +441,7 @@ export async function buySectorUnits(
       await tx.sectorIndex.update({
         where: { id: fund.id },
         data: {
-          fundSovereigns: fromCents(toCents(fund.fundSovereigns) + toCents(input.amount)),
+          fundSovereigns: dbCents(centsOf(fund.fundSovereigns) + amountCents),
           unitsOutstanding: fund.unitsOutstanding + units,
         },
       });
@@ -435,11 +455,14 @@ export async function buySectorUnits(
       const position = await tx.sectorPosition.findUnique({ where });
       if (position) {
         const total = position.units + units;
+        const nextAvgCents = Math.round(
+          (position.units * centsOf(position.avgCost) + amountCents) / total
+        );
         await tx.sectorPosition.update({
           where: { id: position.id },
           data: {
             units: total,
-            avgCost: (position.units * position.avgCost + input.amount) / total,
+            avgCost: dbCents(nextAvgCents),
           },
         });
       } else {
@@ -449,7 +472,7 @@ export async function buySectorUnits(
             realmId: input.realmId,
             sectorKey: input.sectorKey,
             units,
-            avgCost: input.amount / units,
+            avgCost: dbCents(Math.round(amountCents / units)),
           },
         });
       }
@@ -514,7 +537,7 @@ export async function sellSectorUnits(
         where: { realmId_sectorKey: { realmId: input.realmId, sectorKey: input.sectorKey } },
       });
       const units = input.fraction === 1 ? position.units : position.units * input.fraction;
-      const fundCents = toCents(fund.fundSovereigns);
+      const fundCents = centsOf(fund.fundSovereigns);
       const sellsAll = units >= fund.unitsOutstanding * (1 - 1e-9);
       const payoutCents = sellsAll
         ? fundCents
@@ -529,7 +552,7 @@ export async function sellSectorUnits(
       await tx.sectorIndex.update({
         where: { id: fund.id },
         data: {
-          fundSovereigns: fromCents(fundCents - payoutCents),
+          fundSovereigns: dbCents(fundCents - payoutCents),
           unitsOutstanding: sellsAll ? 0 : Math.max(0, fund.unitsOutstanding - units),
         },
       });
@@ -564,7 +587,7 @@ export async function getSectorMarket(db: Db, userId: string, realmId: string) {
   return SECTOR_KEYS.map((sectorKey) => {
     const row = indices.find((i) => i.sectorKey === sectorKey);
     const fund = {
-      fundSovereigns: row?.fundSovereigns ?? 0,
+      fundSovereigns: row?.fundSovereigns ?? 0n,
       unitsOutstanding: row?.unitsOutstanding ?? 0,
     };
     const price = unitPrice(fund);
@@ -576,7 +599,7 @@ export async function getSectorMarket(db: Db, userId: string, realmId: string) {
       macroWeight: row?.macroWeight ?? 0,
       dmModifier: row?.dmModifier ?? 0,
       computedIxTime: row?.computedIxTime ?? null,
-      fund: fund.fundSovereigns,
+      fund: fromCents(centsOf(fund.fundSovereigns)),
       unitPrice: Math.round(price * 10_000) / 10_000,
       history: history
         .filter((h) => h.sectorKey === sectorKey)
@@ -586,7 +609,7 @@ export async function getSectorMarket(db: Db, userId: string, realmId: string) {
       position: position
         ? {
             units: position.units,
-            avgCost: position.avgCost,
+            avgCost: fromCents(centsOf(position.avgCost)),
             value: Math.floor(position.units * price * 100) / 100,
           }
         : null,

@@ -16,6 +16,11 @@ import {
 } from "~/server/api/trpc";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertCountryWriteAccess } from "~/server/shared/country-authorization";
 import type { db as prisma } from "~/server/db";
 import { assertFound, assertOwnCountry } from "../core/shared";
@@ -92,6 +97,8 @@ export const geoFeaturesStorylinesRouter = createTRPCRouter({
         title: z.string().trim().min(1).max(200),
         description: z.string().max(5000).optional(),
         color: hexColor.optional(),
+        wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -102,6 +109,7 @@ export const geoFeaturesStorylinesRouter = createTRPCRouter({
           title: input.title,
           description: input.description || null,
           color: input.color ?? null,
+          ...normalizeFeatureWikiCreate(input),
         },
       });
       await afterStorylineWrite(input.countryId);
@@ -116,17 +124,26 @@ export const geoFeaturesStorylinesRouter = createTRPCRouter({
         title: z.string().trim().min(1).max(200).optional(),
         description: z.string().max(5000).nullable().optional(),
         color: hexColor.nullable().optional(),
+        wikiPageTitle: z.string().max(200).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      await assertStorylineInCountry(ctx.db, input.storylineId, input.countryId);
+      const existing = assertFound(
+        await ctx.db.storyline.findFirst({
+          where: { id: input.storylineId, countryId: input.countryId, ...MAP_KIND },
+          select: { id: true, wikiPageTitle: true, wikiSource: true },
+        }),
+        "Storyline not found"
+      );
       const updated = await ctx.db.storyline.update({
         where: { id: input.storylineId },
         data: {
           ...(input.title !== undefined && { title: input.title }),
           ...(input.description !== undefined && { description: input.description || null }),
           ...(input.color !== undefined && { color: input.color }),
+          ...normalizeFeatureWikiUpdate(input, existing),
         },
       });
       await afterStorylineWrite(input.countryId);

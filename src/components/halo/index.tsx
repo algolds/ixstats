@@ -1,61 +1,70 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { stripBasePath } from "~/lib/base-path";
 import { motion, type PanInfo } from "motion/react";
 import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { useDynamicIslandState } from "./hooks";
+import type { CommandPaletteProps, ViewMode } from "./types";
+import { isChromelessPath, type AppDefinition } from "~/lib/navigation/app-sections";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
-import { useToastQueueStore } from "~/stores/toastQueueStore";
-import { IOSActivityIndicator } from "~/components/ui/loader";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { HaloTourProvider, useHaloTour } from "./HaloTourContext";
-import { HaloTourTooltip } from "./HaloTourTooltip";
-import { springSnappy, tweenFast } from "~/lib/design/motion";
+import { springSnappy } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import { useHydrated } from "~/hooks/useHydrated";
 
-interface CommandPaletteProps {
-  className?: string;
-  isSticky?: boolean;
-  scrollY?: number;
+const HaloTourTooltip = dynamic(() => import("./HaloTourTooltip").then((m) => m.HaloTourTooltip), {
+  ssr: false,
+});
+
+interface SizeInputs {
+  isExpanded: boolean;
+  expandedMode: string;
+  ownsWikiCenter: boolean;
+  hasActiveSection: boolean;
+}
+
+function computeExpandedSize(expandedMode: string): SizePresets {
+  if (expandedMode === "search") return SIZE_PRESETS.ULTRA; // 630px wide
+  if (expandedMode === "notifications") return SIZE_PRESETS.TALL;
+  if (expandedMode === "settings") return SIZE_PRESETS.MEDIUM;
+  if (expandedMode === "mycountry") return SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
+  if (expandedMode.startsWith("plugin:")) return SIZE_PRESETS.ULTRA; // 630px wide
+  return SIZE_PRESETS.MEDIUM;
+}
+
+function computePillSize(inputs: SizeInputs): SizePresets {
+  if (inputs.ownsWikiCenter) {
+    return inputs.hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE;
+  }
+  return SIZE_PRESETS.COMPACT_TALL;
+}
+
+/** Deterministic island preset per mode so switching panels never races stale size state. */
+function computeSize(inputs: SizeInputs): SizePresets {
+  if (inputs.isExpanded) return computeExpandedSize(inputs.expandedMode);
+  return computePillSize(inputs);
 }
 
 function CommandPaletteContent({
-  isSticky = false,
-  scrollY = 0,
   diState,
   isTourActive = false,
+  trayApps,
 }: {
-  isSticky?: boolean;
-  scrollY?: number;
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
+  trayApps?: readonly AppDefinition[];
 }) {
-  const { size: haloSize, setSize } = useHaloSize();
-  const mounted = useHydrated();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [navTrayOpen, setNavTrayOpen] = useState(false);
+  const { setSize } = useHaloSize();
+  // The pathname the tray was opened on; navigating elsewhere closes it without an effect
+  const [navTrayAt, setNavTrayAt] = useState<{ path: string | null } | null>(null);
   const [pillBounce, setPillBounce] = useState(false);
   const [isNavLoading, setIsNavLoading] = useState(false);
-
-  const [isWriterMode, setIsWriterMode] = useState(false);
-
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const checkWriterMode = () => {
-      setIsWriterMode(document.documentElement.classList.contains("wikios-writer-mode"));
-    };
-    checkWriterMode();
-    const observer = new MutationObserver(checkWriterMode);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  const activeIsSticky = isSticky || isWriterMode;
 
   useEffect(() => {
     const handleStart = () => setIsNavLoading(true);
@@ -78,102 +87,47 @@ function CommandPaletteContent({
     searchQuery,
     debouncedSearchQuery,
     searchFilter,
-    isUserInteracting,
     searchResults,
+    isSearchPending,
     setSearchQuery,
     setSearchFilter,
-    setIsUserInteracting,
     switchMode,
   } = diState;
 
   const diPathname = usePathname();
+  const normalizedDiPath = stripBasePath(diPathname || "/");
+  const isChromeless = isChromelessPath(normalizedDiPath);
+  const navTrayOpen = isChromeless && navTrayAt !== null && navTrayAt.path === diPathname;
 
   // Plugin system: read active plugin
   const activePlugin = useActiveDIPlugin();
-  const pluginAccentColor = activePlugin?.accentColor ?? "var(--tint)";
-  const isWikiActive = activePlugin?.id === "wiki";
+  const ownsWikiCenter = activePlugin?.id === "wiki" && Boolean(activePlugin.center);
 
   const { activeSectionId, tocEntries } = useWikiContext();
   const hasActiveSection = !!(activeSectionId && tocEntries.some((e) => e.id === activeSectionId));
 
-  // Dynamic size based on sticky/collapsed state + wiki/forum context + expanded state
   useEffect(() => {
-    let newSize: SizePresets;
-    const isForumActive = activePlugin?.id === "forum";
+    setSize(
+      computeSize({
+        isExpanded,
+        expandedMode,
+        ownsWikiCenter,
+        hasActiveSection,
+      })
+    );
+  }, [setSize, ownsWikiCenter, isExpanded, expandedMode, hasActiveSection]);
 
-    if (isNavLoading) {
-      newSize = SIZE_PRESETS.WIKI_COMPACT; // compact loading pill size (180x40)
-    } else if (isExpanded) {
-      if (expandedMode === "search") {
-        newSize = SIZE_PRESETS.ULTRA; // 630px wide
-      } else if (expandedMode === "notifications") {
-        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.TALL;
-      } else if (expandedMode === "settings") {
-        newSize = haloSize === SIZE_PRESETS.ULTRA ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM;
-      } else if (expandedMode === "mycountry") {
-        newSize = SIZE_PRESETS.MEDIUM; // 371px wide, the profile and country dropdown
-      } else if (expandedMode.startsWith("plugin:")) {
-        newSize = SIZE_PRESETS.ULTRA; // 630px wide
-      } else {
-        newSize = SIZE_PRESETS.MEDIUM;
-      }
-    } else {
-      if (isWikiActive) {
-        if (activeIsSticky && isCollapsed) {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT : SIZE_PRESETS.WIKI_COMPACT; // 170x32 -> 200x36
-        } else if (activeIsSticky) {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.COMPACT; // 200x36 -> 300x44
-        } else {
-          newSize = hasActiveSection ? SIZE_PRESETS.COMPACT_LONG : SIZE_PRESETS.WIKI_INLINE; // 280x38 -> 300x44
-        }
-      } else if (isForumActive) {
-        if (isCollapsed) {
-          newSize = SIZE_PRESETS.WIKI_COMPACT; // 180x32, compact forum text mode
-        } else {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 300x40, hover state and expanded full text
-        }
-      } else {
-        if (activeIsSticky && isCollapsed) {
-          newSize = SIZE_PRESETS.COMPACT; // 200x36 pill
-        } else if (activeIsSticky && !isCollapsed) {
-          newSize = SIZE_PRESETS.COMPACT_LONG; // 320x40 pill (hover state)
-        } else {
-          newSize = SIZE_PRESETS.COMPACT_TALL; // 360x44 pill (inline in navbar)
-        }
-      }
+  // Downward pull gesture opens NavTray below the island on chromeless routes
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (!isChromeless || isExpanded) return;
+    if (info.offset.y > 30 || info.velocity.y > 200) {
+      setPillBounce(true);
+      setTimeout(() => setPillBounce(false), 300);
+      setNavTrayAt({ path: diPathname });
+    } else if (navTrayOpen && (info.offset.y < -20 || info.velocity.y < -150)) {
+      setNavTrayAt(null);
     }
-    setSize(newSize);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    setSize,
-    activeIsSticky,
-    isCollapsed,
-    isWikiActive,
-    activePlugin?.id,
-    isExpanded,
-    expandedMode,
-    isNavLoading,
-    hasActiveSection,
-  ]);
-
-  // Close nav tray when navigating
-  useEffect(() => {
-    setNavTrayOpen(false);
-  }, [diPathname]);
-
-  // Swipe-up gesture handler
-  const handleDragEnd = useCallback(
-    (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-      if (info.offset.y < -30 || info.velocity.y < -200) {
-        if (!isExpanded) {
-          setPillBounce(true);
-          setTimeout(() => setPillBounce(false), 300);
-          setNavTrayOpen(true);
-        }
-      }
-    },
-    [isExpanded]
-  );
+  };
 
   // Initialize notification store
   const initialize = useNotificationStore((state) => state.initialize);
@@ -182,136 +136,105 @@ function CommandPaletteContent({
     initialize().catch(console.error);
   }, [initialize]);
 
-  // Auto-collapse when sticky and not interacting - optimized with proper cleanup
-  const collapseTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastTriggerRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    // Clear existing timeout
-    if (collapseTimeoutRef.current) {
-      clearTimeout(collapseTimeoutRef.current);
-    }
+  const openFromTrigger = (nextMode: ViewMode, triggerOverride?: string) => {
+    setNavTrayAt(null);
+    lastTriggerRef.current =
+      nextMode === "compact"
+        ? null
+        : (triggerOverride ?? (nextMode.startsWith("plugin:") ? "plugin" : nextMode));
+    switchMode(nextMode);
+  };
 
-    const isForumActive = activePlugin?.id === "forum";
-
-    if ((activeIsSticky || isForumActive) && !isUserInteracting && !isCollapsed) {
-      collapseTimeoutRef.current = setTimeout(() => setIsCollapsed(true), 1200);
-    } else if (!(activeIsSticky || isForumActive) && isCollapsed) {
-      // Immediately expand when not sticky and not forum
-      setIsCollapsed(false);
-    }
-
-    return () => {
-      if (collapseTimeoutRef.current) {
-        clearTimeout(collapseTimeoutRef.current);
-      }
-    };
-  }, [activeIsSticky, isUserInteracting, isCollapsed, activePlugin?.id]);
-
-  const toastQueue = useToastQueueStore((s) => s.queue);
-  const prevToastIdRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const latest = toastQueue[0];
-    if (!latest || latest.id === prevToastIdRef.current) return;
-    prevToastIdRef.current = latest.id;
-
-    // Briefly uncollapse sticky DI so the user sees the notification peek
-    if (activeIsSticky && isCollapsed) {
-      setIsCollapsed(false);
-      setIsUserInteracting(true);
-      // Let the auto-collapse timer re-engage after 3s
-      setTimeout(() => setIsUserInteracting(false), 3000);
-    }
-  }, [toastQueue, activeIsSticky, isCollapsed, setIsUserInteracting]);
-
-  if (!mounted) return null;
+  const closeFromPanel = () => {
+    const fallback = expandedMode.startsWith("plugin:") ? "plugin" : expandedMode;
+    const target = lastTriggerRef.current ?? fallback;
+    lastTriggerRef.current = null;
+    switchMode("compact");
+    requestAnimationFrame(() => {
+      (
+        document.querySelector<HTMLElement>(`[data-halo-trigger="${target}"]`) ??
+        document.querySelector<HTMLElement>(`[data-halo-trigger="${fallback}"]`)
+      )?.focus();
+    });
+  };
 
   return (
-    <>
-      <div className="relative">
-        {/* DI pill — draggable for swipe-up nav tray. During the walkthrough the island carries
-            a static tint ring instead of a looping pulse. It has no movement, so it is the same
-            under Reduce Motion. */}
-        <motion.div
-          data-tour-highlight={isTourActive ? "true" : undefined}
-          className={cn("rounded-full", isTourActive && "ring-tint/50 ring-2")}
-          animate={{
-            y: pillBounce ? -4 : 0,
-          }}
-          transition={springSnappy}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.15}
-          dragMomentum={false}
-          onDragEnd={handleDragEnd}
-          style={{ touchAction: "none" }}
-        >
-          <Halo id="command-palette">
-            {isNavLoading ? (
-              <div
-                key="loading"
-                className="text-label flex h-10 w-full items-center justify-center gap-2 px-3"
-              >
-                <IOSActivityIndicator size="sm" />
-                <span className="text-caption">Loading...</span>
-              </div>
-            ) : !isExpanded ? (
-              <div key="compact" className="h-full w-full">
-                <CompactView
-                  mode={mode}
-                  isSticky={activeIsSticky}
-                  isCollapsed={isCollapsed}
-                  setIsCollapsed={setIsCollapsed}
-                  setIsUserInteracting={setIsUserInteracting}
-                  onSwitchMode={switchMode}
-                  scrollY={scrollY}
-                  activePlugin={activePlugin}
-                  pluginCenter={activePlugin?.center}
-                  pluginActions={activePlugin?.actions}
-                  pluginBadge={activePlugin?.badge}
-                />
-              </div>
-            ) : (
-              <div key="expanded" className="h-full w-full">
-                <ExpandedView
-                  mode={expandedMode}
-                  onClose={() => switchMode("compact")}
-                  onSwitchMode={switchMode}
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  searchFilter={searchFilter}
-                  setSearchFilter={setSearchFilter}
-                  debouncedSearchQuery={debouncedSearchQuery}
-                  searchResults={searchResults}
-                  activePlugin={activePlugin}
-                />
-              </div>
-            )}
-          </Halo>
-
-          {/* Section accent line — visible when sticky */}
-          {activeIsSticky && (
-            <motion.div
-              className="pointer-events-none absolute right-1/4 -bottom-0.5 left-1/4 h-[2px] rounded-full"
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={{ opacity: 0.8, scaleX: 1 }}
-              transition={tweenFast}
-              style={{ backgroundColor: pluginAccentColor }}
-            />
+    <div className="relative">
+      {/* DI pill — chromeless routes allow a downward pull for the quick-navigation tray. During the
+          walkthrough the island carries a static tint ring instead of a looping pulse. */}
+      <motion.div
+        data-tour-highlight={isTourActive ? "true" : undefined}
+        className={cn("rounded-full", isTourActive && "ring-tint/50 ring-2")}
+        animate={{
+          y: pillBounce ? 4 : 0,
+        }}
+        transition={springSnappy}
+        drag={isChromeless ? "y" : false}
+        dragConstraints={isChromeless ? { top: 0, bottom: 0 } : undefined}
+        dragElastic={isChromeless ? 0.15 : undefined}
+        dragMomentum={false}
+        onDragEnd={isChromeless ? handleDragEnd : undefined}
+        style={isChromeless ? { touchAction: "none" } : undefined}
+      >
+        <Halo id="command-palette">
+          {!isExpanded ? (
+            <div key="compact" className="h-full w-full">
+              <CompactView
+                mode={mode}
+                isNavLoading={isNavLoading}
+                onSwitchMode={openFromTrigger}
+                activePlugin={activePlugin}
+                pluginCenter={activePlugin?.center}
+                pluginCenterActions={activePlugin?.centerActions}
+                pluginActions={activePlugin?.actions}
+                pluginBadge={activePlugin?.badge}
+                showNavTrayTrigger={isChromeless}
+                navTrayOpen={navTrayOpen && !isExpanded}
+                onToggleNavTray={() =>
+                  setNavTrayAt((prev) =>
+                    prev !== null && prev.path === diPathname ? null : { path: diPathname }
+                  )
+                }
+              />
+            </div>
+          ) : (
+            <div key="expanded" className="h-full w-full">
+              <ExpandedView
+                mode={expandedMode}
+                onClose={closeFromPanel}
+                onSwitchMode={switchMode}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                searchFilter={searchFilter}
+                setSearchFilter={setSearchFilter}
+                debouncedSearchQuery={debouncedSearchQuery}
+                searchResults={searchResults}
+                isSearchPending={isSearchPending}
+                activePlugin={activePlugin}
+              />
+            </div>
           )}
-        </motion.div>
+        </Halo>
+      </motion.div>
 
-        {/* Nav tray dropdown */}
-        <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayOpen(false)} />
+      {/* Quick navigation tray (chromeless routes only, where AppSidebar / TabBar are absent) */}
+      {isChromeless && (
+        <NavTray
+          isOpen={navTrayOpen && !isExpanded}
+          onClose={() => setNavTrayAt(null)}
+          apps={trayApps}
+        />
+      )}
 
-        {/* Walkthrough tooltip overlay */}
-        <HaloTourTooltip />
-      </div>
-    </>
+      {/* Walkthrough tooltip overlay */}
+      <HaloTourTooltip />
+    </div>
   );
 }
 
-export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteProps) {
+export function CommandPalette({ className, trayApps, searchApps }: CommandPaletteProps) {
   const pathname = usePathname();
   const normalizedPath = stripBasePath(pathname || "/");
 
@@ -321,29 +244,21 @@ export function CommandPalette({ className, isSticky, scrollY }: CommandPaletteP
   return (
     <HaloTourProvider>
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper className={className} isSticky={isSticky} scrollY={scrollY} />
+        <CommandPaletteWrapper className={className} trayApps={trayApps} searchApps={searchApps} />
       </HaloProvider>
     </HaloTourProvider>
   );
 }
 
-function CommandPaletteWrapper({
-  className,
-  isSticky,
-  scrollY,
-}: {
-  className?: string;
-  isSticky?: boolean;
-  scrollY?: number;
-}) {
+function CommandPaletteWrapper({ className, trayApps, searchApps }: CommandPaletteProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isInitialized = useHydrated();
-  const diState = useDynamicIslandState();
+  const diState = useDynamicIslandState({ searchApps });
   const { isExpanded, switchMode } = diState;
 
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
       if (!target) return;
 
@@ -367,8 +282,8 @@ function CommandPaletteWrapper({
     };
 
     if (isExpanded && isInitialized) {
-      document.addEventListener("mousedown", handleClickOutside, { passive: true });
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("pointerdown", handleClickOutside, { passive: true });
+      return () => document.removeEventListener("pointerdown", handleClickOutside);
     }
     return;
   }, [isExpanded, isInitialized, switchMode]);
@@ -383,18 +298,10 @@ function CommandPaletteWrapper({
   return (
     <div
       ref={wrapperRef}
-      className={`z-nav pointer-events-none relative flex w-full items-center justify-center ${className || ""}`}
-      style={{
-        maxWidth: isExpanded ? "100%" : isSticky ? "400px" : "100%",
-      }}
+      className={`z-nav pointer-events-none relative flex w-full max-w-full items-center justify-center ${className || ""}`}
     >
       <div className="pointer-events-auto">
-        <CommandPaletteContent
-          isSticky={isSticky}
-          scrollY={scrollY}
-          diState={diState}
-          isTourActive={isTourActive}
-        />
+        <CommandPaletteContent diState={diState} isTourActive={isTourActive} trayApps={trayApps} />
       </div>
     </div>
   );

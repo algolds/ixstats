@@ -26,9 +26,8 @@
 #   the build and restored afterwards (same as deploy-ixworld.sh): IxStates is degraded for the
 #   length of the build, routes it has not served yet fail and its static chunks 404. Run off-peak.
 # - flock-based lock so a crashed deploy never wedges future deploys. The IxWorld deploy lock is
-#   taken too, because both scripts move the same IxStats `.next` aside. deploy-production.sh has
-#   no lock, so this script refuses to start while it is running (and it must not be started while
-#   this script runs).
+#   taken too, because both scripts move the same IxStats `.next` aside; deploy-production.sh takes
+#   that lock as well.
 # - Snapshot of the current release (hardlinks) before swap, with automatic rollback
 #   if the post-deploy health check fails.
 # - Graceful `pm2 startOrReload` instead of delete/start.
@@ -69,7 +68,7 @@ if ! flock -n 200; then
     log "ERROR: Deployment already in progress (could not acquire lock at $LOCK_FILE)"
     exit 1
 fi
-# Same SAVED_NEXT as deploy-ixworld.sh, so the two must never run at once.
+# Same SAVED_NEXT as deploy-ixworld.sh, and the same .next as deploy-production.sh: all three take this lock.
 exec 201>"$IXWORLD_LOCK_FILE"
 if ! flock -n 201; then
     log "ERROR: An IxWorld deployment is in progress (could not acquire lock at $IXWORLD_LOCK_FILE)"
@@ -77,12 +76,6 @@ if ! flock -n 201; then
 fi
 
 log "=== Starting WikiOS Deployment ==="
-
-# deploy-production.sh has no lock and rebuilds/cleans the same .next this script moves aside.
-if pgrep -f 'scripts/deploy-production.sh' > /dev/null 2>&1; then
-    log "ERROR: deploy-production.sh is running. Wait for it to finish; the two must not overlap."
-    exit 1
-fi
 
 # --- Restore the saved IxStats .next if a previous run died mid-deploy ---
 restore_next() {

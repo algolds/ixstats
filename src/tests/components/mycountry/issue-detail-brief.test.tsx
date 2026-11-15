@@ -1,7 +1,7 @@
 /**
  * The issue brief: a decision refreshes everything it writes (approval and stability on the
  * country record, the feed, directive progress), Delegate is offered when the issue has no
- * enforced deadline, the meeting toast points at Politics, and "Make Directive" only shows where
+ * enforced deadline, and "Make Directive" only shows where
  * the sheet can open the composer. Deadlines and research count down on the nation's realm clock.
  */
 import { render, screen } from "@testing-library/react";
@@ -110,12 +110,6 @@ it("refreshes the country, feed and directives after a decision", async () => {
   );
 });
 
-it("says where the scheduled meeting lives", () => {
-  render(<IssueDetailBrief issueId="n-1" />);
-  mockMutationOptions["quickActions.createMeeting"]!.onSuccess!({});
-  expect(mockNotify.success).toHaveBeenCalledWith(expect.stringContaining("Cabinet meetings"));
-});
-
 it("shows a free-text effect on its chip instead of an empty label", () => {
   mockData["nationalIssues.getIssue"] = {
     ...mockData["nationalIssues.getIssue"],
@@ -190,8 +184,8 @@ it("labels each recon finding by its operation", () => {
   };
   render(<IssueDetailBrief issueId="n-1" />);
   for (const label of [
-    "Alpha: —",
-    "Bravo: —",
+    "Alpha: –",
+    "Bravo: –",
     "Charlie: ×1.5",
     "Delta: =40",
     "Echo: -3",

@@ -13,6 +13,12 @@ import { api } from "~/trpc/react";
 import { useDecodedMapLayers } from "~/hooks/useMapLayerData";
 import { MapPin, SystemRestart as Loader2 } from "iconoir-react";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
+import {
+  clampFlatCenterLat,
+  fromCarrier,
+  toCarrierGeoJSON,
+  toCarrierLngLat,
+} from "~/lib/maps/flat-projection";
 import { addGeoLayers, type LayerDef } from "~/components/maps/shared/geo-layers";
 import { useEmbedInRange } from "~/components/maps/widgets/hooks/useEmbedInRange";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -42,6 +48,12 @@ interface CoordinatesMapEmbedProps {
   /** False: a plain realm map, with no marker at the coordinates and no coordinates label. */
   marker?: boolean;
   className?: string;
+  /**
+   * Pixels of the map's right side covered by a floating panel (the front page's realm Lens). The
+   * camera centres in the uncovered part, and the world repeats sideways so the glass always has map
+   * under it and panning never runs into an edge.
+   */
+  insetRight?: number;
   onCountryHover?: (country: EmbedPoliticalFeature | null) => void;
   onCountryClick?: (country: EmbedPoliticalFeature) => void;
 }
@@ -156,11 +168,15 @@ function setPoliticalHover(map: MapLibreMap, id: number | null, hover: boolean) 
   }
 }
 
-/** Show the political layer: its data goes into the source the map already has, else the source and layers are added. */
+/**
+ * Show the political layer (in Plate Carrée, as the flat map draws it): its data goes into the source the
+ * map already has, else the source and layers are added.
+ */
 function showPolitical(map: MapLibreMap, data: FeatureCollection) {
+  const flat = toCarrierGeoJSON(data);
   const source = map.getSource(POLITICAL_SOURCE_ID) as GeoJSONSource | undefined;
-  if (source) source.setData(data);
-  else addGeoLayers(map, POLITICAL_SOURCE_ID, data, POLITICAL_LAYERS);
+  if (source) source.setData(flat);
+  else addGeoLayers(map, POLITICAL_SOURCE_ID, flat, POLITICAL_LAYERS);
 }
 
 export function CoordinatesMapEmbed({
@@ -171,6 +187,7 @@ export function CoordinatesMapEmbed({
   realm: realmProp,
   marker = true,
   className,
+  insetRight,
   onCountryHover,
   onCountryClick,
 }: CoordinatesMapEmbedProps) {
@@ -232,6 +249,9 @@ export function CoordinatesMapEmbed({
 
   const worldPolitical = worldMap?.political;
 
+  // A covered map repeats sideways (see insetRight)
+  const wraps = insetRight !== undefined;
+
   const initMap = useCallback(
     async (isCancelled: () => boolean) => {
       if (!containerRef.current) return;
@@ -244,15 +264,25 @@ export function CoordinatesMapEmbed({
       if (isCancelled() || !containerRef.current) return;
 
       const baseStyle: any = buildBaseStyle();
-      delete baseStyle.projection; // Mercator for embeds
+      // Flat, in Plate Carrée drawn through Mercator (flat-projection.ts): no polar swelling or cut
+      delete baseStyle.projection;
+      const container = containerRef.current;
 
       const map = new maplibregl.Map({
         container: containerRef.current,
         style: baseStyle,
-        center: [lng, lat],
+        center: toCarrierLngLat(lng, lat),
+        // Never past a pole; a map that doesn't repeat stays within ±180°
+        transformConstrain: (center, z) => ({
+          center: new maplibregl.LngLat(
+            wraps ? center.lng : Math.max(-180, Math.min(180, center.lng)),
+            clampFlatCenterLat(center.lat, z, container.clientHeight)
+          ),
+          zoom: z,
+        }),
         zoom: zoom,
         minZoom: marker ? undefined : zoom,
-        renderWorldCopies: false,
+        renderWorldCopies: wraps,
         dragRotate: false,
         touchPitch: false,
         attributionControl: false,
@@ -266,7 +296,9 @@ export function CoordinatesMapEmbed({
       map.on("load", () => {
         if (isCancelled()) return;
         if (marker) {
-          const pin = new maplibregl.Marker({ color: "#ef4444" }).setLngLat([lng, lat]).addTo(map);
+          const pin = new maplibregl.Marker({ color: "#ef4444" })
+            .setLngLat(toCarrierLngLat(lng, lat))
+            .addTo(map);
           if (titleVal) {
             pin.setPopup(
               new maplibregl.Popup({ offset: 25 }).setDOMContent(buildPopupTitleNode(titleVal))
@@ -295,7 +327,7 @@ export function CoordinatesMapEmbed({
                 setPoliticalHover(map, hoveredIdRef.current, false);
                 hoveredIdRef.current = nextId;
                 setPoliticalHover(map, nextId, true);
-                onHoverRef.current?.(toPoliticalFeature(feature.properties, e.lngLat));
+                onHoverRef.current?.(toPoliticalFeature(feature.properties, fromCarrier(e.lngLat)));
               }
               map.getCanvas().style.cursor = "pointer";
               return;
@@ -327,14 +359,15 @@ export function CoordinatesMapEmbed({
               layers: [POLITICAL_FILL_ID],
             })[0];
             if (!feature) return;
-            onClickRef.current?.(toPoliticalFeature(feature.properties, e.lngLat));
+            onClickRef.current?.(toPoliticalFeature(feature.properties, fromCarrier(e.lngLat)));
           });
         }
 
         setMapReady(true);
       });
     },
-    [lat, lng, zoom, interactiveVal, titleVal, marker]
+    // insetRight itself is applied by its own effect
+    [lat, lng, zoom, interactiveVal, titleVal, marker, wraps]
   );
 
   useEffect(() => {
@@ -355,6 +388,11 @@ export function CoordinatesMapEmbed({
       setMapReady(false);
     };
   }, [initMap, inRange]);
+
+  // A covered right side moves the camera's centre, without rebuilding the map
+  useEffect(() => {
+    if (mapReady) mapRef.current?.setPadding({ right: insetRight ?? 0 });
+  }, [mapReady, insetRight]);
 
   // New data goes into the map it has: the map is built once, not again when the layer arrives or changes
   useEffect(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { levelWord } from "~/lib/qualitative-rating";
 import { ArrowRight, Calendar, EditPencil, Globe, Star, User } from "iconoir-react";
 
 import React from "react";
@@ -74,11 +75,11 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         }}
         aria-label={`${exchange.title}, ${typeConfig.label}, ${statusConfig.label}`}
         aria-pressed={isSelected}
-        className={cn("rounded-card overflow-hidden", isSelected && "ring-tint ring-2")}
+        className={cn("rounded-card overflow-hidden", isSelected && "ring-label/30 ring-1")}
         interactive
       >
         {/* Host → exchange type → participants */}
-        <div className="border-separator bg-fill-3 flex items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="border-separator/60 flex items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <FlagTile
               name={exchange.hostCountry.name}
@@ -159,7 +160,7 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
               </span>
               <span className="flex items-center gap-1">
                 <Star className="h-3 w-3" />
-                <span className="tabular-nums">{exchange.metrics.culturalImpact}% impact</span>
+                <span>{levelWord(exchange.metrics.culturalImpact)} impact</span>
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />

@@ -89,7 +89,15 @@ async function seed(): Promise<void> {
   await db.realmFounder.create({
     data: { realmId: "other", userId: alice.clerkUserId, order: 0, addedBy: bob.clerkUserId },
   });
-  await db.realmClaim.create({ data: { realmId: "other", userId: "alice", status: "pending" } });
+  await db.realmClaim.create({
+    data: { realmId: "other", userId: "alice", status: "pending", permissionNote: "Allowed by X" },
+  });
+  await db.realmClaim.create({
+    data: { realmId: "eurth", userId: "alice", status: "rejected", permissionNote: "Old note" },
+  });
+  await db.realmClaim.create({
+    data: { realmId: "eurth", userId: "bob", status: "pending", permissionNote: "Bob note" },
+  });
 
   await addPersona(db, "p1", alice, "n1", "Alice Persona");
   await db.thinkpagesAccount.update({
@@ -192,6 +200,7 @@ async function seed(): Promise<void> {
     },
   });
   await seedPrivateRows(alice.clerkUserId);
+  await seedMiscRows(alice.clerkUserId);
   await db.activityFeed.create({
     data: {
       type: "post",
@@ -267,6 +276,81 @@ async function seedPrivateRows(aliceClerk: string): Promise<void> {
   await event("ge-shared", "alice");
   await db.generationFavorite.create({ data: { eventId: "ge-own", userId: "alice", name: "A" } });
   await db.generationFavorite.create({ data: { eventId: "ge-shared", userId: "bob", name: "B" } });
+}
+
+async function seedMiscRows(aliceClerk: string): Promise<void> {
+  await db.poll.create({
+    data: {
+      id: "poll-1",
+      question: "Q?",
+      options: { create: [{ id: "opt-1", label: "Yes" }] },
+    },
+  });
+  await db.card.create({
+    data: { id: "card-1", title: "Card 1", rarity: "COMMON", cardType: "LORE", realmId: "other" },
+  });
+  await db.card.create({
+    data: { id: "card-2", title: "Card 2", rarity: "COMMON", cardType: "LORE", realmId: "other" },
+  });
+  for (const uid of ["alice", aliceClerk, "bob"]) {
+    await db.mapEditorSession.create({
+      data: { userId: uid, featureId: `f-${uid}`, sessionData: { v: 1 }, expiresAt: NOW },
+    });
+    await db.pollVote.create({ data: { pollId: "poll-1", optionId: "opt-1", userId: uid } });
+    await db.intelligenceAlertThreshold.create({
+      data: { countryId: `c-${uid}`, userId: uid, alertType: "gdp", metricName: "gdp" },
+    });
+    await db.exchangeWatch.create({
+      data: { userId: uid, subjectKind: "COMPANY", subjectId: `co-${uid}` },
+    });
+    await db.cardCategorySuggestion.create({
+      data: { cardId: "card-1", userId: uid, category: "HISTORY", note: `note-${uid}` },
+    });
+    await db.mapEditRequest.create({
+      data: {
+        countryId: "n2",
+        userId: uid,
+        editType: "city",
+        operation: "create",
+        proposedData: { name: `city-${uid}` },
+        status: "pending",
+      },
+    });
+    await db.loreCardRequest.create({
+      data: { userId: uid, articleTitle: `Art-${uid}`, wikiSource: "ixwiki", status: "PENDING" },
+    });
+    await db.loreCardRequest.create({
+      data: {
+        userId: uid,
+        articleTitle: `Reviewed-${uid}`,
+        wikiSource: "ixwiki",
+        status: "GENERATED",
+        adminNotes: `admin-${uid}`,
+      },
+    });
+  }
+  await db.forumPostReaction.create({ data: { postId: "fp-a", userId: "alice", type: "like" } });
+  await db.forumPostReaction.create({ data: { postId: "fp-b", userId: "alice", type: "like" } });
+  await db.forumPostReaction.create({ data: { postId: "fp-a", userId: "bob", type: "like" } });
+  await db.cardWatchlist.create({ data: { userId: "alice", cardId: "card-1" } });
+  await db.cardWatchlist.create({ data: { userId: "alice", cardId: "card-2" } });
+  await db.cardWatchlist.create({ data: { userId: "bob", cardId: "card-1" } });
+  await db.cardNotificationMute.create({ data: { userId: "alice", cardId: "card-1" } });
+  await db.cardNotificationMute.create({ data: { userId: "alice", cardId: "card-2" } });
+  await db.cardNotificationMute.create({ data: { userId: "bob", cardId: "card-1" } });
+  await db.countryLoreAuthor.create({
+    data: { countryId: "n1", userId: "alice", addedById: "bob" },
+  });
+  await db.countryLoreAuthor.create({
+    data: { countryId: "n2", userId: "alice", addedById: "bob" },
+  });
+  await db.countryLoreAuthor.create({ data: { countryId: "n2", userId: "bob", addedById: "bob" } });
+  db.store.rows("ForumPostReaction").find((r) => r.postId === "fp-b")!.userId = aliceClerk;
+  db.store.rows("CardWatchlist").find((r) => r.cardId === "card-2")!.userId = aliceClerk;
+  db.store.rows("CardNotificationMute").find((r) => r.cardId === "card-2")!.userId = aliceClerk;
+  db.store
+    .rows("CountryLoreAuthor")
+    .find((r) => r.countryId === "n2" && r.userId === "alice")!.userId = aliceClerk;
 }
 
 beforeEach(async () => {
@@ -363,7 +447,11 @@ describe("eraseAccount", () => {
     expect((await db.realm.findUnique({ where: { id: "eurth" } }))?.ownerId).toBe("system");
     expect((await db.country.findUnique({ where: { id: "n2" } }))?.ownerUserId).toBe("bob");
     expect(await db.realmClaim.findMany({ where: { userId: "alice" } })).toMatchObject([
-      { status: "withdrawn" },
+      { status: "withdrawn", permissionNote: null },
+      { status: "rejected", permissionNote: null },
+    ]);
+    expect(await db.realmClaim.findMany({ where: { userId: "bob" } })).toMatchObject([
+      { status: "pending", permissionNote: "Bob note" },
     ]);
     // The user acted for themselves: no notice goes to the account being erased
     expect(notifyRealmFounderChanged).not.toHaveBeenCalled();
@@ -378,6 +466,22 @@ describe("eraseAccount", () => {
     expect((await db.conversationParticipant.findMany({})).map((p) => p.userId)).toEqual([
       "bob-clerk",
     ]);
+  });
+
+  it("removes a conversation the erasure leaves with nobody in it, and keeps the shared and ThinkTank ones", async () => {
+    await db.thinkshareConversation.create({ data: { id: "notes", type: "direct" } });
+    await db.conversationParticipant.create({
+      data: { conversationId: "notes", userId: "alice-clerk" },
+    });
+    await db.thinkshareConversation.create({ data: { id: "tank", type: "group", source: "thinktank" } });
+    await db.conversationParticipant.create({
+      data: { conversationId: "tank", userId: "alice-clerk" },
+    });
+
+    await eraseAccount(db, "alice", deps, NOW);
+
+    const left = (await db.thinkshareConversation.findMany({})).map((c) => c.id).sort();
+    expect(left).toEqual(["c1", "tank"]);
   });
 
   it("erases personal rows keyed on either id, and the social graph both ways", async () => {
@@ -407,6 +511,134 @@ describe("eraseAccount", () => {
     // An event another user favourited stays (deleting it would cascade into their favourite)
     expect((await db.generationEvent.findMany({})).map((e) => e.id)).toEqual(["ge-shared"]);
     expect((await db.generationFavorite.findMany({})).map((f) => f.userId)).toEqual(["bob"]);
+  });
+
+  it("recounts the reactions of every post the user reacted to, leaving other users' reactions in", async () => {
+    await db.forumPost.update({ where: { id: "fp-a" }, data: { reactionCounts: { like: 2 } } });
+    await db.forumPost.update({ where: { id: "fp-b" }, data: { reactionCounts: { like: 1 } } });
+    await eraseAccount(db, "alice", deps, NOW);
+    expect((await db.forumPost.findUnique({ where: { id: "fp-a" } }))?.reactionCounts).toEqual({
+      like: 1,
+    });
+    expect((await db.forumPost.findUnique({ where: { id: "fp-b" } }))?.reactionCounts).toEqual({});
+  });
+
+  it("erases watches, votes, reactions, sessions, thresholds and lore authors under either id, and nulls proposal free text", async () => {
+    await eraseAccount(db, "alice", deps, NOW);
+    expect((await db.mapEditorSession.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.pollVote.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.forumPostReaction.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.intelligenceAlertThreshold.findMany({})).map((r) => r.userId)).toEqual([
+      "bob",
+    ]);
+    expect((await db.cardWatchlist.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.cardNotificationMute.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.exchangeWatch.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect((await db.countryLoreAuthor.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect(
+      (await db.cardCategorySuggestion.findMany({})).map((r) => [r.userId, r.note])
+    ).toEqual([
+      ["alice", null],
+      ["alice-clerk", null],
+      ["bob", "note-bob"],
+    ]);
+    expect(
+      (await db.mapEditRequest.findMany({})).map((r) => [r.userId, r.proposedData])
+    ).toEqual([
+      ["alice", {}],
+      ["alice-clerk", {}],
+      ["bob", { name: "city-bob" }],
+    ]);
+    expect(
+      (await db.loreCardRequest.findMany({})).map((r) => [r.userId, r.status, r.adminNotes])
+    ).toEqual([
+      ["alice", "GENERATED", null],
+      ["alice-clerk", "GENERATED", null],
+      ["bob", "PENDING", null],
+      ["bob", "GENERATED", "admin-bob"],
+    ]);
+  });
+
+  it("rejects the user's pending map edit requests, keeps reviewed ones' status, and leaves other users' alone", async () => {
+    await db.mapEditRequest.create({
+      data: {
+        id: "mer-done",
+        countryId: "n2",
+        userId: "alice",
+        editType: "city",
+        operation: "create",
+        proposedData: { name: "done" },
+        status: "approved",
+      },
+    });
+    await eraseAccount(db, "alice", deps, NOW);
+    const rows = await db.mapEditRequest.findMany({});
+    expect(rows.map((r) => [r.userId, r.status, r.proposedData])).toEqual([
+      ["alice", "rejected", {}],
+      ["alice-clerk", "rejected", {}],
+      ["bob", "pending", { name: "city-bob" }],
+      ["alice", "approved", {}],
+    ]);
+  });
+
+  it("credits map features and uploads to nobody, and drops moderator seats, custom government types and dispute reasons", async () => {
+    const city = { countryId: "n2", name: "C", type: "town", coordinates: [0, 0] };
+    await db.city.create({ data: { ...city, id: "city-a", submittedBy: "alice-clerk" } });
+    await db.city.create({ data: { ...city, id: "city-b", submittedBy: "bob-clerk" } });
+    await db.peak.create({
+      data: {
+        id: "peak-a",
+        countryId: "n2",
+        name: "P",
+        coordinates: [0, 0],
+        elevation: 1,
+        submittedBy: "alice",
+      },
+    });
+    await db.uploadedAsset.create({
+      data: {
+        id: "ua-a",
+        source: "forum",
+        url: "/u/a.png",
+        filePath: "a.png",
+        title: "a",
+        mimeType: "image/png",
+        sizeBytes: 1,
+        uploaderClerkId: "alice-clerk",
+      },
+    });
+    await db.forumCategoryModerator.create({
+      data: { categoryId: "cat-rules", userId: "alice", grantedBy: "bob" },
+    });
+    await db.forumCategoryModerator.create({
+      data: { categoryId: "cat-rules", userId: "bob", grantedBy: "bob" },
+    });
+    await db.customGovernmentType.create({ data: { userId: "alice", customTypeName: "Moot" } });
+    await db.contract.create({
+      data: {
+        id: "k1",
+        type: "SUPPLY",
+        title: "T",
+        sectorKey: "energy",
+        value: 1n,
+        endIxTime: 1,
+        createdIxTime: 0,
+        disputedByUserId: "alice",
+        disputeReason: "They cheated",
+      },
+    });
+    await eraseAccount(db, "alice", deps, NOW);
+    expect((await db.city.findMany({})).map((r) => [r.id, r.submittedBy])).toEqual([
+      ["city-a", "erased:alice"],
+      ["city-b", "bob-clerk"],
+    ]);
+    expect((await db.peak.findMany({})).map((r) => r.submittedBy)).toEqual(["erased:alice"]);
+    expect((await db.uploadedAsset.findMany({})).map((r) => r.uploaderClerkId)).toEqual([null]);
+    expect((await db.forumCategoryModerator.findMany({})).map((r) => r.userId)).toEqual(["bob"]);
+    expect(await db.customGovernmentType.findMany({})).toEqual([]);
+    expect((await db.contract.findMany({})).map((r) => [r.disputedByUserId, r.disputeReason])).toEqual(
+      [["alice", null]]
+    );
   });
 
   it("renames personal personas and retires nation personas without renaming them", async () => {

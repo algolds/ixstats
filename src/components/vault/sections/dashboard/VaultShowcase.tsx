@@ -8,18 +8,16 @@ import { Button, focusRing } from "~/components/ui/button";
 import { Card, CardDescription, CardTitle } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { useCardSheet } from "~/hooks/useCardSheet";
 import { DISPLAY_SIZE } from "~/lib/cards/face/showcase-limits";
-import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
+import { CARD_HUB_PATHS, STORE_PATH } from "~/lib/cards/hub-routes";
 import { IconWell } from "./IconWell";
 import { cn } from "~/lib/utils/cn";
 import { springGentle, tweenFast } from "~/lib/design/motion";
 
-const MY_PACKS_HREF = "/vault/store?view=my-packs";
-// The pack and Explore tiles are the size of an M face (`w-48` at 5:7), so the strip is even.
+// The pack and Explore tiles match the M card face (`w-48` at 5:7), keeping the pass shelf uniform.
 const TILE_BOX = "aspect-[5/7] w-48 shrink-0";
 
 interface WaitingPack {
@@ -31,7 +29,7 @@ interface WaitingPack {
 
 function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
   return (
-    <Link href={MY_PACKS_HREF} className={cn(focusRing, "rounded-row block snap-start", TILE_BOX)}>
+    <Link href={STORE_PATH} className={cn(focusRing, "rounded-row block snap-start", TILE_BOX)}>
       <Card
         interactive
         padding="sm"
@@ -48,7 +46,7 @@ function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
           />
         </div>
         <div className="flex max-w-full min-w-0 flex-col gap-0.5">
-          <span className="text-callout">
+          <span className="text-callout tabular-nums">
             {count.toLocaleString()} {count === 1 ? "pack" : "packs"} waiting
           </span>
           <span className="text-footnote text-label-secondary truncate">{pack.name}</span>
@@ -58,7 +56,7 @@ function PackTile({ count, pack }: { count: number; pack: WaitingPack }) {
   );
 }
 
-/** Ends a short strip: a quiet tile, the size of a card, that points to where more cards come from. */
+/** Ends a short pass shelf with a quiet card-sized tile pointing to Explore. */
 function MoreCardsTile() {
   return (
     <Link
@@ -70,11 +68,10 @@ function MoreCardsTile() {
         padding="sm"
         className="flex h-full flex-col items-center justify-center gap-2 text-center"
       >
-        <TextureOverlay texture="grid" className="[--facet-texture-color:var(--tint)]" />
         <IconWell className="size-10 [&_svg]:size-5">
           <Search />
         </IconWell>
-        <span className="relative flex flex-col gap-0.5">
+        <span className="flex flex-col gap-0.5">
           <span className="text-callout">Find more cards</span>
           <span className="text-footnote text-label-secondary">Every realm's cards in Explore</span>
         </span>
@@ -87,15 +84,15 @@ function ShowcaseSkeleton() {
   return (
     <div className="flex gap-3 overflow-x-auto">
       {Array.from({ length: DISPLAY_SIZE }, (_, i) => (
-        <Skeleton key={i} className={cn("rounded-card", TILE_BOX)} />
+        <Skeleton key={i} className={cn("rounded-row", TILE_BOX)} />
       ))}
     </div>
   );
 }
 
 /**
- * The player's display: their pinned showcase, else their most valuable cards, as card faces that open the sheet,
- * and while any wait, their unopened packs.
+ * Collectible pass shelf: the player's pinned showcase or highest-value cards as interactive
+ * `CardFace` passes, plus a waiting-pack tile whenever unopened packs are in the Store.
  */
 export function VaultShowcase() {
   const reduceMotion = useReducedMotion();
@@ -108,16 +105,14 @@ export function VaultShowcase() {
   const waiting = packs.data?.packs ?? [];
   const firstPack = waiting[0]?.pack;
   const hasCards = faces.length > 0;
-  // Without cards, the packs decide what there is to show: wait for them, and never call the
-  // collection empty when they could not be read.
+  // Without cards, wait for unopened packs before calling the shelf empty.
   const unavailable = display.isError || (!hasCards && packs.isError);
   const loading = display.isLoading || (!hasCards && packs.isLoading);
   const empty = !hasCards && !firstPack;
 
   return (
     <Card content="collectible" padding="md" data-slot="vault-showcase" className="overflow-hidden">
-      <TextureOverlay texture="paperGrain" />
-      <div className="relative mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <div className="min-w-0 space-y-1">
           <CardTitle icon={<MultiplePages />}>Showcase</CardTitle>
           {hasCards && (
@@ -133,10 +128,12 @@ export function VaultShowcase() {
           )}
         </div>
         <Button asChild variant="ghost" size="sm">
-          <Link href={CARD_HUB_PATHS.mine}>All cards</Link>
+          <Link href={pinned ? CARD_HUB_PATHS.sets : CARD_HUB_PATHS.mine}>
+            {pinned ? "Manage showcase" : "Open my cards"}
+          </Link>
         </Button>
       </div>
-      <div className="relative">
+      <div>
         {unavailable ? (
           <p className="text-footnote text-label-secondary">Your showcase is unavailable</p>
         ) : loading ? (

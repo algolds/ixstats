@@ -6,6 +6,7 @@
  */
 
 import type { PrismaClient } from "@prisma/client";
+import type { ThinkPagesMessageEvent } from "~/lib/websocket/thinkpages-types";
 
 export const DEFAULT_USER_MESSAGE_CAP = 1000;
 /** Most people a group conversation holds, its creator included (creating and adding). */
@@ -13,7 +14,15 @@ export const MAX_GROUP_PARTICIPANTS = 50;
 /** Longest message body, the same as a ThinkPages post. */
 export const MAX_MESSAGE_LENGTH = 10_000;
 
-export type MessageSource = "thinkshare" | "thinktank" | "diplomatic" | "wiki" | "forum" | "system";
+export type MessageSource =
+  | "thinkshare"
+  | "thinktank"
+  | "diplomatic"
+  | "wiki"
+  | "forum"
+  | "system"
+  | "sports"
+  | "lorebot";
 
 export type MessageFolder =
   | "inbox"
@@ -37,39 +46,35 @@ export interface UserAccount {
   username: string;
   displayName: string;
   profileImageUrl: string | null;
+  /** The player's nation flag and name (null for a player with no nation). */
+  countryFlag: string | null;
+  countryName: string | null;
+  country: { flag: string | null; name: string } | null;
   accountType: "country";
 }
 
+/** What the service asks of the notification API (a new-message notice to one user). */
 export interface NotificationCollaborator {
   create(data: {
     userId: string;
-    type?: string;
-    actorId?: string | null;
-    entityId?: string | null;
-    entityType?: string | null;
-    message?: string | null;
-    title?: string | null;
-    link?: string | null;
-    href?: string | null;
-    category?: string;
-    priority?: string;
-    metadata?: any;
-    source?: string;
-    actionable?: boolean;
-  }): Promise<any>;
+    type: "info";
+    category: "social";
+    priority: "low";
+    title: string;
+    message: string;
+    href: string;
+  }): Promise<unknown>;
 }
 
 export interface WebSocketCollaborator {
-  broadcastMessage?(payload: any): void;
-  broadcastToUsers?(userIds: string[], event: string, payload: any): void;
+  /** Delivers the event to the sockets of `event.recipientIds` in the conversation's room. */
+  broadcastMessage?(event: ThinkPagesMessageEvent): void;
   /** Takes a user's sockets out of a conversation room they left or declined. */
   evictFromRoom?(event: { type: "room:evict"; clerkUserId: string; conversationId: string }): void;
 }
 
 export interface BridgeCollaborator {
-  syncInbound?(actorId: string, db: any): Promise<any>;
-  postOutbound?(data: any): Promise<any>;
-  sendOutbound?(sourceId: string, content: string, principalId: string, db: any): Promise<any>;
+  syncInbound?(actorId: string, db: PrismaClient): Promise<unknown>;
 }
 
 export interface TelemetryPayload {
@@ -85,10 +90,10 @@ export interface TelemetryLogger {
 }
 
 export interface MessagingDependencies {
-  db: PrismaClient | any;
-  notifications?: NotificationCollaborator | any;
-  websocket?: WebSocketCollaborator | any | null;
-  wikiBridge?: BridgeCollaborator | any;
+  db: PrismaClient;
+  notifications?: NotificationCollaborator;
+  websocket?: WebSocketCollaborator | null;
+  wikiBridge?: BridgeCollaborator;
   telemetry?: TelemetryLogger;
 }
 
@@ -115,26 +120,29 @@ export interface CreateConversationInput {
   diplomaticClassification?: "PUBLIC" | "RESTRICTED" | "CONFIDENTIAL" | "SECRET" | "TOP_SECRET";
   priority?: "LOW" | "NORMAL" | "HIGH" | "URGENT" | "CRITICAL";
   channelType?: "BILATERAL" | "MULTILATERAL" | "EMERGENCY";
+  /** The caller is an administrator (the router decides): only they may start an "official" conversation. */
+  actorIsAdmin?: boolean;
+}
+
+export interface MessageAttachment {
+  type: string;
+  url: string;
+  filename?: string;
+  size?: number;
 }
 
 export interface SendMessageInput {
   conversationId: string;
   content: string;
   replyToId?: string;
-  attachments?: any[];
-  source?: MessageSource;
+  attachments?: MessageAttachment[];
+  messageType?: "text" | "image" | "file";
+  /** Clerk ids the message mentions; only people in the conversation are kept. */
+  mentions?: string[];
+  /** Kept only in a diplomatic conversation. */
+  classification?: string;
+  priority?: string;
   subject?: string;
-  // Diplomatic metadata fields
-  senderCountryId?: string;
-  senderCountryName?: string;
-  senderCountryFlag?: string;
-  recipientCountryId?: string;
-  recipientCountryName?: string;
-  recipientCountryFlag?: string;
-  diplomaticType?: string;
-  importance?: string;
-  title?: string;
-  metadata?: any;
 }
 
 export interface EditMessageInput {
@@ -174,6 +182,12 @@ export interface LeaveConversationInput {
 export interface RespondToRequestInput {
   conversationId: string;
   accept: boolean;
+}
+
+export interface SetConversationPreferencesInput {
+  conversationId: string;
+  muted?: boolean;
+  archived?: boolean;
 }
 
 export interface SearchUsersInput {

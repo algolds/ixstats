@@ -22,6 +22,8 @@ import {
 } from "~/components/ui/sheet";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { levelWord } from "~/lib/qualitative-rating";
 import { IDEOLOGY_OPTIONS } from "./ideologies";
 import { RepealPolicyButton } from "./RepealPolicyButton";
 
@@ -34,15 +36,15 @@ interface BillsPanelProps {
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   in_committee: {
     label: "In committee",
-    className: "bg-yellow/10 text-yellow-ink border-0",
+    className: "bg-warning/10 text-warning-ink border-0",
   },
   active: {
     label: "Passed",
-    className: "bg-green/10 text-green-ink border-0",
+    className: "bg-success/10 text-success-ink border-0",
   },
   rejected: {
     label: "Rejected",
-    className: "bg-red/10 text-red-ink border-0",
+    className: "bg-destructive/10 text-destructive-ink border-0",
   },
   repealed: {
     label: "Repealed",
@@ -55,8 +57,8 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 };
 
 const VOTE_ICON = {
-  yes: <Check className="text-green h-3 w-3" />,
-  no: <X className="text-red h-3 w-3" />,
+  yes: <Check className="text-success h-3 w-3" />,
+  no: <X className="text-destructive h-3 w-3" />,
   abstain: <Minus className="text-label-secondary h-3 w-3" />,
 } as const;
 
@@ -72,21 +74,23 @@ function WhipCount({ billId }: { billId: string }) {
     w.level === "greyed"
       ? "text-label-tertiary"
       : w.verdict === "pass" || w.verdict === "leaning_pass"
-        ? "text-green"
+        ? "text-success"
         : w.verdict === "too_close"
-          ? "text-yellow"
-          : "text-red";
+          ? "text-warning"
+          : "text-destructive";
   return (
-    <div className="rounded-control-sm bg-surface-secondary p-2">
+    <Card variant="well" padding="sm">
       <p className="text-caption flex items-center gap-2 font-semibold">
         <Gavel aria-hidden className="text-label-secondary h-3 w-3" /> Whip count
-        <span className="text-label-tertiary ml-auto font-normal">standing {data.standing}%</span>
+        <span className="text-label-tertiary ml-auto font-normal">
+          standing {levelWord(data.standing).toLowerCase()}
+        </span>
       </p>
       <p className={`text-footnote mt-1 ${color}`}>
         {w.caption}
         {w.yesSeats != null ? ` (${w.yesSeats}–${w.noSeats})` : ""}
       </p>
-    </div>
+    </Card>
   );
 }
 
@@ -125,32 +129,34 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
-      >
-        <div className="flex items-center gap-3">
-          <div>
-            <h4 className="text-headline">Bills before the legislature</h4>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              {bills && bills.length > 0
-                ? `${committeeCount} pending, ${activeCount} passed`
-                : "No bills proposed"}
-            </p>
+      <Card content="data" padding="none">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(true)}
+          className="h-auto w-full justify-between px-4 py-3.5 text-left whitespace-normal"
+        >
+          <div className="flex items-center gap-3">
+            <div>
+              <h4 className="text-label text-headline">Bills before the legislature</h4>
+              <p className="text-label-secondary text-footnote mt-0.5">
+                {bills && bills.length > 0
+                  ? `${committeeCount} pending, ${activeCount} passed`
+                  : "No bills proposed"}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {committeeCount > 0 && (
-            <Badge variant="warning" className="font-semibold">
-              {committeeCount} pending
-            </Badge>
-          )}
-          <ChevronRight className="text-label-secondary h-4 w-4" />
-        </div>
-      </Button>
+          <div className="flex items-center gap-2">
+            {committeeCount > 0 && (
+              <Badge variant="secondary" className="font-medium">
+                {committeeCount} pending
+              </Badge>
+            )}
+            <ChevronRight className="text-label-secondary h-4 w-4" />
+          </div>
+        </Button>
+      </Card>
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
@@ -236,21 +242,18 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             )}
 
             {bills && bills.length > 0 ? (
-              <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
+              <div className="border-separator/60 divide-separator/60 rounded-row divide-y border">
                 {bills.map((bill) => {
                   const statusMeta = STATUS_BADGE[bill.status] ?? STATUS_BADGE.in_committee!;
                   const result = bill.meta?.voteResult;
                   const isBillExpanded = expanded === bill.id;
                   return (
-                    <div
-                      key={bill.id}
-                      className="bg-fill-4 border-separator rounded-row border p-3"
-                    >
+                    <div key={bill.id} className="p-3">
                       <div className="flex items-center justify-between gap-2">
                         <button
                           type="button"
                           aria-expanded={isBillExpanded}
-                          className="text-body hover:text-tint min-w-0 flex-1 truncate text-left font-medium transition-colors"
+                          className="text-label text-body min-w-0 flex-1 truncate text-left font-medium hover:underline"
                           onClick={() => setExpanded(isBillExpanded ? null : bill.id)}
                         >
                           {bill.name}
@@ -288,7 +291,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                         </div>
                       </div>
                       {isBillExpanded && (
-                        <div className="text-label-secondary border-separator text-footnote mt-2 space-y-2 border-t pt-2">
+                        <div className="text-label-secondary border-separator/60 text-footnote mt-2 space-y-2 border-t pt-2">
                           <p>{bill.description}</p>
                           {bill.gdpEffect !== 0 && (
                             <p className="font-semibold">
@@ -298,12 +301,12 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
-                            <Card variant="well" padding="none" className="space-y-1 p-2">
+                            <div className="border-separator/60 space-y-1 border-t pt-2">
                               <p className="text-label text-caption mb-1">Floor vote breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div
                                   key={pv.partyId}
-                                  className="border-separator flex items-center justify-between gap-2 border-b py-0.5 last:border-b-0"
+                                  className="border-separator/50 flex items-center justify-between gap-2 border-b py-0.5 last:border-b-0"
                                 >
                                   <div className="flex min-w-0 items-center gap-2">
                                     {VOTE_ICON[pv.vote]}
@@ -316,7 +319,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                                   </span>
                                 </div>
                               ))}
-                            </Card>
+                            </div>
                           )}
                         </div>
                       )}
@@ -325,10 +328,12 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                 })}
               </div>
             ) : (
-              <div className="text-label-secondary flex flex-col items-center justify-center gap-2 py-8 text-center">
-                <p className="text-body">No bills before the legislature</p>
-                {canManage && <p className="text-footnote">Draft a bill and call it to a vote.</p>}
-              </div>
+              <EmptyState
+                compact
+                icon={<Gavel />}
+                title="No bills before the legislature"
+                message={canManage ? "Draft a bill and call it to a vote." : undefined}
+              />
             )}
           </div>
         </SheetContent>

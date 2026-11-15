@@ -89,7 +89,7 @@ export const Stat = React.forwardRef<HTMLDivElement, StatProps>(
       <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         <span
           data-slot="stat-value"
-          className={cn("text-tint min-w-0 truncate tabular-nums", VALUE_SIZE[size])}
+          className={cn("text-label min-w-0 truncate tabular-nums", VALUE_SIZE[size])}
         >
           {value}
         </span>

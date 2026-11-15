@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useNotify } from "~/hooks/useNotify";
-import { setPlayAsCookie } from "./play-as-cookie";
+import { setPlayAsCookie } from "~/lib/auth/play-as-cookie";
 
 const STORAGE_KEY = "ixstats.play_as_user";
 const CHANGE_EVENT = "ixstats-play-as-change";

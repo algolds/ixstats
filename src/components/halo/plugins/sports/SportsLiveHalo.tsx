@@ -9,16 +9,20 @@
  */
 
 import React, { useEffect, useMemo, useState } from "react";
-import { AntennaSignal as Radio } from "iconoir-react";
+import { AntennaSignal as Radio, Trophy } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import { computeLiveMatchState } from "~/lib/sports/live-match";
-import type { DIViewProps } from "~/components/halo/types";
+import { HaloEmpty, HaloViewHeader, HaloWell } from "~/components/halo/views/shared/HaloViewParts";
+import type { DIViewProps, PluginCommand } from "~/components/halo/types";
 
 type LiveActivityMatch = RouterOutputs["sports"]["getLiveActivities"][number];
+interface SportsLiveContext {
+  match?: LiveActivityMatch | null;
+}
 
 const ACCENT = "var(--color-red)"; // live red
 
@@ -28,27 +32,29 @@ function shortFor(t: { name: string; shortName?: string | null }): string {
 
 /** Recompute live state once per second off the real clock. */
 function useLiveMatchState(match: LiveActivityMatch | null) {
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const matchId = match?.matchId;
   useEffect(() => {
-    // oxlint-disable-next-line
-    if (!match) return;
-    const id = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [match?.matchId]);
+    if (matchId === undefined) return;
+    const tick = () => setNow(Date.now());
+    // Catch up at once: the clock sat idle while no match was live.
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [matchId]);
 
-  return useMemo(() => {
-    if (!match) return null;
-    return computeLiveMatchState({
-      trace: match.trace,
-      resolvedIxTime: match.resolvedIxTime,
-      nowMs: Date.now(),
-      windowMs: match.windowMs,
-      finalHomeScore: match.finalHomeScore,
-      finalAwayScore: match.finalAwayScore,
-    });
-    // tick drives the recompute
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, tick]);
+  if (!match) return null;
+  return computeLiveMatchState({
+    trace: match.trace,
+    resolvedIxTime: match.resolvedIxTime,
+    nowMs: now,
+    windowMs: match.windowMs,
+    finalHomeScore: match.finalHomeScore,
+    finalAwayScore: match.finalAwayScore,
+  });
 }
 
 function LivePill({ match }: { match: LiveActivityMatch }) {
@@ -67,30 +73,38 @@ function LivePill({ match }: { match: LiveActivityMatch }) {
   );
 }
 
-function SportsLiveView({ context }: DIViewProps) {
-  const match = ((context as any)?.match ?? null) as LiveActivityMatch | null;
+function SportsLiveView({ onClose, context }: DIViewProps<unknown, SportsLiveContext>) {
+  const match = context?.match ?? null;
   const state = useLiveMatchState(match);
   if (!match || !state) {
-    return <div className="text-label-secondary text-body p-6 text-center">No live match.</div>;
+    return (
+      <div className="space-y-3 p-3">
+        <HaloViewHeader
+          leading={<Radio className="text-red size-4 shrink-0" aria-hidden />}
+          title="Live match"
+          onClose={onClose}
+        />
+        <HaloWell>
+          <HaloEmpty title="No live match." />
+        </HaloWell>
+      </div>
+    );
   }
 
   return (
-    <div className="relative overflow-hidden p-5">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          background: `linear-gradient(135deg, ${match.homeTeam.color}25, transparent, ${match.awayTeam.color}25)`,
-        }}
-      />
-      <div className="relative z-10 space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
-            <Radio className="h-2.5 w-2.5" />
+    <div className="space-y-3 p-3">
+      <HaloViewHeader
+        leading={<Radio className="text-red size-4 shrink-0" aria-hidden />}
+        title={match.leagueName}
+        trailing={
+          <span className="bg-red text-caption text-on-red flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold">
             {state.isFinal ? "Full time" : "Live"}
           </span>
-          <span className="text-label-secondary text-footnote truncate">{match.leagueName}</span>
-        </div>
+        }
+        onClose={onClose}
+      />
 
+      <HaloWell className="space-y-4">
         <div className="flex items-center justify-around">
           <TeamBadge team={match.homeTeam} />
           <div className="space-y-1 text-center">
@@ -107,7 +121,7 @@ function SportsLiveView({ context }: DIViewProps) {
         </div>
 
         {/* Broadcast progress */}
-        <div className="bg-fill-4 h-1 overflow-hidden rounded-full">
+        <div className="bg-fill-3 h-1 overflow-hidden rounded-full">
           <div
             className="bg-red h-full rounded-full"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
@@ -117,7 +131,7 @@ function SportsLiveView({ context }: DIViewProps) {
         <p className="text-label-secondary text-footnote min-h-[2rem] leading-relaxed italic">
           {state.lastEvent?.description ?? "Kickoff. The match is underway."}
         </p>
-      </div>
+      </HaloWell>
     </div>
   );
 }
@@ -127,13 +141,48 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
     <div className="flex w-1/3 flex-col items-center text-center">
       <div
         className="text-caption flex h-9 w-9 items-center justify-center rounded-full font-semibold"
-        style={{ backgroundColor: `${team.color}20`, border: `2px solid ${team.color}` }}
+        style={{
+          backgroundColor: `color-mix(in srgb, ${team.color} 12%, transparent)`,
+          border: `2px solid ${team.color}`,
+        }}
       >
         {shortFor(team)}
       </div>
       <p className="text-caption mt-2 max-w-full truncate font-semibold">{team.name}</p>
     </div>
   );
+}
+
+export function sportsLiveCommandsForMatch(
+  match: Pick<LiveActivityMatch, "leagueName" | "homeTeam" | "awayTeam">
+): PluginCommand[] {
+  return [
+    {
+      key: "watch-live",
+      title: `Watch live: ${shortFor(match.homeTeam)} vs ${shortFor(match.awayTeam)}`,
+      description: `${match.leagueName} · Live broadcast`,
+      keywords: [
+        "live",
+        "match",
+        "score",
+        "scoreboard",
+        "watch",
+        match.homeTeam.name.toLowerCase(),
+        match.awayTeam.name.toLowerCase(),
+        match.leagueName.toLowerCase(),
+      ],
+      icon: Radio,
+      pluginView: "sports-live",
+    },
+    {
+      key: "league-standings",
+      title: `Open ${match.leagueName} standings`,
+      description: "MyLeague table, fixtures, and results",
+      keywords: ["standings", "league", "myleague", match.leagueName.toLowerCase()],
+      icon: Trophy,
+      path: "/myleague",
+    },
+  ];
 }
 
 /** Registers the plugin for as long as it's mounted (i.e. while a match is live). */
@@ -144,8 +193,8 @@ function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
       priority: 100, // a live activity takes over the island, like iOS
       center: <LivePill match={match} />,
       expandedViews: { "sports-live": SportsLiveView },
+      commands: sportsLiveCommandsForMatch(match),
       accentColor: ACCENT,
-      stickyLabel: "Live",
       badge: { color: ACCENT },
       context: { match },
     }),
@@ -157,10 +206,12 @@ function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
 
 export function SportsLiveHalo() {
   const { isSignedIn } = useUser();
-  const refetchInterval = useVisibleRefetch(30_000);
+  // Poll fast only while a match is live; the visibility hook pauses it entirely in a hidden tab
+  const visibleInterval = useVisibleRefetch(30_000);
   const { data } = api.sports.getLiveActivities.useQuery(undefined, {
     enabled: isSignedIn,
-    refetchInterval,
+    refetchInterval: (query) =>
+      visibleInterval === false ? false : query.state.data?.length ? 30_000 : 120_000,
     refetchOnWindowFocus: true,
   });
 
@@ -169,5 +220,3 @@ export function SportsLiveHalo() {
   if (!match) return null;
   return <ActiveSportsLiveHalo match={match} />;
 }
-
-// Backwards compatibility alias

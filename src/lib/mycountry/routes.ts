@@ -33,22 +33,20 @@ export function economyTabHref(tab: EconomyTab): string {
   return `/mycountry/economy?tab=${tab}`;
 }
 
-/** The National budget console. */
-export const MYCOUNTRY_BUDGET_PATH = economyTabHref("budget");
-/** The tax rates console, where tax rates are set. */
-export const MYCOUNTRY_TAX_PATH = economyTabHref("taxes");
-/** The Politics section, which opens on the cabinet. */
-export const MYCOUNTRY_CABINET_PATH = "/mycountry/politics";
-/** The nation's map editor, where cities (the capital among them) are placed. */
-export const MYCOUNTRY_MAP_EDITOR_PATH = "/mycountry/map-editor";
-
-/** The country editor: identity, government and size, each section saved on its own. */
-export const MYCOUNTRY_EDITOR_PATH = "/mycountry/editor";
-
 /**
- * Editor anchors: the four groups (`identity`, `government`, `size`, `elsewhere`) and the
- * sections inside them.
+ * Editor panes in the Country Editor Facet Studio, plus legacy and sub-section `#hash` anchors
+ * that resolve into those panes.
  */
+export const EDITOR_PANES = [
+  "identity",
+  "constitution",
+  "cabinet",
+  "scale",
+  "taxes",
+  "budget",
+] as const;
+export type EditorPane = (typeof EDITOR_PANES)[number];
+
 export const EDITOR_ANCHORS = [
   "identity",
   "name",
@@ -56,39 +54,92 @@ export const EDITOR_ANCHORS = [
   "language",
   "culture",
   "civic",
+  "constitution",
   "government",
   "form",
+  "legislature",
   "institutions",
+  "cabinet",
+  "parties",
+  "scale",
   "size",
   "population",
   "figures",
+  "taxes",
+  "trade",
+  "tariffs",
+  "budget",
   "elsewhere",
   "consoles",
 ] as const;
 export type EditorAnchor = (typeof EDITOR_ANCHORS)[number];
 
-/** The editor opened at one group or section ("/mycountry/editor#government"). */
+const ANCHOR_TO_PANE: Record<EditorAnchor, EditorPane> = {
+  identity: "identity",
+  name: "identity",
+  symbols: "identity",
+  language: "identity",
+  culture: "identity",
+  civic: "identity",
+  constitution: "constitution",
+  government: "constitution",
+  form: "constitution",
+  legislature: "constitution",
+  institutions: "constitution",
+  cabinet: "cabinet",
+  parties: "cabinet",
+  scale: "scale",
+  size: "scale",
+  population: "scale",
+  figures: "scale",
+  taxes: "taxes",
+  trade: "taxes",
+  tariffs: "taxes",
+  budget: "budget",
+  elsewhere: "taxes",
+  consoles: "taxes",
+};
+
+/** Resolves any `#hash` or section id to its owning Country Editor studio pane. */
+export function resolveEditorPane(anchor: string | null | undefined): EditorPane {
+  if (!anchor) return "identity";
+  const clean = anchor.replace(/^#/, "");
+  return ANCHOR_TO_PANE[clean as EditorAnchor] ?? "identity";
+}
+
+/** The country editor: identity, constitution, cabinet, scale, taxes and budget. */
+export const MYCOUNTRY_EDITOR_PATH = "/mycountry/editor";
+
+/** The editor opened at one pane or section ("/mycountry/editor#taxes"). */
 export function editorHref(anchor: EditorAnchor): string {
   return `${MYCOUNTRY_EDITOR_PATH}#${anchor}`;
 }
+
+/** The National budget studio pane in the country editor. */
+export const MYCOUNTRY_BUDGET_PATH = editorHref("budget");
+/** The tax rates studio pane in the country editor. */
+export const MYCOUNTRY_TAX_PATH = editorHref("taxes");
+/** The cabinet studio pane in the country editor. */
+export const MYCOUNTRY_CABINET_PATH = editorHref("cabinet");
+/** The nation's map editor, where cities (the capital among them) are placed. */
+export const MYCOUNTRY_MAP_EDITOR_PATH = "/mycountry/map-editor";
 
 /** The Economy section, which opens on its overview. */
 export const MYCOUNTRY_ECONOMY_PATH = "/mycountry/economy";
 
 /**
- * Where the profile checklist's Review goes for its first incomplete section: identity and the
- * form of government are edited in the editor, departments and allocations in the Budget tab, tax
- * rates in the Taxes tab.
+ * Where the profile checklist's Review goes for its first incomplete section: every nation setup
+ * step lives in `/mycountry/editor` on its corresponding studio pane.
  */
 export function complianceReviewHref(
   section: { id: string; missing: readonly string[] } | undefined
 ): string {
   switch (section?.id) {
     case "government": {
-      const needsEditor = section.missing.some(
+      const needsConstitution = section.missing.some(
         (item) => item === COMPLIANCE_GOVERNMENT_TYPE || item === COMPLIANCE_NO_GOVERNMENT
       );
-      return needsEditor ? editorHref("government") : MYCOUNTRY_BUDGET_PATH;
+      return needsConstitution ? editorHref("constitution") : MYCOUNTRY_BUDGET_PATH;
     }
     case "taxes":
       return MYCOUNTRY_TAX_PATH;

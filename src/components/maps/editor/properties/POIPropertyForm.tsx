@@ -1,44 +1,38 @@
 "use client";
 import React from "react";
+import { NavArrowDown } from "iconoir-react";
 import type { POIFormData } from "~/hooks/useMapEditor";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import { CoordinatePicker } from "./CoordinatePicker";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { POI_CATEGORY_OPTIONS } from "../optionLists";
-import {
-  Field,
-  inputClasses,
-  SubdivisionSelect,
-  WikiLinkField,
-  type PointFormProps,
-} from "./fields";
+import { Field, SubdivisionSelect, WikiLinkField, type PointFormProps } from "./fields";
 
 const POI_ICONS = [
-  { value: "castle", emoji: "\u{1F3F0}", label: "Castle" },
-  { value: "church", emoji: "\u26EA", label: "Church" },
-  { value: "mosque", emoji: "\u{1F54C}", label: "Mosque" },
-  { value: "temple", emoji: "\u26E9\uFE0F", label: "Temple" },
-  { value: "monument", emoji: "\u{1F5FD}", label: "Monument" },
-  { value: "ruins", emoji: "\u{1F3DB}\uFE0F", label: "Ruins" },
-  { value: "mountain", emoji: "\u26F0\uFE0F", label: "Mountain" },
-  { value: "volcano", emoji: "\u{1F30B}", label: "Volcano" },
-  { value: "forest", emoji: "\u{1F332}", label: "Forest" },
-  { value: "lake", emoji: "\u{1F4A7}", label: "Lake" },
-  { value: "port", emoji: "\u2693", label: "Port" },
-  { value: "fortress", emoji: "\u{1F3EF}", label: "Fortress" },
-  { value: "university", emoji: "\u{1F393}", label: "University" },
-  { value: "factory", emoji: "\u{1F3ED}", label: "Factory" },
-  { value: "mine", emoji: "\u26CF\uFE0F", label: "Mine" },
-  { value: "bridge", emoji: "\u{1F309}", label: "Bridge" },
-  { value: "lighthouse", emoji: "\u{1F5FC}", label: "Lighthouse" },
-  { value: "stadium", emoji: "\u{1F3DF}\uFE0F", label: "Stadium" },
-  { value: "museum", emoji: "\u{1F3DB}\uFE0F", label: "Museum" },
-  { value: "palace", emoji: "\u{1F451}", label: "Palace" },
+  { value: "castle", label: "Castle" },
+  { value: "church", label: "Church" },
+  { value: "mosque", label: "Mosque" },
+  { value: "temple", label: "Temple" },
+  { value: "monument", label: "Monument" },
+  { value: "ruins", label: "Ruins" },
+  { value: "mountain", label: "Mountain" },
+  { value: "volcano", label: "Volcano" },
+  { value: "forest", label: "Forest" },
+  { value: "lake", label: "Lake" },
+  { value: "port", label: "Port" },
+  { value: "fortress", label: "Fortress" },
+  { value: "university", label: "University" },
+  { value: "factory", label: "Factory" },
+  { value: "mine", label: "Mine" },
+  { value: "bridge", label: "Bridge" },
+  { value: "lighthouse", label: "Lighthouse" },
+  { value: "stadium", label: "Stadium" },
+  { value: "museum", label: "Museum" },
+  { value: "palace", label: "Palace" },
 ];
 
-const POI_ICON_OPTIONS = [
-  { value: "", label: "Icon (auto)" },
-  ...POI_ICONS.map((ic) => ({ value: ic.value, label: `${ic.emoji} ${ic.label}` })),
-];
+const POI_ICON_OPTIONS = [{ value: "", label: "Icon (auto)" }, ...POI_ICONS];
 
 const IMPORTANCE_OPTIONS = [
   { value: "0", label: "Normal (Standard marker)" },
@@ -57,12 +51,12 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
 }: PointFormProps<POIFormData>) {
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="Name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
       <OptionSelect
@@ -88,12 +82,12 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
           setIsPickingLocation={setIsPickingLocation}
         />
       )}
-      <textarea
+      <Textarea
         placeholder="Description (optional)"
         value={form.description ?? ""}
         onChange={(e) => onChange({ ...form, description: e.target.value })}
         rows={2}
-        className={inputClasses}
+        className="text-footnote min-h-16 px-2.5 py-2"
       />
       <WikiLinkField
         form={form}
@@ -107,16 +101,14 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
       />
 
       <details className="border-separator bg-fill-4 group rounded-control border p-2">
-        <summary className="text-label-secondary hover:text-label text-caption flex cursor-pointer items-center justify-between font-semibold select-none">
-          <span>Historical Story & Lore (Optional)</span>
-          <span className="text-label-secondary text-footnote transition-transform group-open:rotate-180">
-            &#9660;
-          </span>
+        <summary className="text-label-secondary hover:text-label text-caption flex cursor-pointer items-center justify-between font-medium select-none">
+          <span>Historical story & lore (optional)</span>
+          <NavArrowDown className="text-label-secondary h-3.5 w-3.5 transition-transform group-open:rotate-180" />
         </summary>
-        <div className="border-separator mt-2 space-y-2 border-t pt-1">
+        <div className="border-separator mt-2 space-y-2 border-t pt-2">
           <div className="grid grid-cols-2 gap-2">
-            <Field label="IxTime Year">
-              <input
+            <Field label="IxTime year">
+              <Input
                 type="number"
                 placeholder="e.g. 1420"
                 value={form.ixTimeYear ?? ""}
@@ -126,16 +118,16 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
                     ixTimeYear: e.target.value === "" ? undefined : parseInt(e.target.value, 10),
                   })
                 }
-                className={inputClasses}
+                className="text-footnote h-8 px-2.5 tabular-nums"
               />
             </Field>
             <Field label="Era label">
-              <input
+              <Input
                 type="text"
                 placeholder="e.g. Bronze Age"
                 value={form.eraLabel ?? ""}
                 onChange={(e) => onChange({ ...form, eraLabel: e.target.value || undefined })}
-                className={inputClasses}
+                className="text-footnote h-8 px-2.5"
               />
             </Field>
           </div>
@@ -149,13 +141,13 @@ export const POIPropertyForm = React.memo(function POIPropertyForm({
               className="w-full"
             />
           </Field>
-          <Field label="Story Narrative (Markdown)">
-            <textarea
+          <Field label="Story narrative (Markdown)">
+            <Textarea
               placeholder="Narrative lore or historical chronicle..."
               value={form.storyContent ?? ""}
               onChange={(e) => onChange({ ...form, storyContent: e.target.value || undefined })}
               rows={3}
-              className={inputClasses}
+              className="text-footnote min-h-20 px-2.5 py-2"
             />
           </Field>
         </div>

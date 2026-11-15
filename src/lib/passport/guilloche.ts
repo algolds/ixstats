@@ -38,15 +38,36 @@ function strandPath(cx: number, cy: number, radius: number, lobes: number, phase
   return `M${points.join("L")}Z`;
 }
 
+function rosettePaths(rosette: Rosette, width: number, height: number): string[] {
+  const side = Math.min(width, height);
+  const { cx, cy, r, lobes, strands } = rosette;
+  return Array.from({ length: strands }, (_, s) =>
+    strandPath(cx * width, cy * height, r * side, lobes, (s / strands) * Math.PI * 2)
+  );
+}
+
 /**
  * The guilloché as SVG path data for a `width` x `height` canvas: a few rosettes of interwoven,
  * phase-shifted lobed strands. Deterministic, so the page and the OG image draw the same pattern.
  */
 export function guillochePaths(width: number, height: number): string[] {
-  const side = Math.min(width, height);
-  return ROSETTES.flatMap(({ cx, cy, r, lobes, strands }) =>
-    Array.from({ length: strands }, (_, s) =>
-      strandPath(cx * width, cy * height, r * side, lobes, (s / strands) * Math.PI * 2)
-    )
-  );
+  return ROSETTES.flatMap((rosette) => rosettePaths(rosette, width, height));
+}
+
+/**
+ * Splits the guilloché rosettes into `far` (companion rosettes) and `near` (the primary sweeping
+ * rosette) so Lens backdrops can drift them on separate parallax planes alongside the monogram.
+ */
+export function guillochePlanePaths(
+  width: number,
+  height: number
+): { far: string[]; near: string[] } {
+  const [topRight, bottomLeft, bottomCenter] = ROSETTES;
+  return {
+    far: [
+      ...(topRight ? rosettePaths(topRight, width, height) : []),
+      ...(bottomCenter ? rosettePaths(bottomCenter, width, height) : []),
+    ],
+    near: bottomLeft ? rosettePaths(bottomLeft, width, height) : [],
+  };
 }

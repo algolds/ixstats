@@ -1,9 +1,10 @@
 import React from "react";
-import Link from "next/link";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { Community as Handshake } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { EmptyState } from "~/components/ui/empty-state";
 import { formatCompact } from "./trade-commerce-types";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
@@ -21,16 +22,16 @@ interface TradePartnersManagerProps {
   partners: TradePartnerItem[];
 }
 
-export const TradePartnersManager = React.memo(function TradePartnersManager({
-  partners,
-}: TradePartnersManagerProps) {
+export function TradePartnersManager({ partners }: TradePartnersManagerProps) {
   if (partners.length === 0) {
     return (
-      <Card className="rounded-card border-dashed px-4 py-8 text-center">
-        <p className="text-label-secondary text-footnote">
-          No active bilateral trade partners found. Establish diplomatic embassies to negotiate
-          trade pacts.
-        </p>
+      <Card className="rounded-card">
+        <EmptyState
+          compact
+          icon={<Handshake />}
+          title="No active bilateral trade partners"
+          message="Establish diplomatic embassies to negotiate trade pacts."
+        />
       </Card>
     );
   }
@@ -43,9 +44,9 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
             <Handshake aria-hidden="true" className="text-label-secondary h-4 w-4 shrink-0" />
             <h3 className="text-label text-headline">Bilateral trade agreements & partners</h3>
           </div>
-          <Badge variant="default" className="shrink-0 tabular-nums">
+          <span className="text-label-secondary text-footnote shrink-0 tabular-nums">
             {partners.length} connected
-          </Badge>
+          </span>
         </div>
         <p className="text-label-secondary text-footnote">
           Agreement status comes from your recorded treaties. To sign a free trade agreement,
@@ -85,13 +86,14 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
               </Badge>
             ) : (
               <Button asChild variant="outline" size="xs" className="h-11 shrink-0 sm:h-7">
-                <Link
-                  href={`/countries/${partner.countryId}`}
+                {/* The nation's actions sheet holds the confirmed free trade proposal. */}
+                <CountryLink
+                  country={{ id: partner.countryId, name: partner.countryName }}
                   title={`Open ${partner.countryName} to propose a free trade agreement`}
                 >
                   <Handshake aria-hidden="true" />
                   Propose FTA
-                </Link>
+                </CountryLink>
               </Button>
             )}
           </Card>
@@ -99,4 +101,4 @@ export const TradePartnersManager = React.memo(function TradePartnersManager({
       </CardContent>
     </Card>
   );
-});
+}

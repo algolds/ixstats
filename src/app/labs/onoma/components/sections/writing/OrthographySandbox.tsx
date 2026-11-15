@@ -393,7 +393,7 @@ export function OrthographySandbox({
                     onForgeMissing?.(tok.charOrPhoneme);
                   }}
                   title={`Unmapped phoneme: '${tok.charOrPhoneme}' (Click to design)`}
-                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
+                  className="border-separator hover:border-tint/60 hover:bg-tint/10 text-label-secondary hover:text-tint rounded-row text-footnote flex shrink-0 cursor-pointer items-center justify-center border border-dashed font-mono font-medium transition-[color,background-color,border-color,box-shadow,opacity]"
                   style={{
                     width: glyphSize,
                     height: glyphSize,
@@ -410,7 +410,7 @@ export function OrthographySandbox({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-label-secondary text-eyebrow">
+          <span className="text-label-secondary text-caption">
             Phonetic Token Stream ({tokens.filter((t) => !t.isSpace && !t.isNewline).length} tokens)
           </span>
           <span className="text-label-secondary text-caption">
@@ -452,7 +452,7 @@ export function OrthographySandbox({
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Glyph size</span>
-            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-medium">
               {glyphSize}px
             </span>
           </div>
@@ -468,7 +468,7 @@ export function OrthographySandbox({
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Tracking</span>
-            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-medium">
               {letterSpacing}px
             </span>
           </div>
@@ -484,7 +484,7 @@ export function OrthographySandbox({
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Word gap</span>
-            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-medium">
               {wordSpacing}px
             </span>
           </div>
@@ -500,7 +500,7 @@ export function OrthographySandbox({
         <div className="space-y-2">
           <div className="text-caption flex items-center justify-between">
             <span className="text-label-secondary font-medium">Baseline shift</span>
-            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-semibold">
+            <span className="text-label bg-fill-3 py-0.2 rounded-control-sm px-1 font-mono font-medium">
               {baselineOffset > 0 ? `+${baselineOffset}` : baselineOffset}px
             </span>
           </div>

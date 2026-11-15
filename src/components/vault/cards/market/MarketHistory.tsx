@@ -1,10 +1,12 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { ArrowSeparate } from "iconoir-react";
+import { ArrowSeparate, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { mergeMarketHistory, type HistoryEntry } from "./market-history";
 
@@ -28,6 +30,35 @@ export function MarketHistory({ onOpenCard }: { onOpenCard: (cardId: string) => 
   const { userId } = useAuth();
   const trades = api.trading.getTradeHistory.useQuery({ limit: HISTORY_LIMIT });
   const auctions = api.cardMarket.getMyAuctionParticipation.useQuery({ limit: HISTORY_LIMIT });
+
+  if ((trades.isLoading || auctions.isLoading) && !trades.data && !auctions.data) {
+    return <Skeleton className="rounded-card h-32" />;
+  }
+  if ((trades.isError && !trades.data) || (auctions.isError && !auctions.data)) {
+    return (
+      <Card>
+        <EmptyState
+          compact
+          role="alert"
+          icon={<WarningCircle />}
+          title="History did not load"
+          message="Try loading your past trades and auctions again."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                void trades.refetch();
+                void auctions.refetch();
+              }}
+            >
+              Try again
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
   const entries = mergeMarketHistory(
     trades.data?.trades ?? [],
     auctions.data?.auctions ?? [],
@@ -35,11 +66,14 @@ export function MarketHistory({ onOpenCard }: { onOpenCard: (cardId: string) => 
   );
   if (entries.length === 0) {
     return (
-      <EmptyState
-        compact
-        title="No trades or auctions yet"
-        message="Finished trades and auctions appear here."
-      />
+      <Card>
+        <EmptyState
+          compact
+          icon={<ArrowSeparate />}
+          title="No trades or auctions yet"
+          message="Finished trades and auctions appear here."
+        />
+      </Card>
     );
   }
   return (

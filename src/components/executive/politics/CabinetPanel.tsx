@@ -8,6 +8,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -18,13 +19,13 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { Textarea } from "~/components/ui/textarea";
-import { cn } from "~/lib/utils";
 import { CreateGovernmentStructureButton } from "~/components/mycountry/domains/government/CreateGovernmentStructureButton";
 
 interface CabinetPanelProps {
   countryId: string;
+  /** Omit outer card chrome when nested inside an `EditorSection`. */
+  embedded?: boolean;
 }
 
 interface AppointFormState {
@@ -60,7 +61,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n !== 1 ? "s" : ""}`;
 
 type Structure = NonNullable<RouterOutputs["government"]["getByCountryId"]>;
 type Department = NonNullable<Structure["departments"]>[number];
-type Official = NonNullable<RouterOutputs["meetings"]["getOfficials"]>[number];
+type Official = NonNullable<RouterOutputs["government"]["getOfficials"]>[number];
 
 function DepartmentRow({
   dept,
@@ -78,24 +79,19 @@ function DepartmentRow({
 }) {
   const isVacant = officials.length === 0;
   return (
-    <div
-      className={cn(
-        "group rounded-control border p-3 transition-colors",
-        isVacant
-          ? "border-separator bg-fill-2 border-dashed"
-          : "border-separator bg-surface-secondary"
-      )}
-    >
+    <div className="px-4 py-3.5">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-body truncate font-medium">{dept.name}</span>
+            <span className="text-label text-body truncate font-medium">{dept.name}</span>
             {isVacant ? (
               <Badge variant="outline" className="text-footnote">
                 Vacant
               </Badge>
             ) : (
-              <Badge variant="secondary">{plural(officials.length, "official")}</Badge>
+              <span className="text-label-secondary text-footnote">
+                {plural(officials.length, "official")}
+              </span>
             )}
           </div>
           {dept.ministerTitle ? (
@@ -104,12 +100,7 @@ function DepartmentRow({
         </div>
 
         {isVacant ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-footnote h-7 gap-1"
-            onClick={onAppoint}
-          >
+          <Button size="sm" variant="outline" className="gap-1" onClick={onAppoint}>
             <Plus className="h-3.5 w-3.5" />
             Appoint
           </Button>
@@ -117,23 +108,23 @@ function DepartmentRow({
       </div>
 
       {!isVacant && (
-        <ul className="mt-2 space-y-2">
+        <ul className="border-separator/50 divide-separator/50 mt-2.5 divide-y border-t pt-2">
           {officials.map((official) => (
             <li
               key={official.id}
-              className="rounded-control-sm bg-surface text-body flex items-center justify-between gap-2 px-2 py-2"
+              className="text-body flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{official.name}</p>
+                <p className="text-label truncate font-medium">{official.name}</p>
                 <p className="text-label-secondary text-footnote truncate">
                   {official.title}
                   {official.role ? ` · ${official.role}` : ""}
                 </p>
               </div>
               <Button
-                size="icon"
+                size="icon-sm"
                 variant="ghost"
-                className="text-label-secondary hover:text-destructive h-7 w-7 shrink-0"
+                className="text-label-secondary hover:text-destructive shrink-0"
                 onClick={() => onRemove(official.id)}
                 disabled={removing.pending}
                 aria-label={`Remove ${official.name}`}
@@ -172,24 +163,21 @@ function CabinetBody({
   }
   if (departments.length === 0) {
     return (
-      <div className="text-label-secondary text-body flex flex-col items-center justify-center py-8 text-center">
-        <Users className="mb-2 h-8 w-8 opacity-40" />
-        <p>No government departments yet.</p>
-        <p className="text-footnote mt-1 mb-3">
-          Create your government&apos;s departments, then appoint officials here.
-        </p>
-        <CreateGovernmentStructureButton countryId={countryId} />
+      <div className="p-4">
+        <EmptyState
+          compact
+          icon={<Users />}
+          title="No government departments yet"
+          message="Create your government's departments, then appoint officials here."
+          action={<CreateGovernmentStructureButton countryId={countryId} />}
+        />
       </div>
     );
   }
-  return (
-    <ScrollArea className="h-[440px] pr-2">
-      <div className="space-y-2">{departments.map(render)}</div>
-    </ScrollArea>
-  );
+  return <div className="divide-separator/60 divide-y">{departments.map(render)}</div>;
 }
 
-export function CabinetPanel({ countryId }: CabinetPanelProps) {
+export function CabinetPanel({ countryId, embedded = false }: CabinetPanelProps) {
   const utils = api.useUtils();
   const notify = useNotify();
   const [dialogDepartmentId, setDialogDepartmentId] = useState<string | null>(null);
@@ -203,23 +191,23 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
   );
 
   const structureId = structure?.id;
-  const { data: officials, isLoading: officialsLoading } = api.meetings.getOfficials.useQuery(
+  const { data: officials, isLoading: officialsLoading } = api.government.getOfficials.useQuery(
     { governmentStructureId: structureId, active: true },
     { enabled: !!structureId }
   );
 
-  const appoint = api.meetings.appointOfficial.useMutation({
+  const appoint = api.government.appointOfficial.useMutation({
     onSuccess: () => {
-      void utils.meetings.getOfficials.invalidate();
+      void utils.government.getOfficials.invalidate();
       setDialogDepartmentId(null);
       setForm(initialForm());
     },
     onError: (error) => notify.error("Could not appoint the official", error.message),
   });
 
-  const remove = api.meetings.removeOfficial.useMutation({
+  const remove = api.government.removeOfficial.useMutation({
     onSuccess: () => {
-      void utils.meetings.getOfficials.invalidate();
+      void utils.government.getOfficials.invalidate();
     },
     onError: (error) => notify.error("Could not remove the official", error.message),
   });
@@ -254,43 +242,58 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
     });
   };
 
+  const body = (
+    <CabinetBody
+      countryId={countryId}
+      loading={structureLoading || officialsLoading}
+      departments={departments}
+      render={(dept) => (
+        <DepartmentRow
+          key={dept.id}
+          dept={dept}
+          officials={officials?.filter((o) => o.departmentId === dept.id) ?? []}
+          onAppoint={() => openAppointDialog(dept.id)}
+          onRemove={(id) => remove.mutate({ id, reason: "Resigned" })}
+          removing={{ pending: remove.isPending, id: remove.variables?.id }}
+        />
+      )}
+    />
+  );
+
   return (
     <>
-      <Card className="flex flex-col gap-6 py-6">
-        <CardHeader className="pb-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <CardTitle className="text-body">Cabinet</CardTitle>
-              <CardDescription className="text-body">
-                Appoint officials to lead each department.
-              </CardDescription>
+      {embedded ? (
+        <div className="flex flex-col gap-3">
+          {departments.length > 0 && (
+            <p className="text-label-secondary text-footnote tabular-nums">
+              {plural(departments.length, "department")}
+            </p>
+          )}
+          <Card variant="well" content="data" padding="none">
+            {body}
+          </Card>
+        </div>
+      ) : (
+        <Card content="data" padding="none">
+          <CardHeader className="border-separator/60 border-b p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle className="text-headline">Cabinet</CardTitle>
+                <CardDescription className="text-footnote mt-0.5">
+                  Appoint officials to lead each department.
+                </CardDescription>
+              </div>
+              {departments.length > 0 && (
+                <span className="text-label-secondary text-footnote shrink-0 tabular-nums">
+                  {plural(departments.length, "department")}
+                </span>
+              )}
             </div>
-            {departments.length > 0 && (
-              <Badge variant="default" className="shrink-0">
-                {plural(departments.length, "department")}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
+          </CardHeader>
 
-        <CardContent className="pt-0">
-          <CabinetBody
-            countryId={countryId}
-            loading={structureLoading || officialsLoading}
-            departments={departments}
-            render={(dept) => (
-              <DepartmentRow
-                key={dept.id}
-                dept={dept}
-                officials={officials?.filter((o) => o.departmentId === dept.id) ?? []}
-                onAppoint={() => openAppointDialog(dept.id)}
-                onRemove={(id) => remove.mutate({ id, reason: "Resigned" })}
-                removing={{ pending: remove.isPending, id: remove.variables?.id }}
-              />
-            )}
-          />
-        </CardContent>
-      </Card>
+          <CardContent className="p-0">{body}</CardContent>
+        </Card>
+      )}
 
       <Dialog
         open={!!dialogDepartmentId}
@@ -306,9 +309,9 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <form id="appoint-official-form" onSubmit={handleSubmit} className="space-y-4">
+          <form id="appoint-official-form" onSubmit={handleSubmit} className="flex flex-col gap-4">
             {FORM_FIELDS.map((f) => (
-              <div key={f.key} className="space-y-2">
+              <div key={f.key} className="flex flex-col gap-2">
                 <Label htmlFor={`official-${f.key}`}>{f.label}</Label>
                 <Input
                   id={`official-${f.key}`}
@@ -321,7 +324,7 @@ export function CabinetPanel({ countryId }: CabinetPanelProps) {
               </div>
             ))}
 
-            <div className="space-y-2">
+            <div className="flex flex-col gap-2">
               <Label htmlFor="official-bio">Bio</Label>
               <Textarea
                 id="official-bio"

@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * The signed-in player's account in the shell: avatar (country flag once a nation is linked),
- * name and country; your country (its public page), your Passport (`/@me`) and Stash, the nation
- * switcher, Passport settings (IxnayID & passport), the external account manager and sign out. Signed out, it
- * is the sign-in button.
+ * The signed-in player's account in the shell: Clerk portrait, display name and active nation on
+ * the trigger row; direct links to MyCountry (`/mycountry`), Passport (`/@me`) and Stash
+ * (`/stashes`), the nation switcher, feedback, the external account manager, sign out, and the
+ * platform version / legal footer.
  *
  * `layout="sidebar"` is a popover opened from the AppSidebar's footer row; `layout="sheet"` is the
  * same panel inline in the TabBar's More sheet.
@@ -14,12 +14,9 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Bookmark,
-  Fingerprint,
-  HalfMoon,
-  Laptop,
+  ChatBubble,
   LogOut,
   Settings,
-  SunLight,
   User,
   UserCircle,
   WarningCircle,
@@ -27,64 +24,44 @@ import {
 
 import { useAuth, useUser, SignInButton } from "~/context/auth-context";
 import { api } from "~/trpc/react";
-import { useCountryFlag } from "~/hooks/useCountryFlags";
 import { useUserCountry } from "~/hooks/useUserCountry";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { cn } from "~/lib/utils/cn";
 import { createAbsoluteUrl } from "~/lib/utils/url-utils";
-import { getNationUrl } from "~/lib/utils/slug-utils";
 import { focusRing, Button } from "~/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { NationSwitcher } from "~/components/navigation/NationSwitcher";
 import { CollapsedTooltip, rowBase } from "./AppSidebar";
+import { SidebarFooterLinks } from "./SidebarFooterLinks";
 import { assetUrl } from "~/lib/base-path";
-import { useTheme, type Theme } from "~/context/theme-context";
 
 interface AccountMenuProps {
   layout: "sidebar" | "sheet";
   /** The sidebar is collapsed to icons (`null` before hydration). */
   collapsed?: boolean | null;
+  onOpenFeedback?: () => void;
 }
 
 const itemClass = cn(
-  "text-body text-label hover:bg-fill-4 rounded-control flex min-h-9 w-full items-center gap-3 px-2.5 pointer-coarse:min-h-11",
+  "text-body text-label hover:bg-fill-4 rounded-control flex min-h-(--control-height) w-full items-center gap-3 px-2.5 pointer-coarse:min-h-11",
   focusRing
 );
 
-const THEME_ROW: Record<Theme, { label: string; Icon: typeof SunLight }> = {
-  light: { label: "Light", Icon: SunLight },
-  dark: { label: "Dark", Icon: HalfMoon },
-  system: { label: "System", Icon: Laptop },
-};
-
-/** Cycles the sitewide theme preference (light, dark, system); the wiki follows it. */
-function ThemeRow() {
-  const { theme, toggleTheme } = useTheme();
-  const { label, Icon } = THEME_ROW[theme];
-  return (
-    <button type="button" onClick={toggleTheme} className={cn(itemClass, "cursor-pointer")}>
-      <Icon aria-hidden className="size-4 shrink-0" />
-      {`Theme: ${label}`}
-    </button>
-  );
-}
-
 function useAccount() {
   const { user } = useUser();
+  const { country: userCountry } = useUserCountry();
   const { data: profile } = api.users.getProfile.useQuery(undefined, {
     enabled: Boolean(user),
     staleTime: 60_000,
   });
-  const country = profile?.country ?? null;
-  const { flag } = useCountryFlag(country?.name ?? "");
+  const countryName = profile?.country?.name ?? userCountry?.name ?? null;
   const name = user?.firstName || user?.username || "Account";
   return {
     user,
     name,
-    countryName: country?.name ?? null,
-    flagUrl: country ? (flag?.flagUrl ?? null) : null,
-    needsSetup: Boolean(user) && profile !== undefined && !profile?.countryId,
+    countryName,
+    needsSetup: Boolean(user) && profile !== undefined && !profile?.countryId && !userCountry,
   };
 }
 
@@ -98,7 +75,6 @@ function Avatar({
   className: string;
 }) {
   if (imageUrl) {
-    // Clerk avatar or flag URL; next/image would need its host allow-listed.
     return (
       <img
         src={assetUrl(imageUrl) ?? undefined}
@@ -120,7 +96,7 @@ function Avatar({
   );
 }
 
-/** Your country, passport and wiki profile: what the per-app player and wiki widgets offered. */
+/** Direct identity destinations: MyCountry, Passport and Stash. */
 function IdentityLinks({ onClose }: { onClose?: () => void }) {
   const { country } = useUserCountry();
   const done = () => onClose?.();
@@ -129,7 +105,7 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
     <ul className="flex flex-col gap-0.5 pb-1">
       {country && (
         <li>
-          <Link href={getNationUrl(country.name)} onClick={done} className={itemClass}>
+          <Link href="/mycountry" onClick={done} className={itemClass}>
             <span aria-hidden className="flex size-4 shrink-0 items-center justify-center">
               <UnifiedCountryFlag
                 countryName={country.name}
@@ -138,7 +114,7 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
                 showTooltip={false}
               />
             </span>
-            <span className="min-w-0 flex-1 truncate">{country.name}</span>
+            <span className="min-w-0 flex-1 truncate">MyCountry</span>
           </Link>
         </li>
       )}
@@ -149,7 +125,6 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
         </Link>
       </li>
       <li>
-        {/* The one Stash: saved pages, images and threads from every app. */}
         <Link href="/stashes" onClick={done} className={itemClass}>
           <Bookmark aria-hidden className="size-4 shrink-0" />
           Stash
@@ -159,19 +134,30 @@ function IdentityLinks({ onClose }: { onClose?: () => void }) {
   );
 }
 
-function AccountPanel({ onClose }: { onClose?: () => void }) {
+function AccountPanel({
+  onClose,
+  onOpenFeedback,
+}: {
+  onClose?: () => void;
+  onOpenFeedback?: () => void;
+}) {
   const { signOut } = useAuth();
-  const { user, name, countryName, flagUrl, needsSetup } = useAccount();
+  const { user, name, countryName, needsSetup } = useAccount();
   const done = () => onClose?.();
+
+  const handleFeedback = () => {
+    done();
+    if (onOpenFeedback) {
+      onOpenFeedback();
+    } else {
+      window.dispatchEvent(new CustomEvent("ix:open-feedback"));
+    }
+  };
 
   return (
     <div data-slot="account-panel" className="flex flex-col gap-1">
       <div className="flex items-center gap-3 px-2.5 pt-1 pb-2">
-        <Avatar
-          imageUrl={flagUrl ?? user?.imageUrl}
-          name={name}
-          className="text-headline size-10"
-        />
+        <Avatar imageUrl={user?.imageUrl} name={name} className="text-headline size-10" />
         <div className="min-w-0">
           <p className="text-headline text-label truncate">{name}</p>
           <p className="text-footnote text-label-secondary truncate">
@@ -194,13 +180,14 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
           </li>
         )}
         <li>
-          <ThemeRow />
-        </li>
-        <li>
-          <Link href="/settings?tab=account" onClick={done} className={itemClass}>
-            <Fingerprint aria-hidden className="size-4 shrink-0" />
-            Passport settings
-          </Link>
+          <button
+            type="button"
+            onClick={handleFeedback}
+            className={cn(itemClass, "cursor-pointer")}
+          >
+            <ChatBubble aria-hidden className="size-4 shrink-0" />
+            Send feedback
+          </button>
         </li>
         <li>
           <a
@@ -229,22 +216,23 @@ function AccountPanel({ onClose }: { onClose?: () => void }) {
         </li>
       </ul>
 
-      {/* The sidebar's footer links hide while it is collapsed and the phone tab bar has none. */}
-      <p className="border-separator text-caption text-label-secondary flex items-center gap-3 border-t px-2.5 pt-2 pb-1">
-        <Link href="/privacy" onClick={done} className="hover:text-label hover:underline">
-          Privacy
-        </Link>
-        <Link href="/terms" onClick={done} className="hover:text-label hover:underline">
-          Terms
-        </Link>
-      </p>
+      <div
+        onClick={(event) => {
+          if ((event.target as HTMLElement).closest("a")) done();
+        }}
+      >
+        <SidebarFooterLinks
+          signedIn={false}
+          className="border-separator border-t px-2.5 pt-2 pb-1"
+        />
+      </div>
     </div>
   );
 }
 
-export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
+export function AccountMenu({ layout, collapsed, onOpenFeedback }: AccountMenuProps) {
   const [open, setOpen] = React.useState(false);
-  const { user, name, flagUrl } = useAccount();
+  const { user, name, countryName } = useAccount();
 
   if (!user) {
     return (
@@ -260,31 +248,39 @@ export function AccountMenu({ layout, collapsed }: AccountMenuProps) {
     );
   }
 
-  if (layout === "sheet") return <AccountPanel />;
+  if (layout === "sheet") {
+    return <AccountPanel onOpenFeedback={onOpenFeedback} />;
+  }
+
+  const label = countryName ? `${name} · ${countryName}` : name;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <CollapsedTooltip collapsed={collapsed ?? false} label={name}>
+      <CollapsedTooltip collapsed={collapsed ?? false} label={label}>
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label={`Account: ${name}`}
+            aria-label={`Account: ${label}`}
             aria-haspopup="dialog"
             className={cn(rowBase, focusRing, "text-label hover:bg-fill-4 cursor-pointer")}
           >
-            <Avatar
-              imageUrl={flagUrl ?? user.imageUrl}
-              name={name}
-              className="text-caption size-6"
-            />
-            <span className="sidebar-collapsed:sr-only min-w-0 flex-1 truncate text-left">
-              {name}
+            <Avatar imageUrl={user.imageUrl} name={name} className="text-caption size-6" />
+            <span className="sidebar-collapsed:sr-only flex min-w-0 flex-1 items-baseline gap-1.5 text-left">
+              <span className="text-subhead text-label truncate font-medium">{name}</span>
+              {countryName && (
+                <>
+                  <span aria-hidden className="text-label-tertiary shrink-0">
+                    ·
+                  </span>
+                  <span className="text-footnote text-label-secondary truncate">{countryName}</span>
+                </>
+              )}
             </span>
           </button>
         </PopoverTrigger>
       </CollapsedTooltip>
-      <PopoverContent side="right" align="end" className="w-64 p-2">
-        <AccountPanel onClose={() => setOpen(false)} />
+      <PopoverContent side="right" align="end" sideOffset={10} className="w-64 p-2">
+        <AccountPanel onClose={() => setOpen(false)} onOpenFeedback={onOpenFeedback} />
       </PopoverContent>
     </Popover>
   );

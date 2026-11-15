@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * NPC Personalities Seed Script
  *
@@ -7,9 +8,7 @@
  * Run with: npx tsx prisma/seeds/npc-personalities.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 // 6 Personality Archetypes with Full Trait Profiles
 const personalityArchetypes = [

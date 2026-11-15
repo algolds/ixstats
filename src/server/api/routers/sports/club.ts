@@ -436,7 +436,8 @@ export const sportsClubRouter = createTRPCRouter({
         season: { select: { league: { select: { name: true, sportPreset: true } } } },
       },
       orderBy: { resolvedIxTime: "desc" },
-      take: 5,
+      // The Halo shows only the most recent live match
+      take: 1,
     });
 
     return matches.map((m) => ({

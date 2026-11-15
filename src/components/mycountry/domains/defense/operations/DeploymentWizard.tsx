@@ -11,6 +11,8 @@ import {
   Eye,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
@@ -270,10 +272,13 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
           </div>
 
           {branches && allUnits.length === 0 && allAssets.length === 0 && (
-            <p className="border-separator rounded-control text-label-secondary text-footnote border border-dashed p-3">
-              No units or assets to deploy yet. Build your force under Branches, then assign its
-              units here.
-            </p>
+            <Card variant="well" padding="sm">
+              <EmptyState
+                compact
+                title="No units or assets to deploy yet"
+                message="Build your force under Branches, then assign its units here."
+              />
+            </Card>
           )}
 
           {allUnits.length > 0 && (
@@ -286,7 +291,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                     variant="outline"
                     pressed={selectedUnitIds.includes(unit.id)}
                     onPressedChange={() => toggleUnit(unit.id)}
-                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
+                    className="text-footnote data-[state=on]:border-tint/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
                     <span className="w-full truncate font-medium">{unit.name}</span>
                     <span className="text-label-secondary block w-full truncate font-normal">
@@ -308,7 +313,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                     variant="outline"
                     pressed={selectedAssetIds.includes(asset.id)}
                     onPressedChange={() => toggleAsset(asset.id)}
-                    className="text-footnote data-[state=on]:border-red/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
+                    className="text-footnote data-[state=on]:border-tint/50 h-auto min-w-0 flex-col items-start gap-0 p-2 text-left"
                   >
                     <span className="w-full truncate font-medium">{asset.name}</span>
                     <span className="text-label-secondary block w-full truncate font-normal">
@@ -320,9 +325,9 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
             </div>
           )}
 
-          <div className="border-separator rounded-control border p-3">
+          <Card variant="well" padding="sm">
             <div className="mb-2 flex items-center gap-2">
-              <AlertTriangle aria-hidden="true" className="text-yellow h-4 w-4" />
+              <AlertTriangle aria-hidden="true" className="text-warning h-4 w-4" />
               <span className="text-label text-body font-medium">
                 Cost estimate, from your Defense budget&apos;s O&amp;M line
               </span>
@@ -337,7 +342,7 @@ export function DeploymentWizard({ countryId, onSuccess }: DeploymentWizardProps
                 <p className="font-medium tabular-nums">{formatCurrency(estimatedAnnualCost)}</p>
               </div>
             </div>
-          </div>
+          </Card>
 
           <Button
             onClick={handleDeploy}

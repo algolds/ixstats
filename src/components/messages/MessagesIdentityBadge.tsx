@@ -3,7 +3,6 @@
 import { Globe } from "iconoir-react";
 import type { MessageFolder } from "~/types/messages";
 import type { ResolvedIdentity } from "~/types/messages";
-import { Eyebrow } from "~/components/ui/eyebrow";
 
 interface UserProfile {
   country?: {
@@ -68,7 +67,9 @@ export function MessagesIdentityBadge({ identity, size = "sm" }: MessagesIdentit
   return (
     <span className="inline-flex items-center gap-1">
       {Icon && <Icon className={`${iconSize} ${identity.badgeColor ?? "text-label-secondary"}`} />}
-      {identity.sourceLabel && <Eyebrow>{identity.sourceLabel}</Eyebrow>}
+      {identity.sourceLabel && (
+        <span className="text-footnote text-label-secondary">{identity.sourceLabel}</span>
+      )}
     </span>
   );
 }

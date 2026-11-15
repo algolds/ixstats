@@ -40,16 +40,16 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
   };
 
   const defaultStats = statistics ?? [
-    { label: "Wins", value: player.ratings?.wins ?? "—" },
-    { label: "Losses", value: player.ratings?.losses ?? "—" },
-    { label: "Overall", value: overallRating ?? "—" },
+    { label: "Wins", value: player.ratings?.wins ?? "–" },
+    { label: "Losses", value: player.ratings?.losses ?? "–" },
+    { label: "Overall", value: overallRating ?? "–" },
   ];
 
   const playerPhoto = getPlayerPhotoUrl(player);
 
   return (
     <Card className={cn("rounded-sheet mx-auto w-[340px] p-1", className)}>
-      <div className="bg-surface border-separator rounded-card border p-3">
+      <Card padding="sm">
         <div className="relative overflow-hidden pb-3">
           <div className="overflow-hidden [filter:url('#rounded')]">
             <div
@@ -57,7 +57,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
               style={gradientStyle}
             >
               {/* Big Name Background Overlay */}
-              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-semibold text-white uppercase italic opacity-25 mix-blend-overlay select-none">
+              <div className="pointer-events-none absolute inset-x-0 top-6 -z-10 text-center text-7xl/none font-semibold text-white italic opacity-25 mix-blend-overlay select-none">
                 <div>{player.firstName.slice(0, 8)}</div>
                 <div>{player.lastName.slice(0, 8)}</div>
               </div>
@@ -79,7 +79,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
             className="rounded-row text-title-1 shadow-card absolute start-1/2 bottom-0 flex h-12 w-12 -translate-x-1/2 items-center justify-center border border-white/30 leading-none text-white tabular-nums"
             style={{ backgroundColor: teamColor }}
           >
-            {player.number ?? overallRating ?? "—"}
+            {player.number ?? overallRating ?? "–"}
           </div>
 
           {/* Top-Left Crest */}
@@ -99,7 +99,7 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
               {player.firstName} {player.lastName}
             </h3>
           </div>
-          <div className="text-label-secondary text-eyebrow flex items-center justify-center gap-2">
+          <div className="text-label-secondary text-caption flex items-center justify-center gap-2">
             {team?.name && <span>{team.name}</span>}
             {team?.name && <span>•</span>}
             <PositionTooltip position={player.position}>
@@ -120,12 +120,12 @@ export function PlayerCard({ player, team, statistics, className }: PlayerCardPr
         <div className="bg-fill-3 border-separator divide-separator rounded-card mt-4 grid grid-cols-3 divide-x border p-3 shadow-inner">
           {defaultStats.map((stat, idx) => (
             <div key={idx} className="px-1 text-center">
-              <span className="text-label-secondary text-eyebrow block">{stat.label}</span>
+              <span className="text-label-secondary text-caption block">{stat.label}</span>
               <span className="text-label text-title-3 tabular-nums">{stat.value}</span>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </Card>
   );
 }

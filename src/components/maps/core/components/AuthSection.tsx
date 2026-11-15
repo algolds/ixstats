@@ -4,7 +4,9 @@ import { LogIn, User, Dashboard as LayoutDashboard, Crown } from "iconoir-react"
 import { SignInButton } from "~/context/auth-context";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
-import { cn, getNationUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
+import { generateSlug } from "~/lib/utils/slug-utils";
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
 import { useRouter } from "next/navigation";
 import { assetUrl } from "~/lib/base-path";
 
@@ -23,6 +25,7 @@ interface AuthSectionProps {
 
 export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSectionProps) {
   const router = useRouter();
+  const openCountryActions = useOpenCountryActions();
   if (!isLoaded) {
     return <span className="text-label-secondary text-footnote">…</span>;
   }
@@ -108,7 +111,10 @@ export function AuthSection({ user, isLoaded, greeting, countryName }: AuthSecti
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push(getNationUrl(countryName))}
+              // Your nation's actions sheet (Manage mode), as every country link opens.
+              onClick={() =>
+                openCountryActions({ slug: generateSlug(countryName), name: countryName })
+              }
               className="text-label-secondary w-full justify-start"
             >
               <Crown aria-hidden />

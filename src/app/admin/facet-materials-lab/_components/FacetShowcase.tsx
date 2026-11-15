@@ -146,6 +146,15 @@ const LAYER_SWATCHES: {
       </FacetMaterial>
     ),
   },
+  {
+    name: "facet-lens",
+    use: "Brand moments over art",
+    Swatch: ({ className, children }) => (
+      <FacetMaterial layer="lens" className={className}>
+        {children}
+      </FacetMaterial>
+    ),
+  },
 ];
 
 export function FacetShowcase() {
@@ -182,7 +191,7 @@ export function FacetShowcase() {
       <section>
         <SectionTitle
           title="Surfaces and layers"
-          description="Five layers: canvas, pane, well, chrome and overlay. Only chrome and overlay blur; a well sits inside a pane."
+          description="Six layers: canvas, pane, well, chrome, overlay and lens. Only chrome and overlay blur; the lens refracts its edges; a well sits inside a pane."
         />
         <div className="grid gap-4 lg:grid-cols-2">
           <Card padding="md" className="space-y-3">

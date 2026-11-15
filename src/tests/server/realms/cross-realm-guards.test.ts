@@ -11,7 +11,6 @@ jest.mock("~/lib/notifications/api", () => ({
 }));
 jest.mock("~/lib/notifications/hooks", () => ({
   notificationHooks: {
-    onMeetingEvent: jest.fn().mockResolvedValue(undefined),
     onDiplomaticEvent: jest.fn().mockResolvedValue(undefined),
   },
 }));
@@ -33,7 +32,6 @@ import { diplomaticCoreRouter } from "~/server/api/routers/diplomacy/core";
 import { diplomaticPoliciesRouter } from "~/server/api/routers/diplomacy/policies";
 import { diplomaticScenariosChoicesRouter } from "~/server/api/routers/diplomaticScenarios/choices";
 import { diplomaticScenariosRouter } from "~/server/api/routers/diplomaticScenarios";
-import { meetingsMeetingsRouter } from "~/server/api/routers/meetings/meetings";
 import { SAME_REALM_MESSAGE, nationsInRealm, sameRealm } from "~/lib/realms/same-realm";
 import { assertSameRealm } from "~/server/shared/same-realm-guard";
 import { createMockRouterContext } from "~/tests/helpers/router-context";
@@ -417,23 +415,6 @@ describe("relations, scenarios and summits", () => {
     ).rejects.toMatchObject(refused);
     expect(create).not.toHaveBeenCalled();
   });
-
-  it("request no summit with a nation of another realm", async () => {
-    const create = jest.fn().mockResolvedValue({ id: "m1", title: "S", scheduledDate: new Date() });
-    const caller = createCallerFactory(meetingsMeetingsRouter)(
-      realmContext({ cabinetMeeting: { create } }) as never
-    );
-    const summit = (targetCountryId: string) =>
-      caller.createMeeting({
-        countryId: CALLER_COUNTRY,
-        targetCountryId,
-        title: "Summit",
-        scheduledDate: new Date(),
-      });
-    await expect(summit(FOREIGN_COUNTRY)).rejects.toMatchObject(refused);
-    expect(create).not.toHaveBeenCalled();
-    await expect(summit(NEIGHBOUR)).resolves.toMatchObject({ id: "m1" });
-  });
 });
 
 describe("foreign policy and alliances", () => {
@@ -459,6 +440,20 @@ describe("foreign policy and alliances", () => {
     await expect(propose("F")).rejects.toMatchObject(refused);
     expect(state.foreignPolicyActions).toHaveLength(0);
     await expect(propose("B")).resolves.toMatchObject({ pendingConsent: true });
+  });
+
+  it("propose summits only to nations of the initiator's realm", async () => {
+    const { db, state } = createDiplomacyFakeDb({ countries: COUNTRIES });
+    const propose = (targetId: string) =>
+      as(db, "uA", "A").proposeSummit({ targetId, when: "month" });
+    await expect(propose("F")).rejects.toMatchObject(refused);
+    expect(state.foreignPolicyActions).toHaveLength(0);
+    await expect(propose("B")).resolves.toMatchObject({ id: expect.any(String) });
+    expect(state.foreignPolicyActions[0]).toMatchObject({
+      actionType: "summit",
+      status: "proposed",
+      relationshipDelta: 5,
+    });
   });
 
   it("accept no proposal from another realm, but decline one", async () => {

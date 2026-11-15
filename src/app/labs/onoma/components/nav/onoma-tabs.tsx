@@ -88,25 +88,21 @@ const CREATE_DOMAIN_TABS = [
     id: "places",
     label: "Places",
     notation: "Geography",
-    icon: createGlyphAdapter("sound-vowel-quad"),
   },
   {
     id: "people",
     label: "People",
     notation: "Characters",
-    icon: createGlyphAdapter("sound-articulation"),
   },
   {
     id: "organizations",
     label: "Factions",
     notation: "Organizations",
-    icon: createGlyphAdapter("struct-syntax"),
   },
   {
     id: "culture",
     label: "Culture",
     notation: "Traditions",
-    icon: createGlyphAdapter("compose-morphology"),
   },
 ];
 
@@ -116,7 +112,6 @@ export const ONOMA_TABS = [
     label: "Sandbox",
     notation: "Freeform",
     className: "whitespace-nowrap font-medium",
-    icon: createGlyphAdapter("emerge-engine"),
   },
   ...CREATE_DOMAIN_TABS,
 ];

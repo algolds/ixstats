@@ -1,5 +1,5 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Input } from "~/components/ui/input";
 import React, { useMemo, useState } from "react";
 import { Droplet } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
@@ -118,7 +118,7 @@ function estimateVolumeKm3(areaKm2: number | null, maxDepthM: number | null) {
 }
 
 function formatVolume(volumeKm3: number | null) {
-  if (volumeKm3 == null) return "—";
+  if (volumeKm3 == null) return "–";
   return volumeKm3 >= 1 ? `${volumeKm3.toFixed(2)} km³` : `${(volumeKm3 * 1000).toFixed(1)} M m³`;
 }
 
@@ -148,7 +148,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
       <div className="grid grid-cols-2 gap-2">
         <MetricCard
           label="Surface area"
-          value={areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
+          value={areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "–"}
           unit={areaKm2 != null && "km²"}
         >
           {areaSqMi != null && (
@@ -160,7 +160,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
 
         <MetricCard
           label="Shoreline perimeter"
-          value={perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "—"}
+          value={perimeterKm != null ? Math.round(perimeterKm).toLocaleString() : "–"}
           unit={perimeterKm != null && "km"}
         >
           {sdi != null && (
@@ -175,7 +175,9 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Droplet className="text-blue h-3.5 w-3.5" />
-            <Eyebrow>Limnology & bathymetry</Eyebrow>
+            <span className="text-caption text-label-secondary font-medium">
+              Limnology & bathymetry
+            </span>
           </div>
           {surfaceSample.isLoading && (
             <div className="border-separator border-t-blue h-2.5 w-2.5 animate-spin rounded-full border-2" />
@@ -185,7 +187,7 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
         <div className="text-footnote grid grid-cols-2 gap-2">
           <ReadoutTile
             label="Surface elevation"
-            value={surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "—"}
+            value={surfaceElev != null ? `${surfaceElev.toLocaleString()} m` : "–"}
           >
             <span className="text-label-secondary text-footnote block truncate">
               {surfaceSample.data?.zoneName || "Inland water"}
@@ -193,20 +195,20 @@ export const LakeHydrologySection = React.memo(function LakeHydrologySection({
           </ReadoutTile>
 
           <div className="border-separator bg-fill-4 rounded-control-sm min-w-0 space-y-1 p-2">
-            <span className="text-stat-label text-label-secondary block">Max depth</span>
+            <span className="text-caption text-label-secondary block">Max depth</span>
             <div className="flex items-center gap-1">
-              <input
+              <Input
                 type="number"
                 value={depthInput}
                 onChange={(e) => setDepthInput(e.target.value)}
                 onBlur={handleDepthBlur}
                 placeholder="Auto"
-                className="border-separator bg-surface text-label focus:border-tint text-footnote rounded-control-sm w-16 px-2 py-0.5 tabular-nums focus:outline-none"
+                className="text-footnote rounded-control-sm h-6 w-16 px-2 py-0.5 tabular-nums"
               />
               <span className="text-label-secondary text-footnote">m</span>
             </div>
-            <span className="text-label-secondary text-footnote block">
-              Mean: ~{parsedDepthM ? Math.round(parsedDepthM * 0.4) : "—"} m
+            <span className="text-label-secondary text-footnote block tabular-nums">
+              Mean: ~{parsedDepthM ? Math.round(parsedDepthM * 0.4) : "–"} m
             </span>
           </div>
         </div>

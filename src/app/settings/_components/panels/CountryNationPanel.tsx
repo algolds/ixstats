@@ -23,7 +23,6 @@ import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow, SettingsSelectRow } from "../primitives";
 import { Input } from "~/components/ui/input";
 import { getCountryPath } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { assetUrl } from "~/lib/base-path";
 
 interface CountryNationPanelProps {
@@ -146,10 +145,8 @@ export function CountryNationPanel({
             <Button
               type="button"
               onClick={() => {
-                soundEffects.press();
                 setFlagUploadMode(!flagUploadMode);
               }}
-              data-cuelume-press="soft"
               variant="secondary"
               size="sm"
             >
@@ -209,7 +206,6 @@ export function CountryNationPanel({
               <Button
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setFlagUploadMode(false);
                   setUploadedFlagUrl(null);
                 }}
@@ -253,7 +249,6 @@ export function CountryNationPanel({
                 type="button"
                 onClick={handleUpdateCountryName}
                 disabled={updateCountryNameMutation.isPending || !newCountryName.trim()}
-                data-cuelume-press="soft"
                 variant="default"
                 size="icon-sm"
               >
@@ -262,10 +257,8 @@ export function CountryNationPanel({
               <Button
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setIsEditingCountry(false);
                 }}
-                data-cuelume-press="soft"
                 variant="secondary"
                 size="icon-sm"
               >
@@ -278,11 +271,9 @@ export function CountryNationPanel({
               <Button
                 type="button"
                 onClick={() => {
-                  soundEffects.press();
                   setNewCountryName(country.name);
                   setIsEditingCountry(true);
                 }}
-                data-cuelume-press="soft"
                 variant="secondary"
                 size="sm"
               >
@@ -299,10 +290,7 @@ export function CountryNationPanel({
           glyphClass="bg-muted/60 text-foreground"
         >
           <Button asChild variant="secondary" size="sm">
-            <Link
-              href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}
-              data-cuelume-press="soft"
-            >
+            <Link href={getCountryPath({ id: country.id, name: country.name, slug: country.slug })}>
               <span>Open country page</span>
               <ExternalLink className="h-3 w-3 opacity-60" />
             </Link>
@@ -357,7 +345,6 @@ export function CountryNationPanel({
             type="button"
             onClick={handleRebase}
             disabled={rebaseMutation.isPending}
-            data-cuelume-press="soft"
             variant="secondary"
             size="sm"
           >

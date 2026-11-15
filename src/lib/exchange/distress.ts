@@ -19,14 +19,16 @@
 
 import type { Company, Prisma } from "@prisma/client";
 import { ExchangeError, earnSovereignsTx } from "~/lib/vault/exchange-service";
-import { formatSovereigns } from "./amounts";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
 import { refreshFairValue, returnListedShares } from "./companies";
 import type { Db } from "./guards";
 import type { ExchangeNotice } from "./notify";
-import { fromCents, holdersOf, splitProRata, type Holder } from "./ownership";
+import { holdersOf, splitProRata, type Holder } from "./ownership";
 import { returnBuyOrders } from "./shares";
 import { closeCompanyProposalsTx } from "./acquisition";
 import { debitTreasuryTx, transferToTreasuryTx } from "./treasury";
+import { publishNewsTx } from "./news";
+import { unwindCompanyMoneyTx } from "./unwind";
 
 const HOUR_MS = 60 * 60 * 1000;
 export const DISTRESS_GRACE_MS = 72 * HOUR_MS;
@@ -79,7 +81,7 @@ export async function setCapitalTx(tx: Db, companyId: string, cents: number): Pr
   });
   const { count } = await tx.company.updateMany({
     where: { id: companyId, capital: current.capital },
-    data: { capital: fromCents(cents) },
+    data: { capital: dbCents(cents) },
   });
   if (count !== 1) throw new ExchangeError("CONFLICT", "The company changed; try again");
 }
@@ -125,6 +127,16 @@ async function enterDistressTx(tx: Db, input: LifecycleInput, notices: ExchangeN
     status: "DISTRESSED",
     distressedSinceIxTime: input.nowMs,
   });
+  await publishNewsTx(tx, {
+    realmId: c.realmId,
+    kind: "distress",
+    prominence: "HEADLINE",
+    sourceKind: "EXCHANGE",
+    headline: `${c.name} enters distress with 72 hours to recapitalise`,
+    companyId: c.id,
+    countryId: c.hqCountryId ?? undefined,
+    key: `news:distress:${c.id}:${input.nowMs}`,
+  });
   notices.push(...distressNotices(c, await holdersOf(tx, c.id)));
 }
 
@@ -141,21 +153,21 @@ async function cureTx(tx: Db, c: Company, notices: ExchangeNotice[]) {
 async function plantRecoveryCents(
   tx: Db,
   hq: string | null,
-  decisionValue: number
+  decisionValueCents: number
 ): Promise<number> {
-  if (!hq || decisionValue <= 0) return 0;
+  if (!hq || decisionValueCents <= 0) return 0;
   const treasury = await tx.nationTreasury.findUnique({
     where: { countryId: hq },
     select: { balance: true },
   });
-  const available = Math.max(0, Math.floor((treasury?.balance ?? 0) * 100));
-  return Math.min(Math.round(decisionValue * PLANT_RECOVERY_RATE * 100), available);
+  const available = Math.max(0, treasury ? centsOf(treasury.balance) : 0);
+  return Math.min(Math.round(decisionValueCents * PLANT_RECOVERY_RATE), available);
 }
 
 /** The HQ treasury buys the plant. Returns the cents paid to the company. */
 async function recoverPlantTx(tx: Db, input: LifecycleInput, key: string): Promise<number> {
   const c = input.company;
-  const cents = await plantRecoveryCents(tx, input.hq, c.decisionValue);
+  const cents = await plantRecoveryCents(tx, input.hq, centsOf(c.decisionValue));
   if (!input.hq || cents <= 0) return 0;
   await debitTreasuryTx(tx, {
     countryId: input.hq,
@@ -178,7 +190,7 @@ async function repayLenderTx(tx: Db, input: LifecycleInput, cashCents: number, k
       countryId: input.hq,
       realmId: c.realmId,
       amount: fromCents(cents),
-      type: "INTEREST",
+      type: "PRINCIPAL",
       source: `LIQUIDATION:${c.id}`,
       key: `${key}:lender`,
     });
@@ -231,9 +243,10 @@ async function liquidateTx(tx: Db, input: LifecycleInput, notices: ExchangeNotic
   await returnBuyOrders(tx, c.id);
   await closeCompanyProposalsTx(tx, c.id, input.nowMs);
 
+  const unwound = await unwindCompanyMoneyTx(tx, c.id, input.nowMs);
   const recovered = await recoverPlantTx(tx, input, key);
-  let cash = input.cashCents + recovered;
-  if (recovered > 0) await setCapitalTx(tx, c.id, cash);
+  let cash = input.cashCents + toCents(unwound) + recovered;
+  if (unwound > 0 || recovered > 0) await setCapitalTx(tx, c.id, cash);
 
   const repaid = await repayLenderTx(tx, input, cash, key);
   cash -= repaid;
@@ -243,12 +256,22 @@ async function liquidateTx(tx: Db, input: LifecycleInput, notices: ExchangeNotic
   await setCapitalTx(tx, c.id, 0);
   await setStatusTx(tx, c.id, "DISTRESSED", {
     status: "BANKRUPT",
-    creditDrawn: 0,
-    decisionValue: 0,
+    creditDrawn: 0n,
+    decisionValue: 0n,
     distressedSinceIxTime: null,
     tradingOpen: false,
   });
   await refreshFairValue(tx, c.id);
+  await publishNewsTx(tx, {
+    realmId: c.realmId,
+    kind: "bankruptcy",
+    prominence: "HEADLINE",
+    sourceKind: "EXCHANGE",
+    headline: `${c.name} goes bankrupt; its plant is sold and holders are paid out`,
+    companyId: c.id,
+    countryId: c.hqCountryId ?? undefined,
+    key: `news:bankruptcy:${c.id}`,
+  });
   notices.push({
     userId: c.founderId,
     title: `${c.name} went bankrupt`,

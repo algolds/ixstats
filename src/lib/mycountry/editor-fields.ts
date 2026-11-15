@@ -219,9 +219,15 @@ export const EDITOR_SECTION_TITLES = {
   culture: "Culture",
   civic: "Civic standards",
   form: "Form and institutions",
+  legislature: "Legislature",
   institutions: "Institutions",
+  cabinet: "Cabinet",
+  parties: "Political parties",
   population: "Population and wealth",
   figures: "Economic figures",
+  taxes: "Tax rates",
+  tariffs: "Sector tariffs",
+  budget: "Departments and budget",
 } as const;
 export type EditorSectionId = keyof typeof EDITOR_SECTION_TITLES;
 

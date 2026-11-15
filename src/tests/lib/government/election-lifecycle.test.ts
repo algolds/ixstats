@@ -658,4 +658,73 @@ describe("MC-2 politics lifecycle", () => {
     expect(first.status).toBe("completed");
     expect(tables.electionResult!.filter((r) => r.electionId === first.id)).toHaveLength(2);
   });
+
+  it("collapses legacy multi-candidate results per party and prunes duplicate candidates on sync", async () => {
+    await setUpNation();
+    const first = tables.election![0]!;
+    const [civic, workers] = tables.politicalParty!;
+
+    // Simulate a legacy completed election where two candidates stood under the same partyId
+    const completed = await fakeDb.election.create({
+      data: {
+        countryId: COUNTRY,
+        legislatureId: tables.legislature![0]!.id,
+        name: "Legacy General Election",
+        electionType: "general",
+        scheduledIxTime: IxTime.getCurrentIxTime() - DAY,
+        status: "completed",
+        turnout: 72,
+        marginOfVictory: 20,
+      },
+    });
+    const candA = await fakeDb.electionCandidate.create({
+      data: { electionId: completed.id, partyId: civic!.id, candidateName: "Candidate A" },
+    });
+    const candB = await fakeDb.electionCandidate.create({
+      data: { electionId: completed.id, partyId: civic!.id, candidateName: "Candidate B" },
+    });
+    await fakeDb.electionResult.create({
+      data: {
+        electionId: completed.id,
+        candidateId: candA.id,
+        votePercentage: 50.84,
+        seatsWon: 100,
+      },
+    });
+    await fakeDb.electionResult.create({
+      data: {
+        electionId: completed.id,
+        candidateId: candB.id,
+        votePercentage: 49.16,
+        seatsWon: 100,
+      },
+    });
+
+    const { elections } = callers();
+    const status = await elections.getElectionStatus({ countryId: COUNTRY });
+    expect(status.lastElection?.results).toEqual([
+      {
+        partyId: civic!.id,
+        partyName: civic!.name,
+        color: civic!.color,
+        votePercentage: 100,
+        seatsWon: 100,
+      },
+    ]);
+
+    // Duplicate candidates queued on the upcoming election are deduplicated before resolution
+    await fakeDb.electionCandidate.create({
+      data: { electionId: first.id, partyId: civic!.id, candidateName: "Dup 1" },
+    });
+    await fakeDb.electionCandidate.create({
+      data: { electionId: first.id, partyId: civic!.id, candidateName: "Dup 2" },
+    });
+    await fakeDb.electionCandidate.create({
+      data: { electionId: first.id, partyId: workers!.id, candidateName: "Workers" },
+    });
+
+    IxTime.setTimeOverride(first.scheduledIxTime + DAY);
+    expect(await processDueElections()).toMatchObject({ resolved: 1 });
+    expect(tables.electionCandidate!.filter((c) => c.electionId === first.id)).toHaveLength(2);
+  });
 });

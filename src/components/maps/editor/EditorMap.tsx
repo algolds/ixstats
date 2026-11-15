@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { createPortal } from "react-dom";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { Polygon, MultiPolygon, FeatureCollection } from "geojson";
@@ -30,6 +31,7 @@ import { VertexEditingToolbar } from "./toolbars/VertexEditingToolbar";
 import { RouteEditingToolbar } from "./toolbars/RouteEditingToolbar";
 import { MapHintPill } from "./toolbars/MapHintPill";
 import { EditorRulers } from "./components/EditorRulers";
+import { EditorZoomControls } from "./components/EditorZoomControls";
 
 export interface EditorMapRef {
   flyTo: (lng: number, lat: number, zoom?: number) => void;
@@ -109,6 +111,8 @@ interface EditorMapProps {
   snapEnabled?: boolean;
   snapTolerance?: number;
   onMapReady?: (map: MapLibreMap | null) => void;
+  /** Unobscured viewport container for rulers, zoom controls and floating toolbars. */
+  viewportRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
@@ -162,6 +166,7 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
     snapEnabled = true,
     snapTolerance = 10,
     onMapReady,
+    viewportRef,
   },
   ref
 ) {
@@ -170,7 +175,12 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
   // The instance the layer and tool hooks draw on: state, so a render reads it (the ref is for handlers)
   const [map, setMap] = useState<MapLibreMap | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLDivElement | null>(null);
   const context = useMapEditorContext();
+
+  useEffect(() => {
+    if (viewportRef?.current) setPortalTarget(viewportRef.current);
+  }, [viewportRef]);
 
   const snapPoint = (coords: [number, number]) => {
     let snapped = coords;
@@ -320,36 +330,18 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
 
   useSelectionHighlight(mapRef, isLoaded, selectedFeature, selectedIds);
 
-  return (
-    <div className="relative h-full w-full select-none" style={{ minHeight: 400 }}>
-      <style>{`
-          .maplibregl-ctrl-top-right {
-            top: 28px !important;
-          }
-        `}</style>
-
-      <div
-        ref={containerRef}
-        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-      />
-
-      {!isLoaded && (
-        <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="border-separator border-t-green h-8 w-8 animate-spin rounded-full border-4" />
-            <p className="text-label-secondary text-body">Loading map editor...</p>
-          </div>
-        </div>
-      )}
-
+  const hud = (
+    <>
       <EditorRulers
         map={map}
         isLoaded={isLoaded}
-        containerRef={containerRef}
+        containerRef={viewportRef ?? containerRef}
         guides={guides}
         setGuides={setGuides}
         showGuides={showGuides}
       />
+
+      {isLoaded && <EditorZoomControls map={map} className="absolute top-8 right-3 z-20" />}
 
       <DrawingToolbar {...draw} />
 
@@ -371,6 +363,26 @@ const EditorMap = forwardRef<EditorMapRef, EditorMapProps>(function EditorMap(
         drawVerticesCount={draw.drawVertices.length}
         polylineCount={routeWaypoints?.length ?? 0}
       />
+    </>
+  );
+
+  return (
+    <div className="relative h-full w-full select-none" style={{ minHeight: 400 }}>
+      <div
+        ref={containerRef}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+      />
+
+      {!isLoaded && (
+        <div className="bg-fill-3 absolute inset-0 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="border-separator border-t-tint h-8 w-8 animate-spin rounded-full border-4" />
+            <p className="text-label-secondary text-body">Loading map editor…</p>
+          </div>
+        </div>
+      )}
+
+      {viewportRef ? (portalTarget ? createPortal(hud, portalTarget) : null) : hud}
     </div>
   );
 });

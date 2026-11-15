@@ -1,6 +1,6 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Xmark as Close, Check, OpenNewWindow as ExternalLink } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
@@ -15,7 +15,7 @@ import { getFeatureIcon } from "../featureTypeIcons";
 import { CITY_TYPES } from "../../optionLists";
 import { resolveRouteBaseSpeed } from "~/lib/economy/travel-time";
 import { createUrl } from "~/lib/utils/url-utils";
-import { wikiReaderPath } from "~/lib/wiki-os/config";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
@@ -25,6 +25,7 @@ import { Card } from "~/components/ui/card";
 export interface FeaturePropertyUpdates {
   name?: string;
   wikiPageTitle?: string | null;
+  wikiSource?: string | null;
   cityType?: string;
   population?: number;
   isNationalCapital?: boolean;
@@ -85,6 +86,7 @@ function readFields(feature: EditorFeature) {
   return {
     name: feature.name || "",
     wikiPageTitle: (p?.wikiPageTitle as string) || undefined,
+    wikiSource: (p?.wikiSource as string) || undefined,
     subdivisionId: (p?.subdivisionId as string) || "",
     cityType: (p?.cityType as string) || "city",
     routeType,
@@ -196,7 +198,7 @@ function ElevationTerrainCard({
   return (
     <div className="border-separator rounded-control space-y-2 border p-2">
       <div className="flex items-center justify-between">
-        <Eyebrow>Elevation & terrain</Eyebrow>
+        <span className="text-caption text-label-secondary font-medium">Elevation & terrain</span>
         {isLoading && (
           <div className="border-separator border-t-primary h-2.5 w-2.5 animate-spin rounded-full border-2" />
         )}
@@ -204,7 +206,7 @@ function ElevationTerrainCard({
 
       <div className="grid grid-cols-2 gap-2">
         {[
-          ["Elevation", sample?.midpoint != null ? `${sample.midpoint.toLocaleString()} m` : "—"],
+          ["Elevation", sample?.midpoint != null ? `${sample.midpoint.toLocaleString()} m` : "–"],
           ["Terrain zone", sample?.zoneName || "Lowland"],
         ].map(([label, value]) => (
           <div key={label} className="border-separator bg-fill-4 rounded-control-sm p-2">
@@ -288,13 +290,13 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
       <InspectorSection title="Details">
         <LabeledField label="Name">
-          <input
+          <Input
             type="text"
             value={fields.name}
             onChange={(e) => setFields((f) => ({ ...f, name: e.target.value }))}
             onBlur={handleNameBlur}
             placeholder="e.g. Caphiria"
-            className="border-separator bg-surface text-label placeholder:text-label-tertiary focus:border-tint focus:ring-tint rounded-control text-caption w-full border px-3 py-2 transition-colors focus:ring-1 focus:outline-none"
+            className="text-caption h-8 px-2.5"
           />
         </LabeledField>
 
@@ -405,9 +407,14 @@ export const FeatureInspector = React.memo(function FeatureInspector({
         <LabeledField label="Article title">
           <WikiLinkWizard
             value={fields.wikiPageTitle}
-            onChange={(wikiPageTitle) =>
-              commit({ wikiPageTitle }, { wikiPageTitle: wikiPageTitle || null })
-            }
+            wikiSource={fields.wikiPageTitle ? fields.wikiSource : undefined}
+            onChange={(wikiPageTitle, wikiSource) => {
+              const nextSource = wikiPageTitle ? (wikiSource ?? "ixwiki") : undefined;
+              commit(
+                { wikiPageTitle, wikiSource: nextSource },
+                { wikiPageTitle: wikiPageTitle || null, wikiSource: nextSource ?? null }
+              );
+            }}
             currentCoords={coords}
             placeholder="Search wiki articles…"
           />
@@ -415,10 +422,12 @@ export const FeatureInspector = React.memo(function FeatureInspector({
 
         {fields.wikiPageTitle && (
           <a
-            href={createUrl(wikiReaderPath(fields.wikiPageTitle))}
+            href={createUrl(
+              wikiReaderPath(fields.wikiPageTitle, parseWikiSource(fields.wikiSource))
+            )}
             target="_blank"
             rel="noreferrer"
-            className="border-separator bg-surface hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-[color,background-color,border-color,box-shadow,opacity]"
+            className="border-separator bg-fill-4 hover:bg-fill-3 text-label rounded-control text-caption flex items-center justify-center gap-2 border py-2 transition-colors"
           >
             <ExternalLink className="h-3.5 w-3.5 opacity-70" />
             <span>Open in wiki</span>

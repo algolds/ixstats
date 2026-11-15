@@ -41,17 +41,28 @@ export const COUNTRY_OWNED_MODELS = [
   "country",
 ] as const;
 
+/** Procedure builders that are exempt from country-ownership checks. */
+export const EXEMPT_ROOTS = new Set<string>(["adminProcedure"]);
+
 /** Procedure builders that do not bind the caller to the target country. */
 export const AUDITED_ROOTS = new Set<string>([
   "publicProcedure",
   "protectedProcedure",
-  "lightMutationProcedure",
-  "readOnlyProcedure",
   "premiumProcedure",
-  "cachedProtectedProcedure",
-  "rateLimitedPublicProcedure",
   "countryOwnerProcedure",
   "standardMutationCountryOwnerProcedure",
+  "mapFeatureOwnerProcedure",
+  "standardMutationMapFeatureOwnerProcedure",
+  "lightMutationProcedure",
+  "rateLimitedMutationProcedure",
+  "premiumMutationProcedure",
+  "rateLimitedPublicProcedure",
+  "readOnlyProcedure",
+  "publicReadOnlyProcedure",
+  "wikiReadProcedure",
+  "cachedPublicProcedure",
+  "cachedStaticProcedure",
+  "cachedProtectedProcedure",
 ]);
 
 const WRITE_METHODS = "create|update|upsert|delete|deleteMany|updateMany|createMany";
@@ -142,7 +153,15 @@ export function analyzeSource(project: Project, file: string, text: string): Ido
     const callee = call.getExpression();
     if (!Node.isPropertyAccessExpression(callee) || callee.getName() !== "mutation") continue;
     const chain = readChain(call);
-    if (!chain || !AUDITED_ROOTS.has(chain.root)) continue;
+    if (!chain || EXEMPT_ROOTS.has(chain.root)) continue;
+    if (!AUDITED_ROOTS.has(chain.root)) {
+      if (chain.root.endsWith("Procedure")) {
+        throw new Error(
+          `Unknown procedure root "${chain.root}" at ${file}:${call.getStartLineNumber()}`
+        );
+      }
+      continue;
+    }
     if (!isCountryScoped(chain.inputText, chain.bodyText)) continue;
     findings.push({
       status: classifyBody(chain.bodyText),

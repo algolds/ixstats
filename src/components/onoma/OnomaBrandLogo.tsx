@@ -216,7 +216,7 @@ export function OnomaBrandLogo({
   return (
     <div
       className={cn(
-        "border-separator bg-surface hover:border-tint/30 shadow-card hover:shadow-card relative flex items-center justify-center overflow-hidden border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate,rotate] duration-300 hover:scale-105",
+        "border-separator bg-surface hover:border-tint/30 shadow-card relative flex items-center justify-center overflow-hidden border transition-[border-color] duration-300",
         SIZE_MAP["app-icon"][size],
         className
       )}

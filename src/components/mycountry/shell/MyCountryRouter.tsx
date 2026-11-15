@@ -20,11 +20,10 @@ import { MyCountryComplianceModal } from "~/components/mycountry/shared/modals/M
 import { DashboardErrorBoundary } from "~/components/dashboard/DashboardErrorBoundary";
 import { withBasePath } from "~/lib/base-path";
 import { complianceReviewHref } from "~/lib/mycountry/routes";
-import { useNationalIssuesToast } from "~/hooks/useNationalIssuesToast";
 import { CommandSurface } from "./CommandSurface";
 
 const SECTION_TITLES: Record<MyCountrySection, string> = {
-  overview: "MyCountry®",
+  overview: "MyCountry",
   executive: "Executive Directives",
   economy: "Economy & Budget",
   diplomacy: "Diplomatic Operations",
@@ -87,9 +86,6 @@ function MyCountryRouterInner() {
 
   // The address is the state: Next.js folds native pushState and Back/Forward into usePathname.
   const activeSection = getSectionFromPathname(pathname);
-
-  // Push national issue alerts to Dynamic Island toast queue
-  useNationalIssuesToast(country?.id);
 
   // Compliance modal (overview only)
   const {

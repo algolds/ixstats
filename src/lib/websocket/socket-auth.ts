@@ -3,6 +3,7 @@
 import { verifyToken } from "@clerk/backend";
 import type { Socket } from "socket.io";
 import { db } from "~/server/db";
+import { getRealmBoardAccess } from "~/server/shared/realm-board";
 
 interface SocketPrincipal {
   clerkUserId: string;
@@ -114,20 +115,45 @@ export function getPrincipal(socket: Socket): SocketPrincipal | null {
   return principals.get(socket) ?? null;
 }
 
+/** Request states that keep a participant out of the live room (they still read the request through queries). */
+const BLOCKED_REQUEST_STATES = ["pending", "declined"];
+
+interface RoomConversation {
+  source: string | null;
+  sourceId: string | null;
+}
+
+/** A realm board's chat refuses a user banned from the board; the legacy participant row stays active. */
+async function isBannedFromBoardChat(
+  conversation: RoomConversation | null,
+  clerkUserId: string
+): Promise<boolean> {
+  if (conversation?.source !== "thinktank" || !conversation.sourceId) return false;
+  const access = await getRealmBoardAccess(db, conversation.sourceId, clerkUserId);
+  return access.restriction?.kind === "ban";
+}
+
 export async function canJoinConversation(
   clerkUserId: string,
   conversationId: string
 ): Promise<boolean> {
   const participant = await db.conversationParticipant.findFirst({
-    where: { conversationId, userId: clerkUserId, isActive: true },
-    select: { id: true },
+    where: {
+      conversationId,
+      userId: clerkUserId,
+      isActive: true,
+      requestStatus: { notIn: BLOCKED_REQUEST_STATES },
+    },
+    select: { id: true, conversation: { select: { source: true, sourceId: true } } },
   });
-  return participant !== null;
+  if (!participant) return false;
+  return !(await isBannedFromBoardChat(participant.conversation ?? null, clerkUserId));
 }
 
 /**
  * Which of `clerkUserIds` are still active members of a conversation or ThinkTank group, in one
- * query: a room's sockets are re-checked with it before a message is delivered.
+ * query: a room's sockets are re-checked with it before a message is delivered. Conversation
+ * members whose request is pending or declined, or who are banned from a realm board, do not count.
  */
 export async function activeRoomMembers(
   kind: "conversation" | "group",
@@ -136,17 +162,21 @@ export async function activeRoomMembers(
 ): Promise<Set<string>> {
   if (clerkUserIds.length === 0) return new Set();
   const where = { userId: { in: clerkUserIds }, isActive: true };
-  const rows =
-    kind === "conversation"
-      ? await db.conversationParticipant.findMany({
-          where: { ...where, conversationId: id },
-          select: { userId: true },
-        })
-      : await db.thinktankMember.findMany({
-          where: { ...where, groupId: id },
-          select: { userId: true },
-        });
-  return new Set(rows.map((row) => row.userId));
+  if (kind === "group") {
+    const rows = await db.thinktankMember.findMany({
+      where: { ...where, groupId: id },
+      select: { userId: true },
+    });
+    return new Set(rows.map((row) => row.userId));
+  }
+  const rows = await db.conversationParticipant.findMany({
+    where: { ...where, conversationId: id, requestStatus: { notIn: BLOCKED_REQUEST_STATES } },
+    select: { userId: true, conversation: { select: { source: true, sourceId: true } } },
+  });
+  const banned = await Promise.all(
+    rows.map((row) => isBannedFromBoardChat(row.conversation ?? null, row.userId))
+  );
+  return new Set(rows.filter((_, i) => !banned[i]).map((row) => row.userId));
 }
 
 export async function canJoinThinktankGroup(

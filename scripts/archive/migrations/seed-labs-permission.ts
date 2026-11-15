@@ -1,12 +1,12 @@
+import { createPrismaClient } from "~/server/prisma-client";
 // scripts/seed-labs-permission.ts
 // One-off: add the `labs.access` permission to an already-initialized DB (the
 // canonical initializeRoleSystem uses create-only and won't re-run). Idempotent.
 // After this, grant it in the roles admin: create/edit a role to include
 // "Access Labs" and assign it to the users you want.
 //   bun scripts/seed-labs-permission.ts
-import { PrismaClient } from "@prisma/client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 const perm = await db.permission.upsert({
   where: { name: "labs.access" },

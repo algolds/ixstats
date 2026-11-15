@@ -8,7 +8,6 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { Xmark } from "iconoir-react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -151,9 +150,9 @@ export default function CommonsBrowserPanel({
         <div className="border-separator bg-surface border-b p-4">
           {activeTab === "category" ? (
             <div className="space-y-1">
-              <Eyebrow id="commons-category-label" className="block">
+              <span id="commons-category-label" className="text-caption text-label-secondary block">
                 Commons category
-              </Eyebrow>
+              </span>
               <OptionSelect
                 aria-labelledby="commons-category-label"
                 value={selectedCategory}
@@ -163,7 +162,7 @@ export default function CommonsBrowserPanel({
             </div>
           ) : (
             <div className="space-y-1">
-              <Eyebrow className="block">Search term</Eyebrow>
+              <span className="text-caption text-label-secondary block">Search term</span>
               <SearchField
                 aria-label="Search term"
                 placeholder="e.g. heraldic lion, crown SVG..."
@@ -178,9 +177,9 @@ export default function CommonsBrowserPanel({
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
           {isLoading ? (
             <LoadingBlock
-              message="Fetching Wikimedia library..."
-              className="py-20"
-              spinnerClassName="h-6 w-6"
+              message="Loading Wikimedia Commons"
+              count={6}
+              className="lg:grid-cols-3"
             />
           ) : svgImages.length === 0 ? (
             <div className="text-label-secondary text-footnote py-20 text-center italic">
@@ -222,7 +221,7 @@ export default function CommonsBrowserPanel({
                     {isImportingThis ? (
                       <div className="border-separator text-footnote space-y-2 border-t p-1">
                         <div>
-                          <span className="text-label-secondary mb-0.5 block font-semibold">
+                          <span className="text-label-secondary text-subhead mb-0.5 block">
                             Name
                           </span>
                           <Input
@@ -234,7 +233,7 @@ export default function CommonsBrowserPanel({
                           />
                         </div>
                         <div>
-                          <span className="text-label-secondary mb-0.5 block font-semibold">
+                          <span className="text-label-secondary text-subhead mb-0.5 block">
                             Category
                           </span>
                           <OptionSelect

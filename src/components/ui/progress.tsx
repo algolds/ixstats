@@ -18,12 +18,12 @@ const TONE: Record<ProgressTone, string> = {
   neutral: "bg-label-secondary",
 };
 
-/** Linear meter: `fill-2` track, tint (or status) indicator. */
+/** Linear meter: `fill-2` track, neutral ink (or explicit status/tint) indicator. */
 function Progress({
   className,
   value,
   max = 100,
-  tone = "tint",
+  tone = "neutral",
   indicatorClassName,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root> & {

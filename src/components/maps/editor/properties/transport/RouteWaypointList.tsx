@@ -1,6 +1,6 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { memo, useMemo } from "react";
 import {
   Check,
@@ -59,16 +59,18 @@ export const RouteWaypointList = memo(function RouteWaypointList({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Eyebrow className="block">Route name & properties</Eyebrow>
-        <input
+        <span className="text-caption text-label-secondary block font-medium">
+          Route name & properties
+        </span>
+        <Input
           type="text"
           placeholder="e.g. Trans-National Highway 1"
           value={routeName}
           onChange={(e) => setRouteName(e.target.value)}
-          className="border-separator bg-surface text-label placeholder:text-label-secondary focus:border-tint rounded-control-sm text-footnote w-full border px-3 py-2 focus:outline-none"
+          className="rounded-control-sm text-footnote h-8 px-2.5"
         />
 
-        <Eyebrow className="block pt-1">Route type</Eyebrow>
+        <span className="text-caption text-label-secondary block pt-1 font-medium">Route type</span>
         <OptionSelect
           aria-label="Route type"
           value={manualRouteType}
@@ -85,7 +87,9 @@ export const RouteWaypointList = memo(function RouteWaypointList({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Eyebrow>Waypoints ({waypointCount})</Eyebrow>
+            <span className="text-caption text-label-secondary font-medium tabular-nums">
+              Waypoints ({waypointCount})
+            </span>
             {waypointCount >= 2 && (
               <div className="flex items-center gap-1">
                 <span className="border-separator bg-fill-3 text-label text-footnote rounded-control-sm border px-2 py-0.5 tabular-nums">
@@ -136,13 +140,13 @@ export const RouteWaypointList = memo(function RouteWaypointList({
             {routeWaypoints.map((pt, idx) => (
               <div
                 key={idx}
-                className="bg-surface text-footnote rounded-control-sm flex items-center justify-between px-2 py-1"
+                className="bg-fill-4 text-footnote rounded-control-sm flex items-center justify-between px-2 py-1"
               >
                 <div className="flex items-center gap-2">
                   <MapPin className="text-tint h-3 w-3 shrink-0" />
-                  <span className="text-label-secondary font-mono tabular-nums">#{idx + 1}</span>
+                  <span className="text-label-secondary tabular-nums">#{idx + 1}</span>
                 </div>
-                <span className="text-label-secondary text-footnote font-mono tabular-nums">
+                <span className="text-label-secondary text-footnote font-data tabular-nums">
                   {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
                 </span>
               </div>

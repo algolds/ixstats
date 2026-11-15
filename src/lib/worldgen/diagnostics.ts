@@ -68,6 +68,8 @@ export interface DiagnosticImage {
   width: number;
   height: number;
   rgba: Uint8Array;
+  /** The diagnostic before the warp: equirectangular, pole to pole, for a flat (Plate Carrée) map */
+  flat: { width: number; height: number; rgba: Uint8Array };
   legend: DiagnosticLegend;
 }
 
@@ -445,7 +447,12 @@ export function renderDiagnostic(graph: WorldGraph, kind: DiagnosticKind): Diagn
     { width: raster.width, height: raster.height, data },
     DIAGNOSTIC_ZOOM
   );
-  return { kind, ...warped, legend };
+  return {
+    kind,
+    ...warped,
+    flat: { width: raster.width, height: raster.height, rgba: data },
+    legend,
+  };
 }
 
 /** Each nation's seed: its capital settlement, as a GeoJSON point. */

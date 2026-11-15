@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/settings/VoicePreferencesPanel.tsx
 // Voice Preferences, Species Presets, Inflection Tuning, and Culture Voice Mappings
 
+import { Card } from "~/components/ui/card";
 import React, { useState } from "react";
 import {
   SoundHigh as Volume2,
@@ -208,12 +209,12 @@ export function VoicePreferencesPanel({
   };
 
   return (
-    <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
+    <Card padding="none" className="space-y-4 p-4 text-left">
       <div className="border-separator flex items-center justify-between border-b pb-2">
         <h4 className="text-label text-subhead">Voice preferences</h4>
         <div className="flex items-center gap-2">
           {healthData && (
-            <span className="text-caption flex items-center gap-1 font-semibold">
+            <span className="text-caption flex items-center gap-1 font-medium">
               <span
                 className={
                   healthData.fastapi === "up" || healthData.web === "up"
@@ -279,9 +280,7 @@ export function VoicePreferencesPanel({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <label className="text-label-secondary text-subhead">Personal speed override</label>
-            <span className="text-tint text-footnote font-mono font-semibold">
-              {personalSpeed}x
-            </span>
+            <span className="text-tint text-footnote font-mono font-medium">{personalSpeed}x</span>
           </div>
           <Slider
             min={0.5}
@@ -331,7 +330,7 @@ export function VoicePreferencesPanel({
               </div>
 
               <div className="text-label flex items-center justify-between py-1">
-                <span className="text-eyebrow">Force Native Browser TTS</span>
+                <span className="text-caption text-label-secondary">Force Native Browser TTS</span>
                 <Checkbox
                   checked={forceNative}
                   onCheckedChange={(checked) =>
@@ -342,8 +341,8 @@ export function VoicePreferencesPanel({
 
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-eyebrow">Local playback volume</span>
-                  <span className="text-tint text-footnote font-mono font-semibold">
+                  <span className="text-caption text-label-secondary">Local playback volume</span>
+                  <span className="text-tint text-footnote font-mono font-medium">
                     {Math.round(personalVolume * 100)}%
                   </span>
                 </div>
@@ -358,8 +357,8 @@ export function VoicePreferencesPanel({
 
               <div className="space-y-1">
                 <div className="flex justify-between">
-                  <span className="text-eyebrow">Browser speech pitch</span>
-                  <span className="text-tint text-footnote font-mono font-semibold">
+                  <span className="text-caption text-label-secondary">Browser speech pitch</span>
+                  <span className="text-tint text-footnote font-mono font-medium">
                     {personalPitch}x
                   </span>
                 </div>
@@ -374,7 +373,7 @@ export function VoicePreferencesPanel({
 
               <div className="border-separator space-y-2 border-t pt-2">
                 <div className="text-label flex items-center justify-between">
-                  <span className="text-eyebrow">Voice blending</span>
+                  <span className="text-caption text-label-secondary">Voice blending</span>
                   <Checkbox
                     checked={voiceBlendActive}
                     onCheckedChange={(checked) =>
@@ -388,7 +387,7 @@ export function VoicePreferencesPanel({
                 {voiceBlendActive && (
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-caption font-semibold">Primary voice</label>
+                      <label className="text-caption font-medium">Primary voice</label>
                       <ValueSelect
                         value={voiceBlendPrimary}
                         onValueChange={(v) =>
@@ -400,7 +399,7 @@ export function VoicePreferencesPanel({
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-caption font-semibold">Secondary voice</label>
+                      <label className="text-caption font-medium">Secondary voice</label>
                       <ValueSelect
                         value={voiceBlendSecondary}
                         onValueChange={(v) =>
@@ -432,7 +431,7 @@ export function VoicePreferencesPanel({
               </div>
 
               <div className="border-separator space-y-2 border-t pt-2">
-                <span className="text-label text-eyebrow">Inflection & phoneme tweaks</span>
+                <span className="text-label text-caption">Inflection & phoneme tweaks</span>
 
                 <div className="text-label flex items-center justify-between">
                   <span className="font-medium">Anglicize Vowels (Soft/English tones)</span>
@@ -455,7 +454,7 @@ export function VoicePreferencesPanel({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-label text-caption font-semibold">
+                  <label className="text-label text-caption font-medium">
                     Initial Breath/Aspiration Prefix
                   </label>
                   <ValueSelect
@@ -474,7 +473,7 @@ export function VoicePreferencesPanel({
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-label text-caption font-semibold">
+                  <label className="text-label text-caption font-medium">
                     Custom model override
                   </label>
                   <Input
@@ -516,9 +515,7 @@ export function VoicePreferencesPanel({
               </p>
               {CULTURES.map((c) => (
                 <div key={c} className="text-caption flex items-center justify-between gap-2">
-                  <span className="text-label-secondary truncate font-semibold capitalize">
-                    {c}
-                  </span>
+                  <span className="text-label-secondary truncate font-medium capitalize">{c}</span>
                   <ValueSelect
                     value={personalVoiceMap[c] || "" || "__none__"}
                     onValueChange={(v) => onUpdateCultureMap(c, v === "__none__" ? "" : v)}
@@ -541,6 +538,6 @@ export function VoicePreferencesPanel({
           </Button>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

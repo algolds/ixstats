@@ -1,12 +1,11 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Detailed Verification Script
  *
  * Comprehensive check of all economic data with detailed examples
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("\n📊 DETAILED ECONOMIC DATA VERIFICATION REPORT\n");

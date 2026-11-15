@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import React from "react";
 import Link from "next/link";
 import { Crown, Globe, Shield } from "iconoir-react";
@@ -101,12 +102,16 @@ function NationRow({ item }: { item: RealmItem }) {
         </div>
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/countries/${country.slug}`}
+            <CountryLink
+              country={{
+                id: country.id,
+                slug: country.slug,
+                name: country.name.replace(/_/g, " "),
+              }}
               className={`text-label text-headline truncate ${LINK_CLASS}`}
             >
               {country.name.replace(/_/g, " ")}
-            </Link>
+            </CountryLink>
             {item.isPrimary && <Badge variant="secondary">Primary nation</Badge>}
           </div>
           {meta && <p className="text-label-secondary text-footnote truncate">{meta}</p>}

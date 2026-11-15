@@ -5,13 +5,13 @@
  * Populates the database with preview data for development
  */
 
-import { PrismaClient } from "@prisma/client";
 import { seedCardPacks } from "../../prisma/seeds/card-packs";
 import { seedSmallArmsEquipment } from "../../prisma/seeds/seed-small-arms-equipment";
 import { seedMilitaryEquipmentCatalog } from "../../prisma/seeds/military-equipment-catalog";
 import { seedOnomaPresets } from "../../prisma/seeds/onoma-presets";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 async function seedDatabase() {
   try {

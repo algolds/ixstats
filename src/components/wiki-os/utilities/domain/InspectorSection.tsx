@@ -207,8 +207,6 @@ export function InspectorPageLink({
   return (
     <Link
       href={`/wiki/${encodeURIComponent(slug || title)}`}
-      data-cuelume-press="page"
-      data-cuelume-hover="tick"
       className={`${missing ? "text-red" : "text-label hover:text-tint"} font-medium hover:underline`}
     >
       {title}

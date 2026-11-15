@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { WarningTriangle } from "iconoir-react";
 import { Badge, type BadgeTone } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { timeAgo } from "~/lib/format/compact";
@@ -94,21 +94,20 @@ export function IntelligenceAlertsCard({
       aria-labelledby="intelligence-alerts-title"
       className="rounded-card scroll-mt-24"
     >
-      <CardHeader className="flex-row items-center gap-3 px-4 pt-4 pb-0">
-        <span
-          aria-hidden="true"
-          className="bg-fill-3 text-label-secondary flex size-8 shrink-0 items-center justify-center rounded-lg"
-        >
-          <WarningTriangle className="size-4" />
-        </span>
+      <CardHeader className="flex-row items-start justify-between gap-3 px-4 pt-4 pb-0 sm:px-5 sm:pt-5">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h2 id="intelligence-alerts-title" className="text-headline text-label">
+          <CardTitle
+            id="intelligence-alerts-title"
+            icon={<WarningTriangle className="text-orange" />}
+            role="heading"
+            aria-level={2}
+          >
             Intelligence alerts
-          </h2>
-          <p className="text-footnote text-label-secondary">
+          </CardTitle>
+          <CardDescription className="text-footnote tabular-nums">
             {data?.openCount ?? alerts.length} open
             {unread > 0 ? `, ${unread} unread` : ""}
-          </p>
+          </CardDescription>
         </div>
         {unread > 0 ? (
           <Button
@@ -122,7 +121,7 @@ export function IntelligenceAlertsCard({
           </Button>
         ) : null}
       </CardHeader>
-      <CardContent className="px-4 pt-2 pb-3">
+      <CardContent className="px-4 pt-2 pb-3 sm:px-5 sm:pb-4">
         <ul className="divide-separator divide-y" aria-label="Open intelligence alerts">
           {alerts.map((alert) => {
             const isUnread = !alert.readAt;

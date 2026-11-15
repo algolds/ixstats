@@ -4,7 +4,10 @@
  * One JSON object of what the user put in and what identifies them: the account (with the Clerk
  * email and username, since email is not stored here), linked accounts, nations, personas and all
  * their ThinkPages posts, forum threads and posts, the ThinkShare and ThinkTank messages they sent,
- * Onoma work, cards, trades, realm claims, achievements and preferences.
+ * Onoma work, cards, trades, realm claims, Vault, stashes, wiki discussion comments, polls, sports
+ * predictions, blurb responses, collaborative documents, lore team memberships, achievements and
+ * preferences. Polls on nations the user owns that nothing ties to them are listed apart as
+ * `pollsOnYourNations`, and a collaborative document they only last edited is listed without its text.
  *
  * Never in it: link tokens and verification codes, other users' messages, and other users' ids
  * (a trade names the user's side, not the other party; a realm claim leaves out its reviewer and
@@ -332,20 +335,248 @@ async function vaultSection(db: PrismaClient, user: AccountRow) {
   });
 }
 
+function stashesSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  return db.stash.findMany({
+    where: { userId: { in: [clerkUserId, user.id] } },
+    select: {
+      id: true,
+      name: true,
+      color: true,
+      icon: true,
+      isDefault: true,
+      order: true,
+      createdAt: true,
+      updatedAt: true,
+      items: {
+        select: {
+          id: true,
+          pageTitle: true,
+          pageSlug: true,
+          contentType: true,
+          source: true,
+          note: true,
+          order: true,
+          savedAt: true,
+          annotations: {
+            select: {
+              id: true,
+              selectedText: true,
+              comment: true,
+              color: true,
+              createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+        orderBy: { order: "asc" },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+function commentsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  return db.wikiDiscussionComment.findMany({
+    where: { userId: { in: [clerkUserId, user.id] } },
+    select: {
+      id: true,
+      threadId: true,
+      countryId: true,
+      content: true,
+      suggestedEdit: true,
+      createdAt: true,
+      updatedAt: true,
+      thread: { select: { articleTitle: true, title: true, sectionAnchor: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/** A poll the user is tied to through their own post or activity entry: the only ways a poll names its creator. */
+const createdPollWhere = (ids: string[]) => [
+  { thinkpagesPosts: { some: { account: { clerkUserId: { in: ids } } } } },
+  { activityFeeds: { some: { userId: { in: ids } } } },
+];
+
+const POLL_SELECT = {
+  id: true,
+  question: true,
+  description: true,
+  pollType: true,
+  multiple: true,
+  isActive: true,
+  endDate: true,
+  countryId: true,
+  realmId: true,
+  createdAt: true,
+  options: { select: { id: true, label: true, description: true } },
+} as const;
+
+/**
+ * `created`: polls attached to the user's own posts or activity entries. `pollsOnYourNations`: the other polls on
+ * nations they currently own; `Poll` has no creator column, so a previous owner or an admin may have made them.
+ * `votes`: the user's own votes.
+ */
+async function pollsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  const ids = [clerkUserId, user.id];
+  const [created, onYourNations, votes] = await Promise.all([
+    db.poll.findMany({
+      where: { OR: createdPollWhere(ids) },
+      select: POLL_SELECT,
+      orderBy: { createdAt: "asc" },
+    }),
+    db.poll.findMany({
+      where: { country: { ownerUserId: user.id }, NOT: { OR: createdPollWhere(ids) } },
+      select: POLL_SELECT,
+      orderBy: { createdAt: "asc" },
+    }),
+    db.pollVote.findMany({
+      where: { userId: { in: ids } },
+      select: {
+        id: true,
+        pollId: true,
+        optionId: true,
+        createdAt: true,
+        poll: { select: { question: true } },
+        option: { select: { label: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
+  return { created, pollsOnYourNations: onYourNations, votes };
+}
+
+function predictionsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  return db.sportPrediction.findMany({
+    where: { userId: { in: [clerkUserId, user.id] } },
+    select: {
+      id: true,
+      matchId: true,
+      seasonId: true,
+      outcome: true,
+      stake: true,
+      payout: true,
+      status: true,
+      createdIxTime: true,
+      resolvedIxTime: true,
+      createdAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+function blurbsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  return db.blurbResponse.findMany({
+    where: { userId: { in: [clerkUserId, user.id] } },
+    select: {
+      id: true,
+      promptId: true,
+      countryId: true,
+      content: true,
+      linkedArticles: true,
+      featured: true,
+      thinkpagesPostId: true,
+      createdAt: true,
+      updatedAt: true,
+      prompt: { select: { title: true, slug: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+/**
+ * Documents the user created, in full; documents they only last edited as id, title and update time, since the text
+ * is another member's.
+ */
+async function documentsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  const ids = [clerkUserId, user.id];
+  const docs = await db.collaborativeDoc.findMany({
+    where: { OR: [{ createdBy: { in: ids } }, { lastEditBy: { in: ids } }] },
+    select: {
+      id: true,
+      groupId: true,
+      title: true,
+      content: true,
+      version: true,
+      isPublic: true,
+      createdBy: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  return docs.map(({ createdBy, ...doc }) =>
+    ids.includes(createdBy) ? doc : { id: doc.id, title: doc.title, updatedAt: doc.updatedAt }
+  );
+}
+
+function loreTeamsSection(db: PrismaClient, user: AccountRow, clerkUserId: string) {
+  return db.countryLoreAuthor.findMany({
+    where: { userId: { in: [clerkUserId, user.id] } },
+    select: {
+      id: true,
+      countryId: true,
+      createdAt: true,
+      country: { select: { name: true, slug: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
 async function accountContent(db: PrismaClient, user: AccountRow, clerkUserId: string) {
-  const [linkedAccounts, nations, forum, messages, onoma, cards, trades, realmClaims, vault] =
-    await Promise.all([
-      linkedAccountsSection(db, user),
-      nationsSection(db, user),
-      forumSection(db, user),
-      messagesSection(db, user, clerkUserId),
-      onomaSection(db, user),
-      cardsSection(db, user),
-      tradesSection(db, user),
-      realmClaimsSection(db, user),
-      vaultSection(db, user),
-    ]);
-  return { linkedAccounts, nations, forum, messages, onoma, cards, trades, realmClaims, vault };
+  const [
+    linkedAccounts,
+    nations,
+    forum,
+    messages,
+    onoma,
+    cards,
+    trades,
+    realmClaims,
+    vault,
+    stashes,
+    comments,
+    polls,
+    predictions,
+    blurbs,
+    documents,
+    loreTeams,
+  ] = await Promise.all([
+    linkedAccountsSection(db, user),
+    nationsSection(db, user),
+    forumSection(db, user),
+    messagesSection(db, user, clerkUserId),
+    onomaSection(db, user),
+    cardsSection(db, user),
+    tradesSection(db, user),
+    realmClaimsSection(db, user),
+    vaultSection(db, user),
+    stashesSection(db, user, clerkUserId),
+    commentsSection(db, user, clerkUserId),
+    pollsSection(db, user, clerkUserId),
+    predictionsSection(db, user, clerkUserId),
+    blurbsSection(db, user, clerkUserId),
+    documentsSection(db, user, clerkUserId),
+    loreTeamsSection(db, user, clerkUserId),
+  ]);
+  return {
+    linkedAccounts,
+    nations,
+    forum,
+    messages,
+    onoma,
+    cards,
+    trades,
+    realmClaims,
+    vault,
+    stashes,
+    comments,
+    polls,
+    predictions,
+    blurbs,
+    documents,
+    loreTeams,
+  };
 }
 
 /** The same shape for a Clerk user who never got an account row: only what Clerk and the Clerk-keyed rows hold. */
@@ -372,6 +603,13 @@ function emptyContent(): Awaited<ReturnType<typeof accountContent>> {
     trades: [],
     realmClaims: [],
     vault: null,
+    stashes: [],
+    comments: [],
+    polls: { created: [], pollsOnYourNations: [], votes: [] },
+    predictions: [],
+    blurbs: [],
+    documents: [],
+    loreTeams: [],
   };
 }
 

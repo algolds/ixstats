@@ -12,13 +12,13 @@ their own (below). ThinkPages itself is the forum, at `/thinkpages`
 
 ## Routes
 
-| Route        | Page title            | File                                   |
-| ------------ | --------------------- | -------------------------------------- |
-| `/dashboard` | "Dashboard - IxStats" | `page.tsx` → `DashboardPageClient.tsx` |
-| `/dashboard/accounts` | "Accounts - IxStats" | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`) |
-| `/dashboard/post/[postId]` | feed post | `post/[postId]/page.tsx` (client page: a feed post with replies and the inline reply composer) |
-| `/dashboard/profile/[username]` | persona profile | `profile/[username]/page.tsx` (client page: a persona's posts, followers and following) |
-| `/dashboard/saved` | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only) |
+| Route                           | Page title              | File                                                                                           |
+| ------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
+| `/dashboard`                    | "Dashboard - IxStats"   | `page.tsx` → `DashboardPageClient.tsx`                                                         |
+| `/dashboard/accounts`           | "Accounts - IxStats"    | `accounts/page.tsx` → `DashboardPageClient.tsx` (`initialSection="accounts"`)                  |
+| `/dashboard/post/[postId]`      | feed post               | `post/[postId]/page.tsx` (client page: a feed post with replies and the inline reply composer) |
+| `/dashboard/profile/[username]` | persona profile         | `profile/[username]/page.tsx` (client page: a persona's posts, followers and following)        |
+| `/dashboard/saved`              | "Saved posts - IxStats" | `saved/page.tsx` (client component `SavedPosts`; signed-in only)                               |
 
 Feed posts and persona profiles are public, as they were under `/thinkpages`; Accounts and
 Saved posts need a sign-in.
@@ -45,20 +45,21 @@ feed tab are not reflected in the URL.
   the GDP / population / government-spending / vitality breakdown modals), and
   an executive telemetry micro-bar. The hero is collapsible and starts collapsed
   when the nation has no linked map territory (`countries.getMapLinkStatus`).
-- **Unified feed** (`UnifiedDashboardSection`): tabbed activity stream — All
-  activity, Following (country owners only), Community — with an inline
-  ThinkPages composer (`GlassCanvasComposer`) and account switching.
-- **Around IxStates Inspector**: Trending Now (`TrendingSectionWidget`), Countries to
+- **Unified feed** (`UnifiedDashboardSection`): the ThinkPages composer (`GlassCanvasComposer`, signed-in
+  only) on top, with persona switching and "Manage accounts" in its avatar menu; then a right-aligned compact
+  **All activity** / **Following** switcher (signed-in only, so signed-out visitors get no tabs) and the
+  "Around IxStates" button below `xl`, directly above the stream.
+- **Around IxStates Inspector**: Your realm (`YourRealmPanel`), Daily blurb (`DailyBlurbCard`), Countries to
   Explore (`CountriesToExploreCard`), and Economic Tier Distribution. An aside at
-  1280px and up; below that the "Trends" button in the feed toolbar opens it as a sheet.
+  1280px and up; below that the "Around IxStates" button in the feed toolbar opens it as a sheet.
 - There is no player widget, Vault card or quick-links column: the page is a plain
   centred column. The Vault balance and Daily reward are badges and a row in the
   sidebar's Vault entry, and links to other apps are the source list.
-- `BlurbSection` daily-prompt widget. A new build is announced by the sidebar's "What's new" row
+- A new build is announced by the sidebar's "What's new" row
   (shown while the build is unseen; `src/lib/navigation/seen-version.ts`), not a banner.
 - **Widgets**: the Inspector's trend and community widgets are plain `Card`s with an `h2` title under
-  the page's visually hidden `h1` ("Dashboard"). The pressable Blurb card is itself the
-  button, so its "Respond" pill is visual. Only the hero keeps the glass material.
+  the page's visually hidden `h1` ("Dashboard"). The blurb row is itself the button, so its
+  "Respond" label is visual. Only the hero keeps the glass material.
 
 ## Architecture
 
@@ -74,19 +75,18 @@ page.tsx / accounts/page.tsx (server: resolves signed-in country id) → Dashboa
 
 Key files (all under `src/components/dashboard/`):
 
-| Component                                               | Role                                                                   |
-| ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| `DashboardRouter.tsx`                                   | Top-level orchestration (global stats, map-link status, hero collapse) |
-| `hero/DashboardHero.tsx`                                | Nation hero on the shared `CountryHeroCard` (map, cosmetics, MyCountry) |
-| `DashboardColumn.tsx`                                   | Shared content layout: a plain centred column (hero, children)         |
-| `accounts/AccountsSection.tsx`                          | The Accounts section: persona list, create and settings modals         |
-| `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs |
-| `accounts/form/`                                        | Creation form parts: type selector, details form, traits, username check |
-| `sections/UnifiedDashboardSection.tsx`                  | Feed tabs, composer, Inspector with the community widgets              |
-| `sections/UnifiedFeedContent.tsx`                       | Feed/Following stream rendering                                        |
-| `sections/TrendingSectionWidget.tsx`                    | Trending content                                                       |
-| `sections/CountriesToExploreCard.tsx`                   | Suggested countries                                                    |
-| `sections/BlurbSection.tsx`                             | Daily blurb prompt                                                     |
+| Component                                                                                                                                           | Role                                                                     |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `DashboardRouter.tsx`                                                                                                                               | Top-level orchestration (global stats, map-link status, hero collapse)   |
+| `hero/DashboardHero.tsx`                                                                                                                            | Nation hero on the shared `CountryHeroCard` (map, cosmetics, MyCountry)  |
+| `DashboardColumn.tsx`                                                                                                                               | Shared content layout: a plain centred column (hero, children)           |
+| `accounts/AccountsSection.tsx`                                                                                                                      | The Accounts section: persona list, create and settings modals           |
+| `accounts/EnhancedAccountManager.tsx`, `accounts/AccountCreationModal.tsx`, `accounts/AccountSettingsModal.tsx`, `accounts/AccountManagerModal.tsx` | Persona management dialogs                                               |
+| `accounts/form/`                                                                                                                                    | Creation form parts: type selector, details form, traits, username check |
+| `sections/UnifiedDashboardSection.tsx`                                                                                                              | Feed tabs, composer, Inspector with the community widgets                |
+| `sections/UnifiedFeedContent.tsx`                                                                                                                   | Feed/Following stream rendering                                          |
+| `sections/CountriesToExploreCard.tsx`                                                                                                               | Suggested countries                                                      |
+| `sections/BlurbSection.tsx`                                                                                                                         | Daily blurb prompt                                                       |
 
 Hooks: `useUser` (auth), `usePremium`, `useActiveCosmetics` (avatar glow / chat
 badge / neon frame), `useNotify`, `usePageTitle`.
@@ -100,7 +100,7 @@ Verified `api.*` (tRPC) calls used across the dashboard tree:
   `countries.getActivityRingsData`, `countries.getMapLinkStatus`,
   `mycountry.getCountryDashboard`
 - **Social feed**: `activities.getGlobalFeed`, `activities.getFollowingFeed`,
-  `activities.getUnifiedTrending`, `activities.followCountry`,
+  `activities.followCountry`,
   `thinkpages.getMyAccounts`, `blurbs.*`
 - **Feedback**: `userLogging.submitFeedback`
 - **Wiki**: `wikios.getIntro`, `wikios.getRecentChanges`, `wikios.getPageImages`,

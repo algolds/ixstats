@@ -31,36 +31,6 @@ async function onThinkPageActivity(params: {
 }
 
 /**
- * Meeting Event Hook
- * Triggers notifications for meeting lifecycle events
- */
-async function onMeetingEvent(params: {
-  meetingId: string;
-  title: string;
-  scheduledTime: Date;
-  participants: string[];
-  action: "scheduled" | "starting" | "ended" | "cancelled";
-  minutesUntilStart?: number;
-}) {
-  if (!(await guardNotificationEvent("onMeetingEvent"))) return;
-  await notificationAPI.notifyMeetingEvent({
-    meetingId: params.meetingId,
-    title: params.title,
-    scheduledTime: params.scheduledTime,
-    participants: params.participants,
-    action: params.action,
-  });
-
-  // Schedule reminder notifications for upcoming meetings
-  if (params.action === "scheduled" && params.minutesUntilStart) {
-    // Could integrate with a job scheduler here
-    console.log(
-      `[NotificationHooks] Meeting reminder scheduled for ${params.minutesUntilStart} minutes before start`
-    );
-  }
-}
-
-/**
  * Diplomatic Event Hook
  * Triggers notifications for diplomatic activities
  */
@@ -72,28 +42,22 @@ async function onDiplomaticEvent(params: {
   affectedUserIds?: string[];
 }) {
   if (!(await guardNotificationEvent("onDiplomaticEvent"))) return;
-  await notificationAPI.trigger({
-    diplomatic: {
-      eventType: params.eventType,
-      countries: params.countries,
-      title: params.title,
-    },
-  });
-
-  // Notify specific users if provided
-  if (params.affectedUserIds && params.affectedUserIds.length > 0) {
-    for (const userId of params.affectedUserIds) {
-      await notificationAPI.create({
-        title: params.title,
-        message: params.description || `Diplomatic ${params.eventType} event`,
-        userId,
-        category: "diplomatic",
-        priority: params.eventType === "conflict" ? "high" : "medium",
-        href: "/mycountry/diplomacy",
-        actionable: true,
-      });
-    }
-  }
+  const notice = {
+    title: params.title,
+    message: params.description || `Diplomatic ${params.eventType} event`,
+    category: "diplomatic" as const,
+    type: params.eventType === "conflict" ? ("warning" as const) : ("info" as const),
+    priority: params.eventType === "conflict" ? ("high" as const) : ("medium" as const),
+    href: "/mycountry/diplomacy",
+    source: "diplomatic-system",
+    actionable: true,
+    metadata: { eventType: params.eventType, countries: params.countries },
+  };
+  // The nations involved, never the whole site: a notification with no user and no country is a global one.
+  await notificationAPI.createMany([
+    ...[...new Set(params.countries)].map((countryId) => ({ ...notice, countryId })),
+    ...(params.affectedUserIds ?? []).map((userId) => ({ ...notice, userId })),
+  ]);
 }
 
 /**
@@ -160,56 +124,6 @@ export async function onSocialActivity(params: {
       fromUserId: params.fromUserId,
       activityType: params.activityType,
       ...(params.contentId ? { postId: params.contentId } : {}),
-    },
-  });
-}
-
-/**
- * Quick Action Complete Hook
- * Triggers notifications when quick actions (policies, meetings) complete or fail
- */
-async function onQuickActionComplete(params: {
-  userId?: string;
-  countryId: string;
-  actionType: "policy" | "meeting" | "activity" | "decision";
-  actionName: string;
-  status: "completed" | "failed" | "scheduled";
-  impactSummary?: string;
-  errorDetails?: string;
-  href?: string;
-}) {
-  if (!(await guardNotificationEvent("onQuickActionComplete"))) return;
-  const statusTitles = {
-    completed: "Action Completed Successfully",
-    failed: "Action Failed",
-    scheduled: "Action Scheduled",
-  };
-
-  const priority =
-    params.status === "failed" ? "high" : params.status === "completed" ? "medium" : "low";
-  const type =
-    params.status === "failed" ? "error" : params.status === "completed" ? "success" : "info";
-
-  const message =
-    params.status === "failed" && params.errorDetails
-      ? `${params.actionName}: ${params.errorDetails}`
-      : params.status === "completed" && params.impactSummary
-        ? `${params.actionName}: ${params.impactSummary}`
-        : params.actionName;
-
-  await notificationAPI.create({
-    title: statusTitles[params.status],
-    message,
-    userId: params.userId || null,
-    countryId: params.countryId,
-    category: "governance",
-    priority,
-    type,
-    href: params.href || "/mycountry/quickactions",
-    actionable: params.status === "failed",
-    metadata: {
-      actionType: params.actionType,
-      status: params.status,
     },
   });
 }
@@ -598,11 +512,9 @@ async function onVitalityScoreChange(params: {
 // Export all hooks
 export const notificationHooks = {
   onThinkPageActivity,
-  onMeetingEvent,
   onDiplomaticEvent,
   onAchievementUnlock,
   onSocialActivity,
-  onQuickActionComplete,
   onTaxSystemChange,
   onGovernmentStructureChange,
   onThinktankActivity,

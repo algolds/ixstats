@@ -84,8 +84,8 @@ export function RouteEditingToolbar({
   if (mode === "add-route") {
     if (!estimate) return null;
     return (
-      <div className="absolute bottom-12 left-1/2 z-10 -translate-x-1/2">
-        <FacetMaterial layer="chrome" className="rounded-full py-1">
+      <div className="pointer-events-none absolute bottom-12 left-1/2 z-10 -translate-x-1/2">
+        <FacetMaterial layer="chrome" className="facet-chrome-subtle rounded-control py-1">
           <EstimateText estimate={estimate} />
         </FacetMaterial>
       </div>
@@ -95,9 +95,12 @@ export function RouteEditingToolbar({
   if (mode !== "edit-route") return null;
 
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <FacetMaterial layer="chrome" className="flex items-center gap-2 rounded-full p-2">
-        <span className="text-label-secondary text-caption hidden px-3 sm:inline">
+    <div className="pointer-events-auto absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+      <FacetMaterial
+        layer="chrome"
+        className="facet-chrome-subtle rounded-control flex items-center gap-2 px-2.5 py-1.5"
+      >
+        <span className="text-label-secondary text-caption hidden px-2 sm:inline">
           Drag route vertices · Midpoints to add · Right-click to remove
         </span>
         <div className="bg-separator hidden h-4 w-px sm:block" />
@@ -107,10 +110,10 @@ export function RouteEditingToolbar({
             <div className="bg-separator h-4 w-px" />
           </>
         )}
-        <Button size="sm" onClick={onRouteEditCommit}>
+        <Button size="xs" onClick={onRouteEditCommit}>
           Save route path
         </Button>
-        <Button variant="outline" size="sm" onClick={onRouteEditCancel}>
+        <Button variant="outline" size="xs" onClick={onRouteEditCancel}>
           Cancel
         </Button>
       </FacetMaterial>

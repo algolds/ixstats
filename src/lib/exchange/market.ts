@@ -9,11 +9,15 @@
  *
  * Every step is safe to re-run: a stipend is keyed per nation per tick, a realm's operations per
  * realm per tick, decisions apply once, and the other steps act only on rows still open.
+ *
+ * A closed Exchange (maintenance mode, or `vault_isExchangeEnabled` off) skips the whole tick: the
+ * integer-cents deploy closes it so nothing moves money while the columns change type.
  */
 
 import type { PrismaClient } from "@prisma/client";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
-import { round2 } from "./amounts";
+import { ExchangeError } from "~/lib/vault/exchange-service";
+import { fromCents, toCents } from "./amounts";
 import { refreshFairValue } from "./companies";
 import { resolveDueDecisions } from "./decisions";
 import { expireLapsedContracts } from "./expiry";
@@ -21,8 +25,12 @@ import { syncCorporateFeedback } from "./feedback";
 import { finalizeProposalsTx } from "./governance";
 import { notifyExchange } from "./notify";
 import { operatingTickKey, runCompanyOperations, TICKS_PER_DAY } from "./operations";
+import { assertExchangeOpen } from "./guards";
 import { computeSectorIndices } from "./sectors";
 import { mintStipendTx, stipendFor } from "./treasury";
+import { runBondPayments } from "./bonds";
+import { alertWatchers } from "./news";
+import { runPolicyHeadlines } from "./policy";
 
 /** Nations that host an operating company or already hold a treasury. */
 async function stipendNationsOf(db: PrismaClient) {
@@ -48,11 +56,11 @@ async function stipendNationsOf(db: PrismaClient) {
 
 async function mintStipendsOf(db: PrismaClient, nowMs: number, tickKey: string): Promise<number> {
   const cfg = await getExchangeConfig(db);
-  let minted = 0;
+  let mintedCents = 0;
   for (const nation of await stipendNationsOf(db)) {
     const amount = stipendFor(nation.economicTier, cfg.treasuryDailyStipend / TICKS_PER_DAY);
     try {
-      minted += await db.$transaction((tx) =>
+      const minted = await db.$transaction((tx) =>
         mintStipendTx(tx, {
           countryId: nation.id,
           realmId: nation.realmId,
@@ -62,11 +70,12 @@ async function mintStipendsOf(db: PrismaClient, nowMs: number, tickKey: string):
           key: `exchange-stipend:${nation.id}:${tickKey}`,
         })
       );
+      mintedCents += toCents(minted);
     } catch (error) {
       console.error(`[Exchange] stipend for ${nation.id} failed:`, error);
     }
   }
-  return round2(minted);
+  return fromCents(mintedCents);
 }
 
 async function finalizeProposalsOf(db: PrismaClient, nowMs: number): Promise<number> {
@@ -104,10 +113,11 @@ async function refreshActiveFairValues(db: PrismaClient): Promise<number> {
   return refreshed;
 }
 
-export async function runExchangeMarketTick(db: PrismaClient) {
+async function runOpenTick(db: PrismaClient) {
   const nowMs = Date.now();
   const tickKey = operatingTickKey(nowMs);
   const stipendsMinted = await mintStipendsOf(db, nowMs, tickKey);
+  const bonds = await runBondPayments(db, nowMs);
   const indices = await computeSectorIndices(db, nowMs);
   const operations = await runCompanyOperations(db, nowMs);
   const decisionsApplied = await resolveDueDecisions(db, nowMs);
@@ -115,8 +125,12 @@ export async function runExchangeMarketTick(db: PrismaClient) {
   const contracts = await expireLapsedContracts(db, nowMs);
   const feedback = await syncCorporateFeedback(db, nowMs);
   const companiesRefreshed = await refreshActiveFairValues(db);
+  const policy = await runPolicyHeadlines(db, nowMs);
+  await alertWatchers(db, [...bonds.news, ...policy]);
   return {
     stipendsMinted,
+    bonds: { couponsPaid: bonds.couponsPaid, matured: bonds.matured, defaulted: bonds.defaulted },
+    policyHeadlines: policy.length,
     indices: indices.map((i) => ({ sector: i.sectorKey, value: i.value })),
     operations,
     decisionsApplied,
@@ -125,4 +139,32 @@ export async function runExchangeMarketTick(db: PrismaClient) {
     feedback,
     companiesRefreshed,
   };
+}
+
+/** Why a closed Exchange skipped the tick: the `ExchangeError` code `assertExchangeOpen` raised. */
+export type MarketTickSkip = { skipped: true; reason: "MAINTENANCE" | "DISABLED" };
+export type MarketTickResult =
+  | MarketTickSkip
+  | ({ skipped: false } & Awaited<ReturnType<typeof runOpenTick>>);
+
+/** The closed Exchange's reason, or null when it is open. */
+async function closedReason(db: PrismaClient): Promise<MarketTickSkip["reason"] | null> {
+  try {
+    await assertExchangeOpen(db);
+    return null;
+  } catch (error) {
+    if (error instanceof ExchangeError && (error.code === "MAINTENANCE" || error.code === "DISABLED")) {
+      return error.code;
+    }
+    throw error;
+  }
+}
+
+export async function runExchangeMarketTick(db: PrismaClient): Promise<MarketTickResult> {
+  const reason = await closedReason(db);
+  if (reason) {
+    console.warn(`[Exchange] market tick skipped: the Exchange is closed (${reason})`);
+    return { skipped: true, reason };
+  }
+  return { skipped: false, ...(await runOpenTick(db)) };
 }

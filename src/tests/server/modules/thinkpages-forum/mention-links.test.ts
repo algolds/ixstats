@@ -132,7 +132,15 @@ describe("mentions in the stored html", () => {
     it("leaves a noscript as it was written and links the text beside it (parser differential)", () => {
       const trap =
         '<noscript><p title="</noscript><img src=x onerror=alert(1)>">@kir</p></noscript>';
-      expect(linkMentionsInHtml(`<p>@kir</p>${trap}`, hrefOf)).toBe(`<p>${link("kir")}</p>${trap}`);
+      // The noscript's text is left alone; the serializer escapes `<` and `>` in the attribute (parse5 8, as the
+      // HTML spec has since 2025), so the stored copy cannot close the noscript either.
+      const escaped = trap.replace(
+        /title="([^"]*)"/,
+        (_m, v: string) => `title="${v.replaceAll("<", "&lt;").replaceAll(">", "&gt;")}"`
+      );
+      expect(linkMentionsInHtml(`<p>@kir</p>${trap}`, hrefOf)).toBe(
+        `<p>${link("kir")}</p>${escaped}`
+      );
     });
   });
   describe("mentionAnchorNames", () => {

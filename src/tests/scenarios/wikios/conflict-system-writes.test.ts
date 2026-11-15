@@ -394,10 +394,12 @@ describe.each(WIKIOS_MODES)("WikiOS's own writes never win or lose by time [%s]"
     expect(revisionRow(kir.revisionId)).toMatchObject({ parked: true });
   });
 
-  it("a page made in WikiOS and mirrored (no classic page id remembered), saved again, then deleted later on classic: the delete is judged", async () => {
+  it("a page made in WikiOS and mirrored before page ids were remembered, saved again, then deleted later on classic: the delete is judged", async () => {
     await saves("Fresh", "A fresh page.", "db-kir");
     await runMirrorCycle();
-    expect(article("Fresh")?.mwPageId ?? null).toBeNull();
+    // The mirror remembers the classic page id since 2026-11-04; a page mirrored before that has none.
+    expect(article("Fresh")?.mwPageId).toBe(site.pages.get("Fresh")!.pageid);
+    article("Fresh")!.mwPageId = null;
     const again = await saves(
       "Fresh",
       "A fresh page, again.",

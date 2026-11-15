@@ -112,7 +112,7 @@ function percentToFraction(percent: number | null | undefined): number | null {
  * A fraction above 1 would be a rate above 100%, so any value above 1 is read as a percent and
  * anything else as already a fraction.
  */
-function rateToFraction(stored: number | null | undefined): number | null {
+export function rateToFraction(stored: number | null | undefined): number | null {
   const n = finiteOrNull(stored);
   if (n == null) return null;
   return n > 1 ? n / 100 : n;

@@ -12,6 +12,8 @@ import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 interface EditMorphButtonProps {
   /** Pill plate classes when the button sits over the flag. */
   plate?: string;
+  /** Button height scale; `"sm"` aligns with the document ribbon and compact chrome bar. */
+  size?: "default" | "sm";
 }
 
 const EDITOR_HREF = editorHref("identity");
@@ -21,7 +23,7 @@ const MAP_EDITOR_HREF = MYCOUNTRY_MAP_EDITOR_PATH;
  * One Edit pill that morphs into a Country | Map pair: on hover with a mouse, or on click (touch
  * and keyboard). The map editor is free for every owner. It closes on mouse leave, Escape or a click outside.
  */
-export function EditMorphButton({ plate }: EditMorphButtonProps) {
+export function EditMorphButton({ plate, size = "default" }: EditMorphButtonProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const firstRef = useRef<HTMLAnchorElement>(null);
@@ -85,14 +87,24 @@ export function EditMorphButton({ plate }: EditMorphButtonProps) {
             exit={{ opacity: 0 }}
             transition={transition}
           >
-            <Button asChild variant="ghost" className="text-label-secondary rounded-full">
+            <Button
+              asChild
+              variant="ghost"
+              size={size}
+              className="text-label-secondary rounded-full"
+            >
               <Link ref={firstRef} href={EDITOR_HREF} aria-label="Country editor">
                 <EditPencil aria-hidden="true" />
                 Country
               </Link>
             </Button>
             <span aria-hidden className="bg-separator h-4 w-px shrink-0" />
-            <Button asChild variant="ghost" className="text-label-secondary rounded-full">
+            <Button
+              asChild
+              variant="ghost"
+              size={size}
+              className="text-label-secondary rounded-full"
+            >
               <Link href={MAP_EDITOR_HREF} aria-label="Map editor">
                 <MapPin aria-hidden="true" />
                 Map
@@ -111,6 +123,7 @@ export function EditMorphButton({ plate }: EditMorphButtonProps) {
               ref={triggerRef}
               type="button"
               variant="ghost"
+              size={size}
               aria-expanded={false}
               aria-label="Edit country or map"
               onClick={(e) => {

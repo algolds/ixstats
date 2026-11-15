@@ -3,7 +3,7 @@
 // Unified narrator audio player built with audio-ui.xyz components (ghost variant, Transport, Fader).
 // Theme compliant with WikiOS accents, ambient animated background waveform, and inline Apple Design controls.
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
@@ -17,12 +17,12 @@ import {
   Dashboard as Gauge,
 } from "iconoir-react";
 import { AudioPlayer, AudioPlayerControlBar, AudioPlayerButton } from "~/components/audio/player";
-import { Transport } from "~/components/audio/elements/transport";
-import { Fader } from "~/components/audio/elements/fader";
 import { PlayPauseMorph } from "./PlayPauseMorph";
 import { useAudioStore } from "~/lib/audio-store";
 import { cn } from "~/lib/utils";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
+import { Slider } from "~/components/ui/slider";
+import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { api } from "~/trpc/react";
@@ -111,18 +111,13 @@ export function WikiNarratorPlayer({
   const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
   const activeSectionTitle = activeEntry?.text ?? narratorState?.activeSectionTitle ?? "Overview";
   const accentColor = wikiAccent(themeColors);
-
-  const narratorTracks = useMemo(
-    () => [
-      {
-        id: activeSectionId || "wiki-narrator",
-        title: narratorState?.activeSectionTitle || "Wiki article",
-        artist: "Wiki narrator",
-        url: "",
-      },
-    ],
-    [activeSectionId, narratorState?.activeSectionTitle]
-  );
+  const narratorTrack = {
+    id: activeSectionId || "wiki-narrator",
+    title: narratorState?.activeSectionTitle || "Wiki article",
+    artist: "Wiki narrator",
+    url: "",
+  };
+  const narratorTracks = [narratorTrack];
 
   // Sync narrator state into audio-ui's centralized audio store
   useEffect(() => {
@@ -137,15 +132,21 @@ export function WikiNarratorPlayer({
       duration: Math.max(1, narratorState.totalBlocks ?? 1),
       volume: currentVolume,
       playbackRate: currentSpeed,
-      currentTrack: narratorTracks[0],
+      currentTrack: {
+        id: activeSectionId || "wiki-narrator",
+        title: narratorState?.activeSectionTitle || "Wiki article",
+        artist: "Wiki narrator",
+        url: "",
+      },
     });
   }, [
     narratorState?.isPlaying,
     narratorState?.activeBlockIndex,
     narratorState?.totalBlocks,
+    narratorState?.activeSectionTitle,
+    activeSectionId,
     currentVolume,
     currentSpeed,
-    narratorTracks,
   ]);
 
   // Connect audio-ui playback, seek, and volume actions directly to the narrator engine
@@ -188,26 +189,23 @@ export function WikiNarratorPlayer({
   }, [narratorActions, narratorState?.isPlaying]);
 
   // Timeline & section scrubbing callback
-  const handleScrub = useCallback(
-    (pct: number) => {
-      if (isNarratorActive && narratorActions) {
-        const targetIdx = Math.min(
-          narratorState.totalBlocks - 1,
-          Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
-        );
-        narratorActions.jumpToBlock(targetIdx);
-      } else {
-        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-        if (scrollHeight > 0) {
-          window.scrollTo({
-            top: (pct / 100) * scrollHeight,
-            behavior: "smooth",
-          });
-        }
+  const handleScrub = (pct: number) => {
+    if (isNarratorActive && narratorActions) {
+      const targetIdx = Math.min(
+        narratorState.totalBlocks - 1,
+        Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
+      );
+      narratorActions.jumpToBlock(targetIdx);
+    } else {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight > 0) {
+        window.scrollTo({
+          top: (pct / 100) * scrollHeight,
+          behavior: "smooth",
+        });
       }
-    },
-    [isNarratorActive, narratorActions, narratorState?.totalBlocks]
-  );
+    }
+  };
 
   const toggleMute = () => {
     if (!narratorActions?.setVolume) return;
@@ -227,7 +225,7 @@ export function WikiNarratorPlayer({
     <div className="relative w-full space-y-2">
       {/* Ambient Background Audio Waveform (Apple Design Subtlety) */}
       <div
-        className="rounded-row pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 overflow-hidden px-3 py-2 select-none"
+        className="rounded-row pointer-events-none absolute inset-0 flex items-center justify-between gap-1 overflow-hidden px-3 py-2 select-none"
         aria-hidden="true"
       >
         {BG_WAVEFORM_BARS.map((heightPct, idx) => (
@@ -249,7 +247,7 @@ export function WikiNarratorPlayer({
       <AudioPlayer
         tracks={narratorTracks}
         size="sm"
-        className="relative z-10 w-full space-y-2 border-0 bg-transparent p-0 shadow-none"
+        className="z-raised relative w-full space-y-2 border-0 bg-transparent p-0 shadow-none"
         data-slot="wiki-narrator-player"
       >
         {/* 1. Top HUD Bar (Section Title + Reading Progress) */}
@@ -275,13 +273,17 @@ export function WikiNarratorPlayer({
           </div>
         )}
 
-        {/* 2. audio-ui Section Scrubber (Transport with Chapter Milestone Markers) */}
+        {/* 2. Section scrubber with chapter milestone markers */}
         <div className="relative w-full px-1 py-1">
-          <Transport
+          <Slider
             aria-label="Section timeline"
-            value={displayPercent}
-            onSeek={(val) => handleScrub(val)}
-            size="sm"
+            min={0}
+            max={100}
+            step={0.1}
+            value={[displayPercent]}
+            onValueChange={([val]) => {
+              if (val !== undefined) handleScrub(val);
+            }}
             className="w-full"
           />
 
@@ -291,35 +293,39 @@ export function WikiNarratorPlayer({
               const offset = sectionOffsets[entry.id] ?? 0;
               const isActive = activeSectionId === entry.id;
               return (
-                <button
-                  type="button"
-                  key={entry.id}
-                  aria-label={`Jump to ${entry.text}`}
-                  className="group/tick focus-visible:outline-tint pointer-events-auto absolute top-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full focus-visible:outline-2"
-                  style={{ left: `${offset}%` }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (isNarratorActive && narratorActions) {
-                      narratorActions.jumpToSection(entry.id);
-                    } else {
-                      handleScrub(offset);
-                    }
-                  }}
-                >
-                  <div
-                    className={cn(
-                      "duration-fast rounded-full border transition-[color,background-color,border-color,width,height]",
-                      isActive
-                        ? "border-separator h-2 w-2"
-                        : "border-separator bg-fill-3 group-hover/tick:border-label h-1.5 w-1.5"
-                    )}
-                    style={isActive ? { backgroundColor: accentColor } : undefined}
-                  />
-                  {/* Tooltip */}
-                  <span className="border-separator bg-surface-elevated text-label rounded-control-sm text-caption shadow-floating duration-fast pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 border px-2 py-1 whitespace-nowrap opacity-0 transition-opacity group-hover/tick:opacity-100">
-                    {entry.text}
-                  </span>
-                </button>
+                <Tooltip key={entry.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={entry.text}
+                      className={cn(
+                        "group/tick z-raised pointer-events-auto absolute top-1/2 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
+                        focusRing,
+                        hitSlop
+                      )}
+                      style={{ left: `${offset}%` }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isNarratorActive && narratorActions) {
+                          narratorActions.jumpToSection(entry.id);
+                        } else {
+                          handleScrub(offset);
+                        }
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "duration-fast rounded-full border transition-[color,background-color,border-color,width,height]",
+                          isActive
+                            ? "border-separator h-2 w-2"
+                            : "border-separator bg-fill-3 group-hover/tick:border-label h-1.5 w-1.5"
+                        )}
+                        style={isActive ? { backgroundColor: accentColor } : undefined}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{entry.text}</TooltipContent>
+                </Tooltip>
               );
             })}
           </div>
@@ -451,7 +457,7 @@ export function WikiNarratorPlayer({
 
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && engine !== "browser" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-1 border p-2">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-1 p-2">
             <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
               <span>Narrator voice</span>
               <span className="text-footnote font-normal opacity-70">Kokoro TTS</span>
@@ -505,7 +511,7 @@ export function WikiNarratorPlayer({
 
         {/* 4B. Inline Playback speed Tray */}
         {activeTray === "speed" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-2 p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Playback speed</span>
               <span className="text-label font-semibold tabular-nums">{currentSpeed}×</span>
@@ -529,7 +535,7 @@ export function WikiNarratorPlayer({
 
         {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
         {activeTray === "volume" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-2 p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Volume gain</span>
               <span className="text-label font-semibold tabular-nums">
@@ -555,19 +561,16 @@ export function WikiNarratorPlayer({
               </Button>
 
               <div className="flex-1">
-                <Fader
-                  orientation="horizontal"
-                  size="sm"
+                <Slider
+                  aria-label="Volume"
                   min={0}
                   max={100}
                   step={1}
-                  value={Math.round(currentVolume * 100)}
-                  onValueChange={(val: number | readonly number[]) => {
-                    const num = Array.isArray(val) ? val[0] : (val as number);
-                    if (typeof num === "number") {
-                      narratorActions?.setVolume(num / 100);
-                      if (num > 0) setLastNonZeroVol(num / 100);
-                    }
+                  value={[Math.round(currentVolume * 100)]}
+                  onValueChange={([num]) => {
+                    if (num === undefined) return;
+                    narratorActions?.setVolume(num / 100);
+                    if (num > 0) setLastNonZeroVol(num / 100);
                   }}
                   className="w-full"
                 />

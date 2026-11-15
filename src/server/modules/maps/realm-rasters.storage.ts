@@ -40,6 +40,13 @@ export function rasterTileFile(dir: string, z: number, x: number, y: number): st
     : null;
 }
 
+/** A flat map's tile (Plate Carrée), composed on first ask and kept in the version's `flat/` folder. */
+export function flatRasterTileFile(dir: string, z: number, x: number, y: number): string | null {
+  return isRasterTileCoord(z, x, y)
+    ? path.join(/*turbopackIgnore: true*/ dir, "flat", String(z), String(x), `${y}.webp`)
+    : null;
+}
+
 export const RASTER_LEGEND_FILE = "legend.webp";
 
 /** Whether a built version's folder exists. */

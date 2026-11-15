@@ -76,7 +76,7 @@ export function RadioCard({
         "focus-visible:outline-tint outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "text-label border-separator bg-surface hover:bg-fill-4",
-        "data-[state=checked]:border-tint data-[state=checked]:bg-tint-fill data-[state=checked]:ring-tint data-[state=checked]:hover:bg-tint-fill data-[state=checked]:ring-1",
+        "data-[state=checked]:border-label/30 data-[state=checked]:bg-control-thumb data-[state=checked]:shadow-card data-[state=checked]:hover:bg-control-thumb",
         className
       )}
       {...props}
@@ -84,7 +84,7 @@ export function RadioCard({
       {icon != null && icon !== false && (
         <span
           aria-hidden
-          className="text-label-secondary group-data-[state=checked]/radio-card:text-tint flex shrink-0 items-center justify-center pt-0.5 [:where(&)_svg]:size-5"
+          className="text-label-secondary group-data-[state=checked]/radio-card:text-label flex shrink-0 items-center justify-center pt-0.5 [:where(&)_svg]:size-5"
         >
           {icon}
         </span>
@@ -101,9 +101,9 @@ export function RadioCard({
       {indicator && (
         <span
           aria-hidden
-          className="border-label-tertiary bg-surface group-data-[state=checked]/radio-card:border-tint group-data-[state=checked]/radio-card:bg-tint mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border"
+          className="border-label-tertiary bg-surface group-data-[state=checked]/radio-card:border-label group-data-[state=checked]/radio-card:bg-label mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border"
         >
-          <span className="bg-on-tint hidden size-1.5 rounded-full group-data-[state=checked]/radio-card:block" />
+          <span className="bg-surface hidden size-1.5 rounded-full group-data-[state=checked]/radio-card:block" />
         </span>
       )}
     </RadioGroupPrimitive.Item>

@@ -64,6 +64,19 @@ export function allocationOverCap(input: {
   return `The budget would allocate more than 100%. ${left.toFixed(1)}% is left for this department.`;
 }
 
+/**
+ * Validates a batch update of department shares against the 100% total cap. Reductions from an
+ * already over-allocated legacy budget are permitted so the owner can bring it down in steps.
+ */
+export function batchAllocationOverCap(input: {
+  currentTotal: number;
+  nextTotal: number;
+}): string | null {
+  if (input.nextTotal <= BUDGET_TOTAL_PERCENT + BUDGET_TOTAL_TOLERANCE) return null;
+  if (input.nextTotal <= input.currentTotal) return null;
+  return `The budget would allocate ${input.nextTotal.toFixed(1)}%, which is more than 100%.`;
+}
+
 export interface ShareLine {
   id: string;
   allocatedPercent: number;

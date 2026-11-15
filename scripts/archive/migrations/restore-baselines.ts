@@ -9,11 +9,11 @@
  *   bun scripts/restore-baselines.ts --live      # Live updates
  */
 
-import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
 import XLSX from "xlsx";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const WORLD_ROSTER_PATH = "/ixwiki/public/projects/ixstats/public/World-Roster.xlsx";
 
 interface WorldRosterCountry {

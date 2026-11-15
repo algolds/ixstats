@@ -1,22 +1,53 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
-import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
-import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  AchievementsSummaryCard,
+  RarestEarnedMedalsShelf,
+} from "~/components/achievements/AchievementsSummaryCard";
+import { VaultLorewardsPanel } from "~/components/achievements/VaultLorewardsPanel";
+import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
+
+type AchievementTab = "achievements" | "lorewards";
+
+const ACHIEVEMENT_OPTIONS = [
+  { value: "achievements", label: "Achievements" },
+  { value: "lorewards", label: "Lorewards" },
+] as const satisfies ReadonlyArray<{ value: AchievementTab; label: string }>;
 
 export default function VaultAchievementsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isLorewards = searchParams?.get("tab") === "lorewards";
+  const activeTab: AchievementTab = isLorewards ? "lorewards" : "achievements";
+
   useEffect(() => {
-    document.title = "Achievements - IxStates";
-  }, []);
+    document.title = isLorewards ? "Lorewards - IxStates" : "Achievements - IxStates";
+  }, [isLorewards]);
 
   const { user } = useUser();
-  const { data: userProfile } = api.users.getProfile.useQuery(undefined, { enabled: !!user?.id });
+  const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
+    undefined,
+    { enabled: Boolean(user?.id) }
+  );
 
-  // Achievements belong to the account; the country (if any) only adds country achievements
-  const hasProfile = !!userProfile;
-  const { data: achievements } = api.achievements.getAllWithStatus.useQuery(
+  const hasProfile = Boolean(userProfile);
+  const {
+    data: achievements,
+    isLoading: achievementsLoading,
+    isError: achievementsError,
+    refetch: refetchAchievements,
+  } = api.achievements.getAllWithStatus.useQuery(
     { countryId: userProfile?.countryId || undefined },
     { enabled: hasProfile }
   );
@@ -35,17 +66,65 @@ export default function VaultAchievementsPage() {
     }
   }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
+  const isCatalogueLoading = Boolean(user) && (profileLoading || achievementsLoading);
+
   return (
-    // pt-14: the tabs are the first row and the page has no header toolbar, so it clears Halo's floating band itself.
-    <div className="space-y-6 pt-14">
-      {/* The page's title for assistive tech; the sidebar's Achievements row names it on screen. */}
-      <h1 className="sr-only">Achievements</h1>
-      <AchievementsTabs
-        achievements={achievements}
-        isLoading={achievements === undefined}
-        // Signed out, the catalogue never loads: no achievements rather than a skeleton that never ends.
-        lorewardsPanel={<VaultLorewardsPanel achievements={user ? achievements : []} />}
+    <div className="space-y-6">
+      <PageHeader
+        title={isLorewards ? "Lorewards" : "Achievements"}
+        subtitle={
+          isLorewards
+            ? "Annual community writing honours, peer nominations, and wiki citations."
+            : "Platform milestones, simulation mastery, and collector honours."
+        }
+        bleed
+        actions={
+          <SegmentedControl
+            aria-label="Achievement categories"
+            size="sm"
+            value={activeTab}
+            onValueChange={(next) =>
+              router.replace(
+                next === "lorewards" ? "/vault/achievements?tab=lorewards" : "/vault/achievements",
+                { scroll: false }
+              )
+            }
+            options={ACHIEVEMENT_OPTIONS}
+          />
+        }
       />
+
+      {isLorewards ? (
+        <VaultLorewardsPanel achievements={user ? achievements : []} />
+      ) : (
+        <>
+          {user && achievements && <AchievementsSummaryCard achievements={achievements} />}
+
+          {user && achievements && <RarestEarnedMedalsShelf achievements={achievements} />}
+
+          {achievementsError ? (
+            <Card>
+              <EmptyState
+                icon={<WarningCircle />}
+                title="Achievements didn't load"
+                message="Please try again in a moment."
+                action={
+                  <Button variant="secondary" size="sm" onClick={() => void refetchAchievements()}>
+                    Try again
+                  </Button>
+                }
+              />
+            </Card>
+          ) : isCatalogueLoading ? (
+            <div aria-busy className="space-y-3">
+              <Skeleton className="rounded-control-sm h-9 max-w-md" />
+              <Skeleton className="rounded-row h-64" />
+            </div>
+          ) : (
+            <AllAchievementsTab achievements={achievements} />
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { Shop, WarningCircle } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
@@ -24,7 +25,7 @@ function ListingLine({
   const titleId = `listing-${listing.id}`;
   const copy = `${FINISH_LABEL[listing.finish]} #${listing.serialNumber}`;
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li data-row className="flex flex-wrap items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
         <p id={titleId} className="text-callout truncate">
           {listing.cardTitle} · {listing.price.toLocaleString()} IxC
@@ -63,30 +64,37 @@ function ListingsBody({
   if (query.isLoading) return <Skeleton className="rounded-card h-24" />;
   if (query.isError && !query.data) {
     return (
-      <EmptyState
-        compact
-        role="alert"
-        title="Your listings did not load"
-        action={
-          <Button variant="secondary" onClick={() => void query.refetch()}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          compact
+          role="alert"
+          icon={<WarningCircle />}
+          title="Your listings did not load"
+          message="Try loading your fixed-price listings again."
+          action={
+            <Button variant="secondary" onClick={() => void query.refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   const listings = query.data ?? [];
   if (listings.length === 0) {
     return (
-      <EmptyState
-        compact
-        title="You have nothing listed"
-        message="List a copy at a fixed price from Mine or from its card's sheet."
-      />
+      <Card>
+        <EmptyState
+          compact
+          icon={<Shop />}
+          title="You have nothing listed"
+          message="List a copy at a fixed price from Mine or from its card's sheet."
+        />
+      </Card>
     );
   }
   return (
-    <Card content="data">
+    <Card content="data" padding="none">
       <ul className="divide-separator divide-y">
         {listings.map((listing) => (
           <ListingLine

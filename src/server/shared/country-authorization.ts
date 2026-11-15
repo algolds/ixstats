@@ -30,9 +30,10 @@ interface CountryAuthContext {
 }
 
 /**
- * Extract role name consistently from user entity or session claims
+ * Extract role name consistently from the user entity (the database role)
  */
-export function getRoleName(user?: unknown, sessionClaims?: unknown): string | undefined {
+// Clerk metadata is not an authority: admin = the database role.
+export function getRoleName(user?: unknown, _sessionClaims?: unknown): string | undefined {
   if (typeof user === "string") return user;
   if (user && typeof user === "object") {
     const roleProp = (user as any).role;
@@ -40,11 +41,6 @@ export function getRoleName(user?: unknown, sessionClaims?: unknown): string | u
     if (roleProp && typeof roleProp === "object" && typeof roleProp.name === "string") {
       return roleProp.name;
     }
-  }
-
-  if (sessionClaims && typeof sessionClaims === "object") {
-    const claimRole = (sessionClaims as any)?.metadata?.role;
-    if (typeof claimRole === "string") return claimRole;
   }
 
   return undefined;

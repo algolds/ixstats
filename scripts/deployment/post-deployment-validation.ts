@@ -6,6 +6,7 @@
  */
 
 import { exit } from "process";
+import { createPrismaClient } from "~/server/prisma-client";
 
 // ANSI color codes
 const colors = {
@@ -172,7 +173,7 @@ async function testDatabase(): Promise<TestResult> {
 
   try {
     const { PrismaClient } = await import("@prisma/client");
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
 
     await prisma.$connect();
 

@@ -12,7 +12,15 @@ let mockPathname: string | null = null;
 jest.mock("next/navigation", () => ({ usePathname: () => mockPathname }));
 
 jest.mock("~/app/countries/[slug]/_hooks/useCountryProfileLayer", () => ({
-  useCountryProfileLayer: () => ({ countryId: "c1", slug: "caphiria", owner: null }),
+  useCountryProfileLayer: () => ({
+    countryId: "c1",
+    slug: "caphiria",
+    owner: null,
+    media: { sectionCovers: { economy: null, state: null, foreign: null } },
+  }),
+}));
+jest.mock("~/components/country-profile/FactbookImages", () => ({
+  FactbookImages: () => <section aria-label="Factbook images" />,
 }));
 jest.mock("~/hooks/useUserCountry", () => ({ useUserCountry: () => ({ userProfile: null }) }));
 jest.mock("~/components/mycountry/dossier/CountryActionsMenu", () => ({
@@ -159,5 +167,15 @@ describe("CountryDocument", () => {
     expect(manage.closest("[inert]")).not.toBeNull();
     fireEvent.click(done);
     expect(manage).toHaveFocus();
+  });
+
+  it("sizes the face to the side showing, so a taller back face leaves no band under the hero", () => {
+    const { container } = setup("factbook", true);
+    const side = (name: string) => container.querySelector(`[data-side="${name}"]`)!;
+    expect(side("front")).not.toHaveClass("absolute");
+    expect(side("back")).toHaveClass("absolute");
+    fireEvent.click(screen.getByRole("button", { name: "Manage" }));
+    expect(side("front")).toHaveClass("absolute");
+    expect(side("back")).not.toHaveClass("absolute");
   });
 });

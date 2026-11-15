@@ -153,9 +153,9 @@ export function OnomaFooter({
         {/* Copyright, attribution and legal */}
         <div className="border-separator text-label-secondary text-footnote relative flex flex-col justify-between gap-2 border-t pt-4 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-label font-mono font-semibold">⟨ONOMA⟩</span>
+            <span className="text-label font-mono font-medium">⟨ONOMA⟩</span>
             <span aria-hidden="true">·</span>
-            <span>© {new Date().getFullYear()} IxLabs Research</span>
+            <span>IxLabs Research, {new Date().getFullYear()}</span>
             <span className="text-label-tertiary" aria-hidden="true">
               ·
             </span>

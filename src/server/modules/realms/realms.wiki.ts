@@ -48,6 +48,7 @@ import {
 import { SOURCE_PRESETS } from "~/lib/realms/sources/presets";
 import { canModerateRealm, type RealmActor } from "./realms.access";
 import { realmSlugWhere } from "~/lib/realms/realm-ids";
+import { updateRealmSettings } from "./realm-settings";
 
 type WikiErrorCode = "NOT_FOUND" | "FORBIDDEN" | "BAD_REQUEST" | "BAD_GATEWAY" | "CONFLICT";
 
@@ -128,7 +129,7 @@ export async function getRealmWikiView(db: Pick<PrismaClient, "realm">, actor: R
 
 /** Save (or with `null`, clear) the realm's wiki settings; every other key of `Realm.settings` is kept. */
 export async function saveRealmWikiSettings(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   input: RealmWikiSettingsInput | null
@@ -143,7 +144,9 @@ export async function saveRealmWikiSettings(
     }
     wiki = parsed.data;
   }
-  await db.realm.update({ where: { id: realm.id }, data: { settings: withRealmWikiSettings(realm.settings, wiki) } });
+  await updateRealmSettings(db, realm.id, (settings) =>
+    withRealmWikiSettings(settings as Prisma.JsonValue, wiki)
+  );
   await globalCache.delete(hintsCacheKey(realm.id));
   return { success: true, wiki };
 }
@@ -196,7 +199,7 @@ const CHOSEN_MAP_ORIGINAL_TTL_MS = 15 * 60 * 1000;
 const chosenMapOriginalCache = new Cache<WikiFileOriginal>({ defaultTtlMs: CHOSEN_MAP_ORIGINAL_TTL_MS });
 
 export async function chooseRealmWikiMap(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   fileTitle: string,
@@ -231,7 +234,9 @@ export async function chooseRealmWikiMap(
         checkedAt: null,
       },
     };
-    await db.realm.update({ where: { id: realm.id }, data: { settings: withRealmWikiMap(realm.settings, map) } });
+    await updateRealmSettings(db, realm.id, (settings) =>
+      withRealmWikiMap(settings as Prisma.JsonValue, map)
+    );
     return { success: true, map };
   } catch (error) {
     return wikiFailure(error);
@@ -277,7 +282,7 @@ export type MapRecheckStatus = "unchanged" | "changed" | "missing";
  * when it was checked; never changes the stored choice.
  */
 export async function recheckRealmWikiMap(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   actor: RealmActor,
   slug: string,
   deps: RealmWikiDeps = {}
@@ -297,10 +302,10 @@ export async function recheckRealmWikiMap(
   const status: MapRecheckStatus = !current ? "missing" : current.sha1 === stored.source.sha1 ? "unchanged" : "changed";
   const checkedAt = new Date().toISOString();
   if (stored.file) {
-    await db.realm.update({
-      where: { id: realm.id },
-      data: { settings: withRealmWikiMap(realm.settings, { ...stored, file: { ...stored.file, checkedAt } }) },
-    });
+    const file = { ...stored.file, checkedAt };
+    await updateRealmSettings(db, realm.id, (settings) =>
+      withRealmWikiMap(settings as Prisma.JsonValue, { ...stored, file })
+    );
   }
   return {
     status,

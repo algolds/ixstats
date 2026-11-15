@@ -125,8 +125,7 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
 
   return (
     <div
-      className="absolute z-20"
-
+      className="pointer-events-auto absolute z-20"
       style={{
         left: pos.x,
         top: pos.y,
@@ -134,7 +133,10 @@ export const FloatingImportPanel = memo(function FloatingImportPanel({
         height: size.height,
       }}
     >
-      <FacetMaterial layer="chrome" className="rounded-row flex h-full flex-col overflow-hidden">
+      <FacetMaterial
+        layer="chrome"
+        className="facet-chrome-subtle rounded-row flex h-full flex-col overflow-hidden"
+      >
         <div
           onPointerDown={onDragStart}
           onPointerMove={onDragMove}

@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/settings/ConlangDataManagerPanel.tsx
 // Local storage data management, backup export, restore import, cache clearer
 
+import { Card } from "~/components/ui/card";
 import React from "react";
 import { Download, Upload, Trash as Trash2 } from "iconoir-react";
 import { useNotify } from "~/hooks/useNotify";
@@ -170,7 +171,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
   };
 
   return (
-    <div className="border-separator bg-fill-4 rounded-row space-y-4 border p-4 text-left">
+    <Card padding="none" className="space-y-4 p-4 text-left">
       <h4 className="text-label text-subhead">Browser conlang data manager</h4>
       <p className="text-label-secondary text-caption leading-normal">
         All conlang dictionary definitions, custom pronunciation rules, and overrides are stored
@@ -182,7 +183,7 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
           <Download className="text-tint h-3.5 w-3.5" /> Export backup file
         </Button>
 
-        <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-semibold transition-colors select-none">
+        <label className="border-separator bg-background text-label hover:bg-fill-3 rounded-control text-footnote flex cursor-pointer items-center justify-center gap-2 border px-3 py-2 font-medium transition-colors select-none">
           <Upload className="text-green h-3.5 w-3.5" /> Import backup file
           <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
@@ -204,6 +205,6 @@ export function ConlangDataManagerPanel({ onImportComplete }: ConlangDataManager
           <Trash2 className="h-3.5 w-3.5" /> Clear all data
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

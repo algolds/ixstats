@@ -4,7 +4,7 @@ import { Dashboard as Gauge, Clock, PathArrow as Route } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
 import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Input } from "~/components/ui/input";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { ROUTE_STYLES, ROUTE_TYPE_KEYS } from "~/lib/maps/map-config";
@@ -72,9 +72,9 @@ function TravelTelemetry({
   return (
     <div className="border-separator rounded-control space-y-2 border p-2">
       <div className="flex items-center justify-between">
-        <Eyebrow className="flex items-center gap-2">
+        <span className="text-caption text-label-secondary flex items-center gap-2 font-medium">
           <Gauge className="text-tint h-3 w-3" /> Velocity & transit
-        </Eyebrow>
+        </span>
         {travelTime.isInstantaneous ? (
           <span className="bg-tint-fill text-tint text-caption rounded-control-sm px-2 py-0.5">
             Light speed
@@ -82,7 +82,7 @@ function TravelTelemetry({
         ) : (
           <span className="text-label text-caption flex items-center gap-1 font-semibold tabular-nums">
             <Clock className="text-tint h-3 w-3 opacity-80" />
-            {travelTime.formattedTime ?? "—"}
+            {travelTime.formattedTime ?? "–"}
           </span>
         )}
       </div>
@@ -96,14 +96,14 @@ function TravelTelemetry({
               valueClassName="text-label font-medium tabular-nums"
             />
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min={5}
                 max={1200}
                 step={5}
                 value={routeSpeed}
                 onChange={(e) => onSpeedChange(parseInt(e.target.value, 10) || 5)}
-                className="border-separator bg-surface text-label focus:border-tint text-footnote rounded-control-sm w-24 border px-2 py-1 tabular-nums focus:outline-none"
+                className="text-footnote rounded-control-sm h-7 w-24 px-2 tabular-nums"
               />
               <span className="text-label-secondary text-footnote">km/h</span>
             </div>
@@ -193,7 +193,7 @@ function PathNodes({
               <span>
                 #{i + 1} {nodeSuffix(i, vertices.length)}
               </span>
-              <span>
+              <span className="font-data tabular-nums">
                 {pt[0].toFixed(4)}°, {pt[1].toFixed(4)}°
               </span>
             </div>

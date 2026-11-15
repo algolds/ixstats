@@ -180,7 +180,7 @@ export function DictionaryEditModal({ dict, onClose, onSave }: Props) {
 
         <div className="border-separator flex items-center justify-between border-t pt-3 pb-1">
           <div className="flex flex-col">
-            <span className="text-label text-footnote font-semibold">Public sharing</span>
+            <span className="text-label text-footnote font-medium">Public sharing</span>
             <span className="text-label-secondary text-caption">
               Allow other players to discover and clone this dictionary.
             </span>

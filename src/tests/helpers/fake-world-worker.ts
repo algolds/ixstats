@@ -71,7 +71,12 @@ export function resultMessage(id: number, over: Partial<ResultMessage> = {}): Re
     restartedAt: "mesh",
     generationMs: 10,
     cells: new Float32Array([10, 20, 300]).buffer,
-    relief: { width: 2, height: 2, rgba: new Uint8Array(16).buffer },
+    relief: {
+      width: 2,
+      height: 2,
+      rgba: new Uint8Array(16).buffer,
+      flat: { width: 2, height: 1, rgba: new Uint8Array(8).buffer },
+    },
     ...over,
   };
 }
@@ -99,7 +104,12 @@ export function worldResult(over: Partial<WorldGenResult> = {}): WorldGenResult 
     restartedAt: "mesh",
     generationMs: 10,
     cells: new Float32Array([10, 20, 300]),
-    relief: { width: 2, height: 2, rgba: new Uint8ClampedArray(16) },
+    relief: {
+      width: 2,
+      height: 2,
+      rgba: new Uint8ClampedArray(16),
+      flat: { width: 2, height: 1, rgba: new Uint8ClampedArray(8) },
+    },
     ...over,
   };
 }

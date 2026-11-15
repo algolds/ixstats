@@ -1,24 +1,16 @@
 "use client";
 
 /**
- * PackHolographicCover — Procedural holographic pack cover
+ * PackHolographicCover: Procedural holographic pack cover
  *
- * Generates a Yu-Gi-Oh-inspired foil cover for card packs using
- * only CSS gradients, blend modes, and animations. Supports custom pack artworks
- * as the base layer, with overlaying interactive 3D tilt, specular glare highlight,
- * and procedural SVG noise filters.
- *
- * Layer stack (bottom → top):
- *  1. Base artwork (custom image or pack-type gradient)
- *  2. Holographic foil sweep (mix-blend-mode: color-dodge)
- *  3. Geometric accents (diamond outlines)
- *  4. Foil noise texture (SVG fractal noise)
- *  5. Specular glare (cursor tracking, mix-blend-mode: overlay)
- *  6. Text overlay (pack name + rarity stamp)
+ * Generates a foil cover for card packs using CSS artwork classes in card-art.css,
+ * blend modes, and custom pack artworks, with optional fullscreen 3D pointer tilt
+ * and reduced-motion stillness.
  */
 
 import React, { useMemo, useRef } from "react";
 import { cn } from "~/lib/utils";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardsLogomark } from "~/lib/navigation/icons/CardsLogomark";
 import type { CardRarity } from "@prisma/client";
 import { parseCardRarity } from "~/lib/cards/enums";
@@ -39,45 +31,27 @@ interface PackHolographicCoverProps {
   className?: string;
   /** sm = store thumb (h-20), md = card, lg = pack-opening fullscreen */
   size?: "sm" | "md" | "lg";
+  /** Enables 3D pointer tilt and specular glare; defaults to `size === "lg"` and disables under Reduce Motion. */
+  interactive?: boolean;
 }
 
-// Pack-type base themes
+type PackThemeKey = "BASIC" | "PREMIUM" | "ELITE" | "EVENT";
 
-interface PackTheme {
-  base: string;
-  accent: string;
-  accentSoft: string;
-  hueRotate: number;
-}
-
-const PACK_THEMES: Record<string, PackTheme> = {
-  BASIC: {
-    base: "from-blue-950 via-slate-900 to-blue-950",
-    accent: "rgba(59,130,246,0.45)",
-    accentSoft: "rgba(59,130,246,0.12)",
-    hueRotate: 0,
-  },
-  PREMIUM: {
-    base: "from-violet-950 via-indigo-900 to-violet-950",
-    accent: "rgba(139,92,246,0.45)",
-    accentSoft: "rgba(139,92,246,0.12)",
-    hueRotate: 40,
-  },
-  ELITE: {
-    base: "from-fuchsia-950 via-purple-900 to-fuchsia-950",
-    accent: "rgba(236,72,153,0.45)",
-    accentSoft: "rgba(236,72,153,0.12)",
-    hueRotate: 80,
-  },
-  EVENT: {
-    base: "from-amber-950 via-red-900 to-amber-950",
-    accent: "rgba(234,179,8,0.45)",
-    accentSoft: "rgba(234,179,8,0.12)",
-    hueRotate: 160,
-  },
+const PACK_HUE_ROTATE: Record<PackThemeKey, number> = {
+  BASIC: 0,
+  PREMIUM: 40,
+  ELITE: 80,
+  EVENT: 160,
 };
 
-// Rarity helpers
+function resolvePackThemeKey(packType: string): PackThemeKey {
+  const upper = packType.toUpperCase();
+  if (upper === "PREMIUM" || upper === "ELITE" || upper === "EVENT") return upper;
+  return "BASIC";
+}
+
+const ACCENT_BORDER = "color-mix(in srgb, var(--pack-accent, var(--color-blue)) 45%, transparent)";
+const ACCENT_SOFT = "color-mix(in srgb, var(--pack-accent, var(--color-blue)) 12%, transparent)";
 
 function getHoloGradient(rarity: CardRarity): string {
   switch (rarity) {
@@ -118,8 +92,6 @@ function getHoloOpacity(rarity: CardRarity): number {
   return map[rarity] ?? 0.15;
 }
 
-// Size presets
-
 const SIZE_CLASSES = { sm: "h-20", md: "h-40", lg: "h-full min-h-[320px]" } as const;
 const LABEL_SIZES = { sm: "text-footnote", md: "text-footnote", lg: "text-body" } as const;
 const STAMP_SIZES = {
@@ -129,8 +101,10 @@ const STAMP_SIZES = {
 } as const;
 
 export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
-  ({ packType, guaranteedRarity, packName, packArtwork, className, size = "sm" }) => {
-    const theme = PACK_THEMES[packType.toUpperCase()] ?? PACK_THEMES.BASIC!;
+  ({ packType, guaranteedRarity, packName, packArtwork, className, size = "sm", interactive }) => {
+    const reduceMotion = useFacetReducedMotion();
+    const resolvedThemeKey = resolvePackThemeKey(packType);
+    const hueRotate = PACK_HUE_ROTATE[resolvedThemeKey];
     const rarity = parseCardRarity(guaranteedRarity) ?? "COMMON";
     const foilStamp = getFoilStampConfig(rarity);
     const sweepDuration = getSweepSpeed(rarity);
@@ -139,9 +113,8 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
 
     const showGeometry = rarity !== "COMMON";
     const showStamp = foilStamp.enabled && size !== "sm";
-    const isInteractive = size === "md" || size === "lg";
+    const isInteractive = (interactive ?? size === "lg") && !reduceMotion;
 
-    // Refs for cursor interactive glare and 3D tilt
     const refElement = useRef<HTMLDivElement>(null);
     const isPointerInside = useRef(false);
     const state = useRef({
@@ -211,7 +184,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
       }
     };
 
-    const containerStyle = {
+    const containerStyle: React.CSSProperties = {
       "--m-x": "50%",
       "--m-y": "50%",
       "--r-x": "0deg",
@@ -221,12 +194,18 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
       "--opacity": "0",
       "--duration": "300ms",
       "--easing": "ease",
+      "--pack-sweep-duration": `${sweepDuration}s`,
+    } as React.CSSProperties;
+
+    const staticTimingStyle: React.CSSProperties = {
+      "--pack-sweep-duration": `${sweepDuration}s`,
     } as React.CSSProperties;
 
     return (
       <div
         ref={refElement}
-        style={isInteractive ? containerStyle : undefined}
+        data-pack-theme={resolvedThemeKey}
+        style={isInteractive ? containerStyle : staticTimingStyle}
         onPointerMove={isInteractive ? handlePointerMove : undefined}
         onPointerEnter={isInteractive ? handlePointerEnter : undefined}
         onPointerLeave={isInteractive ? handlePointerLeave : undefined}
@@ -251,41 +230,51 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
               style={{ backgroundImage: `url(${packArtwork})` }}
             />
           ) : (
-            <div className={cn("card-art-linear-br absolute inset-0", theme.base)} />
+            <div className="pack-cover-base absolute inset-0" />
           )}
 
           {/* Layer 2: Holographic foil sweep */}
           <div
-            className="pack-holo-drift pointer-events-none absolute inset-0"
-            style={{
-              backgroundImage: holoGradient,
-              backgroundSize: "400% 400%",
-              mixBlendMode: "color-dodge",
-              opacity: isInteractive ? "calc(var(--opacity) * 0.7 + 0.1)" : holoOpacity,
-              filter: theme.hueRotate ? `hue-rotate(${theme.hueRotate}deg)` : undefined,
-              backgroundPosition: isInteractive
-                ? "calc(var(--bg-x) * 1.5) calc(var(--bg-y) * 1.5)"
-                : undefined,
-              animation: isInteractive ? undefined : "holo-drift 8s ease-in-out infinite",
-              transition: "opacity 0.3s ease",
-            }}
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              !isInteractive && "pack-holo-drift"
+            )}
+            style={
+              {
+                "--pack-drift-duration": "8s",
+                backgroundImage: holoGradient,
+                backgroundSize: "400% 400%",
+                mixBlendMode: "color-dodge",
+                opacity: isInteractive ? "calc(var(--opacity) * 0.7 + 0.1)" : holoOpacity,
+                filter: hueRotate ? `hue-rotate(${hueRotate}deg)` : undefined,
+                backgroundPosition: isInteractive
+                  ? "calc(var(--bg-x) * 1.5) calc(var(--bg-y) * 1.5)"
+                  : undefined,
+                transition: "opacity 0.3s ease",
+              } as React.CSSProperties
+            }
           />
 
           {/* Layer 7: PDS Custom Foil Overlay */}
           {packArtwork && packArtwork.endsWith(".svg") && (
             <div
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage: `url(${packArtwork.replace(".svg", "_foil.svg")})`,
-                backgroundSize: "cover",
-                mixBlendMode: "color-dodge",
-                opacity: isInteractive ? "calc(var(--opacity) * 0.6 + 0.15)" : 0.25,
-                backgroundPosition: isInteractive
-                  ? "calc(var(--bg-x) * 1.2) calc(var(--bg-y) * 1.2)"
-                  : undefined,
-                animation: isInteractive ? undefined : "holo-drift 10s ease-in-out infinite",
-                transition: "opacity 0.3s ease",
-              }}
+              className={cn(
+                "pointer-events-none absolute inset-0",
+                !isInteractive && "pack-holo-drift"
+              )}
+              style={
+                {
+                  "--pack-drift-duration": "10s",
+                  backgroundImage: `url(${packArtwork.replace(".svg", "_foil.svg")})`,
+                  backgroundSize: "cover",
+                  mixBlendMode: "color-dodge",
+                  opacity: isInteractive ? "calc(var(--opacity) * 0.6 + 0.15)" : 0.25,
+                  backgroundPosition: isInteractive
+                    ? "calc(var(--bg-x) * 1.2) calc(var(--bg-y) * 1.2)"
+                    : undefined,
+                  transition: "opacity 0.3s ease",
+                } as React.CSSProperties
+              }
             />
           )}
 
@@ -297,30 +286,28 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
                 style={{
                   width: "70%",
                   height: "70%",
-                  border: `1.5px solid ${theme.accent}`,
+                  border: `1.5px solid ${ACCENT_BORDER}`,
                   clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                  animation: "geo-spin 20s linear infinite",
                 }}
               />
               <div
-                className="pack-geo-spin absolute"
+                className="pack-geo-spin-reverse absolute"
                 style={{
                   width: "45%",
                   height: "45%",
-                  border: `1px solid ${theme.accentSoft}`,
-                  background: theme.accentSoft,
+                  border: `1px solid ${ACCENT_SOFT}`,
+                  background: ACCENT_SOFT,
                   clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
-                  animation: "geo-spin 25s linear infinite reverse",
                 }}
               />
               {(rarity === "EPIC" || rarity === "LEGENDARY") && (
                 <div
-                  className="absolute animate-pulse rounded-full"
+                  className="pack-core-pulse absolute rounded-full"
                   style={{
                     width: "18%",
                     height: "18%",
-                    border: `1px solid ${theme.accent}`,
-                    background: `radial-gradient(circle, ${theme.accentSoft} 0%, transparent 70%)`,
+                    border: `1px solid ${ACCENT_BORDER}`,
+                    background: `radial-gradient(circle, ${ACCENT_SOFT} 0%, transparent 70%)`,
                   }}
                 />
               )}
@@ -353,7 +340,7 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
             <div
               className="pointer-events-none absolute inset-0 opacity-[var(--opacity)] mix-blend-overlay transition-opacity duration-300"
               style={{
-                background: `radial-gradient(farthest-corner circle at var(--m-x) var(--m-y), rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.2) 25%, transparent 70%)`,
+                background: `radial-gradient(farthest-corner circle at var(--m-x) var(--m-y), rgb(255 255 255 / 0.45) 0%, rgb(255 255 255 / 0.2) 25%, transparent 70%)`,
               }}
             />
           )}
@@ -362,13 +349,10 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
           {!isInteractive && (
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               <div
-                className="pack-foil-sweep absolute h-full"
+                className="pack-foil-sweep absolute top-0 h-full w-1/2"
                 style={{
-                  width: "50%",
-                  top: 0,
                   background:
-                    "linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.22) 50%, rgba(255,255,255,0.1) 55%, transparent 70%)",
-                  animation: `foil-sweep ${sweepDuration}s ease-in-out infinite`,
+                    "linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.1) 45%, rgb(255 255 255 / 0.22) 50%, rgb(255 255 255 / 0.1) 55%, transparent 70%)",
                 }}
               />
             </div>
@@ -384,13 +368,13 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
                   foilStamp.color,
                   STAMP_SIZES[size]
                 )}
-                style={{ textShadow: "0 0 8px rgba(255,255,255,0.8)" }}
+                style={{ textShadow: "0 0 8px rgb(255 255 255 / 0.8)" }}
               >
                 {foilStamp.symbol}
               </div>
             )}
 
-            <div className="card-art-linear-t relative w-full from-black/70 via-black/30 to-transparent px-2 pt-4 pb-2">
+            <div className="card-face-scrim relative w-full px-2 pt-4 pb-2">
               {packName && size !== "sm" && (
                 <p
                   className={cn(
@@ -406,14 +390,9 @@ export const PackHolographicCover = React.memo<PackHolographicCoverProps>(
                   {packName}
                 </p>
               )}
-              <p
-                className={cn(
-                  "flex items-center justify-center gap-1 font-semibold text-white/40",
-                  size === "sm" ? "text-[7px]" : "text-footnote"
-                )}
-              >
+              <p className="flex items-center justify-center gap-1 text-xs font-semibold text-white/40">
                 <CardsLogomark />
-                Cards
+                <span className={size === "sm" ? "sr-only" : undefined}>Cards</span>
               </p>
             </div>
           </div>

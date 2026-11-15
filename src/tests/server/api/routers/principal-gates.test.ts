@@ -191,7 +191,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       });
     });
 
-    it("throws FORBIDDEN when caller is not an active participant in getConversation", async () => {
+    it("answers null, writing nothing, when caller is not a participant in getConversation", async () => {
       const mockDb = createMockDb();
       mockDb.thinkshareConversation.findFirst = jest.fn().mockResolvedValue({
         id: "conv-secret",
@@ -201,12 +201,14 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         messages: [{ userId: victimUser, content: "Between us" }],
       });
 
+      // The same answer as for an id that names nothing: a read never says whether a conversation exists.
       await expect(
         createCaller(callerUser, mockDb).conversations.getConversation({
           conversationId: "conv-secret",
         })
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      ).resolves.toBeNull();
       expect(mockDb.conversationParticipant.upsert).not.toHaveBeenCalled();
+      expect(mockDb.thinkshareConversation.create).not.toHaveBeenCalled();
     });
   });
 
@@ -218,10 +220,8 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         conversationId: "conv-1",
         userId: callerUser,
         isActive: true,
-      });
-      mockDb.thinkshareConversation.findUnique = jest.fn().mockResolvedValue({
-        id: "conv-1",
-        source: "thinkshare",
+        requestStatus: "none",
+        conversation: { id: "conv-1", type: "group", source: "thinkshare" },
       });
       mockDb.thinkshareMessage.create = jest
         .fn()
@@ -248,37 +248,29 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       );
     });
 
-    it("routes external outbound bridges with callerUser identity", async () => {
+    it("refuses a send into a wiki talk conversation, and never reaches the wiki bridge", async () => {
       const mockDb = createMockDb();
       mockDb.conversationParticipant.findFirst = jest.fn().mockResolvedValue({
         id: "part-1",
         conversationId: "conv-wiki",
         userId: callerUser,
         isActive: true,
+        requestStatus: "none",
+        conversation: { id: "conv-wiki", type: "direct", source: "wiki", sourceId: "Wiki_Talk_Page" },
       });
-      mockDb.thinkshareConversation.findUnique = jest.fn().mockResolvedValue({
-        id: "conv-wiki",
-        source: "wiki",
-        sourceId: "Wiki_Talk_Page",
-      });
-      mockDb.thinkshareMessage.create = jest.fn().mockResolvedValue({ id: "msg-w1" });
-      mockDb.thinkshareConversation.update = jest.fn().mockResolvedValue({});
-      mockDb.conversationParticipant.findMany = jest.fn().mockResolvedValue([]);
+      mockDb.thinkshareMessage.create = jest.fn();
 
       const caller = createCaller(callerUser, mockDb);
 
-      await caller.messaging.sendMessage({
-        conversationId: "conv-wiki",
-        userId: victimUser,
-        content: "Wiki update note",
-      });
-
-      expect(wikiTalkBridge.sendOutbound).toHaveBeenCalledWith(
-        "Wiki_Talk_Page",
-        "Wiki update note",
-        callerUser,
-        expect.anything()
-      );
+      await expect(
+        caller.messaging.sendMessage({
+          conversationId: "conv-wiki",
+          userId: victimUser,
+          content: "Wiki update note",
+        })
+      ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      expect(mockDb.thinkshareMessage.create).not.toHaveBeenCalled();
+      expect(wikiTalkBridge.sendOutbound).not.toHaveBeenCalled();
     });
   });
 
@@ -288,8 +280,15 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       mockDb.thinkshareMessage.findUnique = jest
         .fn()
         .mockResolvedValueOnce({ id: "msg-1", userId: victimUser }) // non-author
-        .mockResolvedValueOnce({ id: "msg-1", userId: callerUser }); // author
+        .mockResolvedValueOnce({
+          id: "msg-1",
+          userId: callerUser,
+          conversationId: "conv-1",
+          conversation: { source: "thinkshare" },
+        }); // author
       mockDb.thinkshareMessage.update = jest.fn().mockResolvedValue({});
+      mockDb.conversationParticipant.findFirst = jest.fn().mockResolvedValue({ id: "part-1" });
+      mockDb.conversationParticipant.findMany = jest.fn().mockResolvedValue([]);
 
       const caller = createCaller(callerUser, mockDb);
 
@@ -311,8 +310,15 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       mockDb.thinkshareMessage.findUnique = jest
         .fn()
         .mockResolvedValueOnce({ id: "msg-2", userId: victimUser })
-        .mockResolvedValueOnce({ id: "msg-2", userId: callerUser });
+        .mockResolvedValueOnce({
+          id: "msg-2",
+          userId: callerUser,
+          conversationId: "conv-1",
+          conversation: { source: "thinkshare" },
+        });
       mockDb.thinkshareMessage.update = jest.fn().mockResolvedValue({});
+      mockDb.conversationParticipant.findFirst = jest.fn().mockResolvedValue({ id: "part-1" });
+      mockDb.conversationParticipant.findMany = jest.fn().mockResolvedValue([]);
 
       const caller = createCaller(callerUser, mockDb);
 
@@ -368,7 +374,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       ).rejects.toMatchObject({ code: "FORBIDDEN" });
     });
 
-    it("updates read state and creates receipts strictly for callerUser", async () => {
+    it("updates read state strictly for callerUser and writes no receipt rows", async () => {
       const mockDb = createMockDb();
       mockDb.conversationParticipant.findFirst = jest.fn().mockResolvedValue({
         id: "part-1",
@@ -377,7 +383,7 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
         isActive: true,
       });
       mockDb.conversationParticipant.updateMany = jest.fn().mockResolvedValue({ count: 1 });
-      mockDb.messageReadReceipt.findMany = jest.fn().mockResolvedValue([]);
+      mockDb.thinkshareMessage.count = jest.fn().mockResolvedValue(1);
       mockDb.messageReadReceipt.createMany = jest.fn().mockResolvedValue({ count: 1 });
 
       const caller = createCaller(callerUser, mockDb);
@@ -389,19 +395,44 @@ describe("Plan 148: Secure Messaging Principal Binding", () => {
       });
 
       expect(res).toEqual({ success: true });
+      expect(mockDb.thinkshareMessage.count).toHaveBeenCalledWith({
+        where: { id: { in: ["msg-99"] }, conversationId: "conv-1" },
+      });
       expect(mockDb.conversationParticipant.updateMany).toHaveBeenCalledWith({
         where: { conversationId: "conv-1", userId: callerUser },
         data: expect.objectContaining({ lastReadAt: expect.any(Date) }),
       });
-      expect(mockDb.messageReadReceipt.createMany).toHaveBeenCalledWith({
-        data: [
-          {
-            thinkshareMessageId: "msg-99",
-            userId: callerUser,
-            messageType: "thinkshare",
-          },
-        ],
+      expect(mockDb.messageReadReceipt.createMany).not.toHaveBeenCalled();
+    });
+
+    it("rejects message ids that belong to another conversation, and marks nothing read", async () => {
+      const mockDb = createMockDb();
+      mockDb.conversationParticipant.findFirst = jest.fn().mockResolvedValue({
+        id: "part-1",
+        conversationId: "conv-1",
+        userId: callerUser,
+        isActive: true,
       });
+      mockDb.conversationParticipant.updateMany = jest.fn().mockResolvedValue({ count: 1 });
+      mockDb.thinkshareMessage.count = jest.fn().mockResolvedValue(1); // only one of the two is here
+
+      await expect(
+        createCaller(callerUser, mockDb).participants.markMessagesAsRead({
+          conversationId: "conv-1",
+          messageIds: ["mine", "someone-elses-conversation"],
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(mockDb.conversationParticipant.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("refuses more than 200 message ids at the router", async () => {
+      const ids = Array.from({ length: 201 }, (_, i) => `m${i}`);
+      await expect(
+        createCaller(callerUser).participants.markMessagesAsRead({
+          conversationId: "conv-1",
+          messageIds: ids,
+        })
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
     });
   });
 

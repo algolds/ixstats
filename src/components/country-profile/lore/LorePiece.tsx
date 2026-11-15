@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Pin } from "iconoir-react";
+import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useArticleHtml } from "~/hooks/lore/useArticleHtml";
 import { useNearViewport } from "~/hooks/useNearViewport";
@@ -11,7 +12,7 @@ import { LorePieceActions, type LorePieceActionProps } from "./LorePieceActions"
 
 function PieceLoading({ title }: { title: string }) {
   return (
-    <div className="max-w-[44rem] space-y-3" role="status" aria-label={`Loading ${title}`}>
+    <div className="space-y-3" role="status" aria-label={`Loading ${title}`}>
       {[0, 1, 2].map((i) => (
         <Skeleton key={i} className={i === 2 ? "h-4 w-1/2" : "h-4 w-full"} />
       ))}
@@ -40,9 +41,7 @@ function PieceBody({ title, near }: { title: string; near: boolean }) {
   });
   if (markup) {
     return (
-      <div
-        className={`wikios-article-body wikios-article-content max-w-[44rem] ${SHIFTED_HEADINGS}`}
-      >
+      <div className={`wikios-article-body wikios-article-content ${SHIFTED_HEADINGS}`}>
         <div className={ARTICLE_STYLE_ROOT_CLASS} dangerouslySetInnerHTML={markup} />
       </div>
     );
@@ -58,7 +57,7 @@ export interface LorePieceProps extends Omit<LorePieceActionProps, "title" | "pi
   refusal: string | null;
 }
 
-/** One piece as a chapter of the Lore tab: its heading and actions, then its page, read inline. */
+/** One piece as a chapter of the Lore tab: its heading and actions, then its page, read inline in the article's flow. */
 export function LorePiece({ piece, busy, refusal, ...actions }: LorePieceProps) {
   const ref = useRef<HTMLElement>(null);
   const near = useNearViewport(ref);
@@ -68,28 +67,30 @@ export function LorePiece({ piece, busy, refusal, ...actions }: LorePieceProps) 
       ref={ref}
       id={id}
       aria-labelledby={`${id}-heading`}
-      className="flex scroll-mt-[calc(var(--shell-top-offset,5rem)+1rem)] flex-col gap-3"
+      className="scroll-mt-[calc(var(--shell-top-offset,5rem)+1rem)]"
     >
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h3 id={`${id}-heading`} className="text-title-3 text-label min-w-0">
-          {piece.title}
-        </h3>
-        {piece.pinned && (
-          <span className="text-footnote text-label-secondary inline-flex items-center gap-1">
-            <Pin aria-hidden="true" className="size-3.5" />
-            Pinned
-          </span>
-        )}
-        <div className="ml-auto">
-          <LorePieceActions title={piece.title} pinned={piece.pinned} busy={busy} {...actions} />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+          <h3 id={`${id}-heading`} className="text-title-3 text-label min-w-0">
+            {piece.title}
+          </h3>
+          {piece.pinned && (
+            <Badge variant="secondary" className="inline-flex items-center gap-1">
+              <Pin aria-hidden="true" className="size-3" />
+              Pinned
+            </Badge>
+          )}
+          <div className="ml-auto">
+            <LorePieceActions title={piece.title} pinned={piece.pinned} busy={busy} {...actions} />
+          </div>
         </div>
+        {refusal && (
+          <p role="alert" className="text-callout text-destructive">
+            {refusal}
+          </p>
+        )}
+        <PieceBody title={piece.title} near={near} />
       </div>
-      {refusal && (
-        <p role="alert" className="text-callout text-destructive">
-          {refusal}
-        </p>
-      )}
-      <PieceBody title={piece.title} near={near} />
     </section>
   );
 }

@@ -6,6 +6,8 @@ import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { SportsShell } from "~/components/sports/core/SportsShell";
 import { useUrlSyncedSection } from "~/components/sports/core/useUrlSyncedSection";
 import {
@@ -14,7 +16,7 @@ import {
 } from "~/components/sports/core/sportsSections";
 import { SportsSectionTabs } from "~/components/sports/core/SportsSectionTabs";
 import { PageHeader } from "~/components/shell/PageHeader";
-import { ControlSlider } from "iconoir-react";
+import { ControlSlider, Trophy } from "iconoir-react";
 import {
   LeagueControlDeck,
   ReigningChampionWidget,
@@ -215,6 +217,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
       color: s.team.color ?? undefined,
       logo: s.team.logo,
       wikiSlug: s.team.wikiSlug,
+      wikiSource: s.team.wikiSource,
     }));
   }, [standings, schedule?.matches]);
 
@@ -252,8 +255,6 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
     totalCount = schedule.matches.length;
     completedCount = schedule.matches.filter((m) => m.status === "completed").length;
   }
-
-  const progressPct = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   // Next scheduled fixture details
   const nextScheduledMatch = schedule?.matches?.find((m) => m.status === "scheduled");
@@ -309,6 +310,10 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         awayColor: m.awayTeam.color ?? undefined,
         homeLogo: m.homeTeam.logo,
         awayLogo: m.awayTeam.logo,
+        homeWikiSlug: m.homeTeam.wikiSlug,
+        awayWikiSlug: m.awayTeam.wikiSlug,
+        homeWikiSource: m.homeTeam.wikiSource,
+        awayWikiSource: m.awayTeam.wikiSource,
         homeScore: m.homeScore ?? 0,
         awayScore: m.awayScore ?? 0,
         status: m.status,
@@ -318,7 +323,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6">
-        <Skeleton className="rounded-sheet h-36 w-full" />
+        <Skeleton className="rounded-card h-28 w-full" />
         <div className="grid gap-6 lg:grid-cols-4">
           <Skeleton className="rounded-card h-96" />
           <Skeleton className="rounded-card h-96 lg:col-span-3" />
@@ -329,17 +334,15 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
 
   if (!league) {
     return (
-      <div className="mx-auto max-w-xl space-y-4 py-20 text-center">
-        <h2 className="text-title-2 text-label">Competition not found</h2>
-        <p className="text-footnote text-label-secondary">
-          The requested sports league does not exist or has been archived.
-        </p>
-        <Button
-          onClick={() => router.push("/myleague")}
-          className="rounded-row text-footnote font-semibold"
-        >
-          Return to MyLeague lobby
-        </Button>
+      <div className="mx-auto max-w-xl px-4 py-20">
+        <Card>
+          <EmptyState
+            icon={<Trophy />}
+            title="Competition not found"
+            message="This competition does not exist or was archived."
+            action={<Button onClick={() => router.push("/myleague")}>Back to MyLeague</Button>}
+          />
+        </Card>
       </div>
     );
   }
@@ -358,8 +361,7 @@ export function LeagueRouter({ leagueId }: LeagueRouterProps) {
         activeSeason={activeSeason}
         latestSeason={latestSeason}
         nextMatchDay={nextMatchDay}
-        totalMatchDays={38}
-        progressPct={progressPct}
+        played={{ done: completedCount, total: totalCount, unit: isCircuit ? "races" : "matches" }}
         canManageLeague={canManageLeague}
         onOpenSettings={() => setSettingsTab("branding")}
         onSimulateMatchDay={

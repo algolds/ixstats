@@ -23,8 +23,9 @@ const run = url ? describe : describe.skip;
 jest.mock("@clerk/nextjs/server", () => ({ auth: () => Promise.resolve({ userId: null }) }));
 jest.mock("~/server/db", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PrismaClient } = require("@prisma/client") as typeof import("@prisma/client");
-  return { db: new PrismaClient({ datasourceUrl: process.env.TILES_DB_URL }) };
+  const { createPrismaClient } =
+    require("~/server/prisma-client") as typeof import("~/server/prisma-client");
+  return { db: createPrismaClient({ url: process.env.TILES_DB_URL }) };
 });
 
 import { db as client } from "~/server/db";

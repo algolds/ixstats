@@ -1,12 +1,12 @@
 {
-  "eyebrow": 380,
-  "statLabel": 51,
-  "emDash": 143,
-  "sparks": 32,
-  "emoji": 498,
-  "hoverScale": 28,
+  "eyebrow": 157,
+  "statLabel": 45,
+  "emDash": 57,
+  "sparks": 22,
+  "emoji": 474,
+  "hoverScale": 18,
   "hexClass": 0,
-  "rawPalette": 277,
-  "animatePing": 4,
-  "adhocSpring": 17
+  "rawPalette": 246,
+  "animatePing": 3,
+  "adhocSpring": 5
 }

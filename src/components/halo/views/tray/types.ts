@@ -73,7 +73,7 @@ const PRIORITY_COLORS: Record<string, { bg: string; text: string }> = {
   warning: { bg: "bg-caution/15", text: "text-caution" },
   success: { bg: "bg-success/15", text: "text-success" },
   error: { bg: "bg-destructive/15", text: "text-destructive" },
-  info: { bg: "bg-caution/15", text: "text-caution" },
+  info: { bg: "bg-info/15", text: "text-info" },
 };
 
 export function getColors(n: NotificationItem) {

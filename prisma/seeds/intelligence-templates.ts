@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Intelligence Template Seed Data
  *
@@ -9,9 +10,7 @@
  * - Security (Level 3+): RESTRICTED classification
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 export const intelligenceTemplates = [
   {

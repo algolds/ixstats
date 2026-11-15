@@ -64,7 +64,7 @@ export function GlyphMapRegistry({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-label text-footnote font-semibold">Glyph registry</h4>
+              <h4 className="text-label text-footnote font-medium">Glyph registry</h4>
               {glyphs.length > 0 && (
                 <span className="text-label-secondary bg-fill-3 py-0.2 text-caption rounded-full px-2 font-mono">
                   {glyphs.length}
@@ -96,7 +96,7 @@ export function GlyphMapRegistry({
             className="border-separator bg-fill-4 rounded-row overflow-hidden border p-3"
           >
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-label-secondary text-eyebrow">Preset script packs</span>
+              <span className="text-label-secondary text-caption">Preset script packs</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -118,7 +118,7 @@ export function GlyphMapRegistry({
                   className="rounded-row hover:border-tint/40 hover:bg-tint/5 h-auto flex-col items-stretch gap-0 p-3 text-left font-normal whitespace-normal"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-label text-footnote font-semibold">{pack.name}</span>
+                    <span className="text-label text-footnote font-medium">{pack.name}</span>
                     <span className="text-label-secondary bg-fill-3 rounded-control-sm text-caption px-2 py-0.5 font-mono">
                       {pack.glyphs.length} glyphs
                     </span>
@@ -152,7 +152,7 @@ export function GlyphMapRegistry({
           <div className="bg-fill-3 text-label-secondary rounded-card shadow-card mb-2 flex h-10 w-10 items-center justify-center">
             <Type className="h-5 w-5 opacity-40" />
           </div>
-          <p className="text-label text-footnote font-semibold">No glyphs mapped yet</p>
+          <p className="text-label text-footnote font-medium">No glyphs mapped yet</p>
           <p className="text-label-secondary text-caption mt-1 max-w-[220px]">
             Draw vector strokes on the canvas or load a starter pack above.
           </p>
@@ -233,7 +233,7 @@ export function GlyphMapRegistry({
                     onClick={() => onEditGlyph(g)}
                     className="mt-2 flex w-full cursor-pointer items-center justify-between gap-1"
                   >
-                    <span className="text-label bg-fill-3 rounded-control-sm text-caption flex-1 truncate px-2 py-0.5 text-center font-mono font-semibold">
+                    <span className="text-label bg-fill-3 rounded-control-sm text-caption flex-1 truncate px-2 py-0.5 text-center font-mono font-medium">
                       {g.phoneme}
                     </span>
                     {g.unicode && (

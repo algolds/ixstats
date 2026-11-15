@@ -15,6 +15,38 @@ import { NAV_STORAGE_KEYS, applyNavPreferences, readNavPreferences } from "~/lib
 
 /** Same-document writers notify synchronously; the observer covers anything else touching <html>. */
 const listeners = new Set<() => void>();
+let animatingTimer: ReturnType<typeof setTimeout> | null = null;
+
+function markSidebarAnimating(root: HTMLElement): void {
+  if (typeof window === "undefined") return;
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  root.setAttribute("data-sidebar-animating", "true");
+  if (animatingTimer !== null) clearTimeout(animatingTimer);
+  animatingTimer = setTimeout(() => {
+    root.removeAttribute("data-sidebar-animating");
+    animatingTimer = null;
+  }, 320);
+}
+
+/** Updates the persisted sidebar state and triggers the smooth shell width transition. */
+export function setSidebarCollapsed(next: boolean): void {
+  if (typeof document === "undefined") return;
+  try {
+    window.localStorage.setItem(NAV_STORAGE_KEYS.sidebarCollapsed, String(next));
+  } catch {
+    // Storage blocked (private mode): the attribute below still applies for this page view.
+  }
+  const root = document.documentElement;
+  markSidebarAnimating(root);
+  applyNavPreferences(root, { sidebarCollapsed: next });
+  for (const listener of listeners) listener();
+}
+
+/** Flips the current sidebar collapsed state (`⌘\` / `Ctrl+\` and Halo command palette). */
+export function toggleSidebarCollapsed(): void {
+  if (typeof document === "undefined") return;
+  setSidebarCollapsed(!readCollapsed());
+}
 
 function subscribe(onChange: () => void): () => void {
   listeners.add(onChange);
@@ -47,13 +79,7 @@ interface SidebarCollapsedState {
 export function useSidebarCollapsed(): SidebarCollapsedState {
   const collapsed = useSyncExternalStore<boolean | null>(subscribe, readCollapsed, unknownOnServer);
   const setCollapsed = useCallback((next: boolean) => {
-    try {
-      window.localStorage.setItem(NAV_STORAGE_KEYS.sidebarCollapsed, String(next));
-    } catch {
-      // Storage blocked (private mode): the attribute below still applies for this page view.
-    }
-    applyNavPreferences(document.documentElement, { sidebarCollapsed: next });
-    for (const listener of listeners) listener();
+    setSidebarCollapsed(next);
   }, []);
   return { collapsed, setCollapsed };
 }

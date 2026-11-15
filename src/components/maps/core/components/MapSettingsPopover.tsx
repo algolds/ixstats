@@ -35,7 +35,7 @@ const THEME_OPTIONS = [
 
 const PROJECTION_OPTIONS = [
   { value: "globe", label: "Globe" },
-  { value: "mercator", label: "Mercator" },
+  { value: "mercator", label: "Flat" },
   { value: "dynamic", label: "Auto" },
 ];
 

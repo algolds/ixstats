@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { useState, useCallback } from "react";
 import { Trash as Trash2, Xmark as X, EditPencil as Pencil, Check } from "iconoir-react";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
@@ -152,25 +153,25 @@ export const BatchActionsBar = React.memo(function BatchActionsBar({
           )}
 
           {selectedFieldMeta.inputType === "number" && (
-            <input
+            <Input
               type="number"
               min={1}
               max={5}
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={pending}
-              className="bg-surface border-separator text-footnote rounded-control-sm w-14 border px-2 py-0.5 disabled:opacity-50"
+              className="text-footnote h-7 w-16 px-2 tabular-nums"
               placeholder="1–5"
             />
           )}
 
           {selectedFieldMeta.inputType === "text" && (
-            <input
+            <Input
               type="text"
               value={value}
               onChange={(e) => setValue(e.target.value)}
               disabled={pending}
-              className="bg-surface border-separator text-footnote rounded-control-sm w-28 border px-2 py-0.5 disabled:opacity-50"
+              className="text-footnote h-7 w-32 px-2"
               placeholder="e.g. monarchy"
             />
           )}

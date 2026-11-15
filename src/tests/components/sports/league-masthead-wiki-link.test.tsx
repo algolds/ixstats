@@ -93,3 +93,20 @@ describe("LeagueMasthead publish to wiki", () => {
     expect(mockNotify.error).toHaveBeenCalledWith("This league has no standings to publish yet.");
   });
 });
+
+describe("LeagueMasthead season progress", () => {
+  it("counts fixtures played instead of a percentage", () => {
+    render(
+      <LeagueMasthead
+        league={{ id: "l1", name: "Liga Ixnay", teamCount: 20 }}
+        archetypeLabel="League"
+        sportTheme={theme}
+        activeSeason={{ id: "s1", seasonNumber: 2, status: "in_progress" }}
+        nextMatchDay={5}
+        played={{ done: 40, total: 380, unit: "matches" }}
+      />
+    );
+    expect(screen.getByText(/40 of 380 matches played/)).toBeInTheDocument();
+    expect(screen.queryByText(/%/)).toBeNull();
+  });
+});

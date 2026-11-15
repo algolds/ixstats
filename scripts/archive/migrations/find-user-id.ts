@@ -1,13 +1,12 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Script to help find your Clerk user ID for system owner setup
  * This will show you how to get your user ID from Clerk
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function findUserInfo() {
   try {

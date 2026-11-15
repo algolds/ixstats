@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
 
@@ -322,7 +321,10 @@ function LocationFeedback({
       {coordinates && isPointMode && (
         <>
           <LocationOk>
-            Location: {coordinates[1].toFixed(3)}&deg;, {coordinates[0].toFixed(3)}&deg;
+            Location:{" "}
+            <span className="font-data tabular-nums">
+              {coordinates[1].toFixed(3)}&deg;, {coordinates[0].toFixed(3)}&deg;
+            </span>
           </LocationOk>
           <TerrainChips info={pointInfo} loading={pointInfoLoading} />
         </>
@@ -363,7 +365,7 @@ export const FeaturePropertyPanel = React.memo(function FeaturePropertyPanel(
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <Eyebrow className="block">{MODE_TITLES[mode] ?? mode}</Eyebrow>
+        <h3 className="text-subhead font-semibold">{MODE_TITLES[mode] ?? mode}</h3>
       </div>
 
       <LocationFeedback

@@ -1,7 +1,7 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { City } from "iconoir-react";
 import { PopoverContent } from "~/components/ui/popover";
@@ -47,7 +47,7 @@ function SliderRow({
 }: SliderRowProps) {
   return (
     <div className="space-y-1">
-      <Eyebrow className="block">{label}</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">{label}</span>
       <div className="flex items-center gap-2">
         <Slider
           aria-label={ariaLabel}
@@ -59,7 +59,9 @@ function SliderRow({
           className="flex-1 py-2"
         />
         {valueText && (
-          <span className="text-caption w-8 text-right font-semibold">{valueText}</span>
+          <span className="text-caption w-8 text-right font-semibold tabular-nums">
+            {valueText}
+          </span>
         )}
         {onApply && (
           <Button size="xs" variant={applyVariant} type="button" onClick={onApply}>
@@ -94,7 +96,7 @@ export function CityScatterPopover({
         valueText={String(count)}
       />
       <div className="space-y-1">
-        <Eyebrow className="block">City type</Eyebrow>
+        <span className="text-caption text-label-secondary block font-medium">City type</span>
         <OptionSelect
           aria-label="City type"
           value={type}
@@ -105,12 +107,12 @@ export function CityScatterPopover({
         />
       </div>
       <div className="space-y-1">
-        <Eyebrow className="block">Name prefix</Eyebrow>
-        <input
+        <span className="text-caption text-label-secondary block font-medium">Name prefix</span>
+        <Input
           type="text"
           value={prefix}
           onChange={(e) => setPrefix(e.target.value)}
-          className="border-separator bg-surface text-label focus:ring-tint/50 text-footnote rounded-control-sm h-6 w-full border px-2 outline-none focus:ring-1"
+          className="text-footnote rounded-control-sm h-7 px-2"
         />
       </div>
       <Button
@@ -147,7 +149,7 @@ export function TransformGeometryPopover({
         applyVariant="secondary"
       />
       <div className="space-y-1">
-        <Eyebrow className="block">Smooth geometry</Eyebrow>
+        <span className="text-caption text-label-secondary block font-medium">Smooth geometry</span>
         <Button
           variant="secondary"
           size="sm"

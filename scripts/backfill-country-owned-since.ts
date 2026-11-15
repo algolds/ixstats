@@ -8,6 +8,7 @@
  * are written, and each write re-checks that.
  */
 import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "~/server/prisma-client";
 
 type Db = Pick<PrismaClient, "country" | "realmClaim" | "countryChangeLog">;
 
@@ -86,7 +87,7 @@ export async function backfillOwnedSince(db: Db, apply: boolean): Promise<Backfi
 
 async function main() {
   const apply = process.argv.includes("--apply");
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const report = await backfillOwnedSince(db, apply);
     console.log(

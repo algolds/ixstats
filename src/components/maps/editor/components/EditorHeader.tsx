@@ -63,7 +63,7 @@ interface EditorHeaderProps {
   onShowShortcuts?: () => void;
 }
 
-/** 28px icon button that shows a filled background while `active`. */
+/** 28px icon button that shows a tinted fill while `active`. */
 function HeaderIconButton({
   active,
   className,
@@ -73,7 +73,11 @@ function HeaderIconButton({
     <Button
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", active ? "bg-fill-3 text-label" : "text-label-secondary", className)}
+      className={cn(
+        "h-7 w-7",
+        active ? "bg-tint-fill text-tint-ink" : "text-label-secondary",
+        className
+      )}
       {...props}
     />
   );
@@ -92,7 +96,7 @@ function Breadcrumbs({
 }) {
   return (
     <div className="text-label-secondary text-footnote flex items-center gap-2 select-none">
-      <Map className="text-blue h-3.5 w-3.5" aria-hidden />
+      <Map className="text-tint h-3.5 w-3.5" aria-hidden />
       {isWorldMode ? (
         <>
           <span className="text-label font-semibold">World map</span>
@@ -167,7 +171,7 @@ export const EditorHeader = React.memo(function EditorHeader({
   return (
     <FacetMaterial
       layer="chrome"
-      className="pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none px-3"
+      className="facet-chrome-subtle pointer-events-auto flex h-11 shrink-0 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 shadow-none"
     >
       <HeaderIconButton onClick={handleRequestExit} title="Exit Editor (Esc)">
         <ArrowLeft className="h-4 w-4" />

@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
-import { Cart } from "iconoir-react";
+import { useId, useRef, useState, type RefObject } from "react";
+import { Cart, Filter, WarningCircle, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Label } from "~/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
@@ -25,7 +27,6 @@ import { useBrowse, type BrowseInputView, type BrowseItemView } from "~/hooks/ca
 import { RARITY_LABEL, RARITY_ORDER } from "~/lib/cards/face/labels";
 import type { CardRarity } from "~/lib/cards/face/types";
 import { AuctionRow, type AuctionRowData } from "./AuctionRow";
-import { CreateAuctionModal } from "./CreateAuctionModal";
 import { ListingRow } from "./ListingRow";
 
 const ANY = "any";
@@ -95,79 +96,131 @@ function toBuyTarget(item: BrowseItemView): BuyTarget | null {
     : null;
 }
 
-/** The kind, realm, rarity and sort controls, and Sell. */
+/** Compact toolbar: kind switcher, a filters popover for realm and rarity, optional card chip, and sort. */
 function BrowseToolbar({
   choice,
+  forCardId,
+  onClearFor,
   onChoose,
-  onSell,
 }: {
   choice: BrowseChoice;
+  forCardId: string | null;
+  onClearFor: () => void;
   onChoose: (patch: Partial<BrowseChoice>) => void;
-  onSell: () => void;
 }) {
+  const realmSelectId = useId();
+  const raritySelectId = useId();
   const shelves = api.cards.exploreShelves.useQuery(undefined, { staleTime: 5 * 60 * 1000 });
-  // Every public realm with cards, as Explore's realm filter lists them, not only the realms it shelves.
   const realms: ReadonlyArray<{ id: string; name: string }> = shelves.data?.realms ?? [];
+  const filterCount = (choice.realmId ? 1 : 0) + (choice.rarity ? 1 : 0);
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <SegmentedControl
-        size="sm"
-        aria-label="Show"
-        options={KINDS}
-        value={choice.kind}
-        onValueChange={(kind) => onChoose({ kind })}
-      />
-      <Select
-        value={choice.realmId ?? ANY}
-        onValueChange={(v) => onChoose({ realmId: v === ANY ? null : v })}
-      >
-        <SelectTrigger aria-label="Realm" className="w-auto">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ANY}>Every realm</SelectItem>
-          {realms.map((realm) => (
-            <SelectItem key={realm.id} value={realm.id}>
-              {realm.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select value={choice.rarity ?? ANY} onValueChange={(v) => onChoose({ rarity: rarityOf(v) })}>
-        <SelectTrigger aria-label="Rarity" className="w-auto">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={ANY}>Every rarity</SelectItem>
-          {RARITY_ORDER.map((r) => (
-            <SelectItem key={r} value={r}>
-              {RARITY_LABEL[r]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select value={choice.sort} onValueChange={(v) => onChoose({ sort: sortOf(v) })}>
-        <SelectTrigger aria-label="Sort" className="w-auto">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {SORTS.map((s) => (
-            <SelectItem key={s.value} value={s.value}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Button size="sm" className="ml-auto" onClick={onSell}>
-        Sell a card
-      </Button>
-    </div>
+    <Card variant="well" padding="sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl
+          size="sm"
+          aria-label="Show"
+          options={KINDS}
+          value={choice.kind}
+          onValueChange={(kind) => onChoose({ kind })}
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={filterCount > 0 ? `Filters, ${filterCount} on` : "Filters"}
+            >
+              <Filter aria-hidden />
+              Filters
+              {filterCount > 0 && (
+                <span className="bg-tint-fill text-tint text-caption min-w-5 rounded-full px-1 tabular-nums">
+                  {filterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" aria-label="Filters" className="w-72 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={realmSelectId}>Realm</Label>
+              <Select
+                value={choice.realmId ?? ANY}
+                onValueChange={(v) => onChoose({ realmId: v === ANY ? null : v })}
+              >
+                <SelectTrigger id={realmSelectId} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Every realm</SelectItem>
+                  {realms.map((realm) => (
+                    <SelectItem key={realm.id} value={realm.id}>
+                      {realm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={raritySelectId}>Rarity</Label>
+              <Select
+                value={choice.rarity ?? ANY}
+                onValueChange={(v) => onChoose({ rarity: rarityOf(v) })}
+              >
+                <SelectTrigger id={raritySelectId} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Every rarity</SelectItem>
+                  {RARITY_ORDER.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {RARITY_LABEL[r]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={filterCount === 0}
+              onClick={() => onChoose({ realmId: null, rarity: null })}
+            >
+              Clear filters
+            </Button>
+          </PopoverContent>
+        </Popover>
+        {forCardId && (
+          <Button variant="secondary" size="sm" onClick={onClearFor}>
+            Listings for one card
+            <Xmark aria-hidden />
+            <span className="sr-only">, show every listing</span>
+          </Button>
+        )}
+        <Select value={choice.sort} onValueChange={(v) => onChoose({ sort: sortOf(v) })}>
+          <SelectTrigger
+            aria-label="Sort"
+            className="text-footnote ml-auto h-(--control-height-sm) w-auto"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORTS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </Card>
   );
 }
 
 interface BrowseBodyProps {
   query: ReturnType<typeof useBrowse>;
   listRef: RefObject<HTMLUListElement | null>;
+  filtered: boolean;
+  onClearFilters: () => void;
   onSell: () => void;
   onOpenCard: (cardId: string) => void;
   onShowSelling: () => void;
@@ -175,39 +228,80 @@ interface BrowseBodyProps {
 }
 
 /** The list, or why there is none: loading, failed or empty. */
-function BrowseBody({ query, listRef, onSell, onOpenCard, onShowSelling, onBuy }: BrowseBodyProps) {
+function BrowseBody({
+  query,
+  listRef,
+  filtered,
+  onClearFilters,
+  onSell,
+  onOpenCard,
+  onShowSelling,
+  onBuy,
+}: BrowseBodyProps) {
   const { placeBid, executeBuyout, isBidding, isBuyingOut } = useAuctionBid();
   const items = query.data?.items ?? [];
   if (query.isLoading) return <Skeleton className="rounded-card h-40" />;
   if (query.isError && !query.data) {
     return (
-      <EmptyState
-        role="alert"
-        title="The listings did not load"
-        action={
-          <Button variant="secondary" onClick={() => void query.refetch()}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="The listings did not load"
+          message="Try loading the market listings again."
+          action={
+            <Button variant="secondary" onClick={() => void query.refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (items.length === 0) {
+    if (filtered) {
+      return (
+        <Card>
+          <EmptyState
+            icon={<Filter />}
+            title="No listings match these filters"
+            message="Clear or loosen your filters to see running listings and auctions."
+            action={
+              <Button variant="secondary" onClick={onClearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        </Card>
+      );
+    }
     return (
-      <EmptyState
-        icon={<Cart />}
-        title="Nothing is listed right now"
-        message="Listings and auctions appear here while they run."
-        action={
-          <Button variant="secondary" onClick={onSell}>
-            Sell a card
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Cart />}
+          title="Nothing is listed right now"
+          message="Listings and auctions appear here while they run."
+          action={
+            <Button variant="secondary" onClick={onSell}>
+              List a card
+            </Button>
+          }
+        />
+      </Card>
     );
   }
+  const activeTotal = items.length;
+  // The browse page has no total, only whether another page exists
+  const more = query.data?.hasMore ? "+" : "";
   return (
-    <Card content="data">
+    <Card content="data" padding="none">
+      <div className="border-separator flex items-center justify-between gap-2 border-b px-4 py-2.5">
+        <span className="text-subheadline text-label-secondary font-medium">Live floor</span>
+        <span className="text-footnote text-label-secondary tabular-nums">
+          {activeTotal.toLocaleString()}
+          {more} {activeTotal === 1 && !more ? "active offer" : "active offers"}
+        </span>
+      </div>
       <ul ref={listRef} tabIndex={-1} aria-label="Listings" className="divide-separator divide-y">
         {items.map((item) =>
           item.kind === "listing" ? (
@@ -239,6 +333,7 @@ interface MarketBrowseProps {
   /** `?for=<cardId>` from a card's sheet: only that card's listings and auctions. */
   forCardId: string | null;
   onClearFor: () => void;
+  onSell: () => void;
   onOpenCard: (cardId: string) => void;
   onShowSelling: () => void;
 }
@@ -247,12 +342,12 @@ interface MarketBrowseProps {
 export function MarketBrowse({
   forCardId,
   onClearFor,
+  onSell,
   onOpenCard,
   onShowSelling,
 }: MarketBrowseProps) {
   const [choice, setChoice] = useState(FIRST_CHOICE);
   const [limit, setLimit] = useState(PAGE);
-  const [selling, setSelling] = useState(false);
   const [buying, setBuying] = useState<BrowseItemView | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const { focus, settle } = useDialogFocus();
@@ -268,33 +363,38 @@ export function MarketBrowse({
     },
   });
   const target = buying && toBuyTarget(buying);
-  const sell = () => setSelling(true);
+  const filtered =
+    choice.kind !== "all" ||
+    choice.realmId !== null ||
+    choice.rarity !== null ||
+    forCardId !== null;
+
   const bought = () => {
     // The bought listing leaves the list, so focus goes to the list rather than the page
     settle(listRef.current);
     setBuying(null);
   };
 
+  const clearAll = () => {
+    setChoice((current) => ({ ...current, kind: "all", realmId: null, rarity: null }));
+    if (forCardId) onClearFor();
+  };
+
   return (
     <div className="space-y-4">
       <BrowseToolbar
         choice={choice}
+        forCardId={forCardId}
+        onClearFor={onClearFor}
         onChoose={(patch) => setChoice((current) => ({ ...current, ...patch }))}
-        onSell={sell}
       />
-      {forCardId && (
-        <p className="text-callout text-label-secondary flex flex-wrap items-center gap-2">
-          Listings for one card
-          <Button variant="link" size="sm" className="px-0" onClick={onClearFor}>
-            Show every listing
-          </Button>
-        </p>
-      )}
       <div aria-busy={query.isFetching}>
         <BrowseBody
           query={query}
           listRef={listRef}
-          onSell={sell}
+          filtered={filtered}
+          onClearFilters={clearAll}
+          onSell={onSell}
           onOpenCard={onOpenCard}
           onShowSelling={onShowSelling}
           onBuy={setBuying}
@@ -320,7 +420,6 @@ export function MarketBrowse({
           focus={focus}
         />
       )}
-      <CreateAuctionModal open={selling} onClose={() => setSelling(false)} />
     </div>
   );
 }

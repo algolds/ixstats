@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import React, { use } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle, SystemRestart as Loader2 } from "iconoir-react";
@@ -98,12 +99,16 @@ export default function PersonaProfilePage({ params }: ProfilePageProps) {
             <span>@{profile.username}</span>
             <Badge variant="outline">{profile.accountType}</Badge>
             {profile.country && (
-              <Link
-                href={`/countries/${profile.country.slug ?? profile.country.id}`}
+              <CountryLink
+                country={{
+                  id: profile.country.id,
+                  slug: profile.country.slug,
+                  name: profile.country.name,
+                }}
                 className="text-tint hover:underline"
               >
                 {profile.country.name}
-              </Link>
+              </CountryLink>
             )}
           </div>
         </div>

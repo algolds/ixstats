@@ -20,7 +20,7 @@ export function GrammarRootsSection() {
     <div className="space-y-6">
       <div className="border-separator flex flex-col justify-between gap-4 border-b pb-4 sm:flex-row sm:items-center">
         <div>
-          <h2 className="text-label text-body font-semibold">
+          <h2 className="text-label text-headline">
             {mode === "roots"
               ? "Etymological Web & Root Derivations"
               : "Syntactic Sandbox & Sentence Grammar"}

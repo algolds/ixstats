@@ -124,9 +124,69 @@ describe("LoreReader", () => {
     expect(screen.queryByText("Capital: Venceia")).toBeNull();
   });
 
+  it("says at a glance where the article is from, how long it takes and how many sections it has", () => {
+    render(<LoreReader layer={layer} />);
+    expect(screen.getByRole("heading", { level: 2, name: "Caphiria" })).toBeInTheDocument();
+    expect(screen.getByText("From the Wiki · 1 min read · 2 sections")).toBeInTheDocument();
+  });
+
+  it("pins a thin reading-progress bar above the article and puts the contents inline, before it", () => {
+    render(<LoreReader layer={layer} />);
+    const bar = screen.getByRole("progressbar", { name: "Reading progress" });
+    expect(bar).toHaveClass("sticky", "h-[3px]");
+    const contents = screen.getByRole("navigation", { name: "Contents" });
+    const article = screen.getByRole("article", { name: "Caphiria on the wiki" });
+    expect(
+      contents.compareDocumentPosition(article) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(screen.queryByRole("complementary")).toBeNull();
+  });
+
+  it("numbers the sections and jumps to one in place, leaving the address alone", () => {
+    const scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = scrollIntoView;
+    render(<LoreReader layer={layer} />);
+    const contents = screen.getByRole("navigation", { name: "Contents" });
+    expect(
+      within(contents)
+        .getAllByRole("listitem")
+        .map((li) => li.textContent)
+    ).toEqual(["1History", "2Geography"]);
+    expect(fireEvent.click(within(contents).getByRole("link", { name: "Geography" }))).toBe(false);
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById("Geography"));
+  });
+
+  it("ends the article with further reading, not ahead of it", () => {
+    const withMedia = {
+      ...layer,
+      media: {
+        articles: [
+          {
+            id: "a1",
+            title: "History of Caphiria",
+            slug: "History_of_Caphiria",
+            summary: null,
+            imageUrl: null,
+            readingTime: 26,
+          },
+        ],
+      },
+    } as unknown as CountryProfileLayer;
+    render(<LoreReader layer={withMedia} />);
+    const further = screen.getByRole("navigation", { name: "Further reading" });
+    expect(within(further).getByRole("link", { name: /History of Caphiria/ })).toHaveAttribute(
+      "href",
+      "/wiki/History_of_Caphiria"
+    );
+    const article = screen.getByRole("article", { name: "Caphiria on the wiki" });
+    expect(
+      article.compareDocumentPosition(further) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it("lists the article's sections in WikiOS's contents", () => {
     render(<LoreReader layer={layer} />);
-    const contents = screen.getByRole("complementary", { name: "Contents" });
+    const contents = screen.getByRole("navigation", { name: "Contents" });
     expect(
       within(contents)
         .getAllByRole("link")
@@ -176,7 +236,7 @@ describe("LoreReader", () => {
     it("lists the article's chapters in the index, then the pieces by type", () => {
       mockPieces = { data: PIECES, isError: false };
       render(<LoreReader layer={layer} />);
-      const contents = screen.getByRole("complementary", { name: "Contents" });
+      const contents = screen.getByRole("navigation", { name: "Contents" });
       expect(
         within(contents)
           .getAllByRole("link")
@@ -209,14 +269,14 @@ describe("LoreReader", () => {
     it("leaves out the article's contents when it has a single chapter", () => {
       answer = { ...answer, data: { ...ARTICLE, toc: [ARTICLE.toc[0]!] } };
       render(<LoreReader layer={layer} />);
-      expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
+      expect(screen.queryByRole("navigation", { name: "Contents" })).toBeNull();
     });
 
     it("lists no chapters of an article that has nothing to show", () => {
       answer = { ...answer, data: { ...ARTICLE, contentHtml: "" } };
       render(<LoreReader layer={layer} />);
       expect(screen.getByText("The wiki could not be loaded")).toBeInTheDocument();
-      expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
+      expect(screen.queryByRole("navigation", { name: "Contents" })).toBeNull();
     });
 
     it("asks again for a lean article this page cannot resolve, and waits for it", () => {
@@ -238,13 +298,13 @@ describe("LoreReader", () => {
       answer = { ...answer, data: { ...ARTICLE, toc: [] } };
       mockPieces = { data: PIECES, isError: false };
       render(<LoreReader layer={layer} />);
-      expect(screen.getByRole("complementary", { name: "Contents" })).toBeInTheDocument();
+      expect(screen.getByRole("navigation", { name: "Contents" })).toBeInTheDocument();
     });
 
     it("has no index for an article without chapters and no pieces", () => {
       answer = { ...answer, data: { ...ARTICLE, toc: [] } };
       render(<LoreReader layer={layer} />);
-      expect(screen.queryByRole("complementary", { name: "Contents" })).toBeNull();
+      expect(screen.queryByRole("navigation", { name: "Contents" })).toBeNull();
     });
 
     it("reads the pieces as chapters after the article", () => {

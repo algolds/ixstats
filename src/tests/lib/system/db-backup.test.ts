@@ -57,6 +57,7 @@ describe("targets and commands", () => {
       expect(dump.command).toBe("pg_dump");
       expect(dump.args.join(" ")).not.toContain("s3cr");
       expect(dump.env).toEqual({ PGPASSWORD: "s3cr@t" });
+      expect(dump.args).toContain("--compress=zstd:1");
       expect(restoreCommand(target, "a.dump").args).toEqual([
         "--clean",
         "--if-exists",
@@ -65,5 +66,24 @@ describe("targets and commands", () => {
         "a.dump",
       ]);
     }
+  });
+
+  it("dumps with zstd from the Docker container too", () => {
+    const dump = dumpCommand({
+      kind: "docker",
+      container: "ixstats-postgres",
+      user: "postgres",
+      database: "ixstats",
+    });
+    expect(dump.args).toEqual([
+      "exec",
+      "ixstats-postgres",
+      "pg_dump",
+      "-U",
+      "postgres",
+      "-Fc",
+      "--compress=zstd:1",
+      "ixstats",
+    ]);
   });
 });

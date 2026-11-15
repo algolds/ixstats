@@ -4,6 +4,8 @@
  * so the step gating and the archetype rules are testable without React.
  */
 
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { WIKI_SOURCE_IDS } from "~/lib/wiki-os/wiki-source-availability";
 import type { ComponentType } from "@prisma/client";
 import {
   DEFAULT_GOVERNMENT_FORM_ID,
@@ -90,8 +92,9 @@ export interface FoundingIdentity {
 
 export type IdentityFieldId = keyof FoundingIdentity;
 
-export const WIKI_SITE_IDS = ["iiwiki", "althistory"] as const;
-export type WikiSiteId = (typeof WIKI_SITE_IDS)[number];
+/** The wikis a nation page can be imported from: IxWiki ("Wiki") first, then the sister wikis. */
+export const WIKI_SITE_IDS = WIKI_SOURCE_IDS;
+export type WikiSiteId = WikiSource;
 
 /** What the wiki import found and the player kept; applied once, never re-fetched. */
 export interface FoundingImport {

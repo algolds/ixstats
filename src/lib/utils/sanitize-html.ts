@@ -18,7 +18,7 @@ import { mediaWikiOrigin, wikiosConfig } from "~/lib/wiki-os/config";
 import { DOM_DEPTH_CEILING, tagsNestTooDeep } from "~/lib/wiki-os/transformers/inert-dom";
 import { articleInlineStyle, scopeTemplateStyles, type StylePolicy } from "./scope-template-styles";
 
-type Purifier = typeof DOMPurify;
+export type Purifier = typeof DOMPurify;
 type StyleSanitizer = (style: Element) => void;
 
 let serverWindow: import("jsdom").DOMWindow | null = null;
@@ -29,7 +29,7 @@ let serverWindow: import("jsdom").DOMWindow | null = null;
  * use. `typeof window` is a compile-time constant per bundle, so browser bundles drop
  * the jsdom branch. `fresh` asks for an instance of its own (hooks are per instance), not the shared one.
  */
-function createPurifier(fresh = false): Purifier {
+export function createPurifier(fresh = false): Purifier {
   if (typeof window === "undefined") {
     const { JSDOM } = require("jsdom") as typeof import("jsdom");
     serverWindow ??= new JSDOM("").window;
@@ -39,7 +39,7 @@ function createPurifier(fresh = false): Purifier {
 }
 
 /** Block data: URIs in src/href attributes. */
-function installSharedHooks(created: Purifier): void {
+export function installSharedHooks(created: Purifier): void {
   created.addHook("uponSanitizeAttribute", (_node, event) => {
     if (
       (event.attrName === "src" || event.attrName === "href") &&
@@ -121,78 +121,78 @@ function getArticlePurifier(): Purifier {
   return articlePurifier;
 }
 
+export const USER_CONTENT_CONFIG: Config = {
+  ALLOWED_TAGS: [
+    "p",
+    "br",
+    "span",
+    "div",
+    "b",
+    "i",
+    "em",
+    "strong",
+    "u",
+    "s",
+    "sub",
+    "sup",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "mark", // search highlights
+    "pre",
+    "code",
+    "a",
+    "img",
+  ],
+  ALLOWED_ATTR: [
+    "href",
+    "title",
+    "target",
+    "src",
+    "alt",
+    "width",
+    "height",
+    "class", // Limited to safe classes
+    "data-wikiembed",
+    "data-title",
+    "data-summary",
+    "data-imageurl",
+    "data-source",
+    // Forum posts: a quote's source post, and the wiki links and embeds in posts imported from XenForo
+    "data-post",
+    "data-wiki-embed",
+    "data-wiki-title",
+    "data-width",
+    "data-spoiler", // lib/thinkpages/spoilers.ts; SAFE_FOR_TEMPLATES disables ALLOW_DATA_ATTR, so list each
+  ],
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
+  FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
+  FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
+  // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
+  ADD_URI_SAFE_ATTR: ["data-wiki-title"],
+  ALLOW_UNKNOWN_PROTOCOLS: false,
+  SAFE_FOR_TEMPLATES: true,
+  KEEP_CONTENT: true,
+  RETURN_TRUSTED_TYPE: false,
+};
+
 /**
  * STRICT sanitization for user-generated content
  * Use for: ThinkPages posts, comments, collaborative documents, user profiles
  *
- * Allows: Basic text formatting (b, i, em, strong, p, br, ul, ol, li, blockquote)
+ * Allows: Basic text formatting (b, i, em, strong, p, br, ul, ol, li, blockquote, mark for search highlights)
  * Blocks: Scripts, iframes, forms, links with javascript:, event handlers, positioning classes (`fixed inset-0 z-50`)
  */
 export function sanitizeUserContent(html: string): string {
   if (!html) return "";
-
-  const config: Config = {
-    ALLOWED_TAGS: [
-      "p",
-      "br",
-      "span",
-      "div",
-      "b",
-      "i",
-      "em",
-      "strong",
-      "u",
-      "s",
-      "sub",
-      "sup",
-      "h1",
-      "h2",
-      "h3",
-      "h4",
-      "h5",
-      "h6",
-      "ul",
-      "ol",
-      "li",
-      "blockquote",
-      "pre",
-      "code",
-      "a",
-      "img",
-    ],
-    ALLOWED_ATTR: [
-      "href",
-      "title",
-      "target",
-      "src",
-      "alt",
-      "width",
-      "height",
-      "class", // Limited to safe classes
-      "data-wikiembed",
-      "data-title",
-      "data-summary",
-      "data-imageurl",
-      "data-source",
-      // Forum posts: a quote's source post, and the wiki links and embeds in posts imported from XenForo
-      "data-post",
-      "data-wiki-embed",
-      "data-wiki-title",
-      "data-width",
-      "data-spoiler", // lib/thinkpages/spoilers.ts; SAFE_FOR_TEMPLATES disables ALLOW_DATA_ATTR, so list each
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
-    FORBID_TAGS: ["script", "style", "iframe", "object", "embed", "form", "input", "button"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
-    // A wiki title is not a URL: "File:X.jpg" must not be read as an unknown protocol and dropped.
-    ADD_URI_SAFE_ATTR: ["data-wiki-title"],
-    ALLOW_UNKNOWN_PROTOCOLS: false,
-    SAFE_FOR_TEMPLATES: true,
-    KEEP_CONTENT: true,
-    RETURN_TRUSTED_TYPE: false,
-  };
-
-  return stripPositioning(purify.sanitize(html, config));
+  return stripPositioning(purify.sanitize(html, USER_CONTENT_CONFIG));
 }
 
 /**

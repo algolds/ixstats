@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { useNotify } from "~/hooks/useNotify";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "~/lib/utils";
@@ -22,8 +21,7 @@ import {
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
-import { MeetingScheduler } from "~/components/executive/actions/MeetingScheduler";
+import { ProposeSummitForm } from "./ProposeSummitForm";
 import { wikiReaderPath } from "~/lib/wiki-os/config";
 import { type CountryCardData } from "./CountryFocusCard";
 import { useCountryDiplomacyActions, type ForeignPolicyType } from "./useCountryDiplomacyActions";
@@ -37,11 +35,10 @@ interface ExpandedCardContentProps {
 
 export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
   ({ country, viewerCountryId, isOwnCountry }) => {
-    const notify = useNotify();
     const router = useRouter();
     const targetCountryId = country.id;
     const targetCountryName = country.name;
-    const [schedulerOpen, setSchedulerOpen] = useState(false);
+    const [summitOpen, setSummitOpen] = useState(false);
 
     const diplomacy = useCountryDiplomacyActions({
       viewerCountryId,
@@ -101,7 +98,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
           {/* Header */}
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Eyebrow>Country actions</Eyebrow>
+              <span className="text-footnote text-label-secondary font-medium">
+                Country actions
+              </span>
               {country.continent && <Badge variant="default">{country.continent}</Badge>}
               {country.region && <Badge variant="outline">{country.region}</Badge>}
             </div>
@@ -128,7 +127,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
             <div className="space-y-4">
               {/* Social */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Social</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Social</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -164,7 +163,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Diplomacy */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Diplomacy</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Diplomacy</p>
                 <div className="flex flex-col gap-2">
                   <Button
                     type="button"
@@ -179,27 +178,33 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                     ) : (
                       <Building2 className="text-label-secondary h-3.5 w-3.5" />
                     )}
-                    Construct Embassy
+                    Construct embassy
                   </Button>
 
                   <Button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!viewerCountryId) {
-                        notify.error("You must be logged in to request a meeting");
-                        return;
-                      }
-                      setSchedulerOpen(true);
+                      setSummitOpen((open) => !open);
                     }}
                     disabled={!viewerCountryId || isLoading}
+                    aria-pressed={summitOpen}
                     variant="outline"
                     size="lg"
                     className={actionClass}
                   >
                     <Calendar className="text-label-secondary h-3.5 w-3.5" />
-                    Request meeting
+                    Propose summit
                   </Button>
+                  {summitOpen && (
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ProposeSummitForm
+                        targetCountryId={targetCountryId}
+                        targetCountryName={targetCountryName}
+                        onDone={() => setSummitOpen(false)}
+                      />
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-2 gap-2">
                     <Button
@@ -231,7 +236,9 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Foreign Policy (Sanctions & Embargo) */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Foreign policy</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">
+                  Foreign policy
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     type="button"
@@ -261,7 +268,7 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
 
               {/* Quick Links */}
               <div className="space-y-2">
-                <Eyebrow className="block px-1">Quick links</Eyebrow>
+                <p className="text-footnote text-label-secondary px-1 font-medium">Quick links</p>
                 <Button asChild variant="outline" size="lg" className={actionClass}>
                   <Link href={wikiReaderPath(country.name)} onClick={(e) => e.stopPropagation()}>
                     <Globe className="text-label-secondary h-3.5 w-3.5" />
@@ -280,14 +287,6 @@ export const ExpandedCardContent = React.memo<ExpandedCardContentProps>(
                 Login required to perform actions
               </p>
             </div>
-          )}
-          {viewerCountryId && (
-            <MeetingScheduler
-              countryId={viewerCountryId}
-              open={schedulerOpen}
-              onOpenChange={setSchedulerOpen}
-              defaultTargetCountryId={targetCountryId}
-            />
           )}
         </div>
       </div>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React from "react";
 import { useRouter } from "next/navigation";
@@ -40,7 +39,9 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
 
   return (
     <div className="space-y-4">
-      <Eyebrow className="block">Revision History ({revisions.length})</Eyebrow>
+      <h3 className="text-headline text-label">
+        Revisions <span className="text-label-secondary tabular-nums">{revisions.length}</span>
+      </h3>
 
       <div className="max-h-[300px] space-y-3 overflow-y-auto pr-1">
         {revisions.map((rev, idx) => {
@@ -49,7 +50,7 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
           return (
             <div
               key={rev.id}
-              className="border-separator bg-surface rounded-control text-footnote flex items-center justify-between gap-4 border p-2"
+              className="facet-well rounded-row text-footnote flex items-center justify-between gap-4 p-2"
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center">
@@ -57,16 +58,14 @@ export default function RevisionHistory({ achievementId }: RevisionHistoryProps)
                 </div>
 
                 <div className="space-y-0.5">
-                  <span className="text-label-secondary block font-semibold">
-                    Version: {revisions.length - idx}
+                  <span className="text-label text-subhead block">
+                    Version {revisions.length - idx}
                   </span>
                   <span className="text-label-secondary text-footnote block">
                     {new Date(rev.createdAt).toLocaleString()}
                   </span>
                   {rev.revisionNote && (
-                    <p className="text-label-secondary text-footnote italic">
-                      Change: {rev.revisionNote}
-                    </p>
+                    <p className="text-label-secondary text-footnote italic">{rev.revisionNote}</p>
                   )}
                 </div>
               </div>

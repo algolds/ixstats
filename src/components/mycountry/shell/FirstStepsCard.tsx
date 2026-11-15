@@ -5,6 +5,7 @@ import { Bank, CheckCircle, Group, MapPin, PageEdit, Percentage, TaskList } from
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Progress } from "~/components/ui/progress";
 import { useNotify } from "~/hooks/useNotify";
 import { shouldShowFirstSteps, type FirstStepId } from "~/lib/mycountry/first-steps";
 import { api } from "~/trpc/react";
@@ -69,17 +70,24 @@ export function FirstStepsCard({ countryId }: { countryId: string }) {
   if (!shouldShowFirstSteps(data)) return null;
 
   const doneCount = data.items.filter((item) => item.done).length;
+  const progressPercent =
+    data.items.length > 0 ? Math.round((doneCount / data.items.length) * 100) : 0;
 
   return (
     <Card role="region" aria-labelledby={TITLE_ID} padding="md">
       <CardHeader className="flex-row items-start justify-between gap-3 px-0 pb-3">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <CardTitle id={TITLE_ID} icon={<TaskList />} role="heading" aria-level={2}>
             First steps
           </CardTitle>
           <CardDescription className="mt-1 tabular-nums">
             {doneCount} of {data.items.length} done
           </CardDescription>
+          <Progress
+            value={progressPercent}
+            aria-label="First steps progress"
+            className="mt-2 h-1.5 max-w-xs"
+          />
         </div>
         <Button
           type="button"

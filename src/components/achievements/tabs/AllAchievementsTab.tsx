@@ -1,388 +1,86 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
-import { motion } from "motion/react";
-import {
-  Lock,
-  Trophy as Award,
-  ViewGrid as LayoutGrid,
-  List,
-  Eye,
-  EyeClosed as EyeOff,
-  Crown as Diamond,
-  Crown as Gem,
-  Flash as Zap,
-  Archery as Target,
-  OnePointCircle as CircleDot,
-  Component as Layers,
-  Hexagon,
-  Hourglass,
-} from "iconoir-react";
-import { cn } from "~/lib/utils";
+import React, { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Trophy } from "iconoir-react";
 import type { RouterOutputs } from "~/trpc/react";
-import { Badge, type BadgeVariant } from "~/components/ui/badge";
+import { cn } from "~/lib/utils/cn";
+import { ActionPill } from "~/components/ui/action-pill";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { SearchField } from "~/components/ui/search-field";
-import { SegmentedControl } from "~/components/ui/segmented-control";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { springSmooth } from "~/lib/design/motion";
 import {
-  rarities,
-  getTrophyTier,
-  type TrophyTier,
-  groupAchievements,
-  getCategoryTheme,
-  type GroupedAchievementItem,
-} from "../constants";
-import { AchievementIcon, AchievementCardBackdrop } from "../AchievementDecorations";
-import { Card } from "~/components/ui/card";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  AchievementListView,
+  resolveAchievementRowState,
+  type AchievementProgressStatus,
+} from "../AchievementListView";
+import { getCategoryTheme, groupAchievements, type GroupedAchievementItem } from "../constants";
 
-const MotionCard = motion.create(Card);
+type StatusFilter = "all" | AchievementProgressStatus;
+
+interface CatalogueFilters {
+  query: string;
+  category: string;
+  categorySeed: string | null;
+  status: StatusFilter;
+}
+
+function matchesCatalogueFilters(
+  item: GroupedAchievementItem,
+  activeCategory: string,
+  status: StatusFilter,
+  trimmedQuery: string
+): boolean {
+  if (activeCategory !== "all" && item.category.toLowerCase() !== activeCategory.toLowerCase()) {
+    return false;
+  }
+
+  if (status !== "all") {
+    const rowState = resolveAchievementRowState(item);
+    if (rowState.status !== status) {
+      return false;
+    }
+  }
+
+  if (!trimmedQuery) return true;
+
+  const seriesMatch = item.seriesName?.toLowerCase().includes(trimmedQuery) ?? false;
+  const levelMatch = item.levels.some(
+    (lvl) =>
+      lvl.title.toLowerCase().includes(trimmedQuery) ||
+      lvl.description.toLowerCase().includes(trimmedQuery)
+  );
+  return seriesMatch || levelMatch;
+}
 
 interface AllAchievementsTabProps {
   achievements: RouterOutputs["achievements"]["getAllWithStatus"] | undefined;
-  /** An achievement to open: its series card opens on that tier and scrolls into view. */
   focusKey?: string;
-}
-
-/** Trophy tier chip: a Badge variant plus an icon (colour never carries meaning alone). */
-const ACHIEVEMENT_TIER_CONFIG: Record<
-  TrophyTier,
-  {
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-    badge: BadgeVariant;
-  }
-> = {
-  platinum: { label: "Legendary", icon: Zap, badge: "warning" },
-  gold: { label: "Epic", icon: Gem, badge: "secondary" },
-  silver: { label: "Rare", icon: Hexagon, badge: "info" },
-  bronze: { label: "Core", icon: Target, badge: "default" },
-};
-
-/** Rarity filter: label and icon per option. */
-const RARITY_CONFIG: Record<
-  string,
-  { label: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  all: { label: "All", icon: Layers },
-  Legendary: { label: "Legendary", icon: Zap },
-  Epic: { label: "Epic", icon: Gem },
-  Rare: { label: "Rare", icon: Hexagon },
-  Uncommon: { label: "Uncommon", icon: Target },
-  Common: { label: "Common", icon: CircleDot },
-};
-
-const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
-
-/** The tier a rarity filter aims at: its first match when unlocked, else the series' current tier. */
-function rarityTierIndex(item: GroupedAchievementItem, selectedRarity: string): number {
-  if (selectedRarity !== "all") {
-    const matchIdx = item.levels.findIndex((l) => l.rarity === selectedRarity);
-    if (matchIdx !== -1 && item.levels[matchIdx].isUnlocked) return matchIdx;
-  }
-  return item.currentTierIndex;
-}
-
-/**
- * Grouped Achievement Series Card with an icon and an aurora-watermark backdrop
- */
-function GroupedSeriesCard({
-  item,
-  selectedRarity,
-  revealedSecrets,
-  toggleSecretReveal,
-  focusKey,
-}: {
-  item: GroupedAchievementItem;
-  selectedRarity: string;
-  revealedSecrets: Set<string>;
-  toggleSecretReveal: (k: string) => void;
-  /** Set on the one card holding the opened achievement. */
-  focusKey?: string;
-}) {
-  const focusIndex = focusKey ? item.levels.findIndex((l) => l.key === focusKey) : -1;
-  // The inspected tier, with the inputs it was last aimed from (adjusted during render, not in an
-  // effect): a rarity or series change re-aims it at the rarity's tier, a new deep link at that
-  // achievement. The deep link wins on mount and when both change; a later rarity change still re-aims it.
-  const [inspection, setInspection] = useState(() => ({
-    index: focusIndex === -1 ? rarityTierIndex(item, selectedRarity) : focusIndex,
-    selectedRarity,
-    currentTierIndex: item.currentTierIndex,
-    levels: item.levels,
-    focusIndex,
-  }));
-  const rarityChanged =
-    inspection.selectedRarity !== selectedRarity ||
-    inspection.currentTierIndex !== item.currentTierIndex ||
-    inspection.levels !== item.levels;
-  const focusChanged = inspection.focusIndex !== focusIndex;
-  if (rarityChanged || focusChanged) {
-    let index = inspection.index;
-    if (focusChanged && focusIndex !== -1) index = focusIndex;
-    else if (rarityChanged) index = rarityTierIndex(item, selectedRarity);
-    setInspection({
-      index,
-      selectedRarity,
-      currentTierIndex: item.currentTierIndex,
-      levels: item.levels,
-      focusIndex,
-    });
-  }
-  const inspectedIndex = inspection.index;
-  const setInspectedIndex = (index: number) => setInspection((prev) => ({ ...prev, index }));
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [shakingTierKey, setShakingTierKey] = useState<string | null>(null);
-  const [isPedestalShaking, setIsPedestalShaking] = useState(false);
-
-  // A deep link scrolls its card into view
-  useEffect(() => {
-    if (focusIndex === -1) return;
-    cardRef.current?.scrollIntoView?.({ block: "center" });
-  }, [focusIndex]);
-
-  const triggerLockedShake = (key?: string) => {
-    if (key) {
-      setShakingTierKey(key);
-      setTimeout(() => setShakingTierKey(null), 400);
-    } else {
-      setIsPedestalShaking(true);
-      setTimeout(() => setIsPedestalShaking(false), 400);
-    }
-  };
-
-  const activeLevel = item.levels[inspectedIndex] || item.levels[0];
-  const isUnlocked = activeLevel?.isUnlocked;
-  const isSecret =
-    (activeLevel.key.startsWith("vid-") || activeLevel.key.startsWith("meme-")) && !isUnlocked;
-  const isRevealed = revealedSecrets.has(activeLevel.key);
-  const tier = getTrophyTier(activeLevel.rarity);
-  const tierConfig = ACHIEVEMENT_TIER_CONFIG[tier];
-  const TierIcon = tierConfig.icon;
-  const isUltraRare = (activeLevel.globalUnlockPercent ?? 100) < 5;
-  const categoryTheme = getCategoryTheme(item.category);
-  const CategoryIcon = categoryTheme.icon;
-  const isLegacy = item.isLegacy;
-  const isLegendaryOrEpic = activeLevel.rarity === "Legendary" || activeLevel.rarity === "Epic";
-
-  return (
-    // Unlocked achievements lift on hover and carry the aurora / foil
-    // backdrop; locked ones stay a dashed opaque slot.
-    <MotionCard
-      ref={cardRef}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={springSmooth}
-      interactive={isUnlocked && !isLegacy}
-      className={cn(
-        "flex flex-col justify-between overflow-hidden p-5",
-        focusIndex !== -1 && "outline-tint outline-2 outline-offset-2",
-        isLegacy && "opacity-70 grayscale",
-        isUnlocked
-          ? !isLegacy && categoryTheme.cardBorderHover
-          : "bg-surface-secondary border-dashed shadow-none select-none"
-      )}
-    >
-      <AchievementCardBackdrop
-        categoryTheme={categoryTheme}
-        isUnlocked={!!isUnlocked}
-        isLegendaryOrEpic={isLegendaryOrEpic}
-      />
-
-      {/* Status & tier */}
-      <div className="relative space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={tierConfig.badge}>
-              <TierIcon aria-hidden />
-              <span>{tierConfig.label}</span>
-            </Badge>
-
-            {isLegacy && (
-              <Badge variant="default">
-                <Hourglass aria-hidden />
-                <span>Legacy</span>
-              </Badge>
-            )}
-
-            {isUltraRare && (
-              <Badge variant="info" className="tabular-nums">
-                <Diamond aria-hidden />
-                <span>{activeLevel.globalUnlockPercent}% ultra-rare</span>
-              </Badge>
-            )}
-          </div>
-
-          <Badge variant={categoryTheme.badgeVariant}>
-            <CategoryIcon aria-hidden />
-            <span>{item.category}</span>
-          </Badge>
-        </div>
-
-        {/* Icon, title and description */}
-        <div className="flex items-start gap-4 pt-1">
-          <motion.div
-            animate={isPedestalShaking ? { x: [0, -6, 6, -5, 5, -2, 2, 0] } : { x: 0 }}
-            transition={{ duration: 0.38, ease: [0.36, 0.07, 0.19, 0.97] }}
-            onClick={() => {
-              if (!isUnlocked) triggerLockedShake();
-            }}
-            className={cn(
-              "rounded-row relative flex size-13 shrink-0 items-center justify-center select-none",
-              isUnlocked
-                ? categoryTheme.pedestal
-                : "border-separator bg-fill-4 text-label-tertiary cursor-not-allowed border border-dashed"
-            )}
-          >
-            <AchievementIcon icon={item.icon} isUnlocked={!!isUnlocked} className="size-7.5" />
-          </motion.div>
-
-          <div className="min-w-0 flex-1 space-y-1">
-            <h3
-              className={cn(
-                "text-headline truncate",
-                isUnlocked ? "text-label" : "text-label-secondary"
-              )}
-            >
-              {isSecret && !isRevealed ? "Secret milestone" : activeLevel.title}
-            </h3>
-
-            {/* Locked descriptions stay blurred (non-interactive) */}
-            <p
-              className={cn(
-                "text-footnote pointer-events-none line-clamp-2 select-none",
-                isUnlocked
-                  ? "text-label-secondary"
-                  : isSecret && !isRevealed
-                    ? "text-label-tertiary opacity-40 blur-[3px]"
-                    : "text-label-secondary opacity-60 blur-[2px]"
-              )}
-            >
-              {isSecret && !isRevealed
-                ? "Secret achievement. Select the eye icon to reveal it."
-                : activeLevel.description}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tier stepper & footer */}
-      <div className="border-separator relative mt-4 space-y-3 border-t pt-3">
-        {item.isSeries && item.levels.length > 1 && (
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="text-label-secondary text-footnote">Tiers</span>
-              <div
-                role="group"
-                aria-label="Tiers"
-                className="bg-fill-3 rounded-control flex items-center gap-1 p-0.5"
-              >
-                {item.levels.map((lvl, idx) => {
-                  const lvlUnlocked = lvl.isUnlocked;
-                  const isCurrent = inspectedIndex === idx;
-                  const isShaking = shakingTierKey === lvl.key;
-
-                  return (
-                    <motion.button
-                      type="button"
-                      key={lvl.key}
-                      animate={isShaking ? { x: [0, -6, 6, -5, 5, -2, 2, 0] } : { x: 0 }}
-                      transition={{ duration: 0.38, ease: [0.36, 0.07, 0.19, 0.97] }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (!lvlUnlocked) {
-                          triggerLockedShake(lvl.key);
-                          return;
-                        }
-                        setInspectedIndex(idx);
-                      }}
-                      aria-pressed={isCurrent}
-                      aria-disabled={!lvlUnlocked}
-                      className={cn(
-                        "rounded-control-sm text-caption duration-fast ease-out-facet focus-visible:outline-tint relative flex h-6 min-w-6 items-center justify-center px-2 tabular-nums transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2",
-                        isCurrent
-                          ? "bg-surface text-label shadow-card"
-                          : lvlUnlocked
-                            ? "text-success-ink hover:bg-fill-4 cursor-pointer"
-                            : "text-label-tertiary cursor-not-allowed"
-                      )}
-                      title={`Level ${idx + 1}: ${lvl.title} (${lvlUnlocked ? "unlocked, select to view" : "locked tier"})`}
-                    >
-                      <span>{ROMAN_NUMERALS[idx] || idx + 1}</span>
-                      {!lvlUnlocked && (
-                        <Lock aria-hidden className="absolute -top-1 -right-1 size-3" />
-                      )}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <span className="text-label-secondary text-footnote">
-              <span className="tabular-nums">
-                {item.unlockedCount} / {item.totalLevels}
-              </span>{" "}
-              mastered
-            </span>
-          </div>
-        )}
-
-        {/* Points, secret toggle and date */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isSecret && (
-              <Button
-                type="button"
-                variant="secondary"
-                size="icon-sm"
-                className="rounded-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleSecretReveal(activeLevel.key);
-                }}
-                title={isRevealed ? "Hide secret" : "Reveal secret"}
-                aria-label={isRevealed ? "Hide secret" : "Reveal secret"}
-                aria-pressed={isRevealed}
-              >
-                {isRevealed ? <EyeOff /> : <Eye />}
-              </Button>
-            )}
-
-            <Badge variant="success" className="select-none">
-              {activeLevel.points ?? 0} pts
-            </Badge>
-          </div>
-
-          <div className="text-footnote text-right">
-            {isUnlocked && activeLevel.unlockedAt ? (
-              <span className="text-label">
-                Unlocked{" "}
-                <span className="tabular-nums">
-                  {new Date(activeLevel.unlockedAt).toLocaleDateString(undefined, {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </span>
-              </span>
-            ) : (
-              <span className="text-label-secondary inline-flex items-center gap-1">
-                <Lock aria-hidden className="size-3.5" />
-                Locked
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </MotionCard>
-  );
 }
 
 export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTabProps) {
-  const [selectedRarity, setSelectedRarity] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(new Set());
+  const searchParams = useSearchParams();
+  const resolvedFocusKey = focusKey ?? searchParams?.get("a") ?? undefined;
+  const queryCategory = searchParams?.get("category") ?? null;
+
+  const [filters, setFilters] = useState<CatalogueFilters>(() => ({
+    query: "",
+    category: queryCategory || "all",
+    categorySeed: queryCategory,
+    status: "all",
+  }));
+  const [revealedSecrets, setRevealedSecrets] = useState<Set<string>>(() => new Set());
+
+  const activeCategory =
+    filters.categorySeed === queryCategory ? filters.category : queryCategory || "all";
 
   const toggleSecretReveal = (key: string) => {
     setRevealedSecrets((prev) => {
@@ -393,127 +91,128 @@ export function AllAchievementsTab({ achievements, focusKey }: AllAchievementsTa
     });
   };
 
-  // Grouped Series representation
-  const groupedItems = useMemo(() => {
-    return groupAchievements(achievements || []);
-  }, [achievements]);
+  const groupedItems = useMemo(() => groupAchievements(achievements ?? []), [achievements]);
 
-  // Counts per rarity for badges in toggle: active achievements only, Legacy counts in no total
-  const rarityCounts = useMemo(() => {
-    const active = groupedItems.filter((item) => !item.isLegacy);
-    const counts: Record<string, number> = { all: active.length };
-    for (const r of rarities) {
-      if (r === "all") continue;
-      counts[r] = active.filter((item) => item.levels.some((l) => l.rarity === r)).length;
-    }
-    return counts;
-  }, [groupedItems]);
+  const categories = useMemo(
+    () =>
+      Array.from(new Set(groupedItems.map((item) => item.category))).sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [groupedItems]
+  );
 
-  const filteredGroupedItems = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return groupedItems.filter((item) => {
-      // Rarity filter: match if any level in series has the selected rarity
-      if (selectedRarity !== "all") {
-        const matchesRarity = item.levels.some((l) => l.rarity === selectedRarity);
-        if (!matchesRarity) return false;
-      }
+  const trimmedQuery = filters.query.trim().toLowerCase();
+  const filteredGroupedItems = useMemo(
+    () =>
+      groupedItems.filter((item) =>
+        matchesCatalogueFilters(item, activeCategory, filters.status, trimmedQuery)
+      ),
+    [groupedItems, activeCategory, filters.status, trimmedQuery]
+  );
 
-      // Search filter
-      if (q) {
-        const nameMatch = item.seriesName?.toLowerCase().includes(q);
-        const levelMatch = item.levels.some(
-          (l) => l.title.toLowerCase().includes(q) || l.description.toLowerCase().includes(q)
-        );
-        return nameMatch || levelMatch;
-      }
-      return true;
-    });
-  }, [groupedItems, selectedRarity, searchQuery]);
+  const hasActiveFilters =
+    Boolean(filters.query) || activeCategory !== "all" || filters.status !== "all";
 
   return (
     <section aria-labelledby="achievement-catalogue-title" className="space-y-4">
-      {/* The catalogue's cards are h3s: name the section in the outline (after the showcase h2). */}
       <h2 id="achievement-catalogue-title" className="sr-only">
         Achievement catalogue
       </h2>
-      {/* Search and filters */}
-      <Card
-        padding="sm"
-        className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
-      >
-        <SearchField
-          size="sm"
-          placeholder="Search achievements"
-          aria-label="Search achievements"
-          value={searchQuery}
-          onValueChange={setSearchQuery}
-          containerClassName="max-w-sm flex-1"
-        />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <ToggleGroup
-            type="single"
-            aria-label="Rarity"
+      <div className="space-y-3">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <SearchField
             size="sm"
-            variant="pill"
-            value={selectedRarity}
-            onValueChange={(value) => setSelectedRarity(value || "all")}
-            className="flex-wrap"
-          >
-            {rarities.map((r: string) => {
-              const config = RARITY_CONFIG[r] ?? { label: r, icon: CircleDot };
-              const RarityIcon = config.icon;
-              const count = rarityCounts[r] ?? 0;
-              return (
-                <ToggleGroupItem key={r} value={r} className="gap-2">
-                  <RarityIcon aria-hidden className="size-3.5" />
-                  <span>{config.label}</span>
-                  <span className="text-label-secondary tabular-nums">{count}</span>
-                </ToggleGroupItem>
-              );
-            })}
-          </ToggleGroup>
-
-          <SegmentedControl
-            aria-label="Layout"
-            size="sm"
-            value={viewMode}
-            onValueChange={setViewMode}
-            options={[
-              { value: "grid", label: "Grid", icon: <LayoutGrid /> },
-              { value: "list", label: "List", icon: <List /> },
-            ]}
+            placeholder="Search achievements"
+            aria-label="Search achievements"
+            value={filters.query}
+            onValueChange={(query) => setFilters((prev) => ({ ...prev, query }))}
+            containerClassName="flex-1 sm:max-w-xs"
           />
-        </div>
-      </Card>
 
-      {/* Catalogue */}
-      {filteredGroupedItems.length > 0 ? (
-        <div
-          className={cn(
-            "relative max-h-[620px] overflow-y-auto pr-1",
-            viewMode === "grid"
-              ? "grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-              : "space-y-3"
-          )}
-        >
-          {filteredGroupedItems.map((item) => (
-            <GroupedSeriesCard
-              key={item.seriesId || item.levels[0].key}
-              item={item}
-              selectedRarity={selectedRarity}
-              revealedSecrets={revealedSecrets}
-              toggleSecretReveal={toggleSecretReveal}
-              focusKey={item.levels.some((l) => l.key === focusKey) ? focusKey : undefined}
-            />
-          ))}
+          <Select
+            value={filters.status}
+            onValueChange={(status) =>
+              setFilters((prev) => ({ ...prev, status: status as StatusFilter }))
+            }
+          >
+            <SelectTrigger size="sm" aria-label="Status" className="w-full sm:w-40">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="earned">Earned</SelectItem>
+              <SelectItem value="in-progress">In progress</SelectItem>
+              <SelectItem value="not-earned">Not earned</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        <div role="group" aria-label="Category" className="flex flex-wrap items-center gap-1.5">
+          <ActionPill
+            size="sm"
+            pressed={activeCategory === "all"}
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, category: "all", categorySeed: queryCategory }))
+            }
+          >
+            All
+          </ActionPill>
+          {categories.map((category) => {
+            const theme = getCategoryTheme(category);
+            const CatIcon = theme.icon;
+            const isPressed = activeCategory.toLowerCase() === category.toLowerCase();
+
+            return (
+              <ActionPill
+                key={category}
+                size="sm"
+                icon={<CatIcon />}
+                pressed={isPressed}
+                className={cn(isPressed && theme.pedestal)}
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, category, categorySeed: queryCategory }))
+                }
+              >
+                {category}
+              </ActionPill>
+            );
+          })}
+        </div>
+      </div>
+
+      {filteredGroupedItems.length > 0 ? (
+        <AchievementListView
+          items={filteredGroupedItems}
+          activeCategory={activeCategory}
+          revealedSecrets={revealedSecrets}
+          toggleSecretReveal={toggleSecretReveal}
+          focusKey={resolvedFocusKey}
+        />
       ) : (
         <Card>
           <EmptyState
-            icon={<Award />}
+            icon={<Trophy />}
             title="No achievements match"
-            message="Change the search or pick another rarity."
+            message="Change the search or pick another filter."
+            action={
+              hasActiveFilters ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() =>
+                    setFilters({
+                      query: "",
+                      category: "all",
+                      categorySeed: queryCategory,
+                      status: "all",
+                    })
+                  }
+                >
+                  Reset filters
+                </Button>
+              ) : undefined
+            }
           />
         </Card>
       )}

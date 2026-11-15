@@ -1,6 +1,5 @@
 "use client";
 
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React from "react";
 import {
   Group as Users,
@@ -34,8 +33,9 @@ import { formatPopulation } from "~/lib/utils/format-utils";
 import { useNationClockFor } from "~/hooks/useNationClock";
 import type { RealmCalendar } from "~/lib/realms/realm-clock";
 import { cn } from "~/lib/utils/cn";
+import { FACET_AXIS_TICK, FacetChartTooltip } from "~/components/ui/chart";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
-import { CHART_TOOLTIP_STYLE, type MetricModalTab, type TimeRange, type ChartType } from "./types";
+import type { MetricModalTab, TimeRange, ChartType } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
 import { filterAndSortHistory } from "./hooks/useMetricHistoryFilter";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "~/components/ui/hover-card";
@@ -126,9 +126,9 @@ function PerformanceSummary({ metrics }: { metrics: PerformanceMetrics }) {
     >
       <MetricModalLayout.TileGrid columns="grid-cols-1 md:grid-cols-3">
         <Card variant="well" padding="none" className={tileClass}>
-          <div className="text-label-secondary text-eyebrow mb-1 flex items-center justify-center gap-2">
+          <div className="text-caption text-label-secondary mb-1 flex items-center justify-center gap-2">
             <GrowthIcon className={cn("h-4 w-4", signedTone(metrics.growth))} />
-            Recent Growth
+            Recent growth
           </div>
           <span className={cn("text-title-2", signedTone(metrics.growth))}>
             {metrics.growth > 0 ? "+" : ""}
@@ -217,7 +217,9 @@ function PopulationOverview({
           bordered={false}
           label={
             <div className="flex items-center justify-between">
-              <Eyebrow>Demographics classification</Eyebrow>
+              <span className="text-footnote text-label-secondary font-medium">
+                Demographics classification
+              </span>
               <TierInfoPopover currentIndex={tierIndex} />
             </div>
           }
@@ -314,28 +316,45 @@ function PopulationComparison({
           ) : comparison.length > 0 ? (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={comparison.slice(0, 10)} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+                <BarChart data={comparison.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid
+                    horizontal={false}
+                    strokeDasharray="3 3"
+                    stroke="var(--color-separator)"
+                  />
                   <XAxis
                     type="number"
                     tickFormatter={(value) => formatPopulation(value)}
-                    stroke="var(--color-label-secondary)"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={FACET_AXIS_TICK}
                   />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    width={80}
-                    stroke="var(--color-label-secondary)"
+                    width={88}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={FACET_AXIS_TICK}
                   />
                   <Tooltip
-                    contentStyle={CHART_TOOLTIP_STYLE}
-                    formatter={(value) => [formatPopulation(value as number), "Population"]}
-                    labelFormatter={(label, payload) => {
-                      const item = payload?.[0]?.payload as { fullName?: string } | undefined;
-                      return item?.fullName || String(label);
-                    }}
+                    cursor={{ fill: "var(--color-fill-4)" }}
+                    content={
+                      <FacetChartTooltip
+                        labelFormatter={(label, payload) => {
+                          const fullName = payload?.[0]?.payload?.fullName;
+                          return typeof fullName === "string" ? fullName : String(label);
+                        }}
+                        valueFormatter={(val) => formatPopulation(val)}
+                      />
+                    }
                   />
-                  <Bar dataKey="population" fill={POPULATION_COLOR} radius={[0, 4, 4, 0]} />
+                  <Bar
+                    dataKey="population"
+                    name="Population"
+                    fill={POPULATION_COLOR}
+                    radius={[0, 4, 4, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -355,49 +374,61 @@ function PopulationComparison({
             </p>
           ) : (
             <>
-              <div className="flex h-44 w-full items-center justify-center">
+              <div className="flex h-40 w-full items-center justify-center">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={breakdown}
                       cx="50%"
                       cy="50%"
-                      outerRadius={60}
-                      fill="var(--chart-5)"
+                      innerRadius={44}
+                      outerRadius={62}
+                      paddingAngle={2}
+                      stroke="none"
                       dataKey="value"
-                      label={(props: { name?: string }) => props.name ?? ""}
-                      labelLine={false}
+                      nameKey="name"
                     >
                       {breakdown.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={CHART_TOOLTIP_STYLE}
-                      formatter={(value) => formatPopulation(value as number)}
+                      content={
+                        <FacetChartTooltip
+                          hideLabel
+                          valueFormatter={(val) => formatPopulation(val)}
+                        />
+                      }
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
 
-              <div className="max-h-[160px] space-y-2 overflow-y-auto pr-1">
+              <ul className="divide-separator/60 max-h-[160px] divide-y overflow-y-auto pr-1">
                 {breakdown.map((segment) => (
-                  <div
+                  <li
                     key={segment.name}
-                    className="bg-fill-3 rounded-row text-footnote flex items-center justify-between p-2"
+                    className="text-footnote flex items-center justify-between py-2 first:pt-0 last:pb-0"
                   >
-                    <span className="text-label-secondary font-medium">{segment.name}</span>
-                    <div className="text-right">
-                      <div className="text-label font-semibold tabular-nums">
+                    <span className="flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: segment.color }}
+                      />
+                      <span className="text-label">{segment.name}</span>
+                    </span>
+                    <div className="text-right tabular-nums">
+                      <div className="text-label font-semibold">
                         {formatPopulation(segment.value)}
                       </div>
                       <div className="text-label-secondary text-footnote">
                         {segment.percentage.toFixed(1)}%
                       </div>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </>
           )}
         </MetricModalLayout.SidePanel>
@@ -465,15 +496,15 @@ export function PopulationDetailsModal({
     country && urban != null && rural != null
       ? [
           {
-            name: "Urban Population",
+            name: "Urban population",
             value: (country.currentPopulation * urban) / 100,
-            color: "var(--color-blue-500)",
+            color: "var(--color-chart-1)",
             percentage: urban,
           },
           {
-            name: "Rural Population",
+            name: "Rural population",
             value: (country.currentPopulation * rural) / 100,
-            color: "var(--chart-3)",
+            color: "var(--color-chart-3)",
             percentage: rural,
           },
         ]

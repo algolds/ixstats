@@ -1,17 +1,27 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
+import { useHeldValue } from "~/hooks/useHeldValue";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { List, MultiplePages, ViewGrid } from "iconoir-react";
+import { Filter, List, MultiplePages, ViewGrid, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { LensCard } from "~/components/ui/lens-card";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
 import { AddToShowcaseDialog } from "~/components/cards/showcase/AddToShowcaseDialog";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
 import { useDebounce } from "~/hooks/useDebounce";
-import { EMPTY_CARD_FILTERS, mineFilterInput, type CardFilters } from "~/lib/cards/face/filters";
+import {
+  activeFilterCount,
+  EMPTY_CARD_FILTERS,
+  mineFilterInput,
+  type CardFilters,
+} from "~/lib/cards/face/filters";
 import { MINE_SORT_OPTIONS, type MineSort } from "~/lib/cards/face/mine-options";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import type { MinePage, MineRow } from "~/lib/cards/hub/mine";
@@ -32,7 +42,7 @@ const MINE_DIMENSIONS: readonly FilterDimension[] = [
   "category",
   "duplicates",
 ];
-const PAGE = 60;
+const PAGE = 120;
 type MineView = "grid" | "list";
 
 interface ViewOption {
@@ -89,7 +99,7 @@ function useMinePicks(listed: ReadonlySet<string>) {
   if (selected && [...selected].some((id) => !listed.has(id))) {
     setSelected(new Set([...selected].filter((id) => listed.has(id))));
   }
-  const picked = useMemo(() => (selected ? [...selected] : []), [selected]);
+  const picked = selected ? [...selected] : [];
   return {
     selected,
     picked,
@@ -99,7 +109,75 @@ function useMinePicks(listed: ReadonlySet<string>) {
   };
 }
 
-/** Mine: every copy the player holds, as a still grid or a list with values, and a select mode for bulk actions. */
+/** Collector binder summary strip: copies held, distinct cards, and estimated deck value on Lens glass. */
+function BinderSummaryStrip(props: {
+  loading: boolean;
+  failed: boolean;
+  totalCopies: number;
+  uniqueCards: number;
+  deckValue: number;
+}) {
+  if (props.failed) return null;
+  if (props.loading) return <Skeleton className="rounded-card h-16" />;
+  if (props.totalCopies === 0) {
+    return (
+      <LensCard app="vault" content="data" padding="sm">
+        <EmptyState
+          icon={<MultiplePages />}
+          title="Your binder is empty"
+          message={
+            <>
+              Explore every realm&apos;s cards, or open packs in the{" "}
+              <Link
+                href={STORE_PATH}
+                className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
+              >
+                Store
+              </Link>
+              .
+            </>
+          }
+          action={
+            <Button variant="secondary" asChild>
+              <Link href={CARD_HUB_PATHS.explore}>Explore cards</Link>
+            </Button>
+          }
+        />
+      </LensCard>
+    );
+  }
+  return (
+    <LensCard app="vault" content="data" padding="sm" data-slot="binder-summary">
+      <div className="divide-separator grid grid-cols-3 divide-x">
+        <Stat
+          size="sm"
+          label="Total copies"
+          value={props.totalCopies.toLocaleString()}
+          className="px-2 sm:px-3"
+        />
+        <Stat
+          size="sm"
+          label="Unique cards"
+          value={props.uniqueCards.toLocaleString()}
+          className="px-2 sm:px-3"
+        />
+        <Stat
+          size="sm"
+          label="Estimated deck value"
+          value={
+            <span className="inline-flex items-center gap-1 tabular-nums">
+              <IxCreditsSymbol className="size-[0.85em]" />
+              {props.deckValue.toLocaleString()}
+            </span>
+          }
+          className="px-2 sm:px-3"
+        />
+      </div>
+    </LensCard>
+  );
+}
+
+/** My cards: collector binder summary strip over the filtered binder grid/list and bulk selection bar. */
 export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void }) {
   const [filters, setFilters] = useState<CardFilters>(EMPTY_CARD_FILTERS);
   const [sort, setSort] = useState<MineSort>("acquired");
@@ -115,24 +193,29 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
       placeholderData: keepPreviousData,
     }
   );
+  const statsQuery = api.vault.getUserStats.useQuery();
   const pages = query.data?.pages;
-  const rows = useMemo(() => uniqueRows(pages ?? []), [pages]);
-  const listed = useMemo(() => new Set(rows.map(copyIdOf)), [rows]);
+  const rows = uniqueRows(pages ?? []);
+  const listed = new Set(rows.map(copyIdOf));
   const first = pages?.[0];
-  const totalCopies = first?.totalCopies ?? 0;
+  const totalCopies = first?.totalCopies ?? statsQuery.data?.totalCards ?? 0;
+  const isFiltered = activeFilterCount(filters) > 0 || filters.search.trim() !== "";
+  const uniqueInRows = new Set(rows.map((row) => row.face.cardId)).size;
+  // A filter narrows the rows; the strip keeps the binder's unique count from before it.
+  const heldUnique = useHeldValue(uniqueInRows, !isFiltered && rows.length > 0);
+  const uniqueCards = !isFiltered ? uniqueInRows : heldUnique;
+  const deckValue = statsQuery.data?.deckValue ?? rows.reduce((sum, row) => sum + row.value, 0);
+  const failed = query.isError && !query.data;
+
   const picks = useMinePicks(listed);
   const selected = picks.selected;
-  const rowById = useMemo(() => new Map(rows.map((row) => [copyIdOf(row), row])), [rows]);
+  const rowById = new Map(rows.map((row) => [copyIdOf(row), row]));
   // Picks are already limited to the listed copies.
-  const selectedCopies = useMemo(
-    () =>
-      picks.picked.flatMap((id) => {
-        const row = rowById.get(id);
-        const copy = row && selectedCopyOf(row);
-        return copy ? [copy] : [];
-      }),
-    [picks.picked, rowById]
-  );
+  const selectedCopies = picks.picked.flatMap((id) => {
+    const row = rowById.get(id);
+    const copy = row && selectedCopyOf(row);
+    return copy ? [copy] : [];
+  });
   const selectButton = useRef<HTMLButtonElement>(null);
   // Select mode picks from the grid, whichever view was on.
   const shownView: MineView = selected ? "grid" : view;
@@ -145,75 +228,84 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
 
   return (
     <div className="flex flex-col gap-4">
-      <CardFilterBar
-        filters={filters}
-        onChange={setFilters}
-        dimensions={MINE_DIMENSIONS}
-        types={first?.facets.types ?? []}
-        categories={first?.facets.categories ?? []}
-        realms={first?.realms ?? []}
-        sort={sort}
-        sortOptions={MINE_SORT_OPTIONS}
-        onSortChange={setSort}
-        trailing={
-          <>
-            <DustBalances />
-            <SegmentedControl
-              asTabs
-              size="sm"
-              aria-label="View"
-              value={shownView}
-              onValueChange={setView}
-              disabled={selected !== null}
-              getTabPanelId={() => panelId}
-              options={VIEW_OPTIONS}
+      <BinderSummaryStrip
+        loading={query.isLoading}
+        failed={failed}
+        totalCopies={totalCopies}
+        uniqueCards={uniqueCards}
+        deckValue={deckValue}
+      />
+      {(query.isLoading || failed || totalCopies > 0) && (
+        <>
+          <CardFilterBar
+            filters={filters}
+            onChange={setFilters}
+            dimensions={MINE_DIMENSIONS}
+            types={first?.facets.types ?? []}
+            categories={first?.facets.categories ?? []}
+            realms={first?.realms ?? []}
+            sort={sort}
+            sortOptions={MINE_SORT_OPTIONS}
+            onSortChange={setSort}
+            trailing={
+              <>
+                <DustBalances />
+                <SegmentedControl
+                  asTabs
+                  size="sm"
+                  aria-label="View"
+                  value={shownView}
+                  onValueChange={setView}
+                  disabled={selected !== null}
+                  getTabPanelId={() => panelId}
+                  options={VIEW_OPTIONS}
+                />
+                <Button
+                  ref={selectButton}
+                  variant="secondary"
+                  disabled={totalCopies === 0}
+                  onClick={selected ? picks.stop : picks.start}
+                >
+                  {selected ? "Cancel" : "Select"}
+                </Button>
+              </>
+            }
+          />
+          {selected && (
+            // First in the DOM, so the keyboard reaches it before the cards; drawn last, held above the tab bar.
+            <MineBulkBar
+              className="order-last"
+              copies={selectedCopies}
+              onAddToShowcase={() => setShowcasing(true)}
+              onDone={picks.stop}
+              focusAfter={selectButton}
             />
-            <Button
-              ref={selectButton}
-              variant="secondary"
-              disabled={totalCopies === 0}
-              onClick={selected ? picks.stop : picks.start}
-            >
-              {selected ? "Cancel" : "Select"}
-            </Button>
-          </>
-        }
-      />
-      {selected && (
-        // First in the DOM, so the keyboard reaches it before the cards; drawn last, held above the tab bar.
-        <MineBulkBar
-          className="order-last"
-          copies={selectedCopies}
-          onAddToShowcase={() => setShowcasing(true)}
-          onDone={picks.stop}
-          focusAfter={selectButton}
-        />
+          )}
+          <div
+            role="tabpanel"
+            id={panelId}
+            aria-label={VIEW_LABEL[shownView]}
+            aria-busy={query.isFetching && !query.isFetchingNextPage}
+          >
+            <MineBody
+              loading={query.isLoading}
+              failed={failed}
+              onRetry={() => void query.refetch()}
+              rows={rows}
+              view={shownView}
+              selected={selected}
+              onOpen={open}
+              onClearFilters={() => setFilters(EMPTY_CARD_FILTERS)}
+            />
+          </div>
+          <MoreCards
+            hasMore={query.hasNextPage}
+            loading={query.isFetchingNextPage}
+            failed={query.isFetchNextPageError}
+            onMore={() => void query.fetchNextPage()}
+          />
+        </>
       )}
-      <div
-        role="tabpanel"
-        id={panelId}
-        aria-label={VIEW_LABEL[shownView]}
-        aria-busy={query.isFetching && !query.isFetchingNextPage}
-      >
-        <MineBody
-          loading={query.isLoading}
-          // A failed refresh keeps the cards it already has; only a list that never loaded says so.
-          failed={query.isError && !query.data}
-          onRetry={() => void query.refetch()}
-          totalCopies={totalCopies}
-          rows={rows}
-          view={shownView}
-          selected={selected}
-          onOpen={open}
-          onClearFilters={() => setFilters(EMPTY_CARD_FILTERS)}
-        />
-      </div>
-      <MoreCards
-        hasMore={query.hasNextPage}
-        loading={query.isFetchingNextPage}
-        failed={query.isFetchNextPageError}
-        onMore={() => void query.fetchNextPage()}
-      />
       {/* A dismissed dialog keeps the picks; once they are in a showcase, select mode ends. */}
       <AddToShowcaseDialog
         open={showcasing}
@@ -230,7 +322,6 @@ function MineBody(props: {
   loading: boolean;
   failed: boolean;
   onRetry: () => void;
-  totalCopies: number;
   rows: MineRow[];
   view: MineView;
   selected: ReadonlySet<string> | null;
@@ -240,51 +331,35 @@ function MineBody(props: {
   if (props.loading) return <Skeleton className="rounded-card h-64" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Your cards did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
-    );
-  }
-  if (props.totalCopies === 0) {
-    return (
-      <EmptyState
-        icon={<MultiplePages />}
-        title="No cards yet"
-        message={
-          <>
-            Explore every realm&apos;s cards, or buy a pack in the{" "}
-            <Link
-              href={STORE_PATH}
-              className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
-            >
-              Store
-            </Link>
-            .
-          </>
-        }
-        action={
-          <Button asChild>
-            <Link href={CARD_HUB_PATHS.explore}>Explore cards</Link>
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Your cards did not load"
+          message="Try loading your collection again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.rows.length === 0) {
     return (
-      <EmptyState
-        title="No cards match these filters"
-        action={
-          <Button variant="secondary" onClick={props.onClearFilters}>
-            Clear filters
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Filter />}
+          title="No cards match these filters"
+          message="Clear or loosen your filters to see your cards."
+          action={
+            <Button variant="secondary" onClick={props.onClearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.view === "list") return <MineList rows={props.rows} onOpen={props.onOpen} />;

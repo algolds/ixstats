@@ -133,7 +133,7 @@ export default function ComparatorSection({
     <div className="space-y-6">
       {!hideHeader && (
         <div className="border-separator space-y-1 border-b pb-4">
-          <h2 className="text-label text-title-2 font-bold">Linguistic comparison</h2>
+          <h2 className="text-label text-title-2">Linguistic comparison</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Analyze phonetic distance, bigram entropy, and synthesize hybrid vocabulary between
             natural cultures and custom conlangs.
@@ -172,10 +172,10 @@ export default function ComparatorSection({
           )}`}
         >
           <GitCompare className="mb-2 h-6 w-6 opacity-80" />
-          <span className="text-large-title font-mono font-bold">
-            {comparison.linguisticDistance}
+          <span className="text-large-title font-mono">{comparison.linguisticDistance}</span>
+          <span className="text-caption text-label-secondary mt-1 opacity-85">
+            Linguistic distance
           </span>
-          <span className="text-eyebrow mt-1 opacity-85">Linguistic distance</span>
           <span className="text-caption mt-1 opacity-70">
             {comparison.linguisticDistance >= 75
               ? "Mutually Unintelligible (Completely Alien)"
@@ -186,10 +186,10 @@ export default function ComparatorSection({
         </Card>
 
         <Card variant="well" padding="none" className="p-4 text-center">
-          <span className="text-label text-large-title font-mono font-bold">
+          <span className="text-label text-large-title font-mono">
             {comparison.phonemeOverlap}%
           </span>
-          <span className="text-label-secondary text-eyebrow mt-1 block">
+          <span className="text-label-secondary text-caption mt-1 block">
             Phoneme inventory overlap
           </span>
           <span className="text-label-secondary text-caption mt-1 block">
@@ -199,10 +199,10 @@ export default function ComparatorSection({
 
         <Card variant="well" padding="none" className="p-4 text-center">
           <GitCompare className="text-indigo mx-auto mb-2 h-6 w-6 opacity-80" />
-          <span className="text-label text-large-title font-mono font-bold">
+          <span className="text-label text-large-title font-mono">
             {comparison.bigramSimilarity}%
           </span>
-          <span className="text-label-secondary text-eyebrow mt-1 block">
+          <span className="text-label-secondary text-caption mt-1 block">
             Bigram cosine similarity
           </span>
           <span className="text-label-secondary text-caption mt-1 block">
@@ -215,7 +215,7 @@ export default function ComparatorSection({
         <h3 className="text-label-secondary text-subhead">Phoneme inventory overlap analysis</h3>
         <Card variant="well" padding="none" className="space-y-4 p-4">
           <div className="space-y-2">
-            <span className="text-caption text-green font-semibold">
+            <span className="text-caption text-green font-medium">
               Shared Phonemes ({comparison.sharedPhonemes.length})
             </span>
             <div className="flex flex-wrap gap-2">
@@ -235,7 +235,7 @@ export default function ComparatorSection({
 
           <div className="border-separator grid grid-cols-1 gap-4 border-t pt-2 sm:grid-cols-2">
             <div className="space-y-2">
-              <span className="text-tint text-caption font-semibold capitalize">
+              <span className="text-tint text-caption font-medium capitalize">
                 Unique to {corpusA.label} ({comparison.uniqueToA.length})
               </span>
               <div className="flex flex-wrap gap-2">
@@ -254,7 +254,7 @@ export default function ComparatorSection({
             </div>
 
             <div className="space-y-2">
-              <span className="text-caption text-indigo font-semibold capitalize">
+              <span className="text-caption text-indigo font-medium capitalize">
                 Unique to {corpusB.label} ({comparison.uniqueToB.length})
               </span>
               <div className="flex flex-wrap gap-2">
@@ -282,7 +282,7 @@ export default function ComparatorSection({
           <div className="space-y-3">
             <div className="text-label-secondary text-footnote flex items-center justify-between">
               <span>Entropy difference</span>
-              <span className="text-label font-mono font-semibold">
+              <span className="text-label font-mono font-medium">
                 {comparison.entropyDelta.toFixed(3)} bits
               </span>
             </div>
@@ -290,7 +290,7 @@ export default function ComparatorSection({
               <div>
                 <div className="text-caption mb-1 flex justify-between">
                   <span className="text-label capitalize">{corpusA.label}</span>
-                  <span className="font-mono font-semibold">
+                  <span className="font-mono font-medium">
                     {comparison.entropyA.toFixed(3)} bits
                   </span>
                 </div>
@@ -305,7 +305,7 @@ export default function ComparatorSection({
               <div>
                 <div className="text-caption mb-1 flex justify-between">
                   <span className="text-label capitalize">{corpusB.label}</span>
-                  <span className="font-mono font-semibold">
+                  <span className="font-mono font-medium">
                     {comparison.entropyB.toFixed(3)} bits
                   </span>
                 </div>
@@ -333,7 +333,7 @@ export default function ComparatorSection({
                 className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
-                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label font-medium">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <Button
@@ -361,7 +361,7 @@ export default function ComparatorSection({
                 className="hover:bg-fill-4 text-footnote flex items-center justify-between p-3 transition-colors"
               >
                 <div>
-                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label font-medium">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <Button
@@ -402,7 +402,7 @@ export default function ComparatorSection({
                 className="border-separator bg-fill-4 rounded-control text-footnote flex items-center justify-between border p-3"
               >
                 <div>
-                  <span className="text-label font-semibold">{item.name}</span>
+                  <span className="text-label font-medium">{item.name}</span>
                   <span className="text-label-secondary ml-2 font-mono">{item.ipa}</span>
                 </div>
                 <Button

@@ -346,8 +346,10 @@ function CollapsedStrip({
   return (
     <FacetMaterial
       layer="chrome"
-      className={`flex shrink-0 items-center justify-between px-2 py-2 ${
-        placement === "bottom" ? "rounded-control-sm h-9 w-32" : "h-9 w-full rounded-none"
+      className={`facet-chrome-subtle flex shrink-0 items-center justify-between px-2 py-2 shadow-none ${
+        placement === "bottom"
+          ? "rounded-control-sm h-9 w-32"
+          : "h-9 w-full rounded-none border-x-0 border-t-0"
       }`}
     >
       <div className="flex items-center gap-2 overflow-hidden">
@@ -476,12 +478,23 @@ export function EditorPanel(props: EditorPanelProps) {
     <CollapseToggle collapsed={collapsed} onToggle={onToggleCollapse} placement={placement} />
   );
 
+  const edgeBorder =
+    placement === "left"
+      ? "border-y-0 border-l-0"
+      : placement === "right"
+        ? "border-y-0 border-r-0"
+        : "border-x-0 border-b-0";
+
   // Import mode takes over the entire panel (only if features tab exists here)
   if (mode === "import-provinces" && importWizardContent && tabs.includes("features")) {
     return (
       <div className="relative flex h-full">
         {!collapsed && (
-          <FacetMaterial layer="chrome" className="flex flex-col rounded-none" style={frameStyle}>
+          <FacetMaterial
+            layer="chrome"
+            className={`facet-chrome-subtle flex flex-col rounded-none shadow-none ${edgeBorder}`}
+            style={frameStyle}
+          >
             {resizeHandle}
             {importWizardContent}
           </FacetMaterial>
@@ -509,7 +522,9 @@ export function EditorPanel(props: EditorPanelProps) {
       {!collapsed && (
         <FacetMaterial
           layer="chrome"
-          className={`flex flex-col rounded-none ${isBottom ? "w-full" : "h-full"}`}
+          className={`facet-chrome-subtle flex flex-col rounded-none shadow-none ${edgeBorder} ${
+            isBottom ? "w-full" : "h-full"
+          }`}
           style={frameStyle}
         >
           {resizeHandle}
@@ -534,9 +549,11 @@ export function EditorPanel(props: EditorPanelProps) {
                 if (!tabDef) return null;
                 const isActive = activeTab === tabId;
                 return (
-                  <button
+                  <Button
                     key={tabId}
                     type="button"
+                    variant="ghost"
+                    size="xs"
                     role="tab"
                     aria-selected={isActive}
                     aria-label={tabDef.label}
@@ -545,11 +562,12 @@ export function EditorPanel(props: EditorPanelProps) {
                       panelsLocked ? undefined : (e) => e.dataTransfer.setData("tabId", tabId)
                     }
                     onClick={() => handleTabClick(tabId)}
-                    className={`text-caption sm:text-footnote flex h-full min-w-[60px] flex-shrink-0 cursor-grab items-center justify-center gap-2 px-3 transition-colors ${
+                    className={cn(
+                      "text-caption sm:text-footnote h-full min-w-[60px] shrink-0 cursor-grab gap-2 rounded-none px-3",
                       isActive
-                        ? "border-tint text-label border-b-2"
+                        ? "border-tint text-label border-b-2 hover:bg-transparent"
                         : "text-label-secondary hover:text-label hover:bg-fill-3"
-                    }`}
+                    )}
                   >
                     <tabDef.Icon className="h-3.5 w-3.5" aria-hidden />
                     <span className="hidden sm:inline">{tabDef.label}</span>
@@ -558,7 +576,7 @@ export function EditorPanel(props: EditorPanelProps) {
                         {featureCount}
                       </Badge>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -614,7 +632,7 @@ function CollapseToggle({
       aria-label={collapsed ? "Show panel" : "Hide panel"}
       className={cn(
         "rounded-control-sm size-5",
-        `bg-surface border-separator text-label-secondary hover:text-label shadow-card absolute z-10 flex items-center justify-center border transition-colors ${COLLAPSE_POSITION[placement]}`
+        `facet-chrome-subtle text-label-secondary hover:text-label absolute z-10 flex items-center justify-center transition-colors ${COLLAPSE_POSITION[placement]}`
       )}
     >
       <Icon className="h-3 w-3" />

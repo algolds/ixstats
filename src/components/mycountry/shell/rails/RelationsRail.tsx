@@ -1,5 +1,6 @@
 "use client";
 
+import { relationStrengthWord } from "~/lib/qualitative-rating";
 import React from "react";
 import {
   City as Building2,
@@ -8,9 +9,10 @@ import {
   Group as Users,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { getStandingBand } from "~/lib/diplomacy/relation-bands";
+import { COOPERATIVE_FP_TYPES } from "~/lib/diplomacy/proposal-lifecycle";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import {
   DomainKpiGrid,
@@ -93,6 +95,7 @@ function embassyPartner(e: EmbassyItem, countryId: string) {
 
 interface LiveRelation {
   id: string;
+  targetId?: string | null;
   targetName: string;
   targetFlag: string | null;
   strength: number | null;
@@ -111,6 +114,7 @@ function buildLiveRelations(
     seenTargets.add(r.targetCountryId ?? r.id);
     return {
       id: r.id,
+      targetId: r.targetCountryId ?? null,
       targetName: r.targetCountryName ?? nameOf(r.targetCountry) ?? PARTNER_FALLBACK,
       targetFlag: r.targetCountryFlag ?? target?.flag ?? r.flagUrl ?? null,
       strength: r.strength ?? null,
@@ -124,6 +128,7 @@ function buildLiveRelations(
     seenTargets.add(partner.id);
     list.push({
       id: `embassy-rel-${e.id}`,
+      targetId: partner.id,
       targetName: partner.name,
       targetFlag: partner.flag ?? null,
       strength: e.strength ?? null,
@@ -133,10 +138,9 @@ function buildLiveRelations(
   return list;
 }
 
+const COOPERATIVE = new Set<string>(COOPERATIVE_FP_TYPES);
 const HOSTILE_TONE = (actionType: string | null | undefined) =>
-  actionType === "free_trade" || actionType === "military_alliance"
-    ? STATUS_TEXT.success
-    : STATUS_TEXT.critical;
+  COOPERATIVE.has(actionType ?? "") ? STATUS_TEXT.success : STATUS_TEXT.critical;
 
 function buildActivity(
   embassies: EmbassyItem[],
@@ -217,13 +221,22 @@ function EmbassyList({ embassies, countryId }: { embassies: EmbassyItem[]; count
                   className="shrink-0"
                 />
                 <div className="min-w-0">
-                  <p className="text-label truncate font-medium">{partner.name}</p>
+                  {partner.id ? (
+                    <CountryLink
+                      country={{ id: partner.id, name: partner.name }}
+                      className="text-label focus-visible:outline-tint rounded-control-sm block truncate font-medium underline-offset-2 hover:underline focus-visible:outline-2"
+                    >
+                      {partner.name}
+                    </CountryLink>
+                  ) : (
+                    <p className="text-label truncate font-medium">{partner.name}</p>
+                  )}
                   <p className="text-label-secondary">
                     {partner.isGuest ? "Host embassy" : "Guest embassy"}
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className={cn("shrink-0", STATUS_TEXT.success)}>
+              <Badge variant="success" className="shrink-0">
                 Active
               </Badge>
             </RailRow>
@@ -251,10 +264,19 @@ function RelationList({ relations }: { relations: LiveRelation[] }) {
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-label truncate font-medium">{rel.targetName}</span>
-                <span className="text-label shrink-0 tabular-nums">
-                  {rel.strength != null ? `${rel.strength}%` : "—"}
-                </span>
+                {rel.targetId ? (
+                  <CountryLink
+                    country={{ id: rel.targetId, name: rel.targetName }}
+                    className="text-label focus-visible:outline-tint rounded-control-sm truncate font-medium underline-offset-2 hover:underline focus-visible:outline-2"
+                  >
+                    {rel.targetName}
+                  </CountryLink>
+                ) : (
+                  <span className="text-label truncate font-medium">{rel.targetName}</span>
+                )}
+                {rel.strength != null && (
+                  <span className="text-label shrink-0">{relationStrengthWord(rel.strength)}</span>
+                )}
               </div>
               {rel.strength != null && <RailBar value={rel.strength} />}
             </div>
@@ -324,9 +346,9 @@ export function RelationsRail({ countryId }: { countryId: string }) {
                 <p className="text-label truncate font-medium">{ally.name ?? "Defense Pact"}</p>
                 <p className="text-label-secondary">{memberCountOf(ally)} nations</p>
               </div>
-              <Badge variant="default" className="shrink-0 capitalize">
+              <span className="text-label-secondary shrink-0 capitalize">
                 {ally.myRole ?? "Member"}
-              </Badge>
+              </span>
             </RailRow>
           ))
         )}

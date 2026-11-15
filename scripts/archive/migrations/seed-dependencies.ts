@@ -8,10 +8,10 @@
  *        bunx tsx scripts/seed-dependencies.ts --dry-run
  */
 
-import { PrismaClient } from "@prisma/client";
 import { createRequire } from "module";
 import * as path from "path";
 import { fileURLToPath } from "url";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const require = createRequire(import.meta.url);
 const XLSX = require("xlsx");
@@ -19,7 +19,7 @@ const XLSX = require("xlsx");
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 const DRY_RUN = process.argv.includes("--dry-run");
 
 // ─── Constants ───────────────────────────────────────────────────────────────

@@ -8,8 +8,8 @@ import { formatSovereigns } from "~/lib/exchange/amounts";
 import { economyTabHref } from "~/lib/mycountry/routes";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { FiscalPolicyInsights } from "../FiscalPolicyConsole";
-import { TradeCommerceInsights } from "../TradeCommerceConsole";
+import { FiscalPolicyInsights } from "../fiscal/FiscalPolicyInsights";
+import { TradeCommerceInsights } from "../trade-commerce/TradeCommerceInsights";
 import { RailCard, RailCount, RailRow, STATUS_TEXT } from "./shared";
 
 function signedShiftPct(shift: number): string {
@@ -41,25 +41,27 @@ export function CorporateTreasuryInsights({ countryId }: { countryId: string }) 
       accessory={<RailCount>{companyCount} corporations</RailCount>}
       contentClassName="space-y-2.5"
     >
-      <div className="grid grid-cols-2 gap-2">
-        <RailRow className="p-2">
-          <span className="text-label-secondary text-footnote block">₷ treasury</span>
-          <p className="text-label text-title-3 mt-0.5 tabular-nums">{formatSovereigns(balance)}</p>
-        </RailRow>
-        <RailRow className="p-2">
-          <span className="text-label-secondary text-footnote block">GDP feedback</span>
-          <p
+      <dl className="divide-separator/60 grid grid-cols-2 divide-x">
+        <div className="min-w-0 pr-3">
+          <dt className="text-label-secondary text-footnote block">₷ treasury</dt>
+          <dd className="text-label text-title-3 mt-0.5 tabular-nums">
+            {formatSovereigns(balance)}
+          </dd>
+        </div>
+        <div className="min-w-0 pl-3">
+          <dt className="text-label-secondary text-footnote block">GDP feedback</dt>
+          <dd
             className={cn(
               "text-title-3 mt-0.5 tabular-nums",
               shift > 0 ? STATUS_TEXT.success : shift < 0 ? STATUS_TEXT.critical : "text-label"
             )}
           >
             {signedShiftPct(shift)}
-          </p>
-        </RailRow>
-      </div>
+          </dd>
+        </div>
+      </dl>
 
-      <RailRow className="flex items-center justify-between gap-2 p-2">
+      <RailRow className="flex items-center justify-between gap-2">
         <span className="text-label-secondary text-footnote">Corp tax vs realm avg</span>
         <span className="text-label text-footnote font-medium tabular-nums">
           {corpTax.toFixed(1)}% vs {realmTax.toFixed(1)}%

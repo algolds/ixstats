@@ -1,7 +1,8 @@
 "use client";
 
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
 import { use, useMemo, useState, type ReactNode } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useAuth } from "~/context/auth-context";
 import { usePageTitle } from "~/hooks/usePageTitle";
@@ -112,7 +113,7 @@ function nationCorner(
  */
 export default function RealmNationsPage({ params }: { params: Promise<{ realm: string }> }) {
   const { realm: slug } = use(params);
-  const router = useRouter();
+  const openCountryActions = useOpenCountryActions();
   const searchParams = useSearchParams();
   const { data: realm, isLoading } = api.realms.getBySlug.useQuery({ slug });
   const { data: statsResult, isLoading: statsLoading } = api.countries.getAll.useQuery(
@@ -164,7 +165,7 @@ export default function RealmNationsPage({ params }: { params: Promise<{ realm: 
           nations={nations}
           initialSearch={searchParams.get("nation") ?? undefined}
           isLoading={statsLoading || flagsLoading}
-          onCountryClick={(c) => router.push(`/countries/${c.slug ?? c.id}`)}
+          onCountryClick={(c) => openCountryActions({ id: c.id, slug: c.slug, name: c.name })}
           viewerCountryId={profile?.countryId ?? undefined}
           corner={(nation) =>
             nationCorner(nation, realm, {

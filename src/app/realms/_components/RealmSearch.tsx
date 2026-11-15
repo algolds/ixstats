@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import Link from "next/link";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -29,12 +30,12 @@ function NationRow({ nation }: { nation: NationHit }) {
       )}
       <div className="min-w-0 flex-1">
         {nation.kind === "country" ? (
-          <Link
-            href={`/countries/${nation.slug ?? nation.id}`}
+          <CountryLink
+            country={{ id: nation.id, slug: nation.slug, name: nation.name }}
             className="text-label text-body block truncate hover:underline"
           >
             {nation.name}
-          </Link>
+          </CountryLink>
         ) : (
           <span className="text-label text-body block truncate">{nation.name}</span>
         )}

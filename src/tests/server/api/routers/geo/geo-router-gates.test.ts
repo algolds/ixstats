@@ -60,6 +60,7 @@ import { geoFeaturesStoryPinsRouter } from "~/server/api/routers/geo/features/st
 import { geoFeaturesCitiesRouter } from "~/server/api/routers/geo/features/cities";
 import { geoFeaturesNamedFeaturesRouter } from "~/server/api/routers/geo/features/namedFeatures";
 import { geoFeaturesSubdivisionsCrudRouter } from "~/server/api/routers/geo/features/subdivisions/crud";
+import { geoEditorLinkageAssignmentRouter } from "~/server/api/routers/geo/editor/linkage/assignment";
 import { countryGeoRouter } from "~/server/api/routers/countryGeo";
 import { atlasStudioRouter } from "~/server/api/routers/atlas/studio";
 import { upsertCity } from "~/lib/country-geo";
@@ -502,4 +503,47 @@ it("deleting a storyline keeps its pins, taken out of any storyline, in one tran
   });
   expect(db.storyline.delete).toHaveBeenCalledWith({ where: { id: "s1" } });
   expect(db.$transaction).toHaveBeenCalledTimes(1);
+});
+
+describe("updateFeatureProperties input bounds", () => {
+  const callUpdate = (db: MockPrismaProxy, input: Record<string, unknown>) =>
+    createCallerFactory(geoEditorLinkageAssignmentRouter)(ctx(db, adminUser)).updateFeatureProperties({
+      featureId: "F1",
+      ...input,
+    } as never);
+
+  it.each([
+    ["displayName over 200 chars", { displayName: "A".repeat(201) }],
+    ["wikiPageTitle over 255 chars", { wikiPageTitle: "W".repeat(256) }],
+    ["property key over 64 chars", { properties: { ["k".repeat(65)]: "val" } }],
+    ["property string value over 2000 chars", { properties: { note: "x".repeat(2001) } }],
+    ["more than 50 properties", {
+      properties: Object.fromEntries(Array.from({ length: 51 }, (_, i) => [`k${i}`, i])),
+    }],
+    ["properties nested two levels deep", {
+      properties: { coverage: { inner: { tolerance: 0.01 } } },
+    }],
+    ["a property list over 200 entries", {
+      properties: { sourceKeys: Array.from({ length: 201 }, (_, i) => `k${i}`) },
+    }],
+    ["serialized properties over 20,000 bytes", {
+      properties: Object.fromEntries(
+        Array.from({ length: 15 }, (_, i) => [`key_${i}`, "v".repeat(1500)])
+      ),
+    }],
+  ])("refuses %s with BAD_REQUEST before touching the database", async (_label, input) => {
+    const db = createMockPrisma();
+    await expect(callUpdate(db, input)).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(db.mapLayer.findFirst).not.toHaveBeenCalled();
+    expect(db.mapLayer.update).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a smoothed feature's nested coverage record", { coverage: { tolerance: 0.01, smooth: true, hash: "abc" } }],
+    ["a map import's sourceKeys list", { source: "map-import", sourceKeys: ["a", "b"] }],
+  ])("accepts %s and reaches the feature lookup", async (_label, properties) => {
+    const db = createMockPrisma();
+    await expect(callUpdate(db, { properties })).rejects.toMatchObject({ code: "NOT_FOUND" });
+    expect(db.mapLayer.findFirst).toHaveBeenCalledTimes(1);
+  });
 });

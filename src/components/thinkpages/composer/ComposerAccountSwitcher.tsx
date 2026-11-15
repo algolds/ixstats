@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { NavArrowDown as ChevronDown, Plus, User as UserIcon } from "iconoir-react";
+import { NavArrowDown as ChevronDown, Plus, Settings, User as UserIcon } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { Badge } from "~/components/ui/badge";
@@ -18,6 +18,8 @@ interface ComposerAccountSwitcherProps {
   setShowAccountManager: (val: boolean) => void;
   onAccountSelect?: (account: any) => void;
   onCreateAccount?: () => void;
+  /** Adds a "Manage accounts" footer that opens the full account manager. */
+  onManageAccounts?: () => void;
   isOwner: boolean;
   getAccountAvatar: (acc: any) => string;
   /** Offered when the user has no personal persona yet: creates it and switches to it. */
@@ -33,6 +35,7 @@ export function ComposerAccountSwitcher({
   setShowAccountManager,
   onAccountSelect,
   onCreateAccount,
+  onManageAccounts,
   isOwner,
   getAccountAvatar,
   onPostAsYourself,
@@ -136,6 +139,23 @@ export function ComposerAccountSwitcher({
               ))}
             </FacetListSection>
           </FacetList>
+
+          {onManageAccounts && (
+            <div className="border-separator mt-2 border-t pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowAccountManager(false);
+                  onManageAccounts();
+                }}
+                className="w-full justify-start"
+              >
+                <Settings aria-hidden="true" />
+                Manage accounts
+              </Button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     </div>

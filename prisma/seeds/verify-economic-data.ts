@@ -1,12 +1,11 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Verification Script for Economic Data
  *
  * Queries the database to verify all economic data was seeded correctly
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("\n🔍 Verifying Economic Data Migration...\n");

@@ -159,7 +159,7 @@ export function AllianceCreatorSheet({ open, onOpenChange, onCreated }: Alliance
                     <div className="flex items-center gap-2">
                       <t.icon className="h-4 w-4" />
                       <span>{t.label}</span>
-                      <span className="text-label-secondary text-footnote">— {t.description}</span>
+                      <span className="text-label-secondary text-footnote">· {t.description}</span>
                     </div>
                   </SelectItem>
                 ))}

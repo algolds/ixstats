@@ -1,0 +1,33 @@
+{
+  /* next build's typecheck (next.config.js tsconfigPath): the app without its tests, which CI typechecks separately. */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "exclude": [
+    "src/tests",
+    "src/setupTests.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "**/__tests__",
+    "**/node_modules",
+    "**/.*",
+    "public",
+    "docs",
+    "prisma/migrations",
+    "prisma/backups",
+    "scripts",
+    ".next/cache",
+    ".next/server",
+    ".next/static",
+    ".next/standalone",
+    ".next/diagnostics",
+    "dist",
+    "build",
+    "out",
+    "coverage",
+    "odysseus"
+  ]
+}

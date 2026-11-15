@@ -15,6 +15,7 @@ export interface ContextMenuFeature {
   name: string;
   type: string;
   wikiPageTitle?: string | null;
+  wikiSource?: string | null;
   geometry?: Geometry | object | null;
   coordinates?: [number, number];
 }
@@ -54,6 +55,7 @@ export interface EditorFeatureDetails {
   boundingBox?: Prisma.JsonValue;
   properties?: Prisma.JsonValue;
   wikiPageTitle: string | null;
+  wikiSource?: string | null;
   countryName: string | null;
   flagUrl?: string | null;
   featureType?: string | null;

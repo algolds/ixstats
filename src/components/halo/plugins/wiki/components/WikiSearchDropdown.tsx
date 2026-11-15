@@ -7,7 +7,9 @@ import { Search, Xmark as X } from "iconoir-react";
 import { PreText } from "~/components/ui/pretext";
 import { HighlightedSnippet } from "~/components/wiki-os/shared/HighlightedSnippet";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
+import { HaloWell } from "~/components/halo/views/shared/HaloViewParts";
+import { cn } from "~/lib/utils";
 
 interface WikiSearchDropdownProps {
   searchQuery: string;
@@ -42,16 +44,26 @@ export function WikiSearchDropdown({
   return (
     <>
       {/* Search Input Bar */}
-      <div className="mb-3">
-        <div className="border-separator bg-fill-4 rounded-control flex items-center gap-2 border px-3">
+      <HaloWell className="p-2">
+        <div className="bg-fill-4 rounded-control flex items-center gap-2 px-3">
           <Search className="text-label-secondary h-4 w-4 shrink-0" />
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Search wiki articles..."
-            className="text-label placeholder:text-label-secondary text-body w-full bg-transparent py-2 outline-none"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                if (searchQuery) {
+                  onSearchChange("");
+                } else {
+                  e.currentTarget.blur();
+                }
+              }
+            }}
+            placeholder="Search wiki articles…"
+            className="text-label placeholder:text-label-secondary text-body focus-visible:outline-tint w-full bg-transparent py-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             data-command-palette-search="true"
           />
           {searchQuery && (
@@ -67,18 +79,18 @@ export function WikiSearchDropdown({
             </Button>
           )}
         </div>
-      </div>
+      </HaloWell>
 
       {/* Search Results Dropdown */}
       {searchQuery.length >= 2 && (
-        <div className="border-separator mb-3 border-b pb-3">
-          <div className="text-label-secondary text-subhead mb-1 flex items-center justify-between">
+        <HaloWell className="space-y-1 p-2">
+          <div className="text-label-secondary text-subhead flex items-center justify-between px-2 py-0.5">
             <PreText className="text-inherit" whiteSpace="nowrap">
               {`Results${searchData?.totalHits ? ` (${searchData.totalHits})` : ""}`}
             </PreText>
             {isSearching && (
               <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
-                searching...
+                Searching…
               </PreText>
             )}
           </div>
@@ -88,7 +100,11 @@ export function WikiSearchDropdown({
                 key={result.title}
                 type="button"
                 onClick={() => onSelectArticle(result.title)}
-                className="text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm flex w-full flex-col px-2 py-2 text-left transition-colors"
+                className={cn(
+                  "text-label-secondary hover:bg-fill-4 hover:text-label rounded-control-sm relative flex w-full cursor-pointer flex-col px-2 py-2 text-left transition-colors",
+                  focusRing,
+                  hitSlop
+                )}
               >
                 <span className="text-body flex items-center gap-2">
                   <PreText className="truncate font-medium text-inherit" whiteSpace="nowrap">
@@ -107,7 +123,7 @@ export function WikiSearchDropdown({
               No results
             </PreText>
           ) : null}
-        </div>
+        </HaloWell>
       )}
     </>
   );

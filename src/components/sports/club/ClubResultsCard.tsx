@@ -91,7 +91,7 @@ export function ClubResultsCard({ teamId }: { teamId: string }) {
   }
 
   const { lastMatch, comparison, recent } = data;
-  const fmt = (ms: number | null) => (ms ? formatMatchDate(ms) : "—");
+  const fmt = (ms: number | null) => (ms ? formatMatchDate(ms) : "–");
 
   return (
     <Card padding="lg" className="space-y-6 overflow-hidden">

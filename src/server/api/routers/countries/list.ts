@@ -7,6 +7,7 @@ import { realmScopeInput, realmWhere, viewerRealmId } from "~/server/api/trpc/re
 import { DEFAULT_INFLATION_RATE } from "~/lib/economy/calculations";
 import { clocksForRealms, pickClock } from "~/server/shared/realm-time";
 import { LATEST_GROWTH_SELECT, effectiveGrowthOf } from "~/lib/economy/effective-growth";
+import { pickForExposure } from "~/lib/countries/exposure-pick";
 
 const MAP_SUMMARY_SELECT = {
   id: true,
@@ -329,50 +330,44 @@ export const listProcedures = {
     }),
 
   /**
-   * Get random countries (for "Countries to Explore" widget).
-   * No caching — each call returns a fresh random selection.
+   * The dashboard's "Countries to explore": nations of the viewer's realm, weighted toward the least followed
+   * so quieter nations get seen. The viewer's own nation and the ones it already follows are left out.
    */
-  getRandomCountries: publicProcedure
+  getCountriesToExplore: publicProcedure
     .input(
       z.object({
-        limit: z.number().min(1).max(10).default(3),
+        limit: z.number().int().min(1).max(8).default(4),
         ...realmScopeInput.shape,
       })
     )
     .query(async ({ ctx, input }) => {
-      const where = { isDemo: false, realmId: await viewerRealmId(ctx, input.realm) };
-      const count = await ctx.db.country.count({ where });
-      const skip = Math.max(0, Math.floor(Math.random() * count) - input.limit);
+      const viewerCountryId = ctx.user?.countryId ?? null;
+      const candidates = await ctx.db.country.findMany({
+        where: {
+          isDemo: false,
+          realmId: await viewerRealmId(ctx, input.realm),
+          ...(viewerCountryId
+            ? {
+                id: { not: viewerCountryId },
+                followers: { none: { followerCountryId: viewerCountryId } },
+              }
+            : {}),
+        },
+        select: { id: true, _count: { select: { followers: true } } },
+      });
+      const picked = pickForExposure(
+        candidates.map((c) => ({ id: c.id, followers: c._count.followers })),
+        input.limit
+      ).map((c) => c.id);
 
       const countries = await ctx.db.country.findMany({
-        where,
-        take: input.limit,
-        skip,
-        orderBy: { name: "asc" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          flag: true,
-          economicTier: true,
-          currentPopulation: true,
-          continent: true,
-          region: true,
-        },
+        where: { id: { in: picked } },
+        select: { id: true, name: true, slug: true, flag: true, continent: true, region: true },
       });
-
-      // Shuffle for true randomness (the skip-based approach is pseudo-random)
-      const shuffled = countries.sort(() => Math.random() - 0.5);
-
-      return shuffled.map((c) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        flagUrl: normalizeFlagUrl(c.flag),
-        economicTier: c.economicTier,
-        currentPopulation: c.currentPopulation,
-        continent: c.continent,
-        region: c.region,
-      }));
+      // Back in the sampled order: the database returns them in its own.
+      return picked.flatMap((id) => {
+        const c = countries.find((row) => row.id === id);
+        return c ? [{ ...c, flagUrl: normalizeFlagUrl(c.flag) }] : [];
+      });
     }),
 };

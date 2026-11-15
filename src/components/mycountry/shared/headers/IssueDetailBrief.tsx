@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
   StatUp as TrendingUp,
   Bank as Landmark,
@@ -16,11 +16,9 @@ import {
   ArrowUpRight,
   KeyCommand as Command,
   ControlSlider as Sliders,
-  CalendarRotate as CalendarClock,
 } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { cn } from "~/lib/utils";
 import { api, type RouterOutputs } from "~/trpc/react";
@@ -61,7 +59,7 @@ type Issue = NonNullable<RouterOutputs["nationalIssues"]["getIssue"]>;
 type ReconData = NonNullable<RouterOutputs["nationalIssues"]["getReconReveal"]>;
 
 function formatReveal(r: ReconRevealItem): string {
-  if (r.value == null) return "—";
+  if (r.value == null) return "–";
   if (r.operation === "multiply") return `×${r.value}`;
   if (r.operation === "set") return `=${r.value}`;
   return `${r.operation === "subtract" ? "-" : "+"}${Math.abs(r.value)}`;
@@ -100,14 +98,13 @@ function IssueHero({
 
   return (
     <Card className="flex flex-col gap-3 p-5">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="outline">
-          <DomainIcon />
-          {domain.label}
-        </Badge>
-        <Badge variant="outline" className={cn("capitalize", severityTone)}>
-          {severity}
-        </Badge>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-label-secondary text-footnote flex flex-wrap items-center gap-1.5">
+          <DomainIcon aria-hidden="true" className="h-3.5 w-3.5" />
+          <span>{domain.label}</span>
+          <span aria-hidden="true">·</span>
+          <span className={cn("capitalize", severityTone)}>{severity}</span>
+        </span>
         {deadline && (
           <Badge variant={deadline.urgent ? "destructive" : "outline"}>
             {deadline.urgent ? <Flame /> : <Clock />}
@@ -119,10 +116,10 @@ function IssueHero({
       <div>
         <h2 className="text-label text-title-3">{issue.title}</h2>
         {issue.intentId && (
-          <Badge variant="default" className="mt-2">
-            <Command />
+          <p className="text-label-secondary text-footnote mt-1 flex items-center gap-1.5">
+            <Command aria-hidden="true" className="h-3.5 w-3.5" />
             Linked to an active directive
-          </Badge>
+          </p>
         )}
       </div>
 
@@ -311,16 +308,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
     },
     onError: (e: { message?: string }) => notify.error("Failed to delegate issue", e?.message),
   });
-  const scheduleMeetingM = api.quickActions.createMeeting.useMutation({
-    onSuccess: () => {
-      notify.success(
-        "Cabinet meeting scheduled for next week. It is in Politics, under Cabinet meetings."
-      );
-      void utils.meetings.getMeetings.invalidate();
-      onClose?.();
-    },
-    onError: (e: { message?: string }) => notify.error("Failed to schedule meeting", e?.message),
-  });
   const commissionRecon = api.nationalIssues.commissionRecon.useMutation({
     onSuccess: () => {
       void reconQuery.refetch();
@@ -330,14 +317,14 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   });
 
   const issue = issueQuery.data;
-  const options = useMemo(() => parseOptions(issue?.responseOptions), [issue?.responseOptions]);
+  const options = parseOptions(issue?.responseOptions);
 
   if (issueQuery.isLoading) {
     return (
       <div className="space-y-4" role="status" aria-label="Loading issue">
-        <Skeleton className="rounded-row h-40" />
-        <Skeleton className="rounded-row h-24" />
-        <Skeleton className="rounded-row h-24" />
+        <Skeleton className="rounded-card h-40" />
+        <Skeleton className="rounded-card h-24" />
+        <Skeleton className="rounded-card h-24" />
       </div>
     );
   }
@@ -360,28 +347,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
   const chosenDirective =
     localDirective ?? options.find((o) => o.id === issue.chosenOptionId)?.recommendedDirective;
   const recon = reconQuery.data;
-
-  const handleSetMeeting = () => {
-    const nextWeekDate = new Date();
-    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-    scheduleMeetingM.mutate({
-      countryId: issue.countryId,
-      userId: issue.countryId,
-      meeting: {
-        title: `Cabinet Meeting: ${issue.title}`,
-        description: `Cabinet meeting to address the national issue '${issue.title}'.`,
-        scheduledDate: nextWeekDate,
-        duration: 60,
-        agendaItems: [
-          {
-            title: issue.title,
-            description: issue.description || undefined,
-            category: issue.domain,
-          },
-        ],
-      },
-    });
-  };
 
   return (
     <div className="space-y-5 pb-4">
@@ -415,16 +380,16 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
         <div className="space-y-3">
           <Card className="space-y-3 p-4">
             <div className="border-separator flex items-center justify-between gap-2 border-b pb-2">
-              <Eyebrow className="flex items-center gap-2">
+              <span className="text-footnote text-label-secondary flex items-center gap-2 font-medium">
                 <AlertTriangle className="text-yellow h-3.5 w-3.5" />
                 Executive issue resolution
-              </Eyebrow>
+              </span>
             </div>
 
             <div
               className={cn(
                 "grid grid-cols-2 gap-2",
-                onDeclare ? "sm:grid-cols-4" : "sm:grid-cols-3"
+                onDeclare ? "sm:grid-cols-3" : "sm:grid-cols-2"
               )}
             >
               <PathwayButton
@@ -443,13 +408,6 @@ export function IssueDetailBrief({ issueId, onDeclare, onClose }: IssueDetailBri
                     .getElementById("issue-brief-options")
                     ?.scrollIntoView({ behavior: "smooth" })
                 }
-              />
-              <PathwayButton
-                icon={CalendarClock}
-                label={scheduleMeetingM.isPending ? "Scheduling…" : "Set meeting"}
-                sub="Next week"
-                onClick={handleSetMeeting}
-                disabled={scheduleMeetingM.isPending}
               />
               {onDeclare && (
                 <PathwayButton

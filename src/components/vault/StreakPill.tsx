@@ -20,7 +20,7 @@ export function StreakPill({ streak }: { streak: number }) {
           ? "Streak boost at its peak"
           : `The boost peaks on day ${STREAK_BOOST_FULL_DAYS}`
       }
-      className="bg-orange/10 text-orange-ink text-caption relative isolate inline-flex shrink-0 items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 font-semibold tabular-nums"
+      className="bg-orange/10 text-orange-ink text-caption relative isolate inline-flex shrink-0 items-center gap-1 overflow-hidden rounded-full px-2 py-0.5 tabular-nums"
     >
       <motion.span
         aria-hidden

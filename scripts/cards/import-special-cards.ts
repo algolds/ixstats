@@ -9,12 +9,13 @@
  *
  * Idempotent: a second run plans nothing and awards nothing.
  */
-import { PrismaClient } from "@prisma/client";
+
 import { awardAchievementCard } from "~/lib/cards/card-service";
 import { LEGACY_SPECIAL_CARDS, planSpecialCardImport } from "~/lib/cards/special-card-import";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const APPLY = process.argv.includes("--apply");
 
 async function importCards() {

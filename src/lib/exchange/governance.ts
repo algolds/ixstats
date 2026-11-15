@@ -24,6 +24,7 @@ import {
   executeAcquisition,
   returnOfferTx,
 } from "./acquisition";
+import { publishNewsTx } from "./news";
 
 export const PROPOSAL_TYPES = ["DISSOLVE", "ISSUE_SHARES", "ACQUIRE_OFFER"] as const;
 export type ProposalType = (typeof PROPOSAL_TYPES)[number];
@@ -181,12 +182,44 @@ async function settleTx(tx: Db, proposal: CompanyProposal, now: number): Promise
   return executeTx(tx, proposal, now);
 }
 
-async function executeTx(tx: Db, proposal: CompanyProposal, now: number): Promise<ExchangeNotice[]> {
+const PASSED_HEADLINES: Record<string, string> = {
+  DISSOLVE: "shareholders vote to dissolve",
+  ISSUE_SHARES: "shareholders approve a new share issue",
+};
+
+/** A passed vote on the feed (an acquisition publishes its own headline). Dissolving is a headline. */
+async function publishPassedVoteTx(tx: Db, proposal: CompanyProposal): Promise<void> {
+  const what = PASSED_HEADLINES[proposal.type];
+  if (!what) return;
+  const company = await tx.company.findUnique({
+    where: { id: proposal.companyId },
+    select: { name: true, realmId: true },
+  });
+  if (!company) return;
+  await publishNewsTx(tx, {
+    realmId: company.realmId,
+    kind: "vote_passed",
+    prominence: proposal.type === "DISSOLVE" ? "HEADLINE" : "ACTIVITY",
+    sourceKind: "COMPANY",
+    sourceId: proposal.companyId,
+    headline: `${company.name}: ${what}`,
+    companyId: proposal.companyId,
+    key: `news:vote_passed:${proposal.id}`,
+  });
+}
+
+async function executeTx(
+  tx: Db,
+  proposal: CompanyProposal,
+  now: number
+): Promise<ExchangeNotice[]> {
+  await publishPassedVoteTx(tx, proposal);
   switch (proposal.type) {
     case "DISSOLVE": {
       const { notices } = await dissolveCompanyTx(tx, {
         userId: proposal.proposerUserId,
         companyId: proposal.companyId,
+        viaVote: true,
       });
       return notices;
     }
@@ -197,6 +230,7 @@ async function executeTx(tx: Db, proposal: CompanyProposal, now: number): Promis
         companyId: proposal.companyId,
         shares,
         requestId: `proposal:${proposal.id}`,
+        viaVote: true,
       });
       return issued.notices;
     }
@@ -220,7 +254,6 @@ async function closeTx(
     const { buyerCompanyId, offerAmount } = acquirePayloadOf(proposal.payload);
     await returnOfferTx(tx, {
       companyId: buyerCompanyId,
-      founderId: proposal.proposerUserId,
       amount: offerAmount,
       key: `exchange:acquire-return:${proposal.id}`,
     });
@@ -357,7 +390,6 @@ export async function resolveAcquireDecision(
   if (blocked) {
     await returnOfferTx(tx, {
       companyId: buyer.id,
-      founderId: buyer.founderId,
       amount: offerAmount,
       key: `exchange:acquire-return:decision:${decision.id}`,
     });
@@ -365,7 +397,11 @@ export async function resolveAcquireDecision(
       where: { id: decision.id },
       data: { effect: { rejected: blocked, refunded: offerAmount } },
     });
-    notices.push({ userId: buyer.founderId, title: `${buyer.name}: offer not made`, message: blocked });
+    notices.push({
+      userId: buyer.founderId,
+      title: `${buyer.name}: offer not made`,
+      message: blocked,
+    });
     return;
   }
 

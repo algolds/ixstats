@@ -51,7 +51,7 @@ interface ManualSlider {
   set: (t: ManualTransform, v: number) => ManualTransform;
 }
 
-const DEGREE_CLASS = "text-label font-mono font-medium";
+const DEGREE_CLASS = "text-label font-data font-medium tabular-nums";
 
 const MANUAL_SLIDERS: ManualSlider[] = [
   {
@@ -204,7 +204,7 @@ export const AlignmentStep = memo(function AlignmentStep({ importer }: Alignment
                   key={i}
                   className="bg-fill-3 text-footnote rounded-control-sm flex items-center justify-between px-2 py-1"
                 >
-                  <span>
+                  <span className="font-data tabular-nums">
                     Point {i + 1}: [{pt.source[0]?.toFixed(2)}, {pt.source[1]?.toFixed(2)}] → [
                     {pt.target[0]?.toFixed(2)}, {pt.target[1]?.toFixed(2)}]
                   </span>

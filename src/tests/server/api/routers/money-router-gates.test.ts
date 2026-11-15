@@ -64,6 +64,15 @@ const PUBLIC = [
   "loreCards.getCardAuthorInfo",
   "nsImport.getVerificationUrl",
   "nsImport.requestSelfServiceTakedown",
+  // The Exchange terminal is public to watch (docs/specs/2026-11-06-exchange-overhaul-design.md).
+  "exchange.realms",
+  "exchange.frontPage",
+  "exchange.markets",
+  "exchange.companyPage",
+  "exchange.bondPage",
+  "exchange.nationPage",
+  "exchange.story",
+  "exchange.leaderboards",
 ];
 
 /** The Loreward admin procedures, which are not named admin. */
@@ -263,6 +272,40 @@ describe("input bounds", () => {
       "a credit draw over the 250,000 ₷ cap",
       "exchange.borrowCredit",
       { companyId: "co_1", amount: 250_001, requestId: "req_12345678" },
+    ],
+    [
+      "a wealth fund deposit of 0 ₷",
+      "exchange.depositToFund",
+      { countryId: "c1", amount: 0, requestId: "req_12345678" },
+    ],
+    [
+      "a fund order for 0 bond units",
+      "exchange.fundTrade",
+      {
+        countryId: "c1",
+        order: { kind: "bond-buy", bondId: "b1", units: 0 },
+        requestId: "req_12345678",
+      },
+    ],
+    [
+      "a lending spread over 10%",
+      "exchange.setLendingTerms",
+      { countryId: "c1", spread: 0.2, cap: 1000 },
+    ],
+    [
+      "a bond issue over 10,000 units",
+      "exchange.issueBond",
+      { countryId: "c1", units: 10_001, couponRate: 0.05, termWeeks: 4, requestId: "req_12345678" },
+    ],
+    [
+      "a bond term over 12 weeks",
+      "exchange.issueBond",
+      { countryId: "c1", units: 100, couponRate: 0.05, termWeeks: 13, requestId: "req_12345678" },
+    ],
+    [
+      "a bond listing at 0 ₷",
+      "exchange.listBondUnits",
+      { bondId: "b1", units: 1, pricePerUnit: 0, requestId: "req_12345678" },
     ],
     [
       "a treasury tender below 10 ₷",
