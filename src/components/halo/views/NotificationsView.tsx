@@ -34,7 +34,8 @@ import {
   relativeTime,
 } from "./tray/types";
 import { soundCues } from "~/lib/sound/cuelume";
-import { tweenFast } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, tweenFast } from "~/lib/design/motion";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { Button } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -58,6 +59,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const [locallyDismissedIds, setLocallyDismissedIds] = useState<Set<string>>(new Set());
   const { size: haloSize, setSize } = useHaloSize();
   const isUltra = haloSize === SIZE_PRESETS.ULTRA;
+  const reduceMotion = useFacetReducedMotion();
 
   // Data sources
 
@@ -397,7 +399,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                       <div className="flex items-center gap-2">
                         <motion.div
                           animate={{ rotate: isCollapsed ? 0 : 90 }}
-                          transition={tweenFast}
+                          transition={reduceMotion ? { duration: 0 } : tweenFast}
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
@@ -414,10 +416,12 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                     <AnimatePresence>
                       {!isCollapsed && (
                         <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={tweenFast}
+                          initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                          animate={
+                            reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }
+                          }
+                          exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                          transition={reduceMotion ? REDUCED_MOTION_FADE : tweenFast}
                           className="space-y-1 overflow-hidden"
                         >
                           <SwipeableGroup>

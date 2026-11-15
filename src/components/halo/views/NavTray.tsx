@@ -12,7 +12,8 @@ import { Compass as SolidCompass, MultiBubble as SolidMultiBubble } from "iconoi
 import { stripBasePath } from "~/lib/base-path";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import { PreText } from "~/components/ui/pretext";
-import { springSmooth, tweenExit } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
 
@@ -52,6 +53,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
   const pathname = usePathname();
   const normalized = stripBasePath(pathname || "/");
   const trayRef = React.useRef<HTMLDivElement>(null);
+  const reduceMotion = useFacetReducedMotion();
 
   // Close on an outside press or Escape.
   React.useEffect(() => {
@@ -84,10 +86,14 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
           ref={trayRef}
           aria-label="Quick navigation"
           className="pointer-events-auto absolute top-full left-1/2 z-30 mt-3 w-[280px] -translate-x-1/2"
-          initial={{ opacity: 0, y: -8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.96, transition: tweenExit }}
-          transition={springSmooth}
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+          exit={
+            reduceMotion
+              ? { opacity: 0, transition: REDUCED_MOTION_FADE }
+              : { opacity: 0, y: -8, scale: 0.96, transition: tweenExit }
+          }
+          transition={reduceMotion ? REDUCED_MOTION_FADE : springSmooth}
         >
           {/* The island's expanded acrylic sheet. */}
           <FacetMaterial
@@ -104,9 +110,11 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                 return (
                   <motion.div
                     key={item.name}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...springSmooth, delay: i * 0.03 }}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                    transition={
+                      reduceMotion ? REDUCED_MOTION_FADE : { ...springSmooth, delay: i * 0.03 }
+                    }
                   >
                     <Link
                       href={item.href}

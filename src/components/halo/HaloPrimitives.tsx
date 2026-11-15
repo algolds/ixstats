@@ -11,7 +11,7 @@ import React, {
 } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "~/lib/utils/cn";
-import { springSnappy, tweenExit } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSnappy, tweenExit } from "~/lib/design/motion";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { useHydrated } from "~/hooks/useHydrated";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
@@ -238,16 +238,25 @@ type DynamicContainerProps = {
 };
 
 export const HaloContainer = ({ className, children }: DynamicContainerProps) => {
+  const reduceMotion = useFacetReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98, y: 4 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        transition: springSnappy,
-      }}
-      exit={{ opacity: 0, scale: 0.98, y: 10, transition: tweenExit }}
+      initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: 4 }}
+      animate={
+        reduceMotion
+          ? { opacity: 1, transition: REDUCED_MOTION_FADE }
+          : {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              transition: springSnappy,
+            }
+      }
+      exit={
+        reduceMotion
+          ? { opacity: 0, transition: REDUCED_MOTION_FADE }
+          : { opacity: 0, scale: 0.98, y: 10, transition: tweenExit }
+      }
       className={className}
     >
       {children}
