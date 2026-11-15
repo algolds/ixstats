@@ -125,100 +125,110 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         <div className="min-w-0 space-y-1">
           {/* Appearance */}
           <SectionLabel>Appearance</SectionLabel>
-
-          {/* Theme */}
-          <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
-            <div className="bg-tint/15 rounded-control-sm shrink-0 p-2">
-              {effectiveTheme === "dark" ? (
-                <Moon className="text-tint h-3.5 w-3.5" />
-              ) : (
-                <Sun className="text-tint h-3.5 w-3.5" />
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">
-                Theme
-              </PreText>
-              <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
-                {theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
-              </PreText>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={toggleTheme}
-              aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
-            >
-              {effectiveTheme === "dark" ? <Sun /> : <Moon />}
-            </Button>
-          </div>
-
-          {/* Compact Mode */}
-          <SettingsRow
-            icon={<Layout className="text-indigo h-3.5 w-3.5" />}
-            iconBg="bg-indigo/15"
-            label="Compact mode"
-            description="Denser UI layout"
-          >
-            <ToggleSwitch
-              enabled={compactMode}
-              onToggle={() => {
-                toggleCompactMode();
-              }}
-            />
-          </SettingsRow>
-
-          {/* Sound */}
-          <SettingsRow
-            icon={
-              soundEnabled ? (
-                <SoundHigh className="text-green h-3.5 w-3.5" />
-              ) : (
-                <SoundOff className="text-label-secondary h-3.5 w-3.5" />
-              )
-            }
-            iconBg={soundEnabled ? "bg-green/15" : "bg-fill-4"}
-            label="Sound"
-            description={soundEnabled ? "Enabled" : "Muted"}
-            onIconClick={soundEnabled ? () => previewSound("ready") : undefined}
-            iconTitle={soundEnabled ? "Tap to test the notification sound" : undefined}
-          >
-            <ToggleSwitch
-              enabled={soundEnabled}
-              onToggle={() => {
-                const next = !soundEnabled;
-                setSoundEnabled(next);
-              }}
-            />
-          </SettingsRow>
-
-          {/* Image Appearance (Wiki — Dark Mode only) */}
-          {isOnWikiPage && effectiveTheme === "dark" && (
-            <SettingsRow
-              icon={
-                mediaThemeMode === "plinth" ? (
-                  <Square className="text-green h-3.5 w-3.5" />
-                ) : (
-                  <SunMoon className="text-teal h-3.5 w-3.5" />
-                )
-              }
-              iconBg={mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"}
-              label="Image appearance"
-              description={mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive dark"}
-            >
-              <Switch
-                checked={mediaThemeMode === "plinth"}
-                onCheckedChange={(checked) => {
-                  setMediaThemeMode(checked ? "plinth" : "auto");
-                }}
+          <FacetList variant="plain">
+            <FacetListSection aria-label="Appearance">
+              <FacetRow
+                leading={
+                  <span className="bg-tint/15 rounded-control-sm block p-2">
+                    {effectiveTheme === "dark" ? (
+                      <Moon className="text-tint size-3.5" />
+                    ) : (
+                      <Sun className="text-tint size-3.5" />
+                    )}
+                  </span>
+                }
+                title="Theme"
+                subtitle={theme === "system" ? "Auto" : theme === "dark" ? "Dark" : "Light"}
+                trailing={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={toggleTheme}
+                    aria-label={`Switch to ${NEXT_THEME_NAME[nextTheme(theme)]} theme`}
+                  >
+                    {effectiveTheme === "dark" ? <Sun /> : <Moon />}
+                  </Button>
+                }
               />
-            </SettingsRow>
-          )}
 
-          {/* More Preferences Trigger Row (Wiki) — smoothly toggles the side panel */}
-          {isOnWikiPage && (
-            <FacetList variant="plain">
-              <FacetListSection aria-label="Reader preferences">
+              <FacetRow
+                leading={
+                  <span className="bg-indigo/15 rounded-control-sm block p-2">
+                    <Layout className="text-indigo size-3.5" />
+                  </span>
+                }
+                title="Compact mode"
+                subtitle="Denser UI layout"
+                trailing={
+                  <ToggleSwitch
+                    enabled={compactMode}
+                    onToggle={() => {
+                      toggleCompactMode();
+                    }}
+                  />
+                }
+              />
+
+              <FacetRow
+                leading={
+                  soundEnabled ? (
+                    <button
+                      type="button"
+                      onClick={() => previewSound("ready")}
+                      title="Tap to test the notification sound"
+                      aria-label="Tap to test the notification sound"
+                      className="rounded-control-sm bg-green/15 focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2"
+                    >
+                      <SoundHigh className="text-green size-3.5" />
+                    </button>
+                  ) : (
+                    <span className="bg-fill-4 rounded-control-sm block p-2">
+                      <SoundOff className="text-label-secondary size-3.5" />
+                    </span>
+                  )
+                }
+                title="Sound"
+                subtitle={soundEnabled ? "Enabled" : "Muted"}
+                trailing={
+                  <ToggleSwitch
+                    enabled={soundEnabled}
+                    onToggle={() => {
+                      setSoundEnabled(!soundEnabled);
+                    }}
+                  />
+                }
+              />
+
+              {isOnWikiPage && effectiveTheme === "dark" && (
+                <FacetRow
+                  leading={
+                    <span
+                      className={cn(
+                        "rounded-control-sm block p-2",
+                        mediaThemeMode === "plinth" ? "bg-green/15" : "bg-teal/15"
+                      )}
+                    >
+                      {mediaThemeMode === "plinth" ? (
+                        <Square className="text-green size-3.5" />
+                      ) : (
+                        <SunMoon className="text-teal size-3.5" />
+                      )}
+                    </span>
+                  }
+                  title="Image appearance"
+                  subtitle={mediaThemeMode === "plinth" ? "Light backplate" : "Adaptive dark"}
+                  trailing={
+                    <Switch
+                      checked={mediaThemeMode === "plinth"}
+                      onCheckedChange={(checked) => {
+                        setMediaThemeMode(checked ? "plinth" : "auto");
+                      }}
+                    />
+                  }
+                />
+              )}
+
+              {isOnWikiPage && (
                 <FacetRow
                   onClick={() => handleToggleMorePrefs(!morePrefsExpanded)}
                   selected={morePrefsExpanded}
@@ -246,9 +256,9 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                     />
                   }
                 />
-              </FacetListSection>
-            </FacetList>
-          )}
+              )}
+            </FacetListSection>
+          </FacetList>
 
           {/* Account */}
           {isSignedIn ? (
@@ -325,88 +335,96 @@ export function SettingsView({ onClose }: SettingsViewProps) {
         {morePrefsExpanded && (
           <div className="border-separator min-w-0 space-y-1 border-t pt-2 sm:border-t-0 sm:border-l sm:pt-0 sm:pl-4">
             <SectionLabel>Reader preferences</SectionLabel>
+            <FacetList variant="plain">
+              <FacetListSection aria-label="Reader preferences">
+                <FacetRow
+                  leading={
+                    <span className="bg-wiki/15 rounded-control-sm block p-2">
+                      <MessageSquare className="text-wiki size-3.5" />
+                    </span>
+                  }
+                  title="Citation tooltips"
+                  subtitle="Hover source preview cards"
+                  trailing={
+                    <ToggleSwitch
+                      enabled={showCiteTooltips}
+                      onToggle={() => {
+                        setShowCiteTooltips(!showCiteTooltips);
+                      }}
+                    />
+                  }
+                />
 
-            {/* Citations */}
-            <SettingsRow
-              icon={<MessageSquare className="text-wiki h-3.5 w-3.5" />}
-              iconBg="bg-wiki/15"
-              label="Citation tooltips"
-              description="Hover source preview cards"
-            >
-              <ToggleSwitch
-                enabled={showCiteTooltips}
-                onToggle={() => {
-                  setShowCiteTooltips(!showCiteTooltips);
-                }}
-              />
-            </SettingsRow>
+                <FacetRow
+                  leading={
+                    <span className="bg-teal/15 rounded-control-sm block p-2">
+                      <List className="text-teal size-3.5" />
+                    </span>
+                  }
+                  title="Article TOC"
+                  subtitle="Floating outline navigator"
+                  trailing={
+                    <ToggleSwitch
+                      enabled={showWikiToc}
+                      onToggle={() => {
+                        setShowWikiToc(!showWikiToc);
+                      }}
+                    />
+                  }
+                />
 
-            {/* Article TOC */}
-            <SettingsRow
-              icon={<List className="text-teal h-3.5 w-3.5" />}
-              iconBg="bg-teal/15"
-              label="Article TOC"
-              description="Floating outline navigator"
-            >
-              <ToggleSwitch
-                enabled={showWikiToc}
-                onToggle={() => {
-                  setShowWikiToc(!showWikiToc);
-                }}
-              />
-            </SettingsRow>
+                <FacetRow
+                  leading={
+                    <span className="bg-blue/15 rounded-control-sm block p-2">
+                      <Search className="text-blue size-3.5" />
+                    </span>
+                  }
+                  title="Quick search"
+                  subtitle="Index wiki articles in search"
+                  trailing={
+                    <ToggleSwitch
+                      enabled={dynamicSearchWiki}
+                      onToggle={() => {
+                        setDynamicSearchWiki(!dynamicSearchWiki);
+                      }}
+                    />
+                  }
+                />
 
-            {/* Quick Search */}
-            <SettingsRow
-              icon={<Search className="text-blue h-3.5 w-3.5" />}
-              iconBg="bg-blue/15"
-              label="Quick search"
-              description="Index wiki articles in search"
-            >
-              <ToggleSwitch
-                enabled={dynamicSearchWiki}
-                onToggle={() => {
-                  setDynamicSearchWiki(!dynamicSearchWiki);
-                }}
-              />
-            </SettingsRow>
+                <FacetRow
+                  leading={
+                    <span className="bg-green/15 rounded-control-sm block p-2">
+                      <ExternalLink className="text-green size-3.5" />
+                    </span>
+                  }
+                  title="Open in New Tab"
+                  subtitle="External link target"
+                  trailing={
+                    <ToggleSwitch
+                      enabled={openInNewTab}
+                      onToggle={() => {
+                        setOpenInNewTab(!openInNewTab);
+                      }}
+                    />
+                  }
+                />
 
-            {/* Open in New Tab */}
-            <SettingsRow
-              icon={<ExternalLink className="text-green h-3.5 w-3.5" />}
-              iconBg="bg-green/15"
-              label="Open in New Tab"
-              description="External link target"
-            >
-              <ToggleSwitch
-                enabled={openInNewTab}
-                onToggle={() => {
-                  setOpenInNewTab(!openInNewTab);
-                }}
-              />
-            </SettingsRow>
-
-            {/* Deep Wiki Settings Link */}
-            <div className="pt-2">
-              <FacetList variant="plain">
-                <FacetListSection aria-label="Wiki system settings">
-                  <FacetRow
-                    onClick={() => {
-                      onClose();
-                      router.push("/settings#wiki-settings");
-                    }}
-                    leading={
-                      <span className="rounded-control-sm bg-indigo/15 block p-2">
-                        <BookOpen className="text-indigo size-3.5" />
-                      </span>
-                    }
-                    title="Wiki system settings"
-                    subtitle="Lore scanner and sources"
-                    accessory="chevron"
-                  />
-                </FacetListSection>
-              </FacetList>
-            </div>
+                <FacetRow
+                  onClick={() => {
+                    onClose();
+                    router.push("/settings#wiki-settings");
+                  }}
+                  leading={
+                    <span className="rounded-control-sm bg-indigo/15 block p-2">
+                      <BookOpen className="text-indigo size-3.5" />
+                    </span>
+                  }
+                  title="Wiki system settings"
+                  subtitle="Lore scanner and sources"
+                  accessory="chevron"
+                />
+              </FacetListSection>
+            </FacetList>
           </div>
         )}
       </div>
@@ -456,60 +474,5 @@ function SettingsHeader({
         onClose();
       }}
     />
-  );
-}
-
-// Reusable settings row
-
-function SettingsRow({
-  icon,
-  iconBg,
-  label,
-  description,
-  onIconClick,
-  iconTitle,
-  children,
-}: {
-  icon: React.ReactNode;
-  iconBg: string;
-  label: string;
-  description?: string;
-  onIconClick?: () => void;
-  iconTitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-control hover:bg-fill-3 duration-fast flex items-center gap-3 px-3 py-3 transition-colors select-none">
-      {onIconClick ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onIconClick();
-          }}
-          title={iconTitle}
-          aria-label={iconTitle}
-          className={cn(
-            "rounded-control-sm focus-visible:outline-tint shrink-0 cursor-pointer p-2 transition-colors focus-visible:outline-2",
-            iconBg
-          )}
-        >
-          {icon}
-        </button>
-      ) : (
-        <div className={`rounded-control-sm shrink-0 p-2 ${iconBg}`}>{icon}</div>
-      )}
-      <div className="min-w-0 flex-1">
-        <PreText className="text-label text-body block font-medium" whiteSpace="nowrap">
-          {label}
-        </PreText>
-        {description && (
-          <PreText className="text-label-secondary text-footnote block" whiteSpace="nowrap">
-            {description}
-          </PreText>
-        )}
-      </div>
-      {children}
-    </div>
   );
 }
