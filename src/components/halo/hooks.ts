@@ -1,4 +1,4 @@
-import { useState, useEffect, useEffectEvent } from "react";
+import { useEffect, useEffectEvent, useReducer, useState } from "react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useAuth, useUser } from "~/context/auth-context";
@@ -14,6 +14,7 @@ import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { CORE_FEATURES, type SystemActionId } from "./halo-registry";
+import { haloReducer, INITIAL_HALO_STATE } from "~/lib/halo/halo-state";
 import {
   buildIndex,
   commandEntriesFor,
@@ -39,12 +40,28 @@ export function useDynamicIslandState() {
   const isWikiActive = activePlugin?.id === "wiki";
   const isAdmin = useCanOpenAdmin();
 
-  const [mode, setMode] = useState<ViewMode>("compact");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
+  const [haloState, dispatch] = useReducer(haloReducer, INITIAL_HALO_STATE);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 150);
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
+  const [prevPluginKey, setPrevPluginKey] = useState("");
+
+  const mode: ViewMode = haloState.status === "compact" ? "compact" : haloState.view;
+  const isExpanded = haloState.status === "expanded";
+  const expandedMode: ViewMode = haloState.status === "expanded" ? haloState.view : "search";
+
+  // Sync open plugin view if the active plugin or its available views change
+  const viewKeys = activePlugin?.expandedViews ? Object.keys(activePlugin.expandedViews) : [];
+  const pluginKey = activePlugin ? `${activePlugin.id}:${viewKeys.join(",")}` : "";
+  if (pluginKey !== prevPluginKey) {
+    setPrevPluginKey(pluginKey);
+    dispatch({
+      type: "plugin-changed",
+      firstView: viewKeys[0] ?? null,
+      availableViews: viewKeys,
+      pluginGone: !activePlugin,
+    });
+  }
 
   // Countries are only needed while the search view can list them
   const countriesEnabled =
@@ -66,42 +83,28 @@ export function useDynamicIslandState() {
   const isSearchPending =
     searchQuery !== debouncedSearchQuery || countriesLoading || (wikiEnabled && wikiFetching);
 
-  // Undefined at first, so a plugin active on mount counts as a change
-  const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
+  const applyInitialSearchFilter = () => {
+    let isDynamicWikiSearchEnabled = true;
+    try {
+      const stored = localStorage.getItem("wikios:dynamicSearchWiki");
+      if (stored !== null) {
+        isDynamicWikiSearchEnabled = stored === "true";
+      }
+    } catch {
+      // SSR fallback
+    }
+    setSearchFilter(isDynamicWikiSearchEnabled && isWikiActive ? "wiki" : "all");
+  };
 
   // Mode switching with auto-expand management
   const switchMode = (newMode: ViewMode) => {
-    setMode(newMode);
-
-    const isExpandedMode =
-      newMode === "search" ||
-      newMode === "notifications" ||
-      newMode === "settings" ||
-      newMode === "mycountry" ||
-      newMode.startsWith("plugin:");
-
-    if (isExpandedMode) {
-      setIsExpanded(true);
-      setExpandedMode(newMode);
-    } else {
-      setIsExpanded(false);
+    if (newMode === "compact") {
+      dispatch({ type: "close" });
+      return;
     }
-
+    dispatch({ type: "open", view: newMode });
     if (newMode === "search") {
-      let isDynamicWikiSearchEnabled = true;
-      try {
-        const stored = localStorage.getItem("wikios:dynamicSearchWiki");
-        if (stored !== null) {
-          isDynamicWikiSearchEnabled = stored === "true";
-        }
-      } catch {
-        // SSR fallback
-      }
-      if (isDynamicWikiSearchEnabled && isWikiActive) {
-        setSearchFilter("wiki");
-      } else {
-        setSearchFilter("all");
-      }
+      applyInitialSearchFilter();
     }
   };
 
@@ -213,20 +216,6 @@ export function useDynamicIslandState() {
     { wikiFirst: isWikiActive }
   ).map(toSearchResult);
 
-  // Plugin view sync: a newly active plugin's first view becomes the expanded view, and a plugin
-  // view left open after its plugin goes away falls back to compact
-  if (activePlugin?.id !== prevActivePluginId) {
-    setPrevActivePluginId(activePlugin?.id);
-    const firstViewKey = activePlugin?.expandedViews
-      ? Object.keys(activePlugin.expandedViews)[0]
-      : undefined;
-    if (firstViewKey) setExpandedMode(`plugin:${firstViewKey}`);
-  }
-  if (!activePlugin && mode.startsWith("plugin:")) {
-    setMode("compact");
-    setIsExpanded(false);
-  }
-
   // Global Keyboard Shortcuts (Cmd+K, Cmd+comma, Esc). Never preventDefault keys we do not handle.
   const onKey = useEffectEvent((e: KeyboardEvent) => {
     // Holding a toggle chord must not flip the mode on every auto-repeat
@@ -257,7 +246,7 @@ export function useDynamicIslandState() {
         e.stopPropagation();
 
         if (mode === "search") {
-          switchMode("compact");
+          dispatch({ type: "close" });
         } else {
           switchMode("search");
         }
@@ -270,14 +259,10 @@ export function useDynamicIslandState() {
     }
 
     // Secondary shortcuts
-    if (e.metaKey || e.ctrlKey) {
-      switch (e.key) {
-        case ",":
-          e.preventDefault();
-          e.stopPropagation();
-          switchMode(mode === "settings" ? "compact" : "settings");
-          break;
-      }
+    if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch({ type: "toggle", view: "settings" });
     }
 
     // Escape to close. Only claim the event when Halo has something to close, so that other
@@ -289,7 +274,7 @@ export function useDynamicIslandState() {
         setSearchQuery("");
         setSearchFilter("all");
       } else {
-        switchMode("compact");
+        dispatch({ type: "close" });
       }
     }
   });
@@ -302,36 +287,31 @@ export function useDynamicIslandState() {
   }, []);
 
   // Tour step transitions
+  const onTourStep = useEffectEvent((e: Event) => {
+    const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
+    if (!customEvent.detail || !customEvent.detail.active) return;
+
+    switch (customEvent.detail.step) {
+      case 1:
+      case 3:
+        switchMode("compact");
+        break;
+      case 2:
+      case 4:
+        switchMode("mycountry");
+        break;
+      case 5:
+        switchMode("settings");
+        break;
+    }
+  });
+
   useEffect(() => {
-    const handleTourStep = (e: Event) => {
-      const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
-      if (!customEvent.detail || !customEvent.detail.active) return;
-
-      const { step } = customEvent.detail;
-      switch (step) {
-        case 1:
-          switchMode("compact");
-          break;
-        case 2:
-          switchMode("mycountry");
-          break;
-        case 3:
-          switchMode("compact");
-          break;
-        case 4:
-          switchMode("mycountry");
-          break;
-        case 5:
-          switchMode("settings");
-          break;
-      }
-    };
-
-    window.addEventListener("ix:halo-tour-step", handleTourStep);
+    window.addEventListener("ix:halo-tour-step", onTourStep);
     return () => {
-      window.removeEventListener("ix:halo-tour-step", handleTourStep);
+      window.removeEventListener("ix:halo-tour-step", onTourStep);
     };
-  }, [switchMode]);
+  }, []);
 
   return {
     mode,
@@ -343,9 +323,6 @@ export function useDynamicIslandState() {
     searchResults,
     isSearchPending,
     countriesData,
-    setMode,
-    setIsExpanded,
-    setExpandedMode,
     setSearchQuery,
     setSearchFilter,
     switchMode,

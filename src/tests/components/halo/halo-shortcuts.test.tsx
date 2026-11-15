@@ -149,4 +149,20 @@ describe("Halo shortcuts", () => {
     });
     expect(result.current.mode).toBe("compact");
   });
+
+  it("closes an open wiki plugin view cleanly when a higher-priority sports live plugin activates", () => {
+    mockPlugin = wikiPlugin;
+    const { result, rerender } = renderHook(() => useDynamicIslandState());
+    act(() => {
+      result.current.switchMode("plugin:wiki");
+    });
+    expect(result.current.mode).toBe("plugin:wiki");
+    expect(result.current.isExpanded).toBe(true);
+
+    mockPlugin = { id: "sports-live", priority: 100, expandedViews: { "sports-live": () => null } };
+    rerender();
+
+    expect(result.current.mode).toBe("compact");
+    expect(result.current.isExpanded).toBe(false);
+  });
 });
