@@ -366,7 +366,7 @@ function CommandPaletteWrapper({
 
   // Close dropdown when clicking outside - use shared state
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: PointerEvent) => {
       const target = event.target as HTMLElement;
       if (!target) return;
 
@@ -390,8 +390,8 @@ function CommandPaletteWrapper({
     };
 
     if (isExpanded && isInitialized) {
-      document.addEventListener("mousedown", handleClickOutside, { passive: true });
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("pointerdown", handleClickOutside, { passive: true });
+      return () => document.removeEventListener("pointerdown", handleClickOutside);
     }
     return;
   }, [isExpanded, isInitialized, switchMode]);

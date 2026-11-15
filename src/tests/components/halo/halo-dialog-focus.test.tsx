@@ -157,3 +157,24 @@ describe("Trigger ARIA & focus return on close (Step 2)", () => {
     expect(restoredSettingsBtn).toHaveFocus();
   });
 });
+
+describe("Outside pointerdown closes Halo (Step 3)", () => {
+  it("collapses expanded Halo on pointerdown outside while ignoring external dialogs", async () => {
+    render(<CommandPalette />);
+    await act(async () => {});
+
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    expect(await screen.findByRole("dialog", { name: "Quick settings" })).toBeInTheDocument();
+
+    const otherDialog = document.createElement("div");
+    otherDialog.setAttribute("role", "dialog");
+    document.body.appendChild(otherDialog);
+    fireEvent.pointerDown(otherDialog);
+    expect(screen.getByRole("dialog", { name: "Quick settings" })).toBeInTheDocument();
+    otherDialog.remove();
+
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("dialog", { name: "Quick settings" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Settings" })).toBeInTheDocument();
+  });
+});
