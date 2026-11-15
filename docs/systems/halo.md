@@ -70,7 +70,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/views/tray/types.ts`: Notification item types, relative-time formatter, and category icon/colour helpers
 - `src/lib/halo/commands-from-apps.ts`: Derives Halo command entries from `APPS` + `getVisibleApps`, `NAV_COMMAND_META`, and `EXTRA_HALO_COMMANDS`
 - `src/lib/halo/halo-state.ts`: Pure `haloReducer` state machine (`HaloState`, `HaloEvent`, `INITIAL_HALO_STATE`)
-- `src/lib/halo/search.ts`: Pure search indexing and ranking helpers (`buildIndex`, `commandEntriesFor`, `searchCatalog`)
+- `src/lib/halo/search.ts`: Pure search indexing and ranking helpers (`buildIndex`, `indexPluginCommands`, `indexRealms`, `commandEntriesFor`, `searchCatalog`)
 
 ## Views and state
 
@@ -116,6 +116,17 @@ interface DIBadge {
   color: string;
 }
 
+export interface PluginCommand {
+  key: string;
+  title: string;
+  description?: string;
+  keywords?: readonly string[];
+  icon?: React.ComponentType<{ className?: string }>;
+  run?: () => void;
+  path?: string;
+  pluginView?: string;
+}
+
 export interface DIPlugin<F = unknown, C = unknown> {
   id: string;
   priority?: number;
@@ -124,6 +135,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
   expandedViews?: Record<string, React.ComponentType<DIViewProps<any, any>>>;
   badge?: DIBadge;
   actions?: DIAction[];
+  commands?: readonly PluginCommand[];
   accentColor?: string;
   filter?: F;
   context?: C;
@@ -155,19 +167,21 @@ flowchart TD
 
 | Plugin           | `id`            | Priority                                   | Expanded views                                                                                                                             | Notes                                                                                                                            |
 | ---------------- | --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | `mycountry` (`MyCountryActionsView`)                                                                                                       | Mounted on `/mycountry` routes; built-in `"mycountry"` mode renders `MyCountryView` from the avatar/crown button                 |
-| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` when no `articleTitle`), `narrator` (`WikiNarratorView` when narrator access is enabled) | Uses `centerActions` for the section jump `Popover` and narrator `PlayPauseMorph`; expanded views load lazily via `next/dynamic` |
-| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                           | Mounted on `/builder` and `/mycountry/editor`; outranks `mycountry` and `wiki` on editor routes                                  |
-| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                           | Mounted globally; registers only while one of the signed-in user's clubs has an active live match broadcast                      |
+| `MyCountryHalo`  | `"mycountry"`   | `5`                                        | `mycountry` (`MyCountryActionsView`)                                                                                                       | Mounted on `/mycountry` routes; contributes `"Declare directive"` and MyCountry section commands (`MYCOUNTRY_PLUGIN_COMMANDS`)   |
+| `WikiHalo`       | `"wiki"`        | `10` (`50` paused narrator, `100` playing) | `wiki` (`WikiView`), `profile` (`WikiProfileView` when no `articleTitle`), `narrator` (`WikiNarratorView` when narrator access is enabled) | Contributes article heading jumps (`level <= 3`) and narrator toggle to Search; expanded views load lazily via `next/dynamic`    |
+| `BuilderHalo`    | `"builder"`     | `20`                                       | `sections` (`JumpToSectionView`)                                                                                                           | Mounted on `/builder` and `/mycountry/editor`; contributes `"Jump to <section>"` commands (`builderCommandsForSections`)         |
+| `SportsLiveHalo` | `"sports-live"` | `100`                                      | `sports-live` (`SportsLiveView`)                                                                                                           | Mounted globally during live club matches; contributes `"Watch live"` (`plugin:sports-live`) and league standings commands       |
 
 ## Command palette
 
-Command entries derive from the sidebar navigation model (`APPS` and `getVisibleApps` in [`src/lib/navigation/app-sections.ts`](../../src/lib/navigation/app-sections.ts)) via [`src/lib/halo/commands-from-apps.ts`](../../src/lib/halo/commands-from-apps.ts) (`NAV_COMMAND_META` + `EXTRA_HALO_COMMANDS`), while `CORE_FEATURES` lives in [`src/components/halo/halo-registry.ts`](../../src/components/halo/halo-registry.ts). `FacetShell` passes `trayApps` (strict viewer visibility for `NavTray`) and `searchApps` (respecting admin tab toggles and role gates) down through `ShellHalo` into `CommandPalette`. Pure indexing and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts):
+Command entries derive from the sidebar navigation model (`APPS` and `getVisibleApps` in [`src/lib/navigation/app-sections.ts`](../../src/lib/navigation/app-sections.ts)) via [`src/lib/halo/commands-from-apps.ts`](../../src/lib/halo/commands-from-apps.ts) (`NAV_COMMAND_META` + `EXTRA_HALO_COMMANDS`), while `CORE_FEATURES` lives in [`src/components/halo/halo-registry.ts`](../../src/components/halo/halo-registry.ts). `FacetShell` passes `trayApps` (strict viewer visibility for `NavTray`) and `searchApps` (respecting admin tab toggles and role gates) down through `ShellHalo` into `CommandPalette`. Pure indexing and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts) (`buildIndex`, `indexPluginCommands`, `indexRealms`, `commandEntriesFor`, `searchCatalog`):
 
-- **Viewer commands first:** `commandEntriesFor({ isAdmin, signedIn, pathname, searchApps })` prepends viewer-specific entries (`Sign in` and `Sign up` when signed out, `Sign out` when signed in, plus `Country profile` when viewing `/countries/<slug>`) ahead of `commandsFromVisibleApps(searchApps)` (or `commandsFor(isAdmin)`) so they are not truncated under the 3-per-category `"all"` cap.
-- **Per-filter limits and ordering:** `searchCatalog(query, filter, sources, { wikiFirst })` returns up to 3 matches per source when `filter === "all"` and up to 12 when a single filter is selected (capped at 12 total). Under `"all"`, results are ordered `[countries, commands, features, wiki]` by default, or `[wiki, countries, commands, features]` when `wikiFirst` is true (active Wiki plugin). Wiki queries run once the debounced query is at least 2 characters.
+- **Active plugin commands first (`"On this page"`):** Commands exposed on `activePlugin.commands` rank at the top of `"all"` (limit 3), `"commands"` (limit 12), and `"wiki"` when `WikiHalo` is active (limit 3), keyed as `plugin-${pluginId}-${key}` and badged `"On this page"`.
+- **Open realm search (`"Realm"`):** Under `"all"`, `hooks.ts` lazily fetches `api.realms.getSelectList` (1 query over `DIRECTORY_REALM_WHERE`, `staleTime: 30 * 60_000`) and matches up to 3 open realms by name, slug, tags, or description, routing to `/r/<slug>` with a `data-app="realms"` badge.
+- **Viewer commands:** `commandEntriesFor({ isAdmin, signedIn, pathname, searchApps })` prepends viewer-specific entries (`Sign in` and `Sign up` when signed out, `Sign out` when signed in, plus `Country profile` when viewing `/countries/<slug>`) ahead of `commandsFromVisibleApps(searchApps)` (or `commandsFor(isAdmin)`) so they are not truncated under the 3-per-category `"all"` cap.
+- **Per-filter limits and ordering:** `searchCatalog(query, filter, sources, { wikiFirst, pluginId })` returns up to 3 matches per source when `filter === "all"` and up to 12 when a single filter is selected (capped at 12 total). Under `"all"`, results are ordered `[pluginMatches, realms, countries, commands, features, wiki]` by default, or `[pluginMatches, wiki, realms, countries, commands, features]` when `wikiFirst` is true (active Wiki plugin). Wiki queries run once the debounced query is at least 2 characters.
 - **Initial filter on Wiki pages:** Opening Search checks `localStorage["wikios:dynamicSearchWiki"]` (default `true`); when enabled on a Wiki page, Search starts on the `"wiki"` filter, otherwise `"all"`.
-- **Execution:** Navigating entries route client-side via `navigateWithBasePath(path, router)` (preserving React state and Halo's layout morph); `#search`, `#notifications`, and `#settings` switch Halo views; `actionId` entries (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `sign-out`, `random-country`) run only when activated via `Enter` or click.
+- **Execution:** Plugin commands execute `cmd.run()`, open `plugin:${cmd.pluginView}`, or navigate to `cmd.path`; realm, country, and route entries navigate client-side via `navigateWithBasePath(path, router)` (preserving React state and Halo's layout morph); `#search`, `#notifications`, and `#settings` switch Halo views; `actionId` entries (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `sign-out`, `random-country`) run only when activated via `Enter` or click.
 - **Route verification:** [`src/tests/components/halo/halo-registry-routes.test.ts`](../../src/tests/components/halo/halo-registry-routes.test.ts) verifies that every derived palette and `NavTray` path resolves to a real `src/app/**/page.tsx` route without duplicates.
 
 ## Keyboard

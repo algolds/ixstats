@@ -62,7 +62,7 @@ On the [world map](/maps), Halo is replaced by the map's own floating bar.
 
 ### Search
 
-Search finds countries, commands, features, and Wiki articles. Use the filter buttons (`All`, `Wiki`, `Countries`, `Commands`, or `Features`) or the `Left` and `Right` arrow keys on them to narrow results, move through the list with the `Up` and `Down` arrow keys, and press `Enter` (or select a row) to open a page or run a command such as "Toggle dark or light theme", "Toggle sound effects", or "Mark all notifications read". When you open Search on the Wiki, **Wiki results in search** in [Settings](/help/getting-started/settings#wikios) (also called **Quick search** in Halo's Wiki settings) controls whether Search starts on the **Wiki** filter or **All**.
+Search finds open realms, countries, commands, features, Wiki articles, and actions on the current page (badged **On this page**, such as jumping to a Country Editor section or Wiki heading, declaring a directive in MyCountry, or opening a live sports match). Use the filter buttons (`All`, `Wiki`, `Countries`, `Commands`, or `Features`) or the `Left` and `Right` arrow keys on them to narrow results, move through the list with the `Up` and `Down` arrow keys, and press `Enter` (or select a row) to open a page or run a command such as "Toggle dark or light theme", "Toggle sound effects", or "Mark all notifications read". When you open Search on the Wiki, **Wiki results in search** in [Settings](/help/getting-started/settings#wikios) (also called **Quick search** in Halo's Wiki settings) controls whether Search starts on the **Wiki** filter or **All**.
 
 ### Notifications and messages
 
