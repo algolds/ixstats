@@ -7,8 +7,13 @@ import type { DIPlugin } from "./types";
 
 type Listener = () => void;
 
+interface RegisteredPlugin {
+  plugin: DIPlugin;
+  token: symbol;
+}
+
 class DIPluginRegistry {
-  private _plugins = new Map<string, DIPlugin>();
+  private _plugins = new Map<string, RegisteredPlugin>();
   private _listeners = new Set<Listener>();
   private _snapshot: Map<string, DIPlugin> = new Map();
 
@@ -16,12 +21,15 @@ class DIPluginRegistry {
     return this._snapshot;
   }
 
-  register(plugin: DIPlugin) {
-    this._plugins.set(plugin.id, plugin);
+  register(plugin: DIPlugin): symbol {
+    const token = Symbol(plugin.id);
+    this._plugins.set(plugin.id, { plugin, token });
     this._emitChange();
+    return token;
   }
 
-  unregister(id: string) {
+  unregister(id: string, token: symbol) {
+    if (this._plugins.get(id)?.token !== token) return;
     this._plugins.delete(id);
     this._emitChange();
   }
@@ -39,7 +47,11 @@ class DIPluginRegistry {
 
   private _emitChange() {
     // Create a new Map reference so useSyncExternalStore detects the change
-    this._snapshot = new Map(this._plugins);
+    const next = new Map<string, DIPlugin>();
+    this._plugins.forEach((entry, id) => {
+      next.set(id, entry.plugin);
+    });
+    this._snapshot = next;
     this._listeners.forEach((listener) => listener());
   }
 }
@@ -77,9 +89,9 @@ export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
 
   React.useEffect(() => {
     if (!registry) return;
-    registry.register(plugin as unknown as DIPlugin);
+    const token = registry.register(plugin as unknown as DIPlugin);
     return () => {
-      registry.unregister(plugin.id);
+      registry.unregister(plugin.id, token);
     };
   }, [registry, plugin]);
 }

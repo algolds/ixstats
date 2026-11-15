@@ -82,9 +82,7 @@ describe("Halo plugin registry", () => {
     expect(active(container)).toBe("b");
   });
 
-  // Plan 463 changes unregister semantics; flip this to a normal test when it lands.
-  // Today host A's cleanup unregisters by id, which also removes host B's newer registration.
-  test.failing("keeps the newer registration when the older host unmounts", () => {
+  it("keeps the newer registration when the older host unmounts", () => {
     const older: DIPlugin = { id: "x", priority: 1 };
     const newer: DIPlugin = { id: "x", priority: 1 };
     const { container, rerender } = render(<Scenario plugins={[older]} />);
