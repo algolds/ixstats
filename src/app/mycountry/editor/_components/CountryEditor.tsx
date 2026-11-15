@@ -507,7 +507,12 @@ export function CountryEditor({ countryId }: { countryId: string }) {
 
       <BuilderHalo
         label={state.name}
-        sections={ALL_STUDIO_PANES.map((pane) => ({ id: pane.id, label: pane.title }))}
+        sections={ALL_STUDIO_PANES.map((pane) => ({
+          id: pane.id,
+          label: pane.title,
+          description: pane.subtitle,
+          keywords: pane.dirtySectionIds,
+        }))}
         currentId={activePane}
         onJump={jumpTo}
       />

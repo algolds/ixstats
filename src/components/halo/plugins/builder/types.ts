@@ -2,6 +2,8 @@
 export interface BuilderHaloSection {
   id: string;
   label: string;
+  description?: string;
+  keywords?: readonly string[];
 }
 
 /** What `BuilderHalo` hands its expanded view. */

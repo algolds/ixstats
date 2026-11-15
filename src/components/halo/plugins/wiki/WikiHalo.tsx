@@ -7,16 +7,16 @@
  * WikiNarratorView, WikiView, and WikiProfileView as dedicated expanded views.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { ProfileCircle } from "iconoir-react";
+import { List, ProfileCircle, SoundHigh } from "iconoir-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 import { useUser } from "~/context/auth-context";
 import { useHasNarratorAccess } from "~/hooks/usePermissions";
 import { useContextHour } from "~/hooks/useContextHour";
 import { greetingForHour } from "~/lib/time/greeting";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import type { DIViewProps } from "~/components/halo/types";
+import type { DIViewProps, PluginCommand } from "~/components/halo/types";
 import { PlayPauseMorph } from "./components/PlayPauseMorph";
 import { focusRing, hitSlop } from "~/components/ui/button";
 import { PreText } from "~/components/ui/pretext";
@@ -227,21 +227,79 @@ function WikiCenterActions() {
   );
 }
 
+export function wikiCommandsForArticle({
+  articleTitle,
+  toc,
+  canNarrate,
+  isPlaying,
+  onJumpSection,
+  onToggleNarrator,
+}: {
+  articleTitle: string | null;
+  toc: ReadonlyArray<{ id: string; text: string }>;
+  canNarrate: boolean;
+  isPlaying: boolean;
+  onJumpSection: (id: string) => void;
+  onToggleNarrator: () => void;
+}): PluginCommand[] {
+  const commands: PluginCommand[] = [];
+  if (canNarrate) {
+    commands.push({
+      key: "narrator-toggle",
+      title: isPlaying ? "Pause article narration" : "Narrate article",
+      description: articleTitle ? `Listen to ${articleTitle}` : "Read this article aloud",
+      keywords: ["narrate", "narrator", "listen", "audio", isPlaying ? "pause" : "play"],
+      icon: SoundHigh,
+      run: onToggleNarrator,
+    });
+  }
+  for (const entry of toc) {
+    commands.push({
+      key: `toc-${entry.id}`,
+      title: `Jump to ${entry.text}`,
+      description: articleTitle ? `Section in ${articleTitle}` : "Article section",
+      keywords: ["section", "heading", "jump", entry.text.toLowerCase()],
+      icon: List,
+      run: () => onJumpSection(entry.id),
+    });
+  }
+  return commands;
+}
+
 export function WikiHalo() {
-  const { articleTitle, narratorState, themeColors } = useWikiContext();
+  const {
+    articleTitle,
+    tocEntries,
+    navigateToSection,
+    narratorState,
+    narratorActions,
+    themeColors,
+  } = useWikiContext();
   const hasNarratorAccess = useHasNarratorAccess();
   const isPlaying = hasNarratorAccess && !!narratorState?.isPlaying;
+  const canNarrate = !!(hasNarratorAccess && narratorState && narratorState.totalBlocks > 0);
   const isNarrating = !!(
-    hasNarratorAccess &&
+    canNarrate &&
     narratorState &&
-    narratorState.totalBlocks > 0 &&
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
+
+  const actionsRef = useRef({ navigateToSection, narratorActions, isPlaying });
+  useEffect(() => {
+    actionsRef.current = { navigateToSection, narratorActions, isPlaying };
+  }, [navigateToSection, narratorActions, isPlaying]);
+
+  const tocKey = JSON.stringify(
+    (tocEntries ?? [])
+      .filter((e) => e.level <= 3)
+      .map((e) => ({ id: e.id, text: e.text }))
   );
 
   const accent = wikiAccent(themeColors);
 
-  const plugin = useMemo(
-    () => ({
+  const plugin = useMemo(() => {
+    const parsedToc = JSON.parse(tocKey) as Array<{ id: string; text: string }>;
+    return {
       id: "wiki",
       // When narrating or playing audio, boost priority to 100 so it takes over the Dynamic Island / Halo like a live activity
       priority: isPlaying ? 100 : isNarrating ? 50 : 10,
@@ -257,10 +315,22 @@ export function WikiHalo() {
             wiki: WikiView,
             ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }) as Record<string, React.ComponentType<DIViewProps>>,
+      commands: wikiCommandsForArticle({
+        articleTitle,
+        toc: parsedToc,
+        canNarrate,
+        isPlaying,
+        onJumpSection: (id: string) => actionsRef.current.navigateToSection?.(id),
+        onToggleNarrator: () => {
+          const cur = actionsRef.current;
+          if (!cur.narratorActions) return;
+          if (cur.isPlaying) cur.narratorActions.pause();
+          else cur.narratorActions.play();
+        },
+      }),
       accentColor: accent,
-    }),
-    [articleTitle, hasNarratorAccess, isPlaying, isNarrating, accent]
-  );
+    };
+  }, [articleTitle, hasNarratorAccess, canNarrate, isPlaying, isNarrating, accent, tocKey]);
 
   useDIPlugin(plugin);
   return null;

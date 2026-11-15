@@ -2,13 +2,14 @@
 
 /**
  * BuilderHalo: the Halo plugin for founding (`/builder`) and the country editor
- * (`/mycountry/editor`). It offers one command, "Jump to section"; the page keeps its own
- * stepper or anchor nav, saves and validation.
+ * (`/mycountry/editor`). Exposes "Jump to section" both as an expanded view and as
+ * "On this page" commands in Halo Search; the page keeps its own stepper, saves, and validation.
  */
 
 import { useEffect, useMemo, useRef } from "react";
+import { List } from "iconoir-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
-import type { DIPlugin } from "~/components/halo/types";
+import type { DIPlugin, PluginCommand } from "~/components/halo/types";
 import { JumpToSectionView } from "./views";
 import type { BuilderHaloContext, BuilderHaloSection } from "./types";
 
@@ -21,6 +22,20 @@ export interface BuilderHaloProps {
   currentId?: string | null;
   /** Moves the page to a section (a founding step, or an editor `#hash`). */
   onJump: (id: string) => void;
+}
+
+export function builderCommandsForSections(
+  sections: readonly BuilderHaloSection[],
+  onJump: (id: string) => void
+): PluginCommand[] {
+  return sections.map((section) => ({
+    key: `jump-${section.id}`,
+    title: `Jump to ${section.label}`,
+    description: section.description ?? "Jump to this section on the current page",
+    keywords: ["jump", "section", section.id, ...(section.keywords ?? [])],
+    icon: List,
+    run: () => onJump(section.id),
+  }));
 }
 
 function BuilderHaloLabel({ label }: { label: string }) {
@@ -42,6 +57,15 @@ export function BuilderHalo({ label, sections, currentId = null, onJump }: Build
   }, [onJump]);
 
   const sectionsKey = JSON.stringify(sections);
+  const parsedSections = useMemo(
+    () => JSON.parse(sectionsKey) as BuilderHaloSection[],
+    [sectionsKey]
+  );
+  const commands = useMemo(
+    () => builderCommandsForSections(parsedSections, (id: string) => jumpRef.current(id)),
+    [parsedSections]
+  );
+
   const plugin = useMemo<DIPlugin<unknown, BuilderHaloContext>>(
     () => ({
       id: "builder",
@@ -49,14 +73,15 @@ export function BuilderHalo({ label, sections, currentId = null, onJump }: Build
       priority: 20,
       center: <BuilderHaloLabel label={label} />,
       expandedViews: { sections: JumpToSectionView },
+      commands,
       accentColor: "var(--tint)",
       context: {
-        sections: JSON.parse(sectionsKey) as BuilderHaloSection[],
+        sections: parsedSections,
         currentId,
         onJump: (id: string) => jumpRef.current(id),
       },
     }),
-    [label, sectionsKey, currentId]
+    [label, parsedSections, commands, currentId]
   );
 
   useDIPlugin(plugin);

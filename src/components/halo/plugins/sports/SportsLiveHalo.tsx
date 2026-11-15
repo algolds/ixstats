@@ -8,8 +8,8 @@
  * the capsule with a live ticking scoreboard replayed deterministically from the match trace.
  */
 
-import React, { useEffect, useState } from "react";
-import { AntennaSignal as Radio } from "iconoir-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { AntennaSignal as Radio, Trophy } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { useDIPlugin } from "~/components/halo/plugin-context";
@@ -17,7 +17,7 @@ import { useVisibleRefetch } from "~/hooks/useVisibleRefetch";
 import { PreText } from "~/components/ui/pretext";
 import { computeLiveMatchState } from "~/lib/sports/live-match";
 import { HaloEmpty } from "~/components/halo/views/shared/HaloViewParts";
-import type { DIViewProps } from "~/components/halo/types";
+import type { DIViewProps, PluginCommand } from "~/components/halo/types";
 
 type LiveActivityMatch = RouterOutputs["sports"]["getLiveActivities"][number];
 
@@ -136,17 +136,53 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
   );
 }
 
+export function sportsLiveCommandsForMatch(
+  match: Pick<LiveActivityMatch, "leagueName" | "homeTeam" | "awayTeam">
+): PluginCommand[] {
+  return [
+    {
+      key: "watch-live",
+      title: `Watch live: ${shortFor(match.homeTeam)} vs ${shortFor(match.awayTeam)}`,
+      description: `${match.leagueName} · Live broadcast`,
+      keywords: [
+        "live",
+        "match",
+        "score",
+        "scoreboard",
+        "watch",
+        match.homeTeam.name.toLowerCase(),
+        match.awayTeam.name.toLowerCase(),
+        match.leagueName.toLowerCase(),
+      ],
+      icon: Radio,
+      pluginView: "sports-live",
+    },
+    {
+      key: "league-standings",
+      title: `Open ${match.leagueName} standings`,
+      description: "MyLeague table, fixtures, and results",
+      keywords: ["standings", "league", "myleague", match.leagueName.toLowerCase()],
+      icon: Trophy,
+      path: "/myleague",
+    },
+  ];
+}
+
 /** Registers the plugin for as long as it's mounted (i.e. while a match is live). */
 function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
-  const plugin = {
-    id: "sports-live",
-    priority: 100, // a live activity takes over the island, like iOS
-    center: <LivePill match={match} />,
-    expandedViews: { "sports-live": SportsLiveView },
-    accentColor: ACCENT,
-    badge: { color: ACCENT },
-    context: { match },
-  };
+  const plugin = useMemo(
+    () => ({
+      id: "sports-live",
+      priority: 100, // a live activity takes over the island, like iOS
+      center: <LivePill match={match} />,
+      expandedViews: { "sports-live": SportsLiveView },
+      commands: sportsLiveCommandsForMatch(match),
+      accentColor: ACCENT,
+      badge: { color: ACCENT },
+      context: { match },
+    }),
+    [match]
+  );
   useDIPlugin(plugin);
   return null;
 }
