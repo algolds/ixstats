@@ -1,6 +1,6 @@
 /**
- * CardsHub per-route PageHeader archetypes: My cards, Sets, Card market, and Explore cards,
- * with no duplicate route SegmentedControl or Vault back link, and inline MarketPane mode pills.
+ * CardsHub per-route PageHeader archetypes + in-page Facet SegmentedControl (`My cards | Sets | Market | Explore`),
+ * `Import deck` link, and inline MarketPane mode pills.
  */
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
@@ -127,17 +127,24 @@ beforeEach(() => {
   window.history.replaceState(null, "", "/vault/cards/market");
 });
 
-describe("CardsHub per-route PageHeader identity", () => {
-  it("renders route-specific headers and actions with no duplicate top route SegmentedControl or Vault back button", () => {
+describe("CardsHub per-route PageHeader identity and in-page SegmentedControl", () => {
+  it("renders route-specific headers, in-page Cards views SegmentedControl, and Import deck link", () => {
     const { rerender } = render(<CardsHub initialTab="mine" />);
     expect(screen.getByRole("heading", { level: 1, name: "My cards" })).toBeInTheDocument();
     expect(
       screen.getByText("Your personal binder, showcase pins, and duplicate copies.")
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Get packs" })).toHaveAttribute("href", "/vault/store");
+    expect(screen.getByRole("link", { name: "Import deck" })).toHaveAttribute(
+      "href",
+      "/vault/import"
+    );
     expect(screen.getByRole("button", { name: /list a card/i })).toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Mine" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+
+    const viewsSwitch = screen.getByRole("radiogroup", { name: "Cards views" });
+    expect(within(viewsSwitch).getByRole("radio", { name: "My cards" })).toBeChecked();
+    fireEvent.click(within(viewsSwitch).getByRole("radio", { name: "Sets" }));
+    expect(mockNavigate).toHaveBeenCalledWith("sets");
 
     rerender(<CardsHub initialTab="sets" />);
     expect(screen.getByRole("heading", { level: 1, name: "Sets" })).toBeInTheDocument();
@@ -145,7 +152,6 @@ describe("CardsHub per-route PageHeader identity", () => {
       screen.getByText("Season albums, regional series, and completion progress.")
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "New showcase" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
 
     rerender(<CardsHub initialTab="explore" />);
     expect(screen.getByRole("heading", { level: 1, name: "Explore cards" })).toBeInTheDocument();
@@ -153,7 +159,6 @@ describe("CardsHub per-route PageHeader identity", () => {
       screen.getByText("Complete reference index of every card minted across seasons and realms.")
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /suggest a card/i })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
   });
 
   it("renders Card market header, inline ActionPill mode switcher, single primary List a card CTA, and Filters trigger", () => {
@@ -167,7 +172,6 @@ describe("CardsHub per-route PageHeader identity", () => {
     expect(
       screen.getByText("Live player auctions, direct card trades, and wishlists.")
     ).toBeInTheDocument();
-    expect(screen.queryByRole("tab", { name: "Market" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
 
     const modeGroup = screen.getByRole("group", { name: "Market mode" });

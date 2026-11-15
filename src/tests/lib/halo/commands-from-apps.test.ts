@@ -6,15 +6,16 @@ import {
 } from "~/lib/halo/commands-from-apps";
 
 describe("commandsFromApps", () => {
-  it("lists no sign-in-gated app for a signed-out viewer", () => {
+  it("lists no sign-in-gated app or signed-in-only extra command for a signed-out viewer", () => {
     const signedOut = commandsFromApps({ signedIn: false, isAdmin: false });
     const paths = signedOut.map((entry) => entry.path);
     const gated = APPS.filter((app) => app.requiresAuth).map((app) => app.href);
     expect(gated.length).toBeGreaterThan(0);
     for (const href of gated) expect(paths).not.toContain(href);
+    expect(paths).not.toContain("/util/lorewards");
   });
 
-  it("derives unique routed destinations and system actions for non-admin and admin viewers", () => {
+  it("derives unique routed destinations (including consolidated Vault & Wiki deep links) and system actions", () => {
     const nonAdmin = commandsFromApps({
       signedIn: true,
       isAdmin: false,
@@ -39,10 +40,20 @@ describe("commandsFromApps", () => {
         "/mycountry/executive",
         "/maps",
         "/vault",
+        "/vault/cards/mine",
+        "/vault/cards/sets",
+        "/vault/cards/market",
+        "/vault/cards/explore",
+        "/vault/import",
         "/vault/store",
+        "/vault/achievements",
+        "/vault/achievements?tab=lorewards",
         "/leaderboards",
         "/wiki/Main_Page",
         "/wiki?create=true",
+        "/util/search",
+        "/util/categories",
+        "/util/lorewards",
         "/thinkpages",
         "/countries",
         "/realms",
@@ -55,6 +66,12 @@ describe("commandsFromApps", () => {
         "/settings",
       ])
     );
+
+    expect(nonAdmin.find((e) => e.path === "/vault/achievements?tab=lorewards")?.name).toBe(
+      "Lorewards"
+    );
+    expect(nonAdmin.find((e) => e.path === "/util/lorewards")?.name).toBe("Wiki Lorewards");
+
     expect(nonAdmin.map((e) => e.actionId).filter(Boolean)).toEqual(
       expect.arrayContaining([
         "daily-reward",
@@ -94,6 +111,9 @@ describe("commandsFromApps", () => {
     expect(paths.has("/exchange/portfolio")).toBe(false);
     expect(paths.has("/wiki/Main_Page")).toBe(false);
     expect(paths.has("/wiki?create=true")).toBe(false);
+    expect(paths.has("/util/search")).toBe(false);
+    expect(paths.has("/util/categories")).toBe(false);
+    expect(paths.has("/util/lorewards")).toBe(false);
     expect(paths.has("#random-wiki")).toBe(false);
     expect(paths.has("/help")).toBe(false);
   });

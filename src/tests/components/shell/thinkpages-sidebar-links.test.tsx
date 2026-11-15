@@ -4,29 +4,40 @@ import { AppSidebar } from "~/components/shell/AppSidebar";
 import { SourceList } from "~/components/shell/SourceList";
 import { getApp, getVisibleApps } from "~/lib/navigation/app-sections";
 
-describe("ThinkPages and Vault sidebar navigation", () => {
+beforeAll(() => {
+  globalThis.ResizeObserver ??= class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  } as never;
+});
+
+describe("Contextual sidebar disclosure and 1-click collapsed rail", () => {
   const visibleApps = getVisibleApps({ signedIn: true, isAdmin: false, forumModerator: true });
   const thinkpagesApp = visibleApps.find((a) => a.id === "thinkpages")!;
   const vaultApp = getApp("vault");
+  const wikiApp = getApp("wiki");
 
-  it("links ThinkPages directly to /thinkpages with no expand chevron or child rows when outside ThinkPages", () => {
+  it("hides child subtabs and expand chevrons across all apps when on an unrelated route", () => {
     render(
       <SourceList
         pathname="/dashboard"
         searchParams={null}
-        apps={[thinkpagesApp]}
-        expanded={new Set(["thinkpages"])}
+        apps={[thinkpagesApp, vaultApp, wikiApp]}
+        expanded={new Set(["thinkpages", "vault", "wiki"])}
         onToggle={() => {}}
         badges={{}}
       />
     );
 
-    const link = screen.getByRole("link", { name: "ThinkPages" });
-    expect(link).toHaveAttribute("href", "/thinkpages");
-    expect(screen.queryByRole("button", { name: /ThinkPages/i })).toBeNull();
+    expect(screen.getByRole("link", { name: "ThinkPages" })).toHaveAttribute("href", "/thinkpages");
+    expect(screen.getByRole("link", { name: "Vault" })).toHaveAttribute("href", "/vault");
+    expect(screen.getByRole("link", { name: "Wiki" })).toHaveAttribute("href", "/wiki");
+
+    expect(screen.queryByRole("button", { name: /Expand/i })).toBeNull();
     expect(screen.queryByRole("link", { name: "Forums" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "ThinkTanks" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "Accounts" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Wallet" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Main page" })).toBeNull();
   });
 
   it("discloses ThinkPages child rows once on a ThinkPages route", () => {
@@ -53,13 +64,13 @@ describe("ThinkPages and Vault sidebar navigation", () => {
     );
   });
 
-  it("renders collapsed rail ThinkPages as a direct link outside ThinkPages", () => {
+  it("renders every collapsed rail app icon as a 1-click direct link (no two-click Popover buttons)", () => {
     const { container } = render(
       <TooltipProvider>
         <AppSidebar
           pathname="/dashboard"
           searchParams={null}
-          apps={[thinkpagesApp]}
+          apps={[thinkpagesApp, vaultApp, wikiApp]}
           collapsed={true}
           onCollapsedChange={() => {}}
           expanded={new Set()}
@@ -71,52 +82,65 @@ describe("ThinkPages and Vault sidebar navigation", () => {
 
     const railNav = container.querySelector('nav[aria-label="Apps"]') as HTMLElement;
     expect(railNav).not.toBeNull();
-    const railLink = within(railNav).getByRole("link", { name: "ThinkPages" });
-    expect(railLink).toHaveAttribute("href", "/thinkpages");
-    expect(within(railNav).queryByRole("button", { name: "ThinkPages" })).toBeNull();
+    expect(within(railNav).getByRole("link", { name: "ThinkPages" })).toHaveAttribute(
+      "href",
+      "/thinkpages"
+    );
+    expect(within(railNav).getByRole("link", { name: "Vault" })).toHaveAttribute("href", "/vault");
+    expect(within(railNav).getByRole("link", { name: "Wiki" })).toHaveAttribute("href", "/wiki");
+    expect(within(railNav).queryAllByRole("button")).toHaveLength(0);
   });
 
-  it("lists all Vault destinations including Lorewards and grouped Cards routes in the sidebar", () => {
-    render(
+  it("lists the 5 right-sized Vault subtabs and highlights Cards / Achievements across consolidated child routes", () => {
+    const { rerender } = render(
       <SourceList
         pathname="/vault/achievements"
         searchParams={new URLSearchParams("tab=lorewards")}
         apps={[vaultApp]}
-        expanded={new Set(["vault:Cards"])}
+        expanded={new Set()}
         onToggle={() => {}}
         badges={{}}
       />
     );
 
     expect(screen.getByRole("link", { name: "Wallet" })).toHaveAttribute("href", "/vault");
+    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute(
+      "href",
+      "/vault/cards/mine"
+    );
     expect(screen.getByRole("link", { name: "Store" })).toHaveAttribute("href", "/vault/store");
-    expect(screen.getByRole("link", { name: "Achievements" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "Lorewards" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Achievements" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
     expect(screen.getByRole("link", { name: "Leaderboards" })).toHaveAttribute(
       "href",
       "/leaderboards"
     );
+    expect(screen.queryByRole("button", { name: /Daily reward/i })).toBeNull();
 
-    const cardsGroup = screen.getByRole("group", { name: "Cards" });
-    expect(within(cardsGroup).getByRole("link", { name: "My cards" })).toHaveAttribute(
-      "href",
-      "/vault/cards/mine"
+    rerender(
+      <SourceList
+        pathname="/vault/cards/sets"
+        searchParams={null}
+        apps={[vaultApp]}
+        expanded={new Set()}
+        onToggle={() => {}}
+        badges={{}}
+      />
     );
-    expect(within(cardsGroup).getByRole("link", { name: "Sets" })).toHaveAttribute(
-      "href",
-      "/vault/cards/sets"
+    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute("aria-current", "page");
+
+    rerender(
+      <SourceList
+        pathname="/vault/import"
+        searchParams={null}
+        apps={[vaultApp]}
+        expanded={new Set()}
+        onToggle={() => {}}
+        badges={{}}
+      />
     );
-    expect(within(cardsGroup).getByRole("link", { name: "Market" })).toHaveAttribute(
-      "href",
-      "/vault/cards/market"
-    );
-    expect(within(cardsGroup).getByRole("link", { name: "Explore" })).toHaveAttribute(
-      "href",
-      "/vault/cards/explore"
-    );
-    expect(within(cardsGroup).getByRole("link", { name: "Import deck" })).toHaveAttribute(
-      "href",
-      "/vault/import"
-    );
+    expect(screen.getByRole("link", { name: "Cards" })).toHaveAttribute("aria-current", "page");
   });
 });

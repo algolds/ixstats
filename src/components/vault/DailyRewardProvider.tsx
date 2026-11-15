@@ -4,8 +4,9 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { useAuth } from "@clerk/nextjs";
 import { Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
+import { cn } from "~/lib/utils/cn";
 import { DailyRewardDialog } from "./daily-reward/DailyRewardDialog";
 
 interface DailyRewardContextValue {
@@ -98,5 +99,31 @@ export function DailyRewardStatus({
         <span className="flex-1 text-left whitespace-nowrap">Daily reward</span>
       </Button>
     </div>
+  );
+}
+
+/** Compact inline `facet-gold` pill rendered inside `SidebarVaultCard` only while today's reward is claimable. */
+export function DailyRewardInlinePill() {
+  const { userId } = useAuth();
+  const { open } = useDailyRewardContext();
+  const { data: balanceData, isLoading } = api.vault.getBalance.useQuery(undefined, {
+    enabled: !!userId,
+  });
+
+  if (!userId || isLoading || !balanceData?.canClaimDailyBonus) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      data-slot="daily-reward-pill"
+      aria-label="Claim daily reward"
+      className={cn(
+        focusRing,
+        "facet-gold text-caption inline-flex h-6 shrink-0 cursor-pointer items-center rounded-full px-2.5 font-semibold whitespace-nowrap transition-opacity hover:opacity-90"
+      )}
+    >
+      Claim
+    </button>
   );
 }

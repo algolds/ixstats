@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Plus } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import { useCardHubTab } from "~/hooks/useCardHubTab";
 import { useCardSheet } from "~/hooks/useCardSheet";
 import { marketTabOf, STORE_PATH, type CardHubTab } from "~/lib/cards/hub-routes";
@@ -79,9 +80,16 @@ function hubHeaderAction(args: {
   return undefined;
 }
 
-/** Per-route Cards shell: My cards, Sets, Card market, and Explore cards, navigated from AppSidebar. */
+const CARDS_HUB_OPTIONS = [
+  { value: "mine", label: "My cards" },
+  { value: "sets", label: "Sets" },
+  { value: "market", label: "Market" },
+  { value: "explore", label: "Explore" },
+] as const satisfies ReadonlyArray<{ value: CardHubTab; label: string }>;
+
+/** Per-route Cards shell: My cards, Sets, Card market, and Explore cards, switched in place via SegmentedControl. */
 export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
-  const { tab } = useCardHubTab(initialTab);
+  const { tab, navigate } = useCardHubTab(initialTab);
   const sheet = useCardSheet();
   const params = useSearchParams();
   const param = (key: string) => params?.get(key) || null;
@@ -130,6 +138,18 @@ export function CardsHub({ initialTab }: { initialTab: CardHubTab }) {
           onSuggest: () => setParam("suggest", "1"),
         })}
       />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SegmentedControl
+          aria-label="Cards views"
+          size="sm"
+          value={tab}
+          onValueChange={navigate}
+          options={CARDS_HUB_OPTIONS}
+        />
+        <Button variant="secondary" size="sm" asChild>
+          <Link href="/vault/import">Import deck</Link>
+        </Button>
+      </div>
       {tab === "mine" && <MinePane onOpenCard={sheet.open} />}
       {tab === "sets" && (
         <SetsPane

@@ -26,26 +26,21 @@ import { WikiLogomark } from "./icons/WikiLogomark";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import {
   Activity,
-  Album,
   Bell,
   Bookmark,
   BookmarkBook,
-  BookStack,
   Cart,
   ChatBubble,
   ChatLines,
   CheckSquare,
   Clock,
   Coins,
-  Compass,
   Component,
   Cpu,
   Database,
-  Download,
   EditPencil,
   Folder,
   Gamepad,
-  Gift,
   Globe,
   Group,
   HelpCircle,
@@ -69,7 +64,6 @@ import {
   Settings,
   Shield,
   ShieldCheck,
-  Shop,
   Sparks,
   Terminal,
   Translate,
@@ -142,6 +136,14 @@ interface AppSection {
    * gated by the map: the page keeps its own premium preview for anyone who arrives by URL.
    */
   requires?: SectionRequirement;
+  /** Nation identity attributes (`COUNTRY_ATTRS`) written onto the link for `SystemContextMenu`. */
+  country?: CountryRowMeta;
+}
+
+export interface CountryRowMeta {
+  id?: string;
+  slug?: string;
+  name?: string;
 }
 
 /**
@@ -177,11 +179,6 @@ export interface AppDefinition {
   placement?: "main" | "footer";
   /** Sections are listed as top-level rows, always shown, with no app row to expand (Home). */
   inline?: true;
-  /**
-   * Sections appear only while the viewer is on a route belonging to this app; outside it the row
-   * navigates directly with no expand chevron (ThinkPages).
-   */
-  sectionsWhenCurrentOnly?: true;
 }
 
 /** The admin console's sections of one sidebar group: `[id, label, href, icon]` rows. */
@@ -252,68 +249,26 @@ export const APPS: readonly AppDefinition[] = [
     href: "/vault",
     icon: VaultLogomark,
     tint: "vault",
+    badge: "daily-reward",
     match: ["/vault", "/leaderboards"],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Wallet", href: "/vault", icon: Wallet, exact: true },
       {
-        id: "daily-reward",
-        label: "Daily reward",
-        href: "/vault",
-        icon: Gift,
-        action: "daily-reward",
-        badge: "daily-reward",
+        id: "cards",
+        label: "Cards",
+        href: "/vault/cards/mine",
+        icon: CardsLogomark,
+        match: ["/vault/cards", "/vault/import"],
       },
-      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
+      { id: "store", label: "Store", href: "/vault/store", icon: Cart, match: ["/vault/packs"] },
       {
         id: "achievements",
         label: "Achievements",
         href: "/vault/achievements",
         icon: Trophy,
-        exact: true,
-      },
-      {
-        id: "lorewards",
-        label: "Lorewards",
-        href: "/vault/achievements?tab=lorewards",
-        icon: Medal,
       },
       { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
-      {
-        id: "cards-mine",
-        label: "My cards",
-        href: "/vault/cards/mine",
-        icon: CardsLogomark,
-        group: "Cards",
-      },
-      {
-        id: "cards-sets",
-        label: "Sets",
-        href: "/vault/cards/sets",
-        icon: Album,
-        group: "Cards",
-      },
-      {
-        id: "cards-market",
-        label: "Market",
-        href: "/vault/cards/market",
-        icon: Shop,
-        group: "Cards",
-      },
-      {
-        id: "cards-explore",
-        label: "Explore",
-        href: "/vault/cards/explore",
-        icon: Compass,
-        group: "Cards",
-      },
-      {
-        id: "cards-import",
-        label: "Import deck",
-        href: "/vault/import",
-        icon: Download,
-        group: "Cards",
-      },
     ],
   },
   {
@@ -324,10 +279,8 @@ export const APPS: readonly AppDefinition[] = [
     tint: "wiki",
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
-    // WikiOS utilities live under /util. WikiOS has no rail of its own: search is a section here, and page creation
-    // and page tools live in the page header. Stash is a main row (it is too central to bury in Utilities, and it is
-    // also in the account menu); the rest of the tools (Random, Contributions, ...) open from the Utilities hub, and
-    // /blurbs stays in the app without a row.
+    // WikiOS utilities live under /util. Five contextual rows keep the sidebar calm while Search,
+    // Categories and Wiki Lorewards remain featured on /util and directly searchable in Halo (⌘K).
     sections: [
       {
         id: "main",
@@ -336,24 +289,6 @@ export const APPS: readonly AppDefinition[] = [
         icon: OpenBook,
         exact: true,
         match: ["/wiki/Main_Page"],
-      },
-      {
-        id: "search",
-        label: "Search",
-        href: "/util/search",
-        icon: Search,
-      },
-      {
-        id: "recent-changes",
-        label: "Recent changes",
-        href: "/util/recent-changes",
-        icon: Clock,
-      },
-      {
-        id: "categories",
-        label: "Categories",
-        href: "/util/categories",
-        icon: BookStack,
       },
       {
         id: "repository",
@@ -369,11 +304,10 @@ export const APPS: readonly AppDefinition[] = [
         requires: "signed-in",
       },
       {
-        id: "lorewards",
-        label: "Lorewards",
-        href: "/util/lorewards",
-        icon: Trophy,
-        requires: "signed-in",
+        id: "recent-changes",
+        label: "Recent changes",
+        href: "/util/recent-changes",
+        icon: Clock,
       },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
@@ -386,7 +320,6 @@ export const APPS: readonly AppDefinition[] = [
     href: FORUM_HOME,
     icon: ChatBubble,
     tint: "thinkpages",
-    sectionsWhenCurrentOnly: true,
     match: [FORUM_HOME, "/thinktanks", "/dashboard/accounts"],
     sections: [
       { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },
@@ -425,13 +358,6 @@ export const APPS: readonly AppDefinition[] = [
       // The viewer's realm's Nations tab: /countries resolves the active nation's realm and redirects there.
       { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
       { id: "explore", label: "Explore", href: "/realms", icon: Search, match: ["/r"] },
-      {
-        id: "realm-admin",
-        label: "Realm admin",
-        href: "/admin/realms",
-        icon: ShieldCheck,
-        requires: "admin",
-      },
     ],
   },
   {
@@ -463,6 +389,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/help", "/changelog"],
     navSetting: "showHelpTab",
     sections: [
+      { id: "getting-started", label: "Getting started", href: "/help", icon: HelpCircle },
       { id: "changelog", label: "What's new", href: "/changelog", icon: Clock },
       {
         id: "discord",
@@ -694,9 +621,15 @@ export function getApp(id: AppId): AppDefinition {
  */
 export function withCountryRows(
   apps: readonly AppDefinition[],
-  countryHref: string | undefined
+  countryHref: string | undefined,
+  countryMeta?: CountryRowMeta
 ): readonly AppDefinition[] {
   if (!countryHref) return apps;
+  const inferredSlug = normalizePath(countryHref).startsWith("/countries/")
+    ? decodeURIComponent(normalizePath(countryHref).slice("/countries/".length))
+    : undefined;
+  const resolvedCountry: CountryRowMeta | undefined =
+    countryMeta ?? (inferredSlug ? { slug: inferredSlug } : undefined);
   return apps.map((app) =>
     app.id === "mycountry"
       ? {
@@ -708,6 +641,7 @@ export function withCountryRows(
               label: "Public profile",
               href: countryHref,
               icon: ProfileCircle,
+              country: resolvedCountry,
             },
             {
               id: "editor",

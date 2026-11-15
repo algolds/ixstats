@@ -80,15 +80,15 @@ Update `VAULT_APP.sections` in `src/lib/navigation/app-sections.ts` to 5 peer de
 #### In-Page Promotions for Consolidated Vault Views
 
 1. **`CardsHub` (`src/components/vault/cards/CardsHub.tsx`):**
-   - Render a Facet `<SegmentedControl asTabs value={tab} onValueChange={navigate} size="sm" options={...} aria-label="Cards views" />` in the `PageHeader` toolbar (`data-app="vault"`) wired directly to `useCardHubTab`'s zero-reload `window.history.pushState` `navigate` callback:
+   - Render a Facet `<SegmentedControl value={tab} onValueChange={navigate} size="sm" options={...} aria-label="Cards views" />` in the `CardsHub` sub-bar beneath `PageHeader` (`data-app="vault"`) wired directly to `useCardHubTab`'s zero-reload `window.history.pushState` `navigate` callback:
      - `mine` → `"My cards"`
      - `sets` → `"Sets"`
      - `market` → `"Market"`
      - `explore` → `"Explore"`
-   - Render a secondary `<Button asChild variant="secondary" size="sm"><Link href="/vault/import">Import deck</Link></Button>` in `PageHeader` `actions` alongside existing tab-specific controls (e.g. `Quick list` on `Market`).
+   - Render a secondary `<Button asChild variant="secondary" size="sm"><Link href="/vault/import">Import deck</Link></Button>` alongside the `Cards views` switcher.
    - Extend `getActiveSectionId` (`src/lib/navigation/app-sections.ts`) with optional `matchPrefixes?: readonly string[]` on `NavSection` so `cards` (`href: "/vault/cards/mine"`, `matchPrefixes: ["/vault/cards", "/vault/import"]`) stays highlighted across `/vault/cards/mine`, `/vault/cards/sets`, `/vault/cards/market`, `/vault/cards/explore`, `/vault/cards/[cardId]`, and `/vault/import`.
 2. **`VaultAchievementsPage` (`src/app/vault/achievements/page.tsx`):**
-   - Add a Facet `<SegmentedControl asTabs value={tab} onValueChange={setTab} size="sm" aria-label="Achievement categories" />` in `PageHeader` `actions` (`Achievements` | `Lorewards`), updating `/vault/achievements` vs. `/vault/achievements?tab=lorewards` cleanly via router/history so `Lorewards` is 1 click inside `Achievements` without needing a dedicated sidebar subtab.
+   - Add a Facet `<SegmentedControl value={activeTab} onValueChange={...} size="sm" aria-label="Achievement categories" />` in `PageHeader` `actions` (`Achievements` | `Lorewards`), updating `/vault/achievements` vs. `/vault/achievements?tab=lorewards` cleanly via `router.replace` so `Lorewards` is 1 click inside `Achievements` without needing a dedicated sidebar subtab.
 
 ### 3.2 `Wiki` (`8` rows → `5` contextual subtabs)
 
@@ -106,10 +106,10 @@ Update `WIKI_APP.sections` in `src/lib/navigation/app-sections.ts` to 5 peer des
 
 ### 3.3 `Realms`, `Help`, `MyCountry` & `ThinkPages`
 
-- **`Realms` (`2` contextual subtabs):** `Browse realms` (`/realms`), `Create realm` (`/realms/create`). Remove the `adminOnly` `Realm admin` (`/admin/realms`) duplicate from `Realms` (canonical home remains `Admin → System → Realms`).
+- **`Realms` (`2` contextual subtabs):** `My realm` (`/countries`), `Explore` (`/realms`). Remove the `adminOnly` `Realm admin` (`/admin/realms`) duplicate from `Realms` (canonical home remains `Admin → System → Realms`).
 - **`Help` (`3` contextual subtabs when inside `/help` or `/changelog`):** `Getting started` (`/help`), `What's new` (`/changelog`), and external `Ixnay Discord` (`https://discord.gg/ixnay`, `external: true`). Match `/changelog` to `HELP_APP` (`extraPrefixes: ["/changelog"]`) so `What's new` highlights cleanly.
-- **`MyCountry` (`3` contextual subtabs when linked):** `Overview` (`/mycountry`), `Public profile` (`/countries/[slug]`), `Country editor` (`/mycountry/editor`), `Map editor` (`/mycountry/map-editor`) (`4` total via `withCountryRows`).
-- **`ThinkPages` (`4` contextual subtabs):** Unchanged (`Feed`, `Blurbs`, `Forum`, `Trending`).
+- **`MyCountry` (`3` contextual subtabs when linked):** `Public profile` (`/countries/[slug]`), `Country editor` (`/mycountry/editor`), `Map editor` (`/mycountry/map-editor`) via `withCountryRows` (plus `Dashboard` at `/mycountry` when unlinked).
+- **`ThinkPages` (`4` contextual subtabs):** Unchanged (`Forums`, `ThinkTanks`, `Accounts`, `Moderation`).
 
 ### 3.4 `⌘K` Command Palette Parity (`src/lib/halo/commands-from-apps.ts`)
 

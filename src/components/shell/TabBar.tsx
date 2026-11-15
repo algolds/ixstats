@@ -32,6 +32,7 @@ import {
   getVisibleAppForPath,
   splitTabBarApps,
   type AppDefinition,
+  type CountryRowMeta,
   type NavAction,
   type NavBadges,
   type NavIcon,
@@ -50,6 +51,7 @@ interface TabBarProps {
   badges: NavBadges;
   onAction?: (action: NavAction) => void;
   countryHref?: string;
+  countryMeta?: CountryRowMeta;
   backHref?: string;
   /** The account (`AccountMenu layout="sheet"`), listed at the end of the More sheet. */
   account?: React.ReactNode;
@@ -133,6 +135,7 @@ export function TabBar({
   badges,
   onAction,
   countryHref,
+  countryMeta,
   backHref,
   account,
   className,
@@ -227,6 +230,7 @@ export function TabBar({
                 badges={badges}
                 onAction={onAction}
                 countryHref={countryHref}
+                countryMeta={countryMeta}
                 backHref={backHref}
                 onNavigate={close}
               />

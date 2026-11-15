@@ -1,35 +1,13 @@
-import {
-  Bell,
-  BookmarkBook,
-  Building,
-  ChatBubble,
-  CheckCircle,
-  Coins,
-  DiceFive,
-  EditPencil,
-  Gift,
-  Globe,
-  HalfMoon,
-  LayoutLeft,
-  Map as MapIcon,
-  ProfileCircle,
-  RefreshDouble,
-  Settings,
-  Shield,
-  Shop,
-  SidebarCollapse,
-  SoundHigh,
-  User,
-} from "iconoir-react";
 import type { CommandCategory, CommandEntry } from "~/components/halo/halo-registry";
-import { MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import {
   getVisibleApps,
   withCountryRows,
   type AppDefinition,
   type AppVisibilityContext,
 } from "~/lib/navigation/app-sections";
-import { newThreadHref } from "~/lib/thinkpages-forum/links";
+import { EXTRA_HALO_COMMANDS, type ScopedExtraCommand } from "./extra-commands";
+
+export { EXTRA_HALO_COMMANDS, type ScopedExtraCommand };
 
 export type AppVisibilityInput = AppVisibilityContext & {
   countryHref?: string;
@@ -61,7 +39,7 @@ const APP_DEFAULT_CATEGORY: Record<AppId, CommandCategory> = {
 
 /**
  * Side metadata keyed by `app:<appId>` or `<appId>:<sectionId>`.
- * Keeps search prose and keywords out of the 885-line `app-sections.ts` table while letting any
+ * Keeps search prose and keywords out of `app-sections.ts` while letting any
  * newly added sidebar app or section surface automatically with sensible defaults.
  */
 export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
@@ -128,41 +106,16 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
     description: "Milestones, badges and Loreward trophies",
     keywords: ["trophies", "badges", "rewards", "lorewards", "quests", "achievements"],
   },
-  "vault:lorewards": {
-    name: "Lorewards",
-    description: "Loreward trophies and their progress",
-    keywords: ["lorewards", "trophies", "rewards", "lore", "progress", "medals"],
-  },
   "vault:leaderboards": {
     name: "Leaderboards",
     category: "Geography",
     description: "Rankings of a realm's nations by GDP, population and stability",
     keywords: ["rankings", "leaderboards", "top", "score", "economy", "gdp", "tier", "global"],
   },
-  "vault:cards-mine": {
+  "vault:cards": {
     name: "My cards",
     description: "Your cards, showcases and the card market",
     keywords: ["cards", "mine", "showcase", "binder", "inventory", "collection", "deck", "tcg"],
-  },
-  "vault:cards-sets": {
-    name: "Card sets",
-    description: "Your card sets and how far each one is complete",
-    keywords: ["sets", "album", "complete", "completion", "collection", "binder"],
-  },
-  "vault:cards-market": {
-    name: "Card market",
-    description: "Bid on, sell and trade cards",
-    keywords: ["market", "auction", "trade", "buy", "sell", "credits", "bids"],
-  },
-  "vault:cards-explore": {
-    name: "Explore cards",
-    description: "Every realm's cards, collected or not",
-    keywords: ["explore", "gallery", "lore", "cards", "realms", "catalogue"],
-  },
-  "vault:cards-import": {
-    name: "Import NationStates cards",
-    description: "Import the cards of a NationStates nation you own",
-    keywords: ["ns", "deck", "nationstates", "import", "cards"],
   },
   "wiki:main": {
     name: "Wiki main page",
@@ -170,20 +123,10 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
     description: "The Wiki knowledge base and articles",
     keywords: ["wiki", "encyclopedia", "articles", "lore", "reading", "docs"],
   },
-  "wiki:search": {
-    name: "Search the wiki",
-    description: "Find articles and pages across the wiki",
-    keywords: ["search wiki", "find article", "lookup", "articles", "search", "find page"],
-  },
   "wiki:recent-changes": {
     name: "Wiki recent changes",
     description: "Recent article edits, revisions and lore updates",
     keywords: ["history", "diffs", "edits", "recent", "activity", "log"],
-  },
-  "wiki:categories": {
-    name: "Wiki categories",
-    description: "Browse the wiki's article categories",
-    keywords: ["categories", "topics", "tags", "browse", "sections"],
   },
   "wiki:repository": {
     name: "Wiki repository",
@@ -194,11 +137,6 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
     name: "Stash",
     description: "Bookmarks and saved lore collections",
     keywords: ["stashes", "bookmarks", "saved", "reading list", "collections"],
-  },
-  "wiki:lorewards": {
-    name: "Wiki Lorewards",
-    description: "Loreward trophies earned through wiki contributions",
-    keywords: ["wiki lorewards", "lore", "writing", "trophies"],
   },
   "wiki:utilities": {
     name: "Wiki utilities",
@@ -262,7 +200,7 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
     description: "Manage your squad, tactics and club operations",
     keywords: ["myclub", "team", "squad", "players", "tactics", "club"],
   },
-  "app:help": {
+  "help:getting-started": {
     name: "Help",
     description: "Guides and answers to common questions",
     keywords: ["help", "guide", "support", "faq", "how to", "docs"],
@@ -283,293 +221,6 @@ export const NAV_COMMAND_META: Readonly<Record<string, NavCommandMeta>> = {
     keywords: ["admin", "cms", "management", "config", "owner", "staff"],
   },
 };
-
-export interface ScopedExtraCommand extends CommandEntry {
-  /** When set, included only if this sidebar app is visible to the viewer. */
-  parentAppId?: AppId;
-}
-
-/**
- * Hand-written commands that have no row in `APPS`: MyCountry's command-ribbon sections,
- * in-app deep links, and client-side system actions.
- */
-export const EXTRA_HALO_COMMANDS: readonly ScopedExtraCommand[] = [
-  // MyCountry command-ribbon sections (`APPS` leaves `mycountry.sections` empty)
-  {
-    name: "Executive and Directives",
-    path: "/mycountry/executive",
-    parentAppId: "mycountry",
-    icon: CheckCircle,
-    category: "Statecraft",
-    description: "Issue Directives and executive orders",
-    keywords: ["directives", "decrees", "orders", "executive", "council"],
-  },
-  {
-    name: "Country editor",
-    path: "/mycountry/editor",
-    parentAppId: "mycountry",
-    icon: EditPencil,
-    category: "Statecraft",
-    description: "Rename your nation and edit its flag, symbols, government and size",
-    keywords: [
-      "edit",
-      "rename",
-      "name",
-      "flag",
-      "symbols",
-      "identity",
-      "capital",
-      "language",
-      "government",
-      "institutions",
-      "population",
-    ],
-  },
-  {
-    name: "Embassies and diplomacy",
-    path: "/mycountry/diplomacy",
-    parentAppId: "mycountry",
-    icon: Globe,
-    category: "Statecraft",
-    description: "Manage embassies, pacts and treaties",
-    keywords: ["embassy", "treaties", "alliances", "ambassadors", "foreign policy", "diplomacy"],
-  },
-  {
-    name: "Defense and readiness",
-    path: "/mycountry/defense",
-    parentAppId: "mycountry",
-    icon: Shield,
-    category: "Statecraft",
-    description: "Force readiness, defense posture and military operations",
-    keywords: [
-      "military",
-      "army",
-      "navy",
-      "air force",
-      "war",
-      "defense",
-      "security",
-      "readiness",
-      "intel",
-      "recon",
-      "spy",
-      "signals",
-    ],
-  },
-  {
-    name: "Fiscal and economic policy",
-    path: "/mycountry/economy",
-    parentAppId: "mycountry",
-    icon: Coins,
-    category: "Statecraft",
-    description: "Budget allocation, tax rates and spending",
-    keywords: ["economy", "budget", "tax", "spending", "treasury", "revenue", "fiscal"],
-  },
-  {
-    name: "Legislature and elections",
-    path: "/mycountry/politics",
-    parentAppId: "mycountry",
-    icon: Building,
-    category: "Statecraft",
-    description: "Parliamentary seats, parties and election cycles",
-    keywords: ["politics", "parliament", "congress", "voting", "parties", "elections", "senate"],
-  },
-  {
-    name: "Map editor",
-    path: MYCOUNTRY_MAP_EDITOR_PATH,
-    parentAppId: "mycountry",
-    icon: MapIcon,
-    category: "Statecraft",
-    description: "Draw national boundaries and provincial subdivisions",
-    keywords: ["borders", "provinces", "claims", "geometry", "land", "territory", "map edit"],
-  },
-
-  // In-app / flow deep links not listed as top-level sidebar rows
-  {
-    name: "Passport",
-    path: "/@me",
-    parentAppId: "home",
-    icon: User,
-    category: "Community",
-    description: "Your public player passport, realms and showcased cards",
-    keywords: ["passport", "profile", "handle", "identity", "@me", "bio"],
-  },
-  {
-    name: "Found a nation",
-    path: "/builder",
-    icon: Building,
-    category: "Geography",
-    description: "Choose a kind of nation, name it and found it",
-    keywords: ["create", "builder", "found", "new nation", "wizard", "start nation"],
-  },
-  {
-    name: "Create wiki article",
-    path: "/wiki?create=true",
-    parentAppId: "wiki",
-    icon: EditPencil,
-    category: "Knowledge",
-    description: "Draft and publish a new article",
-    keywords: ["new article", "write", "publish", "author", "compose"],
-  },
-  {
-    name: "Saved posts",
-    path: "/dashboard/saved",
-    parentAppId: "home",
-    icon: BookmarkBook,
-    category: "Community",
-    description: "Feed posts you bookmarked",
-    keywords: ["saved", "bookmarks", "posts"],
-  },
-  {
-    name: "Start forum thread",
-    path: newThreadHref({ key: "general" }),
-    parentAppId: "thinkpages",
-    icon: EditPencil,
-    category: "Community",
-    description: "Create a new topic in the forum",
-    keywords: ["new thread", "post", "topic", "create thread"],
-  },
-  {
-    name: "Exchange markets",
-    path: "/exchange/markets",
-    parentAppId: "labs",
-    icon: Shop,
-    category: "Labs",
-    description: "Prices and listings on the exchange",
-    keywords: ["markets", "prices", "listings", "exchange", "trading"],
-  },
-  {
-    name: "Exchange portfolio",
-    path: "/exchange/portfolio",
-    parentAppId: "labs",
-    icon: Coins,
-    category: "Labs",
-    description: "Your holdings on the exchange",
-    keywords: ["portfolio", "holdings", "stakes", "investments", "exchange"],
-  },
-
-  // System & Halo actions (non-route actions executed by Halo or shell)
-  {
-    name: "Account",
-    path: "#mycountry",
-    parentAppId: "home",
-    icon: ProfileCircle,
-    category: "System",
-    description: "Open the Halo Account panel for MyCountry and Passport",
-    keywords: ["account", "panel", "halo", "mycountry", "passport"],
-  },
-  {
-    name: "Notifications",
-    path: "#notifications",
-    parentAppId: "home",
-    icon: Bell,
-    category: "System",
-    description: "Open notifications and the diplomatic inbox",
-    keywords: ["notifications", "alerts", "inbox", "bell"],
-  },
-  {
-    name: "Quick settings",
-    path: "#settings",
-    icon: Settings,
-    category: "System",
-    description: "Open Halo appearance, sound and reader preferences",
-    keywords: ["quick settings", "preferences", "appearance", "halo settings"],
-  },
-  {
-    name: "Claim daily reward",
-    path: "#daily-reward",
-    parentAppId: "vault",
-    icon: Gift,
-    category: "Vault",
-    actionId: "daily-reward",
-    description: "Open today's Vault streak and daily reward",
-    keywords: ["daily", "reward", "streak", "bonus", "claim", "ixc"],
-  },
-  {
-    name: "Random country",
-    path: "#random-country",
-    icon: DiceFive,
-    category: "Geography",
-    actionId: "random-country",
-    description: "Open a random nation's profile",
-    keywords: ["random", "surprise", "nation"],
-  },
-  {
-    name: "Random wiki article",
-    path: "#random-wiki",
-    parentAppId: "wiki",
-    icon: DiceFive,
-    category: "Knowledge",
-    actionId: "random-wiki",
-    description: "Jump to a random nation or lore article",
-    keywords: ["shuffle", "random", "surprise", "dice", "random wiki"],
-  },
-  {
-    name: "Refresh data",
-    path: "#reload-data",
-    icon: RefreshDouble,
-    category: "System",
-    actionId: "reload-data",
-    description: "Reload the latest data",
-    keywords: ["refresh", "reload", "sync"],
-  },
-  {
-    name: "Toggle sidebar",
-    path: "#toggle-sidebar",
-    icon: SidebarCollapse,
-    category: "System",
-    actionId: "toggle-sidebar",
-    description: "Collapse or expand the navigation sidebar",
-    keywords: ["sidebar", "collapse", "expand", "navigation", "rail"],
-  },
-  {
-    name: "Toggle dark or light theme",
-    path: "#toggle-theme",
-    icon: HalfMoon,
-    category: "System",
-    actionId: "toggle-theme",
-    description: "Switch between dark, light and system appearance",
-    keywords: ["theme", "dark mode", "light mode", "appearance", "color"],
-  },
-  {
-    name: "Toggle sound effects",
-    path: "#toggle-sound",
-    icon: SoundHigh,
-    category: "System",
-    actionId: "toggle-sound",
-    description: "Turn interface sound effects on or off",
-    keywords: ["sound", "audio", "sfx", "mute", "unmute", "volume", "chime"],
-  },
-  {
-    name: "Toggle compact layout",
-    path: "#toggle-compact",
-    icon: LayoutLeft,
-    category: "System",
-    actionId: "toggle-compact",
-    description: "Switch between compact and standard spacing",
-    keywords: ["compact", "dense", "layout", "spacing", "mode"],
-  },
-  {
-    name: "Mark all notifications read",
-    path: "#mark-all-read",
-    parentAppId: "home",
-    icon: CheckCircle,
-    category: "System",
-    actionId: "mark-all-read",
-    description: "Clear all unread notification and message badges",
-    keywords: ["read all", "clear notifications", "dismiss alerts", "inbox clean"],
-  },
-  {
-    name: "Send feedback",
-    path: "#open-feedback",
-    parentAppId: "home",
-    icon: ChatBubble,
-    category: "System",
-    actionId: "open-feedback",
-    description: "Report an issue or share product feedback",
-    keywords: ["feedback", "bug", "report", "suggestion", "support"],
-  },
-];
 
 type Section = AppDefinition["sections"][number];
 
@@ -652,9 +303,11 @@ export function commandsFromVisibleApps(
   }
 
   if (includeExtras) {
+    const signedIn = visibleIds.has("home");
     for (const extra of EXTRA_HALO_COMMANDS) {
       if (extra.parentAppId && !visibleIds.has(extra.parentAppId)) continue;
-      const { parentAppId: _parentAppId, ...command } = extra;
+      if (extra.requiresSignedIn && !signedIn) continue;
+      const { parentAppId: _parentAppId, requiresSignedIn: _requiresSignedIn, ...command } = extra;
       pushUnique(command);
     }
   }

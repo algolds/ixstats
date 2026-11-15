@@ -126,6 +126,10 @@ export function FacetShell() {
   // Shares AccountMenu's queries; MyCountry's profile and editor buttons appear once it answers.
   const { country } = useUserCountry();
   const countryHref = hydrated && country ? getNationUrl(country.name) : undefined;
+  const countryMeta =
+    hydrated && country
+      ? { id: country.id, slug: country.slug ?? undefined, name: country.name }
+      : undefined;
   const navSettings = navigationSettings as NavigationVisibilitySettings | undefined;
   const apps = getVisibleApps(
     hydrated
@@ -142,7 +146,8 @@ export function FacetShell() {
       : { signedIn: false, isAdmin: false }
   );
   // Search lists exactly what the sidebar shows this viewer, plus the nation's profile and editor rows.
-  const searchApps = withCountryRows(apps, countryHref);
+  const searchApps = withCountryRows(apps, countryHref, countryMeta);
+  const openFeedback = () => setFeedbackOpen(true);
 
   return (
     <>
@@ -159,18 +164,13 @@ export function FacetShell() {
             badges={badges}
             onAction={onAction}
             countryHref={countryHref}
+            countryMeta={countryMeta}
             backHref={backHref}
             signedIn={signedIn}
-            onOpenFeedback={() => setFeedbackOpen(true)}
-            vaultCard={
-              signedIn ? (
-                <SidebarVaultCard
-                  expanded={expanded.has("vault-card")}
-                  onToggle={() => toggle("vault-card")}
-                />
-              ) : undefined
+            vaultCard={signedIn ? <SidebarVaultCard /> : undefined}
+            account={
+              <AccountMenu layout="sidebar" collapsed={collapsed} onOpenFeedback={openFeedback} />
             }
-            account={<AccountMenu layout="sidebar" collapsed={collapsed} />}
           />
           <TabBar
             pathname={pathname}
@@ -181,8 +181,9 @@ export function FacetShell() {
             badges={badges}
             onAction={onAction}
             countryHref={countryHref}
+            countryMeta={countryMeta}
             backHref={backHref}
-            account={<AccountMenu layout="sheet" />}
+            account={<AccountMenu layout="sheet" onOpenFeedback={openFeedback} />}
           />
         </>
       )}

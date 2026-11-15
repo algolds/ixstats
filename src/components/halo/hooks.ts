@@ -409,10 +409,18 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     }
   });
 
+  const onOpenHaloMode = useEffectEvent((e: Event) => {
+    const customEvent = e as CustomEvent<ViewMode>;
+    if (!customEvent.detail) return;
+    switchMode(customEvent.detail);
+  });
+
   useEffect(() => {
     window.addEventListener("ix:halo-tour-step", onTourStep);
+    window.addEventListener("ix:open-halo-mode", onOpenHaloMode);
     return () => {
       window.removeEventListener("ix:halo-tour-step", onTourStep);
+      window.removeEventListener("ix:open-halo-mode", onOpenHaloMode);
     };
   }, []);
 
