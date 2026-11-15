@@ -24,16 +24,22 @@ export interface BuilderHaloProps {
   onJump: (id: string) => void;
 }
 
-export function builderCommandsForSections(
-  sections: readonly BuilderHaloSection[],
-  onJump: (id: string) => void
-): PluginCommand[] {
-  return sections.map((section) => ({
+export function builderCommandMeta(section: BuilderHaloSection): Omit<PluginCommand, "run"> {
+  return {
     key: `jump-${section.id}`,
     title: `Jump to ${section.label}`,
     description: section.description ?? "Jump to this section on the current page",
     keywords: ["jump", "section", section.id, ...(section.keywords ?? [])],
     icon: List,
+  };
+}
+
+export function builderCommandsForSections(
+  sections: readonly BuilderHaloSection[],
+  onJump: (id: string) => void
+): PluginCommand[] {
+  return sections.map((section) => ({
+    ...builderCommandMeta(section),
     run: () => onJump(section.id),
   }));
 }
@@ -61,10 +67,17 @@ export function BuilderHalo({ label, sections, currentId = null, onJump }: Build
     () => JSON.parse(sectionsKey) as BuilderHaloSection[],
     [sectionsKey]
   );
-  const commands = useMemo(
-    () => builderCommandsForSections(parsedSections, (id: string) => jumpRef.current(id)),
-    [parsedSections]
-  );
+  const commands = useMemo(() => {
+    const out: PluginCommand[] = [];
+    for (let i = 0; i < parsedSections.length; i++) {
+      const section = parsedSections[i]!;
+      out[i] = {
+        ...builderCommandMeta(section),
+        run: () => jumpRef.current(section.id),
+      };
+    }
+    return out;
+  }, [parsedSections]);
 
   const plugin = useMemo<DIPlugin<unknown, BuilderHaloContext>>(
     () => ({

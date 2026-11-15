@@ -7,7 +7,7 @@
  * WikiNarratorView, WikiView, and WikiProfileView as dedicated expanded views.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { List, ProfileCircle, SoundHigh } from "iconoir-react";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -284,15 +284,8 @@ export function WikiHalo() {
     (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
   );
 
-  const actionsRef = useRef({ navigateToSection, narratorActions, isPlaying });
-  useEffect(() => {
-    actionsRef.current = { navigateToSection, narratorActions, isPlaying };
-  }, [navigateToSection, narratorActions, isPlaying]);
-
   const tocKey = JSON.stringify(
-    (tocEntries ?? [])
-      .filter((e) => e.level <= 3)
-      .map((e) => ({ id: e.id, text: e.text }))
+    (tocEntries ?? []).filter((e) => e.level <= 3).map((e) => ({ id: e.id, text: e.text }))
   );
 
   const accent = wikiAccent(themeColors);
@@ -320,17 +313,26 @@ export function WikiHalo() {
         toc: parsedToc,
         canNarrate,
         isPlaying,
-        onJumpSection: (id: string) => actionsRef.current.navigateToSection?.(id),
+        onJumpSection: navigateToSection,
         onToggleNarrator: () => {
-          const cur = actionsRef.current;
-          if (!cur.narratorActions) return;
-          if (cur.isPlaying) cur.narratorActions.pause();
-          else cur.narratorActions.play();
+          if (!narratorActions) return;
+          if (isPlaying) narratorActions.pause();
+          else narratorActions.play();
         },
       }),
       accentColor: accent,
     };
-  }, [articleTitle, hasNarratorAccess, canNarrate, isPlaying, isNarrating, accent, tocKey]);
+  }, [
+    articleTitle,
+    hasNarratorAccess,
+    canNarrate,
+    isPlaying,
+    isNarrating,
+    accent,
+    tocKey,
+    navigateToSection,
+    narratorActions,
+  ]);
 
   useDIPlugin(plugin);
   return null;
