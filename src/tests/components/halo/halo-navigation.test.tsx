@@ -2,6 +2,7 @@
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { HaloProvider, SIZE_PRESETS } from "~/components/halo/HaloPrimitives";
+import { MyCountryActionsView } from "~/components/halo/plugins/mycountry/views/MyCountryActionsView";
 import { MyCountryView } from "~/components/halo/plugins/mycountry/views/MyCountryView";
 import { NotificationsView } from "~/components/halo/views/NotificationsView";
 import { SettingsView } from "~/components/halo/views/SettingsView";
@@ -190,6 +191,17 @@ describe("Halo views router navigation (Step 3)", () => {
     mockPush.mockReset();
     onClose.mockReset();
     render(<MyCountryView onClose={onClose} />);
+    fireEvent.click(screen.getByRole("button", { name: /Diplomacy/i }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(mockPush).toHaveBeenCalledWith("/mycountry/diplomacy");
+  });
+});
+
+describe("MyCountryActionsView router navigation (Step 4)", () => {
+  it("navigates quick actions via router.push without synthetic PopStateEvent", () => {
+    const onClose = jest.fn();
+    render(<MyCountryActionsView onClose={onClose} />);
+
     fireEvent.click(screen.getByRole("button", { name: /Diplomacy/i }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(mockPush).toHaveBeenCalledWith("/mycountry/diplomacy");

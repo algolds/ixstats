@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Crown, Globe, Shield, Xmark as X, Hammer as Gavel } from "iconoir-react";
-import { withBasePath } from "~/lib/base-path";
-import { createAbsoluteUrl, cn } from "~/lib/utils";
+import { navigateWithBasePath } from "~/lib/base-path";
+import { cn } from "~/lib/utils";
 import { PreText } from "~/components/ui/pretext";
 import { motion } from "motion/react";
 import type { DIViewProps } from "~/components/halo/types";
@@ -13,21 +13,12 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 
 export function MyCountryActionsView({ onClose }: DIViewProps) {
-  React.useEffect(() => {}, []);
+  const router = useRouter();
 
-  const navigateToSection = useCallback(
-    (section: string) => {
-      onClose();
-      const href = section === "overview" ? "/mycountry" : `/mycountry/${section}`;
-      if (typeof window !== "undefined" && window.location.pathname.includes("/mycountry")) {
-        window.history.pushState(null, "", withBasePath(href));
-        window.dispatchEvent(new PopStateEvent("popstate"));
-      } else {
-        window.location.href = createAbsoluteUrl(href);
-      }
-    },
-    [onClose]
-  );
+  const navigateToSection = (section: string) => {
+    onClose();
+    navigateWithBasePath(section === "overview" ? "/mycountry" : `/mycountry/${section}`, router);
+  };
 
   const quickActions = [
     {
