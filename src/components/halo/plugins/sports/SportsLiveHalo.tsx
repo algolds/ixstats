@@ -8,7 +8,7 @@
  * the capsule with a live ticking scoreboard replayed deterministically from the match trace.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { AntennaSignal as Radio } from "iconoir-react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
@@ -28,27 +28,29 @@ function shortFor(t: { name: string; shortName?: string | null }): string {
 
 /** Recompute live state once per second off the real clock. */
 function useLiveMatchState(match: LiveActivityMatch | null) {
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const matchId = match?.matchId;
   useEffect(() => {
-    // oxlint-disable-next-line
-    if (!match) return;
-    const id = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, [match?.matchId]);
+    if (matchId === undefined) return;
+    const tick = () => setNow(Date.now());
+    // Catch up at once: the clock sat idle while no match was live.
+    const first = setTimeout(tick, 0);
+    const id = setInterval(tick, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(id);
+    };
+  }, [matchId]);
 
-  return useMemo(() => {
-    if (!match) return null;
-    return computeLiveMatchState({
-      trace: match.trace,
-      resolvedIxTime: match.resolvedIxTime,
-      nowMs: Date.now(),
-      windowMs: match.windowMs,
-      finalHomeScore: match.finalHomeScore,
-      finalAwayScore: match.finalAwayScore,
-    });
-    // tick drives the recompute
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match, tick]);
+  if (!match) return null;
+  return computeLiveMatchState({
+    trace: match.trace,
+    resolvedIxTime: match.resolvedIxTime,
+    nowMs: now,
+    windowMs: match.windowMs,
+    finalHomeScore: match.finalHomeScore,
+    finalAwayScore: match.finalAwayScore,
+  });
 }
 
 function LivePill({ match }: { match: LiveActivityMatch }) {
@@ -138,19 +140,16 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
 
 /** Registers the plugin for as long as it's mounted (i.e. while a match is live). */
 function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
-  const plugin = useMemo(
-    () => ({
-      id: "sports-live",
-      priority: 100, // a live activity takes over the island, like iOS
-      center: <LivePill match={match} />,
-      expandedViews: { "sports-live": SportsLiveView },
-      accentColor: ACCENT,
-      stickyLabel: "Live",
-      badge: { color: ACCENT },
-      context: { match },
-    }),
-    [match]
-  );
+  const plugin = {
+    id: "sports-live",
+    priority: 100, // a live activity takes over the island, like iOS
+    center: <LivePill match={match} />,
+    expandedViews: { "sports-live": SportsLiveView },
+    accentColor: ACCENT,
+    stickyLabel: "Live",
+    badge: { color: ACCENT },
+    context: { match },
+  };
   useDIPlugin(plugin);
   return null;
 }

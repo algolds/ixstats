@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "~/components/ui/button";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { nextTheme, useTheme } from "~/context/theme-context";
@@ -40,6 +40,16 @@ import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-lis
 
 const NEXT_THEME_NAME = { light: "light", dark: "dark", system: "automatic" } as const;
 
+/** Invalidation is kept out of the component body: the React Compiler skips components with `finally`. */
+async function refreshAll(utils: ReturnType<typeof api.useUtils>) {
+  try {
+    await Promise.allSettled([utils.countries.invalidate(), utils.notifications.invalidate()]);
+  } catch (error) {
+    console.error("Refresh failed:", error);
+    soundCues.error();
+  }
+}
+
 function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const router = useRouter();
   const { user, isLoaded, isSignedIn } = useUser();
@@ -54,13 +64,10 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
   const { setSize } = useHaloSize();
   const [morePrefsExpanded, setMorePrefsExpanded] = useState(false);
 
-  const handleToggleMorePrefs = useCallback(
-    (expanded: boolean) => {
-      setMorePrefsExpanded(expanded);
-      setSize(expanded ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM);
-    },
-    [setSize]
-  );
+  const handleToggleMorePrefs = (expanded: boolean) => {
+    setMorePrefsExpanded(expanded);
+    setSize(expanded ? SIZE_PRESETS.ULTRA : SIZE_PRESETS.MEDIUM);
+  };
 
   // Clean up size on unmount
   useEffect(() => {
@@ -80,16 +87,9 @@ function SettingsViewComponent({ onClose }: SettingsViewProps) {
 
   const utils = api.useUtils();
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setIsRefreshing(true);
-    try {
-      await Promise.allSettled([utils.countries.invalidate(), utils.notifications.invalidate()]);
-    } catch (error) {
-      console.error("Refresh failed:", error);
-      soundCues.error();
-    } finally {
-      setIsRefreshing(false);
-    }
+    void refreshAll(utils).finally(() => setIsRefreshing(false));
   };
 
   if (!isLoaded) {
