@@ -1,10 +1,22 @@
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
 import dynamic from "next/dynamic";
-import type { ExpandedViewProps, DIPlugin } from "../types";
+import type { ExpandedViewProps, DIPlugin, ViewMode } from "../types";
 import { Button } from "~/components/ui/button";
 import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
 import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
+
+function dialogLabelForMode(mode: ViewMode, activePlugin?: DIPlugin | null): string {
+  if (mode === "search") return "Search";
+  if (mode === "notifications") return "Notifications and messages";
+  if (mode === "settings") return "Quick settings";
+  if (mode === "mycountry") return "Account";
+  if (mode.startsWith("plugin:")) {
+    const raw = activePlugin?.id || mode.slice(7);
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Plugin";
+  }
+  return "Halo";
+}
 
 // The views are not needed until the Halo opens, so each is its own chunk fetched then; the fallback
 // keeps the island's height stable while the chunk loads.
@@ -55,7 +67,32 @@ export function ExpandedView({
 
   return (
     <div
-      className="relative max-h-[80vh] w-full overflow-y-auto text-left"
+      id="halo-panel"
+      role="dialog"
+      aria-modal="false"
+      aria-label={dialogLabelForMode(mode, activePlugin)}
+      tabIndex={-1}
+      ref={(el) => {
+        if (
+          el &&
+          !el.contains(document.activeElement) &&
+          !document.activeElement?.closest('[data-slot="virtual-anchor-popover"]')
+        ) {
+          el.focus({ preventScroll: true });
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !e.defaultPrevented) {
+          e.preventDefault();
+          if (mode === "search" && searchQuery) {
+            setSearchQuery("");
+            setSearchFilter("all");
+          } else {
+            onClose();
+          }
+        }
+      }}
+      className="relative max-h-[80vh] w-full overflow-y-auto text-left outline-none"
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
