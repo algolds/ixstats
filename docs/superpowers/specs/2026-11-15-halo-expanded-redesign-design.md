@@ -1,6 +1,6 @@
 # Halo expanded redesign: Nation and Passport, on Lens
 
-**Date:** 2026-11-15 · **Status:** design, awaiting owner approval · **Branch base:** `rose-garden` (`fb18a868a`)
+**Date:** 2026-11-15 · **Status:** approved, implemented · **Branch base:** `rose-garden` (`fb18a868a`)
 
 ## Intent
 

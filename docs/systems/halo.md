@@ -4,7 +4,7 @@ Halo is the contextual floating island and command palette for IxStates, providi
 
 ## What Halo is
 
-`ShellHalo` mounts Halo top-centre above the content column (`left: var(--shell-sidebar-width)`, `right: var(--shell-inspector-width)`), leaving primary navigation to `AppSidebar` and `TabBar`. In its collapsed pill it shows the IxTime clock, greeting or active plugin breadcrumb, navigation loading feedback, and triggers for Search, Notifications, Settings, and the user's country view. Expanding Halo morphs the chrome capsule into a non-modal dialog (`role="dialog"`, `aria-modal="false"`) for built-in views or route-registered plugin views. Halo hides itself on `/maps`, where `MapDynamicIsland` owns the floating map controls.
+`ShellHalo` mounts Halo top-centre above the content column (`left: var(--shell-sidebar-width)`, `right: var(--shell-inspector-width)`), leaving primary navigation to `AppSidebar` and `TabBar`. In its collapsed pill it shows the IxTime clock, greeting or active plugin breadcrumb, navigation loading feedback, and triggers for Search, Notifications, Settings, and the viewer's Account panel (`"mycountry"` mode). Expanding Halo morphs the frosted Lens capsule (`facet-lens facet-lens-frosted`) into a non-modal dialog (`role="dialog"`, `aria-modal="false"`) whose sections sit on solid wells (`HaloWell`) across built-in views and route-registered plugin views. Halo hides itself on `/maps`, where `MapDynamicIsland` owns the floating map controls.
 
 ## Versions
 
@@ -23,6 +23,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/HaloTourContext.tsx`: Guided tour step state and custom event dispatch for Halo walkthroughs
 - `src/components/halo/HaloTourTooltip.tsx`: Anchored onboarding tooltip callout with skip and next controls
 - `src/components/halo/country-actions.ts`: Shared `COUNTRY_ACTIONS` table and `countryProfilePath` helper used across country views
+- `src/components/halo/halo-material.ts`: `HaloMaterial`, `useHaloMaterial`, `setHaloMaterial`, `ISLAND_MATERIAL`, and `WELL_MATERIAL` helpers for the Lens island and admin material comparison toggle
 - `src/components/halo/halo-registry.ts`: Command types, `CORE_FEATURES`, and `commandsFor` wrapper over `commandsFromApps`
 - `src/components/halo/hooks.ts`: `useDynamicIslandState` hook wiring `haloReducer`, debounced queries, `searchCatalog`, and global shortcuts
 - `src/components/halo/index.tsx`: `CommandPalette` root component, dialog focus management, outside-pointer dismiss, and size sync
@@ -35,8 +36,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/plugins/mycountry/MyCountryHalo.tsx`: Plugin for `/mycountry` routes registering quick country actions
 - `src/components/halo/plugins/mycountry/index.ts`: Barrel export for `MyCountryHalo` and MyCountry Halo views
 - `src/components/halo/plugins/mycountry/views/MyCountryActionsView.tsx`: Quick-action grid for Diplomacy, Executive, and Defense
-- `src/components/halo/plugins/mycountry/views/MyCountryView.tsx`: Account and nation summary card, KPI toggles, and country actions grid
-- `src/components/halo/plugins/mycountry/views/index.ts`: Barrel export for `MyCountryView` and `MyCountryActionsView`
+- `src/components/halo/plugins/mycountry/views/index.ts`: Barrel export for `MyCountryActionsView`
 - `src/components/halo/plugins/sports/SportsLiveHalo.tsx`: Live match scoreboard pill and expanded broadcast view
 - `src/components/halo/plugins/sports/index.ts`: Barrel export for `SportsLiveHalo`
 - `src/components/halo/plugins/wiki/WikiHalo.tsx`: Wiki article breadcrumb, section jump popover, narrator controls, and lazy view registration
@@ -55,18 +55,22 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/presets.ts`: Capsule `SizePresets` union, `SIZE_PRESETS`, and `DynamicIslandSizePresets` geometry table
 - `src/components/halo/types.ts`: `DIPlugin`, `DIViewProps`, `ViewMode`, `SearchFilter`, `SearchResult`, and view prop interfaces
 - `src/components/halo/views/CompactView.tsx`: Collapsed pill with center button, `pluginCenterActions` slot, toast peek, and right action rail
-- `src/components/halo/views/ExpandedView.tsx`: Lazy-loaded view router (`next/dynamic`) switching built-in and `plugin:*` views
-- `src/components/halo/views/NavTray.tsx`: Secondary quick-navigation popover tray derived from `getVisibleApps` and `TAB_BAR_PRIORITY`
-- `src/components/halo/views/NotificationsView.tsx`: Alert and direct-message inbox tray with unread counts, grouping, and swipe rows
+- `src/components/halo/views/ExpandedView.tsx`: Lazy-loaded view router (`next/dynamic`) switching built-in (`SearchView`, `NotificationsView`, `SettingsView`, `AccountView`) and `plugin:*` views
+- `src/components/halo/views/NavTray.tsx`: Secondary quick-navigation popover tray derived from `getVisibleApps` and `TAB_BAR_PRIORITY` on `FacetMaterial` + `HaloWell`
+- `src/components/halo/views/NotificationsView.tsx`: Alert and direct-message inbox tray with pinned pending national issues (`PendingIssuesRow`), unread counts, grouping, and swipe rows
 - `src/components/halo/views/SearchView.tsx`: Accessible combobox/listbox command palette and search view
-- `src/components/halo/views/SettingsView.tsx`: Quick settings panel using `FacetList`/`FacetRow` for appearance, sound, and Wiki reader preferences
+- `src/components/halo/views/SettingsView.tsx`: Quick settings panel on `HaloWell`s for appearance, sound, admin Halo material comparison, account settings, and Wiki reader preferences
+- `src/components/halo/views/account/AccountView.tsx`: Expanded account panel (`"mycountry"` mode) switching between `NationSide` and `PassportSide` with remembered side in `localStorage`
+- `src/components/halo/views/account/NationSide.tsx`: Shared `PosterHeader`, `VitalityStrip`, `EditNationMenu`, `ShareCountryButton`, 4-tile `ManageGrid`, and `OpenIn` for the viewer's nation
+- `src/components/halo/views/account/PassportSide.tsx`: Shared `PassportCompactFace` (`ixnayid.getMyPassportCard`), `NationSwitcher`, Wiki drafts, account shortcuts, and Sign out
 - `src/components/halo/views/compact/HaloIconButton.tsx`: Compact pill icon button wrapping `Button` with tooltip and optional count dot
 - `src/components/halo/views/compact/NarratorProgress.tsx`: Compact pill narrator progress ring
 - `src/components/halo/views/index.ts`: Barrel export for `CompactView` and `ExpandedView`
 - `src/components/halo/views/settings/SettingsControls.tsx`: `useLocalPref`, `ToggleSwitch`, and `SectionLabel` helpers for `SettingsView`
-- `src/components/halo/views/shared/HaloViewParts.tsx`: Shared `HaloViewHeader`, `HaloCloseButton`, and `HaloEmpty` primitives
+- `src/components/halo/views/shared/HaloViewParts.tsx`: Shared `HaloViewHeader`, `HaloCloseButton`, `HaloWell`, and `HaloEmpty` primitives
 - `src/components/halo/views/tray/MessageTrayItem.tsx`: Swipeable conversation row in the Messages tab of `NotificationsView`
 - `src/components/halo/views/tray/NotificationRow.tsx`: Swipeable alert row with expandable details in `NotificationsView`
+- `src/components/halo/views/tray/PendingIssuesRow.tsx`: Pinned non-swipeable row for pending national issues (`api.nationalIssues.getPendingCount`) routing to `/mycountry/executive`
 - `src/components/halo/views/tray/types.ts`: Notification item types, relative-time formatter, and category icon/colour helpers
 - `src/lib/halo/commands-from-apps.ts`: Derives Halo command entries from `APPS` + `getVisibleApps`, `NAV_COMMAND_META`, and `EXTRA_HALO_COMMANDS`
 - `src/lib/halo/halo-state.ts`: Pure `haloReducer` state machine (`HaloState`, `HaloEvent`, `INITIAL_HALO_STATE`)
@@ -88,9 +92,9 @@ Halo open/close state is driven by `haloReducer` in [`src/lib/halo/halo-state.ts
 Seven size presets remain in [`src/components/halo/presets.ts`](../../src/components/halo/presets.ts):
 
 - **Compact (`width: "fit-content"`, `height: "auto"`):** `default`, `compactLong` (pill baseline), `compactTall` (active plugin pill), `wikiInline`.
-- **Expanded (`width` from preset, `height: "auto"`):** `medium` (`371px`, settings and compact plugin sheets), `tall` (`371px`, `42px` radius, search, notifications, MyCountry, Wiki), `ultra` (`630px` desktop / `350px` capped mobile, expanded notifications or two-column Wiki reader settings).
+- **Expanded (`width: min(<preset>px, calc(100vw - 24px))`, `height: "auto"`, `borderRadius: 24px`):** `medium` (`396px`, settings and compact plugin sheets), `tall` (`396px`, search, notifications, Account, Wiki), `ultra` (`630px` desktop / clamped to `calc(100vw - 24px)` on narrow viewports, expanded notifications or two-column Wiki reader settings).
 
-When expanded, `CommandPalette` renders `role="dialog"` with `aria-modal="false"` and a mode-specific `aria-label`, moves focus into the dialog (the search input for `"search"`, or the first focusable control for other views), closes on outside `pointerdown` (ignoring portaled Radix popovers/menus), and restores focus to the trigger element on keyboard/button close.
+When expanded, `CommandPalette` renders `role="dialog"` with `aria-modal="false"` and a mode-specific `aria-label` (`"Account"` for `"mycountry"`), moves focus into the dialog (the search input for `"search"`, or the first focusable control for other views), closes on outside `pointerdown` (ignoring portaled Radix popovers/menus), and restores focus to the trigger element on keyboard/button close. Every expanded view shares one inner frame (`p-3` outer padding, `12px` spacing, `HaloViewHeader`, and `HaloWell` sections with concentric `rounded-row` `12px` corners inside the `24px` island radius).
 
 ## Plugins
 
@@ -199,7 +203,7 @@ Global shortcuts in `hooks.ts` listen only for modifier chords (plus `Escape` wh
 
 ## Motion
 
-`HaloPrimitives.tsx` drives capsule expansion and collapse on the compositor via Motion layout projection (`layout` on the outer `facet-chrome` `motion.div`, `layout="position"` on the inner content wrapper), without `ResizeObserver` state writes or animated `width`/`height` keyframes. While `useNavigationLoading()` reports an in-flight route transition, the compact pill cross-fades a spinner into the Search button slot without shifting pill width.
+`HaloPrimitives.tsx` drives capsule expansion and collapse on the compositor via Motion layout projection (`layout` on the outer `facet-lens facet-lens-frosted` `motion.div`, `layout="position"` on the inner content wrapper), without `ResizeObserver` state writes or animated `width`/`height` keyframes. While `useNavigationLoading()` reports an in-flight route transition, the compact pill cross-fades a spinner into the Search button slot without shifting pill width.
 
 All transitions import shared Facet motion tokens from [`src/lib/design/motion.ts`](../../src/lib/design/motion.ts) (`springSnappy` for the island morph and `HaloContainer`, `springSmooth` for `NavTray`, `tweenFast` for micro-disclosures, `tweenExit` for exits, and `REDUCED_MOTION_FADE` when `useFacetReducedMotion()` is active). Under Reduce Motion (`prefers-reduced-motion: reduce`), the layout morph uses `{ duration: 0 }` (`data-reduced-motion="true"`) and view/peek swaps cross-fade opacity only via `REDUCED_MOTION_FADE`. Motion, z-index, shadow, and colour-mix rules are enforced by [`src/tests/architecture/halo-motion.test.ts`](../../src/tests/architecture/halo-motion.test.ts).
 
