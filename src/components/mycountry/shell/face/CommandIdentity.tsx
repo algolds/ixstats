@@ -34,12 +34,15 @@ export function CommandIdentity({
   titleRef?: (el: HTMLHeadingElement | null) => void;
 }) {
   const { country } = useCountryData();
-  const name = country?.name?.replace(/_/g, " ") ?? "MyCountry";
+  const rawName = country?.name;
+  const name = rawName ? rawName.replace(/_/g, " ") : "MyCountry";
   const identity = country?.nationalIdentity;
   const motto = str(identity?.motto);
   const system = str(country?.governmentType);
   const capital = str(identity?.capitalCity);
-  const region = [country?.continent, country?.region].filter(Boolean).join(" · ") || null;
+  const continent = country?.continent;
+  const regionName = country?.region;
+  const region = [continent, regionName].filter(Boolean).join(" · ") || null;
   const realm = country?.realm
     ? {
         name: country.realm.name,
@@ -47,11 +50,16 @@ export function CommandIdentity({
         logoUrl: country.realm.emblemUrl ?? country.realm.thumbnail,
       }
     : null;
+  const slug = country?.slug;
+  const flagUrl = country?.flagUrl;
+  const flagFallback = country?.flag;
+  const flagSrc = assetUrl(flagUrl || flagFallback) ?? null;
   const owner = country?.owner;
+  const ownerRole = owner?.role;
   const sovereign = owner
     ? {
         username: str(owner.handle) ?? str(owner.forumUsername),
-        roleName: str(owner.role?.displayName) ?? str(owner.role?.name),
+        roleName: str(ownerRole?.displayName) ?? str(ownerRole?.name),
         avatarUrl: owner.avatarUrl,
       }
     : null;
@@ -59,18 +67,18 @@ export function CommandIdentity({
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <div className="flex min-w-0 items-center gap-3">
-        <SharedElement name={countryTransitionName("flag", country?.slug)}>
-          <FlagTile src={assetUrl(country?.flagUrl || country?.flag) ?? null} name={name} />
+        <SharedElement name={countryTransitionName("flag", slug)}>
+          <FlagTile src={flagSrc} name={name} />
         </SharedElement>
         <div className="min-w-0">
           {region && <p className="text-footnote text-label-secondary">{region}</p>}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <SharedElement name={countryTransitionName("title", country?.slug)}>
+            <SharedElement name={countryTransitionName("title", slug)}>
               <h1 ref={titleRef} className="text-large-title text-label text-balance">
                 {name}
               </h1>
             </SharedElement>
-            {country?.slug && <CountryOwnerRibbonRack countrySlug={country.slug} />}
+            {slug && <CountryOwnerRibbonRack countrySlug={slug} />}
           </div>
           {motto && (
             <p className="text-callout text-label-secondary text-pretty">

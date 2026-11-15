@@ -19,14 +19,6 @@ export interface CollectorStandingRow {
   isViewer?: boolean;
 }
 
-export interface RealmCollectorFallbackEntry {
-  countryId: string;
-  countryName: string;
-  achievementCount: number;
-  rareAchievements: number;
-  totalPoints: number;
-}
-
 export function LeaderboardRankPill({ rank }: { rank: number }) {
   if (rank <= 3) {
     return (
@@ -163,23 +155,7 @@ function LivePlayerCollectorsBoard() {
   return <CollectorStandingsTable rows={rows} />;
 }
 
-export interface LeaderboardTabProps {
-  fallbackEntries?: RealmCollectorFallbackEntry[];
-}
-
-export function LeaderboardTab({ fallbackEntries = [] }: LeaderboardTabProps) {
-  if (api.achievements.getPlayerLeaderboard?.useQuery) {
-    return <LivePlayerCollectorsBoard />;
-  }
-
-  const rows: CollectorStandingRow[] = fallbackEntries.map((entry, idx) => ({
-    key: entry.countryId,
-    rank: idx + 1,
-    name: entry.countryName,
-    achievementCount: entry.achievementCount,
-    rareAchievements: entry.rareAchievements,
-    totalPoints: entry.totalPoints,
-  }));
-
-  return <CollectorStandingsTable rows={rows} />;
+/** The collectors standings: every player's achievements, points and rare unlocks. */
+export function LeaderboardTab() {
+  return <LivePlayerCollectorsBoard />;
 }

@@ -1,15 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { NavArrowRight, Trophy } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
@@ -73,6 +65,14 @@ const MAX_CATEGORY_CHIPS = 4;
 function swipeTarget(from: number, projectedDx: number, width: number, count: number): number {
   const step = Math.abs(projectedDx) > width * SWIPE_TURN ? -Math.sign(projectedDx) : 0;
   return Math.min(count - 1, Math.max(0, from + step));
+}
+
+function capturePointer(el: HTMLDivElement, pointerId: number) {
+  try {
+    el.setPointerCapture?.(pointerId);
+  } catch {
+    // Synthetic test events may not register active pointer capture.
+  }
 }
 
 function releaseCapture(el: HTMLDivElement, pointerId: number) {
@@ -198,18 +198,13 @@ export function VaultUnlocks() {
 
   const recent = summary?.recent ?? [];
   const next = nearest && !recent.some((item) => item.key === nearest.key) ? nearest : null;
-  const slides: AchievementFace[] = useMemo(
-    () => (next ? [...recent, next] : recent),
-    [recent, next]
-  );
+  const slides: AchievementFace[] = next ? [...recent, next] : recent;
   const count = slides.length;
 
-  const categoryItems = useMemo(() => {
-    if (summary?.categories && summary.categories.length > 0) {
-      return summary.categories;
-    }
-    return deriveFallbackCategories(recent, next);
-  }, [summary?.categories, recent, next]);
+  const categoryItems =
+    summary?.categories && summary.categories.length > 0
+      ? summary.categories
+      : deriveFallbackCategories(recent, next);
 
   useEffect(() => {
     const el = track.current;
@@ -235,11 +230,7 @@ export function VaultUnlocks() {
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType !== "mouse" || event.button !== 0) return;
     const now = performance.now();
-    try {
-      event.currentTarget.setPointerCapture?.(event.pointerId);
-    } catch {
-      // Synthetic test events may not register active pointer capture.
-    }
+    capturePointer(event.currentTarget, event.pointerId);
     drag.current = {
       pointerId: event.pointerId,
       x: event.clientX,

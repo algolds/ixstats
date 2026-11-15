@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState, type ReactNode } from "react";
+import { useHeldValue } from "~/hooks/useHeldValue";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
 import { Filter, List, MultiplePages, ViewGrid, WarningCircle } from "iconoir-react";
@@ -200,9 +201,9 @@ export function MinePane({ onOpenCard }: { onOpenCard: (cardId: string) => void 
   const totalCopies = first?.totalCopies ?? statsQuery.data?.totalCards ?? 0;
   const isFiltered = activeFilterCount(filters) > 0 || filters.search.trim() !== "";
   const uniqueInRows = new Set(rows.map((row) => row.face.cardId)).size;
-  const unfilteredUnique = useRef<number | null>(null);
-  if (!isFiltered && rows.length > 0) unfilteredUnique.current = uniqueInRows;
-  const uniqueCards = !isFiltered ? uniqueInRows : (unfilteredUnique.current ?? uniqueInRows);
+  // A filter narrows the rows; the strip keeps the binder's unique count from before it.
+  const heldUnique = useHeldValue(uniqueInRows, !isFiltered && rows.length > 0);
+  const uniqueCards = !isFiltered ? uniqueInRows : heldUnique;
   const deckValue = statsQuery.data?.deckValue ?? rows.reduce((sum, row) => sum + row.value, 0);
   const failed = query.isError && !query.data;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Coins } from "iconoir-react";
 import {
   AlertDialog,
@@ -165,7 +165,7 @@ export function TaxesSection({ state }: { state: EditorState }) {
   const notify = useNotify();
   const utils = api.useUtils();
 
-  const saved = useMemo(() => readSavedRates(state.fiscalSystem), [state.fiscalSystem]);
+  const saved = readSavedRates(state.fiscalSystem);
   const [edits, setEdits] = useState<Record<string, number>>({});
   const [flattened, setFlattened] = useState<Record<string, boolean>>({});
 
@@ -177,12 +177,8 @@ export function TaxesSection({ state }: { state: EditorState }) {
   const dirty = changedKeys.length > 0;
   useReportDirty("taxes", "Tax rates", dirty);
 
-  const effectiveEdits = useMemo(
-    () => Object.fromEntries(changedKeys.map((key) => [key, edits[key]!])),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [changedKeys.join(","), edits]
-  );
-  const revenue = useMemo(() => nationalRevenue(state, effectiveEdits), [state, effectiveEdits]);
+  const effectiveEdits = Object.fromEntries(changedKeys.map((key) => [key, edits[key]!]));
+  const revenue = nationalRevenue(state, effectiveEdits);
 
   const mutation = api.economics.updateFiscalSystem.useMutation({
     onSuccess: (_result, variables) => {

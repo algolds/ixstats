@@ -290,13 +290,16 @@ function BrowseBody({
       </Card>
     );
   }
-  const activeTotal = query.data?.total ?? items.length;
+  const activeTotal = items.length;
+  // The browse page has no total, only whether another page exists
+  const more = query.data?.hasMore ? "+" : "";
   return (
     <Card content="data" padding="none">
       <div className="border-separator flex items-center justify-between gap-2 border-b px-4 py-2.5">
         <span className="text-subheadline text-label-secondary font-medium">Live floor</span>
         <span className="text-footnote text-label-secondary tabular-nums">
-          {activeTotal.toLocaleString()} {activeTotal === 1 ? "active offer" : "active offers"}
+          {activeTotal.toLocaleString()}
+          {more} {activeTotal === 1 && !more ? "active offer" : "active offers"}
         </span>
       </div>
       <ul ref={listRef} tabIndex={-1} aria-label="Listings" className="divide-separator divide-y">

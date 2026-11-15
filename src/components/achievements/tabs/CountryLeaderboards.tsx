@@ -74,11 +74,6 @@ export function CountryLeaderboards() {
   const isCollectors = metric === "collectors";
   const nationMetric: NationMetricId = isCollectors ? "totalGdp" : metric;
 
-  const { data: collectorRealmBoard } = api.achievements.getLeaderboard.useQuery(
-    { limit: 50, realm },
-    { enabled: isCollectors && !unlisted }
-  );
-
   const { data: countryBoard, isLoading } = api.achievements.getCountryLeaderboard.useQuery(
     {
       metric: nationMetric,
@@ -136,7 +131,7 @@ export function CountryLeaderboards() {
       </div>
 
       {isCollectors ? (
-        <LeaderboardTab fallbackEntries={collectorRealmBoard} />
+        <LeaderboardTab />
       ) : unlisted ? (
         <Card>
           <EmptyState

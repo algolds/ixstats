@@ -22,8 +22,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     realms: { directory: { useQuery: () => ({ data: REALMS }) } },
     achievements: {
-      getLeaderboard: { useQuery: (...args: unknown[]) => mockLeaderboard(...args) },
-      getCountryLeaderboard: { useQuery: () => ({ data: [], isLoading: false }) },
+      getCountryLeaderboard: { useQuery: (...args: unknown[]) => mockLeaderboard(...args) },
     },
   },
 }));

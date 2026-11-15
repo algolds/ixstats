@@ -102,9 +102,7 @@ export function LeaderboardsPage({
   realmId: string;
   embedded?: boolean;
 }) {
-  const query = api.exchange.leaderboards?.useQuery({ realmId });
-  if (!query) return null;
-  const { data, isLoading } = query;
+  const { data, isLoading } = api.exchange.leaderboards.useQuery({ realmId });
   if (isLoading || !data) {
     return embedded ? null : <Skeleton className="h-64 w-full" />;
   }
