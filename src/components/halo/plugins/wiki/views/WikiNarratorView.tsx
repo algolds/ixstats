@@ -42,7 +42,7 @@ export function WikiNarratorView({ onClose, onSwitchMode }: WikiNarratorViewProp
             className="border-separator w-full"
           >
             <BookOpen className="h-3.5 w-3.5" />
-            Go to Wiki Workspace
+            Go to wiki workspace
           </Button>
         )}
       </div>

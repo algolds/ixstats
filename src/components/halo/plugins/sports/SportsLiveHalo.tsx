@@ -78,14 +78,8 @@ function SportsLiveView({ context }: DIViewProps) {
   }
 
   return (
-    <div className="relative overflow-hidden p-5">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          background: `linear-gradient(135deg, ${match.homeTeam.color}25, transparent, ${match.awayTeam.color}25)`,
-        }}
-      />
-      <div className="relative z-10 space-y-4">
+    <div className="p-4">
+      <div className="bg-fill-4 rounded-row space-y-4 p-4">
         <div className="flex items-center justify-between">
           <span className="bg-red text-caption text-on-red flex items-center gap-2 rounded-full px-2 py-0.5 font-semibold">
             <Radio className="h-2.5 w-2.5" />
@@ -110,7 +104,7 @@ function SportsLiveView({ context }: DIViewProps) {
         </div>
 
         {/* Broadcast progress */}
-        <div className="bg-fill-4 h-1 overflow-hidden rounded-full">
+        <div className="bg-fill-3 h-1 overflow-hidden rounded-full">
           <div
             className="bg-red h-full rounded-full"
             style={{ width: `${Math.round(state.progress * 100)}%` }}
@@ -130,7 +124,10 @@ function TeamBadge({ team }: { team: { name: string; shortName?: string | null; 
     <div className="flex w-1/3 flex-col items-center text-center">
       <div
         className="text-caption flex h-9 w-9 items-center justify-center rounded-full font-semibold"
-        style={{ backgroundColor: `${team.color}20`, border: `2px solid ${team.color}` }}
+        style={{
+          backgroundColor: `color-mix(in srgb, ${team.color} 12%, transparent)`,
+          border: `2px solid ${team.color}`,
+        }}
       >
         {shortFor(team)}
       </div>

@@ -177,7 +177,7 @@ function WikiCenterActions() {
           <button
             type="button"
             className={cn(
-              "hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast relative z-10 inline-flex max-w-[70px] cursor-pointer items-center px-1 py-0.5 text-left transition-colors",
+              "hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast z-raised relative inline-flex max-w-[70px] cursor-pointer items-center px-1 py-0.5 text-left transition-colors",
               focusRing,
               hitSlop
             )}

@@ -397,7 +397,7 @@ export function SettingsView({ onClose }: SettingsViewProps) {
                       <ExternalLink className="text-green size-3.5" />
                     </span>
                   }
-                  title="Open in New Tab"
+                  title="Open in new tab"
                   subtitle="External link target"
                   trailing={
                     <ToggleSwitch

@@ -3,7 +3,7 @@
 // Unified narrator audio player built with audio-ui.xyz components (ghost variant, Transport, Fader).
 // Theme compliant with WikiOS accents, ambient animated background waveform, and inline Apple Design controls.
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   NavArrowLeft as ChevronLeft,
   NavArrowRight as ChevronRight,
@@ -111,18 +111,13 @@ export function WikiNarratorPlayer({
   const activeEntry = visibleToc.find((e) => e.id === activeSectionId);
   const activeSectionTitle = activeEntry?.text ?? narratorState?.activeSectionTitle ?? "Overview";
   const accentColor = wikiAccent(themeColors);
-
-  const narratorTracks = useMemo(
-    () => [
-      {
-        id: activeSectionId || "wiki-narrator",
-        title: narratorState?.activeSectionTitle || "Wiki article",
-        artist: "Wiki narrator",
-        url: "",
-      },
-    ],
-    [activeSectionId, narratorState?.activeSectionTitle]
-  );
+  const narratorTrack = {
+    id: activeSectionId || "wiki-narrator",
+    title: narratorState?.activeSectionTitle || "Wiki article",
+    artist: "Wiki narrator",
+    url: "",
+  };
+  const narratorTracks = [narratorTrack];
 
   // Sync narrator state into audio-ui's centralized audio store
   useEffect(() => {
@@ -137,15 +132,21 @@ export function WikiNarratorPlayer({
       duration: Math.max(1, narratorState.totalBlocks ?? 1),
       volume: currentVolume,
       playbackRate: currentSpeed,
-      currentTrack: narratorTracks[0],
+      currentTrack: {
+        id: activeSectionId || "wiki-narrator",
+        title: narratorState?.activeSectionTitle || "Wiki article",
+        artist: "Wiki narrator",
+        url: "",
+      },
     });
   }, [
     narratorState?.isPlaying,
     narratorState?.activeBlockIndex,
     narratorState?.totalBlocks,
+    narratorState?.activeSectionTitle,
+    activeSectionId,
     currentVolume,
     currentSpeed,
-    narratorTracks,
   ]);
 
   // Connect audio-ui playback, seek, and volume actions directly to the narrator engine
@@ -188,26 +189,23 @@ export function WikiNarratorPlayer({
   }, [narratorActions, narratorState?.isPlaying]);
 
   // Timeline & section scrubbing callback
-  const handleScrub = useCallback(
-    (pct: number) => {
-      if (isNarratorActive && narratorActions) {
-        const targetIdx = Math.min(
-          narratorState.totalBlocks - 1,
-          Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
-        );
-        narratorActions.jumpToBlock(targetIdx);
-      } else {
-        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-        if (scrollHeight > 0) {
-          window.scrollTo({
-            top: (pct / 100) * scrollHeight,
-            behavior: "smooth",
-          });
-        }
+  const handleScrub = (pct: number) => {
+    if (isNarratorActive && narratorActions) {
+      const targetIdx = Math.min(
+        narratorState.totalBlocks - 1,
+        Math.max(0, Math.round((pct / 100) * (narratorState.totalBlocks - 1)))
+      );
+      narratorActions.jumpToBlock(targetIdx);
+    } else {
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollHeight > 0) {
+        window.scrollTo({
+          top: (pct / 100) * scrollHeight,
+          behavior: "smooth",
+        });
       }
-    },
-    [isNarratorActive, narratorActions, narratorState?.totalBlocks]
-  );
+    }
+  };
 
   const toggleMute = () => {
     if (!narratorActions?.setVolume) return;
@@ -227,7 +225,7 @@ export function WikiNarratorPlayer({
     <div className="relative w-full space-y-2">
       {/* Ambient Background Audio Waveform (Apple Design Subtlety) */}
       <div
-        className="rounded-row pointer-events-none absolute inset-0 -z-10 flex items-center justify-between gap-1 overflow-hidden px-3 py-2 select-none"
+        className="rounded-row pointer-events-none absolute inset-0 flex items-center justify-between gap-1 overflow-hidden px-3 py-2 select-none"
         aria-hidden="true"
       >
         {BG_WAVEFORM_BARS.map((heightPct, idx) => (
@@ -249,7 +247,7 @@ export function WikiNarratorPlayer({
       <AudioPlayer
         tracks={narratorTracks}
         size="sm"
-        className="relative z-10 w-full space-y-2 border-0 bg-transparent p-0 shadow-none"
+        className="z-raised relative w-full space-y-2 border-0 bg-transparent p-0 shadow-none"
         data-slot="wiki-narrator-player"
       >
         {/* 1. Top HUD Bar (Section Title + Reading Progress) */}
@@ -301,7 +299,7 @@ export function WikiNarratorPlayer({
                       type="button"
                       aria-label={entry.text}
                       className={cn(
-                        "group/tick pointer-events-auto absolute top-1/2 z-20 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
+                        "group/tick z-raised pointer-events-auto absolute top-1/2 flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full",
                         focusRing,
                         hitSlop
                       )}
@@ -459,7 +457,7 @@ export function WikiNarratorPlayer({
 
         {/* 4A. Inline Voice Picker Tray */}
         {activeTray === "voice" && engine !== "browser" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-1 border p-2">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-1 p-2">
             <div className="border-separator text-label-secondary text-subhead flex items-center justify-between border-b px-1 pb-1">
               <span>Narrator voice</span>
               <span className="text-footnote font-normal opacity-70">Kokoro TTS</span>
@@ -513,7 +511,7 @@ export function WikiNarratorPlayer({
 
         {/* 4B. Inline Playback speed Tray */}
         {activeTray === "speed" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-2 p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Playback speed</span>
               <span className="text-label font-semibold tabular-nums">{currentSpeed}×</span>
@@ -537,7 +535,7 @@ export function WikiNarratorPlayer({
 
         {/* 4C. Inline Volume Slider Tray (audio-ui Fader) */}
         {activeTray === "volume" && (
-          <div className="border-separator bg-surface-elevated text-label rounded-row shadow-card mt-2 space-y-2 border p-3">
+          <div className="bg-fill-4 text-label rounded-row mt-2 space-y-2 p-3">
             <div className="text-label-secondary text-subhead flex items-center justify-between">
               <span>Volume gain</span>
               <span className="text-label font-semibold tabular-nums">

@@ -61,7 +61,7 @@ export function WikiSearchDropdown({
                 }
               }
             }}
-            placeholder="Search wiki articles..."
+            placeholder="Search wiki articles…"
             className="text-label placeholder:text-label-secondary text-body focus-visible:outline-tint w-full bg-transparent py-2 outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
             data-command-palette-search="true"
           />
@@ -89,7 +89,7 @@ export function WikiSearchDropdown({
             </PreText>
             {isSearching && (
               <PreText className="text-label-secondary text-footnote" whiteSpace="nowrap">
-                searching...
+                Searching…
               </PreText>
             )}
           </div>

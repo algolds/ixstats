@@ -49,7 +49,7 @@ interface NavTrayProps {
   onClose: () => void;
 }
 
-function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
+export function NavTray({ isOpen, onClose }: NavTrayProps) {
   const pathname = usePathname();
   const normalized = stripBasePath(pathname || "/");
   const trayRef = React.useRef<HTMLDivElement>(null);
@@ -85,7 +85,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
           key="nav-tray"
           ref={trayRef}
           aria-label="Quick navigation"
-          className="pointer-events-auto absolute top-full left-1/2 z-30 mt-3 w-[280px] -translate-x-1/2"
+          className="z-popover pointer-events-auto absolute top-full left-1/2 mt-3 w-[280px] -translate-x-1/2"
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 }}
           animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
           exit={
@@ -121,15 +121,15 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                       data-app={item.app}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`group rounded-row duration-fast flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] ${focusRing} ${
+                      className={`group rounded-row duration-fast flex items-center gap-2 px-3 py-2 transition-[color,background-color] ${focusRing} ${
                         active
-                          ? "bg-fill-3 text-label shadow-card"
+                          ? "bg-fill-3 text-label"
                           : "text-label-secondary hover:bg-fill-4 hover:text-label"
                       }`}
                     >
                       <div
                         className={`rounded-control-sm duration-fast flex size-8 shrink-0 items-center justify-center transition-colors ${
-                          active ? "shadow-card" : "bg-fill-4 group-hover:bg-fill-3"
+                          active ? "" : "bg-fill-4 group-hover:bg-fill-3"
                         }`}
                         style={
                           active
@@ -191,5 +191,3 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
     </AnimatePresence>
   );
 }
-
-export const NavTray = React.memo(NavTrayComponent);

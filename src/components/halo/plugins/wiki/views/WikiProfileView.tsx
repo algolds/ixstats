@@ -200,7 +200,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                     <textarea
                       value={scratchpad}
                       onChange={handleScratchpadChange}
-                      placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here... (auto-saves)"
+                      placeholder="Jot down quick worldbuilding notes, drafts, task lists, or article revisions here… (auto-saves)"
                       className="border-separator bg-fill-4 text-label placeholder:text-label-tertiary focus:border-separator focus:bg-fill-3 rounded-row text-footnote focus-visible:outline-tint min-h-[140px] w-full resize-none border p-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
                       style={{ scrollbarWidth: "thin" }}
                     />
@@ -216,11 +216,11 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   {/* Neon Frame Overlay */}
                   <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
 
-                  <div className="relative z-10 flex items-center gap-3">
+                  <div className="z-raised relative flex items-center gap-3">
                     <AvatarGlow
                       avatarGlow={avatarGlow}
                       roundedClass="rounded-full"
-                      className="bg-indigo/60 shadow-card h-10 w-10"
+                      className="bg-indigo/60 h-10 w-10"
                     >
                       {user?.imageUrl ? (
                         <img
@@ -249,7 +249,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                   </div>
 
                   {lorewardStats && (
-                    <div className="border-separator relative z-10 flex gap-4 border-l pl-4">
+                    <div className="border-separator z-raised relative flex gap-4 border-l pl-4">
                       <div className="flex flex-col items-center">
                         <div className="flex items-center gap-2">
                           <Trophy className="text-yellow h-4 w-4" />
@@ -368,7 +368,7 @@ export function WikiProfileView({ onClose }: WikiProfileViewProps) {
                 <span className="flex flex-col">
                   <span className="inline-flex items-center gap-2">
                     <Crown className="text-yellow h-4 w-4 shrink-0" />
-                    <span>Country Management</span>
+                    <span>Country management</span>
                   </span>
                   {countryName && (
                     <span className="text-label-secondary text-caption font-normal">
