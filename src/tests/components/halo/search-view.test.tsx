@@ -23,7 +23,10 @@ jest.mock("~/context/theme-context", () => ({ useTheme: () => mockTheme }));
 jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => ({}) }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
 jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => false }));
-jest.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard",
+  useRouter: () => ({ push: jest.fn() }),
+}));
 jest.mock("~/components/halo/plugin-context", () => ({ useActiveDIPlugin: () => null }));
 jest.mock("~/components/ui/pretext", () => ({
   PreText: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,

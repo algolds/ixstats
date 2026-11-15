@@ -22,6 +22,7 @@ const mockSignedOut = { user: null, isLoaded: true, isSignedIn: false };
 const mockSignedIn = { user: { id: "user-1" }, isLoaded: true, isSignedIn: true };
 const mockAuth = { signOut: jest.fn() };
 const mockTheme = { toggleTheme: jest.fn(), toggleCompactMode: jest.fn() };
+const mockPush = jest.fn();
 let mockUser: typeof mockSignedOut | typeof mockSignedIn = mockSignedOut;
 let mockIsAdmin = false;
 let mockPathname = "/";
@@ -57,7 +58,10 @@ jest.mock("~/context/theme-context", () => ({ useTheme: () => mockTheme }));
 jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => ({}) }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => ({}) }));
 jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => mockIsAdmin }));
-jest.mock("next/navigation", () => ({ usePathname: () => mockPathname }));
+jest.mock("next/navigation", () => ({
+  usePathname: () => mockPathname,
+  useRouter: () => ({ push: mockPush }),
+}));
 jest.mock("~/components/halo/plugin-context", () => ({
   useActiveDIPlugin: () => mockPlugin,
 }));
@@ -87,6 +91,7 @@ function buildWiki(count: number): MockWikiResult[] {
 
 beforeEach(() => {
   jest.useFakeTimers();
+  mockPush.mockReset();
   mockUser = mockSignedOut;
   mockIsAdmin = false;
   mockPathname = "/";
@@ -319,6 +324,22 @@ describe("Halo search result ids", () => {
       const ids = search(hook, "st", filter).map((r) => r.id);
       expect(ids.length).toBeGreaterThan(0);
       expect(new Set(ids).size).toBe(ids.length);
+    }
+  });
+});
+
+describe("Halo search result router navigation", () => {
+  it("navigates to a country result with router.push instead of full reload", () => {
+    const consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const [first] = search(openSearch(), "st", "countries");
+      expect(first).toBeDefined();
+      first!.action();
+      expect(mockPush).toHaveBeenCalledWith("/countries/eastmark-0");
+      // jsdom logs "Not implemented: navigation" whenever window.location.href is assigned
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    } finally {
+      consoleErrorSpy.mockRestore();
     }
   });
 });

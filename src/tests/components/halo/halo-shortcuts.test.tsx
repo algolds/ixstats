@@ -24,7 +24,10 @@ jest.mock("~/context/theme-context", () => ({ useTheme: () => mockTheme }));
 jest.mock("~/hooks/useSoundSettings", () => ({ useSoundSettings: () => mockSound }));
 jest.mock("~/hooks/useNotify", () => ({ useNotify: () => mockNotify }));
 jest.mock("~/hooks/usePermissions", () => ({ useCanOpenAdmin: () => false }));
-jest.mock("next/navigation", () => ({ usePathname: () => "/" }));
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ push: jest.fn() }),
+}));
 jest.mock("~/components/halo/plugin-context", () => ({
   useActiveDIPlugin: () => mockPlugin,
 }));

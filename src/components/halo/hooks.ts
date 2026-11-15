@@ -8,7 +8,8 @@ import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useNotify } from "~/hooks/useNotify";
 import { useDebounce } from "~/hooks/useDebounce";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { navigateWithBasePath } from "~/lib/base-path";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
 import { useActiveDIPlugin } from "./plugin-context";
@@ -46,6 +47,7 @@ export function useDynamicIslandState() {
   const notify = useNotify();
   const markAllNotificationsAsRead = useNotificationStore((s) => s.markAllAsRead);
   const pathname = usePathname();
+  const router = useRouter();
   const activePlugin = useActiveDIPlugin();
   const isWikiActive = activePlugin?.id === "wiki";
   const isAdmin = useCanOpenAdmin();
@@ -235,7 +237,7 @@ export function useDynamicIslandState() {
             return;
           }
           case "random-wiki": {
-            window.location.href = createAbsoluteUrl("/util/random");
+            navigateWithBasePath("/util/random", router);
             return;
           }
           case "sign-out": {
@@ -248,7 +250,7 @@ export function useDynamicIslandState() {
             if (countryIndex.length > 0) {
               const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
               const slug = random?.slug ?? random?.id;
-              if (slug) window.location.href = createAbsoluteUrl(`/countries/${slug}`);
+              if (slug) navigateWithBasePath(`/countries/${slug}`, router);
             }
             return;
           }
@@ -267,7 +269,7 @@ export function useDynamicIslandState() {
         return;
       }
       if (targetPath) {
-        window.location.href = createAbsoluteUrl(targetPath);
+        navigateWithBasePath(targetPath, router);
       }
     };
 
@@ -291,7 +293,7 @@ export function useDynamicIslandState() {
               flagUrl: country.flagUrl || country.flag || undefined,
               economicTier: country.economicTier,
             },
-            action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
+            action: () => navigateWithBasePath(`/countries/${slug}`, router),
           });
         }
         if (matchedCountries.length >= limit) break;
@@ -358,8 +360,9 @@ export function useDynamicIslandState() {
             category: "Wiki",
           },
           action: () => {
-            window.location.href = createAbsoluteUrl(
-              `/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`
+            navigateWithBasePath(
+              `/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`,
+              router
             );
           },
         });

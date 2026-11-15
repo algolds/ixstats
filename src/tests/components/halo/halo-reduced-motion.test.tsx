@@ -13,6 +13,7 @@ jest.mock("~/components/providers/FacetMotionConfig", () => ({
 
 jest.mock("next/navigation", () => ({
   usePathname: () => "/",
+  useRouter: () => ({ push: jest.fn() }),
 }));
 
 jest.mock("~/trpc/react", () => ({
