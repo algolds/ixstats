@@ -19,17 +19,17 @@ Every page (except the full-screen maps) has two pieces of navigation:
 
 The sidebar on the left lists the areas ("apps") of IxStates. Selecting one opens it and shows its sections underneath:
 
-| App | What's in it |
-| --- | --- |
-| **Home** | [Dashboard](/dashboard), [Messages](/messages), ThinkTanks, ThinkPages, and What's new when there's an update |
-| **MyCountry** | Your nation: Overview, Directives, Economy, Diplomacy, Politics and Defense (Defense with [Premium](/help/getting-started/premium)) |
-| **Maps** | The world map |
-| **Vault** | Your wallet, daily reward, achievements, cards (Mine, Sets, Market, Explore and import) and the store |
-| **Wiki** | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
-| **Realms** | My realm ([/countries](/countries)) and Explore ([/realms](/realms)) |
-| **Labs** | Onoma, Vexel, MyLeague, MyClub and the Exchange |
-| **Help** | These guides, What's new, and the Ixnay Discord |
-| **Settings** | Every [settings panel](/help/getting-started/settings) |
+| App           | What's in it                                                                                                                                    |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Home**      | [Dashboard](/dashboard), [Messages](/messages), ThinkTanks, ThinkPages, and What's new when there's an update                                   |
+| **MyCountry** | Your nation: Overview, Directives, Economy, Diplomacy, Politics and Defense (Defense with [Premium](/help/getting-started/premium))             |
+| **Maps**      | The world map                                                                                                                                   |
+| **Vault**     | Your wallet, daily reward, achievements, cards (Mine, Sets, Market, Explore and import) and the store                                           |
+| **Wiki**      | The wiki, search, recent changes, categories, your watchlist and contributions, Stashes, the media repository and [Blurbs](/help/social/blurbs) |
+| **Realms**    | My realm ([/countries](/countries)) and Explore ([/realms](/realms))                                                                            |
+| **Labs**      | Onoma, Vexel, MyLeague, MyClub and the Exchange                                                                                                 |
+| **Help**      | These guides, What's new, and the Ixnay Discord                                                                                                 |
+| **Settings**  | Every [settings panel](/help/getting-started/settings)                                                                                          |
 
 Some apps only appear when they apply to you. Home, MyCountry, Vault, Labs and Settings need you to be signed in; Admin is for admins only. Admins can also hide Maps, Labs or Help for everyone; Labs stays visible to admins and players with Labs access.
 
@@ -45,11 +45,11 @@ On a narrow screen the sidebar becomes a bar at the bottom with four apps and **
 
 Halo shows the [IxTime](/help/getting-started/ixtime) clock and a greeting, and expands into different views:
 
-| Shortcut | What it does |
-| --- | --- |
-| `Ctrl` + `K` (`Cmd` + `K` on Mac) | Open or close **search** |
-| `Ctrl` + `,` (`Cmd` + `,`) | Open **quick settings** |
-| `Esc` | Clear the search, or close the view |
+| Shortcut                          | What it does                        |
+| --------------------------------- | ----------------------------------- |
+| `Ctrl` + `K` (`Cmd` + `K` on Mac) | Open or close **search**            |
+| `Ctrl` + `,` (`Cmd` + `,`)        | Open **quick settings**             |
+| `Esc`                             | Clear the search, or close the view |
 
 Shortcuts don't fire while you're typing in a text box, except `Ctrl`/`Cmd` + `K` in Halo's own search box.
 
