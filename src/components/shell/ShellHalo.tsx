@@ -9,15 +9,21 @@
  */
 
 import { CommandPalette } from "~/components/halo";
+import type { AppDefinition } from "~/lib/navigation/app-sections";
 
-export function ShellHalo() {
+export interface ShellHaloProps {
+  trayApps?: readonly AppDefinition[];
+  searchApps?: readonly AppDefinition[];
+}
+
+export function ShellHalo({ trayApps, searchApps }: ShellHaloProps = {}) {
   return (
     <div
       data-slot="shell-halo"
       className="z-nav pointer-events-none fixed top-(--shell-page-top) right-(--shell-inspector-width) left-(--shell-sidebar-width) flex justify-center px-3"
     >
       <div className="pointer-events-auto max-w-full">
-        <CommandPalette />
+        <CommandPalette trayApps={trayApps} searchApps={searchApps} />
       </div>
     </div>
   );

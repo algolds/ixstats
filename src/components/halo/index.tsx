@@ -8,7 +8,8 @@ import { motion, type PanInfo } from "motion/react";
 import { Halo, useHaloSize, SIZE_PRESETS, HaloProvider, type SizePresets } from "./HaloPrimitives";
 import { CompactView, ExpandedView, NavTray } from "./views";
 import { useDynamicIslandState } from "./hooks";
-import type { ViewMode } from "./types";
+import type { CommandPaletteProps, ViewMode } from "./types";
+import type { AppDefinition } from "~/lib/navigation/app-sections";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
@@ -20,10 +21,6 @@ import { useHydrated } from "~/hooks/useHydrated";
 const HaloTourTooltip = dynamic(() => import("./HaloTourTooltip").then((m) => m.HaloTourTooltip), {
   ssr: false,
 });
-
-interface CommandPaletteProps {
-  className?: string;
-}
 
 interface SizeInputs {
   isExpanded: boolean;
@@ -61,9 +58,11 @@ function computeSize(prev: SizePresets, inputs: SizeInputs): SizePresets {
 function CommandPaletteContent({
   diState,
   isTourActive = false,
+  trayApps,
 }: {
   diState: ReturnType<typeof useDynamicIslandState>;
   isTourActive?: boolean;
+  trayApps?: readonly AppDefinition[];
 }) {
   const { setSize } = useHaloSize();
   // The pathname the tray was opened on; navigating elsewhere closes it without an effect
@@ -210,7 +209,11 @@ function CommandPaletteContent({
       </motion.div>
 
       {/* Nav tray dropdown */}
-      <NavTray isOpen={navTrayOpen && !isExpanded} onClose={() => setNavTrayAt(null)} />
+      <NavTray
+        isOpen={navTrayOpen && !isExpanded}
+        onClose={() => setNavTrayAt(null)}
+        apps={trayApps}
+      />
 
       {/* Walkthrough tooltip overlay */}
       <HaloTourTooltip />
@@ -218,7 +221,7 @@ function CommandPaletteContent({
   );
 }
 
-export function CommandPalette({ className }: CommandPaletteProps) {
+export function CommandPalette({ className, trayApps, searchApps }: CommandPaletteProps) {
   const pathname = usePathname();
   const normalizedPath = stripBasePath(pathname || "/");
 
@@ -228,16 +231,20 @@ export function CommandPalette({ className }: CommandPaletteProps) {
   return (
     <HaloTourProvider>
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>
-        <CommandPaletteWrapper className={className} />
+        <CommandPaletteWrapper
+          className={className}
+          trayApps={trayApps}
+          searchApps={searchApps}
+        />
       </HaloProvider>
     </HaloTourProvider>
   );
 }
 
-function CommandPaletteWrapper({ className }: { className?: string }) {
+function CommandPaletteWrapper({ className, trayApps, searchApps }: CommandPaletteProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const isInitialized = useHydrated();
-  const diState = useDynamicIslandState();
+  const diState = useDynamicIslandState({ searchApps });
   const { isExpanded, switchMode } = diState;
 
   // Close dropdown when clicking outside - use shared state
@@ -285,7 +292,11 @@ function CommandPaletteWrapper({ className }: { className?: string }) {
       className={`z-nav pointer-events-none relative flex w-full max-w-full items-center justify-center ${className || ""}`}
     >
       <div className="pointer-events-auto">
-        <CommandPaletteContent diState={diState} isTourActive={isTourActive} />
+        <CommandPaletteContent
+          diState={diState}
+          isTourActive={isTourActive}
+          trayApps={trayApps}
+        />
       </div>
     </div>
   );

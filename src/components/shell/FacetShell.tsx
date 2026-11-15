@@ -20,6 +20,7 @@ import { stripBasePath } from "~/lib/base-path";
 import {
   getVisibleApps,
   isChromelessPath,
+  withCountryRows,
   type NavAction,
   type NavigationVisibilitySettings,
 } from "~/lib/navigation/app-sections";
@@ -68,6 +69,8 @@ export function FacetShell() {
   const { forumModerator } = useForumNavFlags(signedIn);
   // Shares AccountMenu's queries; MyCountry's profile and editor buttons appear once it answers.
   const { country } = useUserCountry();
+  const countryHref = hydrated && country ? getNationUrl(country.name) : undefined;
+  const navSettings = navigationSettings as NavigationVisibilitySettings | undefined;
   const apps = getVisibleApps(
     hydrated
       ? {
@@ -78,9 +81,27 @@ export function FacetShell() {
           hasMycountryPremium,
           forumModerator,
           ownsNation: Boolean(country),
-          navigationSettings: navigationSettings as NavigationVisibilitySettings | undefined,
+          navigationSettings: navSettings,
         }
       : { signedIn: false, isAdmin: false }
+  );
+  // Signed-out search still offers public/auth-redirected app destinations while respecting admin tab toggles and roles.
+  const searchApps = withCountryRows(
+    getVisibleApps(
+      hydrated
+        ? {
+            signedIn: true,
+            isAdmin,
+            canOpenAdmin,
+            hasLabsAccess,
+            hasMycountryPremium,
+            forumModerator,
+            ownsNation: Boolean(country),
+            navigationSettings: navSettings,
+          }
+        : { signedIn: true, isAdmin: false }
+    ),
+    countryHref
   );
 
   return (
@@ -97,7 +118,7 @@ export function FacetShell() {
             onToggle={toggle}
             badges={badges}
             onAction={onAction}
-            countryHref={hydrated && country ? getNationUrl(country.name) : undefined}
+            countryHref={countryHref}
             signedIn={signedIn}
             vaultCard={
               signedIn ? (
@@ -121,7 +142,7 @@ export function FacetShell() {
           />
         </>
       )}
-      <ShellHalo />
+      <ShellHalo trayApps={apps} searchApps={searchApps} />
     </>
   );
 }

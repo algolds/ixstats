@@ -11,6 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { navigateWithBasePath } from "~/lib/base-path";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
+import type { AppDefinition } from "~/lib/navigation/app-sections";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import { CORE_FEATURES, type SystemActionId } from "./halo-registry";
@@ -27,7 +28,7 @@ import {
  * Handles mode transitions, debounced search, keyboard navigation shortcuts,
  * and external event synchronization.
  */
-export function useDynamicIslandState() {
+export function useDynamicIslandState(options?: { searchApps?: readonly AppDefinition[] }) {
   const { user, isSignedIn } = useUser();
   const { signOut } = useAuth();
   const { toggleTheme, toggleCompactMode } = useTheme();
@@ -113,6 +114,7 @@ export function useDynamicIslandState() {
       isAdmin,
       signedIn: Boolean(isSignedIn && user),
       pathname,
+      searchApps: options?.searchApps,
     })
   );
   const featureIndex = buildIndex(CORE_FEATURES);

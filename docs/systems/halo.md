@@ -23,7 +23,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/HaloTourContext.tsx`: Guided tour step state and custom event dispatch for Halo walkthroughs
 - `src/components/halo/HaloTourTooltip.tsx`: Anchored onboarding tooltip callout with skip and next controls
 - `src/components/halo/country-actions.ts`: Shared `COUNTRY_ACTIONS` table and `countryProfilePath` helper used across country views
-- `src/components/halo/halo-registry.ts`: Static command palette entries (`COMMANDS`, `CORE_FEATURES`, `commandsFor`, `SystemActionId`)
+- `src/components/halo/halo-registry.ts`: Command types, `CORE_FEATURES`, and `commandsFor` wrapper over `commandsFromApps`
 - `src/components/halo/hooks.ts`: `useDynamicIslandState` hook wiring `haloReducer`, debounced queries, `searchCatalog`, and global shortcuts
 - `src/components/halo/index.tsx`: `CommandPalette` root component, dialog focus management, outside-pointer dismiss, and size sync
 - `src/components/halo/plugin-context.tsx`: `DIPluginRegistry` external store (`useSyncExternalStore`), `useDIPlugin`, and `useActiveDIPlugin`
@@ -56,7 +56,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/types.ts`: `DIPlugin`, `DIViewProps`, `ViewMode`, `SearchFilter`, `SearchResult`, and view prop interfaces
 - `src/components/halo/views/CompactView.tsx`: Collapsed pill with center button, `pluginCenterActions` slot, toast peek, and right action rail
 - `src/components/halo/views/ExpandedView.tsx`: Lazy-loaded view router (`next/dynamic`) switching built-in and `plugin:*` views
-- `src/components/halo/views/NavTray.tsx`: Secondary quick-navigation popover tray
+- `src/components/halo/views/NavTray.tsx`: Secondary quick-navigation popover tray derived from `getVisibleApps` and `TAB_BAR_PRIORITY`
 - `src/components/halo/views/NotificationsView.tsx`: Alert and direct-message inbox tray with unread counts, grouping, and swipe rows
 - `src/components/halo/views/SearchView.tsx`: Accessible combobox/listbox command palette and search view
 - `src/components/halo/views/SettingsView.tsx`: Quick settings panel using `FacetList`/`FacetRow` for appearance, sound, and Wiki reader preferences
@@ -68,6 +68,7 @@ Generated from `find src/components/halo src/lib/halo -type f | sort`:
 - `src/components/halo/views/tray/MessageTrayItem.tsx`: Swipeable conversation row in the Messages tab of `NotificationsView`
 - `src/components/halo/views/tray/NotificationRow.tsx`: Swipeable alert row with expandable details in `NotificationsView`
 - `src/components/halo/views/tray/types.ts`: Notification item types, relative-time formatter, and category icon/colour helpers
+- `src/lib/halo/commands-from-apps.ts`: Derives Halo command entries from `APPS` + `getVisibleApps`, `NAV_COMMAND_META`, and `EXTRA_HALO_COMMANDS`
 - `src/lib/halo/halo-state.ts`: Pure `haloReducer` state machine (`HaloState`, `HaloEvent`, `INITIAL_HALO_STATE`)
 - `src/lib/halo/search.ts`: Pure search indexing and ranking helpers (`buildIndex`, `commandEntriesFor`, `searchCatalog`)
 
@@ -161,13 +162,13 @@ flowchart TD
 
 ## Command palette
 
-Static command and feature entries live in [`src/components/halo/halo-registry.ts`](../../src/components/halo/halo-registry.ts) (`COMMANDS`, `CORE_FEATURES`, `commandsFor(isAdmin)`). Pure indexing and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts):
+Command entries derive from the sidebar navigation model (`APPS` and `getVisibleApps` in [`src/lib/navigation/app-sections.ts`](../../src/lib/navigation/app-sections.ts)) via [`src/lib/halo/commands-from-apps.ts`](../../src/lib/halo/commands-from-apps.ts) (`NAV_COMMAND_META` + `EXTRA_HALO_COMMANDS`), while `CORE_FEATURES` lives in [`src/components/halo/halo-registry.ts`](../../src/components/halo/halo-registry.ts). `FacetShell` passes `trayApps` (strict viewer visibility for `NavTray`) and `searchApps` (respecting admin tab toggles and role gates) down through `ShellHalo` into `CommandPalette`. Pure indexing and ranking live in [`src/lib/halo/search.ts`](../../src/lib/halo/search.ts):
 
-- **Viewer commands first:** `commandEntriesFor({ isAdmin, signedIn, pathname })` prepends viewer-specific entries (`Sign in` and `Sign up` when signed out, `Sign out` when signed in, plus `Country profile` when viewing `/countries/<slug>`) ahead of `commandsFor(isAdmin)` so they are not truncated under the 3-per-category `"all"` cap.
+- **Viewer commands first:** `commandEntriesFor({ isAdmin, signedIn, pathname, searchApps })` prepends viewer-specific entries (`Sign in` and `Sign up` when signed out, `Sign out` when signed in, plus `Country profile` when viewing `/countries/<slug>`) ahead of `commandsFromVisibleApps(searchApps)` (or `commandsFor(isAdmin)`) so they are not truncated under the 3-per-category `"all"` cap.
 - **Per-filter limits and ordering:** `searchCatalog(query, filter, sources, { wikiFirst })` returns up to 3 matches per source when `filter === "all"` and up to 12 when a single filter is selected (capped at 12 total). Under `"all"`, results are ordered `[countries, commands, features, wiki]` by default, or `[wiki, countries, commands, features]` when `wikiFirst` is true (active Wiki plugin). Wiki queries run once the debounced query is at least 2 characters.
 - **Initial filter on Wiki pages:** Opening Search checks `localStorage["wikios:dynamicSearchWiki"]` (default `true`); when enabled on a Wiki page, Search starts on the `"wiki"` filter, otherwise `"all"`.
 - **Execution:** Navigating entries route client-side via `navigateWithBasePath(path, router)` (preserving React state and Halo's layout morph); `#search`, `#notifications`, and `#settings` switch Halo views; `actionId` entries (`toggle-theme`, `toggle-sound`, `toggle-compact`, `mark-all-read`, `reload-data`, `random-wiki`, `sign-out`, `random-country`) run only when activated via `Enter` or click.
-- **Route verification:** [`src/tests/components/halo/halo-registry-routes.test.ts`](../../src/tests/components/halo/halo-registry-routes.test.ts) verifies that every static path in `halo-registry.ts` resolves to a real `src/app/**/page.tsx` route or an approved `#` view anchor.
+- **Route verification:** [`src/tests/components/halo/halo-registry-routes.test.ts`](../../src/tests/components/halo/halo-registry-routes.test.ts) verifies that every derived palette and `NavTray` path resolves to a real `src/app/**/page.tsx` route without duplicates.
 
 ## Keyboard
 

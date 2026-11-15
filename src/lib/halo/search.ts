@@ -7,6 +7,8 @@ import {
   type SystemActionId,
 } from "~/components/halo/halo-registry";
 import type { CountrySummary, SearchFilter } from "~/components/halo/types";
+import { commandsFromVisibleApps } from "~/lib/halo/commands-from-apps";
+import type { AppDefinition } from "~/lib/navigation/app-sections";
 
 export type IndexedEntry<T> = T & { _lower: string };
 
@@ -60,10 +62,12 @@ export function commandEntriesFor({
   isAdmin,
   signedIn,
   pathname,
+  searchApps,
 }: {
   isAdmin: boolean;
   signedIn: boolean;
   pathname: string | null;
+  searchApps?: readonly AppDefinition[];
 }): CommandEntry[] {
   const viewerEntries: CommandEntry[] = [];
 
@@ -111,7 +115,8 @@ export function commandEntriesFor({
     }
   }
 
-  return [...viewerEntries, ...commandsFor(isAdmin)];
+  const baseCommands = searchApps ? commandsFromVisibleApps(searchApps) : commandsFor(isAdmin);
+  return [...viewerEntries, ...baseCommands];
 }
 
 function matchCountries(

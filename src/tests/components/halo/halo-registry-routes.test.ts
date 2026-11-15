@@ -1,12 +1,14 @@
 /** @jest-environment node */
 /**
- * Every palette and nav-tray destination must resolve to a real page, and the palette must not repeat one.
+ * Every derived palette and nav-tray destination must resolve to a real page, and the palette must not repeat one.
  * Route patterns come from walking `src/app` for `page.tsx` files, the way Next.js builds its routes.
  */
 import { readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { CORE_COMMANDS, CORE_FEATURES } from "~/components/halo/halo-registry";
-import { PRIMARY_NAV, SECONDARY_NAV } from "~/components/halo/views/NavTray";
+import { CORE_FEATURES } from "~/components/halo/halo-registry";
+import { splitNavTrayApps } from "~/components/halo/views/NavTray";
+import { commandsFromApps } from "~/lib/halo/commands-from-apps";
+import { getVisibleApps } from "~/lib/navigation/app-sections";
 
 // NavTray pulls in pretext, an ESM-only package Jest cannot parse. The routes do not depend on its text layout.
 jest.mock("~/components/ui/pretext", () => ({ PreText: () => null }));
@@ -49,8 +51,20 @@ const resolves = (path: string) => matchers.some((matcher) => matcher.test(path)
 const routedPaths = (paths: (string | undefined)[]) =>
   paths.filter((path): path is string => Boolean(path) && !/^(#|http)/.test(path ?? ""));
 
-const paletteRaw = [...CORE_COMMANDS, ...CORE_FEATURES].map((entry) => entry.path);
-const navRaw = [...PRIMARY_NAV, ...SECONDARY_NAV].map((item) => item.href);
+const derivedCommands = commandsFromApps({
+  signedIn: true,
+  isAdmin: true,
+  canOpenAdmin: true,
+  forumModerator: true,
+  hasLabsAccess: true,
+  hasMycountryPremium: true,
+  ownsNation: true,
+  countryHref: "/countries/aphis",
+});
+const tray = splitNavTrayApps(getVisibleApps({ signedIn: true, isAdmin: true, canOpenAdmin: true }));
+
+const paletteRaw = [...derivedCommands, ...CORE_FEATURES].map((entry) => entry.path);
+const navRaw = [...tray.primary, ...tray.secondary].map((item) => item.href);
 
 describe("halo registry and nav tray routes", () => {
   it("points every palette and nav entry at a page that exists", () => {

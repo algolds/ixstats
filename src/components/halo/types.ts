@@ -1,6 +1,11 @@
-// Main CommandPalette props interface
-// Branded string type helper for plugin & view identifiers
-// User Profile interface
+import type { AppDefinition } from "~/lib/navigation/app-sections";
+
+export interface CommandPaletteProps {
+  className?: string;
+  trayApps?: readonly AppDefinition[];
+  searchApps?: readonly AppDefinition[];
+}
+
 // Search Result interface
 export interface SearchResult {
   id: string;
