@@ -18,6 +18,7 @@ import { greetingForHour } from "~/lib/time/greeting";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import type { DIViewProps } from "~/components/halo/types";
 import { PlayPauseMorph } from "./components/PlayPauseMorph";
+import { focusRing, hitSlop } from "~/components/ui/button";
 import { PreText } from "~/components/ui/pretext";
 import { cn } from "~/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
@@ -40,16 +41,7 @@ const WikiNarratorView = dynamic(
 function WikiBreadcrumb() {
   const { user } = useUser();
   const hour = useContextHour();
-  const {
-    articleTitle,
-    activeSectionId,
-    tocEntries,
-    navigateToSection,
-    themeColors,
-    narratorState,
-    narratorActions,
-  } = useWikiContext();
-  const [popoverOpen, setPopoverOpen] = useState(false);
+  const { articleTitle, activeSectionId, tocEntries, narratorState } = useWikiContext();
 
   const greetingText = useMemo(() => {
     const timeGreeting = hour === null ? "Welcome" : greetingForHour(hour);
@@ -73,32 +65,10 @@ function WikiBreadcrumb() {
     ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
     : null;
 
-  // Narrator Active in Breadcrumb: Clean, tactile, zero clutter
-  if (isNarratorActive && narratorActions) {
+  // Narrator Active in Breadcrumb: label only (play/pause lives in WikiCenterActions)
+  if (isNarratorActive) {
     return (
-      <div className="flex max-w-[170px] min-w-0 items-center gap-2 select-none sm:max-w-[220px]">
-        {/* Leading: Tactile Apple Play/Pause Morph Button */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (narratorState.isPlaying) {
-              narratorActions.pause();
-            } else {
-              narratorActions.play();
-            }
-          }}
-          onPointerDown={(e) => e.stopPropagation()}
-          className="bg-tint text-on-tint flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full"
-          title={narratorState.isPlaying ? "Pause narration" : "Resume narration"}
-        >
-          <PlayPauseMorph
-            isPlaying={!!narratorState.isPlaying}
-            size={10}
-            className="fill-current"
-          />
-        </button>
-
+      <div className="flex max-w-[150px] min-w-0 items-center gap-2 select-none sm:max-w-[190px]">
         {/* The article colour has no contrast guarantee on chrome, so the title stays label ink. */}
         <span className="text-label text-caption truncate font-semibold">
           {hasSpecificTitle ? articleTitle : "Wiki narrator"}
@@ -113,10 +83,9 @@ function WikiBreadcrumb() {
     );
   }
 
-  // Default Reading / Profile Breadcrumb
+  // Default Reading / Profile Breadcrumb (section popover lives in WikiCenterActions)
   return (
-    <div className="flex max-w-[160px] min-w-0 items-center gap-2 sm:max-w-[200px]">
-      {/* Title or Personalized Greeting */}
+    <div className="flex max-w-[120px] min-w-0 items-center gap-2 sm:max-w-[150px]">
       {hasSpecificTitle ? (
         <span className="text-label text-caption max-w-[90px] truncate font-semibold sm:max-w-[120px]">
           {articleTitle}
@@ -140,65 +109,120 @@ function WikiBreadcrumb() {
           </PreText>
         </span>
       )}
+    </div>
+  );
+}
 
-      {/* Section Popover Dropdown when not in narrator mode */}
-      {hasSpecificTitle && activeSectionName && (
-        <>
-          <span className="text-label-secondary text-footnote shrink-0">›</span>
-          <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-            <PopoverTrigger asChild>
-              <span
-                className="hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast relative z-10 inline-block max-w-[70px] cursor-pointer truncate overflow-hidden px-1 py-0.5 text-left transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setPopoverOpen((prev) => !prev);
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-              >
-                {activeSectionName}
-              </span>
-            </PopoverTrigger>
-            <PopoverContent side="bottom" align="start" sideOffset={8} className="w-56 p-2">
-              <div className="max-h-[200px] scrollbar-thin space-y-0.5 overflow-y-auto select-none">
-                {tocEntries
-                  .filter((e) => e.level <= 3)
-                  .map((entry) => {
-                    const isActive = activeSectionId === entry.id;
-                    return (
-                      <button
-                        key={entry.id}
-                        onClick={() => {
-                          navigateToSection(entry.id);
-                          setPopoverOpen(false);
-                        }}
-                        className={cn(
-                          "text-caption rounded-control-sm duration-fast flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors select-none",
-                          isActive
-                            ? "text-label"
-                            : "text-label-secondary hover:text-label hover:bg-fill-3",
-                          entry.level === 3 ? "pl-5" : ""
-                        )}
-                        style={
-                          isActive
-                            ? { backgroundColor: accentMix(wikiAccent(themeColors), 12) }
-                            : undefined
-                        }
-                        type="button"
-                      >
-                        {entry.level === 3 && (
-                          <span className="text-label-tertiary text-footnote mr-1">›</span>
-                        )}
-                        <span className="truncate">{entry.text}</span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </>
-      )}
+function WikiCenterActions() {
+  const {
+    articleTitle,
+    activeSectionId,
+    tocEntries,
+    navigateToSection,
+    themeColors,
+    narratorState,
+    narratorActions,
+  } = useWikiContext();
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const hasNarratorAccess = useHasNarratorAccess();
+
+  const isNarratorActive = !!(
+    hasNarratorAccess &&
+    narratorState &&
+    narratorState.totalBlocks > 0 &&
+    (narratorState.isPlaying || narratorState.activeBlockIndex > 0)
+  );
+
+  if (isNarratorActive && narratorActions) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          if (narratorState.isPlaying) {
+            narratorActions.pause();
+          } else {
+            narratorActions.play();
+          }
+        }}
+        aria-label={narratorState.isPlaying ? "Pause narration" : "Resume narration"}
+        className={cn(
+          "bg-tint text-on-tint relative flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full",
+          focusRing,
+          hitSlop
+        )}
+      >
+        <PlayPauseMorph isPlaying={!!narratorState.isPlaying} size={10} className="fill-current" />
+      </button>
+    );
+  }
+
+  const hasSpecificTitle = Boolean(
+    articleTitle && articleTitle !== "IxWiki" && articleTitle !== "Main Page"
+  );
+  const activeSectionName = activeSectionId
+    ? (tocEntries.find((e) => e.id === activeSectionId)?.text ?? null)
+    : null;
+
+  if (!hasSpecificTitle || !activeSectionName) {
+    return null;
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <span className="text-label-secondary text-footnote shrink-0" aria-hidden="true">
+        ›
+      </span>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={cn(
+              "hover:text-label text-label-secondary hover:bg-fill-3 text-caption rounded-control-sm duration-fast relative z-10 inline-flex max-w-[70px] cursor-pointer items-center px-1 py-0.5 text-left transition-colors",
+              focusRing,
+              hitSlop
+            )}
+          >
+            <span className="truncate">{activeSectionName}</span>
+          </button>
+        </PopoverTrigger>
+        <PopoverContent side="bottom" align="start" sideOffset={8} className="w-56 p-2">
+          <div className="max-h-[200px] scrollbar-thin space-y-0.5 overflow-y-auto select-none">
+            {tocEntries
+              .filter((e) => e.level <= 3)
+              .map((entry) => {
+                const isActive = activeSectionId === entry.id;
+                return (
+                  <button
+                    key={entry.id}
+                    onClick={() => {
+                      navigateToSection(entry.id);
+                      setPopoverOpen(false);
+                    }}
+                    className={cn(
+                      "text-caption rounded-control-sm duration-fast flex w-full cursor-pointer items-center px-3 py-2 text-left transition-colors select-none",
+                      focusRing,
+                      isActive
+                        ? "text-label"
+                        : "text-label-secondary hover:text-label hover:bg-fill-3",
+                      entry.level === 3 ? "pl-5" : ""
+                    )}
+                    style={
+                      isActive
+                        ? { backgroundColor: accentMix(wikiAccent(themeColors), 12) }
+                        : undefined
+                    }
+                    type="button"
+                  >
+                    {entry.level === 3 && (
+                      <span className="text-label-tertiary text-footnote mr-1">›</span>
+                    )}
+                    <span className="truncate">{entry.text}</span>
+                  </button>
+                );
+              })}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
@@ -222,6 +246,7 @@ export function WikiHalo() {
       // When narrating or playing audio, boost priority to 100 so it takes over the Dynamic Island / Halo like a live activity
       priority: isPlaying ? 100 : isNarrating ? 50 : 10,
       center: <WikiBreadcrumb />,
+      centerActions: <WikiCenterActions />,
       expandedViews: (articleTitle
         ? {
             wiki: WikiView,

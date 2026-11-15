@@ -289,6 +289,7 @@ function CommandPaletteContent({
                   scrollY={scrollY}
                   activePlugin={activePlugin}
                   pluginCenter={activePlugin?.center}
+                  pluginCenterActions={activePlugin?.centerActions}
                   pluginActions={activePlugin?.actions}
                   pluginBadge={activePlugin?.badge}
                 />

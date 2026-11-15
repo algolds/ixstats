@@ -49,6 +49,7 @@ export interface DIPlugin<F = unknown, C = unknown> {
   id: string;
   priority?: number;
   center?: React.ReactNode;
+  centerActions?: React.ReactNode;
   // oxlint-disable-next-line typescript/no-explicit-any
   expandedViews?: Record<string, React.ComponentType<DIViewProps<any, any>>>;
   badge?: DIBadge;
@@ -74,6 +75,7 @@ export interface CompactViewProps {
   activePlugin?: DIPlugin | null;
   // Plugin system props
   pluginCenter?: React.ReactNode;
+  pluginCenterActions?: React.ReactNode;
   pluginActions?: DIAction[];
   pluginBadge?: DIBadge;
 }

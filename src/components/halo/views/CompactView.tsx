@@ -17,6 +17,7 @@ import type { CompactViewProps } from "../types";
 import { useWikiContext } from "~/components/wiki-os/shared/WikiContext";
 
 import { PreText } from "~/components/ui/pretext";
+import { focusRing } from "~/components/ui/button";
 import { IOSActivityIndicator } from "~/components/ui/loader";
 import { soundCues } from "~/lib/sound/cuelume";
 import { springSnappy } from "~/lib/design/motion";
@@ -42,6 +43,7 @@ function CompactViewComponent({
   onSwitchMode,
   activePlugin,
   pluginCenter,
+  pluginCenterActions,
   pluginActions,
   pluginBadge,
 }: CompactViewProps) {
@@ -150,50 +152,41 @@ function CompactViewComponent({
             </AnimatePresence>
           )}
 
-          {isSticky &&
-            !peekText &&
-            activePlugin &&
-            pluginCenter &&
-            (pluginViewKey ? (
-              <div
-                role="button"
-                tabIndex={0}
-                data-halo-trigger="plugin"
-                aria-expanded={mode === `plugin:${pluginViewKey}`}
-                aria-controls="halo-panel"
-                onClick={() => {
-                  if (mode === `plugin:${pluginViewKey}`) {
-                    onSwitchMode("compact");
-                  } else {
-                    onSwitchMode(`plugin:${pluginViewKey}`);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+          {isSticky && !peekText && activePlugin && pluginCenter && (
+            <div
+              className={`flex min-w-0 flex-1 items-center gap-1 ${
+                activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
+              }`}
+            >
+              {pluginViewKey ? (
+                <button
+                  type="button"
+                  data-halo-trigger="plugin"
+                  aria-expanded={mode === `plugin:${pluginViewKey}`}
+                  aria-controls="halo-panel"
+                  onClick={() => {
                     if (mode === `plugin:${pluginViewKey}`) {
                       onSwitchMode("compact");
                     } else {
                       onSwitchMode(`plugin:${pluginViewKey}`);
                     }
-                  }
-                }}
-                className={`rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 ${
-                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-                }`}
-                title={`Open ${activePlugin.id} mode`}
-              >
-                {pluginCenter}
-              </div>
-            ) : (
-              <div
-                className={`duration-fast flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] ${
-                  activeSectionName ? "max-w-[220px]" : "max-w-[160px]"
-                }`}
-              >
-                {pluginCenter}
-              </div>
-            ))}
+                  }}
+                  className={cn(
+                    "rounded-control-sm hover:bg-fill-2 duration-fast flex min-w-0 flex-1 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2",
+                    focusRing
+                  )}
+                  title={`Open ${activePlugin.id} mode`}
+                >
+                  {pluginCenter}
+                </button>
+              ) : (
+                <div className="duration-fast flex min-w-0 flex-1 items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]">
+                  {pluginCenter}
+                </div>
+              )}
+              {pluginCenterActions}
+            </div>
+          )}
 
           {/* Non-sticky: peek or time/context */}
           {!isSticky && (
@@ -223,40 +216,35 @@ function CompactViewComponent({
                 >
                   {/* Context switcher / Plugin center */}
                   {activePlugin && pluginCenter ? (
-                    pluginViewKey ? (
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        data-halo-trigger="plugin"
-                        aria-expanded={mode === `plugin:${pluginViewKey}`}
-                        aria-controls="halo-panel"
-                        onClick={() => {
-                          if (mode === `plugin:${pluginViewKey}`) {
-                            onSwitchMode("compact");
-                          } else {
-                            onSwitchMode(`plugin:${pluginViewKey}`);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
+                    <>
+                      {pluginViewKey ? (
+                        <button
+                          type="button"
+                          data-halo-trigger="plugin"
+                          aria-expanded={mode === `plugin:${pluginViewKey}`}
+                          aria-controls="halo-panel"
+                          onClick={() => {
                             if (mode === `plugin:${pluginViewKey}`) {
                               onSwitchMode("compact");
                             } else {
                               onSwitchMode(`plugin:${pluginViewKey}`);
                             }
-                          }
-                        }}
-                        className="rounded-control-sm hover:bg-fill-2 focus-visible:outline-tint duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 sm:max-w-[200px]"
-                        title={`Open ${activePlugin.id} mode`}
-                      >
-                        {pluginCenter}
-                      </div>
-                    ) : (
-                      <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
-                        {pluginCenter}
-                      </div>
-                    )
+                          }}
+                          className={cn(
+                            "rounded-control-sm hover:bg-fill-2 duration-fast flex max-w-[160px] min-w-0 cursor-pointer items-center gap-2 overflow-hidden px-2 py-0.5 text-left transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] focus-visible:-outline-offset-2 sm:max-w-[200px]",
+                            focusRing
+                          )}
+                          title={`Open ${activePlugin.id} mode`}
+                        >
+                          {pluginCenter}
+                        </button>
+                      ) : (
+                        <div className="duration-fast flex max-w-[160px] min-w-0 items-center gap-2 overflow-hidden px-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] sm:max-w-[200px]">
+                          {pluginCenter}
+                        </div>
+                      )}
+                      {pluginCenterActions}
+                    </>
                   ) : (
                     <button
                       type="button"
