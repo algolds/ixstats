@@ -6,7 +6,6 @@ export interface SearchResult {
   id: string;
   type: "country" | "command" | "feature" | "wiki";
   title: string;
-  subtitle?: string;
   description?: string;
   metadata?: Record<string, unknown>;
   icon?: React.ComponentType<{ className?: string }>;
@@ -55,7 +54,6 @@ export interface DIPlugin<F = unknown, C = unknown> {
   badge?: DIBadge;
   actions?: DIAction[];
   accentColor?: string;
-  stickyLabel?: string;
   filter?: F;
   context?: C;
 }

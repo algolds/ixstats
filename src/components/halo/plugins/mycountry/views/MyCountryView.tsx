@@ -503,5 +503,3 @@ export function MyCountryView({ onClose }: MyCountryViewProps) {
     </motion.div>
   );
 }
-
-// Backwards compatibility alias

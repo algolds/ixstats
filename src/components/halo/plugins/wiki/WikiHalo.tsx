@@ -258,7 +258,6 @@ export function WikiHalo() {
             ...(hasNarratorAccess ? { narrator: WikiNarratorView } : {}),
           }) as Record<string, React.ComponentType<DIViewProps>>,
       accentColor: accent,
-      stickyLabel: isPlaying ? "Narrating" : "Wiki",
     }),
     [articleTitle, hasNarratorAccess, isPlaying, isNarrating, accent]
   );
@@ -266,5 +265,3 @@ export function WikiHalo() {
   useDIPlugin(plugin);
   return null;
 }
-
-// Backwards compatibility alias

@@ -146,7 +146,6 @@ function ActiveSportsLiveHalo({ match }: { match: LiveActivityMatch }) {
     center: <LivePill match={match} />,
     expandedViews: { "sports-live": SportsLiveView },
     accentColor: ACCENT,
-    stickyLabel: "Live",
     badge: { color: ACCENT },
     context: { match },
   };
@@ -170,5 +169,3 @@ export function SportsLiveHalo() {
   if (!match) return null;
   return <ActiveSportsLiveHalo match={match} />;
 }
-
-// Backwards compatibility alias

@@ -243,7 +243,6 @@ describe("Halo search results", () => {
     expect(first).toMatchObject({
       id: "country-c0",
       type: "country",
-      subtitle: "Economic Tier: Developed",
       description: "Tier: Developed",
       metadata: { flagUrl: "/flags/eastmark-0.png", economicTier: "Developed" },
     });

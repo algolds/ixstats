@@ -11,7 +11,7 @@ import React, { useMemo } from "react";
 import { Crown } from "iconoir-react";
 import { useDIPlugin } from "~/components/halo/plugin-context";
 import { PreText } from "~/components/ui/pretext";
-import { MyCountryActionsView, MyCountryView } from "./views";
+import { MyCountryActionsView } from "./views";
 
 function MyCountryLabel() {
   return (
@@ -32,10 +32,8 @@ export function MyCountryHalo() {
       center: <MyCountryLabel />,
       expandedViews: {
         mycountry: MyCountryActionsView,
-        mycountry_stats: MyCountryView,
       },
       accentColor: "var(--color-yellow)",
-      stickyLabel: "MyCountry",
     }),
     []
   );
@@ -43,5 +41,3 @@ export function MyCountryHalo() {
   useDIPlugin(plugin);
   return null;
 }
-
-// Backwards compatibility alias

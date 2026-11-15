@@ -67,7 +67,6 @@ export function useDynamicIslandState() {
   // Mode switching with auto-expand management
   const switchMode = (newMode: ViewMode) => {
     setMode(newMode);
-    window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
 
     const isExpandedMode =
       newMode === "search" ||
@@ -100,20 +99,6 @@ export function useDynamicIslandState() {
       }
     }
   };
-
-  // Listen to external mode change triggers
-  useEffect(() => {
-    const handleSwitch = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: ViewMode }>;
-      if (customEvent.detail?.mode) {
-        switchMode(customEvent.detail.mode);
-      }
-    };
-    window.addEventListener("ix:switch-di-mode", handleSwitch);
-    return () => {
-      window.removeEventListener("ix:switch-di-mode", handleSwitch);
-    };
-  }, [switchMode]);
 
   // Pre-compute lowercase command index with category & keywords
   const commandIndex = (() => {
@@ -261,7 +246,6 @@ export function useDynamicIslandState() {
             id: `country-${country.id}`,
             type: "country",
             title: country.name,
-            subtitle: `Economic Tier: ${country.economicTier || "Standard"}`,
             description: country.economicTier
               ? `Tier: ${country.economicTier}`
               : "View country profile",

@@ -100,5 +100,3 @@ export function MyCountryActionsView({ onClose }: DIViewProps) {
     </motion.div>
   );
 }
-
-// Backwards compatibility alias

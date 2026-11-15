@@ -50,7 +50,6 @@ export function BuilderHalo({ label, sections, currentId = null, onJump }: Build
       center: <BuilderHaloLabel label={label} />,
       expandedViews: { sections: JumpToSectionView },
       accentColor: "var(--tint)",
-      stickyLabel: label,
       context: {
         sections: JSON.parse(sectionsKey) as BuilderHaloSection[],
         currentId,

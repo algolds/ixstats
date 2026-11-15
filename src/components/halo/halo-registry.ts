@@ -51,7 +51,6 @@ type SystemActionId =
   | "sign-out";
 
 interface CommandEntry {
-  id?: string;
   name: string;
   path?: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -64,7 +63,6 @@ interface CommandEntry {
 }
 
 interface FeatureEntry {
-  id?: string;
   name: string;
   path?: string;
   icon: React.ComponentType<{ className?: string }>;
