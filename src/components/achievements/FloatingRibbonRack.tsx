@@ -4,10 +4,11 @@ import React from "react";
 import { motion } from "motion/react";
 import { Star, Trophy as Award } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
 import { Badge } from "~/components/ui/badge";
-import { springSnappy } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSnappy } from "~/lib/design/motion";
 import type { FacetAccent } from "~/lib/design/tokens";
 import { getCategoryTheme } from "./constants";
 
@@ -64,6 +65,7 @@ interface RibbonBarProps {
 
 /** One ribbon bar with its tooltip (title, category, rarity and unlock date). */
 export function RibbonBar({ ribbon, size = "sm" }: RibbonBarProps) {
+  const reducedMotion = useFacetReducedMotion();
   const unlocked = ribbon.unlockedAt
     ? new Date(ribbon.unlockedAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })
     : null;
@@ -71,8 +73,8 @@ export function RibbonBar({ ribbon, size = "sm" }: RibbonBarProps) {
     <Tooltip>
       <TooltipTrigger asChild>
         <motion.div
-          whileHover={{ y: -2 }}
-          transition={springSnappy}
+          whileHover={reducedMotion ? undefined : { y: -2 }}
+          transition={reducedMotion ? REDUCED_MOTION_FADE : springSnappy}
           className="group/ribbon relative flex cursor-default flex-col items-center"
           aria-label={`${ribbon.title} ribbon (${ribbon.rarity})`}
           role="img"
@@ -86,7 +88,7 @@ export function RibbonBar({ ribbon, size = "sm" }: RibbonBarProps) {
             )}
           >
             <div className="bg-yellow absolute inset-x-0 top-0 h-px" />
-            <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(90deg,transparent,transparent_1px,rgba(0,0,0,0.25)_1px,rgba(0,0,0,0.25)_2px)]" />
+            <div aria-hidden className="ribbon-weave pointer-events-none absolute inset-0" />
             <Star
               aria-hidden
               className={cn(
@@ -142,22 +144,20 @@ export function FloatingRibbonRack({
   const more = Math.max(0, (total ?? ribbons.length) - shown.length);
 
   return (
-    <TooltipProvider delayDuration={100}>
-      <div
-        className={cn("inline-flex items-center gap-2 select-none", className)}
-        style={style}
-        data-testid="ribbon-rack"
-      >
-        {shown.map((ribbon) => (
-          <RibbonBar key={ribbon.key} ribbon={ribbon} />
-        ))}
-        {more > 0 && (
-          <span className="bg-fill-2 text-label text-caption rounded-xs px-1 tabular-nums">
-            +{more}
-          </span>
-        )}
-      </div>
-    </TooltipProvider>
+    <div
+      className={cn("inline-flex items-center gap-2 select-none", className)}
+      style={style}
+      data-testid="ribbon-rack"
+    >
+      {shown.map((ribbon) => (
+        <RibbonBar key={ribbon.key} ribbon={ribbon} />
+      ))}
+      {more > 0 && (
+        <span className="bg-fill-2 text-label text-caption rounded-xs px-1 tabular-nums">
+          +{more}
+        </span>
+      )}
+    </div>
   );
 }
 

@@ -6,7 +6,7 @@ import { Bank, Coins, Globe, NavArrowRight } from "iconoir-react";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
 import { formatBig, formatPercent, formatRate } from "~/app/countries/[slug]/_utils/profileLayer";
 import { Badge } from "~/components/ui/badge";
-import { Card } from "~/components/ui/card";
+import { FACET_CHART_BG_CLASSES } from "~/components/ui/chart";
 import { EmptyState } from "~/components/ui/empty-state";
 import { FlagImage } from "~/components/ui/facet/identity/FlagImage";
 import { assetUrl } from "~/lib/base-path";
@@ -23,11 +23,11 @@ import { FactList, SnapshotBlock } from "./SnapshotBlock";
 type BlockProps = { layer: CountryProfileLayer; onMore: () => void };
 type RegionShareData = NonNullable<ReturnType<typeof regionShares>>;
 
-/** Tint steps for the largest regions in the share bar, strongest first. */
-const SHARE_FILLS = ["bg-tint", "bg-tint/75", "bg-tint/55", "bg-tint/40"] as const;
+/** Categorical Facet chart fills for the largest regions in the share bar. */
+const SHARE_FILLS = FACET_CHART_BG_CLASSES;
 
-/** Stepped fills for parliamentary party composition segments. */
-const PARTY_FILLS = ["bg-tint", "bg-info", "bg-success", "bg-warning", "bg-fill-2"] as const;
+/** Categorical Facet chart fills for parliamentary party composition segments. */
+const PARTY_FILLS = FACET_CHART_BG_CLASSES;
 
 function buildSparklinePoints(history: readonly { year: number; gdp: number }[]): {
   polyline: string;
@@ -67,7 +67,7 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
         : null;
 
   return (
-    <Card padding="sm" className="flex items-center justify-between gap-3">
+    <div className="border-separator/60 flex items-center justify-between gap-3 border-t pt-3">
       <div className="min-w-0">
         <span className="text-caption text-label-secondary block">
           {hasPerCapita ? "GDP per capita" : "Historical output"}
@@ -92,11 +92,11 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
           viewBox="0 0 160 36"
           className="h-9 w-28 shrink-0 overflow-visible"
         >
-          <polygon points={spark.area} fill="var(--tint)" fillOpacity="0.14" />
+          <polygon points={spark.area} fill="var(--color-chart-1)" fillOpacity="0.12" />
           <polyline
             fill="none"
-            stroke="var(--tint)"
-            strokeWidth="2"
+            stroke="var(--color-chart-1)"
+            strokeWidth="1.75"
             strokeLinecap="round"
             strokeLinejoin="round"
             points={spark.polyline}
@@ -112,7 +112,7 @@ function EconomyTrajectoryWell({ vitals }: { vitals: CountryProfileLayer["vitals
           </div>
         )
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -123,7 +123,7 @@ function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
   const clearUnpinned = () => setSelection((curr) => (curr?.pinned ? curr : null));
 
   return (
-    <Card padding="sm" className="flex flex-col gap-2">
+    <div className="border-separator/60 flex flex-col gap-2 border-t pt-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-caption text-label-secondary">Regional concentration</span>
         <span className="text-caption text-label-secondary tabular-nums">
@@ -131,7 +131,7 @@ function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
         </span>
       </div>
       <div
-        className="rounded-control-sm flex h-3 gap-0.5 overflow-hidden"
+        className="rounded-control-sm flex h-2.5 gap-0.5 overflow-hidden"
         onMouseLeave={clearUnpinned}
         onBlur={clearUnpinned}
       >
@@ -169,7 +169,7 @@ function RegionalPopulationWell({ shares }: { shares: RegionShareData }) {
       <p className="text-caption text-label-secondary">
         {shares.regions.length} largest regions hold {shares.topShare.toFixed(1)}% of the people
       </p>
-    </Card>
+    </div>
   );
 }
 
@@ -260,7 +260,7 @@ function LegislatureWell({
   const totalSeats = Math.max(election.totalSeats, partySeatSum);
 
   return (
-    <Card padding="sm" className="flex flex-col gap-2">
+    <div className="border-separator/60 flex flex-col gap-2 border-t pt-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-caption text-label-secondary truncate">
           {legislatureName ? stripHtml(legislatureName) : "Legislature composition"}
@@ -276,7 +276,7 @@ function LegislatureWell({
 
       {parties.length > 0 && (
         <>
-          <div aria-hidden className="rounded-control-sm flex h-2.5 gap-0.5 overflow-hidden">
+          <div aria-hidden className="rounded-control-sm flex h-2 gap-0.5 overflow-hidden">
             {parties.map((p, index) => {
               const weight =
                 totalSeats > 0 && p.seatsWon > 0
@@ -322,7 +322,7 @@ function LegislatureWell({
           </ul>
         </>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -359,8 +359,8 @@ export function StateBlock({ layer, onMore }: BlockProps) {
         <>
           {e && <LegislatureWell legislatureName={g?.legislature} election={e} />}
           {offices.length > 0 && (
-            <Card padding="sm" className="flex items-center justify-between gap-3">
-              <ol className="border-tint/40 flex min-w-0 flex-col gap-2 border-l-2 pl-3">
+            <div className="border-separator/60 flex items-center justify-between gap-3 border-t pt-3">
+              <ol className="border-separator flex min-w-0 flex-col gap-2 border-l-2 pl-3">
                 {offices.map((o) => (
                   <li key={`${o.role}-${o.name}`} className="flex min-w-0 flex-col">
                     <span className="text-caption text-label-secondary truncate">
@@ -380,7 +380,7 @@ export function StateBlock({ layer, onMore }: BlockProps) {
                   className="border-separator bg-fill-4 rounded-control size-14 shrink-0 border object-cover"
                 />
               )}
-            </Card>
+            </div>
           )}
           {departments.length > 0 && (
             <p className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
@@ -445,9 +445,9 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
       ) : (
         <>
           {topRelations.length > 0 && (
-            <Card padding="sm" className="flex flex-col gap-2">
+            <div className="border-separator/60 flex flex-col gap-2 border-t pt-3">
               <span className="text-caption text-label-secondary">Bilateral ties</span>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-2.5">
                 {topRelations.map((r) => {
                   const badge = relationshipBadge(r.relationship);
                   const pct = Math.max(8, Math.min(100, Math.round(r.strength)));
@@ -487,17 +487,17 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                         aria-hidden
                         className="bg-fill-3 rounded-control-sm h-1 w-full overflow-hidden"
                       >
-                        <div className="bg-tint h-full" style={{ width: `${pct}%` }} />
+                        <div className="bg-label-secondary h-full" style={{ width: `${pct}%` }} />
                       </div>
                     </li>
                   );
                 })}
               </ul>
-            </Card>
+            </div>
           )}
 
           {embassyLinks.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="border-separator/60 flex flex-wrap gap-1.5 border-t pt-3">
               {embassyLinks.map((emb) => {
                 const content = (
                   <>
@@ -522,14 +522,14 @@ export function ForeignBlock({ layer, onMore }: BlockProps) {
                   <CountryLink
                     key={emb.id}
                     country={{ slug: emb.countrySlug }}
-                    className="facet-well facet-press facet-press-subtle focus-visible:outline-tint rounded-control-sm inline-flex max-w-full items-center gap-1.5 px-2.5 py-1 focus-visible:outline-2"
+                    className="border-separator/60 hover:bg-fill-4 facet-press facet-press-subtle focus-visible:outline-tint rounded-control-sm inline-flex max-w-full items-center gap-1.5 border px-2.5 py-1 focus-visible:outline-2"
                   >
                     {content}
                   </CountryLink>
                 ) : (
                   <span
                     key={emb.id}
-                    className="facet-well rounded-control-sm inline-flex max-w-full items-center gap-1.5 px-2.5 py-1"
+                    className="border-separator/60 rounded-control-sm inline-flex max-w-full items-center gap-1.5 border px-2.5 py-1"
                   >
                     {content}
                   </span>

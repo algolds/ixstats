@@ -43,13 +43,14 @@ export function TradeImpactSummary({
 
   return (
     <Card content="data" padding="md">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="lg:divide-separator/60 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-0 lg:divide-x">
         <Stat
           size="sm"
           label="Planned tariff yield"
           icon={<Percent />}
           iconPlacement="trailing"
           value={plannedRevenueText ?? unrecorded()}
+          className="lg:pr-4"
           hint={
             <>
               {plannedAverageTariff != null
@@ -67,6 +68,7 @@ export function TradeImpactSummary({
           label="Trade balance"
           icon={<Ship />}
           iconPlacement="trailing"
+          className="lg:px-4"
           value={
             balanceText == null || tradeBalance == null ? (
               unrecorded()
@@ -92,6 +94,7 @@ export function TradeImpactSummary({
           icon={<Globe2 />}
           iconPlacement="trailing"
           value={exportsText ?? unrecorded()}
+          className="lg:px-4"
           hint={totalExports != null ? "From your recorded exports (% of GDP)" : undefined}
         />
 
@@ -101,6 +104,7 @@ export function TradeImpactSummary({
           icon={<Ship />}
           iconPlacement="trailing"
           value={importsText ?? unrecorded()}
+          className="lg:pl-4"
           hint={totalImports != null ? "From your recorded imports (% of GDP)" : undefined}
         />
       </div>

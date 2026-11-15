@@ -30,7 +30,7 @@ export function StepSection({
       <CardHeader className="flex-row items-start gap-3 p-4 sm:p-6">
         <span
           aria-hidden
-          className="facet-gold text-footnote flex size-6 shrink-0 items-center justify-center rounded-full font-semibold tabular-nums"
+          className="bg-fill-3 text-label text-footnote flex size-6 shrink-0 items-center justify-center rounded-full font-semibold tabular-nums"
         >
           {step}
         </span>

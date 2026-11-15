@@ -28,6 +28,7 @@ import { Badge } from "~/components/ui/badge";
 import { Alert, AlertDescription } from "~/components/ui/alert";
 import { Separator } from "~/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
+import { FACET_AXIS_TICK, FacetChartTooltip } from "~/components/ui/chart";
 import {
   Table,
   TableBody,
@@ -42,7 +43,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
-  Legend,
   ResponsiveContainer,
   Line,
   ComposedChart,
@@ -434,33 +434,72 @@ function PoliciesTab({ model }: { model: Model }) {
 function ProjectionsTab({ data }: { data: YearProjection[] }) {
   return (
     <TabCard value="projections" icon={TrendingUp} title="Projections">
+      <div className="text-caption text-label-secondary mb-3 flex flex-wrap items-center gap-4">
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="bg-chart-1 h-2.5 w-2.5 rounded-full" />
+          GDP (total)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="bg-chart-2 h-2.5 w-2.5 rounded-full" />
+          Inflation %
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span aria-hidden="true" className="bg-chart-8 h-2.5 w-2.5 rounded-full" />
+          Unemployment %
+        </span>
+      </div>
       <div className="h-[400px] w-full">
         <ResponsiveContainer>
-          <ComposedChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="year" />
-            <YAxis yAxisId="left" orientation="left" />
-            <YAxis yAxisId="right" orientation="right" />
-            <RechartsTooltip
-              formatter={(value: any, name: any) => [
-                formatPercentage(value),
-                name.charAt(0).toUpperCase() + name.slice(1),
-              ]}
+          <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="var(--color-separator)"
             />
-            <Legend />
-            <Bar yAxisId="left" dataKey="gdp" fill="#3b82f6" name="GDP (Total)" />
+            <XAxis dataKey="year" axisLine={false} tickLine={false} tick={FACET_AXIS_TICK} />
+            <YAxis
+              yAxisId="left"
+              orientation="left"
+              axisLine={false}
+              tickLine={false}
+              tick={FACET_AXIS_TICK}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              axisLine={false}
+              tickLine={false}
+              tick={FACET_AXIS_TICK}
+            />
+            <RechartsTooltip
+              cursor={{ fill: "var(--color-fill-4)" }}
+              content={<FacetChartTooltip valueFormatter={(val) => formatPercentage(val)} />}
+            />
+            <Bar
+              yAxisId="left"
+              dataKey="gdp"
+              fill="var(--color-chart-1)"
+              radius={[4, 4, 0, 0]}
+              name="GDP (Total)"
+            />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="inflation"
-              stroke="#f59e0b"
+              stroke="var(--color-chart-2)"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "var(--color-chart-2)", strokeWidth: 0 }}
               name="Inflation %"
             />
             <Line
               yAxisId="right"
               type="monotone"
               dataKey="unemployment"
-              stroke="#ef4444"
+              stroke="var(--color-chart-8)"
+              strokeWidth={2.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "var(--color-chart-8)", strokeWidth: 0 }}
               name="Unemployment %"
             />
           </ComposedChart>

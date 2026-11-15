@@ -25,7 +25,7 @@ function ListingLine({
   const titleId = `listing-${listing.id}`;
   const copy = `${FINISH_LABEL[listing.finish]} #${listing.serialNumber}`;
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li data-row className="flex flex-wrap items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
         <p id={titleId} className="text-callout truncate">
           {listing.cardTitle} · {listing.price.toLocaleString()} IxC
@@ -94,7 +94,7 @@ function ListingsBody({
     );
   }
   return (
-    <Card content="data">
+    <Card content="data" padding="none">
       <ul className="divide-separator divide-y">
         {listings.map((listing) => (
           <ListingLine

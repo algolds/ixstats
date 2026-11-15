@@ -24,7 +24,7 @@ interface DailyChoiceStageProps {
 }
 
 const CHOICE_SURFACE = cn(
-  "group facet-lens facet-press facet-press-subtle rounded-card relative flex flex-col justify-between overflow-hidden p-4 text-left",
+  "group rounded-row border-separator bg-surface-secondary/80 hover:bg-fill-3 facet-press relative flex flex-col justify-between overflow-hidden border p-4 text-left",
   "focus-visible:outline-tint cursor-pointer outline-none focus-visible:outline-2 focus-visible:outline-offset-2",
   "disabled:cursor-not-allowed"
 );
@@ -99,7 +99,7 @@ const PREVIEW_TRIO: readonly {
     },
     shine: "SERIALISED",
     widthClass: "w-22",
-    poseClass: "shadow-floating rounded-card relative",
+    poseClass: "rounded-card relative",
     hoverClass:
       "transition-[translate] duration-fast ease-out-facet group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5",
   },
@@ -136,11 +136,7 @@ function CreditsChoiceTile({
       aria-busy={loading}
       onPointerMove={reduce ? undefined : onPointerMove}
       onPointerLeave={reduce ? undefined : onPointerLeave}
-      className={cn(
-        CHOICE_SURFACE,
-        !disabled && "facet-lift",
-        disabled && !loading && "opacity-50"
-      )}
+      className={cn(CHOICE_SURFACE, disabled && !loading && "opacity-50")}
     >
       <TextureOverlay
         texture="chevron"
@@ -153,7 +149,7 @@ function CreditsChoiceTile({
           style={reduce ? undefined : tilt}
           className="relative flex flex-col items-center gap-2.5 transform-3d"
         >
-          <div className="bg-surface-elevated border-separator shadow-floating relative grid size-24 place-items-center overflow-hidden rounded-full border">
+          <div className="border-separator bg-surface relative grid size-24 place-items-center overflow-hidden rounded-full border">
             <span aria-hidden className="facet-foil absolute inset-0" />
             {!reduce && <CardHolo />}
             <span className="facet-recess text-tint relative grid size-16 place-items-center rounded-full">
@@ -220,11 +216,7 @@ function CardPullChoiceTile({
       aria-busy={loading}
       onPointerMove={reduce ? undefined : onPointerMove}
       onPointerLeave={reduce ? undefined : onPointerLeave}
-      className={cn(
-        CHOICE_SURFACE,
-        !disabled && "facet-lift",
-        disabled && !loading && "opacity-50"
-      )}
+      className={cn(CHOICE_SURFACE, disabled && !loading && "opacity-50")}
     >
       <div className="relative my-2 grid h-44 place-items-center perspective-distant">
         <motion.div

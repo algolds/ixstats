@@ -75,45 +75,43 @@ export const WizardStepReview = React.memo(function WizardStepReview({
         </p>
       </div>
 
-      <div className="space-y-5">
-        <Card variant="well" padding="md">
-          <div className="flex items-start gap-3">
-            {React.createElement(typeConfig.icon, {
-              className: "text-label-secondary mt-1 h-5 w-5",
-            })}
-            <div className="flex-1">
-              <h4 className="text-label text-title-3">{data.title}</h4>
-              <p className="text-label-secondary text-body">{typeConfig.label}</p>
-              <p className="text-label-secondary text-body mt-2">{data.description}</p>
-            </div>
+      <Card content="data" padding="none" className="divide-separator divide-y">
+        <div className="flex items-start gap-3 p-4">
+          {React.createElement(typeConfig.icon, {
+            className: "text-label-secondary mt-1 h-5 w-5",
+          })}
+          <div className="flex-1">
+            <h4 className="text-label text-title-3">{data.title}</h4>
+            <p className="text-label-secondary text-body">{typeConfig.label}</p>
+            <p className="text-label-secondary text-body mt-2">{data.description}</p>
           </div>
-        </Card>
+        </div>
 
-        <Card variant="well" padding="md">
+        <div className="p-4">
           <h5 className="text-label-secondary text-headline mb-3">Participating countries</h5>
           <div className="flex flex-col gap-3">
             <ReviewCountry
               name={hostCountry.name}
               flagUrl={getCountryFlagUrl(hostCountry)}
-              caption="Host Country"
+              caption="Host country"
             />
             {selectedCountries.map((country) => (
               <ReviewCountry
                 key={country.id}
                 name={country.name}
                 flagUrl={getCountryFlagUrl(country)}
-                caption="Participant Country"
+                caption="Participant country"
               />
             ))}
           </div>
-        </Card>
+        </div>
 
-        <Card variant="well" padding="md">
+        <div className="p-4">
           <h5 className="text-label-secondary text-headline mb-2">Narrative</h5>
           <p className="text-label-secondary text-body">{data.narrative}</p>
-        </Card>
+        </div>
 
-        <Card variant="well" padding="md">
+        <div className="p-4">
           <h5 className="text-label-secondary text-headline mb-3">Objectives</h5>
           <ul className="divide-separator divide-y">
             {data.objectives.map((obj) => (
@@ -122,9 +120,9 @@ export const WizardStepReview = React.memo(function WizardStepReview({
               </li>
             ))}
           </ul>
-        </Card>
+        </div>
 
-        <Card variant="well" padding="md">
+        <div className="p-4">
           <h5 className="text-label-secondary text-headline mb-3">Details</h5>
           <div className="grid grid-cols-2 gap-4">
             <ReviewDetail
@@ -138,8 +136,8 @@ export const WizardStepReview = React.memo(function WizardStepReview({
             <ReviewDetail label="Max participants" value={data.maxParticipants} />
             <ReviewDetail label="Visibility" value={data.isPublic ? "Public" : "Private"} />
           </div>
-        </Card>
-      </div>
+        </div>
+      </Card>
     </div>
   );
 });

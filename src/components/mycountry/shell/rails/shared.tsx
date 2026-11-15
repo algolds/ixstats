@@ -5,8 +5,7 @@ import { cn } from "~/lib/utils";
 import type { MyCountryDomain } from "../domain-meta";
 import { timeAgo } from "~/lib/format/compact";
 import { STATUS_TEXT as SHELL_STATUS_TEXT } from "../status-tone";
-import { CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { LensCard } from "~/components/ui/lens-card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
 /**
  * Status colours for the domain rails: the shell's shared `status-tone` mapping (destructive,
@@ -21,7 +20,7 @@ export const STATUS_TEXT = {
 export const STATUS_FILL = {
   critical: "bg-destructive",
   warning: "bg-warning",
-  accent: "bg-tint",
+  accent: "bg-label-secondary",
   neutral: "bg-label-tertiary",
   success: "bg-success",
 } as const;
@@ -53,8 +52,7 @@ export function pushRecorded(
 }
 
 /**
- * A rail card: a Facet `LensCard` (`app="mycountry"`) with a title row (tinted icon, sentence-case
- * title, optional trailing accessory) and content below.
+ * A rail card: a neutral Facet pane `Card` with a sentence-case title row and hairline-divided content below.
  */
 export function RailCard({
   title,
@@ -72,7 +70,7 @@ export function RailCard({
   children: React.ReactNode;
 }) {
   return (
-    <LensCard app="mycountry" padding="none" className={cn("rounded-card", className)}>
+    <Card padding="none" className={cn("rounded-card", className)}>
       <CardHeader className="flex-row items-center justify-between gap-2 p-4 pb-3">
         <CardTitle
           icon={Icon ? <Icon /> : undefined}
@@ -85,7 +83,7 @@ export function RailCard({
         {accessory ? <div className="flex shrink-0 items-center gap-2">{accessory}</div> : null}
       </CardHeader>
       <CardContent className={cn("space-y-2 px-4 pb-4", contentClassName)}>{children}</CardContent>
-    </LensCard>
+    </Card>
   );
 }
 
@@ -110,7 +108,7 @@ export function RailRow({
 }
 
 /** Thin level bar (0–100). */
-export function RailBar({ value, fill = "bg-tint" }: { value: number; fill?: string }) {
+export function RailBar({ value, fill = "bg-label-secondary" }: { value: number; fill?: string }) {
   return (
     <Progress
       value={Math.min(100, Math.max(0, value))}

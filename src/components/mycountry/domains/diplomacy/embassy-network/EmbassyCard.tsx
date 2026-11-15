@@ -3,12 +3,11 @@
 import React from "react";
 import { Badge } from "~/components/ui/badge";
 import { Progress } from "~/components/ui/progress";
-import { City as Building2, NavArrowRight as ChevronRight } from "iconoir-react";
+import { NavArrowRight as ChevronRight } from "iconoir-react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { getStandingBand } from "~/lib/diplomacy/relation-bands";
 import { calculateRelativeDevelopment } from "~/lib/diplomacy/relative-development";
-import { Card, CardContent, CardHeader } from "~/components/ui/card";
 
 /** An embassy as the network grid shows it. */
 export interface EmbassySummary {
@@ -28,9 +27,6 @@ export interface EmbassySummary {
   role?: "host" | "guest";
 }
 
-/**
- * Props for EmbassyCard component
- */
 interface EmbassyCardProps {
   embassy: EmbassySummary;
   /** Whether the current user owns this country */
@@ -39,7 +35,7 @@ interface EmbassyCardProps {
   onClick: () => void;
 }
 
-/** One embassy: paired flags, the partner pair, and the pair's relationship standing. */
+/** One embassy row: compact paired flags, partner pair, and relationship standing. */
 export const EmbassyCard = React.memo(function EmbassyCard({
   embassy,
   isOwner,
@@ -56,8 +52,9 @@ export const EmbassyCard = React.memo(function EmbassyCard({
   const standing = embassy.strength === null ? null : getStandingBand(embassy.strength);
 
   return (
-    <Card
-      className="rounded-card overflow-hidden"
+    <div
+      role={isOwner ? "button" : undefined}
+      tabIndex={isOwner ? 0 : undefined}
       onClick={isOwner ? onClick : undefined}
       onKeyDown={
         isOwner
@@ -71,76 +68,68 @@ export const EmbassyCard = React.memo(function EmbassyCard({
           : undefined
       }
       aria-label={isOwner ? `Open ${embassy.name}` : undefined}
-      interactive
+      className={cn(
+        "space-y-3 p-4 text-left transition-colors",
+        isOwner && "hover:bg-fill-4 cursor-pointer active:scale-[0.995]"
+      )}
     >
-      {/* Paired flag header: host left, guest right */}
-      <div className="border-separator relative flex h-20 overflow-hidden border-b">
-        {[
-          { name: embassy.hostCountry, flag: embassy.hostCountryFlag },
-          { name: embassy.guestCountry, flag: embassy.guestCountryFlag },
-        ].map((side) => (
-          <div key={side.name} className="relative w-1/2 overflow-hidden opacity-80">
-            <UnifiedCountryFlag
-              countryName={side.name}
-              flagUrl={side.flag}
-              size="xl"
-              className="h-full w-full object-cover"
-              showPlaceholder={true}
-              rounded={false}
-            />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex shrink-0 items-center -space-x-1.5">
+            {[
+              { name: embassy.guestCountry, flag: embassy.guestCountryFlag },
+              { name: embassy.hostCountry, flag: embassy.hostCountryFlag },
+            ].map((side) => (
+              <div
+                key={side.name}
+                className="border-separator bg-surface rounded-control-sm overflow-hidden border"
+              >
+                <UnifiedCountryFlag
+                  countryName={side.name}
+                  flagUrl={side.flag}
+                  size="sm"
+                  showPlaceholder={true}
+                  rounded={false}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-surface border-separator rounded-full border p-2">
-            <Building2 className="text-label h-4 w-4" />
-          </div>
-        </div>
-      </div>
 
-      <CardHeader className="p-4 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-label text-title-3 truncate">{embassy.name}</h3>
-            <p className="text-label-secondary text-footnote mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+          <div className="min-w-0">
+            <h3 className="text-label text-headline truncate">{embassy.name}</h3>
+            <p className="text-label-secondary text-footnote mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
               <span>
                 {embassy.guestCountry} ⟷ {embassy.hostCountry}
               </span>
               <span aria-hidden>·</span>
-              <span className="capitalize">{embassy.status}</span>
+              <span className="capitalize">{embassy.status.toLowerCase()}</span>
             </p>
           </div>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-2">
           {asymmetry && (
-            <Badge variant="outline" className="text-label-secondary shrink-0">
+            <Badge variant="outline" className="text-label-secondary">
               {asymmetry.label}
             </Badge>
           )}
+          {isOwner && <ChevronRight className="text-label-tertiary h-4 w-4" aria-hidden="true" />}
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-3 px-4 pb-4">
-        <div className="space-y-2">
-          <div className="text-footnote flex items-center justify-between">
-            <span className="text-label-secondary">Relationship standing</span>
-            <span className={cn("font-semibold", standing?.textClass ?? "text-label-secondary")}>
-              {standing?.label ?? "Not yet rated"}
-            </span>
-          </div>
-          <Progress
-            value={embassy.strength ?? 0}
-            className="h-2"
-            indicatorClassName={standing?.barClass}
-          />
+      <div className="space-y-1.5">
+        <div className="text-footnote flex items-center justify-between">
+          <span className="text-label-secondary">Relationship standing</span>
+          <span className={cn("font-medium", standing?.textClass ?? "text-label-secondary")}>
+            {standing?.label ?? "Not yet rated"}
+          </span>
         </div>
-
-        {isOwner && (
-          <div className="border-separator space-y-2 border-t pt-3">
-            <p className="text-label-secondary text-footnote flex items-center justify-center gap-1">
-              Open for embassy details
-              <ChevronRight className="h-3 w-3" />
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        <Progress
+          value={embassy.strength ?? 0}
+          className="h-1.5"
+          indicatorClassName={standing?.barClass}
+        />
+      </div>
+    </div>
   );
 });

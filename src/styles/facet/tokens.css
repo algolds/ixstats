@@ -531,11 +531,11 @@
      nested scopes and appearance changes resolve correctly. */
   :root,
   [data-app="admin"] {
-    --tint-light: #5a493d;
-    --tint-light-strong: #46372b;
+    --tint-light: #3f3f46;
+    --tint-light-strong: #27272a;
     --on-tint-light: #ffffff;
-    --tint-dark: #c3b4a8;
-    --tint-dark-strong: #d7cbc2;
+    --tint-dark: #b4b6be;
+    --tint-dark-strong: #cfd1d8;
     --on-tint-dark: #0b0c0f;
   }
   [data-app="mycountry"] {
@@ -686,10 +686,10 @@
 @layer base {
   :root {
     /* Layer glass scalars. Composed into paints in facet/layers.css. */
-    --pane-fill: 82%;
-    --pane-wash: 10%;
-    --canvas-wash: 7%;
-    --well-tint: 6%;
+    --pane-fill: 88%;
+    --pane-wash: 0%;
+    --canvas-wash: 4%;
+    --well-tint: 0%;
     --chrome-fill: 80%;
     --lens-frosted-fill: 80%;
     --overlay-fill: 90%;
@@ -702,11 +702,11 @@
     --facet-lift-y: -2px;
     --facet-lift-shadow: 0 8px 24px rgb(0 0 0 / 0.08), 0 3px 8px rgb(0 0 0 / 0.04);
 
-    /* Primary action: iron-gall ink (the default app tint's strong shade, its tint on hover), flat gold inside
+    /* Primary action: neutral architectural ink (the default app tint's strong shade, its tint on hover), flat gold inside
        MyCountry and the Builder, the Commons leather tint inside ThinkPages (and ThinkTanks and Messages, which
        wear its scope) */
-    --primary-mono: #46372b;
-    --primary-mono-hover: #5a493d;
+    --primary-mono: #27272a;
+    --primary-mono-hover: #3f3f46;
     --on-primary-mono: #fafafa;
     --gold: #f59e0b;
     --gold-hover: #fbbf24;
@@ -719,16 +719,16 @@
   }
 
   :root[data-theme="dark"] {
-    --pane-fill: 64%;
-    --pane-wash: 8%;
-    --canvas-wash: 10%;
-    --well-tint: 8%;
+    --pane-fill: 72%;
+    --pane-wash: 0%;
+    --canvas-wash: 6%;
+    --well-tint: 0%;
     --chrome-fill: 80%;
     --lens-frosted-fill: 80%;
     --overlay-fill: 90%;
     --facet-lift-shadow: 0 12px 32px rgb(0 0 0 / 0.3), 0 4px 12px rgb(0 0 0 / 0.2);
-    --primary-mono: #d7cbc2;
-    --primary-mono-hover: #c3b4a8;
+    --primary-mono: #cfd1d8;
+    --primary-mono-hover: #b4b6be;
     --on-primary-mono: #0f1114;
     --gold-accent: #f59e0b;
     --accent-fill-mix: 18%;

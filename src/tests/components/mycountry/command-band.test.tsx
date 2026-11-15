@@ -48,7 +48,11 @@ it("draws one pip per directive slot, the used ones filled", () => {
   const slots = screen.getByRole("group", { name: "Directive slots: 1 of 3 used this week" });
   const pips = slots.querySelectorAll("span.flex-1");
   expect(pips).toHaveLength(3);
-  expect([...pips].map((pip) => pip.classList.contains("bg-tint"))).toEqual([true, false, false]);
+  expect([...pips].map((pip) => pip.classList.contains("bg-label-secondary"))).toEqual([
+    true,
+    false,
+    false,
+  ]);
 });
 
 it("rates stability in a word", () => {

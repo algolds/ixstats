@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { LensSurface, SurfaceReset } from "~/components/ui/card";
 import { withBasePath } from "~/lib/base-path";
 import {
   countrySheetHref,
@@ -77,18 +76,14 @@ export function FactbookTab({ layer }: { layer: CountryProfileLayer }) {
 
   return (
     <>
-      {/* The factbook wears the realm tint it inherits: the MyCountry gold stays MyCountry's own. */}
+      {/* Inside CountryDocument's pane Card, blocks step down cleanly to inset wells (no glass on glass). */}
       <div data-slot="factbook-stage" className="relative flex flex-col gap-4">
-        <SurfaceReset>
-          <LensSurface>
-            <div className="grid gap-4 lg:grid-cols-3">
-              <EconomyBlock layer={layer} onMore={() => show("economy")} />
-              <StateBlock layer={layer} onMore={() => show("state")} />
-              <ForeignBlock layer={layer} onMore={() => show("foreign")} />
-            </div>
-            <FactbookMediaGallery layer={layer} />
-          </LensSurface>
-        </SurfaceReset>
+        <div className="grid gap-4 lg:grid-cols-3">
+          <EconomyBlock layer={layer} onMore={() => show("economy")} />
+          <StateBlock layer={layer} onMore={() => show("state")} />
+          <ForeignBlock layer={layer} onMore={() => show("foreign")} />
+        </div>
+        <FactbookMediaGallery layer={layer} />
       </div>
       <FactbookSheets layer={layer} open={open} onClose={close} onSegment={setSegment} />
     </>

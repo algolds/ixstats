@@ -86,7 +86,7 @@ export function SnapshotBlock({
       {cover?.caption && (
         <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center">
           <span className="facet-well rounded-control-sm text-caption text-label inline-flex max-w-full items-center gap-1.5 px-2 py-0.5 font-medium">
-            <OpenBook aria-hidden className="text-tint size-3 shrink-0" />
+            <OpenBook aria-hidden className="text-label-secondary size-3 shrink-0" />
             <span className="truncate">{cover.caption}</span>
             {cover.href && (
               <NavArrowRight aria-hidden className="text-label-secondary size-3 shrink-0" />
@@ -98,7 +98,11 @@ export function SnapshotBlock({
   );
 
   return (
-    <Card padding="md" className="group/block flex min-w-0 flex-col gap-4">
+    <Card
+      variant="well"
+      padding="md"
+      className="border-separator/60 group/block flex min-w-0 flex-col gap-4 border"
+    >
       {showCover && resolvedCover ? (
         cover?.href ? (
           <Link
@@ -123,10 +127,10 @@ export function SnapshotBlock({
             <Link
               href={cover.href}
               data-slot="block-wiki-link"
-              className="facet-well facet-press facet-press-subtle focus-visible:outline-tint rounded-row flex items-center justify-between gap-2.5 px-3 py-2 focus-visible:outline-2"
+              className="border-separator/60 hover:bg-fill-4 facet-press facet-press-subtle focus-visible:outline-tint rounded-control flex items-center justify-between gap-2.5 border px-3 py-2 focus-visible:outline-2"
             >
               <span className="flex min-w-0 items-center gap-2">
-                <OpenBook aria-hidden className="text-tint size-3.5 shrink-0" />
+                <OpenBook aria-hidden className="text-label-secondary size-3.5 shrink-0" />
                 <span className="text-footnote text-label truncate font-medium">
                   {cover.caption}
                 </span>
@@ -144,11 +148,11 @@ export function SnapshotBlock({
         </>
       )}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           {icon != null && (
             <span
               aria-hidden
-              className="facet-recess text-tint rounded-control-sm grid size-8 shrink-0 place-items-center [:where(&)_svg]:size-4"
+              className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-4"
             >
               {icon}
             </span>

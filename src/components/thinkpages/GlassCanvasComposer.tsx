@@ -84,7 +84,7 @@ function NoAccountsCard({
           </div>
         </div>
         <div className="flex shrink-0 flex-col gap-2">
-          <Button size="sm" onClick={onPostAsYourself} disabled={isPending}>
+          <Button variant="glass" size="sm" onClick={onPostAsYourself} disabled={isPending}>
             {isPending ? "Setting up..." : "Post as yourself"}
           </Button>
           {hasCountry && (

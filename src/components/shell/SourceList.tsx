@@ -284,7 +284,8 @@ function SectionRows({
 
 function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolean; ctx: Ctx }) {
   const hasSections = app.sections.length > 0;
-  const open = hasSections && (isCurrent || ctx.expanded.has(app.id));
+  const canExpandOutside = hasSections && !app.sectionsWhenCurrentOnly;
+  const open = hasSections && (isCurrent || (canExpandOutside && ctx.expanded.has(app.id)));
   const listId = `source-list-${ctx.indicatorId}-${app.id}`;
   const appBadge = app.badge ? ctx.badges[app.badge] : undefined;
   const pendingInside = app.sections.some((s) => s.badge && isPending(ctx.badges[s.badge]));
@@ -313,7 +314,7 @@ function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolea
           <Trailing badge={appBadge} />
           {dot}
         </Link>
-        {hasSections && !isCurrent && (
+        {canExpandOutside && !isCurrent && (
           <button
             type="button"
             aria-expanded={open}

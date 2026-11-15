@@ -41,9 +41,30 @@ describe("deriveOpportunity", () => {
       intents: [
         { id: "old", goal: "Old goal", status: "active" },
         { id: "done", goal: "Done", status: "completed" },
-        { id: "new", goal: "New goal", status: "active" },
+        { id: "new", goal: "New goal", status: "active", category: "diplomatic" },
       ],
     });
     expect(opportunity?.intentId).toBe("new");
+    expect(opportunity?.category).toBe("diplomatic");
+  });
+
+  it("tags national issues with their resolved category and human label", () => {
+    const opportunity = deriveOpportunity({
+      ...base,
+      issues: [
+        {
+          id: "iss-1",
+          title: "Port congestion along the strait",
+          description: "Freight queues are backing up.",
+          severity: "critical",
+          urgency: 85,
+          domain: "infrastructure",
+          category: "infrastructure",
+        },
+      ],
+    });
+    expect(opportunity?.subtitle).toBe("Priority national issue");
+    expect(opportunity?.category).toBe("infrastructure");
+    expect(opportunity?.categoryLabel).toBe("Infrastructure");
   });
 });

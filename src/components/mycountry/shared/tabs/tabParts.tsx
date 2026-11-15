@@ -313,10 +313,12 @@ export function StatGrid({
     </div>
   ));
   return inset ? (
-    <Card variant="well" padding="none" className={className}>
+    <Card variant="well" padding="none" className={cn("border-separator/60 border", className)}>
       {cells}
     </Card>
   ) : (
-    <div className={cn("bg-fill-3 rounded-row", className)}>{cells}</div>
+    <div className={cn("border-separator/60 border-y py-3", STAT_GRID_COLUMNS[columns], "grid gap-4")}>
+      {cells}
+    </div>
   );
 }

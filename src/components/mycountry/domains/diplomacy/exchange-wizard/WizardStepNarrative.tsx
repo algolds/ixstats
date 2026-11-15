@@ -34,7 +34,7 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
 
       <div className="space-y-2">
         <Label htmlFor="narrative" className="text-label">
-          Exchange Narrative *
+          Exchange narrative *
         </Label>
         <Textarea
           id="narrative"
@@ -57,8 +57,10 @@ export const WizardStepNarrative = React.memo(function WizardStepNarrative({
               <label
                 key={objective}
                 className={cn(
-                  "bg-surface rounded-row flex cursor-pointer items-center gap-3 border p-3 text-left transition-[background-color,border-color] duration-150",
-                  isSelected ? "border-tint bg-tint-fill" : "border-separator hover:bg-fill-4"
+                  "bg-surface rounded-row flex cursor-pointer items-center gap-3 border p-3 text-left transition-[background-color,border-color,box-shadow] duration-150",
+                  isSelected
+                    ? "border-label/30 bg-control-thumb shadow-card"
+                    : "border-separator hover:bg-fill-4"
                 )}
               >
                 <Checkbox

@@ -13,7 +13,11 @@ const ZERO_TELL_DIRS = [
   "src/app/mycountry",
   "src/components/executive",
   "src/components/mycountry",
-  "src/components/vault/daily-reward",
+  "src/app/vault",
+  "src/app/leaderboards",
+  "src/components/vault",
+  "src/components/achievements",
+  "src/components/cards",
 ];
 
 /** Brand wordmarks explicitly exempted from raw-palette / registered-trademark checks. */

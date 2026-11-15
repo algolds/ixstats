@@ -43,12 +43,15 @@ interface PartyManagerProps {
   countryId: string;
   /** When set, scroll to + highlight this party row. */
   focusId?: string | null;
+  /** Omit outer card chrome when nested inside an `EditorSection`. */
+  embedded?: boolean;
 }
 
 type Party = RouterOutputs["elections"]["getParties"][number];
 type Ideology = (typeof IDEOLOGY_OPTIONS)[number]["value"];
 
-const DEFAULT_COLOR = "#6366f1";
+const DEFAULT_COLOR: string =
+  IDEOLOGY_OPTIONS.find((o) => o.value === "center")?.color ?? IDEOLOGY_OPTIONS[0].color;
 const EMPTY_FORM = {
   name: "",
   shortName: "",
@@ -72,20 +75,15 @@ function PartyRow({
   onDelete: () => void;
 }) {
   return (
-    <Card
-      variant="well"
-      padding="sm"
-      data-focus-id={party.id}
-      className="flex items-center justify-between"
-    >
-      <div className="flex items-center gap-3">
+    <div data-focus-id={party.id} className="flex items-center justify-between gap-3 px-4 py-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div
-          className="border-separator h-4 w-4 rounded-full border"
+          className="border-separator h-3.5 w-3.5 shrink-0 rounded-full border"
           style={{ backgroundColor: party.color }}
         />
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="font-medium">{party.name}</span>
+            <span className="text-label truncate font-medium">{party.name}</span>
             {party.shortName && (
               <span className="text-label-secondary text-footnote">({party.shortName})</span>
             )}
@@ -97,29 +95,23 @@ function PartyRow({
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <div className="text-right tabular-nums">
-          <div className="text-headline">{party.currentSupport.toFixed(1)}%</div>
+          <div className="text-label text-headline">{party.currentSupport.toFixed(1)}%</div>
           <div className="text-label-secondary text-footnote">support</div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onEdit}
-          aria-label={`Edit ${party.name}`}
-          className="h-7 w-7 p-0"
-        >
-          <Pencil className="h-3 w-3" />
+        <Button variant="ghost" size="icon-sm" onClick={onEdit} aria-label={`Edit ${party.name}`}>
+          <Pencil className="h-3.5 w-3.5" />
         </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
               variant="ghost"
-              size="sm"
+              size="icon-sm"
               aria-label={`Delete ${party.name}`}
-              className="text-label-secondary hover:text-destructive h-7 w-7 p-0"
+              className="text-label-secondary hover:text-destructive"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -142,7 +134,7 @@ function PartyRow({
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -156,7 +148,7 @@ function PartyFormFields({
   return (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Party name</Label>
           <Input
             value={form.name}
@@ -164,7 +156,7 @@ function PartyFormFields({
             placeholder="e.g. National Unity Party"
           />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Short name</Label>
           <Input
             value={form.shortName}
@@ -175,7 +167,7 @@ function PartyFormFields({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Ideology</Label>
           <Select
             value={form.ideology}
@@ -201,13 +193,13 @@ function PartyFormFields({
             </SelectContent>
           </Select>
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Party color</Label>
           <ColorPickerInput value={form.color} onChange={(color) => onChange({ color })} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Party leader</Label>
           <Input
             value={form.leaderName}
@@ -215,7 +207,7 @@ function PartyFormFields({
             placeholder="e.g. Jane Doe"
           />
         </div>
-        <div>
+        <div className="flex flex-col gap-2">
           <Label>Base support ({form.baseSupport}%)</Label>
           <Slider
             aria-label="Base support"
@@ -223,7 +215,7 @@ function PartyFormFields({
             max={80}
             value={[form.baseSupport]}
             onValueChange={([v]) => v !== undefined && onChange({ baseSupport: v })}
-            className="mt-2 w-full py-2"
+            className="w-full py-2"
           />
         </div>
       </div>
@@ -231,7 +223,7 @@ function PartyFormFields({
   );
 }
 
-export function PartyManager({ countryId, focusId }: PartyManagerProps) {
+export function PartyManager({ countryId, focusId, embedded = false }: PartyManagerProps) {
   const utils = api.useUtils();
   const notify = useNotify();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -310,67 +302,90 @@ export function PartyManager({ countryId, focusId }: PartyManagerProps) {
     }
   }
 
-  return (
-    <Card className="flex flex-col gap-6 py-6">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span className="flex items-center gap-2">Political parties</span>
-          <Dialog
-            open={dialogOpen}
-            onOpenChange={(open) => {
-              setDialogOpen(open);
-              if (!open) {
-                setEditingParty(null);
-                setFormData(EMPTY_FORM);
-              }
-            }}
+  const addPartyDialog = (
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setEditingParty(null);
+          setFormData(EMPTY_FORM);
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-1">
+          <Plus className="h-3.5 w-3.5" /> Add party
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editingParty ? "Edit party" : "Create political party"}</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <PartyFormFields
+            form={formData}
+            onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+          />
+          <Button
+            onClick={handleSubmit}
+            disabled={!formData.name || createParty.isPending || updateParty.isPending}
+            className="w-full"
           >
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1">
-                <Plus className="h-3 w-3" /> Add party
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{editingParty ? "Edit party" : "Create political party"}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-3">
-                <PartyFormFields
-                  form={formData}
-                  onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
-                />
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!formData.name || createParty.isPending || updateParty.isPending}
-                  className="w-full"
-                >
-                  {editingParty ? "Update party" : "Create party"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+            {editingParty ? "Update party" : "Create party"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const listBody =
+    parties.length === 0 ? (
+      <div className="p-4">
+        <EmptyState
+          compact
+          title="No political parties yet"
+          message="Use Add party to create one."
+        />
+      </div>
+    ) : (
+      <div className="divide-separator/60 divide-y">
+        {parties.map((party) => (
+          <PartyRow
+            key={party.id}
+            party={party}
+            onEdit={() => startEdit(party)}
+            onDelete={() => deleteParty.mutate({ id: party.id })}
+          />
+        ))}
+      </div>
+    );
+
+  if (embedded) {
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-label-secondary text-footnote tabular-nums">
+            {parties.length} {parties.length === 1 ? "party" : "parties"}
+          </span>
+          {addPartyDialog}
+        </div>
+        <Card variant="well" content="data" padding="none">
+          {listBody}
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Card content="data" padding="none">
+      <CardHeader className="border-separator/60 border-b p-4">
+        <CardTitle className="flex items-center justify-between">
+          <span className="text-headline flex items-center gap-2">Political parties</span>
+          {addPartyDialog}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {parties.length === 0 ? (
-          <EmptyState
-            compact
-            title="No political parties yet"
-            message="Use Add party to create one."
-          />
-        ) : (
-          <div className="space-y-2">
-            {parties.map((party) => (
-              <PartyRow
-                key={party.id}
-                party={party}
-                onEdit={() => startEdit(party)}
-                onDelete={() => deleteParty.mutate({ id: party.id })}
-              />
-            ))}
-          </div>
-        )}
-      </CardContent>
+      <CardContent className="p-0">{listBody}</CardContent>
     </Card>
   );
 }

@@ -7,7 +7,6 @@ import { useCardSheetOpen } from "~/hooks/useCardSheet";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { usePointerParallax } from "~/hooks/usePointerParallax";
 import { Dialog, DialogContent } from "~/components/ui/dialog";
-import { FacetMaterial } from "~/components/ui/facet";
 import { MonogramLayer } from "~/components/ui/facet/shared/MonogramLayer";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { proxyCardArtwork } from "~/lib/cards/ns-image-proxy";
@@ -38,10 +37,9 @@ const INITIAL_SESSION: ClaimSession = {
 };
 
 /**
- * Ambient backdrop inside the `facet-overlay` sheet: front-page multi-plane monogram parallax,
- * an aurora wash (switching to the pulled card's rarity hue on card reveal, or foil luster on
- * credits reveal), a diffused full-bleed art wash when a card with artwork is revealed, and a
- * Facet 5 `facet-lens` refractive glass layer (`#facet-lens`) bending the monogram underneath.
+ * Ambient non-glass backdrop inside the single `facet-overlay` sheet: front-page multi-plane
+ * monogram parallax, an aurora wash (switching to the pulled card's rarity hue on card reveal, or
+ * foil luster on credits reveal), and a diffused full-bleed art wash when a card with artwork is revealed.
  */
 function StageAtmosphere({
   artwork,
@@ -83,12 +81,6 @@ function StageAtmosphere({
           <div className="bg-surface/45 absolute inset-0" />
         </>
       )}
-      <FacetMaterial
-        layer="lens"
-        aria-hidden
-        data-slot="monogram-lens"
-        className="rounded-sheet pointer-events-none absolute inset-0 print:hidden"
-      />
     </div>
   );
 }

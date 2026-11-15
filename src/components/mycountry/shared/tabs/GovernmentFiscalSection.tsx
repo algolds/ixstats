@@ -67,7 +67,7 @@ export function GovernmentFiscalSection({
         title="Fiscal conditions & policy"
         subtitle="National fiscal policy indicators"
         layout="list"
-        showProgressBars={true}
+        showProgressBars={false}
         sectors={[
           ...(taxEfficiency != null
             ? [

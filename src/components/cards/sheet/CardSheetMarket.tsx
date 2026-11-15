@@ -4,6 +4,7 @@ import { useId, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "~/lib/utils/cn";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { HeroHelpModal, type HeroHelpStep } from "~/components/ui/hero-help-modal";
 import { Stat } from "~/components/ui/stat";
 import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
@@ -80,17 +81,19 @@ export function CardSheetMarket({
         }
       />
       {market.listings.length > 0 && (
-        <ul className="divide-separator divide-y" aria-label="Live listings">
-          {market.listings.map((listing) => (
-            <ListingLine
-              key={`${listing.kind}-${listing.id}`}
-              listing={listing}
-              cardId={cardId}
-              signedIn={signedIn}
-              onBuy={setBuying}
-            />
-          ))}
-        </ul>
+        <Card content="data" padding="none">
+          <ul className="divide-separator divide-y" aria-label="Live listings">
+            {market.listings.map((listing) => (
+              <ListingLine
+                key={`${listing.kind}-${listing.id}`}
+                listing={listing}
+                cardId={cardId}
+                signedIn={signedIn}
+                onBuy={setBuying}
+              />
+            ))}
+          </ul>
+        </Card>
       )}
       <p className="text-callout">
         <Link href={marketHref} className={cn("text-tint underline", focusRing)}>
@@ -125,7 +128,10 @@ function ListingLine({ listing, cardId, signedIn, onBuy }: ListingLineProps) {
   // Only another player's fixed-price listing still running is bought here
   const buyable = signedIn && listing.kind === "listing" && !listing.isMine && left !== "Ended";
   return (
-    <li className="text-callout flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2">
+    <li
+      data-row
+      className="text-callout flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2.5"
+    >
       <span className="min-w-0">
         <span id={lineId} className="block truncate">
           {`${seller(listing)} · ${FINISH_LABEL[listing.finish]} #${listing.serialNumber} · ${left}`}

@@ -166,15 +166,12 @@ function DashboardHeroComponent({
         />
       }
       action={
-        // MyCountry gold scope for the tinted button.
-        <span data-app="mycountry" className="contents">
-          <Button asChild variant="secondary" size="sm" className="shrink-0 rounded-full">
-            <Link href="/mycountry">
-              <span>MyCountry</span>
-              <ChevronRight />
-            </Link>
-          </Button>
-        </span>
+        <Button asChild variant="glass" size="sm" className="shrink-0">
+          <Link href="/mycountry">
+            <span>MyCountry</span>
+            <ChevronRight />
+          </Link>
+        </Button>
       }
     />
   );

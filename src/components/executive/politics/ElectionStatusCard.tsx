@@ -7,6 +7,7 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { useNationClock } from "~/hooks/useNationClock";
 import { formatClockDate } from "~/lib/realms/nation-time";
 import { electionDisplayName } from "~/lib/realms/realm-year";
+import { collapseResultsByParty } from "~/lib/government/party-election-results";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 interface ElectionStatusCardProps {
@@ -134,7 +135,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
             · {formatClockDate(lastElection.scheduledIxTime, clock)}
             {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
           </p>
-          {lastElection.results.map((r) => (
+          {collapseResultsByParty(lastElection.results).map((r) => (
             <div key={r.partyId} className="text-footnote flex items-center justify-between gap-2">
               <span className="flex min-w-0 items-center gap-2">
                 <span

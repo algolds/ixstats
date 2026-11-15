@@ -1,5 +1,8 @@
+"use client";
+
 import React from "react";
 import { cn } from "~/lib/utils";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import type { AvatarGlowConfig } from "~/hooks/useActiveCosmetics";
 import { CosmeticParticles } from "~/components/vault/CosmeticParticles";
 
@@ -7,8 +10,10 @@ interface AvatarGlowProps {
   avatarGlow: AvatarGlowConfig;
   children: React.ReactNode;
   className?: string;
-  roundedClass?: string; // "rounded-full" or "rounded-control-sm"
+  roundedClass?: string;
 }
+
+const PRESET_GLOW_STYLES: ReadonlySet<string> = new Set(["summer", "emerald", "imperial"]);
 
 export function AvatarGlow({
   avatarGlow,
@@ -16,6 +21,8 @@ export function AvatarGlow({
   className,
   roundedClass = "rounded-full",
 }: AvatarGlowProps) {
+  const reduceMotion = useFacetReducedMotion();
+
   if (!avatarGlow.enabled) {
     return (
       <div
@@ -30,53 +37,32 @@ export function AvatarGlow({
     );
   }
 
-  const isSummer = avatarGlow.style === "summer";
-  const isEmerald = avatarGlow.style === "emerald";
-  const isImperial = avatarGlow.style === "imperial";
+  const styleKey = avatarGlow.style || undefined;
+  const isPreset = Boolean(styleKey && PRESET_GLOW_STYLES.has(styleKey));
+  const customVars: Record<string, string> = {};
+  if (!isPreset) {
+    if (avatarGlow.color) customVars["--cosmetic-color"] = avatarGlow.color;
+    if (avatarGlow.intensity) customVars["--cosmetic-radius"] = avatarGlow.intensity;
+  }
+  const customStyle =
+    Object.keys(customVars).length > 0 ? (customVars as React.CSSProperties) : undefined;
 
   return (
     <div
+      data-glow-style={styleKey}
       className={cn(
-        "relative flex shrink-0 items-center justify-center transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-300",
+        "cosmetic-avatar-glow relative flex shrink-0 items-center justify-center",
         roundedClass,
-        isSummer &&
-          "border-orange animate-[pulse_1.5s_infinite] border-2 shadow-[0_0_15px_color-mix(in_srgb,var(--color-orange)_55%,transparent)]",
-        isEmerald &&
-          "border-green animate-[pulse_2s_infinite] border-2 shadow-[0_0_15px_color-mix(in_srgb,var(--color-green)_55%,transparent)]",
-        isImperial &&
-          "border-yellow animate-[pulse_2.5s_infinite] border-2 shadow-[0_0_20px_color-mix(in_srgb,var(--color-yellow)_55%,transparent)]",
-        !isSummer && !isEmerald && !isImperial && "border",
         className
       )}
-      style={
-        !isSummer && !isEmerald && !isImperial
-          ? {
-              boxShadow: `0 0 ${avatarGlow.intensity || "15px"} ${avatarGlow.color}`,
-              borderColor: avatarGlow.color,
-            }
-          : undefined
-      }
+      style={customStyle}
     >
-      {/* Background particles */}
-      {avatarGlow.style && (
-        <CosmeticParticles
-          style={avatarGlow.style}
-          containerType="glow"
-          className="rounded-[inherit]"
-        />
+      {!reduceMotion && styleKey && (
+        <CosmeticParticles style={styleKey} containerType="glow" className="rounded-[inherit]" />
       )}
-      {/* Background radial aura ring */}
       <span
-        className={cn(
-          "absolute inset-0 -z-10 animate-[pulse_2s_infinite] opacity-25",
-          roundedClass,
-          isSummer && "bg-orange",
-          isEmerald && "bg-green",
-          isImperial && "bg-yellow"
-        )}
-        style={{
-          animationDuration: isSummer ? "1.5s" : isEmerald ? "2s" : "2.5s",
-        }}
+        aria-hidden="true"
+        className={cn("cosmetic-avatar-aura absolute inset-0 -z-10", roundedClass)}
       />
       {children}
     </div>

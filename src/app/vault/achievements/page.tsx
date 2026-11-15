@@ -1,27 +1,37 @@
 "use client";
 
 import React, { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useUser } from "~/context/auth-context";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { Progress } from "~/components/ui/progress";
-import { AchievementsTabs } from "~/components/achievements/AchievementsTabs";
-import { VaultLorewardsPanel } from "~/components/vault/sections/VaultLorewardsPanel";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Skeleton } from "~/components/ui/skeleton";
+import {
+  AchievementsSummaryCard,
+  RarestEarnedMedalsShelf,
+} from "~/components/achievements/AchievementsSummaryCard";
+import { VaultLorewardsPanel } from "~/components/achievements/VaultLorewardsPanel";
+import { AllAchievementsTab } from "~/components/achievements/tabs/AllAchievementsTab";
 
 export default function VaultAchievementsPage() {
+  const searchParams = useSearchParams();
+  const isLorewards = searchParams?.get("tab") === "lorewards";
+
   useEffect(() => {
-    document.title = "Achievements - IxStates";
-  }, []);
+    document.title = isLorewards ? "Lorewards - IxStates" : "Achievements - IxStates";
+  }, [isLorewards]);
 
   const { user } = useUser();
   const { data: userProfile, isLoading: profileLoading } = api.users.getProfile.useQuery(
     undefined,
-    { enabled: !!user?.id }
+    { enabled: Boolean(user?.id) }
   );
 
-  // Achievements belong to the account; the country (if any) only adds country achievements
-  const hasProfile = !!userProfile;
+  const hasProfile = Boolean(userProfile);
   const {
     data: achievements,
     isLoading: achievementsLoading,
@@ -46,48 +56,54 @@ export default function VaultAchievementsPage() {
     }
   }, [hasProfile, userProfile?.countryId, syncAchievements]);
 
-  const activeCatalogue = achievements?.filter((a) => !("isLegacy" in a && a.isLegacy)) ?? [];
-  const unlockedCount = activeCatalogue.filter((a) => a.isUnlocked).length;
-  const totalCount = activeCatalogue.length;
-  const totalPoints =
-    achievements?.filter((a) => a.isUnlocked).reduce((sum, a) => sum + (a.points ?? 0), 0) ?? 0;
+  if (isLorewards) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Lorewards"
+          subtitle="Annual community writing honours, peer nominations, and wiki citations."
+          bleed
+        />
+        <VaultLorewardsPanel achievements={user ? achievements : []} />
+      </div>
+    );
+  }
+
+  const isCatalogueLoading = Boolean(user) && (profileLoading || achievementsLoading);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <PageHeader
         title="Achievements"
-        subtitle="Collector, lore and nation milestones across your Vault."
-        back={{ href: "/vault", label: "Vault" }}
+        subtitle="Platform milestones, simulation mastery, and collector honours."
         bleed
       />
 
-      {user && achievements && totalCount > 0 && (
-        <Card padding="md" className="space-y-2.5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <span className="text-headline text-label tabular-nums">
-              {unlockedCount.toLocaleString()} of {totalCount.toLocaleString()} unlocked
-            </span>
-            <span className="text-footnote text-label-secondary tabular-nums">
-              {totalPoints.toLocaleString()} pts earned
-            </span>
-          </div>
-          <Progress
-            value={unlockedCount}
-            max={totalCount}
-            aria-label="Achievements unlocked"
-            className="h-1.5"
+      {user && achievements && <AchievementsSummaryCard achievements={achievements} />}
+
+      {user && achievements && <RarestEarnedMedalsShelf achievements={achievements} />}
+
+      {achievementsError ? (
+        <Card>
+          <EmptyState
+            icon={<WarningCircle />}
+            title="Achievements didn't load"
+            message="Please try again in a moment."
+            action={
+              <Button variant="secondary" size="sm" onClick={() => void refetchAchievements()}>
+                Try again
+              </Button>
+            }
           />
         </Card>
+      ) : isCatalogueLoading ? (
+        <div aria-busy className="space-y-3">
+          <Skeleton className="rounded-control-sm h-9 max-w-md" />
+          <Skeleton className="rounded-row h-64" />
+        </div>
+      ) : (
+        <AllAchievementsTab achievements={achievements} />
       )}
-
-      <AchievementsTabs
-        achievements={achievements}
-        isLoading={Boolean(user) && (profileLoading || achievementsLoading)}
-        isError={achievementsError}
-        onRetry={() => void refetchAchievements()}
-        // Signed out, the catalogue never loads: no achievements rather than a skeleton that never ends.
-        lorewardsPanel={<VaultLorewardsPanel achievements={user ? achievements : []} />}
-      />
     </div>
   );
 }

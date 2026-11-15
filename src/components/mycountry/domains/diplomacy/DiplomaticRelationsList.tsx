@@ -142,9 +142,9 @@ function RelationCard({
   );
 
   return (
-    <Card
+    <div
       data-focus-id={rel.targetCountryId ?? rel.id}
-      className="rounded-card flex flex-col justify-between p-4"
+      className="flex flex-col justify-between p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -159,7 +159,7 @@ function RelationCard({
             <h4 className="text-label text-headline truncate">
               <CountryLink
                 country={{ id: rel.targetCountryId, name: targetName.replace(/_/g, " ") }}
-                className="hover:text-tint"
+                className="hover:underline"
               >
                 {targetName.replace(/_/g, " ")}
               </CountryLink>
@@ -256,7 +256,7 @@ function RelationCard({
           </span>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -342,17 +342,19 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {allRelations.map((rel) => (
-        <RelationCard
-          key={rel.id}
-          rel={rel}
-          isOwner={isOwner}
-          alliances={alliances ?? []}
-          goalPending={setGoalMutation.isPending}
-          onGoalChange={handleGoalChange}
-        />
-      ))}
-    </div>
+    <Card content="data" padding="none">
+      <div className="divide-separator/60 grid grid-cols-1 divide-y md:grid-cols-2 md:[&>*:nth-child(even)]:border-l md:[&>*:nth-child(even)]:border-separator/60">
+        {allRelations.map((rel) => (
+          <RelationCard
+            key={rel.id}
+            rel={rel}
+            isOwner={isOwner}
+            alliances={alliances ?? []}
+            goalPending={setGoalMutation.isPending}
+            onGoalChange={handleGoalChange}
+          />
+        ))}
+      </div>
+    </Card>
   );
 }

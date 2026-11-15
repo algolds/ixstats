@@ -118,9 +118,7 @@ export function IdentitySection({
   mapCapital?: string | null;
 }) {
   const { countryId } = useEditor();
-  const fields = IDENTITY_FIELDS[sectionId].filter(
-    (f) => !(mapCapital && f.key === "capitalCity")
-  );
+  const fields = IDENTITY_FIELDS[sectionId].filter((f) => !(mapCapital && f.key === "capitalCity"));
   const initial: Values = Object.fromEntries([
     ...fields.map((f) => [f.key, identity?.[f.key] ?? ""]),
     ...(images ? IMAGE_FIELDS.map((f) => [f.key, images[f.key] ?? ""]) : []),

@@ -115,102 +115,104 @@ function BrowseToolbar({
   const filterCount = (choice.realmId ? 1 : 0) + (choice.rarity ? 1 : 0);
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <SegmentedControl
-        size="sm"
-        aria-label="Show"
-        options={KINDS}
-        value={choice.kind}
-        onValueChange={(kind) => onChoose({ kind })}
-      />
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="secondary"
-            size="sm"
-            aria-label={filterCount > 0 ? `Filters, ${filterCount} on` : "Filters"}
-          >
-            <Filter aria-hidden />
-            Filters
-            {filterCount > 0 && (
-              <span className="bg-tint-fill text-tint text-caption min-w-5 rounded-full px-1 tabular-nums">
-                {filterCount}
-              </span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align="start" aria-label="Filters" className="w-72 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor={realmSelectId}>Realm</Label>
-            <Select
-              value={choice.realmId ?? ANY}
-              onValueChange={(v) => onChoose({ realmId: v === ANY ? null : v })}
+    <Card variant="well" padding="sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <SegmentedControl
+          size="sm"
+          aria-label="Show"
+          options={KINDS}
+          value={choice.kind}
+          onValueChange={(kind) => onChoose({ kind })}
+        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              aria-label={filterCount > 0 ? `Filters, ${filterCount} on` : "Filters"}
             >
-              <SelectTrigger id={realmSelectId} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Every realm</SelectItem>
-                {realms.map((realm) => (
-                  <SelectItem key={realm.id} value={realm.id}>
-                    {realm.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor={raritySelectId}>Rarity</Label>
-            <Select
-              value={choice.rarity ?? ANY}
-              onValueChange={(v) => onChoose({ rarity: rarityOf(v) })}
+              <Filter aria-hidden />
+              Filters
+              {filterCount > 0 && (
+                <span className="bg-tint-fill text-tint text-caption min-w-5 rounded-full px-1 tabular-nums">
+                  {filterCount}
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="start" aria-label="Filters" className="w-72 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor={realmSelectId}>Realm</Label>
+              <Select
+                value={choice.realmId ?? ANY}
+                onValueChange={(v) => onChoose({ realmId: v === ANY ? null : v })}
+              >
+                <SelectTrigger id={realmSelectId} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Every realm</SelectItem>
+                  {realms.map((realm) => (
+                    <SelectItem key={realm.id} value={realm.id}>
+                      {realm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={raritySelectId}>Rarity</Label>
+              <Select
+                value={choice.rarity ?? ANY}
+                onValueChange={(v) => onChoose({ rarity: rarityOf(v) })}
+              >
+                <SelectTrigger id={raritySelectId} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ANY}>Every rarity</SelectItem>
+                  {RARITY_ORDER.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {RARITY_LABEL[r]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={filterCount === 0}
+              onClick={() => onChoose({ realmId: null, rarity: null })}
             >
-              <SelectTrigger id={raritySelectId} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ANY}>Every rarity</SelectItem>
-                {RARITY_ORDER.map((r) => (
-                  <SelectItem key={r} value={r}>
-                    {RARITY_LABEL[r]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={filterCount === 0}
-            onClick={() => onChoose({ realmId: null, rarity: null })}
-          >
-            Clear filters
+              Clear filters
+            </Button>
+          </PopoverContent>
+        </Popover>
+        {forCardId && (
+          <Button variant="secondary" size="sm" onClick={onClearFor}>
+            Listings for one card
+            <Xmark aria-hidden />
+            <span className="sr-only">, show every listing</span>
           </Button>
-        </PopoverContent>
-      </Popover>
-      {forCardId && (
-        <Button variant="secondary" size="sm" onClick={onClearFor}>
-          Listings for one card
-          <Xmark aria-hidden />
-          <span className="sr-only">, show every listing</span>
-        </Button>
-      )}
-      <Select value={choice.sort} onValueChange={(v) => onChoose({ sort: sortOf(v) })}>
-        <SelectTrigger
-          aria-label="Sort"
-          className="text-footnote ml-auto h-(--control-height-sm) w-auto"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {SORTS.map((s) => (
-            <SelectItem key={s.value} value={s.value}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+        )}
+        <Select value={choice.sort} onValueChange={(v) => onChoose({ sort: sortOf(v) })}>
+          <SelectTrigger
+            aria-label="Sort"
+            className="text-footnote ml-auto h-(--control-height-sm) w-auto"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SORTS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </Card>
   );
 }
 
@@ -281,15 +283,22 @@ function BrowseBody({
           message="Listings and auctions appear here while they run."
           action={
             <Button variant="secondary" onClick={onSell}>
-              Sell a card
+              List a card
             </Button>
           }
         />
       </Card>
     );
   }
+  const activeTotal = query.data?.total ?? items.length;
   return (
-    <Card content="data">
+    <Card content="data" padding="none">
+      <div className="border-separator flex items-center justify-between gap-2 border-b px-4 py-2.5">
+        <span className="text-subheadline text-label-secondary font-medium">Live floor</span>
+        <span className="text-footnote text-label-secondary tabular-nums">
+          {activeTotal.toLocaleString()} {activeTotal === 1 ? "active offer" : "active offers"}
+        </span>
+      </div>
       <ul ref={listRef} tabIndex={-1} aria-label="Listings" className="divide-separator divide-y">
         {items.map((item) =>
           item.kind === "listing" ? (

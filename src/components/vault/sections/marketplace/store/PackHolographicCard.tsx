@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useRef } from "react";
-import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
-import { InfoCircle as Info, Star, MagicWand, Gift } from "iconoir-react";
-import { cn } from "~/lib/utils";
-import { springGentle } from "~/lib/design/motion";
+import React from "react";
+import { Package } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
-import { focusRing, hitSlop } from "~/components/ui/button";
-import { TYPE_LABEL } from "~/lib/cards/face/labels";
-import type { CardType } from "~/lib/cards/face/types";
-import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
-import { PackOdds } from "./PackOdds";
+import { Button } from "~/components/ui/button";
+import { CutoutCard, CutoutCardContent, CutoutCardHeader } from "~/components/ui/cutout-card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogTrigger,
 } from "~/components/ui/dialog";
+import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
+import { IxCreditsSymbol } from "~/components/vault/IxCreditsSymbol";
+import { TYPE_LABEL } from "~/lib/cards/face/labels";
+import type { CardType } from "~/lib/cards/face/types";
+import { PackOdds } from "./PackOdds";
 
 export interface PackItem {
   id: string;
@@ -39,175 +38,119 @@ export interface PackItem {
   cardType?: CardType | null;
 }
 
-const getPackConfig = (packType: string) => {
-  const type = packType.toUpperCase();
-  if (type.includes("LEGENDARY"))
-    return {
-      color: "text-purple",
-      borderColor: "border-purple/30",
-      glowColor: "rgba(168,85,247,0.3)",
-      icon: Star,
-      label: "Elite",
-    };
-  if (type.includes("PREMIUM") || type.includes("GOLD"))
-    return {
-      color: "text-yellow",
-      borderColor: "border-yellow/30",
-      glowColor: "rgba(245,158,11,0.3)",
-      icon: MagicWand,
-      label: "Premium",
-    };
-  if (type.includes("EVENT"))
-    return {
-      color: "text-red",
-      borderColor: "border-red/30",
-      glowColor: "rgba(239,68,68,0.3)",
-      icon: MagicWand,
-      label: "Event",
-    };
-  return {
-    color: "text-teal",
-    borderColor: "border-teal/30",
-    glowColor: "rgba(6,182,212,0.3)",
-    icon: Gift,
-    label: "Special",
-  };
-};
+interface PackHolographicCardProps {
+  pack: PackItem;
+  onPurchase?: (pack: PackItem) => void;
+  isPurchasing?: boolean;
+  disabled?: boolean;
+}
 
 export function PackHolographicCard({
   pack,
-  actionButton,
-}: {
-  pack: PackItem;
-  actionButton: React.ReactNode;
-}) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const config = getPackConfig(pack.packType);
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const rotateX = useSpring(useTransform(y, [-75, 75], [12, -12]), springGentle);
-  const rotateY = useSpring(useTransform(x, [-50, 50], [-12, 12]), springGentle);
-  const scale = useSpring(1, springGentle);
-  const translateY = useSpring(0, springGentle);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left - width / 2;
-    const mouseY = e.clientY - rect.top - height / 2;
-    x.set(mouseX);
-    y.set(mouseY);
-  };
-
-  const handleMouseEnter = () => {
-    scale.set(1.04);
-    translateY.set(-12);
-  };
-
-  const handleMouseLeave = () => {
-    scale.set(1);
-    translateY.set(0);
-    x.set(0);
-    y.set(0);
-  };
-
+  onPurchase,
+  isPurchasing = false,
+  disabled = false,
+}: PackHolographicCardProps) {
   return (
-    <div className="group relative flex flex-col items-center select-none">
-      <motion.div
-        ref={cardRef}
-        onMouseMove={handleMouseMove}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        className="border-separator bg-surface rounded-card shadow-card duration-fast hover:shadow-floating relative w-44 border p-2 transition-shadow"
-        style={{
-          transformStyle: "preserve-3d",
-          rotateX,
-          rotateY,
-          scale,
-          y: translateY,
-          perspective: "1000px",
-          ["--glow" as string]: config.glowColor,
-        }}
+    <CutoutCard
+      data-content="collectible"
+      data-slot="pack-store-card"
+      className="flex h-full w-full flex-col select-none"
+    >
+      <CutoutCardHeader
+        as="h3"
+        icon={<Package />}
+        trailing={<Badge variant="secondary">{pack.cardCount.toLocaleString()} cards</Badge>}
       >
-        <Dialog>
-          <DialogTrigger
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            className={cn(
-              "border-separator bg-surface/85 text-label shadow-card hover:bg-surface absolute top-3 right-3 z-30 flex h-6 w-6 items-center justify-center rounded-full border transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
-              focusRing,
-              hitSlop
-            )}
-            aria-label="Pack details and odds"
-            title="Pack details and odds"
+        {pack.name}
+      </CutoutCardHeader>
+
+      <CutoutCardContent className="flex flex-1 flex-col justify-between gap-4 p-4 pt-3 md:p-5 md:pt-3">
+        <div className="space-y-3">
+          <div
+            data-slot="pack-stage"
+            className="pack-stage facet-recess rounded-row flex items-center justify-center py-5"
           >
-            <Info className="h-3.5 w-3.5" />
-          </DialogTrigger>
-          <DialogContent className="max-w-sm p-5">
-            <DialogHeader>
-              <DialogTitle className="text-headline text-label">{pack.name}</DialogTitle>
-              <DialogDescription className="text-label-secondary text-footnote mt-2 leading-relaxed">
-                {pack.description || "No detailed description available for this card pack."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="border-separator text-footnote mt-4 space-y-2 border-t pt-3">
-              <div className="flex justify-between">
-                <span className="text-label-secondary">Price</span>
-                <span className="text-yellow-ink font-medium tabular-nums">
-                  {pack.priceCredits.toLocaleString()} Credits
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-label-secondary">Cards included</span>
-                <span className="text-label font-medium tabular-nums">{pack.cardCount} cards</span>
-              </div>
-              {pack.season && (
-                <div className="flex justify-between">
-                  <span className="text-label-secondary">Season</span>
-                  <span className="text-label font-medium tabular-nums">Season {pack.season}</span>
-                </div>
-              )}
-              {pack.cardType && (
-                <div className="flex justify-between">
-                  <span className="text-label-secondary">Card type</span>
-                  <span className="text-label font-medium">{TYPE_LABEL[pack.cardType]}</span>
-                </div>
-              )}
-              <div className="border-separator border-t pt-3">
-                <PackOdds pack={pack} />
-              </div>
+            <div className="rounded-row shadow-card relative aspect-[3/4.2] w-32 overflow-hidden">
+              <PackHolographicCover
+                packType={pack.packType}
+                guaranteedRarity={pack.guaranteedRarity}
+                packName={pack.name}
+                packArtwork={pack.artwork || undefined}
+                size="md"
+                className="h-full w-full"
+              />
             </div>
-          </DialogContent>
-        </Dialog>
-
-        <div className="rounded-row bg-surface-secondary relative aspect-[3/4.2] w-full overflow-hidden">
-          <PackHolographicCover
-            packType={pack.packType}
-            guaranteedRarity={pack.guaranteedRarity}
-            packName={pack.name}
-            packArtwork={pack.artwork || undefined}
-            size="md"
-            className="h-full w-full"
-          />
-        </div>
-
-        <div className="mt-2 space-y-2 px-1">
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-label text-subhead line-clamp-1">{pack.name}</span>
-            <Badge variant="outline" className={cn("text-caption px-1 py-0", config.color)}>
-              {config.label}
-            </Badge>
           </div>
-          <p className="text-label-secondary text-footnote line-clamp-2 leading-tight">
-            {pack.description || `${pack.cardCount} premium cards included`}
+
+          <p className="text-label-secondary text-footnote line-clamp-2 leading-snug">
+            {pack.description || `${pack.cardCount.toLocaleString()} cards included in each pack.`}
           </p>
-          <div className="pt-1">{actionButton}</div>
         </div>
-      </motion.div>
-    </div>
+
+        <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+          <span className="text-subhead text-label inline-flex items-center gap-1 font-semibold tabular-nums">
+            <IxCreditsSymbol decorative className="size-3.5 shrink-0" />
+            {pack.priceCredits.toLocaleString()} IxC
+          </span>
+
+          <div className="flex items-center gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button type="button" variant="ghost" size="sm">
+                  Drop odds
+                </Button>
+              </DialogTrigger>
+              <DialogContent data-app="vault" className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle>{pack.name}</DialogTitle>
+                  <DialogDescription>
+                    {pack.description || `${pack.cardCount.toLocaleString()} cards included.`}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="border-separator text-footnote space-y-2 border-t pt-3 tabular-nums">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-label-secondary">Price</span>
+                    <span className="text-label font-medium">
+                      {pack.priceCredits.toLocaleString()} IxC
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-label-secondary">Cards included</span>
+                    <span className="text-label font-medium">
+                      {pack.cardCount.toLocaleString()} cards
+                    </span>
+                  </div>
+                  {pack.season && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-label-secondary">Season</span>
+                      <span className="text-label font-medium">Season {pack.season}</span>
+                    </div>
+                  )}
+                  {pack.cardType && (
+                    <div className="flex justify-between gap-3">
+                      <span className="text-label-secondary">Card type</span>
+                      <span className="text-label font-medium">{TYPE_LABEL[pack.cardType]}</span>
+                    </div>
+                  )}
+                  <div className="border-separator border-t pt-3">
+                    <PackOdds pack={pack} />
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            <Button
+              type="button"
+              size="sm"
+              disabled={isPurchasing || disabled}
+              onClick={() => onPurchase?.(pack)}
+            >
+              {isPurchasing ? "Buying..." : "Buy"}
+            </Button>
+          </div>
+        </div>
+      </CutoutCardContent>
+    </CutoutCard>
   );
 }

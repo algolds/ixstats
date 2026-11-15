@@ -1,17 +1,12 @@
 /**
- * The Economy section (MyCountry fix plan, WP-B2):
- * - the GDP growth tile is the engine's rate (`calculatedStats.gdpGrowth`), unrecorded figures read "—", and the
- *   wealth tiles come from the stored income classes;
- * - the Budget tab's revenue is the one national figure, passed to the budget dashboard;
- * - old `?tab=` ids open the renamed tabs, and the infrastructure card gets the Directive handler;
- * - the tax console says rates set revenue (not growth), saves a pending rate when it unmounts, and lets a
- *   bracketed tax become one rate after a confirm;
- * - no hint sends anyone to a Country Editor step that does not exist.
+ * Economy drill-down telemetry & Corporate ₷ treasury console:
+ * - Report, Budget, Taxes and Trade render read-only telemetry with deep-links into `/mycountry/editor`;
+ * - Budget passes the single national revenue figure and `isReadOnly` to `BudgetManagementDashboard`;
+ * - Legacy `?tab=` ids open the renamed tabs, and Corporations keeps live B2G tender operations.
  */
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
-// The rate sliders (Radix) measure themselves.
 globalThis.ResizeObserver ??= class {
   observe() {}
   unobserve() {}
@@ -19,22 +14,27 @@ globalThis.ResizeObserver ??= class {
 };
 
 const mockState: { tab: string | null; country: object | null } = { tab: null, country: null };
-const mockMutate = jest.fn();
 const mockCreateTender = jest.fn();
 
 jest.mock("next/navigation", () => ({
   useSearchParams: () => ({ get: () => mockState.tab }),
 }));
-// Each dynamic import renders a stub naming the props this suite checks.
 jest.mock("next/dynamic", () => ({
   __esModule: true,
   default: () =>
     function DynamicStub(props: {
       revenue?: { total: number | null };
+      isReadOnly?: boolean;
       onDeclareDirective?: unknown;
     }) {
       if (props.revenue) {
-        return <div data-testid="budget-dashboard" data-revenue={String(props.revenue.total)} />;
+        return (
+          <div
+            data-testid="budget-dashboard"
+            data-revenue={String(props.revenue.total)}
+            data-readonly={String(Boolean(props.isReadOnly))}
+          />
+        );
       }
       if ("onDeclareDirective" in props) {
         return <div data-testid="infra-card" data-declare={typeof props.onDeclareDirective} />;
@@ -55,19 +55,18 @@ jest.mock("~/hooks/useNotify", () => ({
 jest.mock("~/trpc/react", () => ({
   api: {
     useUtils: () => ({
-      countries: { getByIdWithEconomicData: { invalidate: jest.fn() } },
       exchange: {
         getTreasury: { invalidate: jest.fn() },
         getRealmCorporateSummary: { invalidate: jest.fn() },
       },
     }),
+    diplomaticCore: {
+      getRelationships: { useQuery: () => ({ data: [] }) },
+    },
     mycountry: {
       getCountryDashboard: {
         useQuery: () => ({ data: { economicVitality: 70, governmentalEfficiency: 60 } }),
       },
-    },
-    economics: {
-      updateFiscalSystem: { useMutation: () => ({ mutate: mockMutate, isPending: false }) },
     },
     exchange: {
       getTreasury: {
@@ -167,14 +166,12 @@ jest.mock("~/trpc/react", () => ({
 }));
 
 import { EconomyDrillDown } from "~/components/mycountry/shell/EconomyDrillDown";
-import { FiscalPolicyConsole } from "~/components/mycountry/shell/FiscalPolicyConsole";
 import { CorporationsTreasuryConsole } from "~/components/mycountry/shell/CorporationsTreasuryConsole";
 import { CorporateTreasuryInsights } from "~/components/mycountry/shell/rails/EconomyRail";
 
 const COUNTRY = {
   currentTotalGdp: 100e9,
   calculatedStats: { gdpGrowth: 0.021 },
-  // Mixed-unit stored column: never the tile's source.
   realGDPGrowthRate: 3,
   governmentRevenueTotal: 999e9,
   incomeDistribution: {
@@ -192,7 +189,6 @@ const COUNTRY = {
 beforeEach(() => {
   mockState.tab = null;
   mockState.country = COUNTRY;
-  mockMutate.mockReset();
 });
 
 const tile = (label: string) =>
@@ -200,7 +196,7 @@ const tile = (label: string) =>
     screen.getByText(label).parentElement)! as HTMLElement;
 
 describe("Economy report", () => {
-  it("shows the engine's growth, plain reason for unrecorded unemployment and wealth shares from classes", () => {
+  it("shows the engine's growth, plain reason for unrecorded unemployment, wealth shares and baselines editor link", () => {
     render(<EconomyDrillDown countryId="c1" onDeclare={jest.fn()} />);
     expect(within(tile("GDP growth")).getByText("2.10%")).toBeInTheDocument();
     expect(within(tile("Unemployment")).getByText("Not recorded")).toBeInTheDocument();
@@ -210,6 +206,10 @@ describe("Economy report", () => {
       screen.getByText("No sector breakdown is recorded for this nation.")
     ).toBeInTheDocument();
     expect(screen.getByTestId("infra-card").dataset.declare).toBe("function");
+    expect(screen.getByRole("link", { name: /Edit baselines/i })).toHaveAttribute(
+      "href",
+      "/mycountry/editor#scale"
+    );
     expect(document.body.textContent).not.toMatch(/Country Editor/);
   });
 });
@@ -231,14 +231,13 @@ describe("Economy report estimates", () => {
     expect(
       within(tile("Unemployment")).getByText("Estimated from your economy")
     ).toBeInTheDocument();
-    // The engine's 2% stand-in is never shown in place of the estimate.
     expect(within(tile("Inflation")).getByText("4.4%")).toBeInTheDocument();
     expect(within(tile("Debt to GDP")).getByText("61.0%")).toBeInTheDocument();
     expect(within(tile("Debt to GDP")).queryByText("Estimated from your economy")).toBeNull();
   });
 });
 
-describe("Economy tabs", () => {
+describe("Economy tabs and editor handoff", () => {
   it.each([
     ["fiscal", "budget-dashboard"],
     ["budget", "budget-dashboard"],
@@ -262,62 +261,37 @@ describe("Economy tabs", () => {
     expect(within(tile("Total GDP")).getByText("$44.5T")).toBeInTheDocument();
   });
 
-  it("gives the budget the saved rates on today's GDP as revenue, not the founding total", () => {
+  it("renders budget dashboard read-only with revenue and links configuration to the editor", () => {
     mockState.tab = "budget";
     render(<EconomyDrillDown countryId="c1" />);
-    // 100B x 20% x 0.18 (fallback income weight)
-    expect(screen.getByTestId("budget-dashboard").dataset.revenue).toBe(String(3.6e9));
+    const dashboard = screen.getByTestId("budget-dashboard");
+    expect(dashboard.dataset.revenue).toBe(String(3.6e9));
+    expect(dashboard.dataset.readonly).toBe("true");
     expect(within(tile("Tax revenue yield")).getByText("$3.6B / yr")).toBeInTheDocument();
-  });
-});
-
-describe("Tax rates console", () => {
-  it("says rates set revenue, not growth", () => {
-    render(<FiscalPolicyConsole countryId="c1" />);
-    expect(screen.getByText(/They do not change GDP or growth/)).toBeInTheDocument();
-    expect(screen.queryByLabelText("Edit Tariff rate rate")).toBeNull();
-    expect(screen.getByLabelText("Edit Import tariff rate")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Configure budget/i })).toHaveAttribute(
+      "href",
+      "/mycountry/editor#budget"
+    );
   });
 
-  it("sends a pending rate when it unmounts instead of dropping it", () => {
-    jest.useFakeTimers();
-    const { unmount } = render(<FiscalPolicyConsole countryId="c1" />);
-    fireEvent.click(screen.getByLabelText("Edit VAT and sales tax rate"));
-    const input = screen.getByLabelText("VAT and sales tax rate, percent");
-    fireEvent.change(input, { target: { value: "12" } });
-    fireEvent.blur(input);
-    expect(mockMutate).not.toHaveBeenCalled();
-    unmount();
-    expect(mockMutate).toHaveBeenCalledWith({ countryId: "c1", salesTaxRate: 12 });
-    act(() => jest.runOnlyPendingTimers());
-    expect(mockMutate).toHaveBeenCalledTimes(1);
-    jest.useRealTimers();
-  });
+  it("renders read-only saved tax rates and sector tariff links into the country editor", () => {
+    mockState.tab = "taxes";
+    const view = render(<EconomyDrillDown countryId="c1" />);
+    expect(screen.getByText("20.0%")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Configure tax rates/i })).toHaveAttribute(
+      "href",
+      "/mycountry/editor#taxes"
+    );
+    expect(screen.queryByRole("slider")).toBeNull();
+    view.unmount();
 
-  it("replaces bracketed income tax with its top rate after a confirm", () => {
-    jest.useFakeTimers();
-    mockState.country = {
-      ...COUNTRY,
-      fiscalSystem: {
-        personalIncomeTaxRates: JSON.stringify([
-          { bracket: 0, rate: 10 },
-          { bracket: 50_000, rate: 35 },
-        ]),
-      },
-    };
-    render(<FiscalPolicyConsole countryId="c1" />);
-    expect(screen.getByLabelText("Income tax is set by tax brackets")).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Use one rate" }));
-    const dialog = screen.getByRole("alertdialog");
-    expect(within(dialog).getByText(/becomes a flat 35%/)).toBeInTheDocument();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Use one rate" }));
-    act(() => jest.advanceTimersByTime(800));
-    expect(mockMutate).toHaveBeenCalledWith({
-      countryId: "c1",
-      personalIncomeTaxRates: JSON.stringify({ incomeRate: 35 }),
-    });
-    expect(screen.getByLabelText("Save and lock Income tax rate")).toBeEnabled();
-    jest.useRealTimers();
+    mockState.tab = "trade";
+    render(<EconomyDrillDown countryId="c1" />);
+    expect(screen.getByRole("link", { name: /Configure sector tariffs/i })).toHaveAttribute(
+      "href",
+      "/mycountry/editor#tariffs"
+    );
+    expect(screen.queryByRole("slider")).toBeNull();
   });
 });
 

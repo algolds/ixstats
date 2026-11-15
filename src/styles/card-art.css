@@ -307,4 +307,190 @@
       transparent 2px 10px
     );
   }
+
+  /* Achievement ribbon weave texture (content artwork). */
+  .ribbon-weave {
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 1px,
+      rgb(0 0 0 / 0.22) 1px,
+      rgb(0 0 0 / 0.22) 2px
+    );
+    @variant contrast-more {
+      opacity: 0.45;
+    }
+  }
+
+  /* Pack cover artwork themes & reduced-motion stillness. */
+  [data-pack-theme="BASIC"] {
+    --pack-accent: var(--color-blue);
+  }
+  [data-pack-theme="PREMIUM"] {
+    --pack-accent: var(--color-indigo);
+  }
+  [data-pack-theme="ELITE"] {
+    --pack-accent: var(--color-rarity-epic);
+  }
+  [data-pack-theme="EVENT"] {
+    --pack-accent: var(--color-yellow);
+  }
+  .pack-cover-base {
+    background-color: #090b10;
+    background-image:
+      radial-gradient(
+        circle at 50% 24%,
+        color-mix(in oklab, var(--pack-accent, var(--color-blue)) 34%, #090b10),
+        transparent 68%
+      ),
+      linear-gradient(
+        155deg,
+        color-mix(in oklab, var(--pack-accent, var(--color-blue)) 26%, #090b10) 0%,
+        #0c0f17 52%,
+        color-mix(in oklab, var(--pack-accent, var(--color-blue)) 18%, #07080c) 100%
+      );
+  }
+  .pack-holo-drift {
+    animation: holo-drift var(--pack-drift-duration, 8s) ease-in-out infinite;
+    @variant motion-reduce {
+      animation: none;
+    }
+    @variant transparency-reduced {
+      animation: none;
+    }
+  }
+  .pack-geo-spin {
+    animation: geo-spin var(--pack-spin-duration, 20s) linear infinite;
+    @variant motion-reduce {
+      animation: none;
+    }
+  }
+  .pack-geo-spin-reverse {
+    animation: geo-spin 25s linear infinite reverse;
+    @variant motion-reduce {
+      animation: none;
+    }
+  }
+  .pack-foil-sweep {
+    animation: foil-sweep var(--pack-sweep-duration, 3s) ease-in-out infinite;
+    @variant motion-reduce {
+      animation: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+  }
+  .pack-core-pulse {
+    animation: cosmetic-gentle-pulse 2.2s ease-in-out infinite;
+    @variant motion-reduce {
+      animation: none;
+    }
+  }
+
+  /* Cosmetic avatar glows & neon card frames (content artwork, spec §14 Vault). */
+  @keyframes cosmetic-gentle-pulse {
+    0%,
+    100% {
+      opacity: 0.72;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+  @keyframes cosmetic-shimmer-sweep {
+    0% {
+      transform: translateX(-120%) skewX(-20deg);
+    }
+    65%,
+    100% {
+      transform: translateX(220%) skewX(-20deg);
+    }
+  }
+
+  .cosmetic-avatar-glow {
+    --cosmetic-color: var(--tint);
+    --cosmetic-radius: 14px;
+    border: 2px solid var(--cosmetic-color);
+    box-shadow: 0 0 var(--cosmetic-radius)
+      color-mix(in srgb, var(--cosmetic-color) 50%, transparent);
+    @variant contrast-more {
+      box-shadow: none;
+    }
+  }
+  .cosmetic-avatar-glow[data-glow-style="summer"] {
+    --cosmetic-color: var(--color-orange);
+    --cosmetic-radius: 15px;
+  }
+  .cosmetic-avatar-glow[data-glow-style="emerald"] {
+    --cosmetic-color: var(--color-green);
+    --cosmetic-radius: 15px;
+  }
+  .cosmetic-avatar-glow[data-glow-style="imperial"] {
+    --cosmetic-color: var(--color-yellow);
+    --cosmetic-radius: 18px;
+  }
+  .cosmetic-avatar-aura {
+    pointer-events: none;
+    background-color: var(--cosmetic-color, var(--tint));
+    opacity: 0.2;
+    animation: cosmetic-gentle-pulse 2.4s ease-in-out infinite;
+    @variant motion-reduce {
+      animation: none;
+      opacity: 0.16;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+    @variant contrast-more {
+      display: none;
+    }
+  }
+
+  .cosmetic-neon-frame {
+    --cosmetic-color: var(--color-cyan);
+    border: 2px solid var(--cosmetic-color);
+    box-shadow:
+      0 0 8px color-mix(in srgb, var(--cosmetic-color) 32%, transparent),
+      inset 0 0 4px color-mix(in srgb, var(--cosmetic-color) 18%, transparent);
+    @variant contrast-more {
+      box-shadow: none;
+    }
+  }
+  .cosmetic-neon-frame[data-frame-style="ruby"] {
+    --cosmetic-color: var(--color-red);
+    background-image: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--color-red) 14%, transparent),
+      color-mix(in srgb, var(--color-red) 4%, transparent)
+    );
+  }
+  .cosmetic-neon-frame[data-frame-style="winter"] {
+    --cosmetic-color: var(--color-cyan);
+    background-image:
+      radial-gradient(circle at top right, rgb(255 255 255 / 0.18), transparent 55%),
+      linear-gradient(
+        to bottom right,
+        color-mix(in srgb, var(--color-cyan) 18%, transparent),
+        color-mix(in srgb, var(--color-cyan) 8%, transparent),
+        transparent
+      );
+  }
+  .cosmetic-neon-frame[data-frame-style="pulse"] {
+    animation: cosmetic-gentle-pulse 2.4s ease-in-out infinite;
+    @variant motion-reduce {
+      animation: none;
+    }
+  }
+  .cosmetic-neon-shimmer {
+    pointer-events: none;
+    background-image: linear-gradient(to right, transparent, rgb(255 255 255 / 0.2), transparent);
+    animation: cosmetic-shimmer-sweep 4.2s linear infinite;
+    @variant motion-reduce {
+      display: none;
+    }
+    @variant transparency-reduced {
+      display: none;
+    }
+  }
 }

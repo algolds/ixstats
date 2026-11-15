@@ -11,6 +11,7 @@ import {
   Healthcare as Stethoscope,
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
+import { FACET_CHART_COLORS } from "~/components/ui/chart";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import type { MetricModalTab } from "./types";
 import { MetricModalLayout } from "./MetricModalLayout";
@@ -150,10 +151,20 @@ function EducationAttainment({ levels }: { levels: EducationLevel[] }) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {levels.slice(0, 8).map((level, i) => (
           <div key={level.level || i} className="bg-fill-3 rounded-row p-3 text-center">
-            <div className="text-title-3" style={{ color: level.color || "var(--color-chart-2)" }}>
+            <div className="text-label text-title-3 tabular-nums">
               {(level.percentage || level.percent || 0).toFixed(0)}%
             </div>
-            <div className="text-label-secondary text-footnote mt-1">{level.level}</div>
+            <div className="text-label-secondary text-footnote mt-1 flex items-center justify-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  backgroundColor:
+                    level.color || FACET_CHART_COLORS[i % FACET_CHART_COLORS.length],
+                }}
+              />
+              <span>{level.level}</span>
+            </div>
           </div>
         ))}
       </div>
@@ -260,7 +271,7 @@ export function DemographicsHealthModal({
       title="Demographics & health"
       description="Population health and quality of life metrics"
       icon={Heart}
-      iconColor="text-green"
+      iconColor="text-label-secondary"
       tabs={TABS}
       isLoading={countryLoading}
       variant="demographics"

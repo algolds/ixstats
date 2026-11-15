@@ -87,6 +87,9 @@
   --chart-3: var(--color-chart-3);
   --chart-4: var(--color-chart-4);
   --chart-5: var(--color-chart-5);
+  --chart-6: var(--color-chart-6);
+  --chart-7: var(--color-chart-7);
+  --chart-8: var(--color-chart-8);
 
   /* Dynamic country flag colours - override these per country */
   --country-primary: #6366f1;

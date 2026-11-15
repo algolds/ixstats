@@ -83,7 +83,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
   const StatusIcon = isCritical ? AlertTriangle : Shield;
 
   return (
-    <Card className={cn("p-5", isCritical && "border-yellow/40")}>
+    <Card content="data" className="p-4">
       <div className="border-separator flex flex-wrap items-center justify-between gap-2 border-b pb-3">
         <div className="flex min-w-0 items-center gap-2">
           <StatusIcon
@@ -185,7 +185,7 @@ export const InfrastructureMaintenanceCard = memo(function InfrastructureMainten
             size="sm"
             onClick={() => onDeclareDirective("Rehabilitate the national transport network")}
           >
-            <Command aria-hidden="true" className="text-yellow h-3.5 w-3.5" />
+            <Command aria-hidden="true" className="text-label-secondary h-3.5 w-3.5" />
             Declare a rehabilitation Directive
           </Button>
         )}

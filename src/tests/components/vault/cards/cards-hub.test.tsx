@@ -1,10 +1,11 @@
 /**
- * CardsHub Facet layout: PageHeader with a single primary action per view, natural-width SegmentedControl,
- * compact MarketBrowse Filters popover, and retryable EmptyState on query error.
+ * CardsHub per-route PageHeader archetypes: My cards, Sets, Card market, and Explore cards,
+ * with no duplicate route SegmentedControl or Vault back link, and inline MarketPane mode pills.
  */
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 let mockSearch = "";
+let mockActiveTrades: Array<{ id: string; myTurn: boolean }> = [];
 const mockNavigate = jest.fn();
 
 jest.mock("next/navigation", () => ({
@@ -21,6 +22,9 @@ jest.mock("~/hooks/useCardHubTab", () => ({
 jest.mock("~/hooks/useCardSheet", () => ({
   useCardSheet: () => ({ open: jest.fn(), close: jest.fn(), cardId: null }),
 }));
+jest.mock("~/hooks/useCardsRefresh", () => ({
+  useCardsRefresh: () => jest.fn(),
+}));
 jest.mock("~/hooks/useNotify", () => ({
   useNotify: () => ({ success: jest.fn(), error: jest.fn() }),
 }));
@@ -30,8 +34,8 @@ jest.mock("~/hooks/marketplace/useAuctionWebSocket", () => ({
 jest.mock("~/hooks/marketplace/useAuctionBid", () => ({
   useAuctionBid: () => ({
     placeBid: jest.fn(),
-    buyout: jest.fn(),
-    isPlacingBid: false,
+    executeBuyout: jest.fn(),
+    isBidding: false,
     isBuyingOut: false,
   }),
 }));
@@ -60,6 +64,16 @@ const mockRefetchListings = jest.fn();
 
 jest.mock("~/trpc/react", () => ({
   api: {
+    useUtils: () => ({
+      cardMarket: {
+        getMyListings: { invalidate: jest.fn() },
+        getWishlist: { invalidate: jest.fn() },
+      },
+      cards: {
+        getSheetEconomy: { invalidate: jest.fn() },
+        getSheet: { invalidate: jest.fn() },
+      },
+    }),
     realms: { directory: { useQuery: () => ({ data: [] }) } },
     cardMarket: {
       browse: {
@@ -72,9 +86,20 @@ jest.mock("~/trpc/react", () => ({
       },
       getWishlist: { useQuery: () => ({ data: [], isLoading: false, isError: false }) },
       getMyListings: { useQuery: () => ({ data: [], isLoading: false, isError: false }) },
+      getMyActiveAuctions: {
+        useQuery: () => ({ data: { auctions: [] }, isLoading: false, isError: false }),
+      },
+      getMyActiveBids: {
+        useQuery: () => ({ data: { auctions: [] }, isLoading: false, isError: false }),
+      },
+      cancelListing: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
+      cancelAuction: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
+      removeFromWishlist: { useMutation: () => ({ mutate: jest.fn(), isPending: false }) },
     },
     trading: {
-      getActiveTrades: { useQuery: () => ({ data: [], isLoading: false, isError: false }) },
+      getActiveTrades: {
+        useQuery: () => ({ data: mockActiveTrades, isLoading: false, isError: false }),
+      },
     },
     cards: {
       exploreShelves: { useQuery: () => ({ data: { realms: [] } }) },
@@ -95,34 +120,99 @@ beforeAll(() => {
 
 beforeEach(() => {
   mockSearch = "";
+  mockActiveTrades = [];
   mockListingsError = false;
   mockNavigate.mockReset();
   mockRefetchListings.mockReset();
+  window.history.replaceState(null, "", "/vault/cards/market");
 });
 
-describe("CardsHub Facet header and controls", () => {
-  it("renders PageHeader, top-level tabs, single primary Sell a card action, and compact Filters trigger on Market Browse", () => {
-    render(<CardsHub initialTab="market" />);
-    expect(screen.getByRole("heading", { level: 1, name: "Cards" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Mine" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Market" })).toHaveAttribute("aria-selected", "true");
-    const primarySellButtons = screen
-      .getAllByRole("button", { name: /sell a card/i })
-      .filter((btn) => btn.className.includes("bg-primary-fill"));
-    expect(primarySellButtons).toHaveLength(1);
-    expect(screen.getByRole("button", { name: /filters/i })).toBeInTheDocument();
+describe("CardsHub per-route PageHeader identity", () => {
+  it("renders route-specific headers and actions with no duplicate top route SegmentedControl or Vault back button", () => {
+    const { rerender } = render(<CardsHub initialTab="mine" />);
+    expect(screen.getByRole("heading", { level: 1, name: "My cards" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Your personal binder, showcase pins, and duplicate copies.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Get packs" })).toHaveAttribute("href", "/vault/store");
+    expect(screen.getByRole("button", { name: /list a card/i })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Mine" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+
+    rerender(<CardsHub initialTab="sets" />);
+    expect(screen.getByRole("heading", { level: 1, name: "Sets" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Season albums, regional series, and completion progress.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New showcase" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+
+    rerender(<CardsHub initialTab="explore" />);
+    expect(screen.getByRole("heading", { level: 1, name: "Explore cards" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Complete reference index of every card minted across seasons and realms.")
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /suggest a card/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
   });
 
-  it("switches the PageHeader primary action to New trade on Market Trades and Suggest a card on Explore", () => {
+  it("renders Card market header, inline ActionPill mode switcher, single primary List a card CTA, and Filters trigger", () => {
+    mockActiveTrades = [
+      { id: "t-1", myTurn: true },
+      { id: "t-2", myTurn: false },
+    ];
+    render(<CardsHub initialTab="market" />);
+
+    expect(screen.getByRole("heading", { level: 1, name: "Card market" })).toBeInTheDocument();
+    expect(
+      screen.getByText("Live player auctions, direct card trades, and wishlists.")
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Market" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Vault" })).toBeNull();
+
+    const modeGroup = screen.getByRole("group", { name: "Market mode" });
+    expect(within(modeGroup).getByRole("button", { name: "Auctions" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    const tradesPill = within(modeGroup).getByRole("button", { name: /trades/i });
+    expect(tradesPill).toHaveAttribute("aria-pressed", "false");
+    expect(tradesPill).toHaveTextContent("1");
+    expect(within(modeGroup).getByRole("button", { name: "Wishlist" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+    expect(within(modeGroup).getByRole("button", { name: "My listings" })).toHaveAttribute(
+      "aria-pressed",
+      "false"
+    );
+
+    const primaryListButtons = screen
+      .getAllByRole("button", { name: /list a card/i })
+      .filter((btn) => btn.className.includes("bg-primary-fill"));
+    expect(primaryListButtons).toHaveLength(1);
+    expect(screen.getByRole("button", { name: /filters/i })).toBeInTheDocument();
+
+    fireEvent.click(within(modeGroup).getByRole("button", { name: "Wishlist" }));
+    expect(window.location.search).toBe("?tab=wishlist");
+  });
+
+  it("switches to New trade on Market Trades with zero tablists, and supports Wishlist and My listings modes", () => {
     mockSearch = "tab=trades";
     const { unmount } = render(<CardsHub initialTab="market" />);
     expect(screen.getByRole("link", { name: /new trade/i })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /sell a card/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /list a card/i })).toBeNull();
+    expect(screen.queryAllByRole("tablist")).toHaveLength(0);
+    expect(screen.getByRole("button", { name: /trades/i, pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Incoming", pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sent", pressed: false })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "History", pressed: false })).toBeInTheDocument();
     unmount();
 
-    mockSearch = "";
-    render(<CardsHub initialTab="explore" />);
-    expect(screen.getByRole("button", { name: /suggest a card/i })).toBeInTheDocument();
+    mockSearch = "tab=selling";
+    render(<CardsHub initialTab="market" />);
+    expect(screen.getByRole("button", { name: "My listings", pressed: true })).toBeInTheDocument();
+    expect(screen.getByText("No active auctions or bids")).toBeInTheDocument();
   });
 
   it("renders a retryable EmptyState when Market Browse listings fail to load", () => {

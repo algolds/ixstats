@@ -26,7 +26,7 @@ function Meter({ share, over }: { share: number | null; over?: boolean }) {
       <span
         className={cn(
           "duration-fast ease-out-facet block h-full w-full origin-left rounded-full transition-transform motion-reduce:transition-none",
-          over ? "bg-destructive" : "bg-tint"
+          over ? "bg-destructive" : "bg-label-secondary"
         )}
         style={{ transform: `scaleX(${(share ?? 0) / 100})` }}
       />
@@ -44,7 +44,7 @@ function Pips({ pips }: { pips: readonly boolean[] }) {
           key={i}
           className={cn(
             "duration-fast h-1 flex-1 rounded-full transition-colors motion-reduce:transition-none",
-            used ? "bg-tint" : "bg-fill-2"
+            used ? "bg-label-secondary" : "bg-fill-2"
           )}
         />
       ))}
@@ -119,7 +119,7 @@ export function CommandBand({
   return (
     <section
       aria-label="Command readings"
-      className="facet-well rounded-row flex flex-wrap items-start gap-x-7 gap-y-5 p-4"
+      className="border-separator flex flex-wrap items-start gap-x-7 gap-y-5 border-t px-1 pt-3.5"
     >
       {rings.length > 0 && (
         <RingGrid rings={rings} onOpen={onOpenRings} className="min-w-0 flex-[1_1_16rem]" />
@@ -191,7 +191,7 @@ export function CommandBand({
         </div>
         {openIssues > 0 && (
           <ul aria-label="Waiting on you" className="flex flex-wrap gap-1.5">
-            <li className="bg-tint-fill text-footnote text-label rounded-full px-2.5 py-1 tabular-nums">
+            <li className="bg-fill-3 text-footnote text-label rounded-full px-2.5 py-1 tabular-nums">
               <span className="font-semibold">{openIssues}</span>{" "}
               {openIssues === 1 ? "open issue" : "open issues"}
             </li>

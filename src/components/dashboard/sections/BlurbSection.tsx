@@ -166,7 +166,12 @@ function BlurbCardActions({
   }
   return (
     <div className="flex items-center gap-2">
-      <Button size="sm" className={cn(TAP, "flex-1")} onClick={() => onOpen("write")}>
+      <Button
+        variant="glass"
+        size="sm"
+        className={cn(TAP, "flex-1")}
+        onClick={() => onOpen("write")}
+      >
         <EditPencil aria-hidden />
         Write a blurb
       </Button>
@@ -312,7 +317,13 @@ function BlurbComposer({
         >
           {text.length} / {MAX_BLURB}
         </span>
-        <Button type="submit" size="sm" className={TAP} disabled={!text.trim() || submit.isPending}>
+        <Button
+          type="submit"
+          variant="glass"
+          size="sm"
+          className={TAP}
+          disabled={!text.trim() || submit.isPending}
+        >
           {submit.isPending ? (
             <Loader aria-hidden className="animate-spin" />
           ) : (

@@ -26,6 +26,7 @@ import { WikiLogomark } from "./icons/WikiLogomark";
 import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
 import {
   Activity,
+  Album,
   Bell,
   Bookmark,
   BookmarkBook,
@@ -36,10 +37,12 @@ import {
   CheckSquare,
   Clock,
   Coins,
+  Compass,
   Component,
   Cpu,
   Crown,
   Database,
+  Download,
   EditPencil,
   Folder,
   Gamepad,
@@ -67,6 +70,7 @@ import {
   Settings,
   Shield,
   ShieldCheck,
+  Shop,
   Sparks,
   Terminal,
   Translate,
@@ -174,6 +178,11 @@ export interface AppDefinition {
   placement?: "main" | "footer";
   /** Sections are listed as top-level rows, always shown, with no app row to expand (Home). */
   inline?: true;
+  /**
+   * Sections appear only while the viewer is on a route belonging to this app; outside it the row
+   * navigates directly with no expand chevron (ThinkPages).
+   */
+  sectionsWhenCurrentOnly?: true;
 }
 
 /** The admin console's sections of one sidebar group: `[id, label, href, icon]` rows. */
@@ -256,24 +265,56 @@ export const APPS: readonly AppDefinition[] = [
         action: "daily-reward",
         badge: "daily-reward",
       },
+      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
       {
         id: "achievements",
         label: "Achievements",
         href: "/vault/achievements",
         icon: Trophy,
-        match: ["/vault/achievements"],
+        exact: true,
       },
-      // The nation boards (GDP, population, density, growth); achievement points rank on Achievements.
-      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
-      // The hub's four tabs and the NationStates import; the old card and Store addresses redirect in src/proxy.ts.
       {
-        id: "cards",
-        label: "Cards",
+        id: "lorewards",
+        label: "Lorewards",
+        href: "/vault/achievements?tab=lorewards",
+        icon: Medal,
+      },
+      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
+      {
+        id: "cards-mine",
+        label: "My cards",
         href: "/vault/cards/mine",
         icon: CardsLogomark,
-        match: ["/vault/cards", "/vault/import"],
+        group: "Cards",
       },
-      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
+      {
+        id: "cards-sets",
+        label: "Sets",
+        href: "/vault/cards/sets",
+        icon: Album,
+        group: "Cards",
+      },
+      {
+        id: "cards-market",
+        label: "Market",
+        href: "/vault/cards/market",
+        icon: Shop,
+        group: "Cards",
+      },
+      {
+        id: "cards-explore",
+        label: "Explore",
+        href: "/vault/cards/explore",
+        icon: Compass,
+        group: "Cards",
+      },
+      {
+        id: "cards-import",
+        label: "Import deck",
+        href: "/vault/import",
+        icon: Download,
+        group: "Cards",
+      },
     ],
   },
   {
@@ -346,6 +387,7 @@ export const APPS: readonly AppDefinition[] = [
     href: FORUM_HOME,
     icon: ChatBubble,
     tint: "thinkpages",
+    sectionsWhenCurrentOnly: true,
     match: [FORUM_HOME, "/thinktanks", "/dashboard/accounts"],
     sections: [
       { id: "forums", label: "Forums", href: FORUM_HOME, icon: ChatBubble, exact: true },

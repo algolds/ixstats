@@ -5,9 +5,8 @@
 // sections sit beside it as a smaller, secondary control. Stash and Settings replace the row with a
 // way back.
 
-import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
-import { ArrowLeft, Bookmark, Code, HelpCircle, Settings, SoundHigh } from "iconoir-react";
+import { ArrowLeft, Bookmark, HelpCircle, Settings, SoundHigh } from "iconoir-react";
 import { PageHeader } from "~/components/shell/PageHeader";
 import { ActionPill } from "~/components/ui/action-pill";
 import { Button } from "~/components/ui/button";
@@ -31,8 +30,17 @@ import {
 } from "./onoma-tabs";
 
 const toOptions = (
-  tabs: readonly { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
-) => tabs.map(({ id, label, icon: Icon }) => ({ value: id, label, icon: <Icon /> }));
+  tabs: readonly {
+    id: string;
+    label: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  }[]
+) =>
+  tabs.map(({ id, label, icon: Icon }) => ({
+    value: id,
+    label,
+    icon: Icon ? <Icon /> : undefined,
+  }));
 
 const STUDIO_TABS = toOptions(getStudioTabs());
 const EXPLORE_TABS = toOptions(getExploreTabs());
@@ -175,14 +183,6 @@ export function OnomaHeader({
         }
         actions={
           <>
-            {process.env.NODE_ENV === "development" && (
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/labs/onoma/glyphs" title="Onoma glyph catalog (development only)">
-                  <Code />
-                  <span className="hidden sm:inline">Glyphs</span>
-                </Link>
-              </Button>
-            )}
             <motion.span
               className="inline-flex"
               animate={shouldAnimateStash ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}

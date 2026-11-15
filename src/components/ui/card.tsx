@@ -169,7 +169,10 @@ function CardTitle({
       {...props}
     >
       {icon != null && (
-        <span aria-hidden="true" className="text-tint inline-flex shrink-0 [:where(&)_svg]:size-4">
+        <span
+          aria-hidden="true"
+          className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-4"
+        >
           {icon}
         </span>
       )}

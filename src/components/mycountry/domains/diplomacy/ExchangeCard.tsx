@@ -75,11 +75,11 @@ const ExchangeCard: React.FC<ExchangeCardProps> = React.memo(
         }}
         aria-label={`${exchange.title}, ${typeConfig.label}, ${statusConfig.label}`}
         aria-pressed={isSelected}
-        className={cn("rounded-card overflow-hidden", isSelected && "ring-tint ring-2")}
+        className={cn("rounded-card overflow-hidden", isSelected && "ring-label/30 ring-1")}
         interactive
       >
         {/* Host → exchange type → participants */}
-        <div className="border-separator bg-fill-3 flex items-center justify-between gap-3 border-b px-4 py-3">
+        <div className="border-separator/60 flex items-center justify-between gap-3 border-b px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             <FlagTile
               name={exchange.hostCountry.name}

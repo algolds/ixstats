@@ -5,26 +5,10 @@ import dynamic from "next/dynamic";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { Skeleton } from "~/components/ui/skeleton";
 
-const CabinetPanel = dynamic(
+const StateRepresentationPanel = dynamic(
   () =>
-    import("~/components/executive/politics/CabinetPanel").then((m) => ({
-      default: m.CabinetPanel,
-    })),
-  { loading: () => <Skeleton className="rounded-card h-64" /> }
-);
-
-const PartyManager = dynamic(
-  () =>
-    import("~/components/executive/politics/PartyManager").then((m) => ({
-      default: m.PartyManager,
-    })),
-  { loading: () => <Skeleton className="rounded-card h-64" /> }
-);
-
-const LegislaturePanel = dynamic(
-  () =>
-    import("~/components/executive/politics/LegislaturePanel").then((m) => ({
-      default: m.LegislaturePanel,
+    import("~/components/executive/politics/StateRepresentationPanel").then((m) => ({
+      default: m.StateRepresentationPanel,
     })),
   { loading: () => <Skeleton className="rounded-card h-64" /> }
 );
@@ -65,47 +49,31 @@ interface PoliticsDrillDownProps {
   countryId: string;
 }
 
-/**
- * Politics drill-down: cabinet, parties, legislature, bills and power brokers. Shared between the
- * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
- * never overrides.
- */
 const TABS = [
-  { id: "cabinet" as const, label: "Cabinet" },
-  { id: "parties" as const, label: "Parties" },
-  { id: "legislature" as const, label: "Legislature" },
+  { id: "state" as const, label: "State & representation" },
   { id: "bills" as const, label: "Bills & reforms" },
   { id: "power" as const, label: "Power brokers" },
 ];
 
 /**
- * Politics drill-down: cabinet, parties, legislature, bills and power brokers. Shared between the
- * drill sheet and the full-page politics surface. Politics is player-decided; the sim informs but
- * never overrides.
+ * Politics drill-down: read-only state & representation summary (configured in `/mycountry/editor`),
+ * live bills & reforms, and power brokers.
  */
 export function PoliticsDrillDown({ countryId }: PoliticsDrillDownProps): React.JSX.Element {
-  const [activeTab, setActiveTab] = useState<
-    "cabinet" | "parties" | "legislature" | "bills" | "power"
-  >("cabinet");
+  const [activeTab, setActiveTab] = useState<"state" | "bills" | "power">("state");
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-title-3 text-label">Politics</h2>
-        <SectionTabBar
-          tabs={TABS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          aria-label="Politics sections"
-        />
-      </div>
+      <SectionTabBar
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        aria-label="Politics sections"
+      />
 
-      {/* Election lifecycle: first election date, results, seated chamber (MC-2) */}
       <ElectionStatusCard countryId={countryId} />
 
-      {activeTab === "cabinet" && <CabinetPanel countryId={countryId} />}
-      {activeTab === "parties" && <PartyManager countryId={countryId} />}
-      {activeTab === "legislature" && <LegislaturePanel countryId={countryId} />}
+      {activeTab === "state" && <StateRepresentationPanel countryId={countryId} />}
       {activeTab === "bills" && (
         <div className="space-y-4">
           <BillsPanel countryId={countryId} />

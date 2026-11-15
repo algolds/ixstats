@@ -37,7 +37,7 @@ export function StandingBand({
   return (
     <section
       aria-label="Country DNA"
-      className="facet-well rounded-row flex flex-wrap items-start gap-x-7 gap-y-5 p-4"
+      className="border-separator flex flex-wrap items-start gap-x-7 gap-y-5 border-t px-1 pt-3.5"
     >
       {rings.length > 0 && (
         <RingGrid rings={rings} onOpen={onOpenRings} className="min-w-0 flex-[1_1_16rem]" />
@@ -47,7 +47,7 @@ export function StandingBand({
           {strengths.map((a) => (
             <li
               key={a.key}
-              className="bg-tint-fill text-footnote text-label rounded-full px-2.5 py-1 tabular-nums"
+              className="bg-fill-3 text-footnote text-label rounded-full px-2.5 py-1 tabular-nums"
             >
               <span className="font-semibold">#{a.rank}</span> {a.label}
             </li>
@@ -126,14 +126,14 @@ function FactsStrip({ facts }: { facts: readonly NationalFact[] }) {
       >
         {pages.map((pair) => (
           <li key={pair[0]?.key} className="w-full shrink-0 snap-start">
-            <dl className="grid grid-cols-2 gap-2">
+            <dl className="border-separator/60 divide-separator/60 grid grid-cols-2 divide-x border-t pt-2.5">
               {pair.map((f) => (
                 <div
                   key={f.key}
-                  className="bg-fill-4 rounded-row flex min-w-0 flex-col gap-0.5 px-3 py-2"
+                  className="flex min-w-0 flex-col gap-0.5 px-3 first:pl-0 last:pr-0"
                 >
                   <dt className="text-caption text-label-secondary">{f.label}</dt>
-                  <dd className="text-footnote text-label line-clamp-2" title={f.value}>
+                  <dd className="text-footnote text-label line-clamp-2 font-medium" title={f.value}>
                     {f.value}
                   </dd>
                 </div>

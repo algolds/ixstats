@@ -228,7 +228,8 @@ function RailApp({
 }) {
   const [open, setOpen] = React.useState(false);
   const close = React.useCallback(() => setOpen(false), []);
-  const hasSections = app.sections.length > 0 && !plain;
+  const hasSections =
+    app.sections.length > 0 && !plain && (!app.sectionsWhenCurrentOnly || isCurrent);
   const pending = app.sections.some((s) => s.badge && isPending(list.badges[s.badge]));
   const glyph = <RailGlyph app={app} showDot={pending} />;
 

@@ -165,6 +165,7 @@ export function ExplorePane({
     }
   );
   const pages = query.data?.pages;
+  const totalCount = pages?.[0]?.total;
   const faces = uniqueFaces(pages ?? []);
   // A picked realm id is a string or null, so with no NationStates shelf this is false.
   const { regions, regionSearch } = useRegionSearch(filters.realmId === nsRealmId);
@@ -195,24 +196,33 @@ export function ExplorePane({
         aria-labelledby={headingId}
         className="scroll-mt-(--shell-top-offset) space-y-4"
       >
-        <h2 ref={gridHeading} id={headingId} tabIndex={-1} className="text-title-3 outline-none">
-          All cards
-        </h2>
-        {countryId && <CountryFilterChip countryId={countryId} onClear={onClearCountry} />}
-        <CardFilterBar
-          filters={filters}
-          onChange={change}
-          dimensions={EXPLORE_DIMENSIONS}
-          types={facets.data?.types ?? []}
-          categories={facets.data?.categories ?? []}
-          facets={facetsStatus(facets)}
-          realms={realms}
-          regions={regions}
-          regionSearch={regionSearch}
-          sort={sort}
-          sortOptions={EXPLORE_SORT_OPTIONS}
-          onSortChange={setSort}
-        />
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 ref={gridHeading} id={headingId} tabIndex={-1} className="text-title-3 outline-none">
+            All cards
+          </h2>
+          {totalCount !== undefined && (
+            <span className="text-footnote text-label-secondary tabular-nums">
+              {totalCount.toLocaleString()} {totalCount === 1 ? "card" : "cards"}
+            </span>
+          )}
+        </div>
+        <Card variant="well" padding="sm" className="space-y-2">
+          {countryId && <CountryFilterChip countryId={countryId} onClear={onClearCountry} />}
+          <CardFilterBar
+            filters={filters}
+            onChange={change}
+            dimensions={EXPLORE_DIMENSIONS}
+            types={facets.data?.types ?? []}
+            categories={facets.data?.categories ?? []}
+            facets={facetsStatus(facets)}
+            realms={realms}
+            regions={regions}
+            regionSearch={regionSearch}
+            sort={sort}
+            sortOptions={EXPLORE_SORT_OPTIONS}
+            onSortChange={setSort}
+          />
+        </Card>
         <div aria-busy={query.isFetching && !query.isFetchingNextPage}>
           <GridBody
             loading={query.isLoading}

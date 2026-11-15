@@ -6,7 +6,6 @@ import { motion } from "motion/react";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { TextureOverlay } from "~/components/ui/texture-overlay";
 import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { formatDailyRewardWait } from "~/lib/vault/next-daily-reward";
 import { tweenFast } from "~/lib/design/motion";
@@ -28,19 +27,18 @@ function ReadyTile() {
       padding="sm"
       data-slot="daily-reward-tile"
       data-state="ready"
-      className="bg-tint-fill border-tint/30 flex items-center gap-3 overflow-hidden border"
+      className="bg-tint-fill border-tint/30 flex flex-wrap items-center gap-3 border"
     >
-      <TextureOverlay texture="chevron" className="[--facet-texture-color:var(--tint)]" />
-      <IconWell className="relative">
+      <IconWell>
         <Gift />
       </IconWell>
-      <div className="relative flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <span className="text-callout truncate">Daily reward ready</span>
         <span className="text-footnote text-label-secondary truncate">
           IxCredits or a mystery card
         </span>
       </div>
-      <Button type="button" size="sm" className="relative" onClick={open}>
+      <Button type="button" size="sm" onClick={open}>
         Claim daily reward
       </Button>
     </Card>
@@ -58,21 +56,22 @@ function ClaimedRow() {
       <Gift aria-hidden className="text-label-secondary size-5 shrink-0" />
       <div className="flex min-w-0 flex-col">
         <span className="text-callout text-label-secondary">Daily reward claimed</span>
-        <span className="text-footnote text-label-secondary">{label}</span>
+        <span className="text-footnote text-label-secondary tabular-nums">{label}</span>
       </div>
     </div>
   );
 }
 
 /**
- * The daily reward at the top of the Vault column: a highlighted tile with the Claim button while a reward is
- * waiting, a quiet row once it is claimed. Nothing while the balance loads or fails, so neither state is guessed.
+ * Daily reward prompt: a 1-tap claim tile while a reward is waiting, or a quiet status line once claimed.
+ * Pass `onlyWhenReady` inside the Wallet balance hero so claimed days leave the statement summary uncluttered.
  */
-export function DailyRewardTile() {
+export function DailyRewardTile({ onlyWhenReady = false }: { onlyWhenReady?: boolean }) {
   const balance = api.vault.getBalance.useQuery();
   if (!balance.data) return null;
   const ready = balance.data.canClaimDailyBonus;
-  // The state change remounts the tile, which fades in: an opacity-only tween, so it is also the Reduce Motion form.
+  if (onlyWhenReady && !ready) return null;
+
   return (
     <motion.div
       key={ready ? "ready" : "claimed"}

@@ -18,10 +18,10 @@ export function CosmeticStorePreview({ cosmetics }: { cosmetics: PublicCosmetics
     return (
       <div
         aria-hidden
-        className="bg-surface-secondary border-separator rounded-card relative flex h-20 w-16 items-center justify-center overflow-hidden border shadow-inner"
+        className="bg-surface-secondary border-separator rounded-row relative flex h-20 w-16 items-center justify-center overflow-hidden border"
       >
         <User className="text-label-tertiary size-7" />
-        <NeonFrameOverlay neonFrame={neonFrame} className="rounded-card" />
+        <NeonFrameOverlay neonFrame={neonFrame} className="rounded-row" />
       </div>
     );
   }

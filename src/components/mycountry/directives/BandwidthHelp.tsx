@@ -75,7 +75,7 @@ export function BandwidthBar({ state, className }: { state: BandwidthState; clas
     >
       {state.overCapacity || !b ? (
         <div
-          className={state.overCapacity ? "bg-destructive w-full" : "bg-tint"}
+          className={state.overCapacity ? "bg-destructive w-full" : "bg-label-secondary"}
           style={
             state.overCapacity ? undefined : { width: `${(state.used / state.capacity) * 100}%` }
           }
@@ -161,7 +161,7 @@ export function BandwidthHelp({
         </p>
         <Link
           href="/help/mycountry/executive#executive-bandwidth"
-          className="text-footnote text-tint inline-block underline-offset-2 hover:underline"
+          className="text-footnote text-label decoration-separator hover:decoration-label inline-block underline underline-offset-2"
         >
           How bandwidth works
         </Link>

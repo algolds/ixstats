@@ -46,7 +46,6 @@ const MICRO_TYPE = /\btext-\[(?:(?:\d|1[01])(?:\.\d+)?px|0?\.(?:[0-6]\d*|7(?:[0-
 // Fixed-geometry glyphs where a 12px line box cannot fit.
 const MICRO_TYPE_ALLOWED = new Set([
   "components/sports/surfaces/FootballField.tsx: text-[3px]", // SVG user units, not CSS px
-  "components/cards/pack-opening/PackHolographicCover.tsx: text-[7px]", // size="sm" pack art
   "components/thinkpages/composer/ComposerActionBar.tsx: text-[7px]", // 14px count badge
   "components/thinkpages/post/PostComposers.tsx: text-[7px]", // 14px count badge
 ]);
@@ -162,8 +161,6 @@ const PALETTE_STOP =
  */
 const ART_GRADIENT_FILES = [
   "components/cards/",
-  "components/vault/NeonFrameOverlay.tsx",
-  "components/vault/VaultParticleExplosionModal.tsx",
   "components/mycountry/shared/primitives/mycountry-logo.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
 
@@ -407,15 +404,30 @@ describe("Facet layers", () => {
     "facet-chrome-subtle",
     "facet-overlay",
     "facet-lens",
+    "facet-glass-cta",
   ])("defines the %s layer utility", (name) => {
     expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
   });
 
-  it("blurs only chrome and overlay (the pane has no backdrop-filter)", () => {
+  it("blurs only chrome and overlay (the pane and glass CTA have no backdrop-filter)", () => {
     expect(utility("facet-pane")).not.toMatch(/backdrop-filter/);
+    expect(utility("facet-glass-cta")).not.toMatch(/backdrop-filter/);
     expect(utility("facet-chrome")).toMatch(/backdrop-filter/);
     expect(utility("facet-chrome-subtle")).toMatch(/backdrop-filter/);
     expect(utility("facet-overlay")).toMatch(/backdrop-filter/);
+  });
+
+  it("facet-glass-cta stays neutral (no tint wash, gradient or coloured glow) and goes solid under Reduce Transparency and Increase Contrast", () => {
+    const cta = utility("facet-glass-cta");
+    expect(cta).toMatch(/var\(--color-surface-elevated\)/);
+    expect(cta).toMatch(/color:\s*var\(--color-label\)/);
+    expect(cta).not.toMatch(/--tint|--facet-accent|linear-gradient|backdrop-filter/);
+    expect(cta).toMatch(
+      /@variant transparency-reduced \{[\s\S]*?background-color: var\(--color-surface-elevated\);/
+    );
+    expect(cta).toMatch(
+      /@variant contrast-more \{[\s\S]*?background-color: var\(--color-surface-elevated\);[\s\S]*?border-color: var\(--color-separator-opaque\);/
+    );
   });
 
   it("facet-chrome-subtle keeps vibrant secondary labels and goes solid under Reduce Transparency and Increase Contrast", () => {

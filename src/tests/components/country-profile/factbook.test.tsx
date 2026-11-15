@@ -265,11 +265,10 @@ describe("FactbookTab", () => {
 
     const { container } = render(<FactbookTab layer={rich} />);
 
-    // Top-level Factbook blocks are Facet Lenses; nested sub-blocks inside them are Wells.
-    const lenses = container.querySelectorAll('[data-slot="card"][data-variant="lens"]');
-    expect(lenses.length).toBeGreaterThanOrEqual(3);
+    // Top-level Factbook blocks step down cleanly to inset Wells (no Lens glass-on-glass, no nested Card boxes inside blocks).
+    expect(container.querySelectorAll('[data-slot="card"][data-variant="lens"]')).toHaveLength(0);
     const wells = container.querySelectorAll('[data-slot="card"][data-variant="well"]');
-    expect(wells.length).toBeGreaterThan(0);
+    expect(wells).toHaveLength(3);
 
     // Geography and symbols moved to the hero's Country DNA row; the Factbook no longer repeats them.
     expect(screen.queryByText(/Per aspera ad astra/)).toBeNull();

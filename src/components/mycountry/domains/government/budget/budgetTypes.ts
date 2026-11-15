@@ -9,7 +9,7 @@ export interface BudgetHealthStatus {
  * Revenue categories are one measure, so every bar shares the MyCountry accent; the axis label
  * names the category. Kept as an array so callers can index it by category.
  */
-export const REVENUE_CHART_COLORS = ["var(--color-amber-500)"];
+export const REVENUE_CHART_COLORS = ["var(--color-chart-1)"];
 
 /** Revenue left after the allocations, as a percent of revenue; null without revenue. */
 export function fiscalBalancePercent(totalRevenue: number, totalAllocated: number): number | null {

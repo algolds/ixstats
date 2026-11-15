@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, type Transition } from "motion/react";
 import { Flip } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
-import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springGentle, springSmooth, tweenExit } from "~/lib/design/motion";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { CardFace } from "./CardFace";
 import { CardHolo, useCardTilt } from "./CardTilt";
@@ -60,11 +60,22 @@ interface CardTurn {
   onFlip: () => void;
 }
 
-interface CardFlipProps {
+interface SheetCardFlipProps {
   face: CardFaceData;
   /** Null for a card the viewer holds no copy of: only a copy has a back, so the card does not turn. */
   turn: CardTurn | null;
 }
+
+interface StageCardFlipProps {
+  front: ReactNode;
+  back: ReactNode;
+  /** True when the back (e.g. `.card-face-down`) faces the viewer; false once revealed to `front`. */
+  flipped: boolean;
+  transition?: Transition;
+  className?: string;
+}
+
+export type CardFlipProps = SheetCardFlipProps | StageCardFlipProps;
 
 /** The corner's hint that a tap turns the card; Space and F are named by the card's label. */
 function TurnHint() {
@@ -79,12 +90,73 @@ function TurnHint() {
   );
 }
 
+/** Two-sided 3D stage flip for pack and reward reveals, falling back to a cross-fade under Reduce Motion. */
+function StageCardFlip({
+  front,
+  back,
+  flipped,
+  transition = springGentle,
+  className,
+}: StageCardFlipProps) {
+  const reduce = useFacetReducedMotion();
+
+  if (reduce) {
+    return (
+      <div
+        data-slot="card-flip"
+        className={cn("relative grid w-fit max-w-full grid-cols-1", className)}
+      >
+        <AnimatePresence initial={false}>
+          <motion.div
+            key={flipped ? "back" : "front"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: tweenExit }}
+            transition={REDUCED_MOTION_FADE}
+            className="col-start-1 row-start-1"
+          >
+            {flipped ? back : front}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      data-slot="card-flip"
+      className={cn("relative w-fit max-w-full perspective-distant", className)}
+    >
+      <motion.div
+        initial={false}
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={transition}
+        className="relative transform-3d"
+      >
+        <div className="backface-hidden" inert={flipped}>
+          {front}
+        </div>
+        <div className="absolute inset-0 rotate-y-180 backface-hidden" inert={!flipped}>
+          {back}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 /**
- * The sheet's large card: it leans toward the pointer, a Foil, Holo or Serialised copy catches the light, and a held
- * copy turns over when tapped or on Space or F. Under Reduce Motion there is no tilt and no holo, and the sides
- * cross-fade.
+ * Two-sided 3D card flip:
+ * - On the card sheet (`{ face, turn }`), leans toward the pointer and turns between `CardFace` and `CardBack`.
+ * - On reveal stages (`{ front, back, flipped }`), turns continuously from `.card-face-down` (`back`) to `front`.
  */
-export function CardFlip({ face, turn }: CardFlipProps) {
+export function CardFlip(props: CardFlipProps) {
+  if ("front" in props) {
+    return <StageCardFlip {...props} />;
+  }
+  return <SheetCardFlip {...props} />;
+}
+
+function SheetCardFlip({ face, turn }: SheetCardFlipProps) {
   const reduce = useFacetReducedMotion();
   const { tilt, onPointerMove, onPointerLeave } = useCardTilt();
   const root = useRef<HTMLDivElement>(null);

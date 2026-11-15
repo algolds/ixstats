@@ -157,8 +157,8 @@ interface TintSet {
  */
 export const APP_TINTS = {
   default: {
-    light: { tint: "#5a493d", strong: "#46372b", onTint: "#ffffff" },
-    dark: { tint: "#c3b4a8", strong: "#d7cbc2", onTint: "#0b0c0f" },
+    light: { tint: "#3f3f46", strong: "#27272a", onTint: "#ffffff" },
+    dark: { tint: "#b4b6be", strong: "#cfd1d8", onTint: "#0b0c0f" },
   },
   mycountry: {
     light: { tint: "#b45309", strong: "#92400e", onTint: "#ffffff" },
@@ -297,19 +297,19 @@ export const ACCENT_FILL = { light: 0.14, dark: 0.18 } as const satisfies Record
  */
 export const GLASS = {
   light: {
-    paneFill: 0.82,
-    paneWash: 0.1,
-    canvasWash: 0.07,
-    wellTint: 0.06,
+    paneFill: 0.88,
+    paneWash: 0,
+    canvasWash: 0.04,
+    wellTint: 0,
     chromeFill: 0.8,
     lensFrostedFill: 0.8,
     overlayFill: 0.9,
   },
   dark: {
-    paneFill: 0.64,
-    paneWash: 0.08,
-    canvasWash: 0.1,
-    wellTint: 0.08,
+    paneFill: 0.72,
+    paneWash: 0,
+    canvasWash: 0.06,
+    wellTint: 0,
     chromeFill: 0.8,
     lensFrostedFill: 0.8,
     overlayFill: 0.9,

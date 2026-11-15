@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useId } from "react";
 import { OpenNewWindow as ExternalLink, ShieldCheck, ArrowLeft } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 
 interface ImportVerifyStepProps {
   nationName: string;
@@ -25,63 +26,58 @@ export function ImportVerifyStep({
   onBack,
   isPending,
 }: ImportVerifyStepProps) {
+  const checksumId = useId();
+
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-label text-title-2">Verify ownership</h2>
-        <p className="text-label-secondary text-body mt-1">
-          Prove you own <span className="text-label font-medium">{nationName}</span> via
-          NationStates login verification
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-label text-title-3">Verify ownership</h2>
+        <p className="text-label-secondary text-body">
+          Prove you control <span className="text-label font-medium">{nationName}</span> using
+          NationStates login verification.
         </p>
       </div>
 
-      {/* Instructions */}
-      <Card className="rounded-row space-y-3 p-5">
-        <h4 className="text-label text-headline">Instructions</h4>
-        <ol className="text-label-secondary text-body list-inside space-y-2">
-          <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
+      <Card variant="well" padding="md" className="space-y-3">
+        <h3 className="text-label text-subhead">Instructions</h3>
+        <ol className="text-label-secondary text-footnote space-y-2">
+          <li className="flex items-start gap-2.5">
+            <span className="bg-fill-3 text-label text-caption flex size-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               1
             </span>
             <span>
-              Click the link below to open NationStates verification.{" "}
-              <strong className="text-label font-medium">Log in if prompted.</strong>
+              Open the NationStates verification page below and{" "}
+              <strong className="text-label font-medium">sign in if prompted</strong>.
             </span>
           </li>
-          <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
+          <li className="flex items-start gap-2.5">
+            <span className="bg-fill-3 text-label text-caption flex size-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               2
             </span>
-            NationStates will display a verification code
+            <span>Copy the verification code displayed by NationStates.</span>
           </li>
-          <li className="flex items-start gap-2">
-            <span className="bg-fill-3 text-label text-footnote flex h-5 w-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
+          <li className="flex items-start gap-2.5">
+            <span className="bg-fill-3 text-label text-caption flex size-5 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
               3
             </span>
-            Copy that code and paste it in the field below
+            <span>Paste the code into the field below and confirm ownership.</span>
           </li>
         </ol>
       </Card>
 
-      {/* NS verification link */}
       {verificationUrl && (
-        <a
-          href={verificationUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-row border-blue/30 bg-blue/10 text-headline text-blue-ink hover:bg-blue/15 flex items-center justify-center gap-2 border px-5 py-4 transition-colors"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Open NationStates verification page
-        </a>
+        <Button variant="secondary" asChild className="w-full">
+          <a href={verificationUrl} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="size-4" />
+            Open NationStates verification page
+          </a>
+        </Button>
       )}
 
-      {/* Code input */}
-      <Card className="rounded-row bg-tint-fill space-y-2 p-5">
-        <label className="text-footnote text-tint-ink font-medium">
-          Paste verification code from NationStates
-        </label>
+      <Card variant="well" padding="md" className="space-y-2">
+        <Label htmlFor={checksumId}>Verification code from NationStates</Label>
         <Input
+          id={checksumId}
           value={checksum}
           onChange={(e) => setChecksum(e.target.value)}
           onKeyDown={(e) => {
@@ -89,22 +85,27 @@ export function ImportVerifyStep({
               onVerify();
             }
           }}
-          placeholder="Paste the code NationStates gave you..."
-          className="bg-background font-data text-body h-12"
+          placeholder="Paste the code NationStates gave you"
+          className="font-data"
         />
       </Card>
 
-      {/* Actions */}
       <div className="flex gap-3">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back
+        <Button type="button" variant="outline" onClick={onBack}>
+          <ArrowLeft className="size-4" />
+          Back
         </Button>
-        <Button onClick={onVerify} disabled={!checksum.trim() || isPending} className="flex-1">
+        <Button
+          type="button"
+          onClick={onVerify}
+          disabled={!checksum.trim() || isPending}
+          className="flex-1"
+        >
           {isPending ? (
             "Verifying..."
           ) : (
             <>
-              <ShieldCheck className="mr-2 h-4 w-4" />
+              <ShieldCheck className="size-4" />
               Verify ownership
             </>
           )}

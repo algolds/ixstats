@@ -196,7 +196,7 @@ function CreditsClaimReveal({
           initial={reduce ? { opacity: 0 } : { scale: 0.96, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={reduce ? REDUCED_MOTION_FADE : springGentle}
-          className="bg-surface-elevated border-separator shadow-floating relative grid size-20 place-items-center overflow-hidden rounded-full border transform-3d"
+          className="border-separator bg-surface relative grid size-20 place-items-center overflow-hidden rounded-full border transform-3d"
         >
           <span aria-hidden className="facet-foil absolute inset-0" />
           {!reduce && <CardHolo />}
@@ -226,7 +226,7 @@ function CreditsClaimReveal({
       </div>
 
       {shownBalance !== null && (
-        <div className="facet-lens rounded-row flex w-full items-center justify-between gap-3 px-4 py-3">
+        <div className="bg-surface-secondary border-separator rounded-row flex w-full items-center justify-between gap-3 border px-4 py-3">
           <span className="text-subhead text-label-secondary">Vault balance</span>
           <span className="text-headline text-label inline-flex items-center gap-1.5 tabular-nums">
             <IxCreditsSymbol decorative className="text-tint size-4 shrink-0" />

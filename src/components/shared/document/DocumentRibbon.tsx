@@ -109,12 +109,12 @@ function DocumentRibbonComponent<T extends string>({
               onClick={() => onSelectTab(tab.id)}
               onKeyDown={(event) => handleKeyDown(event, idx)}
               className={cn(
-                // The active tab is the inverted (primary) pill. The 28px pill keeps a 44pt hit
-                // area on touch screens (`hitSlop`).
+                // The active tab lifts as a crisp neutral thumb so primary actions (e.g. Declare Directive)
+                // own the sole accent fill on the ribbon. The 28px pill keeps a 44pt hit area (`hitSlop`).
                 hitSlop,
                 "rounded-control text-footnote focus-visible:outline-tint relative flex h-(--control-height-sm) shrink-0 cursor-pointer items-center gap-2 px-3 font-medium focus-visible:outline-2 focus-visible:outline-offset-2",
                 isActive
-                  ? "bg-primary-fill text-on-primary shadow-card"
+                  ? "bg-control-thumb text-label ring-separator/60 shadow-card ring-1"
                   : "text-label-secondary hover:text-label hover:bg-fill-4"
               )}
             >

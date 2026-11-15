@@ -1,6 +1,8 @@
+"use client";
+
 import React from "react";
-import { motion } from "motion/react";
 import { cn } from "~/lib/utils";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import type { NeonFrameConfig } from "~/hooks/useActiveCosmetics";
 import { CosmeticParticles } from "~/components/vault/CosmeticParticles";
 
@@ -9,61 +11,37 @@ interface NeonFrameOverlayProps {
   className?: string;
 }
 
+const PRESET_FRAME_STYLES: ReadonlySet<string> = new Set(["ruby", "winter"]);
+
 export function NeonFrameOverlay({ neonFrame, className }: NeonFrameOverlayProps) {
+  const reduceMotion = useFacetReducedMotion();
+
   if (!neonFrame.enabled) return null;
 
-  const style = neonFrame.style;
+  const styleKey = neonFrame.style || undefined;
+  const isPreset = Boolean(styleKey && PRESET_FRAME_STYLES.has(styleKey));
+  const customStyle: React.CSSProperties | undefined =
+    !isPreset && neonFrame.color
+      ? ({ "--cosmetic-color": neonFrame.color } as React.CSSProperties)
+      : undefined;
 
   return (
-    <motion.div
+    <div
+      data-frame-style={styleKey}
       className={cn(
-        "rounded-card pointer-events-none absolute inset-0 z-30",
-        style === "ruby" &&
-          "card-art-linear-r border-red from-red/15 to-red/5 border-2 shadow-[0_0_8px_color-mix(in_srgb,var(--color-red)_35%,transparent),inset_0_0_4px_color-mix(in_srgb,var(--color-red)_20%,transparent)]",
-        style === "winter" &&
-          "card-art-linear-br after:rounded-card border-cyan from-cyan/20 via-cyan/10 border-2 to-transparent shadow-[0_0_8px_color-mix(in_srgb,var(--color-cyan)_35%,transparent),inset_0_0_4px_color-mix(in_srgb,var(--color-cyan)_20%,transparent)] after:absolute after:inset-0 after:bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent)]",
-        style !== "ruby" && style !== "winter" && "border-2",
+        "cosmetic-neon-frame rounded-card pointer-events-none absolute inset-0 z-30",
         className
       )}
-      style={
-        style !== "ruby" && style !== "winter"
-          ? {
-              borderColor: neonFrame.color || "var(--color-cyan)",
-              boxShadow: `0 0 8px ${neonFrame.color || "rgba(6,182,212,0.25)"}, inset 0 0 4px ${neonFrame.color || "rgba(6,182,212,0.15)"}`,
-            }
-          : undefined
-      }
-      animate={style === "pulse" ? { opacity: [0.5, 1, 0.5] } : undefined}
-      transition={{
-        duration: 2,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }}
+      style={customStyle}
     >
-      {/* Particle shapes rendering inside the border */}
-      {style && (
-        <CosmeticParticles style={style} containerType="frame" className="rounded-[inherit]" />
+      {!reduceMotion && styleKey && (
+        <CosmeticParticles style={styleKey} containerType="frame" className="rounded-[inherit]" />
       )}
-      {/* Winter snowflakes come from CosmeticParticles (SVG_SNOWFLAKE) above. */}
-      {/* Ruby gem shimmer sweep effect */}
-      {style === "ruby" && (
+      {styleKey === "ruby" && !reduceMotion && (
         <div className="rounded-card absolute inset-0 overflow-hidden">
-          <motion.div
-            className="card-art-linear-r absolute inset-0 from-transparent via-white/20 to-transparent"
-            style={{
-              transform: "skewX(-20deg)",
-            }}
-            initial={{ x: "-100%" }}
-            animate={{ x: "200%" }}
-            transition={{
-              duration: 3.5,
-              repeat: Infinity,
-              ease: "linear",
-              repeatDelay: 1,
-            }}
-          />
+          <div className="cosmetic-neon-shimmer absolute inset-0" />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

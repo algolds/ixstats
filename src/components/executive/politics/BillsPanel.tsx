@@ -129,32 +129,34 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
 
   return (
     <>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        className="h-auto min-h-(--control-height-sm) w-full justify-between justify-start py-2 text-left whitespace-normal"
-      >
-        <div className="flex items-center gap-3">
-          <div>
-            <h4 className="text-headline">Bills before the legislature</h4>
-            <p className="text-label-secondary text-footnote mt-0.5">
-              {bills && bills.length > 0
-                ? `${committeeCount} pending, ${activeCount} passed`
-                : "No bills proposed"}
-            </p>
+      <Card content="data" padding="none">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsOpen(true)}
+          className="h-auto w-full justify-between px-4 py-3.5 text-left whitespace-normal"
+        >
+          <div className="flex items-center gap-3">
+            <div>
+              <h4 className="text-label text-headline">Bills before the legislature</h4>
+              <p className="text-label-secondary text-footnote mt-0.5">
+                {bills && bills.length > 0
+                  ? `${committeeCount} pending, ${activeCount} passed`
+                  : "No bills proposed"}
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {committeeCount > 0 && (
-            <Badge variant="warning" className="font-semibold">
-              {committeeCount} pending
-            </Badge>
-          )}
-          <ChevronRight className="text-label-secondary h-4 w-4" />
-        </div>
-      </Button>
+          <div className="flex items-center gap-2">
+            {committeeCount > 0 && (
+              <Badge variant="secondary" className="font-medium">
+                {committeeCount} pending
+              </Badge>
+            )}
+            <ChevronRight className="text-label-secondary h-4 w-4" />
+          </div>
+        </Button>
+      </Card>
 
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetContent size="wide" className="overflow-y-auto">
@@ -240,18 +242,18 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
             )}
 
             {bills && bills.length > 0 ? (
-              <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
+              <div className="border-separator/60 divide-separator/60 rounded-row divide-y border">
                 {bills.map((bill) => {
                   const statusMeta = STATUS_BADGE[bill.status] ?? STATUS_BADGE.in_committee!;
                   const result = bill.meta?.voteResult;
                   const isBillExpanded = expanded === bill.id;
                   return (
-                    <Card key={bill.id} variant="well" padding="sm">
+                    <div key={bill.id} className="p-3">
                       <div className="flex items-center justify-between gap-2">
                         <button
                           type="button"
                           aria-expanded={isBillExpanded}
-                          className="text-body hover:text-tint min-w-0 flex-1 truncate text-left font-medium transition-colors"
+                          className="text-label text-body min-w-0 flex-1 truncate text-left font-medium hover:underline"
                           onClick={() => setExpanded(isBillExpanded ? null : bill.id)}
                         >
                           {bill.name}
@@ -289,7 +291,7 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                         </div>
                       </div>
                       {isBillExpanded && (
-                        <div className="text-label-secondary border-separator text-footnote mt-2 space-y-2 border-t pt-2">
+                        <div className="text-label-secondary border-separator/60 text-footnote mt-2 space-y-2 border-t pt-2">
                           <p>{bill.description}</p>
                           {bill.gdpEffect !== 0 && (
                             <p className="font-semibold">
@@ -299,12 +301,12 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                           )}
                           {bill.status === "in_committee" && <WhipCount billId={bill.id} />}
                           {result && (
-                            <Card variant="well" padding="none" className="space-y-1 p-2">
+                            <div className="border-separator/60 space-y-1 border-t pt-2">
                               <p className="text-label text-caption mb-1">Floor vote breakdown</p>
                               {result.breakdown.map((pv) => (
                                 <div
                                   key={pv.partyId}
-                                  className="border-separator flex items-center justify-between gap-2 border-b py-0.5 last:border-b-0"
+                                  className="border-separator/50 flex items-center justify-between gap-2 border-b py-0.5 last:border-b-0"
                                 >
                                   <div className="flex min-w-0 items-center gap-2">
                                     {VOTE_ICON[pv.vote]}
@@ -317,11 +319,11 @@ export function BillsPanel({ countryId, canManage = true }: BillsPanelProps) {
                                   </span>
                                 </div>
                               ))}
-                            </Card>
+                            </div>
                           )}
                         </div>
                       )}
-                    </Card>
+                    </div>
                   );
                 })}
               </div>

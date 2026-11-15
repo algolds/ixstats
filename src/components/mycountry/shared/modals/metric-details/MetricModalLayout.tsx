@@ -35,14 +35,12 @@ const accent = (token: string) => ({
 
 const NEUTRAL_THEME = { cardClass: "bg-fill-3", textHighlight: "text-label-secondary" };
 
-// Economy carries the MyCountry accent; the rest stay neutral so the chart series, not the
-// chrome, carry colour.
 const THEMES: Record<MetricThemeVariant, ReturnType<typeof accent> & typeof NEUTRAL_THEME> = {
-  economy: { ...NEUTRAL_THEME, textHighlight: "text-yellow", ...accent("var(--color-amber-500)") },
-  social: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
-  demographics: { ...NEUTRAL_THEME, ...accent("var(--chart-2)") },
-  labor: { ...NEUTRAL_THEME, ...accent("var(--color-blue-500)") },
-  default: { ...NEUTRAL_THEME, ...accent("var(--color-tint)") },
+  economy: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  social: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  demographics: { ...NEUTRAL_THEME, ...accent("var(--color-chart-2)") },
+  labor: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
+  default: { ...NEUTRAL_THEME, ...accent("var(--color-chart-1)") },
 };
 
 export function getThemeClasses(variant: MetricThemeVariant) {

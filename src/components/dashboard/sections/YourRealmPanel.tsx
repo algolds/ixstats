@@ -198,7 +198,7 @@ export function YourRealmPanel() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" className="flex-1 pointer-coarse:min-h-11">
+          <Button asChild variant="glass" size="sm" className="flex-1 pointer-coarse:min-h-11">
             <Link href={realmBoardHref(realm.slug)}>Open the board</Link>
           </Button>
           <Button asChild size="sm" variant="ghost" className="pointer-coarse:min-h-11">

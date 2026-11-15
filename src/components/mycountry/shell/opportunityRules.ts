@@ -8,6 +8,11 @@ import {
 import type { useCountryData } from "~/components/mycountry/shared/primitives";
 import type { DrillSheetKind } from "~/components/mycountry/shell/DrillSheets";
 import { formatGrowthPeek } from "./domain-tiles";
+import {
+  OPPORTUNITY_CATEGORY_META,
+  type OpportunityCategory,
+  resolveOpportunityCategory,
+} from "./opportunityBackdrop";
 import type { StatusTone } from "./status-tone";
 
 export type OpportunityDrill = Exclude<DrillSheetKind, { kind: "intent" } | null>;
@@ -15,6 +20,8 @@ export type OpportunityDrill = Exclude<DrillSheetKind, { kind: "intent" } | null
 export interface Opportunity {
   id: string;
   domain: "politics" | "economy" | "intent";
+  category: OpportunityCategory;
+  categoryLabel?: string;
   title: string;
   subtitle: string;
   description: string;
@@ -32,6 +39,8 @@ export interface CountryIssueItem {
   description?: string | null;
   severity?: string | null;
   urgency?: number | null;
+  domain?: string | null;
+  category?: string | null;
 }
 
 export interface CountryIntentItem {
@@ -69,9 +78,12 @@ const issueRule: Rule = ({ issues, isDismissed }) => {
   if (!top) return null;
 
   const isUrgent = ["critical", "high"].includes(severityOf(top)) || (top.urgency ?? 0) > 70;
+  const category = resolveOpportunityCategory(top.domain, top.category);
   return {
     id: `issue-${top.id}`,
     domain: "politics",
+    category,
+    categoryLabel: OPPORTUNITY_CATEGORY_META[category].label,
     title: top.title,
     subtitle: isUrgent ? "Priority national issue" : "Open national issue",
     description: top.description || "This issue is waiting for your decision.",
@@ -86,6 +98,7 @@ const civilServiceRule: Rule = ({ execBandwidth, isDismissed }) => {
   return {
     id: "civil-service-overcap",
     domain: "politics",
+    category: "political",
     title: "Civil service bottleneck",
     subtitle: "Governance alert",
     description:
@@ -112,6 +125,7 @@ const intentRule: Rule = ({ intents, isDismissed }) => {
   return {
     id: `intent-${top.id}`,
     domain: "intent",
+    category: resolveOpportunityCategory(undefined, top.category),
     title: top.goal ?? "Active directive",
     subtitle: "Directive in progress",
     description:
@@ -141,6 +155,7 @@ const economyRule: Rule = ({ country, isDismissed }) => {
   return {
     id: "economy-growth",
     domain: "economy",
+    category: "economic",
     title: "Set an economic priority",
     subtitle: "Suggested priority",
     description:

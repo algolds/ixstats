@@ -58,6 +58,7 @@ export function SaveButton({
   pending,
   blocked = false,
   onSave,
+  onReset,
 }: {
   section: EditorSectionId;
   label: string;
@@ -67,6 +68,7 @@ export function SaveButton({
   /** Not ready yet for a reason the section shows (a name still being checked). */
   blocked?: boolean;
   onSave: () => void;
+  onReset?: () => void;
 }) {
   const { conflicts } = useEditor();
   const ref = useRef<HTMLButtonElement>(null);
@@ -91,6 +93,11 @@ export function SaveButton({
       >
         {pending ? "Saving…" : label}
       </Button>
+      {dirty && !pending && onReset && (
+        <Button type="button" variant="ghost" size="sm" onClick={onReset}>
+          Reset
+        </Button>
+      )}
       {dirty && !pending && (
         <span className="text-label-secondary text-footnote">Unsaved changes</span>
       )}

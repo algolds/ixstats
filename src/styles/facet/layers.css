@@ -169,28 +169,26 @@
   }
 }
 
-/* Fills carry the app tint. The neutral fills (Input, the SegmentedControl track and thumb, secondary and ghost
-   buttons, hovers, toolbars) read as sterile grey on the tinted canvas; here each is the same strength of an ink that
-   is the tint pulled toward the label, recomposed at every [data-app] scope as --tint-fill is in tokens.css. Light
-   fills darken toward ink, dark fills lighten toward it. Under Increase Contrast the tint is already stronger. */
+/* Neutral Apple fills across all [data-app] scopes so controls, tracks, and hover states never
+   pick up a yellow/amber or warm-taupe cast from the surrounding app tint. */
 @layer base {
   :root,
   [data-app] {
-    --fill-ink: color-mix(in srgb, var(--tint) 40%, rgb(9 9 11));
+    --fill-ink: rgb(9 9 11);
     --color-fill: color-mix(in srgb, var(--fill-ink) 16%, transparent);
     --color-fill-2: color-mix(in srgb, var(--fill-ink) 12%, transparent);
     --color-fill-3: color-mix(in srgb, var(--fill-ink) 8%, transparent);
     --color-fill-4: color-mix(in srgb, var(--fill-ink) 5%, transparent);
-    --color-control-thumb: color-mix(in srgb, var(--tint) 6%, #ffffff);
+    --color-control-thumb: #ffffff;
   }
   :root[data-theme="dark"],
   :root[data-theme="dark"] [data-app] {
-    --fill-ink: color-mix(in srgb, var(--tint) 45%, rgb(244 244 245));
+    --fill-ink: rgb(244 244 245);
     --color-fill: color-mix(in srgb, var(--fill-ink) 24%, transparent);
     --color-fill-2: color-mix(in srgb, var(--fill-ink) 18%, transparent);
     --color-fill-3: color-mix(in srgb, var(--fill-ink) 12%, transparent);
     --color-fill-4: color-mix(in srgb, var(--fill-ink) 8%, transparent);
-    --color-control-thumb: color-mix(in srgb, var(--fill-ink) 26%, transparent);
+    --color-control-thumb: rgba(244, 244, 245, 0.24);
   }
 }
 
@@ -251,4 +249,52 @@
   --lens-frost: var(--lens-frosted-fill);
   --lens-diffuse: blur(12px) saturate(150%);
   --color-label-secondary: var(--color-label-vibrant-secondary);
+}
+
+/* 6 · Neutral Lens glass control (`Button variant="glass"`): clear/frosted elevated surface with a
+   pure white top specular rim, crisp glass hairline and neutral contact shadow. Paint-only and
+   free of backdrop-filter so it never stacks a second blur inside a LensCard or Sheet, with zero
+   tint wash, gradient or coloured glow. Solid under Reduce Transparency and Increase Contrast. */
+@utility facet-glass-cta {
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 78%, var(--color-fill-4));
+  color: var(--color-label);
+  border: 1px solid color-mix(in srgb, var(--color-label) 12%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / calc(0.65 * var(--shadow-strength, 1))),
+    inset 0 -1px 0 0 rgb(0 0 0 / calc(0.05 * var(--shadow-strength, 1))),
+    0 1px 2px 0 rgb(0 0 0 / calc(0.06 * var(--shadow-strength, 1))),
+    0 2px 6px -1px rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 70%, var(--color-fill-2));
+      border-color: color-mix(in srgb, var(--color-label) 18%, transparent);
+    }
+  }
+  &:active {
+    background-color: color-mix(in srgb, var(--color-surface-elevated) 65%, var(--color-fill));
+    box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  }
+  @variant transparency-reduced {
+    background-color: var(--color-surface-elevated);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: color-mix(in srgb, var(--color-surface-elevated) 90%, var(--color-label));
+      }
+    }
+    &:active {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 84%, var(--color-label));
+    }
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-separator-opaque);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: color-mix(in srgb, var(--color-surface-elevated) 90%, var(--color-label));
+      }
+    }
+    &:active {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 84%, var(--color-label));
+    }
+  }
 }

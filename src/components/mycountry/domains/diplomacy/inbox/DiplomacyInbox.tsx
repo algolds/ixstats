@@ -231,6 +231,24 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
   const incomingError = incomingProposals.error ?? incomingInvites.error;
   const outgoingLoading = outgoingProposals.isLoading || outgoingInvites.isLoading;
   const outgoingError = outgoingProposals.error ?? outgoingInvites.error;
+  const summitItems = summits.data ?? [];
+  const anyLoading =
+    incomingLoading || outgoingLoading || summits.isLoading || activePolicies.isLoading;
+  const anyError = incomingError || outgoingError || summits.error || activePolicies.error;
+  const totalItems = incoming.length + outgoing.length + summitItems.length + inForce.length;
+
+  if (!anyLoading && !anyError && totalItems === 0) {
+    return (
+      <Card content="data">
+        <EmptyState
+          compact
+          icon={<MailIn />}
+          title="No pending diplomatic dispatches"
+          message="Incoming proposals, pending invitations, agreed summits, and active sanctions appear here."
+        />
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -251,6 +269,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
           <InboxItem key={row.key} row={row} status="Awaiting your answer">
             <Button
               size="sm"
+              variant="secondary"
               className="gap-1"
               disabled={busy}
               onClick={row.onAccept}
@@ -284,7 +303,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
           void outgoingProposals.refetch();
           void outgoingInvites.refetch();
         }}
-        emptyText="No pending proposals or invitations. Propose a summit, free trade or a military alliance from another nation's actions, or invite nations to an alliance you lead."
+        emptyText="No pending proposals or invitations."
         count={outgoing.length}
       >
         {outgoing.map((row) => (
@@ -311,26 +330,24 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
         loading={summits.isLoading}
         error={summits.error?.message}
         onRetry={() => void summits.refetch()}
-        emptyText="No summits yet. Propose one from another nation's actions."
-        count={summits.data?.length ?? 0}
+        emptyText="No summits scheduled yet."
+        count={summitItems.length}
       >
-        {(summits.data ?? []).map((s) => (
-          <li key={s.id}>
-            <Card variant="well" padding="sm" className="flex items-start gap-3">
-              <Calendar className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-label text-headline truncate">Summit with {s.partner.name}</p>
-                <p className="text-label-secondary text-footnote">
-                  {formatClockDate(s.dateIxTime, reader)} ·{" "}
-                  {s.phase === "upcoming" ? "Upcoming" : "Held"}
+        {summitItems.map((s) => (
+          <li key={s.id} className="flex items-start gap-3 px-4 py-3">
+            <Calendar className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-label text-headline truncate">Summit with {s.partner.name}</p>
+              <p className="text-label-secondary text-footnote">
+                {formatClockDate(s.dateIxTime, reader)} ·{" "}
+                {s.phase === "upcoming" ? "Upcoming" : "Held"}
+              </p>
+              {s.agenda && (
+                <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2">
+                  {s.agenda}
                 </p>
-                {s.agenda && (
-                  <p className="text-label-secondary text-footnote mt-0.5 line-clamp-2">
-                    {s.agenda}
-                  </p>
-                )}
-              </div>
-            </Card>
+              )}
+            </div>
           </li>
         ))}
       </InboxSection>
@@ -341,7 +358,7 @@ export function DiplomacyInbox({ countryId }: DiplomacyInboxProps) {
         loading={activePolicies.isLoading}
         error={activePolicies.error?.message}
         onRetry={() => void activePolicies.refetch()}
-        emptyText="You have not imposed any sanctions, embargoes or blockades."
+        emptyText="No sanctions, embargoes or blockades in force."
         count={inForce.length}
       >
         {inForce.map((row) => (
@@ -444,11 +461,11 @@ function InboxSection({
           </Button>
         </div>
       ) : count === 0 ? (
-        <Card variant="well" padding="sm">
-          <EmptyState compact title={emptyText} />
-        </Card>
+        <p className="text-label-secondary text-footnote py-1">{emptyText}</p>
       ) : (
-        <ul className="space-y-2">{children}</ul>
+        <Card content="data" padding="none">
+          <ul className="divide-separator/60 divide-y">{children}</ul>
+        </Card>
       )}
     </section>
   );
@@ -465,30 +482,24 @@ function InboxItem({
 }) {
   const KindIcon = row.kind === "invite" ? Users : row.kind === "hostile" ? Prohibition : Handshake;
   return (
-    <li>
-      <Card
-        variant="well"
-        padding="sm"
-        className="flex flex-wrap items-center justify-between gap-3"
-      >
-        <div className="flex min-w-0 items-start gap-3">
-          <KindIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
-          <div className="min-w-0">
-            <p className="text-label text-headline truncate">{row.title}</p>
-            <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
-            {row.detail && (
-              <p className="text-label-secondary text-footnote line-clamp-2">{row.detail}</p>
-            )}
-            <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>
-                {status} · {formatExpiry(row.expiresAt)}
-              </span>
-            </p>
-          </div>
+    <li className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+      <div className="flex min-w-0 items-start gap-3">
+        <KindIcon className="text-label-secondary mt-0.5 h-4 w-4 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-label text-headline truncate">{row.title}</p>
+          <p className="text-label-secondary text-footnote truncate">{row.subtitle}</p>
+          {row.detail && (
+            <p className="text-label-secondary text-footnote line-clamp-2">{row.detail}</p>
+          )}
+          <p className="text-label-secondary text-footnote mt-0.5 flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            <span>
+              {status} · {formatExpiry(row.expiresAt)}
+            </span>
+          </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">{children}</div>
-      </Card>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">{children}</div>
     </li>
   );
 }

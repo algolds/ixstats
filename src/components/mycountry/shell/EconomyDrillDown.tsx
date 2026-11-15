@@ -2,9 +2,11 @@
 
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import React, { useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
+  ArrowUpRight,
   StatUp as TrendingUp,
   Bank as Landmark,
   Building,
@@ -32,34 +34,13 @@ import {
 import { incomeSharesOf } from "~/lib/economy/income-classes";
 import { nationalRevenue, REVENUE_BASIS_NOTE } from "~/lib/economy/national-revenue";
 import { SheetSection } from "./SheetSection";
-import { economyTabFromParam, type EconomyTab } from "~/lib/mycountry/routes";
+import { TaxesTelemetryView, TradeTelemetryView } from "./EconomyTelemetryTabs";
+import { economyTabFromParam, editorHref, type EconomyTab } from "~/lib/mycountry/routes";
 
 const BudgetManagementDashboard = dynamic(
   () =>
     import("~/components/mycountry/domains/government/BudgetManagementDashboard").then((m) => ({
       default: m.BudgetManagementDashboard,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="rounded-card h-64" />,
-  }
-);
-
-const FiscalPolicyConsole = dynamic(
-  () =>
-    import("./FiscalPolicyConsole").then((m) => ({
-      default: m.FiscalPolicyConsole,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="rounded-card h-64" />,
-  }
-);
-
-const TradeCommerceConsole = dynamic(
-  () =>
-    import("./TradeCommerceConsole").then((m) => ({
-      default: m.TradeCommerceConsole,
     })),
   {
     ssr: false,
@@ -185,9 +166,16 @@ function MacroTab({
   return (
     <div className="space-y-4">
       <Card content="data" padding="md">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="sm:divide-separator/60 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-0 sm:divide-x">
           {metrics.map(({ label, value, note }) => (
-            <Stat key={label} size="sm" label={label} value={value} hint={note} />
+            <Stat
+              key={label}
+              size="sm"
+              label={label}
+              value={value}
+              hint={note}
+              className="sm:px-4 first:sm:pl-0 last:sm:pr-0"
+            />
           ))}
         </div>
       </Card>
@@ -279,7 +267,18 @@ function MacroTab({
         </div>
       </SheetSection>
 
-      <SheetSection title="Prices and public debt" icon={Coins}>
+      <SheetSection
+        title="Prices and public debt"
+        icon={Coins}
+        accessory={
+          <Button asChild variant="outline" size="sm">
+            <Link href={editorHref("scale")}>
+              Edit baselines
+              <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </Button>
+        }
+      >
         <div className="grid grid-cols-2 gap-4">
           <Stat
             size="sm"
@@ -332,7 +331,14 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
       <SheetSection
         title="Revenue integration and budget balance"
         icon={Landmark}
-        accessory={<span className="text-label-secondary text-footnote">Integrated treasury</span>}
+        accessory={
+          <Button asChild variant="outline" size="sm">
+            <Link href={editorHref("budget")}>
+              Configure budget
+              <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </Button>
+        }
       >
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <Stat
@@ -356,7 +362,7 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
         </div>
       </SheetSection>
 
-      <BudgetManagementDashboard countryId={countryId} revenue={revenue} />
+      <BudgetManagementDashboard countryId={countryId} revenue={revenue} isReadOnly />
     </div>
   );
 }
@@ -387,21 +393,18 @@ export function EconomyDrillDown({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-title-3 text-label">Economy</h2>
-        <SectionTabBar
-          aria-label="Economy sections"
-          tabs={TABS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-        />
-      </div>
+      <SectionTabBar
+        aria-label="Economy sections"
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
       {activeTab === "report" && (
         <MacroTab country={country} countryId={countryId} onDeclare={onDeclare} />
       )}
       {activeTab === "budget" && <FiscalTab country={country} countryId={countryId} />}
-      {activeTab === "taxes" && <FiscalPolicyConsole countryId={countryId} />}
-      {activeTab === "trade" && <TradeCommerceConsole countryId={countryId} />}
+      {activeTab === "taxes" && <TaxesTelemetryView />}
+      {activeTab === "trade" && <TradeTelemetryView countryId={countryId} />}
       {activeTab === "corporations" && (
         <CorporationsTreasuryConsole countryId={countryId} countryName={country?.name} />
       )}

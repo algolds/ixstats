@@ -1,13 +1,14 @@
 "use client";
 
-import { useRef } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import type { ReactNode } from "react";
+import { Cart, DataTransferBoth, Heart, Plus, Shop } from "iconoir-react";
+import { api } from "~/trpc/react";
+import { ActionPill } from "~/components/ui/action-pill";
+import { Button } from "~/components/ui/button";
 import { useAuctionWebSocket } from "~/hooks/marketplace/useAuctionWebSocket";
-import { useKeepSelectedInView } from "~/hooks/useKeepSelectedInView";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
-import { marketTabOf, type MarketTab } from "~/lib/cards/hub-routes";
+import type { MarketTab } from "~/lib/cards/hub-routes";
 import type { TradeAddress } from "~/components/cards/trade/TradeBuilderHost";
-import { CreateAuctionModal } from "./CreateAuctionModal";
 import { MarketBrowse } from "./MarketBrowse";
 import { MarketSelling } from "./MarketSelling";
 import { MarketTrades } from "./MarketTrades";
@@ -16,58 +17,58 @@ import { MarketWishlist } from "./MarketWishlist";
 interface MarketPaneProps {
   tab: MarketTab;
   onTabChange: (tab: MarketTab) => void;
-  /** `?for=<cardId>`: Browse shows only that card's listings. */
+  /** `?for=<cardId>`: Auctions shows only that card's listings. */
   forCardId: string | null;
   onClearFor: () => void;
-  /** `?sell=<ownershipId>`: opens the auction form with that copy. */
-  sellOwnershipId: string | null;
-  onSellHandled: () => void;
-  /** Controlled from the hub's PageHeader "Sell a card" action. */
-  selling: boolean;
+  /** Switches to Auctions filtered to one card (`?for=<cardId>`). */
+  onBrowseForCard?: (cardId: string) => void;
   onSellOpen: () => void;
-  onSellClose: () => void;
   onOpenCard: (cardId: string, from?: SheetFrom | null) => void;
   trade?: TradeAddress | null;
   onCloseTrade?: () => void;
 }
 
-/** Quieter secondary underline trigger so Market sub-views sit clearly below the hub's top-level tabs. */
-const QUIET_SUBTAB =
-  "text-subhead min-h-9 pointer-coarse:min-h-11 rounded-none border-b-2 border-transparent px-3 py-1.5 shadow-none hover:bg-transparent focus-visible:-outline-offset-2 data-[state=active]:border-tint data-[state=active]:bg-transparent data-[state=active]:text-label data-[state=active]:shadow-none data-[state=active]:hover:bg-transparent";
+const MARKET_MODES: ReadonlyArray<{ value: MarketTab; label: string; icon: ReactNode }> = [
+  { value: "browse", label: "Auctions", icon: <Shop /> },
+  { value: "trades", label: "Trades", icon: <DataTransferBoth /> },
+  { value: "wishlist", label: "Wishlist", icon: <Heart /> },
+  { value: "selling", label: "My listings", icon: <Cart /> },
+];
 
-/** The cards hub's Market: Browse, Trades, Wishlist and Selling, each a `?tab=`. */
+/** Live auction floor and trade desk: Auctions, Trades, Wishlist, and My listings synced to `?tab=`. */
 export function MarketPane(props: MarketPaneProps) {
-  // One set of live subscriptions for every tab: Browse and Selling both show running auctions.
+  // One set of live subscriptions for every mode: Auctions and My listings both show running auctions.
   useAuctionWebSocket();
-  const tabsRef = useRef<HTMLDivElement>(null);
-  useKeepSelectedInView(tabsRef, { enabled: true, selected: props.tab });
+  const activeTrades = api.trading.getActiveTrades.useQuery();
+  const incomingCount = (activeTrades.data ?? []).filter((trade) => trade.myTurn).length;
 
   return (
-    <>
-      <Tabs
-        value={props.tab}
-        onValueChange={(value) => props.onTabChange(marketTabOf(value))}
-        className="space-y-4"
-      >
-        <TabsList
-          ref={tabsRef}
-          aria-label="Market"
-          className="border-separator hide-scrollbar gap-1 overflow-x-auto overscroll-x-contain border-b"
-        >
-          <TabsTrigger value="browse" className={QUIET_SUBTAB}>
-            Browse
-          </TabsTrigger>
-          <TabsTrigger value="trades" className={QUIET_SUBTAB}>
-            Trades
-          </TabsTrigger>
-          <TabsTrigger value="wishlist" className={QUIET_SUBTAB}>
-            Wishlist
-          </TabsTrigger>
-          <TabsTrigger value="selling" className={QUIET_SUBTAB}>
-            Selling
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="browse">
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div role="group" aria-label="Market mode" className="flex flex-wrap items-center gap-1.5">
+          {MARKET_MODES.map((mode) => (
+            <ActionPill
+              key={mode.value}
+              size="md"
+              tone="secondary"
+              icon={mode.icon}
+              pressed={props.tab === mode.value}
+              count={mode.value === "trades" && incomingCount > 0 ? incomingCount : undefined}
+              onClick={() => props.onTabChange(mode.value)}
+            >
+              {mode.label}
+            </ActionPill>
+          ))}
+        </div>
+        {props.tab !== "trades" && (
+          <Button size="sm" onClick={props.onSellOpen}>
+            <Plus aria-hidden />
+            List a card
+          </Button>
+        )}
+      </div>
+      <div>
+        {props.tab === "browse" && (
           <MarketBrowse
             forCardId={props.forCardId}
             onClearFor={props.onClearFor}
@@ -75,33 +76,25 @@ export function MarketPane(props: MarketPaneProps) {
             onOpenCard={props.onOpenCard}
             onShowSelling={() => props.onTabChange("selling")}
           />
-        </TabsContent>
-        <TabsContent value="trades">
+        )}
+        {props.tab === "trades" && (
           <MarketTrades
             onOpenCard={props.onOpenCard}
             trade={props.trade}
             onCloseTrade={props.onCloseTrade}
           />
-        </TabsContent>
-        <TabsContent value="wishlist">
+        )}
+        {props.tab === "wishlist" && (
           <MarketWishlist
             onBrowse={() => props.onTabChange("browse")}
+            onBrowseCard={props.onBrowseForCard}
             onOpenCard={props.onOpenCard}
           />
-        </TabsContent>
-        <TabsContent value="selling">
+        )}
+        {props.tab === "selling" && (
           <MarketSelling onSell={props.onSellOpen} onOpenCard={props.onOpenCard} />
-        </TabsContent>
-      </Tabs>
-      <CreateAuctionModal
-        key={props.sellOwnershipId ?? "new"}
-        open={props.selling || props.sellOwnershipId !== null}
-        initialOwnershipId={props.sellOwnershipId}
-        onClose={() => {
-          props.onSellClose();
-          props.onSellHandled();
-        }}
-      />
-    </>
+        )}
+      </div>
+    </div>
   );
 }

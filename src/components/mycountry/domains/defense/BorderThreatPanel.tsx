@@ -11,7 +11,6 @@ import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { getQualitativeRating } from "~/lib/qualitative-rating";
@@ -89,9 +88,9 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
     diplomaticConfig.neutral;
 
   return (
-    <Card variant="well" padding="md" className="space-y-3">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
+    <div className="space-y-3 p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2">
             <Globe aria-hidden="true" className="text-label-secondary h-4 w-4" />
             <h4 className="text-label text-headline">
@@ -118,7 +117,11 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
           <span className="text-label-secondary">Threat score</span>
           <span className="font-medium tabular-nums">{threat.threatScore}/100</span>
         </div>
-        <Progress value={threat.threatScore} className="h-2" indicatorClassName={level.indicator} />
+        <Progress
+          value={threat.threatScore}
+          className="h-1.5"
+          indicatorClassName={level.indicator}
+        />
       </div>
 
       <div className="text-footnote flex items-center justify-between">
@@ -130,11 +133,11 @@ function ThreatRow({ threat }: { threat: NeighborThreat }) {
       </div>
 
       {threat.notes && (
-        <p className="text-label-secondary border-separator text-footnote border-t pt-3 leading-relaxed">
+        <p className="text-label-secondary border-separator/60 text-footnote border-t pt-2.5 leading-relaxed">
           {threat.notes}
         </p>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -157,29 +160,28 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
   const threats = border?.neighborThreats ?? [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <h3 className="text-label text-title-3">Border security</h3>
-        <p className="text-label-secondary text-body">
+        <h3 className="text-label text-headline">Border security</h3>
+        <p className="text-label-secondary text-footnote">
           Worked out from your map neighbors, their forces, your relations and any conflicts or
-          hostile actions between you
+          hostile actions between you.
         </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader className="p-5 pb-3">
+        <Card content="data">
+          <CardHeader className="p-4 pb-3">
             <h4 className="text-label text-headline flex items-center gap-2">
               <Shield aria-hidden="true" className="text-label-secondary h-4 w-4" />
-              Border security overview
+              Frontier posture
             </h4>
-            <p className="text-label-secondary text-footnote">Current frontier posture</p>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pb-5">
-            <div className="border-separator flex items-center justify-between border-b pb-4">
+          <CardContent className="space-y-4 px-4 pb-4">
+            <div className="border-separator/60 flex items-center justify-between border-b pb-3">
               <span className="text-caption text-label-secondary">Security level</span>
               <div className="text-right">
-                <div className="text-label text-title-1 tabular-nums">
+                <div className="text-label text-title-2 tabular-nums">
                   {border?.overallSecurityLevel ?? 0}
                   <span className="text-label-secondary text-body font-normal">/100</span>
                 </div>
@@ -190,7 +192,7 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
               </div>
             </div>
 
-            <div className="divide-separator divide-y">
+            <div className="divide-separator/60 divide-y">
               <StatItem label="Land neighbors" value={border?.landBorders ?? 0} icon={Globe} />
               <StatItem
                 label="Active threats"
@@ -201,8 +203,8 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="p-5 pb-3">
+        <Card content="data" padding="none">
+          <CardHeader className="border-separator/60 border-b p-4">
             <h4 className="text-label text-headline flex items-center gap-2">
               <AlertTriangle aria-hidden="true" className="text-label-secondary h-4 w-4" />
               Neighbor threats
@@ -213,22 +215,22 @@ export function BorderThreatPanel({ countryId }: BorderThreatPanelProps) {
                 : `${threats.length} neighbor${threats.length === 1 ? "" : "s"} assessed`}
             </p>
           </CardHeader>
-          <CardContent className="px-5 pb-5">
+          <CardContent className="p-0">
             {threats.length === 0 ? (
-              <EmptyState
-                compact
-                icon={<Globe />}
-                title="No land neighbors"
-                message="Neighbors come from your borders on the map. Draw or link your territory to assess them."
-              />
+              <div className="p-4">
+                <EmptyState
+                  compact
+                  icon={<Globe />}
+                  title="No land neighbors"
+                  message="Neighbors come from your borders on the map. Draw or link your territory to assess them."
+                />
+              </div>
             ) : (
-              <ScrollArea className="h-[420px] pr-3">
-                <div className="space-y-3">
-                  {threats.map((threat) => (
-                    <ThreatRow key={threat.id} threat={threat} />
-                  ))}
-                </div>
-              </ScrollArea>
+              <div className="divide-separator/60 divide-y">
+                {threats.map((threat) => (
+                  <ThreatRow key={threat.id} threat={threat} />
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

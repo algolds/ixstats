@@ -51,7 +51,7 @@ function ArticleSpotlightTile({ article }: { article: ProfileMediaArticle }) {
     <Link
       href={`/wiki/${encodeURIComponent(article.slug)}`}
       data-slot="factbook-lore-card"
-      className="facet-well facet-press facet-lift focus-visible:outline-tint rounded-row group/article flex min-w-0 flex-col justify-between overflow-hidden focus-visible:outline-2"
+      className="border-separator/60 bg-surface hover:bg-fill-4 facet-press facet-lift focus-visible:outline-tint rounded-row group/article flex min-w-0 flex-col justify-between overflow-hidden border focus-visible:outline-2"
     >
       {showImage && resolvedUrl ? (
         <div className="border-separator bg-fill-4 relative h-28 w-full overflow-hidden border-b">
@@ -81,7 +81,7 @@ function ArticleSpotlightTile({ article }: { article: ProfileMediaArticle }) {
           <span className="flex min-w-0 items-center gap-2">
             <span
               aria-hidden
-              className="facet-recess text-tint rounded-control-sm grid size-6 shrink-0 place-items-center [:where(&)_svg]:size-3.5"
+              className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-3.5"
             >
               {topic.icon}
             </span>
@@ -101,7 +101,7 @@ function ArticleSpotlightTile({ article }: { article: ProfileMediaArticle }) {
           </h3>
           {summary && <p className="text-caption text-label-secondary line-clamp-2">{summary}</p>}
         </div>
-        <span className="text-caption text-tint inline-flex items-center gap-1 font-medium">
+        <span className="text-caption text-label-secondary group-hover/article:text-label inline-flex items-center gap-1 font-medium">
           Read more
           <NavArrowRight aria-hidden className="size-3 shrink-0" />
         </span>
@@ -124,18 +124,20 @@ export function FactbookMediaGallery({ layer }: { layer: CountryProfileLayer }) 
   return (
     <div className="flex flex-col gap-4">
       {articles.length > 0 && (
-        <Card padding="md" className="flex flex-col gap-3.5">
+        <Card
+          variant="well"
+          padding="md"
+          className="border-separator/60 flex flex-col gap-3.5 border"
+        >
           <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2">
               <span
                 aria-hidden
-                className="facet-recess text-tint rounded-control-sm grid size-8 shrink-0 place-items-center [:where(&)_svg]:size-4"
+                className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-4"
               >
                 <BookStack />
               </span>
-              <div className="min-w-0">
-                <h2 className="text-title-3 text-label truncate">Country Lore</h2>
-              </div>
+              <h2 className="text-title-3 text-label truncate">Country Lore</h2>
             </div>
             <Button variant="ghost" size="sm" asChild className="shrink-0">
               <Link href={countryTabHref("lore", layer.slug)}>
@@ -153,18 +155,21 @@ export function FactbookMediaGallery({ layer }: { layer: CountryProfileLayer }) 
       )}
 
       {cards.length > 0 && (
-        <Card padding="md" content="collectible" className="flex flex-col gap-3.5">
+        <Card
+          variant="well"
+          padding="md"
+          content="collectible"
+          className="border-separator/60 flex flex-col gap-3.5 border"
+        >
           <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2">
               <span
                 aria-hidden
-                className="facet-recess text-tint rounded-control-sm grid size-8 shrink-0 place-items-center [:where(&)_svg]:size-4"
+                className="text-label-secondary inline-flex shrink-0 [:where(&)_svg]:size-4"
               >
                 <CardsLogomark />
               </span>
-              <div className="min-w-0">
-                <h2 className="text-title-3 text-label truncate">National collectibles</h2>
-              </div>
+              <h2 className="text-title-3 text-label truncate">National collectibles</h2>
             </div>
             <Button variant="ghost" size="sm" asChild className="shrink-0">
               <Link href="/vault">

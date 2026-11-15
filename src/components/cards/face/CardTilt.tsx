@@ -7,7 +7,6 @@ import { springSmooth } from "~/lib/design/motion";
 
 /** Degrees the card leans toward the pointer at its edge. */
 const MAX_TILT = 8;
-const TILT_SPRING = { stiffness: springSmooth.stiffness, damping: springSmooth.damping };
 
 /**
  * The lean toward the pointer and the light spot, for the two places a card tilts: the sheet's large card and the pack
@@ -16,8 +15,8 @@ const TILT_SPRING = { stiffness: springSmooth.stiffness, damping: springSmooth.d
  * read it.
  */
 export function useCardTilt() {
-  const rotateX = useSpring(0, TILT_SPRING);
-  const rotateY = useSpring(0, TILT_SPRING);
+  const rotateX = useSpring(0, springSmooth);
+  const rotateY = useSpring(0, springSmooth);
   const onPointerMove = (event: PointerEvent<HTMLElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width;
@@ -39,11 +38,11 @@ export function CardHolo() {
   return <span aria-hidden="true" className="card-holo rounded-card absolute inset-0" />;
 }
 
-/** A card that leans toward the pointer and catches the light. Under Reduce Motion it is the card alone. */
-export function CardTilt({ children }: { children: ReactNode }) {
+/** A card that leans toward the pointer and catches the light. Under Reduce Motion or when inactive it is the card alone. */
+export function CardTilt({ active = true, children }: { active?: boolean; children: ReactNode }) {
   const reduce = useFacetReducedMotion();
   const { tilt, onPointerMove, onPointerLeave } = useCardTilt();
-  if (reduce) return <>{children}</>;
+  if (!active || reduce) return <>{children}</>;
   return (
     <div
       className="w-fit perspective-distant"

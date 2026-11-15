@@ -13,9 +13,10 @@ import {
 } from "iconoir-react";
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { XAxis, YAxis, CartesianGrid, BarChart, Bar, ResponsiveContainer, Tooltip } from "recharts";
+import { FACET_AXIS_TICK, FacetChartTooltip } from "~/components/ui/chart";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
-import { CHART_TOOLTIP_STYLE, type MetricModalTab } from "./types";
+import type { MetricModalTab } from "./types";
 
 interface LaborDetailsModalProps {
   isOpen: boolean;
@@ -141,23 +142,38 @@ function LaborBreakdown({ labor, countryData }: LaborViewProps) {
           {sectorData.length > 0 ? (
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sectorData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
-                  <XAxis type="number" stroke="var(--color-label-secondary)" tickLine={false} />
+                <BarChart data={sectorData} layout="vertical" margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+                  <CartesianGrid
+                    horizontal={false}
+                    strokeDasharray="3 3"
+                    stroke="var(--color-separator)"
+                  />
+                  <XAxis
+                    type="number"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={FACET_AXIS_TICK}
+                    tickFormatter={(v: number) => `${v}%`}
+                  />
                   <YAxis
                     dataKey="name"
                     type="category"
-                    stroke="var(--color-label-secondary)"
+                    axisLine={false}
                     tickLine={false}
-                    width={100}
-                    tick={{ fontSize: 9 }}
+                    width={116}
+                    tick={FACET_AXIS_TICK}
                   />
-                  <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                  <Tooltip
+                    cursor={{ fill: "var(--color-fill-4)" }}
+                    content={
+                      <FacetChartTooltip valueFormatter={(val) => `${val.toFixed(1)}%`} />
+                    }
+                  />
                   <Bar
                     dataKey="value"
-                    fill="var(--color-blue-500)"
+                    fill="var(--color-chart-1)"
                     radius={[0, 4, 4, 0]}
-                    name="Percentage %"
+                    name="Share"
                   />
                 </BarChart>
               </ResponsiveContainer>

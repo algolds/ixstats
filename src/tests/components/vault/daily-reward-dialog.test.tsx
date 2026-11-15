@@ -145,22 +145,26 @@ describe("DailyRewardProvider & DailyRewardDialog", () => {
     expect(screen.getByText("2,450")).toBeInTheDocument();
     expect(screen.getByText(/Resets at 00:00 UTC/)).toBeInTheDocument();
 
-    // Multi-plane front-page monogram parallax layers + Facet 5 lens sit behind the stage
+    // Multi-plane front-page monogram parallax layers sit behind the stage with no nested glass-on-glass
     const parallax = document.querySelector("[data-slot='monogram-parallax']")!;
     expect(parallax).toBeInTheDocument();
     for (const app of ["wiki", "mycountry", "maps", "realms"]) {
       expect(parallax.querySelector(`[data-app='${app}']`)).toBeInTheDocument();
     }
-    const monogramLens = parallax.querySelector("[data-slot='monogram-lens']")!;
-    expect(monogramLens).toHaveClass("facet-lens");
+    expect(parallax.querySelector("[data-slot='monogram-lens']")).not.toBeInTheDocument();
+    expect(parallax.querySelector(".facet-lens")).not.toBeInTheDocument();
 
-    // Choice cards use Facet 5 refractive lens glass, have no eyebrows, and fan 3 distinct editions
+    // Choice cards render as concentric Well buttons (single facet-press, no facet-lens) and fan 3 distinct editions
     expect(screen.queryByText("Currency roll")).not.toBeInTheDocument();
     expect(screen.queryByText("Mystery mint")).not.toBeInTheDocument();
     const creditsTile = document.querySelector("[data-slot='daily-choice-credits']")!;
     const cardTile = document.querySelector("[data-slot='daily-choice-card']")!;
-    expect(creditsTile).toHaveClass("facet-lens");
-    expect(cardTile).toHaveClass("facet-lens");
+    expect(creditsTile).not.toHaveClass("facet-lens");
+    expect(creditsTile).toHaveClass("rounded-row", "facet-press");
+    expect(creditsTile).not.toHaveClass("facet-press-subtle");
+    expect(cardTile).not.toHaveClass("facet-lens");
+    expect(cardTile).toHaveClass("rounded-row", "facet-press");
+    expect(cardTile).not.toHaveClass("facet-press-subtle");
     const cardBacks = [...cardTile.querySelectorAll("[data-card-back]")].map((el) =>
       el.getAttribute("data-card-rarity")
     );
@@ -206,6 +210,9 @@ describe("DailyRewardProvider & DailyRewardDialog", () => {
     expect(screen.getByText("350")).toBeInTheDocument();
     expect(screen.getByText("1,550")).toBeInTheDocument();
     expect(screen.getByText("Vault balance")).toBeInTheDocument();
+    expect(
+      document.querySelector("[data-slot='daily-credits-reveal'] .facet-lens")
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/streak/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Collect" }));

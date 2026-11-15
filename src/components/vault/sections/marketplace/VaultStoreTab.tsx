@@ -1,10 +1,8 @@
 "use client";
 
-import { springSmooth } from "~/lib/design/motion";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
 import {
   Package,
   MagicWand,
@@ -47,22 +45,25 @@ import {
   WarningCircle,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { soundCues } from "~/lib/sound/cuelume";
 import { storePrerequisiteMet } from "~/lib/vault/store-purchases";
 import { previewCosmetic } from "~/lib/vault/public-cosmetics";
 import { cardSheetHref } from "~/lib/cards/face/sheet-link";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
 import { PageHeader } from "~/components/shell/PageHeader";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 import { Skeleton } from "~/components/ui/skeleton";
-import { IxCreditsSymbol } from "../../IxCreditsSymbol";
-import { StoreItemCard, type StoreItem } from "./StoreItemCard";
 import { useNotify } from "~/hooks/useNotify";
+import { IxCreditsSymbol } from "../../IxCreditsSymbol";
+import { IconWell } from "../dashboard/IconWell";
+import { StoreItemCard, type StoreItem } from "./StoreItemCard";
 import { PackHolographicCard, type PackItem } from "./store/PackHolographicCard";
-import { StoreCategoryHeader } from "./store/StoreCategoryHeader";
 import { StorePurchaseDialog } from "./store/StorePurchaseDialog";
-import { VaultParticleExplosionModal } from "~/components/vault/VaultParticleExplosionModal";
-import { Card, CardTitle } from "~/components/ui/card";
+import { UnopenedPacksShelf } from "./store/UnopenedPacksShelf";
 
 const PackReveal = dynamic(
   () => import("~/components/cards/reveal/PackReveal").then((m) => m.PackReveal),
@@ -108,41 +109,48 @@ export const ICON_MAP: Record<string, React.ComponentType<{ className?: string }
   User,
 };
 
-const STORE_TABS = [
-  { id: "my-packs" as const, label: "My packs", icon: Package },
-  { id: "packs" as const, label: "Packs", icon: Store },
-  { id: "cosmetics" as const, label: "Cosmetics", icon: MagicWand },
-  { id: "upgrades" as const, label: "Account upgrades", icon: TrendingUp },
-];
+type CheckoutTarget =
+  { kind: "pack"; pack: PackItem; item: StoreItem } | { kind: "item"; item: StoreItem };
 
-type StoreView = (typeof STORE_TABS)[number]["id"];
-
-/** The store sub-tab a `view` URL param names; Packs by default (old `boosters` links included). */
-export function resolveStoreView(view: string | null | undefined): StoreView {
-  return STORE_TABS.find((tab) => tab.id === view)?.id ?? "packs";
+function packToCheckoutItem(pack: PackItem): StoreItem {
+  return {
+    id: pack.id,
+    name: pack.name,
+    description: pack.description || `${pack.cardCount.toLocaleString()} collectible cards.`,
+    price: pack.priceCredits,
+    icon: Package,
+    quality: "standard",
+    badgeText: `${pack.cardCount.toLocaleString()} cards`,
+    category: "packs",
+    pack,
+  };
 }
 
-export function VaultStoreTab({ initialView }: { initialView?: string | null }) {
+function StoreBalanceChip({ credits, loading }: { credits?: number; loading: boolean }) {
+  if (loading) return <Skeleton className="h-7 w-24 rounded-full" />;
+  if (credits === undefined) return null;
+  return (
+    <Badge
+      variant="secondary"
+      data-slot="store-balance-chip"
+      className="text-footnote px-2.5 py-1 font-medium tabular-nums"
+    >
+      <IxCreditsSymbol decorative className="size-3.5 shrink-0" />
+      <span>{credits.toLocaleString()} IxC</span>
+    </Badge>
+  );
+}
+
+export function VaultStoreTab({ initialView: _initialView }: { initialView?: string | null } = {}) {
   const notify = useNotify();
   const router = useRouter();
-
-  const [storeTab, setStoreTab] = useState<StoreView>(() => resolveStoreView(initialView));
-  const [opening, setOpening] = useState<{ id: string; pack: PackItem } | null>(null);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [activeCheckoutItem, setActiveCheckoutItem] = useState<StoreItem | null>(null);
-  const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
-  const sections = useRef<HTMLDivElement>(null);
-
   const utils = api.useUtils();
 
-  const {
-    data: myPacksData,
-    isLoading: myPacksLoading,
-    isError: myPacksError,
-    refetch: refetchMyPacks,
-  } = api.cardPacks.getMyPacks.useQuery({
-    isOpened: false,
-  });
+  const [opening, setOpening] = useState<{ id: string; pack: PackItem } | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutTarget | null>(null);
+
+  const { data: balanceData, isLoading: balanceLoading } = api.vault.getBalance.useQuery();
+  const { data: myPacksData } = api.cardPacks.getMyPacks.useQuery({ isOpened: false });
   const {
     data: packsData,
     isLoading: packsLoading,
@@ -159,6 +167,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
 
   const purchasePackMutation = api.cardPacks.purchasePack.useMutation({
     onSuccess: (data) => {
+      setCheckout(null);
       notify.success("Card pack purchased");
       void utils.vault.getBalance.invalidate();
       void utils.cardPacks.getMyPacks.invalidate();
@@ -171,20 +180,20 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
 
   const purchaseStoreItemMutation = api.vault.purchaseStoreItem.useMutation({
     onSuccess: () => {
-      notify.success("Item unlocked");
+      const purchasedName = checkout?.item.name;
+      soundCues.success();
+      notify.success(
+        "Added to your Vault",
+        purchasedName
+          ? `${purchasedName} is ready in your Vault.`
+          : "Apply it from your account settings."
+      );
       void utils.vault.getBalance.invalidate();
       void utils.vault.getPurchasedItems.invalidate();
-      setActiveCheckoutItem(null);
-      setPurchasingItemId(null);
-      setShowCelebration(true);
-
-      setTimeout(() => {
-        setShowCelebration(false);
-      }, 3500);
+      setCheckout(null);
     },
     onError: (err: { message?: string }) => {
       notify.error(err.message || "Failed to complete transaction.");
-      setPurchasingItemId(null);
     },
   });
 
@@ -206,7 +215,7 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       cosmetics: previewCosmetic(item.id, item.effects),
     }));
 
-  const upgradeItems: StoreItem[] = (storeItemsData ?? [])
+  const UPGRADE_ITEMS: StoreItem[] = (storeItemsData ?? [])
     .filter((item) => item.category === "upgrades")
     .filter((item) => storePrerequisiteMet(item.id, ownedData?.purchaseCounts))
     .map((item) => ({
@@ -214,284 +223,246 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
       name: item.name,
       description: item.description || "",
       price: item.price,
-      icon: ICON_MAP[item.icon] || MagicWand,
+      icon: ICON_MAP[item.icon] || TrendingUp,
       quality: item.quality || "standard",
-      badgeText: item.badgeText || "Custom",
+      badgeText: item.badgeText || "Capacity",
       category: item.category,
     }));
 
-  const handleCustomPurchaseConfirm = () => {
-    if (!activeCheckoutItem) return;
-    setPurchasingItemId(activeCheckoutItem.id);
-    purchaseStoreItemMutation.mutate({ itemId: activeCheckoutItem.id });
+  const isPurchasing =
+    checkout?.kind === "pack"
+      ? purchasePackMutation.isPending
+      : checkout?.kind === "item"
+        ? purchaseStoreItemMutation.isPending
+        : false;
+
+  const handleConfirmPurchase = () => {
+    if (!checkout) return;
+    if (checkout.kind === "pack") {
+      purchasePackMutation.mutate({ packId: checkout.pack.id });
+    } else {
+      purchaseStoreItemMutation.mutate({ itemId: checkout.item.id });
+    }
   };
 
-  const isLoading =
-    storeTab === "my-packs" ? myPacksLoading : storeTab === "packs" ? packsLoading : itemsLoading;
-  const isError =
-    storeTab === "my-packs" ? myPacksError : storeTab === "packs" ? packsError : itemsError;
-  const retryActive =
-    storeTab === "my-packs" ? refetchMyPacks : storeTab === "packs" ? refetchPacks : refetchItems;
-
-  const activeConfig = {
-    "my-packs": {
-      title: "My unopened packs",
-      icon: <Package className="text-blue h-4 w-4" />,
-      description: "Packs you own that are ready to open.",
-    },
-    packs: {
-      title: "Packs",
-      icon: <Store className="text-tint h-4 w-4" />,
-      description: "Packs from every realm. Each shows its odds.",
-    },
-    cosmetics: {
-      title: "Profile customizations",
-      icon: <MagicWand className="text-indigo h-4 w-4" />,
-      description: "Decorations, frames, and name badges for your profile.",
-    },
-    upgrades: {
-      title: "Vault system upgrades",
-      icon: <TrendingUp className="text-green h-4 w-4" />,
-      description: "Permanent card space and passive credit yield.",
-    },
-  }[storeTab];
+  const isLoading = packsLoading && itemsLoading;
+  const isError = packsError && itemsError;
 
   return (
-    <div className="space-y-4 pb-10">
+    <div className="space-y-10 pb-10">
       <PageHeader
         title="Store"
-        subtitle="Packs, profile cosmetics and Vault capacity upgrades."
-        back={{ href: "/vault", label: "Vault" }}
+        subtitle="Card packs, profile cosmetics, and Vault capacity."
+        actions={<StoreBalanceChip credits={balanceData?.credits} loading={balanceLoading} />}
         bleed
       />
 
-      <div ref={sections}>
-        <StoreCategoryHeader
-          tabs={STORE_TABS}
-          activeTab={storeTab}
-          onTabChange={setStoreTab}
-          myPacksCount={myPacks.length}
+      {myPacks.length > 0 && (
+        <UnopenedPacksShelf
+          packs={myPacks}
+          onOpenPack={(userPack) => setOpening({ id: userPack.id, pack: userPack.pack })}
         />
-      </div>
+      )}
 
       {isError ? (
-        <Card>
+        <Card padding="lg">
           <EmptyState
             icon={<WarningCircle />}
             title="The store didn't load"
             message="Please try again in a moment."
             action={
-              <Button variant="secondary" size="sm" onClick={() => void retryActive()}>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  void refetchPacks();
+                  void refetchItems();
+                }}
+              >
                 Try again
               </Button>
             }
           />
         </Card>
       ) : isLoading ? (
-        <Card padding="lg" className="space-y-5">
-          <div className="space-y-1.5">
-            <Skeleton className="h-5 w-40" />
-            <Skeleton className="h-4 w-64" />
+        <div aria-busy className="space-y-10">
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-36" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="rounded-cutout h-72 w-full" />
+              ))}
+            </div>
           </div>
-          <div aria-busy className="flex flex-wrap justify-center gap-6 py-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="rounded-card h-[280px] w-44 shrink-0" />
-            ))}
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-44" />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="rounded-cutout h-64 w-full" />
+              ))}
+            </div>
           </div>
-        </Card>
+        </div>
       ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={storeTab}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={springSmooth}
-            className="relative"
-          >
-            {storeTab === "my-packs" &&
-              (myPacks.length > 0 ? (
-                <Card padding="lg" className="space-y-5">
-                  <div className="border-separator border-b pb-4">
-                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
-                    <p className="text-label-secondary text-footnote mt-1">
-                      {activeConfig.description}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-8 py-2">
-                    {myPacks.map((userPack) => {
-                      const packData = userPack.pack;
-                      return (
-                        <div key={userPack.id} className="shrink-0">
-                          <PackHolographicCard
-                            pack={packData}
-                            actionButton={
-                              <Button
-                                size="sm"
-                                onClick={() => setOpening({ id: userPack.id, pack: packData })}
-                                className="h-7 w-full"
-                              >
-                                Rip open pack
-                              </Button>
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-              ) : (
-                <Card>
-                  <EmptyState
-                    icon={<Package />}
-                    title="No unopened packs"
-                    message="You have no unopened packs right now. Buy one from Packs."
-                    action={
-                      <Button size="sm" onClick={() => setStoreTab("packs")}>
-                        <Store aria-hidden />
-                        Browse packs
-                      </Button>
+        <div className="space-y-10">
+          <section aria-labelledby="store-packs-heading" className="space-y-4">
+            <div className="space-y-1">
+              <h2 id="store-packs-heading" className="text-title-3 text-label">
+                Card packs
+              </h2>
+              <p className="text-label-secondary text-footnote">
+                Foil packs from active realms with published drop odds.
+              </p>
+            </div>
+
+            {packsLoading ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="rounded-cutout h-72 w-full" />
+                ))}
+              </div>
+            ) : packs.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {packs.map((pack) => {
+                  const buyingThisPack =
+                    checkout?.kind === "pack" &&
+                    checkout.pack.id === pack.id &&
+                    purchasePackMutation.isPending;
+                  return (
+                    <PackHolographicCard
+                      key={pack.id}
+                      pack={pack}
+                      isPurchasing={buyingThisPack}
+                      onPurchase={(selectedPack) =>
+                        setCheckout({
+                          kind: "pack",
+                          pack: selectedPack,
+                          item: packToCheckoutItem(selectedPack),
+                        })
+                      }
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <Card padding="lg">
+                <EmptyState
+                  icon={<Store />}
+                  title="No packs available"
+                  message="Check back later for new pack drops and seasonal releases."
+                />
+              </Card>
+            )}
+          </section>
+
+          <section aria-labelledby="store-cosmetics-heading" className="space-y-4">
+            <div className="space-y-1">
+              <h2 id="store-cosmetics-heading" className="text-title-3 text-label">
+                Profile cosmetics
+              </h2>
+              <p className="text-label-secondary text-footnote">
+                Frames, avatar glows, and name badges shown across IxStates.
+              </p>
+            </div>
+
+            {itemsLoading ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="rounded-cutout h-64 w-full" />
+                ))}
+              </div>
+            ) : cosmeticItems.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {cosmeticItems.map((item) => (
+                  <StoreItemCard
+                    key={item.id}
+                    item={item}
+                    onPurchase={(selectedItem) => setCheckout({ kind: "item", item: selectedItem })}
+                    isPurchasing={
+                      checkout?.kind === "item" &&
+                      checkout.item.id === item.id &&
+                      purchaseStoreItemMutation.isPending
                     }
+                    isOwned={Boolean(ownedData?.purchasedItemIds.includes(item.id))}
+                    purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
                   />
-                </Card>
-              ))}
+                ))}
+              </div>
+            ) : (
+              <Card padding="lg">
+                <EmptyState
+                  icon={<MagicWand />}
+                  title="No cosmetics listed"
+                  message="No cosmetics are for sale right now."
+                />
+              </Card>
+            )}
+          </section>
 
-            {storeTab === "packs" &&
-              (packs.length > 0 ? (
-                <Card padding="lg" className="space-y-5">
-                  <div className="border-separator border-b pb-4">
-                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
-                    <p className="text-label-secondary text-footnote mt-1">
-                      {activeConfig.description}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-8 py-2">
-                    {packs.map((pack) => {
-                      const isPending =
-                        purchasePackMutation.isPending &&
-                        purchasePackMutation.variables?.packId === pack.id;
-                      return (
-                        <div key={pack.id} className="shrink-0">
-                          <PackHolographicCard
-                            pack={pack}
-                            actionButton={
-                              <Button
-                                size="sm"
-                                onClick={() =>
-                                  purchasePackMutation.mutate({
-                                    packId: pack.id,
-                                  })
-                                }
-                                disabled={isPending}
-                                className="h-7 w-full"
-                              >
-                                {isPending ? (
-                                  "Buying..."
-                                ) : (
-                                  <span className="flex items-center gap-1 tabular-nums">
-                                    <IxCreditsSymbol className="h-3 w-3 shrink-0" />
-                                    Buy ({pack.priceCredits.toLocaleString()})
-                                  </span>
-                                )}
-                              </Button>
-                            }
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-              ) : (
-                <Card>
-                  <EmptyState
-                    icon={<Store />}
-                    title="No packs available"
-                    message="Check back later for new pack drops and seasonal releases."
-                  />
-                </Card>
-              ))}
+          <FacetList>
+            <FacetListSection
+              header="Vault capacity"
+              headerAs="h2"
+              footer="Permanent expansions applied immediately to your account."
+            >
+              {UPGRADE_ITEMS.length > 0 ? (
+                UPGRADE_ITEMS.map((item) => {
+                  const Icon = item.icon;
+                  const ownedCount = ownedData?.purchaseCounts[item.id] ?? 0;
+                  const canAfford = balanceData === undefined || balanceData.credits >= item.price;
+                  const buyingThisUpgrade =
+                    checkout?.kind === "item" &&
+                    checkout.item.id === item.id &&
+                    purchaseStoreItemMutation.isPending;
 
-            {storeTab === "cosmetics" &&
-              (cosmeticItems.length > 0 ? (
-                <Card padding="lg" className="space-y-5">
-                  <div className="border-separator border-b pb-4">
-                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
-                    <p className="text-label-secondary text-footnote mt-1">
-                      {activeConfig.description}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {cosmeticItems.map((item: StoreItem) => (
-                      <StoreItemCard
-                        key={item.id}
-                        item={item}
-                        onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
-                        isPurchasing={purchasingItemId === item.id}
-                        isOwned={!!ownedData?.purchasedItemIds.includes(item.id)}
-                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
-                      />
-                    ))}
-                  </div>
-                </Card>
+                  return (
+                    <FacetRow
+                      key={item.id}
+                      leading={
+                        <IconWell>
+                          <Icon />
+                        </IconWell>
+                      }
+                      title={item.name}
+                      subtitle={item.description}
+                      trailing={
+                        <span className="flex flex-wrap items-center justify-end gap-2.5">
+                          {ownedCount > 0 && (
+                            <Badge variant="secondary">{ownedCount.toLocaleString()} owned</Badge>
+                          )}
+                          <span className="text-subhead font-semibold tabular-nums">
+                            {item.price.toLocaleString()} IxC
+                          </span>
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={!canAfford || buyingThisUpgrade}
+                            onClick={() => setCheckout({ kind: "item", item })}
+                          >
+                            {buyingThisUpgrade ? "Buying..." : "Buy"}
+                          </Button>
+                        </span>
+                      }
+                    />
+                  );
+                })
               ) : (
-                <Card>
-                  <EmptyState
-                    icon={<MagicWand />}
-                    title="No cosmetics listed"
-                    message="No cosmetics are for sale right now."
-                  />
-                </Card>
-              ))}
-
-            {storeTab === "upgrades" &&
-              (upgradeItems.length > 0 ? (
-                <Card padding="lg" className="space-y-5">
-                  <div className="border-separator border-b pb-4">
-                    <CardTitle icon={activeConfig.icon}>{activeConfig.title}</CardTitle>
-                    <p className="text-label-secondary text-footnote mt-1">
-                      {activeConfig.description}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {upgradeItems.map((item: StoreItem) => (
-                      <StoreItemCard
-                        key={item.id}
-                        item={item}
-                        onPurchase={(itm: StoreItem) => setActiveCheckoutItem(itm)}
-                        isPurchasing={purchasingItemId === item.id}
-                        // Upgrades stack, so they are never "owned"; the count shows how many.
-                        isOwned={false}
-                        purchaseCount={ownedData?.purchaseCounts[item.id] ?? 0}
-                      />
-                    ))}
-                  </div>
-                </Card>
-              ) : (
-                <Card>
-                  <EmptyState
-                    icon={<TrendingUp />}
-                    title="No upgrades listed"
-                    message="No upgrades are for sale right now."
-                  />
-                </Card>
-              ))}
-          </motion.div>
-        </AnimatePresence>
+                <FacetRow
+                  title="No capacity upgrades listed"
+                  subtitle="No Vault capacity expansions are available right now."
+                />
+              )}
+            </FacetListSection>
+          </FacetList>
+        </div>
       )}
 
       <StorePurchaseDialog
-        item={activeCheckoutItem}
-        onClose={() => setActiveCheckoutItem(null)}
-        onConfirm={handleCustomPurchaseConfirm}
-        isPurchasing={
-          purchasingItemId === activeCheckoutItem?.id && purchaseStoreItemMutation.isPending
-        }
-      />
-
-      <VaultParticleExplosionModal
-        open={showCelebration}
-        title="Item added"
-        subtitle="Apply it from your account settings."
+        item={checkout?.item ?? null}
+        currentBalance={balanceData?.credits}
+        onClose={() => setCheckout(null)}
+        onConfirm={handleConfirmPurchase}
+        isPurchasing={isPurchasing}
       />
 
       {opening && (
@@ -509,11 +480,6 @@ export function VaultStoreTab({ initialView }: { initialView?: string | null }) 
             router.push(cardSheetHref(CARD_HUB_PATHS.mine, cardId));
           }}
           onClose={() => setOpening(null)}
-          // An opened pack's "Rip open pack" button leaves My packs, so focus goes back to the section's tab.
-          returnFocus={() =>
-            sections.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]') ??
-            null
-          }
         />
       )}
     </div>

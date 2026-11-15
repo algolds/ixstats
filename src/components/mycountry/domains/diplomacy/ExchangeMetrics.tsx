@@ -23,14 +23,14 @@ export const ExchangeMetrics = React.memo<ExchangeMetricsProps>(({ metrics }) =>
     { label: "Cultural impact", value: levelWord(metrics.avgCulturalImpact) },
   ];
   return (
-    <Card className="rounded-card p-4">
-      <dl className="grid grid-cols-2 gap-4 md:grid-cols-5">
+    <Card content="data" className="rounded-card p-4">
+      <dl className="md:divide-separator/60 grid grid-cols-2 gap-4 md:grid-cols-5 md:gap-0 md:divide-x">
         {items.map((item) => (
-          <div key={item.label} className="space-y-1">
+          <div key={item.label} className="space-y-1 md:px-4 first:md:pl-0 last:md:pr-0">
             <dt>
               <span className="text-caption text-label-secondary">{item.label}</span>
             </dt>
-            <dd className="text-label text-title-1 tabular-nums">{item.value}</dd>
+            <dd className="text-label text-title-3 tabular-nums">{item.value}</dd>
           </div>
         ))}
       </dl>

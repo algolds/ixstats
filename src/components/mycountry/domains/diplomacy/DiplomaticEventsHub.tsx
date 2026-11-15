@@ -162,25 +162,25 @@ function ImpactPreview({
     { label: "Cultural", value: impact.cultural, suffix: "%" },
   ].filter((i): i is { label: string; value: number; suffix: string } => i.value !== undefined);
   return (
-    <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+    <dl className="border-separator/60 divide-separator/60 mt-2.5 grid grid-cols-3 divide-x border-t pt-2.5">
       {items.map((item) => {
         const up = item.value > 0;
         const Trend = up ? TrendingUp : TrendingDown;
         return (
-          <div key={item.label} className="bg-fill-3 rounded-control p-3 text-center">
+          <div key={item.label} className="px-2 text-center first:pl-0 last:pr-0">
             <dd
               className={cn(
-                "mb-1 flex items-center justify-center gap-1 font-semibold tabular-nums",
+                "text-footnote mb-0.5 flex items-center justify-center gap-1 font-semibold tabular-nums",
                 up ? "text-success" : "text-destructive"
               )}
             >
-              <Trend className="h-4 w-4" />
+              <Trend className="h-3.5 w-3.5" />
               {up ? "+" : ""}
               {item.value}
               {item.suffix}
             </dd>
             <dt>
-              <span className="text-caption text-label-secondary">{item.label}</span>
+              <span className="text-footnote text-label-secondary">{item.label}</span>
             </dt>
           </div>
         );
@@ -223,8 +223,8 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="default" className="flex-1" onClick={onOpen}>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={onOpen}>
             <Eye className="h-4 w-4" />
             View & respond
           </Button>
@@ -272,7 +272,7 @@ function EventResponseBody({ event }: { event: DiplomaticEvent }) {
           <h4 className="text-label text-headline mb-3">Response options</h4>
           <div className="space-y-3">
             {event.responseOptions.map((option, idx) => (
-              <Card variant="well" key={idx} className="p-4">
+              <div key={idx} className="border-separator/60 rounded-row border p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <h5 className="text-label text-body font-medium">
                     {option.label || `Option ${idx + 1}`}
@@ -291,7 +291,7 @@ function EventResponseBody({ event }: { event: DiplomaticEvent }) {
                     cultural: option.culturalImpact,
                   }}
                 />
-              </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -384,18 +384,18 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
   return (
     <div className="space-y-6">
       <Card content="data" className="rounded-card p-4">
-        <dl className="grid grid-cols-3 gap-4">
+        <dl className="divide-separator/60 grid grid-cols-3 divide-x">
           {[
             { label: "Active events", value: activeScenarios.length, icon: FileText },
             { label: "Urgent (<24h)", value: urgentCount, icon: Clock },
             { label: "Total resolved", value: scenarioHistory.length, icon: History },
           ].map((stat) => (
-            <div key={stat.label} className="space-y-1">
+            <div key={stat.label} className="space-y-1 px-4 first:pl-0 last:pr-0">
               <dt className="text-footnote text-label-secondary flex items-center gap-2">
                 <stat.icon className="h-3.5 w-3.5" />
                 {stat.label}
               </dt>
-              <dd className="text-label text-title-1 tabular-nums">{stat.value}</dd>
+              <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
             </div>
           ))}
         </dl>

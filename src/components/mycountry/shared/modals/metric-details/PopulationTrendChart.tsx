@@ -5,25 +5,19 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   Area,
   Line,
   ComposedChart,
   Bar,
 } from "recharts";
+import { FACET_AXIS_TICK, FacetChartTooltip } from "~/components/ui/chart";
 import { formatPopulation } from "~/lib/utils/format-utils";
 import { realmYear } from "~/lib/realms/nation-time";
 import type { RealmCalendar } from "~/lib/realms/realm-clock";
 import type { PopulationChartDataPoint } from "~/lib/mycountry/population-details";
-import { CHART_TOOLTIP_STYLE, type ChartType } from "./types";
+import type { ChartType } from "./types";
 
-export const POPULATION_COLOR = "var(--chart-2)";
-
-function tooltipFormatter(value: unknown, name: unknown): [string, string] {
-  if (name === "population") return [formatPopulation(value as number), "Population"];
-  if (name === "populationGrowthRate") return [`${(value as number).toFixed(3)}%`, "Growth Rate"];
-  return [String(value ?? ""), String(name ?? "")];
-}
+export const POPULATION_COLOR = "var(--color-chart-1)";
 
 /** The trend chart in the format picked in the modal header; "composed" adds the growth-rate bars. */
 export function PopulationTrendChart({
@@ -44,8 +38,9 @@ export function PopulationTrendChart({
         type="monotone"
         dataKey="population"
         stroke={POPULATION_COLOR}
-        strokeWidth={3}
+        strokeWidth={2.5}
         dot={false}
+        activeDot={{ r: 4, fill: POPULATION_COLOR, strokeWidth: 0 }}
         name="Population"
       />
     ),
@@ -66,23 +61,23 @@ export function PopulationTrendChart({
         stroke={POPULATION_COLOR}
         fillOpacity={1}
         fill="url(#popColor)"
-        strokeWidth={3}
+        strokeWidth={2.5}
         name="Population"
       />
     ),
   };
 
   return (
-    <ComposedChart data={data}>
+    <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
       {showsArea && (
         <defs>
           <linearGradient id="popColor" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={POPULATION_COLOR} stopOpacity={0.25} />
+            <stop offset="5%" stopColor={POPULATION_COLOR} stopOpacity={0.2} />
             <stop offset="95%" stopColor={POPULATION_COLOR} stopOpacity={0} />
           </linearGradient>
         </defs>
       )}
-      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-separator)" />
+      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--color-separator)" />
       <XAxis
         dataKey="timestamp"
         domain={["dataMin", "dataMax"]}
@@ -91,36 +86,49 @@ export function PopulationTrendChart({
         name="Time"
         tickFormatter={(ts) => String(yearOf(ts))}
         tickCount={6}
-        stroke="var(--color-label-secondary)"
+        axisLine={false}
+        tickLine={false}
+        tick={FACET_AXIS_TICK}
       />
       <YAxis
         yAxisId="population"
         orientation="left"
         tickFormatter={(value) => formatPopulation(value)}
-        stroke="var(--color-label-secondary)"
+        axisLine={false}
+        tickLine={false}
+        tick={FACET_AXIS_TICK}
       />
       {chartType === "composed" && (
         <YAxis
           yAxisId="growth"
           orientation="right"
-          stroke="var(--color-label-secondary)"
+          axisLine={false}
+          tickLine={false}
+          tick={FACET_AXIS_TICK}
           tickFormatter={(value) => `${value.toFixed(2)}%`}
         />
       )}
       <Tooltip
-        contentStyle={CHART_TOOLTIP_STYLE}
-        formatter={tooltipFormatter}
-        labelFormatter={(label) => `Year ${yearOf(label)}`}
+        cursor={{ stroke: "var(--color-separator)", strokeWidth: 1 }}
+        content={
+          <FacetChartTooltip
+            labelFormatter={(label) => `Year ${yearOf(label)}`}
+            valueFormatter={(val, name) =>
+              name === "Population" || name === "population"
+                ? formatPopulation(val)
+                : `${val.toFixed(3)}%`
+            }
+          />
+        }
       />
-      <Legend wrapperStyle={{ fontSize: "11px", opacity: 0.8 }} />
       {populationSeries[chartType === "composed" ? "area" : chartType]}
       {chartType === "composed" && (
         <Bar
           yAxisId="growth"
           dataKey="populationGrowthRate"
-          fill="var(--chart-3)"
-          opacity={0.4}
-          name="Growth Rate"
+          fill="var(--color-chart-3)"
+          opacity={0.75}
+          name="Growth rate"
           radius={[2, 2, 0, 0]}
         />
       )}

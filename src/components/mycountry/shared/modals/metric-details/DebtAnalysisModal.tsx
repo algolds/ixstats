@@ -213,7 +213,7 @@ export function DebtAnalysisModal({
       title="Public debt analysis"
       description="Debt sustainability and fiscal health metrics"
       icon={Landmark}
-      iconColor="text-yellow"
+      iconColor="text-label-secondary"
       tabs={TABS}
       isLoading={countryLoading}
       variant="economy"

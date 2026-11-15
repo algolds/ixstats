@@ -212,23 +212,20 @@ function DirectivesWorkspaceBody({
   return (
     <section aria-label="Directives" className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-title-3 text-label">Directives</h2>
-          <SegmentedControl
-            asTabs
-            scrollable
-            size="sm"
-            aria-label="Directive views"
-            value={view}
-            onValueChange={(v) => setView(v)}
-            options={views.map((v) => ({
-              value: v.id,
-              label: v.label,
-              badge: v.count != null && v.count > 0 ? v.count : undefined,
-              badgeLabel: v.count != null && v.count > 0 ? String(v.count) : undefined,
-            }))}
-          />
-        </div>
+        <SegmentedControl
+          asTabs
+          scrollable
+          size="sm"
+          aria-label="Directive views"
+          value={view}
+          onValueChange={(v) => setView(v)}
+          options={views.map((v) => ({
+            value: v.id,
+            label: v.label,
+            badge: v.count != null && v.count > 0 ? v.count : undefined,
+            badgeLabel: v.count != null && v.count > 0 ? String(v.count) : undefined,
+          }))}
+        />
 
         <div className="flex flex-wrap items-center gap-3">
           <DirectiveStatusLine countryId={countryId} />
@@ -273,7 +270,7 @@ function DirectivesWorkspaceBody({
               message="Declare a Directive to start moving your nation."
               action={
                 !readOnly && (
-                  <Button className="max-sm:h-11" onClick={() => setView("new")}>
+                  <Button variant="outline" className="max-sm:h-11" onClick={() => setView("new")}>
                     <Plus aria-hidden="true" /> Declare Directive
                   </Button>
                 )

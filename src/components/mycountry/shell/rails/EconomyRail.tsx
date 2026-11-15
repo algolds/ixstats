@@ -8,8 +8,8 @@ import { formatSovereigns } from "~/lib/exchange/amounts";
 import { economyTabHref } from "~/lib/mycountry/routes";
 import { cn } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import { FiscalPolicyInsights } from "../FiscalPolicyConsole";
-import { TradeCommerceInsights } from "../TradeCommerceConsole";
+import { FiscalPolicyInsights } from "../fiscal/FiscalPolicyInsights";
+import { TradeCommerceInsights } from "../trade-commerce/TradeCommerceInsights";
 import { RailCard, RailCount, RailRow, STATUS_TEXT } from "./shared";
 
 function signedShiftPct(shift: number): string {
