@@ -163,9 +163,10 @@ describe("Halo under Reduce Motion", () => {
 });
 
 describe("Halo navigation activity", () => {
-  it("keeps the compact island mounted with Search and announces loading status", () => {
+  it("keeps the compact island mounted with Search and announces loading status", async () => {
     reducedMotion = false;
     render(<CommandPalette />);
+    await act(async () => {});
 
     expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument();
     expect(screen.queryByRole("status")).toBeNull();
