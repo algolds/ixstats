@@ -8,7 +8,7 @@ const walk = (d: string): string[] =>
     .flatMap((e) =>
       e.isDirectory()
         ? walk(path.join(d, e.name))
-        : e.name.endsWith(".tsx")
+        : /\.(?:ts|tsx)$/.test(e.name)
           ? [path.join(d, e.name)]
           : []
     );
@@ -26,6 +26,10 @@ const STILL: Record<string, RegExp> = {
   inlineSeconds: /\bduration:\s*\d*\.\d+/,
   glowAnimation: /animate-(?:flash-notification|di-critical|di-nav-pulse)/,
   shoutedCopy: /"(?:FULL TIME|LIVE)"/,
+  rawZIndex: /\bz-(?:10|20|30|40|50)\b/,
+  negativeZIndex: /(?:^|[\s"'`])-z-\d/,
+  layerShadow: /\bshadow-(?:card|floating|sheet)\b/,
+  hexAlphaConcat: /\$\{[^}]+\}[0-9a-fA-F]{2}\b/,
 };
 
 it.each(Object.keys(STILL))("Halo has no %s", (name) => {
