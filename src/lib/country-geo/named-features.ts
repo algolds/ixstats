@@ -1,5 +1,9 @@
 import { findSubdivisionAtPoint } from "./spatial";
 import { polylineLengthKm, geometryAreaSqKm } from "~/lib/maps/geo-math";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
 
 export async function upsertPeak(db: any, countryId: string, data: any): Promise<any> {
   const { validatePointContainment, snapPointToCountryBorder } =
@@ -51,7 +55,7 @@ export async function upsertPeak(db: any, countryId: string, data: any): Promise
         elevation: data.elevation,
         prominence: data.prominence,
         subdivisionId: data.subdivisionId,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiUpdate(data, existing),
         status: "approved",
       },
     });
@@ -64,7 +68,7 @@ export async function upsertPeak(db: any, countryId: string, data: any): Promise
         elevation: data.elevation,
         prominence: data.prominence,
         subdivisionId: data.subdivisionId,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiCreate(data),
         status: "approved",
         submittedBy: data.submittedBy || "owner",
       },
@@ -120,7 +124,7 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
         name: data.name,
         geometry: data.geometry,
         lengthKm: data.lengthKm,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiUpdate(data, existing),
         status: "approved",
       },
     });
@@ -131,7 +135,7 @@ export async function upsertNamedRiver(db: any, countryId: string, data: any): P
         name: data.name,
         geometry: data.geometry,
         lengthKm: data.lengthKm,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiCreate(data),
         status: "approved",
         submittedBy: data.submittedBy || "owner",
       },
@@ -181,7 +185,7 @@ export async function upsertNamedLake(db: any, countryId: string, data: any): Pr
         geometry: data.geometry,
         areaSqKm: data.areaSqKm,
         maxDepthM: data.maxDepthM,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiUpdate(data, existing),
         status: "approved",
       },
     });
@@ -193,7 +197,7 @@ export async function upsertNamedLake(db: any, countryId: string, data: any): Pr
         geometry: data.geometry,
         areaSqKm: data.areaSqKm,
         maxDepthM: data.maxDepthM,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiCreate(data),
         status: "approved",
         submittedBy: data.submittedBy || "owner",
       },

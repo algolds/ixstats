@@ -1,11 +1,11 @@
 /**
- * Cuelume — IxStates' synthesized Web Audio cues.
+ * Cuelume — IxStates' synthesized Web Audio cues (cuelume 0.2.8: fourteen cues named for their job,
+ * with emphasis).
  *
- * Policy: on by default at master 0.25, but only **meaningful moments** make sound —
- * success, error, destructive confirm, sheet/dialog present & dismiss, Vault reveals, Halo
- * notifications and page arrival. No hover ticks, per-button presses, tab or select ticks.
- * Use the semantic {@link soundCues}; `soundEffects` is the raw palette kept for callers that
- * have not migrated yet.
+ * Policy: on by default at master 0.25, but only **meaningful moments** make sound — success,
+ * error, warning, destructive confirm, sheet/dialog present & dismiss, Vault reveals, Halo
+ * notifications, things that need an answer, and page arrival. No hover, per-button press,
+ * toggle, tab or select sounds. Play them only through {@link soundCues}.
  *
  * Muting (checked at play time, so it follows the live preference attributes on <html>):
  *  - the one mute toggle — `ixstates:sound-enabled` in localStorage (`setSoundEnabled`), mirrored
@@ -18,11 +18,12 @@ import {
   play as cuelumePlay,
   setEnabled as cuelumeSetEnabled,
   setVolume as cuelumeSetVolume,
-  sounds as cuelumeSounds,
+  unlock as cuelumeUnlock,
+  type Emphasis,
   type SoundName,
 } from "cuelume";
 
-export { sounds, type SoundName } from "cuelume";
+export { sounds, type Emphasis, type SoundName } from "cuelume";
 
 export const SOUND_STORAGE_KEYS = {
   ENABLED: "ixstates:sound-enabled",
@@ -89,56 +90,15 @@ export function isSoundMuted(): boolean {
   return !getStoredSoundSettings().enabled;
 }
 
-const SOUND_NAMES: ReadonlySet<string> = new Set(cuelumeSounds);
-
-function isSoundName(value: string | null): value is SoundName {
-  return value !== null && SOUND_NAMES.has(value);
-}
-
 /**
- * Delegated `data-cuelume-press` / `data-cuelume-release` / `data-cuelume-toggle` handling,
- * routed through {@link playSound} so the mute rules apply. `data-cuelume-hover` is deliberately
- * not bound — hover ticks are retired. Primitives no longer set these attributes; the
- * mechanism stays for the few meaningful feature-level cues that still use it.
- */
-function bindDelegatedCues(root: Document): void {
-  const bindings: [keyof DocumentEventMap, string, SoundName][] = [
-    ["pointerdown", "data-cuelume-press", "press"],
-    ["pointerup", "data-cuelume-release", "release"],
-    ["click", "data-cuelume-toggle", "toggle"],
-  ];
-  for (const [eventName, attr, fallback] of bindings) {
-    root.addEventListener(
-      eventName,
-      (event) => {
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const element = target.closest(`[${attr}]`);
-        if (!element) return;
-        const requested = element.getAttribute(attr);
-        playSound(isSoundName(requested) ? requested : fallback);
-      },
-      true
-    );
-  }
-}
-
-/**
- * Initializes the cuelume engine with persisted settings and binds the delegated listeners.
+ * Initializes the cuelume engine with the persisted settings.
  */
 export function initializeSoundEngine(): void {
   if (typeof window === "undefined" || isSoundInitialized) return;
-
   const { enabled, volume } = getStoredSoundSettings();
   cuelumeSetEnabled(enabled);
   cuelumeSetVolume(volume);
-
-  try {
-    bindDelegatedCues(document);
-    isSoundInitialized = true;
-  } catch (err) {
-    console.warn("[SoundEngine] Failed to bind cuelume listeners:", err);
-  }
+  isSoundInitialized = true;
 }
 
 /**
@@ -147,6 +107,8 @@ export function initializeSoundEngine(): void {
  */
 export function setSoundEnabled(enabled: boolean): void {
   cuelumeSetEnabled(enabled);
+  // Called from the gesture that turns sound on: some browsers start audio only there.
+  if (enabled) void cuelumeUnlock();
   if (typeof window !== "undefined") {
     try {
       localStorage.setItem(SOUND_STORAGE_KEYS.ENABLED, String(enabled));
@@ -176,7 +138,10 @@ export function setSoundVolume(volume: number): void {
 /**
  * Plays a sound unless muted ({@link isSoundMuted}), with optional volume scaling.
  */
-export function playSound(name: SoundName, options?: { volume?: number }): void {
+export function playSound(
+  name: SoundName,
+  options?: { volume?: number; emphasis?: Emphasis }
+): void {
   if (typeof window === "undefined" || isSoundMuted()) return;
   try {
     cuelumePlay(name, options);
@@ -186,53 +151,28 @@ export function playSound(name: SoundName, options?: { volume?: number }): void 
 }
 
 /**
- * The meaningful moments — the only cues new code should play.
+ * The meaningful moments — the only cues the app plays. Each takes an optional emphasis: `subtle`
+ * for a toast or a small confirmation, `strong` when the moment matters more.
  */
 export const soundCues = {
   /** A sheet or dialog is presented. */
-  present: () => playSound("bloom", { volume: 0.16 }),
-  /** A sheet or dialog is dismissed. */
-  dismiss: () => playSound("droplet", { volume: 0.18 }),
+  present: (emphasis?: Emphasis) => playSound("open", { volume: 0.16, emphasis }),
+  /** A sheet, dialog or notification is dismissed. */
+  dismiss: (emphasis?: Emphasis) => playSound("close", { volume: 0.18, emphasis }),
   /** An operation succeeded. */
-  success: () => playSound("success", { volume: 0.2 }),
+  success: (emphasis?: Emphasis) => playSound("success", { volume: 0.2, emphasis }),
+  /** Done, but it needs a look. */
+  warning: (emphasis?: Emphasis) => playSound("warning", { volume: 0.18, emphasis }),
   /** An operation failed. */
-  error: () => playSound("error", { volume: 0.2 }),
+  error: (emphasis?: Emphasis) => playSound("error", { volume: 0.2, emphasis }),
   /** A destructive action was confirmed. */
-  destructive: () => playSound("pulse", { volume: 0.18 }),
+  destructive: () => playSound("close", { volume: 0.18, emphasis: "strong" }),
   /** Arrived on a new page (client navigation). */
-  arrival: () => playSound("arrival", { volume: 0.14 }),
+  arrival: (emphasis?: Emphasis) => playSound("navigate", { volume: 0.14, emphasis }),
   /** A Vault reveal (pack opening, rare card). */
-  reveal: () => playSound("sparkle", { volume: 0.2 }),
-  /** A Halo notification arrived. */
-  notify: () => playSound("chime", { volume: 0.16 }),
+  reveal: () => playSound("success", { volume: 0.2, emphasis: "strong" }),
+  /** A Halo notification or a new message arrived. */
+  notify: (emphasis?: Emphasis) => playSound("ready", { volume: 0.16, emphasis }),
+  /** Something is blocked until the user answers (a critical notice). */
+  attention: () => playSound("attention", { volume: 0.18 }),
 } as const;
-/**
- * Raw palette (legacy). Prefer {@link soundCues}; hover/press/tick cues are retired and
- * remain only until feature code migrates.
- */
-export const soundEffects = {
-  // Tactile Chrome
-  press: (vol?: number) => playSound("press", { volume: vol ?? 0.18 }),
-  release: (vol?: number) => playSound("release", { volume: vol ?? 0.18 }),
-  toggle: (vol?: number) => playSound("toggle", { volume: vol ?? 0.2 }),
-  tick: (vol?: number) => playSound("tick", { volume: vol ?? 0.12 }),
-  chime: (vol?: number) => playSound("chime", { volume: vol ?? 0.16 }),
-  whisper: (vol?: number) => playSound("whisper", { volume: vol ?? 0.12 }),
-
-  // Motion & Expansions
-  bloom: (vol?: number) => playSound("bloom", { volume: vol ?? 0.16 }),
-  droplet: (vol?: number) => playSound("droplet", { volume: vol ?? 0.18 }),
-  page: (vol?: number) => playSound("page", { volume: vol ?? 0.15 }),
-  scan: (vol?: number) => playSound("scan", { volume: vol ?? 0.16 }),
-
-  // Async & Work Cycles
-  loading: (vol?: number) => playSound("loading", { volume: vol ?? 0.14 }),
-  ready: (vol?: number) => playSound("ready", { volume: vol ?? 0.18 }),
-  arrival: (vol?: number) => playSound("arrival", { volume: vol ?? 0.14 }),
-
-  // Status & Outcomes
-  pulse: (vol?: number) => playSound("pulse", { volume: vol ?? 0.16 }),
-  sparkle: (vol?: number) => playSound("sparkle", { volume: vol ?? 0.2 }),
-  success: (vol?: number) => playSound("success", { volume: vol ?? 0.2 }),
-  error: (vol?: number) => playSound("error", { volume: vol ?? 0.2 }),
-};

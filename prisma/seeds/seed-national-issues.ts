@@ -6,10 +6,10 @@
  * This script upserts all templates (keyed by slug) so it's safe to run multiple times.
  */
 
-import { PrismaClient } from "@prisma/client";
 import { NATIONAL_ISSUE_TEMPLATES } from "./national-issue-templates";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log(`Seeding ${NATIONAL_ISSUE_TEMPLATES.length} national issue templates...`);

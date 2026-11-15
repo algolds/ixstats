@@ -785,9 +785,10 @@ describe("sanitizeWikiArticleHtml bounds the depth it sanitizes", () => {
     ["one attribute that holds 450 of them", `<p title="${"&lt;s&gt;".repeat(450)}">x</p>`],
     ["450 attributes that hold one each", '<p title="&lt;s&gt;">x</p>'.repeat(450)],
   ])("sanitizes a page with `<s>` in %s normally, and again", (_name, page) => {
-    // the serializer leaves `<` unescaped in an attribute value, so the second pass meets `<s>` in the attribute text
+    // the serializer escapes `<` in an attribute value (parse5 8, as the HTML spec has since 2025), so the second
+    // pass reads the same escaped text and a raw `<s>` never reaches the attribute
     const once = sanitizeWikiArticleHtml(page);
-    expect(once).toContain('<p title="<s>');
+    expect(once).toContain('<p title="&lt;s&gt;');
     expect(once.startsWith("<pre")).toBe(false);
     const twice = sanitizeWikiArticleHtml(once);
     expect(twice).toBe(once);

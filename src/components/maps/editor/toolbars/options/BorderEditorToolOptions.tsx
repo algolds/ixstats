@@ -19,7 +19,6 @@ import {
 } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import type { BorderEditorState, BorderEditorActions } from "~/hooks/useBorderEditor";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Slider } from "~/components/ui/slider";
 import { BorderAreaText } from "~/components/maps/editor/components/BorderAreaText";
 
@@ -92,19 +91,19 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
       layer="chrome"
       role="toolbar"
       aria-label="Border editor options"
-      className="pointer-events-auto flex h-9 shrink-0 items-center justify-between rounded-none px-3"
+      className="facet-chrome-subtle pointer-events-auto flex h-9 shrink-0 items-center justify-between rounded-none border-x-0 border-t-0 px-3 shadow-none"
     >
       <div className="flex items-center gap-2">
         <div className="border-separator mr-2 flex items-center gap-2 border-r pr-2">
-          <Scissors className="text-label-secondary h-3.5 w-3.5" />
+          <Scissors className="text-tint h-3.5 w-3.5" />
           <span className="text-label text-caption font-semibold">
-            Border Editor ({countryName || "unnamed"})
+            Border editor ({countryName || "unnamed"})
           </span>
         </div>
 
         {borderState.mode === "brush" && (
           <div className="flex items-center gap-2">
-            <Eyebrow>Brush size</Eyebrow>
+            <span className="text-label-secondary text-caption">Brush size</span>
             <Slider
               aria-label="Brush size"
               min={1}
@@ -171,9 +170,11 @@ export const BorderEditorToolOptions = React.memo(function BorderEditorToolOptio
         <div className="bg-separator h-4 w-px" />
 
         <Popover>
-          <PopoverTrigger className="bg-fill-3 text-label-secondary hover:bg-fill-3 hover:text-label text-caption rounded-control-sm flex h-6 cursor-pointer items-center gap-1 px-2 transition-colors">
-            <Wrench className="h-3 w-3" />
-            <span>Advanced</span>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="xs" className="text-label-secondary">
+              <Wrench className="h-3 w-3" />
+              <span>Advanced</span>
+            </Button>
           </PopoverTrigger>
           <PopoverContent className="rounded-control-sm w-48 p-2" align="end">
             <div className="flex flex-col gap-1">

@@ -9,6 +9,7 @@ import {
   type DraftLayerKey,
 } from "~/lib/maps/world-draft-layers";
 import type { WorldGenResult } from "~/lib/worldgen/worker/world-messages";
+import { onFlatModeChange } from "~/lib/maps/flat-map-adapter";
 
 /** What the Studio adds to the preview; all of it is optional and none of it regenerates the world. */
 export type WorldOverlays = {
@@ -48,8 +49,11 @@ export function useWorldPreview(
     draft.current = current;
     const onStyleData = () => current.sync();
     map.on("styledata", onStyleData);
+    // A switch to or from flat re-pushes the draft in that projection's coordinates and images
+    const offFlat = onFlatModeChange(map, onStyleData);
     return () => {
       map.off("styledata", onStyleData);
+      offFlat();
       current.clear();
       draft.current = null;
     };

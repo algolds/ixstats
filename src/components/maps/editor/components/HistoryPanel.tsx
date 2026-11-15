@@ -1,6 +1,8 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils/cn";
 import React from "react";
 import { ClockRotateRight as History, Map, KeyCommand } from "iconoir-react";
 import type { EditorAction, EditorHistory } from "~/hooks/map-editor/useMapHistory";
@@ -44,7 +46,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
   };
 
   return (
-    <div className="bg-surface text-label flex h-full flex-col select-none">
+    <div className="text-label flex h-full flex-col select-none">
       <div className="border-separator text-footnote flex items-center justify-between border-b px-3 py-2">
         <div className="text-label-secondary flex items-center gap-2 font-medium">
           <History className="h-3.5 w-3.5" />
@@ -67,16 +69,19 @@ export const HistoryPanel = React.memo(function HistoryPanel({
         )}
 
         <div className="space-y-1">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => handleItemClick(-1)}
             disabled={isMutating}
             aria-current={position === -1 ? "step" : undefined}
-            className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
+            className={cn(
+              "group rounded-control text-caption relative flex h-auto w-full items-center justify-start gap-2 px-2 py-2 text-left font-normal",
               position === -1
-                ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
+                ? "bg-tint-fill text-tint-ink ring-tint/30 hover:bg-tint-fill font-semibold ring-1"
                 : "text-label-secondary hover:bg-fill-3 hover:text-label"
-            }`}
+            )}
           >
             <div
               className={`text-footnote relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors ${
@@ -91,7 +96,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
               <span className="truncate">Initial state</span>
               {position === -1 && <Badge variant="default">Current</Badge>}
             </div>
-          </button>
+          </Button>
 
           {actions.map((action, idx) => {
             const isActive = idx <= position;
@@ -100,19 +105,22 @@ export const HistoryPanel = React.memo(function HistoryPanel({
             const timeStr = timeAgo(action.timestamp);
 
             return (
-              <button
+              <Button
                 key={`${action.featureId}-${idx}`}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => handleItemClick(idx)}
                 disabled={isMutating}
                 aria-current={isCurrent ? "step" : undefined}
-                className={`group rounded-control text-caption relative flex w-full items-center gap-2 px-2 py-2 text-left transition-[color,background-color,border-color,box-shadow,opacity] ${
+                className={cn(
+                  "group rounded-control text-caption relative flex h-auto w-full items-center justify-start gap-2 px-2 py-2 text-left font-normal",
                   isCurrent
-                    ? "bg-tint-fill text-tint ring-tint/30 font-semibold ring-1"
+                    ? "bg-tint-fill text-tint-ink ring-tint/30 hover:bg-tint-fill font-semibold ring-1"
                     : isActive
                       ? "text-label hover:bg-fill-3"
                       : "text-label-tertiary hover:bg-fill-4 hover:text-label-secondary"
-                }`}
+                )}
               >
                 <div
                   className={`text-footnote relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors ${
@@ -143,7 +151,7 @@ export const HistoryPanel = React.memo(function HistoryPanel({
                     </span>
                   )}
                 </div>
-              </button>
+              </Button>
             );
           })}
 

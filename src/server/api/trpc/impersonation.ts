@@ -8,10 +8,7 @@ import { Cache } from "~/lib/cache";
 import { isDatabaseReadOnly } from "~/server/db";
 
 type PlayAsDeniedReason =
-  | "not-staff"
-  | "target-is-system-owner"
-  | "target-not-found"
-  | "target-outranks";
+  "not-staff" | "target-is-system-owner" | "target-not-found" | "target-outranks";
 
 type PlayAsDecision =
   | { kind: "none" }
@@ -117,6 +114,8 @@ export const PLAY_AS_MONEY_ROUTES = [
   "sports.resetSeason",
   "sports.regenerateSchedule",
   "sports.placePrediction",
+  // An admin's result override settles that match's predictions
+  "sports.overrideMatchResult",
   "sports.simulateMatchDay",
   "sports.simulateSingleMatch",
   "sports.simulateFullSeason",

@@ -56,19 +56,19 @@ type OfficialKind = "system" | "lorebot";
 const OFFICIAL_THREADS = {
   system: {
     title: "System Messages",
-    status: "Broadcast Channel",
-    subtitle: "Platform broadcasts, simulation digests & system dispatches",
+    status: "Broadcast channel",
+    subtitle: "Platform broadcasts, simulation digests and system dispatches",
     Icon: Shield,
     iconWrapClass: "bg-yellow/15",
-    iconClass: "text-yellow",
+    iconClass: "text-yellow-ink",
   },
   lorebot: {
     title: "LoreBot",
-    status: "WikiOS Activity Feed",
-    subtitle: "WikiOS activity stream, watchlist updates & lore dispatches",
+    status: "WikiOS activity feed",
+    subtitle: "WikiOS activity stream, watchlist updates and lore dispatches",
     Icon: BookOpen,
     iconWrapClass: "bg-teal/15",
-    iconClass: "text-teal",
+    iconClass: "text-teal-ink",
   },
 } as const;
 
@@ -108,7 +108,8 @@ function getDirectView(
     title:
       identity?.displayName ??
       (conversation.name || other?.displayName || other?.username || "Direct Message"),
-    subtitle: participantStatus || "Active now",
+    // Presence only when known: an offline or hidden person gets no status line.
+    subtitle: participantStatus === "online" ? "Online" : undefined,
     avatarUrl: identity?.avatar || other?.countryFlag || other?.profileImageUrl,
   };
 }
@@ -136,7 +137,7 @@ function getThreadView(
       ...base,
       identity: null,
       title: conversation.name || "ThinkTank",
-      subtitle: `${others.length + 1} members • Group Chat`,
+      subtitle: `${others.length + 1} members`,
       avatarUrl: conversation.avatar,
     };
   }
@@ -153,7 +154,11 @@ function ThreadAvatar({ view }: { view: ReturnType<typeof getThreadView> }) {
       </div>
     );
   }
-  if (avatarUrl && other?.countryFlag) {
+  if (
+    avatarUrl &&
+    other?.countryFlag &&
+    normalizeFlagUrl(avatarUrl) === normalizeFlagUrl(other.countryFlag)
+  ) {
     return (
       <div className="border-separator bg-fill-4 rounded-control relative flex size-9 items-center justify-center overflow-hidden border">
         <UnifiedCountryFlag
@@ -199,14 +204,11 @@ function ThreadInfo({
     <>
       <div className="relative shrink-0">
         <ThreadAvatar view={view} />
-        {isDirect && (
+        {isDirect && participantStatus === "online" && (
           <span
-            className={cn(
-              "ring-surface absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2",
-              participantStatus?.toLowerCase().includes("online")
-                ? "bg-success"
-                : "bg-label-tertiary"
-            )}
+            className="ring-surface bg-success absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full ring-2"
+            role="img"
+            aria-label="Online"
           />
         )}
       </div>
@@ -227,7 +229,7 @@ function ThreadInfo({
           )}
           {isGroup && <Badge variant="secondary">Group chat</Badge>}
         </div>
-        <p className="text-footnote text-label-secondary truncate">{subtitle}</p>
+        {subtitle && <p className="text-footnote text-label-secondary truncate">{subtitle}</p>}
       </div>
     </>
   );
@@ -264,7 +266,7 @@ function ConversationMenu({
       : onDeleteConversation && {
           onClick: onDeleteConversation,
           Icon: Trash,
-          label: isGroup ? "Leave Group" : "Delete Thread",
+          label: isGroup ? "Leave group" : "Delete thread",
         };
 
   return (
@@ -287,13 +289,13 @@ function ConversationMenu({
           {onMuteToggle && !isSystemThread && (
             <DropdownMenuItem onClick={onMuteToggle}>
               <BellOff />
-              <span>{isMuted ? "Unmute Thread" : "Mute Thread"}</span>
+              <span>{isMuted ? "Unmute thread" : "Mute thread"}</span>
             </DropdownMenuItem>
           )}
           {onArchiveToggle && !isSystemThread && (
             <DropdownMenuItem onClick={onArchiveToggle}>
               <Archive />
-              <span>{isArchived ? "Unarchive Thread" : "Archive Thread"}</span>
+              <span>{isArchived ? "Unarchive thread" : "Archive thread"}</span>
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
@@ -355,7 +357,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
             variant="ghost"
             size="icon"
             onClick={onBack}
-            className="text-label-secondary mr-1 -ml-1 size-8 shrink-0"
+            className="text-label-secondary mr-1 -ml-1 size-8 shrink-0 lg:hidden"
             title="Back to conversation list"
             aria-label="Back to conversation list"
           >
@@ -370,7 +372,7 @@ export const MessagesChatHeader: React.FC<MessagesChatHeaderProps> = ({
               containerClassName="flex-1"
               value={searchQuery}
               onChange={handleSearchChange}
-              placeholder="Search in conversation..."
+              placeholder="Search in conversation"
               aria-label="Search in conversation"
             />
             <Button variant="ghost" size="icon-sm" onClick={clearSearch} aria-label="Close search">

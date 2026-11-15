@@ -25,7 +25,7 @@ export function ListingRow({ item, onOpenCard, onShowSelling, onBuy }: ListingRo
     timeLeftPhrase(item.endsAt),
   ].filter(Boolean);
   return (
-    <li className="flex flex-wrap items-center gap-3 px-4 py-3">
+    <li data-row className="flex flex-wrap items-center gap-3 px-4 py-3">
       <CardFace face={face} size="S" className="w-20" onOpen={() => onOpenCard(face.cardId)} />
       <div className="min-w-0 flex-1 space-y-1">
         <MarketRowTitle title={face.title} featured={item.isFeatured} />

@@ -157,11 +157,30 @@ export const editorProcedures = {
         governmentType: true,
         currentPopulation: true,
         currentGdpPerCapita: true,
+        currentTotalGdp: true,
+        governmentRevenueTotal: true,
         baselinePopulation: true,
         baselineGdpPerCapita: true,
         inflationRate: true,
         unemploymentRate: true,
         totalDebtGDPRatio: true,
+        fiscalSystem: {
+          select: {
+            corporateTaxRates: true,
+            personalIncomeTaxRates: true,
+            salesTaxRate: true,
+            exciseTaxRates: true,
+            wealthTaxRate: true,
+            taxEfficiency: true,
+          },
+        },
+        economicProfile: {
+          select: {
+            sectorBreakdown: true,
+            exportsGDPPercent: true,
+            importsGDPPercent: true,
+          },
+        },
         nationalIdentity: {
           select: {
             ...(Object.fromEntries(EDITOR_IDENTITY_KEYS.map((key) => [key, true])) as Record<

@@ -15,15 +15,15 @@ export interface CustomSector {
 }
 
 export const ACCENT_BG: Record<AccentColor, string> = {
-  emerald: "bg-green",
-  cyan: "bg-cyan",
-  amber: "bg-yellow",
-  indigo: "bg-indigo",
-  red: "bg-red",
-  blue: "bg-blue",
-  purple: "bg-indigo",
-  rose: "bg-red",
-  teal: "bg-cyan",
+  blue: "bg-chart-1",
+  amber: "bg-chart-2",
+  emerald: "bg-chart-3",
+  purple: "bg-chart-4",
+  indigo: "bg-chart-4",
+  rose: "bg-chart-5",
+  teal: "bg-chart-6",
+  cyan: "bg-chart-6",
+  red: "bg-chart-8",
 };
 
 import { formatCompact } from "~/lib/format/compact";
@@ -31,7 +31,7 @@ import type { RecordedSector } from "~/lib/economy/sector-breakdown";
 
 export { formatCompact };
 
-const SECTOR_ACCENTS: AccentColor[] = ["emerald", "cyan", "amber", "indigo", "red", "blue"];
+const SECTOR_ACCENTS: AccentColor[] = ["blue", "amber", "emerald", "purple", "rose", "teal"];
 
 /**
  * Seed the tariff planner from the nation's recorded sectors (`parseSectorBreakdown`), weighting

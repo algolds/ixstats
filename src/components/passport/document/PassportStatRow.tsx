@@ -10,10 +10,28 @@ interface PassportStatRowProps {
   realmCount: number;
   nationCount: number;
   joinedAt: string | null;
-  onOpenLorewards: () => void;
+  /** `compact` renders static text with no inner button so the whole compact face can be one link. */
+  size?: "page" | "compact";
+  onOpenLorewards?: () => void;
 }
 
 const CELL = "text-subhead flex min-h-11 items-center gap-2 tabular-nums";
+
+function LorewardsStanding({
+  lorewards,
+}: {
+  lorewards: { totalScore: number; rank: number | null };
+}) {
+  return (
+    <>
+      {lorewards.rank !== null && (
+        <span className="text-tint font-semibold">#{lorewards.rank.toLocaleString()}</span>
+      )}{" "}
+      <span className="text-label">Lorewards</span>{" "}
+      <span className="text-label-secondary">· {lorewards.totalScore.toLocaleString()} pts</span>
+    </>
+  );
+}
 
 /**
  * The front face's three facts: Lorewards standing, realm and nation counts, and the join month.
@@ -24,11 +42,26 @@ export const PassportStatRow = React.memo(function PassportStatRow({
   realmCount,
   nationCount,
   joinedAt,
+  size = "page",
   onOpenLorewards,
 }: PassportStatRowProps) {
   const holdings = realmsAndNations(realmCount, nationCount);
   const since = sinceLabel(joinedAt);
   if (!lorewards && !holdings && !since) return null;
+
+  if (size === "compact") {
+    return (
+      <p className="text-footnote text-label-secondary border-separator flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2 tabular-nums">
+        {lorewards && (
+          <span>
+            <LorewardsStanding lorewards={lorewards} />
+          </span>
+        )}
+        {holdings && <span className="text-label">{holdings}</span>}
+        {since && <span>{since}</span>}
+      </p>
+    );
+  }
 
   return (
     // Below lg the cells wrap with plain gaps; from lg the stat column always fits all three, and a
@@ -46,13 +79,7 @@ export const PassportStatRow = React.memo(function PassportStatRow({
               "rounded-control hover:bg-fill-3 focus-visible:outline-tint -ml-2 px-2 transition-colors focus-visible:outline-2"
             )}
           >
-            {lorewards.rank !== null && (
-              <span className="text-tint font-semibold">#{lorewards.rank.toLocaleString()}</span>
-            )}{" "}
-            <span className="text-label">Lorewards</span>{" "}
-            <span className="text-label-secondary">
-              · {lorewards.totalScore.toLocaleString()} pts
-            </span>
+            <LorewardsStanding lorewards={lorewards} />
           </button>
         </div>
       )}

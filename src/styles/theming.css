@@ -36,15 +36,6 @@
       0 0 40px color-mix(in srgb, var(--country-primary) 12%, rgba(0, 0, 0, 0));
   }
 
-  /* Chart theming for country pages */
-  .country-themed [data-chart] {
-    --chart-1: var(--country-primary);
-    --chart-2: var(--country-secondary);
-    --chart-3: var(--country-accent);
-    --chart-4: var(--country-tertiary);
-    --chart-5: color-mix(in srgb, var(--country-primary) 70%, var(--country-secondary) 30%);
-  }
-
   /* Aurora background (LiveGameBanner). Decorative only: it never sets
      position/z-index — the caller positions it. */
   .aurora-bg {

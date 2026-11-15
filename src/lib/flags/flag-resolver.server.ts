@@ -16,6 +16,7 @@ import {
 import { fetchMediaWikiImageBatch } from "~/lib/wiki-os/adapters/mediawiki/bridge";
 import { getMediaWikiApiUrl } from "~/lib/wiki-os/config";
 import { withBasePath } from "~/lib/base-path";
+import { mapWithConcurrency } from "~/lib/utils/map-with-concurrency";
 import { localFlagCache } from "./local-flag-cache.server";
 
 interface CacheEntry {
@@ -25,6 +26,8 @@ interface CacheEntry {
 
 const DEFAULT_POSITIVE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const DEFAULT_NEGATIVE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const MEMORY_CACHE_MAX = 2000;
+const BATCH_CONCURRENCY = 8;
 const PLACEHOLDER_PATH = "/images/flags/placeholder.svg";
 
 export class ServerFlagResolver implements FlagResolver {
@@ -114,6 +117,10 @@ export class ServerFlagResolver implements FlagResolver {
 
       const ttl = resolution.isPlaceholder ? DEFAULT_NEGATIVE_TTL_MS : DEFAULT_POSITIVE_TTL_MS;
 
+      // ponytail: FIFO cap, not LRU; swap for an LRU if hit rates matter
+      if (this.memoryCache.size >= MEMORY_CACHE_MAX && !this.memoryCache.has(cacheKey)) {
+        this.memoryCache.delete(this.memoryCache.keys().next().value as string);
+      }
       this.memoryCache.set(cacheKey, {
         resolution,
         expiresAt: Date.now() + ttl,
@@ -232,12 +239,10 @@ export class ServerFlagResolver implements FlagResolver {
     const results = new Map<string, FlagResolution>();
     if (!countryNames.length) return results;
 
-    const promises = countryNames.map(async (name) => {
+    const settled = await mapWithConcurrency(countryNames, BATCH_CONCURRENCY, async (name) => {
       const res = await this.resolve(name, options);
       return { name, res };
     });
-
-    const settled = await Promise.all(promises);
     for (const { name, res } of settled) {
       results.set(name, res);
     }

@@ -60,37 +60,75 @@ export async function notifyClubMatchResult(
       );
     }
 
-    // 2. Durable record in a per-user system DM channel.
-    let convo = await prisma.thinkshareConversation.findFirst({
-      where: { source: "sports", sourceId: userId },
-      select: { id: true },
-    });
-    if (!convo) {
-      convo = await prisma.thinkshareConversation.create({
-        data: {
-          type: "system",
-          name: "Sports Desk",
-          source: "sports",
-          sourceId: userId,
-          participants: { create: { userId } },
-        },
-        select: { id: true },
-      });
-    }
+    // 2. Durable record in a per-user system DM channel. ThinkShare participants are Clerk ids, while the
+    //    club owner is held by their internal User id, so the record is keyed on the Clerk id.
+    const clerkId = await clerkIdOf(prisma, userId);
+    if (!clerkId) return;
+    const convoId = await sportsDeskFor(prisma, userId, clerkId);
     await prisma.thinkshareMessage.create({
       data: {
-        conversationId: convo.id,
+        conversationId: convoId,
         userId: SPORTS_SENDER_ID,
         content: `${title}\n${body}`,
         isSystem: true,
         messageType: "system",
+        source: "sports",
       },
     });
     await prisma.thinkshareConversation.update({
-      where: { id: convo.id },
+      where: { id: convoId },
       data: { lastActivity: new Date() },
     });
   } catch (err) {
     console.error("[notifyClubMatchResult] failed:", err);
   }
+}
+
+/** The Clerk id of a club owner held by internal User id (or already by Clerk id); null when no such user. */
+async function clerkIdOf(prisma: PrismaClient, ownerId: string): Promise<string | null> {
+  const user = await prisma.user.findFirst({
+    where: { OR: [{ id: ownerId }, { clerkUserId: ownerId }] },
+    select: { clerkUserId: true },
+  });
+  return user?.clerkUserId ?? null;
+}
+
+/**
+ * The owner's Sports Desk conversation, created on first use. One made before the fix is keyed on the internal
+ * id (its source id and its participant): it is moved to the Clerk id, so the owner finally sees it.
+ */
+async function sportsDeskFor(
+  prisma: PrismaClient,
+  ownerId: string,
+  clerkId: string
+): Promise<string> {
+  const keys = ownerId === clerkId ? [clerkId] : [clerkId, ownerId];
+  const existing = await prisma.thinkshareConversation.findFirst({
+    where: { source: "sports", sourceId: { in: keys } },
+    select: { id: true, sourceId: true },
+  });
+  if (!existing) {
+    const created = await prisma.thinkshareConversation.create({
+      data: {
+        type: "system",
+        name: "Sports Desk",
+        source: "sports",
+        sourceId: clerkId,
+        participants: { create: { userId: clerkId } },
+      },
+      select: { id: true },
+    });
+    return created.id;
+  }
+  if (existing.sourceId !== clerkId) {
+    await prisma.conversationParticipant.updateMany({
+      where: { conversationId: existing.id, userId: ownerId },
+      data: { userId: clerkId },
+    });
+    await prisma.thinkshareConversation.update({
+      where: { id: existing.id },
+      data: { sourceId: clerkId },
+    });
+  }
+  return existing.id;
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useId, type RefObject } from "react";
-import { EditPencil, NavArrowLeft, Pin, PinSlash, Plus, Trash } from "iconoir-react";
+import { Album, EditPencil, NavArrowLeft, Pin, PinSlash, Plus, Trash } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import {
   AlertDialog,
@@ -160,15 +161,18 @@ export function ShowcaseView({ showcase, headingRef, onBack, onOpenCard }: Showc
         <OwnerActions showcase={showcase} focusAfterAdd={focusHeading} onDeleted={onBack} />
       )}
       {showcase.items.length === 0 ? (
-        <EmptyState
-          compact
-          title="No cards in this showcase yet"
-          action={
-            showcase.isOwner ? (
-              <AddCards showcase={showcase} focusAfterAdd={focusHeading} />
-            ) : undefined
-          }
-        />
+        <Card>
+          <EmptyState
+            compact
+            icon={<Album />}
+            title="No cards in this showcase yet"
+            action={
+              showcase.isOwner ? (
+                <AddCards showcase={showcase} focusAfterAdd={focusHeading} />
+              ) : undefined
+            }
+          />
+        </Card>
       ) : (
         <CardGrid
           faces={showcase.items.map((item) => item.face)}

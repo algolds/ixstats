@@ -36,6 +36,7 @@ export function formatExpiry(expiresAt: Date | string, now: number = Date.now())
 export const FP_PROPOSAL_LABELS: Record<string, string> = {
   free_trade: "Free trade agreement",
   military_alliance: "Military alliance",
+  summit: "Summit",
 };
 
 export const HOSTILE_ACTION_LABELS: Record<string, string> = {

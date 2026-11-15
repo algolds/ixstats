@@ -4,6 +4,7 @@
 // Onoma Lab: the signed-in user's own language packs (SL-18). Start a draft pack from name bank
 // dictionaries, then publish it to the marketplace (or unlisted) or take it back to draft.
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useMemo, useState } from "react";
 import { Plus, Upload, EyeClosed, WarningTriangle } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -70,7 +71,7 @@ function NewPackForm({ onCreated }: { onCreated: () => void }) {
 
   return (
     <div className="border-separator space-y-3 border-t pt-4">
-      <p className="text-label text-footnote font-semibold">New pack from your dictionaries</p>
+      <p className="text-label text-footnote font-medium">New pack from your dictionaries</p>
       <Input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -86,7 +87,10 @@ function NewPackForm({ onCreated }: { onCreated: () => void }) {
         className="text-footnote min-h-16"
       />
       {isLoading ? (
-        <p className="text-label-secondary text-footnote">Loading your dictionaries...</p>
+        <div className="space-y-2" aria-busy="true" aria-label="Loading your dictionaries">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-4/5" />
+        </div>
       ) : usable.length === 0 ? (
         <p className="text-label-secondary text-footnote">
           Save a dictionary in the name bank first; packs are built from your dictionaries.
@@ -168,7 +172,10 @@ export function MyLanguagePacksPanel() {
       </div>
 
       {isLoading ? (
-        <p className="text-label-secondary text-footnote">Loading your packs...</p>
+        <div className="space-y-3" aria-busy="true" aria-label="Loading your packs">
+          <Skeleton className="rounded-row h-20 w-full" />
+          <Skeleton className="rounded-row h-20 w-full" />
+        </div>
       ) : !packs?.length ? (
         <p className="text-label-secondary text-footnote">
           You have no packs yet. Start one from your dictionaries, or fork a community pack.
@@ -185,7 +192,7 @@ export function MyLanguagePacksPanel() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-label text-callout truncate font-semibold">
+                    <span className="text-label text-callout truncate font-medium">
                       {pack.name}
                     </span>
                     <Badge variant={isDraft ? "default" : "success"}>

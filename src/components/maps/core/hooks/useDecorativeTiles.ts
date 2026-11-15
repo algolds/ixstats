@@ -15,7 +15,9 @@ import {
 export function useDecorativeTiles(
   map: MapLibreMap | null,
   isLoaded: boolean,
-  source?: TileSource
+  source?: TileSource,
+  /** Flat (Plate Carrée) tiles, for a map in flat mode */
+  flat = false
 ) {
   const realmId = source?.realmId;
   const version = source?.version;
@@ -23,7 +25,7 @@ export function useDecorativeTiles(
     if (!map || !isLoaded || realmId === undefined || version === undefined) return;
     const apply = () => {
       for (const layer of TILED_LAYERS) {
-        applyVectorTiles(map, layer, tileUrlTemplate({ realmId, version }, layer));
+        applyVectorTiles(map, layer, tileUrlTemplate({ realmId, version }, layer, flat));
       }
     };
     apply();
@@ -31,5 +33,5 @@ export function useDecorativeTiles(
     return () => {
       map.off("styledata", apply);
     };
-  }, [map, isLoaded, realmId, version]);
+  }, [map, isLoaded, realmId, version, flat]);
 }

@@ -11,7 +11,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -19,6 +18,7 @@ import {
 import type { DepartmentChartItem, RevenueChartItem, BudgetTrendItem } from "./budgetTypes";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Card } from "~/components/ui/card";
+import { FACET_AXIS_TICK, FacetChartTooltip } from "~/components/ui/chart";
 
 interface BudgetOverviewChartsProps {
   overviewChartMode: "allocation" | "trend";
@@ -70,47 +70,96 @@ export function BudgetOverviewCharts({
               The trend appears once budgets are recorded for two or more years.
             </p>
           ) : overviewChartMode === "allocation" ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={departmentChartData}
-                  cx="50%"
-                  cy="45%"
-                  outerRadius="70%"
-                  dataKey="allocated"
-                  nameKey="label"
-                >
-                  {departmentChartData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="flex h-full flex-col items-center gap-4 sm:flex-row">
+              <div className="h-44 w-44 shrink-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={departmentChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={74}
+                      paddingAngle={2}
+                      stroke="none"
+                      dataKey="allocated"
+                      nameKey="name"
+                    >
+                      {departmentChartData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      content={
+                        <FacetChartTooltip
+                          hideLabel
+                          valueFormatter={(value) => formatCurrency(value)}
+                        />
+                      }
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <ul className="divide-separator/60 max-h-full w-full flex-1 divide-y overflow-y-auto pr-1">
+                {departmentChartData.map((entry) => {
+                  const pct = entry.label.slice(entry.name.length).trim();
+                  return (
+                    <li
+                      key={entry.name}
+                      className="text-footnote flex items-center justify-between gap-2 py-1.5 first:pt-0 last:pb-0"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          aria-hidden="true"
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: entry.color }}
+                        />
+                        <span className="text-label truncate">{entry.name}</span>
+                      </span>
+                      <span className="text-label-secondary shrink-0 tabular-nums">
+                        <span className="text-label font-medium">{pct}</span> ·{" "}
+                        {formatCurrency(entry.allocated)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={budgetTrendData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <LineChart data={budgetTrendData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  stroke="var(--color-separator)"
+                />
                 <XAxis
                   dataKey="year"
-                  stroke="currentColor"
-                  className="text-label-secondary text-footnote"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={FACET_AXIS_TICK}
                 />
                 <YAxis
-                  stroke="currentColor"
-                  className="text-label-secondary text-footnote"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={FACET_AXIS_TICK}
                   width={72}
                   tickFormatter={(value: number) => formatCurrency(value)}
                 />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
+                <Tooltip
+                  cursor={{ stroke: "var(--color-separator)", strokeWidth: 1 }}
+                  content={
+                    <FacetChartTooltip valueFormatter={(value) => formatCurrency(value)} />
+                  }
+                />
                 <Line
                   type="monotone"
                   dataKey="budget"
-                  stroke="var(--color-amber-500)"
+                  stroke="var(--color-chart-1)"
                   name="Allocated"
-                  strokeWidth={2}
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 4, fill: "var(--color-chart-1)", strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -129,21 +178,32 @@ export function BudgetOverviewCharts({
             </p>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueChartData}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
+              <BarChart data={revenueChartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+                <CartesianGrid
+                  vertical={false}
+                  strokeDasharray="3 3"
+                  stroke="var(--color-separator)"
+                />
                 <XAxis
                   dataKey="name"
-                  stroke="currentColor"
-                  className="text-label-secondary text-footnote"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={FACET_AXIS_TICK}
                 />
                 <YAxis
-                  stroke="currentColor"
-                  className="text-label-secondary text-footnote"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={FACET_AXIS_TICK}
                   width={72}
                   tickFormatter={(value: number) => formatCurrency(value)}
                 />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                <Tooltip
+                  cursor={{ fill: "var(--color-fill-4)" }}
+                  content={
+                    <FacetChartTooltip valueFormatter={(value) => formatCurrency(value)} />
+                  }
+                />
+                <Bar dataKey="value" name="Revenue" radius={[6, 6, 0, 0]}>
                   {revenueChartData.map((entry, index) => (
                     <Cell key={`revenue-cell-${index}`} fill={entry.color} />
                   ))}

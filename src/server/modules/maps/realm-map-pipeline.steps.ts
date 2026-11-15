@@ -4,7 +4,6 @@
  * (every feature measured again on the realm's planet). Each one is idempotent: a second apply finds nothing to do.
  * The heavier steps have files of their own (realm-map-pipeline.repair/physical/rasters.ts).
  */
-import type { Prisma } from "@prisma/client";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/lib/cache";
 import { isPostGISAvailable } from "~/lib/maps/geo-validation";
 import { EARTH_RADIUS_KM } from "~/lib/maps/planet";
@@ -18,6 +17,7 @@ import {
   type RealmMapDefaultView,
 } from "~/lib/maps/realm-map-settings";
 import { localizeRealmFlags } from "~/server/modules/realms/realms.flags";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 import { artText } from "./realm-map-pipeline.art";
 import {
   capDetails,
@@ -175,14 +175,9 @@ export async function runDefaultViewStep(ctx: StepContext): Promise<StepReport> 
   const stored = parseRealmMapSettings(settings).defaultView;
   const changed = !sameView(stored, auto.view);
   if (changed && !ctx.dryRun) {
-    await ctx.db.realm.update({
-      where: { id: ctx.realm.id },
-      data: {
-        settings: withRealmMapSettings(settings, {
-          defaultView: auto.view,
-        }) as Prisma.InputJsonValue,
-      },
-    });
+    await updateRealmSettings(ctx.db, ctx.realm.id, (current) =>
+      withRealmMapSettings(current, { defaultView: auto.view })
+    );
   }
   const where = `[${auto.view.center.join(", ")}], zoom ${auto.view.zoom}`;
   return {

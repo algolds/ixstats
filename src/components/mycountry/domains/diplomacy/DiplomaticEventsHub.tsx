@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SegmentedControl } from "~/components/ui/segmented-control";
 import {
   Sheet,
   SheetContent,
@@ -115,19 +115,19 @@ function eventTypeConfig(type: string) {
   return EVENT_TYPE_CONFIG[type] ?? { icon: FileText, label: type };
 }
 
-function EventTypeBadge({ type }: { type: string }) {
+function EventTypeLabel({ type }: { type: string }) {
   const { icon: Icon, label } = eventTypeConfig(type);
   return (
-    <Badge variant="outline">
-      <Icon className="h-4 w-4" />
+    <span className="text-label-secondary text-footnote inline-flex items-center gap-1.5">
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
       {label}
-    </Badge>
+    </span>
   );
 }
 
 const URGENCY_CLASS = {
   critical: "text-destructive",
-  warning: "text-yellow",
+  warning: "text-warning",
   normal: "text-label-secondary",
 };
 
@@ -162,25 +162,25 @@ function ImpactPreview({
     { label: "Cultural", value: impact.cultural, suffix: "%" },
   ].filter((i): i is { label: string; value: number; suffix: string } => i.value !== undefined);
   return (
-    <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+    <dl className="border-separator/60 divide-separator/60 mt-2.5 grid grid-cols-3 divide-x border-t pt-2.5">
       {items.map((item) => {
         const up = item.value > 0;
         const Trend = up ? TrendingUp : TrendingDown;
         return (
-          <div key={item.label} className="bg-fill-3 rounded-control p-3 text-center">
+          <div key={item.label} className="px-2 text-center first:pl-0 last:pr-0">
             <dd
               className={cn(
-                "mb-1 flex items-center justify-center gap-1 font-semibold tabular-nums",
-                up ? "text-green" : "text-destructive"
+                "text-footnote mb-0.5 flex items-center justify-center gap-1 font-semibold tabular-nums",
+                up ? "text-success" : "text-destructive"
               )}
             >
-              <Trend className="h-4 w-4" />
+              <Trend className="h-3.5 w-3.5" />
               {up ? "+" : ""}
               {item.value}
               {item.suffix}
             </dd>
             <dt>
-              <span className="text-caption text-label-secondary">{item.label}</span>
+              <span className="text-footnote text-label-secondary">{item.label}</span>
             </dt>
           </div>
         );
@@ -196,8 +196,8 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
       <CardHeader className="p-5 pb-3">
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2">
-              <EventTypeBadge type={event.type} />
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <EventTypeLabel type={event.type} />
               <EventCountdown expiresAt={event.expiresAt} />
             </div>
             <h3 className="text-label text-title-3">{event.title}</h3>
@@ -212,7 +212,7 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
 
         {event.responseOptions && event.responseOptions.length > 0 && (
           <div className="mb-4">
-            <Eyebrow>Potential impacts</Eyebrow>
+            <p className="text-footnote text-label-secondary font-medium">Potential impacts</p>
             <ImpactPreview
               impact={{
                 relationship: first?.relationshipEffect || 0,
@@ -223,8 +223,8 @@ function ActiveEventCard({ event, onOpen }: { event: DiplomaticEvent; onOpen: ()
           </div>
         )}
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="default" className="flex-1" onClick={onOpen}>
+        <div className="flex justify-end gap-2">
+          <Button size="sm" variant="outline" onClick={onOpen}>
             <Eye className="h-4 w-4" />
             View & respond
           </Button>
@@ -241,7 +241,7 @@ function HistoryEventRow({ event }: { event: DiplomaticEvent }) {
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
-            <EventTypeBadge type={event.type} />
+            <EventTypeLabel type={event.type} />
             <Badge variant="default" className="capitalize">
               {event.status}
             </Badge>
@@ -272,7 +272,7 @@ function EventResponseBody({ event }: { event: DiplomaticEvent }) {
           <h4 className="text-label text-headline mb-3">Response options</h4>
           <div className="space-y-3">
             {event.responseOptions.map((option, idx) => (
-              <Card variant="well" key={idx} className="p-4">
+              <div key={idx} className="border-separator/60 rounded-row border p-4">
                 <div className="mb-2 flex items-start justify-between">
                   <h5 className="text-label text-body font-medium">
                     {option.label || `Option ${idx + 1}`}
@@ -291,7 +291,7 @@ function EventResponseBody({ event }: { event: DiplomaticEvent }) {
                     cultural: option.culturalImpact,
                   }}
                 />
-              </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -383,40 +383,44 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="rounded-card p-4">
-        <dl className="grid grid-cols-3 gap-4">
+      <Card content="data" className="rounded-card p-4">
+        <dl className="divide-separator/60 grid grid-cols-3 divide-x">
           {[
             { label: "Active events", value: activeScenarios.length, icon: FileText },
             { label: "Urgent (<24h)", value: urgentCount, icon: Clock },
             { label: "Total resolved", value: scenarioHistory.length, icon: History },
           ].map((stat) => (
-            <div key={stat.label} className="space-y-1">
-              <dt>
-                <Eyebrow className="flex items-center gap-2">
-                  <stat.icon className="h-3.5 w-3.5" />
-                  {stat.label}
-                </Eyebrow>
+            <div key={stat.label} className="space-y-1 px-4 first:pl-0 last:pr-0">
+              <dt className="text-footnote text-label-secondary flex items-center gap-2">
+                <stat.icon className="h-3.5 w-3.5" />
+                {stat.label}
               </dt>
-              <dd className="text-label text-title-1 tabular-nums">{stat.value}</dd>
+              <dd className="text-label text-title-3 tabular-nums">{stat.value}</dd>
             </div>
           ))}
         </dl>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-fill-3 inline-flex flex-wrap gap-1 rounded-full p-1">
-          <TabsTrigger value="active" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Active Events ({activeScenarios.length})
-          </TabsTrigger>
-          <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
-            Event history
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-4">
+        <SegmentedControl
+          asTabs
+          size="sm"
+          aria-label="Diplomatic event views"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          options={[
+            {
+              value: "active",
+              label: "Active events",
+              badge: activeScenarios.length > 0 ? activeScenarios.length : undefined,
+              badgeLabel: activeScenarios.length > 0 ? String(activeScenarios.length) : undefined,
+            },
+            { value: "history", label: "Event history" },
+          ]}
+        />
 
-        <TabsContent value="active" className="space-y-4">
-          {activeScenarios.length > 0 ? (
+        {activeTab === "active" &&
+          (activeScenarios.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {activeScenarios.map((event) => (
                 <ActiveEventCard
@@ -430,59 +434,56 @@ export function DiplomaticEventsHub({ countryId }: DiplomaticEventsHubProps) {
               ))}
             </div>
           ) : (
-            <Card className="rounded-card flex min-h-[240px] items-center justify-center p-6">
-              <div className="space-y-3 text-center">
-                <CheckCircle className="text-label-secondary mx-auto h-6 w-6" />
-                <div>
-                  <h3 className="text-label text-title-3">No active events</h3>
-                  <p className="text-label-secondary text-body mt-1">
-                    There are no diplomatic events to respond to.
-                  </p>
-                </div>
-              </div>
+            <Card className="rounded-card">
+              <EmptyState
+                compact
+                icon={<CheckCircle />}
+                title="No active events"
+                message="There are no diplomatic events to respond to."
+              />
             </Card>
-          )}
-        </TabsContent>
+          ))}
 
-        <TabsContent value="history" className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Filter className="text-label-secondary h-4 w-4" />
-            <Select value={historyFilter} onValueChange={setHistoryFilter}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                {HISTORY_FILTERS.map(([value, label]) => (
-                  <SelectItem key={value} value={value!}>
-                    {label}
-                  </SelectItem>
+        {activeTab === "history" && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Filter className="text-label-secondary h-4 w-4" />
+              <Select value={historyFilter} onValueChange={setHistoryFilter}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HISTORY_FILTERS.map(([value, label]) => (
+                    <SelectItem key={value} value={value!}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <span className="text-label-secondary text-footnote tabular-nums">
+                {filteredHistory.length} events
+              </span>
+            </div>
+
+            {historyLoading ? (
+              <div className="space-y-3" role="status" aria-label="Loading event history">
+                <Skeleton className="rounded-card h-20" />
+                <Skeleton className="rounded-card h-20" />
+              </div>
+            ) : filteredHistory.length > 0 ? (
+              <div className="space-y-3">
+                {filteredHistory.map((event) => (
+                  <HistoryEventRow key={event.id} event={event} />
                 ))}
-              </SelectContent>
-            </Select>
-            <Badge variant="outline">{filteredHistory.length} events</Badge>
-          </div>
-
-          {historyLoading ? (
-            <div className="space-y-3" role="status" aria-label="Loading event history">
-              <Skeleton className="rounded-card h-20" />
-              <Skeleton className="rounded-card h-20" />
-            </div>
-          ) : filteredHistory.length > 0 ? (
-            <div className="space-y-3">
-              {filteredHistory.map((event) => (
-                <HistoryEventRow key={event.id} event={event} />
-              ))}
-            </div>
-          ) : (
-            <Card className="rounded-card flex min-h-[200px] items-center justify-center p-6">
-              <div className="space-y-2 text-center">
-                <History className="text-label-secondary mx-auto h-6 w-6" />
-                <p className="text-label-secondary text-body">No event history found</p>
               </div>
-            </Card>
-          )}
-        </TabsContent>
-      </Tabs>
+            ) : (
+              <Card className="rounded-card">
+                <EmptyState compact icon={<History />} title="No event history found" />
+              </Card>
+            )}
+          </div>
+        )}
+      </div>
 
       <Sheet open={isResponseDialogOpen} onOpenChange={setIsResponseDialogOpen}>
         <SheetContent size="wide" className="overflow-y-auto">

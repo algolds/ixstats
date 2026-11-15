@@ -37,6 +37,11 @@ describe("exploreWhere", () => {
       });
     }
   });
+
+  it("narrows to one nation's cards only when a country is given", () => {
+    expect(exploreWhere(query({ countryId: "c1" }), "me")).toMatchObject({ countryId: "c1" });
+    expect(exploreWhere(query(), "me")).not.toHaveProperty("countryId");
+  });
 });
 
 describe("the category filter", () => {

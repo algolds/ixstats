@@ -11,6 +11,7 @@ import {
   creditTreasuryTx,
   debitTreasuryTx,
   getOrCreateTreasury,
+  isCountryOwner,
   mintStipendTx,
   stipendFor,
   transferToTreasuryTx,
@@ -34,9 +35,9 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
       {
         id: "w_alice",
         userId: "alice",
-        sovereigns: walletSovereigns,
-        lifetimeEarned: walletSovereigns,
-        lifetimeSpent: 0,
+        sovereigns: BigInt(Math.round(walletSovereigns * 100)),
+        lifetimeEarned: BigInt(Math.round(walletSovereigns * 100)),
+        lifetimeSpent: 0n,
       },
     ],
     company: [
@@ -46,7 +47,7 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
         founderId: "alice",
         realmId: REALM,
         sectorKey: "industry",
-        capital: companyCapital,
+        capital: BigInt(Math.round(companyCapital * 100)),
         status: "ACTIVE",
       },
     ],
@@ -56,10 +57,11 @@ function setup(companyCapital = 500, walletSovereigns = 5000) {
 const inTx = <T>(fn: (tx: Db) => Promise<T>): Promise<T> => fake.client.$transaction(fn);
 
 const treasury = () => fake.tables.nationTreasury?.find((t) => t.countryId === NATION);
-const balance = () => treasury()?.balance ?? 0;
+const balance = () => (treasury() ? Number(treasury()!.balance) / 100 : 0);
 const entries = () => fake.tables.nationTreasuryEntry ?? [];
 const company = () => fake.tables.company!.find((c) => c.id === "co1")!;
-const walletSov = () => fake.tables.exchangeWallet!.find((w) => w.userId === "alice")!.sovereigns;
+const walletSov = () =>
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === "alice")!.sovereigns) / 100;
 
 const mint = (amount: number, key: string, ixTime = 1000) =>
   inTx((tx) =>
@@ -109,7 +111,7 @@ describe("getOrCreateTreasury", () => {
     await inTx((tx) => getOrCreateTreasury(tx, NATION, REALM));
     const again = await inTx((tx) => getOrCreateTreasury(tx, NATION, REALM));
     expect(fake.tables.nationTreasury).toHaveLength(1);
-    expect(again).toMatchObject({ countryId: NATION, realmId: REALM, balance: 0 });
+    expect(again).toMatchObject({ countryId: NATION, realmId: REALM, balance: 0n });
   });
 });
 
@@ -121,7 +123,7 @@ describe("mintStipendTx", () => {
     expect(await mint(600, "stipend:2")).toBe(400);
     expect(await mint(50, "stipend:3", 2000)).toBe(0);
     expect(balance()).toBe(CAP);
-    expect(treasury()).toMatchObject({ lifetimeStipend: CAP, lastStipendIxTime: 1000 });
+    expect(treasury()).toMatchObject({ lifetimeStipend: 1000_00n, lastStipendIxTime: 1000 });
     expect(entries()).toHaveLength(2);
   });
 
@@ -130,8 +132,8 @@ describe("mintStipendTx", () => {
     expect(entries()[0]).toMatchObject({
       countryId: NATION,
       type: "STIPEND",
-      amount: 62.5,
-      balanceAfter: 62.5,
+      amount: 62_50n,
+      balanceAfter: 62_50n,
       ixTime: 42,
       idempotencyKey: "stipend:nation_a:1",
     });
@@ -156,13 +158,13 @@ describe("transferToTreasuryTx", () => {
 
   it("moves a company's tax out of capital into the treasury by the same amount", async () => {
     expect(await companyTax(120, "tax:co1:1")).toBe(120);
-    expect(company().capital).toBe(380);
+    expect(company().capital).toBe(380_00n);
     expect(balance()).toBe(120);
-    expect(treasury()).toMatchObject({ lifetimeTaxEarned: 120 });
+    expect(treasury()).toMatchObject({ lifetimeTaxEarned: 120_00n });
     expect(entries()[0]).toMatchObject({
       type: "TAX",
-      amount: 120,
-      balanceAfter: 120,
+      amount: 120_00n,
+      balanceAfter: 120_00n,
       idempotencyKey: "tax:co1:1:treasury",
     });
   });
@@ -177,7 +179,7 @@ describe("transferToTreasuryTx", () => {
   it("applies a retried company payment once", async () => {
     expect(await companyTax(120, "tax:co1:3")).toBe(120);
     expect(await companyTax(120, "tax:co1:3")).toBe(0);
-    expect(company().capital).toBe(380);
+    expect(company().capital).toBe(380_00n);
     expect(balance()).toBe(120);
   });
 
@@ -187,7 +189,7 @@ describe("transferToTreasuryTx", () => {
     await expect(companyTax(80, "tax:co1:4")).rejects.toMatchObject({
       code: "INSUFFICIENT_SOVEREIGNS",
     });
-    expect(company().capital).toBe(50);
+    expect(company().capital).toBe(50_00n);
     expect(balance()).toBe(0);
     expect(entries()).toHaveLength(0);
   });
@@ -211,8 +213,8 @@ describe("transferToTreasuryTx", () => {
     expect(balance()).toBe(300);
     expect(fake.tables.exchangeTransaction).toEqual([
       expect.objectContaining({
-        sovereigns: -300,
-        balanceAfter: 4700,
+        sovereigns: -300_00n,
+        balanceAfter: 4700_00n,
         type: "TREASURY_PAYMENT",
         idempotencyKey: "lobby:1",
       }),
@@ -265,7 +267,7 @@ describe("creditTreasuryTx", () => {
     expect(await refund()).toBe(40);
     expect(await refund()).toBe(0);
     expect(balance()).toBe(40);
-    expect(entries()[0]).toMatchObject({ type: "B2G_REFUND", amount: 40 });
+    expect(entries()[0]).toMatchObject({ type: "B2G_REFUND", amount: 40_00n });
   });
 });
 
@@ -301,8 +303,8 @@ describe("debitTreasuryTx", () => {
     await mint(100, "stipend:spend");
     expect(await debit(40, "escrow:2")).toBe(40);
     expect(balance()).toBe(60);
-    expect(treasury()).toMatchObject({ lifetimeSpent: 40 });
-    expect(entries()[1]).toMatchObject({ type: "B2G_ESCROW", amount: -40, balanceAfter: 60 });
+    expect(treasury()).toMatchObject({ lifetimeSpent: 40_00n });
+    expect(entries()[1]).toMatchObject({ type: "B2G_ESCROW", amount: -40_00n, balanceAfter: 60_00n });
   });
 });
 
@@ -343,5 +345,30 @@ describe("treasurySummary", () => {
     const summary = await treasurySummary(fake.client, NATION, CAP);
     expect(summary.recent).toHaveLength(20);
     expect(summary.balance).toBe(25);
+  });
+});
+
+describe("isCountryOwner", () => {
+  beforeEach(() => setup());
+
+  it("returns false for FORBIDDEN/NOT_FOUND and rethrows unexpected DB errors", async () => {
+    fake.tables.country = [{ id: NATION, realmId: REALM, ownerUserId: "alice" }];
+    expect(await isCountryOwner(fake.client, NATION, "alice")).toBe(true);
+    expect(await isCountryOwner(fake.client, NATION, "bob")).toBe(false);
+    expect(await isCountryOwner(fake.client, "missing_nation", "alice")).toBe(false);
+
+    const brokenDb = {
+      country: {
+        findUnique: async () => {
+          throw new Error("connection reset by peer");
+        },
+      },
+      user: {
+        findUnique: async () => null,
+      },
+    } as unknown as Db;
+    await expect(isCountryOwner(brokenDb, NATION, "alice")).rejects.toThrow(
+      "connection reset by peer"
+    );
   });
 });

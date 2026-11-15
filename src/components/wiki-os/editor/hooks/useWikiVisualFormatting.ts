@@ -166,15 +166,15 @@ function toggleListBlock(editor: PlateEditorLike, targetType: "ul" | "ol") {
     if (listEntry && nodeType(listEntry[0]) === targetType) {
       // Toggle off: unwrap ul/ol and convert li back to p
       Transforms.unwrapNodes(editor, { match: isList, split: true });
-      Transforms.setNodes(editor, { type: "p" } as Partial<Descendant>, { match: isTypeIn("li") });
+      Transforms.setNodes<Descendant>(editor, { type: "p" } as Partial<Descendant>, { match: isTypeIn("li") });
     } else if (listEntry) {
       // Switch list type (ul <-> ol)
-      Transforms.setNodes(editor, { type: targetType } as Partial<Descendant>, {
+      Transforms.setNodes<Descendant>(editor, { type: targetType } as Partial<Descendant>, {
         at: listEntry[1],
       });
     } else {
       // Not in list: convert matching selected blocks to li and wrap in ul/ol
-      Transforms.setNodes(editor, { type: "li", level: 1 } as Partial<Descendant>, {
+      Transforms.setNodes<Descendant>(editor, { type: "li", level: 1 } as Partial<Descendant>, {
         match: (n) =>
           SlateElement.isElement(n) &&
           !editor.isInline(n) &&
@@ -240,7 +240,7 @@ export function useWikiVisualFormatting({
       withEditor((editor) => {
         const entry = findNodeEntry(editor, id);
         if (!entry || (entry[0] as { dataMw?: string }).dataMw !== dataMw) return;
-        Transforms.setNodes(
+        Transforms.setNodes<Descendant>(
           editor,
           { html: transclusionHtml(dataMw, html) } as Partial<Descendant>,
           {
@@ -322,7 +322,7 @@ export function useWikiVisualFormatting({
   const setType = useCallback(
     (type: string) => {
       edit((editor) =>
-        Transforms.setNodes(editor, { type } as Partial<Descendant>, {
+        Transforms.setNodes<Descendant>(editor, { type } as Partial<Descendant>, {
           match: (n) => SlateElement.isElement(n) && !editor.isVoid(n),
           mode: "lowest",
         })
@@ -341,7 +341,7 @@ export function useWikiVisualFormatting({
           6,
           Math.max(1, ((liEntry[0] as { level?: number }).level || 1) + delta)
         );
-        Transforms.setNodes(editor, { level } as Partial<Descendant>, { at: liEntry[1] });
+        Transforms.setNodes<Descendant>(editor, { level } as Partial<Descendant>, { at: liEntry[1] });
         setIsDirty(true);
       }),
     [withEditor, setIsDirty]
@@ -392,7 +392,7 @@ export function useWikiVisualFormatting({
       edit((editor) => {
         const targetType = `h${Math.min(Math.max(level, 2), 4)}`;
         const blockEntry = firstEntry(editor, isEditableBlock(editor), { mode: "lowest" });
-        Transforms.setNodes(
+        Transforms.setNodes<Descendant>(
           editor,
           {
             type: nodeType(blockEntry?.[0]) === targetType ? "p" : targetType,
@@ -564,7 +564,7 @@ export function useWikiVisualFormatting({
         const entry = findNodeEntry(editor, id);
         if (!entry) return null;
         const [node, path] = entry;
-        Transforms.setNodes(
+        Transforms.setNodes<Descendant>(
           editor,
           { params: newParams, dataMw, wikitext } as Partial<Descendant>,
           {

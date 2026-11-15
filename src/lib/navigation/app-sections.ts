@@ -29,23 +29,18 @@ import {
   Bell,
   Bookmark,
   BookmarkBook,
-  BookStack,
-  Building,
   Cart,
   ChatBubble,
   ChatLines,
   CheckSquare,
   Clock,
   Coins,
-  Community,
   Component,
   Cpu,
-  Crown,
   Database,
   EditPencil,
   Folder,
   Gamepad,
-  Gift,
   Globe,
   Group,
   HelpCircle,
@@ -70,7 +65,6 @@ import {
   Shield,
   ShieldCheck,
   Sparks,
-  StatsReport,
   Terminal,
   Translate,
   Trophy,
@@ -88,7 +82,8 @@ export type NavBadge = { kind: "count"; value: number } | { kind: "action"; labe
 export type NavBadges = Partial<Record<NavBadgeKey, NavBadge>>;
 
 /** `data-app` tint keys (tokens.css). Omitted = the default tint (iron-gall ink). */
-type AppTint = "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs";
+type AppTint =
+  "admin" | "mycountry" | "maps" | "thinkpages" | "vault" | "wiki" | "realms" | "labs" | "exchange";
 
 type AppId =
   | "home"
@@ -141,14 +136,24 @@ interface AppSection {
    * gated by the map: the page keeps its own premium preview for anyone who arrives by URL.
    */
   requires?: SectionRequirement;
+  /** Nation identity attributes (`COUNTRY_ATTRS`) written onto the link for `SystemContextMenu`. */
+  country?: CountryRowMeta;
+}
+
+export interface CountryRowMeta {
+  id?: string;
+  slug?: string;
+  name?: string;
 }
 
 /**
  * `mycountry-premium`: MyCountry Premium (the premium ability) or the beta-tester role. `forum-moderator`: site staff
  * or any forum category or realm moderator.
- * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher).
+ * `signed-in`: any signed-in member. `admin`: site admins (role level 10 or higher). `nation-owner`: a member who owns
+ * a nation (the Exchange's Treasury).
  */
-type SectionRequirement = "mycountry-premium" | "forum-moderator" | "signed-in" | "admin";
+type SectionRequirement =
+  "mycountry-premium" | "forum-moderator" | "signed-in" | "admin" | "nation-owner";
 
 export interface AppDefinition {
   id: AppId;
@@ -222,40 +227,11 @@ export const APPS: readonly AppDefinition[] = [
     tint: "mycountry",
     match: ["/mycountry"],
     requiresAuth: true,
-    sections: [
-      {
-        id: "overview",
-        label: "Overview",
-        href: "/mycountry",
-        icon: Crown,
-        exact: true,
-      },
-      {
-        id: "executive",
-        label: "Directives",
-        href: "/mycountry/executive",
-        icon: Building,
-        badge: "issues-pending",
-      },
-      { id: "economy", label: "Economy", href: "/mycountry/economy", icon: StatsReport },
-      {
-        id: "diplomacy",
-        label: "Diplomacy",
-        href: "/mycountry/diplomacy",
-        icon: Globe,
-        badge: "diplomacy-inbox",
-      },
-      { id: "politics", label: "Politics", href: "/mycountry/politics", icon: Community },
-      {
-        id: "defense",
-        label: "Defense",
-        href: "/mycountry/defense",
-        icon: Shield,
-        // Intelligence has no row of its own; its page keeps Defense's highlight.
-        match: ["/mycountry/intelligence"],
-        requires: "mycountry-premium",
-      },
-    ],
+    // The sections live on the command ribbon in the page (MyCountry's one section navigation);
+    // the sidebar lists the app, plus the Public profile and Editor rows once the country is known.
+    // Pending national issues ride on the app row (the ribbon shows them on Directives).
+    badge: "issues-pending",
+    sections: [],
   },
   {
     id: "maps",
@@ -273,28 +249,11 @@ export const APPS: readonly AppDefinition[] = [
     href: "/vault",
     icon: VaultLogomark,
     tint: "vault",
+    badge: "daily-reward",
     match: ["/vault", "/leaderboards"],
     requiresAuth: true,
     sections: [
       { id: "dashboard", label: "Wallet", href: "/vault", icon: Wallet, exact: true },
-      {
-        id: "daily-reward",
-        label: "Daily reward",
-        href: "/vault",
-        icon: Gift,
-        action: "daily-reward",
-        badge: "daily-reward",
-      },
-      {
-        id: "achievements",
-        label: "Achievements",
-        href: "/vault/achievements",
-        icon: Trophy,
-        match: ["/vault/achievements"],
-      },
-      // The nation boards (GDP, population, density, growth); achievement points rank on Achievements.
-      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
-      // The hub's four tabs and the NationStates import; the old card and Store addresses redirect in src/proxy.ts.
       {
         id: "cards",
         label: "Cards",
@@ -302,7 +261,14 @@ export const APPS: readonly AppDefinition[] = [
         icon: CardsLogomark,
         match: ["/vault/cards", "/vault/import"],
       },
-      { id: "store", label: "Store", href: "/vault/store", icon: Cart },
+      { id: "store", label: "Store", href: "/vault/store", icon: Cart, match: ["/vault/packs"] },
+      {
+        id: "achievements",
+        label: "Achievements",
+        href: "/vault/achievements",
+        icon: Trophy,
+      },
+      { id: "leaderboards", label: "Leaderboards", href: "/leaderboards", icon: Leaderboard },
     ],
   },
   {
@@ -313,10 +279,8 @@ export const APPS: readonly AppDefinition[] = [
     tint: "wiki",
     match: ["/wiki", "/util", "/blurbs", "/stashes"],
     navSetting: "showWikiTab",
-    // WikiOS utilities live under /util. WikiOS has no rail of its own: search is a section here, and page creation
-    // and page tools live in the page header. Stash is a main row (it is too central to bury in Utilities, and it is
-    // also in the account menu); the rest of the tools (Random, Contributions, ...) open from the Utilities hub, and
-    // /blurbs stays in the app without a row.
+    // WikiOS utilities live under /util. Five contextual rows keep the sidebar calm while Search,
+    // Categories and Wiki Lorewards remain featured on /util and directly searchable in Halo (⌘K).
     sections: [
       {
         id: "main",
@@ -325,24 +289,6 @@ export const APPS: readonly AppDefinition[] = [
         icon: OpenBook,
         exact: true,
         match: ["/wiki/Main_Page"],
-      },
-      {
-        id: "search",
-        label: "Search",
-        href: "/util/search",
-        icon: Search,
-      },
-      {
-        id: "recent-changes",
-        label: "Recent changes",
-        href: "/util/recent-changes",
-        icon: Clock,
-      },
-      {
-        id: "categories",
-        label: "Categories",
-        href: "/util/categories",
-        icon: BookStack,
       },
       {
         id: "repository",
@@ -358,11 +304,10 @@ export const APPS: readonly AppDefinition[] = [
         requires: "signed-in",
       },
       {
-        id: "lorewards",
-        label: "Lorewards",
-        href: "/util/lorewards",
-        icon: Trophy,
-        requires: "signed-in",
+        id: "recent-changes",
+        label: "Recent changes",
+        href: "/util/recent-changes",
+        icon: Clock,
       },
       { id: "utilities", label: "Utilities", href: "/util", icon: List },
     ],
@@ -413,13 +358,6 @@ export const APPS: readonly AppDefinition[] = [
       // The viewer's realm's Nations tab: /countries resolves the active nation's realm and redirects there.
       { id: "my-realm", label: "My realm", href: "/countries", icon: Globe },
       { id: "explore", label: "Explore", href: "/realms", icon: Search, match: ["/r"] },
-      {
-        id: "realm-admin",
-        label: "Realm admin",
-        href: "/admin/realms",
-        icon: ShieldCheck,
-        requires: "admin",
-      },
     ],
   },
   {
@@ -428,15 +366,15 @@ export const APPS: readonly AppDefinition[] = [
     href: "/labs/onoma",
     icon: SolidRoundFlask,
     tint: "labs",
-    match: ["/labs", "/myleague", "/myclub"],
+    match: ["/labs", "/myleague", "/myclub", "/exchange"],
     requiresAuth: true,
     navSetting: "showLabsTab",
     navSettingBypass: { admin: true, labsAccess: true },
-    // Labs with a shipped entry point. Onoma keeps its own in-app navigation (src/app/labs/onoma).
+    // Labs with a shipped entry point. Onoma and Exchange keep their own in-app navigation.
     sections: [
       { id: "onoma", label: "Onoma", href: "/labs/onoma", icon: Translate },
       { id: "vexel", label: "Vexel", href: "/labs/vexel", icon: Shield },
-      { id: "exchange", label: "Exchange", href: "/labs/exchange", icon: Coins },
+      { id: "exchange", label: "Exchange", href: "/exchange", icon: Coins },
       { id: "myleague", label: "MyLeague", href: "/myleague", icon: Trophy },
       { id: "myclub", label: "MyClub", href: "/myclub", icon: Group },
     ],
@@ -451,6 +389,7 @@ export const APPS: readonly AppDefinition[] = [
     match: ["/help", "/changelog"],
     navSetting: "showHelpTab",
     sections: [
+      { id: "getting-started", label: "Getting started", href: "/help", icon: HelpCircle },
       { id: "changelog", label: "What's new", href: "/changelog", icon: Clock },
       {
         id: "discord",
@@ -556,7 +495,7 @@ export const APPS: readonly AppDefinition[] = [
         id: "country",
         label: "MyCountry",
         href: "/settings?tab=country",
-        icon: Crown,
+        icon: MyCountryLogomark,
         group: "Profile",
       },
       {
@@ -620,7 +559,7 @@ export const APPS: readonly AppDefinition[] = [
 ];
 
 /** Order in which apps claim the TabBar's four slots (the fifth is "More"). */
-const TAB_BAR_PRIORITY: readonly AppId[] = [
+export const TAB_BAR_PRIORITY: readonly AppId[] = [
   "home",
   "mycountry",
   "maps",
@@ -682,9 +621,15 @@ export function getApp(id: AppId): AppDefinition {
  */
 export function withCountryRows(
   apps: readonly AppDefinition[],
-  countryHref: string | undefined
+  countryHref: string | undefined,
+  countryMeta?: CountryRowMeta
 ): readonly AppDefinition[] {
   if (!countryHref) return apps;
+  const inferredSlug = normalizePath(countryHref).startsWith("/countries/")
+    ? decodeURIComponent(normalizePath(countryHref).slice("/countries/".length))
+    : undefined;
+  const resolvedCountry: CountryRowMeta | undefined =
+    countryMeta ?? (inferredSlug ? { slug: inferredSlug } : undefined);
   return apps.map((app) =>
     app.id === "mycountry"
       ? {
@@ -696,8 +641,20 @@ export function withCountryRows(
               label: "Public profile",
               href: countryHref,
               icon: ProfileCircle,
+              country: resolvedCountry,
             },
-            { id: "editor", label: "Editor", href: "/mycountry/editor", icon: EditPencil },
+            {
+              id: "editor",
+              label: "Country editor",
+              href: "/mycountry/editor",
+              icon: EditPencil,
+            },
+            {
+              id: "map-editor",
+              label: "Map editor",
+              href: "/mycountry/map-editor",
+              icon: MapIcon,
+            },
           ],
         }
       : app
@@ -721,6 +678,17 @@ export function getAppForPath(
     }
   }
   return best?.app;
+}
+
+/**
+ * The canvas tint (`data-app`) a page wears: its app's, with two exceptions. The Exchange (a Labs section) has
+ * its own. A nation's profile (`/countries/<slug>/…`) is an identity document like the passport, so it wears
+ * the passport's default tint (iron-gall ink), not the Realms purpure its sidebar row keeps.
+ */
+export function getTintForPath(pathname: string): AppTint | undefined {
+  if (matchesPrefix(pathname, "/exchange")) return "exchange";
+  if (normalizePath(pathname).startsWith("/countries/")) return undefined;
+  return getAppForPath(pathname)?.tint;
 }
 
 /**
@@ -790,7 +758,7 @@ export function groupSections(
   return runs;
 }
 
-interface AppVisibilityContext {
+export interface AppVisibilityContext {
   signedIn: boolean;
   /** Role level 10 or less (admin and above): the Labs bypass of `showLabsTab`, matching the Labs server gate. */
   isAdmin: boolean;
@@ -802,6 +770,8 @@ interface AppVisibilityContext {
   hasMycountryPremium?: boolean;
   /** Site staff or a forum moderator (`forum-moderator` sections). */
   forumModerator?: boolean;
+  /** Owns a nation (the Exchange's Treasury section). */
+  ownsNation?: boolean;
   navigationSettings?: NavigationVisibilitySettings | null;
 }
 
@@ -813,6 +783,7 @@ export function getVisibleApps({
   hasLabsAccess = false,
   hasMycountryPremium = false,
   forumModerator = false,
+  ownsNation = false,
   navigationSettings,
 }: AppVisibilityContext): AppDefinition[] {
   const granted: Record<SectionRequirement, boolean> = {
@@ -820,6 +791,7 @@ export function getVisibleApps({
     "forum-moderator": forumModerator,
     "signed-in": signedIn,
     admin: canOpenAdmin,
+    "nation-owner": signedIn && ownsNation,
   };
   const visibleApps = APPS.filter((app) => {
     if (app.requiresAuth && !signedIn) return false;

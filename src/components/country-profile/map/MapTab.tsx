@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { FacetList, FacetListSection } from "~/components/ui/facet-list";
 import type { MapFocus } from "~/components/maps/widgets/CountryMapEmbed";
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
@@ -131,7 +132,7 @@ export function MapTab({ layer }: { layer: CountryProfileLayer }) {
               </FacetListSection>
             </FacetList>
           ) : (
-            <p className="text-footnote text-label-secondary">No map stories yet.</p>
+            <EmptyState compact title="No map stories yet." />
           )}
         </Card>
       </div>

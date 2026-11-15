@@ -14,7 +14,6 @@ import { useNotify } from "~/hooks/useNotify";
 import { cn } from "~/lib/utils/cn";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Switch } from "~/components/ui/switch";
 import { Slider } from "~/components/ui/slider";
 import type { RouteType } from "~/lib/economy/transport-generator";
@@ -109,10 +108,10 @@ function SwitchRow({
     <>
       <div className="border-separator my-1 border-t" aria-hidden />
       <div className="flex items-center justify-between px-2 py-2">
-        <Eyebrow className="flex items-center gap-2">
+        <span className="text-footnote text-label flex items-center gap-2">
           {icon}
           {label}
-        </Eyebrow>
+        </span>
         <Switch checked={checked} onCheckedChange={onCheckedChange} aria-label={ariaLabel} />
       </div>
     </>
@@ -172,7 +171,9 @@ export function EditorSettingsPopover({
       </PopoverTrigger>
       <PopoverContent className="rounded-row w-64 p-3" align="end">
         <div className="flex flex-col gap-3">
-          <Eyebrow className="block select-none">Map editor settings</Eyebrow>
+          <div className="text-caption text-label-secondary font-medium select-none">
+            Map editor settings
+          </div>
 
           <div className="flex flex-col gap-1">
             <MenuItem
@@ -239,7 +240,7 @@ export function EditorSettingsPopover({
                   onValueChange={([v]) => v !== undefined && setSnapTolerance(v)}
                   className="flex-1 py-2"
                 />
-                <span className="text-label-secondary text-footnote w-10 text-right font-mono tabular-nums">
+                <span className="text-label-secondary text-footnote font-data w-10 text-right tabular-nums">
                   {snapTolerance.toFixed(3)}°
                 </span>
               </div>
@@ -256,7 +257,9 @@ export function EditorSettingsPopover({
             {isAdmin && activeCountryId && (
               <>
                 <div className="border-separator my-1 border-t" aria-hidden />
-                <Eyebrow className="block px-2 select-none">Admin</Eyebrow>
+                <div className="text-caption text-label-secondary px-2 font-medium select-none">
+                  Admin
+                </div>
                 <MenuItem
                   icon={<Train className={ICON} />}
                   label={generateTransport.isPending ? "Generating..." : "Gen Transport"}

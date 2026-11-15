@@ -48,7 +48,7 @@ ThinkTanks is built as a direct sister interface to `/messages`, adhering to App
 - **Spring Physics Animations (`motion/react`)**:
   - Tab controls and category capsules use spring physics (`damping: 30`, `stiffness: 450`) with shared layout IDs (`layoutId="thinktank-dir-tab-pill"`, `layoutId="category-capsule-pill"`).
 - **Tactile Response & Audio**:
-  - Instant micro-interactions (`active:scale-[0.97]`) paired with Cuelume audio cues (`soundEffects.press()`, `soundEffects.release()`, `soundEffects.success()`).
+  - Instant micro-interactions (`active:scale-[0.97]`); outcomes sound through their toasts (Cuelume `soundCues`), and presses stay silent.
 
 ---
 

@@ -11,8 +11,8 @@ import {
 } from "~/server/api/trpc";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
-import { round2 } from "~/lib/exchange/amounts";
-import { SECTOR_KEYS } from "~/lib/exchange/companies";
+import { centsOf, fromCents, round2 } from "~/lib/exchange/amounts";
+import { companyView, SECTOR_KEYS } from "~/lib/exchange/companies";
 import {
   createFaucetTender,
   createGovernmentContract,
@@ -20,9 +20,10 @@ import {
 } from "~/lib/exchange/contracts";
 import { borrowCredit, creditLimitFor, repayCredit } from "~/lib/exchange/credit";
 import { macroOfCountry } from "~/lib/exchange/tariffs";
-import { stipendFor, treasurySummary } from "~/lib/exchange/treasury";
+import { isCountryOwner, stipendFor, treasurySummary } from "~/lib/exchange/treasury";
 import { canModerateRealm, isSiteAdmin } from "~/server/modules/realms/realms.access";
 import { guard } from "./_errors";
+import { lendingTermsOf } from "~/lib/exchange/lending";
 
 const id = z.string().min(1);
 const requestId = z.string().min(8).max(64);
@@ -58,6 +59,8 @@ export const exchangeTreasuryRouter = createTRPCRouter({
           select: { id: true, name: true, realmId: true, economicTier: true },
         });
         const realmId = country?.realmId ?? DEFAULT_REALM_ID;
+        // Tender bids are sealed: the issuing nation sees the amounts, everyone else only a count.
+        const isOwner = await isCountryOwner(ctx.db, input.countryId, ctx.user.id);
         const [companies, treasury, macro, realmCountries, openTenders] = await Promise.all([
           ctx.db.company.findMany({
             where: {
@@ -83,7 +86,6 @@ export const exchangeTreasuryRouter = createTRPCRouter({
               lastTickTax: true,
               lastTickNetIncome: true,
               distressedSinceIxTime: true,
-              founderId: true,
             },
           }),
           ctx.db.nationTreasury.findUnique({
@@ -124,15 +126,17 @@ export const exchangeTreasuryRouter = createTRPCRouter({
         const validMacros = sampleMacros.filter((m): m is NonNullable<typeof m> => m !== null);
         const realmAvgCorpTaxRate =
           validMacros.length > 0
-            ? round2(
-                validMacros.reduce((s, m) => s + m.corporateTaxRate, 0) / validMacros.length
-              )
+            ? round2(validMacros.reduce((s, m) => s + m.corporateTaxRate, 0) / validMacros.length)
             : (macro?.corporateTaxRate ?? 0.2);
 
-        const enriched = companies.map((c) => ({
-          ...c,
-          creditLimit: round2(creditLimitFor(c)),
-        }));
+        const terms = await lendingTermsOf(ctx.db, input.countryId);
+        const enriched = companies.map((raw) => {
+          const c = companyView(raw);
+          return {
+            ...c,
+            creditLimit: round2(creditLimitFor(c, terms.cap)),
+          };
+        });
 
         return {
           countryId: input.countryId,
@@ -159,14 +163,17 @@ export const exchangeTreasuryRouter = createTRPCRouter({
             id: t.id,
             title: t.title,
             sectorKey: t.sectorKey,
-            value: t.value,
+            value: fromCents(centsOf(t.value)),
             fundedBy: t.fundedBy,
             status: t.status,
             endIxTime: t.endIxTime,
             linkedDirectiveId: t.linkedDirectiveId,
             linkedIssueId: t.linkedIssueId,
             bidCount: t.bids.length,
-            lowestBid: t.bids.length > 0 ? Math.min(...t.bids.map((b) => b.amount)) : null,
+            lowestBid:
+              isOwner && t.bids.length > 0
+                ? Math.min(...t.bids.map((b) => fromCents(centsOf(b.amount))))
+                : null,
           })),
         };
       })
@@ -213,8 +220,7 @@ export const exchangeTreasuryRouter = createTRPCRouter({
           where: { id: input.realmId },
           select: { ownerId: true },
         });
-        const permitted =
-          isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
+        const permitted = isSiteAdmin(ctx.user) || (!!realm && canModerateRealm(ctx.user, realm));
         return createFaucetTender(ctx.db, {
           userId: ctx.user.id,
           permitted,
@@ -236,9 +242,6 @@ export const exchangeTreasuryRouter = createTRPCRouter({
   repayCredit: rateLimitedMutationProcedure
     .input(z.object({ companyId: id, amount: creditAmount, requestId }))
     .mutation(({ ctx, input }) =>
-      guard("repay the credit line", () =>
-        repayCredit(ctx.db, { userId: ctx.user.id, ...input })
-      )
+      guard("repay the credit line", () => repayCredit(ctx.db, { userId: ctx.user.id, ...input }))
     ),
 });
-

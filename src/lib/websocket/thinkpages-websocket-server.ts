@@ -3,6 +3,7 @@ import { Server as HTTPServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
 import { RealmBoardRooms, type ThinkPagesServerOptions } from "./realm-board-room";
 import type { BoardLiveEvent } from "~/lib/thinkpages-forum/board-live";
+import type { InboxUpdate, ThinkPagesMessageEvent } from "./thinkpages-types";
 import {
   activeRoomMembers,
   canJoinConversation,
@@ -11,12 +12,27 @@ import {
   getPrincipal,
   isOriginAllowed,
 } from "./socket-auth";
+import {
+  RECEIPTS_PER_SECOND,
+  TYPING_PER_SECOND,
+  createRateLimiter,
+  parseReceiptPayload,
+  parseTypingPayload,
+} from "./socket-guards";
+import { usersWithSwitchOff } from "~/server/shared/privacy-permissions";
+import { db } from "~/server/db";
 
 export type { ThinkPagesServerOptions } from "./realm-board-room";
 
 type ChannelPayload = { channel?: string } | undefined;
 type RoomRef = { conversationId?: string; groupId?: string };
 type ChannelKind = "conversation" | "group" | "realm-board";
+
+/** Each signed-in socket joins `user:<clerkId>`: the room for pings that are not tied to an open thread. */
+const userRoom = (clerkUserId: string) => `user:${clerkUserId}`;
+
+/** A socket's `dmReadReceipts` switch is asked again after this long, so turning it off takes effect. */
+const RECEIPT_SWITCH_TTL_MS = 60_000;
 
 const CHANNEL_PATTERN = /^(conversation|group|realm-board):([A-Za-z0-9_-]{1,64})$/;
 
@@ -41,15 +57,7 @@ async function canJoinMemberRoom(
   return check(clerkUserId, room.id).catch(() => false);
 }
 
-export interface ThinkPagesMessageEvent {
-  type: "message:new" | "message:updated" | "message:deleted";
-  conversationId?: string;
-  groupId?: string;
-  messageId: string;
-  accountId: string;
-  content?: string;
-  timestamp: number;
-}
+export type { ThinkPagesMessageEvent };
 
 /**
  * A user is out of a conversation or ThinkTank group room (they left it, declined it or were
@@ -77,7 +85,14 @@ export class ThinkPagesWebSocketServer {
   private io: SocketIOServer;
   private clients = new Map<
     string,
-    { socket: Socket; accountId?: string; subscriptions: Set<string>; lastSeen: number }
+    {
+      socket: Socket;
+      accountId?: string;
+      subscriptions: Set<string>;
+      lastSeen: number;
+      /** Whether the user's read receipts are off (cached per socket for RECEIPT_SWITCH_TTL_MS). */
+      receiptsOff?: { value: boolean; until: number };
+    }
   >();
   private boardRooms: RealmBoardRooms;
   /** Each member room's broadcasts, chained so they go out in the order they were sent. */
@@ -149,6 +164,7 @@ export class ThinkPagesWebSocketServer {
       // An anonymous reader only subscribes and receives: every emit below needs a verified principal.
       if (!principal) return;
       const accountId = principal.clerkUserId;
+      void socket.join(userRoom(accountId));
       socket.emit("authenticated", { success: true, timestamp: Date.now() });
 
       socket.on("board:typing", (payload: { realmId?: string; personaId?: string | null }) => {
@@ -162,26 +178,64 @@ export class ThinkPagesWebSocketServer {
         socket.emit("presence:update", { ...payload, accountId, timestamp: Date.now() });
       });
 
-      socket.on("typing:update", (payload: (RoomRef & { isTyping: boolean }) | undefined) => {
+      const allowTyping = createRateLimiter(TYPING_PER_SECOND);
+      socket.on("typing:update", (raw: unknown) => {
+        const payload = parseTypingPayload(raw);
+        if (!payload || !allowTyping()) return;
         const channel = channelFor(payload);
         if (!channel || !socket.rooms.has(channel)) return;
-        this.io.to(channel).emit("typing:update", { ...payload, accountId, timestamp: Date.now() });
+        const { isTyping, conversationId, groupId } = payload;
+        this.io.to(channel).emit("typing:update", {
+          ...(conversationId ? { conversationId } : { groupId }),
+          isTyping,
+          accountId,
+          timestamp: Date.now(),
+        });
       });
 
-      socket.on("read:receipt", (payload: (RoomRef & { messageId: string }) | undefined) => {
+      const allowReceipt = createRateLimiter(RECEIPTS_PER_SECOND);
+      socket.on("read:receipt", (raw: unknown) => {
+        const payload = parseReceiptPayload(raw);
+        if (!payload || !allowReceipt()) return;
         const channel = channelFor(payload);
-        if (!payload || !channel || !socket.rooms.has(channel)) return;
-        const event: ThinkPagesReadReceiptEvent = {
+        if (!channel || !socket.rooms.has(channel)) return;
+        void this.relayReadReceipt(socket, channel, {
           type: "read:receipt",
           accountId,
           conversationId: payload.conversationId,
           groupId: payload.groupId,
           messageId: payload.messageId,
           timestamp: Date.now(),
-        };
-        this.io.to(channel).emit("read:receipt", event);
+        });
       });
     });
+  }
+
+  /** Whether the socket's user has read receipts off; a failed lookup counts as off (nothing leaks). */
+  private async receiptsAreOff(socketId: string, accountId: string): Promise<boolean> {
+    const cached = this.clients.get(socketId)?.receiptsOff;
+    if (cached && cached.until > Date.now()) return cached.value;
+    let value: boolean;
+    try {
+      value = (await usersWithSwitchOff(db, [accountId], "dmReadReceipts")).has(accountId);
+    } catch (error) {
+      console.error("[ThinkPagesWS] read receipt setting lookup failed:", error);
+      value = true;
+    }
+    const client = this.clients.get(socketId);
+    if (client) client.receiptsOff = { value, until: Date.now() + RECEIPT_SWITCH_TTL_MS };
+    return value;
+  }
+
+  private async relayReadReceipt(
+    socket: Socket,
+    channel: string,
+    event: ThinkPagesReadReceiptEvent
+  ) {
+    if (await this.receiptsAreOff(socket.id, event.accountId)) return;
+    // The relay is async: the reader may have left the room while the setting was looked up.
+    if (!socket.rooms.has(channel)) return;
+    this.io.to(channel).emit("read:receipt", event);
   }
 
   /**
@@ -282,21 +336,52 @@ export class ThinkPagesWebSocketServer {
       // A failed re-check still delivers to the room as joined (each join was checked).
       console.error("[ThinkPagesWS] membership re-check failed:", error);
     }
-    this.io.to(channel).emit("message:update", {
+    const timestamp = Date.now();
+    this.emitToRoom(channel, event.recipientIds, "message:update", {
       type: "message:update",
       data: event,
-      timestamp: Date.now(),
+      timestamp,
       channel,
     });
     // Also notify conversation list to refresh
     if (event.conversationId) {
-      this.io.to(channel).emit("conversation:update", {
+      this.emitToRoom(channel, event.recipientIds, "conversation:update", {
         type: "conversation:updated",
         conversationId: event.conversationId,
-        data: { lastActivity: Date.now() },
-        timestamp: Date.now(),
+        data: { lastActivity: timestamp },
+        timestamp,
       });
+      if (event.type === "message:new")
+        this.notifyInboxes(event.conversationId, event.recipientIds);
     }
+  }
+
+  /**
+   * Emits to the room, or only to the sockets in it that belong to `recipientIds` when that is set
+   * (an empty list reaches nobody).
+   */
+  private emitToRoom(
+    channel: string,
+    recipientIds: string[] | undefined,
+    name: string,
+    payload: object
+  ) {
+    if (!recipientIds) {
+      this.io.to(channel).emit(name, payload);
+      return;
+    }
+    const allowed = new Set(recipientIds);
+    for (const socketId of this.io.sockets.adapter.rooms.get(channel) ?? []) {
+      const client = this.clients.get(socketId);
+      if (client?.accountId && allowed.has(client.accountId)) client.socket.emit(name, payload);
+    }
+  }
+
+  /** Pings each recipient's user room (no content) so a thread they have not opened still refreshes their inbox. */
+  private notifyInboxes(conversationId: string, recipientIds: string[] | undefined) {
+    if (!recipientIds || recipientIds.length === 0) return;
+    const update: InboxUpdate = { type: "inbox:update", conversationId, timestamp: Date.now() };
+    this.io.to(recipientIds.map(userRoom)).emit("inbox:update", update);
   }
 
   public getStats() {

@@ -5,9 +5,6 @@ import { Card } from "~/components/ui/card";
 import { OptionSelect } from "~/components/maps/shared/OptionSelect";
 import { WikiLinkWizard } from "../WikiLinkWizard";
 
-export const inputClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 sm:py-2 text-body sm:text-body text-label placeholder:text-label-secondary transition-colors focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
-
 export interface PointFormProps<T> {
   form: T;
   onChange: (form: T) => void;
@@ -40,8 +37,8 @@ export function SubdivisionSelect({
 }) {
   const options = React.useMemo(
     () => [
-      { value: "auto", label: "&mdash; Auto-detect Region (Recommended) &mdash;" },
-      { value: "none", label: "&mdash; None &mdash;" },
+      { value: "auto", label: "Auto-detect region (recommended)" },
+      { value: "none", label: "None" },
       ...(allFeatures ?? [])
         .filter((f) => f.type === "subdivision")
         .map((sub) => ({ value: sub.id, label: sub.name })),
@@ -61,7 +58,7 @@ export function SubdivisionSelect({
 }
 
 /** Wiki search/link field; `importPopulation` also copies an imported population into the form. */
-export function WikiLinkField<T extends { wikiPageTitle?: string }>({
+export function WikiLinkField<T extends { wikiPageTitle?: string; wikiSource?: string | null }>({
   form,
   onChange,
   currentCoords,
@@ -75,11 +72,21 @@ export function WikiLinkField<T extends { wikiPageTitle?: string }>({
   return (
     <WikiLinkWizard
       value={form.wikiPageTitle}
-      onChange={(title) => onChange({ ...form, wikiPageTitle: title })}
+      wikiSource={form.wikiPageTitle ? form.wikiSource : undefined}
+      onChange={(title, source) =>
+        onChange({
+          ...form,
+          wikiPageTitle: title,
+          wikiSource: title ? (source ?? "ixwiki") : undefined,
+        })
+      }
       onImport={(fields) =>
         onChange({
           ...form,
           wikiPageTitle: fields.wikiPageTitle,
+          wikiSource: fields.wikiPageTitle
+            ? (fields.wikiSource ?? form.wikiSource ?? "ixwiki")
+            : undefined,
           ...(importPopulation && fields.population ? { population: fields.population } : {}),
         })
       }

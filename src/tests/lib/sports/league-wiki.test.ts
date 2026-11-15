@@ -1,4 +1,4 @@
-import { extractLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
+import { extractLeagueTeams, storableLeagueTeams, toWikiSlug } from "~/lib/sports/league-wiki";
 
 describe("extractLeagueTeams", () => {
   it("reads a bulleted list under a Teams section, naming the team by its label", () => {
@@ -110,6 +110,20 @@ describe("toWikiSlug", () => {
     expect(toWikiSlug(":File:Crest.png")).toBeNull();
     expect(toWikiSlug("image:Old.png")).toBeNull();
     expect(toWikiSlug("Media:Clip.ogg")).toBeNull();
+  });
+});
+
+describe("storableLeagueTeams", () => {
+  it("preserves sister-wiki slugs alongside wikiSource while keeping unlinked teams null", () => {
+    const parsed = [
+      { name: "Varro", wikiSlug: "FC_Varro" },
+      { name: "Plain Town", wikiSlug: null },
+    ];
+    expect(storableLeagueTeams(parsed, "iiwiki")).toEqual([
+      { name: "Varro", wikiSlug: "FC_Varro", wikiSource: "iiwiki" },
+      { name: "Plain Town", wikiSlug: null, wikiSource: null },
+    ]);
+    expect(storableLeagueTeams(parsed, "ixwiki")).toBe(parsed);
   });
 });
 

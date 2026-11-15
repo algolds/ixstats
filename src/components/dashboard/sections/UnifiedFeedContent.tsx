@@ -7,14 +7,14 @@ import { RssFeed as Rss, Group as Users } from "iconoir-react";
 import { DiscussionCountsProvider } from "~/components/action-links/DiscussionCountsProvider";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
+import { groupWikiEdits } from "~/lib/feed/group-wiki-edits";
+import { groupAchievements, isAchievementItem } from "~/lib/feed/group-achievements";
 import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
 import { ThinkpagesPost } from "~/components/thinkpages/ThinkpagesPost";
 import { UnifiedFeedItem, FeedItemSkeleton, getActivityLabel } from "./UnifiedFeedItem";
 import { EmptyState, type EmptyStateProps } from "~/components/ui/empty-state";
 import { springSmooth } from "~/lib/design/motion";
 import { Card } from "~/components/ui/card";
-
-type FeedTab = "all" | "following" | "community";
 
 /**
  * Collapses runs of consecutive items sharing a non-null `keyOf` into one `build(run, start)`
@@ -40,30 +40,6 @@ function groupRuns(
   return result;
 }
 
-const wikiPageKey = (a: any) => (a.source === "wiki" && a.content?.metadata?.pageTitle) || null;
-
-/** Consecutive wiki edits to the same page become one entry. */
-function groupWikiEdits(activities: any[]): any[] {
-  return groupRuns(activities, wikiPageKey, (group, i) => {
-    const pageTitle = wikiPageKey(group[0]);
-    const editors = new Set(group.map((g) => g.user?.name).filter(Boolean));
-    const isNew = group.some((g) => g.content?.title?.startsWith("New wiki page"));
-    return {
-      ...group[0],
-      id: `wiki-grouped-${pageTitle}-${i}`,
-      content: {
-        ...group[0].content,
-        title: isNew ? `New wiki page: ${pageTitle}` : pageTitle,
-      },
-      _grouped: true,
-      _editCount: group.length,
-      _editors: Array.from(editors),
-      _subEdits: group,
-      _isNew: isNew,
-    };
-  });
-}
-
 // Repeated IxStats activities of the same type by the same user within a time window.
 const ACTIVITY_GROUP_WINDOW_MS = 2 * 60 * 60 * 1000;
 
@@ -74,12 +50,12 @@ const timeOf = (a: any) => new Date(a.timestamp).getTime();
 /** A directive is declared on purpose and can be discussed in the forum: it keeps its own row. */
 const isDirective = (a: { type?: string }): boolean => a.type === "directive";
 
-/** Only `source: "activity"` groups (not wiki, thinkpages, forum), and never a directive. */
+/** Only ungrouped `source: "activity"` rows group here (wiki and achievements have their own passes, and directives stay single). */
 export function groupRepeatedActivities(activities: any[]): any[] {
   return groupRuns(
     activities,
     (a) =>
-      a.source === "activity" && !isDirective(a)
+      a.source === "activity" && !a._grouped && !isDirective(a) && !isAchievementItem(a)
         ? `${userKey(a)}\0${getActivityLabel(a).label}`
         : null,
     (group, i) => {
@@ -212,17 +188,8 @@ function wikiChangesAsFeed(changes: any[]): any[] {
     });
 }
 
-/** Picks the stream for a tab, topping it up with wiki changes when the feed has none. */
-function selectFeed(tab: FeedTab, activities: any[] | undefined, wikiItems: any[]): any[] {
-  if (tab === "community") {
-    const fromFeed = (activities ?? []).filter((a) => a.source === "wiki" || a.source === "forum");
-    if (fromFeed.length === 0 && wikiItems.length > 0) return wikiItems;
-    const merged = [...fromFeed];
-    for (const item of wikiItems) {
-      if (!merged.some((m) => m.id === item.id)) merged.push(item);
-    }
-    return newestFifty(merged);
-  }
+/** The global feed, topped up with wiki changes when it has none. */
+function selectFeed(activities: any[] | undefined, wikiItems: any[]): any[] {
   if (!activities) return [];
   const hasWiki = activities.some((a) => a.source === "wiki");
   return !hasWiki && wikiItems.length > 0 ? newestFifty([...activities, ...wikiItems]) : activities;
@@ -238,39 +205,21 @@ export function FeedEmpty(props: EmptyStateProps) {
 }
 
 export function UnifiedFeedContent({
-  activeTab,
   excludeAchievements = false,
   ...handlers
-}: FeedHandlers & { activeTab: FeedTab; excludeAchievements?: boolean }) {
+}: FeedHandlers & { excludeAchievements?: boolean }) {
   const { data: feedData, isLoading: feedLoading } = api.activities.getGlobalFeed.useQuery(
     { limit: 50 },
     { refetchInterval: 60_000, staleTime: 30_000 }
   );
   const { data: wikiRecentChanges } = api.wikios.getRecentChanges.useQuery(
     { limit: 20 },
-    {
-      enabled: activeTab === "all" || activeTab === "community",
-      refetchInterval: 60_000,
-      staleTime: 30_000,
-    }
+    { refetchInterval: 60_000, staleTime: 30_000 }
   );
 
-  const filteredFeed = useMemo(() => {
-    const raw = selectFeed(
-      activeTab,
-      feedData?.activities,
-      wikiChangesAsFeed(wikiRecentChanges ?? [])
-    );
-    const items = excludeAchievements
-      ? raw.filter(
-          (a) =>
-            a.type !== "achievement" &&
-            a.category !== "achievement" &&
-            !(a.source === "activity" && getActivityLabel(a).label === "Achievement")
-        )
-      : raw;
-    return groupRepeatedActivities(groupWikiEdits(items));
-  }, [feedData, wikiRecentChanges, activeTab, excludeAchievements]);
+  const raw = selectFeed(feedData?.activities, wikiChangesAsFeed(wikiRecentChanges ?? []));
+  const items = excludeAchievements ? raw.filter((a) => !isAchievementItem(a)) : raw;
+  const filteredFeed = groupRepeatedActivities(groupAchievements(groupWikiEdits(items)));
 
   if (feedLoading) return <FeedSkeletons />;
 
@@ -278,7 +227,7 @@ export function UnifiedFeedContent({
     return (
       <FeedEmpty
         icon={<Rss />}
-        title={`No recent ${activeTab === "community" ? "community updates" : "activity"}`}
+        title="No recent activity"
         message="Nothing has been posted here recently."
       />
     );
@@ -295,7 +244,8 @@ export function FollowingFeedContent(handlers: FeedHandlers) {
     );
 
   const processedActivities = useMemo(
-    () => groupRepeatedActivities(groupWikiEdits(followingData?.activities ?? [])),
+    () =>
+      groupRepeatedActivities(groupAchievements(groupWikiEdits(followingData?.activities ?? []))),
     [followingData]
   );
 

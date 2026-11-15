@@ -7,15 +7,15 @@
  * (a listing with no seller) belong to nobody yet and earn nothing.
  */
 
+import { fromCents, toCents } from "./amounts";
 import type { Db } from "./guards";
+
+export { fromCents, toCents };
 
 export interface Holder {
   userId: string;
   shares: number;
 }
-
-export const toCents = (n: number): number => Math.round(n * 100);
-export const fromCents = (c: number): number => c / 100;
 
 /**
  * Row-lock a company until the transaction ends. Every share trade, dividend, decision and

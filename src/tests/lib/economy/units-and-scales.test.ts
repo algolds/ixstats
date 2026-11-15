@@ -6,7 +6,7 @@
  * - The displayed GDP growth is the engine's rate (tier cap and diminishing returns included), not the static input.
  */
 import { nextIxDayStart } from "~/lib/ixtime/day";
-import { Prisma } from "@prisma/client";
+import { fullDatamodel } from "../../helpers/dmmf-cache";
 import { IxStatsCalculator } from "~/lib/economy/calculations";
 import { calculateComponentEconomicModifiers } from "~/lib/government/atomic-utils";
 import { getDefaultEconomicConfig } from "~/lib/config-service";
@@ -92,8 +92,8 @@ describe("effective GDP growth", () => {
 
 describe("schema defaults", () => {
   const field = (model: string, name: string) =>
-    Prisma.dmmf.datamodel.models
-      .find((m) => m.name === model)!
+    fullDatamodel()
+      .models.find((m) => m.name === model)!
       .fields.find((f) => f.name === name)!;
 
   it("Country.baselineDate has no wall-clock default (every create sets an IxTime baseline)", () => {

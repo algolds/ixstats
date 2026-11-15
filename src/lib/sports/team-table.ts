@@ -3,6 +3,8 @@
  * differ from the saved ones into the patches `sports.updateTeams` takes.
  */
 
+import { parseWikiSource, type WikiSource } from "~/lib/wiki-os/config";
+
 /** A team as the league query returns it: the fields the table edits. */
 export interface TeamTableSource {
   id: string;
@@ -11,6 +13,7 @@ export interface TeamTableSource {
   color: string;
   nationId?: string | null;
   wikiSlug?: string | null;
+  wikiSource?: string | null;
 }
 
 export interface TeamRow {
@@ -20,6 +23,7 @@ export interface TeamRow {
   color: string;
   nationId: string;
   wikiSlug: string;
+  wikiSource: WikiSource;
 }
 
 export type TeamField = Exclude<keyof TeamRow, "id">;
@@ -32,6 +36,7 @@ export interface TeamPatch {
   color?: string;
   nationId?: string | null;
   wikiSlug?: string | null;
+  wikiSource?: WikiSource | null;
 }
 
 export interface TeamTableState {
@@ -54,6 +59,7 @@ const toRow = (team: TeamTableSource): TeamRow => ({
   color: team.color,
   nationId: team.nationId ?? "",
   wikiSlug: team.wikiSlug ?? "",
+  wikiSource: parseWikiSource(team.wikiSource),
 });
 
 export function createTeamTable(teams: readonly TeamTableSource[]): TeamTableState {
@@ -90,6 +96,9 @@ function patchOf(row: TeamRow, saved: TeamRow): TeamPatch | null {
   if (text(row.color) !== text(saved.color)) patch.color = text(row.color);
   if (optional(row.nationId) !== optional(saved.nationId)) patch.nationId = optional(row.nationId);
   if (optional(row.wikiSlug) !== optional(saved.wikiSlug)) patch.wikiSlug = optional(row.wikiSlug);
+  if (row.wikiSource !== saved.wikiSource) {
+    patch.wikiSource = optional(row.wikiSlug) ? parseWikiSource(row.wikiSource) : null;
+  }
   return Object.keys(patch).length > 1 ? patch : null;
 }
 

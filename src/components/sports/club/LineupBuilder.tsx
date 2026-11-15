@@ -195,7 +195,7 @@ export function LineupBuilder({
                                   : "text-label-secondary"
                             )}
                           >
-                            {ovr ?? <span aria-label="Not recorded">—</span>}
+                            {ovr ?? <span aria-label="Not recorded">–</span>}
                           </span>
                         </div>
                       </div>

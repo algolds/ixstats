@@ -1,16 +1,23 @@
-import { useEffect, useMemo } from "react";
-import { api } from "~/trpc/react";
+import { useEffect } from "react";
+import { api, type RouterOutputs } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
+import {
+  buildMessage,
+  flattenPages,
+  mapFirstPage,
+  mapPages,
+  newTempMessageId,
+  ownAccount,
+  replaceOptimistic,
+  seenMessageId,
+  sortByTime,
+  withReaction,
+  type ThreadMessage,
+} from "~/lib/messages/thread";
 import type { MessageActions } from "./MessagesBubble";
 
-const timeOf = (item: any) => new Date(item.createdAt ?? item.ixTimeTimestamp ?? 0).getTime();
-
-export const sortByTime = <T>(items: T[]): T[] => [...items].sort((a, b) => timeOf(a) - timeOf(b));
-
-export const isConsecutiveMessage = (prev: any, message: any) =>
-  prev != null &&
-  prev.accountId === message.accountId &&
-  timeOf(message) - timeOf(prev) < 5 * 60 * 1000;
+export type CachedMessage =
+  RouterOutputs["messages"]["getConversationMessages"]["messages"][number];
 
 type ClerkLikeUser = {
   username?: string | null;
@@ -18,67 +25,56 @@ type ClerkLikeUser = {
   imageUrl?: string | null;
 } | null;
 
-export const ownAccount = (currentUserId: string, user?: ClerkLikeUser) => ({
-  id: currentUserId,
-  username: user?.username ?? "me",
-  displayName: user?.fullName ?? user?.username ?? "Me",
-  profileImageUrl: user?.imageUrl ?? null,
-  accountType: "country" as const,
-});
-
-/** A cached message row, as inserted optimistically or from a realtime event. */
-export const buildMessage = (fields: {
-  id: string;
-  conversationId: string;
-  accountId: string;
-  account: ReturnType<typeof ownAccount> | Record<string, unknown>;
-  content: string;
-  messageType: string;
-  at: Date;
-}) => {
-  const { at, ...rest } = fields;
-  return {
-    ...rest,
-    ixTimeTimestamp: at,
-    createdAt: at,
-    reactions: {},
-    mentions: [],
-    attachments: [],
-    replyTo: undefined,
-    readReceipts: [],
-    isSystem: false,
-    editedAt: null,
-    deletedAt: null,
-    source: null,
-  };
-};
+type Edit = (messages: ThreadMessage[]) => ThreadMessage[];
 
 /**
- * Optimistic cache edits for one conversation's message list. `patch` cancels in-flight
- * fetches, applies `mapMessages` to the cached messages and returns the previous snapshot.
+ * Edits for one conversation's cached message pages. The cache holds server rows; an edit works on
+ * the thread's own message shape, which every server row already satisfies.
  */
-function useMessageCache(conversationId: string, userId: string) {
+export function useMessageCache(conversationId: string, userId: string) {
   const utils = api.useUtils();
   const queryKey = { conversationId, userId };
   const cache = utils.messages.getConversationMessages;
 
   return {
     queryKey,
-    cache,
-    async patch(mapMessages: (messages: any[]) => any[], ifEmpty?: unknown) {
+    /** Cancels in-flight fetches so they cannot overwrite the edit, then applies it. */
+    async patch(edit: Edit, scope: "all" | "newest" = "all") {
       await cache.cancel(queryKey);
-      const previousMessages = cache.getData(queryKey);
-      cache.setData(queryKey, (old: any) =>
-        old ? { ...old, messages: mapMessages(old.messages) } : ifEmpty
-      );
-      return { previousMessages };
+      cache.setInfiniteData(queryKey, (old) => {
+        if (!old) return old;
+        const apply = scope === "all" ? mapPages : mapFirstPage;
+        return apply(old, (messages) => edit(messages) as CachedMessage[]);
+      });
     },
+    findMessage: (messageId: string) =>
+      cache
+        .getInfiniteData(queryKey)
+        ?.pages.flatMap((page) => page.messages)
+        .find((m) => m.id === messageId),
+    /** The first message of a thread nobody has loaded yet. */
+    seed: (message: ThreadMessage) =>
+      cache.setInfiniteData(
+        queryKey,
+        (old) =>
+          old ?? {
+            pages: [{ messages: [message as CachedMessage], nextCursor: null }],
+            pageParams: [null],
+          }
+      ),
     invalidate: () => void cache.invalidate(queryKey),
   };
 }
 
-const patchMessage = (messageId: string, update: (m: any) => any) => (messages: any[]) =>
-  messages.map((m) => (m.id === messageId ? update(m) : m));
+const patchMessage =
+  (messageId: string, update: (m: ThreadMessage) => ThreadMessage): Edit =>
+  (messages) =>
+    messages.map((m) => (m.id === messageId ? update(m) : m));
+
+interface SendExtras {
+  replyToId?: string;
+  mentions?: string[];
+}
 
 interface Options {
   conversationId: string;
@@ -99,33 +95,53 @@ export function useConversationMessages({
 }: Options) {
   const notify = useNotify();
   const utils = api.useUtils();
-  const { queryKey, cache, patch, invalidate } = useMessageCache(conversationId, currentUserId);
+  const { queryKey, patch, findMessage, seed, invalidate } = useMessageCache(
+    conversationId,
+    currentUserId
+  );
 
-  const { data, isLoading } = api.messages.getConversationMessages.useQuery(queryKey, {
+  const query = api.messages.getConversationMessages.useInfiniteQuery(queryKey, {
     enabled: enabled && !!conversationId && !!currentUserId,
     refetchOnWindowFocus: false,
     staleTime: 30000,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
   });
 
   const sendMessage = api.messages.sendMessage.useMutation({
-    onMutate: (newMsg) => {
-      const now = new Date();
-      const optimisticMsg = buildMessage({
-        id: `temp-${now.getTime()}`,
+    onMutate: async (input) => {
+      const tempId = newTempMessageId();
+      const quoted = input.replyToId ? findMessage(input.replyToId) : undefined;
+      const optimistic = buildMessage({
+        id: tempId,
         conversationId,
         accountId: currentUserId,
         account: ownAccount(currentUserId, user),
-        content: newMsg.content,
-        messageType: newMsg.messageType ?? "text",
-        at: now,
+        content: input.content,
+        messageType: input.messageType ?? "text",
+        at: new Date(),
+        replyTo: quoted && {
+          id: quoted.id,
+          accountId: quoted.accountId,
+          account: quoted.account,
+          content: quoted.content,
+        },
       });
-      return patch((messages) => [...messages, optimisticMsg], {
-        messages: [optimisticMsg],
-        nextCursor: undefined,
-      });
+      await patch((messages) => [...messages, optimistic], "newest");
+      seed(optimistic);
+      return { tempId };
     },
-    onError: (error: any, _newMsg, context) => {
-      if (context?.previousMessages) cache.setData(queryKey, context.previousMessages);
+    onSuccess: (saved, _input, context) => {
+      void patch(
+        (messages) =>
+          replaceOptimistic(messages, context.tempId, {
+            id: saved.id,
+            ixTimeTimestamp: saved.ixTimeTimestamp,
+          }),
+        "newest"
+      );
+    },
+    onError: (error, _input, context) => {
+      if (context) void patch((messages) => messages.filter((m) => m.id !== context.tempId));
       notify.error(
         error.message?.includes("content") ? "Invalid content" : "Failed to send message"
       );
@@ -138,27 +154,13 @@ export function useConversationMessages({
 
   const addReaction = api.messages.addReaction.useMutation({
     onMutate: ({ messageId, reaction }) =>
-      patch(
-        patchMessage(messageId, (m) => ({
-          ...m,
-          reactions: { ...m.reactions, [reaction]: (m.reactions?.[reaction] ?? 0) + 1 },
-        }))
-      ),
+      patch(patchMessage(messageId, (m) => withReaction(m, reaction, true))),
     onSettled: invalidate,
   });
 
   const removeReaction = api.messages.removeReaction.useMutation({
     onMutate: ({ messageId, reaction }) =>
-      patch(
-        patchMessage(messageId, (m) => {
-          const reactions = { ...m.reactions };
-          if (reactions[reaction] !== undefined) {
-            reactions[reaction] -= 1;
-            if (reactions[reaction] <= 0) delete reactions[reaction];
-          }
-          return { ...m, reactions };
-        })
-      ),
+      patch(patchMessage(messageId, (m) => withReaction(m, reaction, false))),
     onSettled: invalidate,
   });
 
@@ -173,33 +175,46 @@ export function useConversationMessages({
     onSettled: invalidate,
   });
 
-  const actions: MessageActions = useMemo(
-    () => ({
-      onAddReaction: (messageId, reaction) =>
-        addReaction.mutate({ messageId, userId: currentUserId, reaction }),
-      onRemoveReaction: (messageId, reaction) => removeReaction.mutate({ messageId, reaction }),
-      onEditMessage: (messageId, content) => editMutation.mutate({ messageId, content }),
-      onDeleteMessage: (messageId) => deleteMutation.mutate({ messageId }),
-    }),
-    [currentUserId, addReaction, removeReaction, editMutation, deleteMutation]
-  );
+  const actions: MessageActions = {
+    onAddReaction: (messageId, reaction) =>
+      addReaction.mutate({ messageId, userId: currentUserId, reaction }),
+    onRemoveReaction: (messageId, reaction) => removeReaction.mutate({ messageId, reaction }),
+    onEditMessage: (messageId, content) => editMutation.mutate({ messageId, content }),
+    onDeleteMessage: (messageId) => deleteMutation.mutate({ messageId }),
+  };
 
-  const send = (content: string) => {
-    sendMessage.mutate({ conversationId, userId: currentUserId, content, messageType: "text" });
+  const send = (content: string, extras: SendExtras = {}) => {
+    sendMessage.mutate({
+      conversationId,
+      userId: currentUserId,
+      content,
+      messageType: "text",
+      replyToId: extras.replyToId,
+      mentions: extras.mentions?.length ? extras.mentions : undefined,
+    });
     onSent();
   };
 
-  const messages = useMemo(() => {
-    const sorted = sortByTime(data?.messages ?? []);
-    if (!searchQuery) return sorted;
-    const q = searchQuery.toLowerCase();
-    return sorted.filter(
-      (msg: any) =>
-        msg.content.toLowerCase().includes(q) || msg.account?.displayName.toLowerCase().includes(q)
-    );
-  }, [data?.messages, searchQuery]);
+  const all = flattenPages(query.data);
+  const needle = searchQuery.toLowerCase();
+  const messages = needle
+    ? all.filter(
+        (msg) =>
+          msg.content.toLowerCase().includes(needle) ||
+          msg.account?.displayName.toLowerCase().includes(needle)
+      )
+    : all;
 
-  return { messages, isLoading, actions, send, isSending: sendMessage.isPending };
+  return {
+    messages,
+    isLoading: query.isLoading,
+    hasOlder: query.hasNextPage,
+    isLoadingOlder: query.isFetchingNextPage,
+    loadOlder: () => void query.fetchNextPage(),
+    actions,
+    send,
+    isSending: sendMessage.isPending,
+  };
 }
 
 export function useSystemBroadcasts({
@@ -236,16 +251,15 @@ export function useSystemBroadcasts({
     onError: (err) => notify.error(err.message || "Failed to clear system notifications"),
   });
 
-  const broadcasts = useMemo(() => {
-    const sorted = sortByTime(data?.notifications ?? []);
-    if (!searchQuery) return sorted;
-    const q = searchQuery.toLowerCase();
-    return sorted.filter(
-      (n: any) =>
-        (n.title ?? "").toLowerCase().includes(q) ||
-        (n.description ?? n.message ?? "").toLowerCase().includes(q)
-    );
-  }, [data?.notifications, searchQuery]);
+  const sorted = sortByTime(data?.notifications ?? []);
+  const q = searchQuery.toLowerCase();
+  const broadcasts = q
+    ? sorted.filter(
+        (n) =>
+          (n.title ?? "").toLowerCase().includes(q) ||
+          (n.description ?? n.message ?? "").toLowerCase().includes(q)
+      )
+    : sorted;
 
   return {
     broadcasts,
@@ -255,14 +269,14 @@ export function useSystemBroadcasts({
   };
 }
 
-/** Marks the open conversation as read once, when it is opened with unread messages. */
+/** Marks the open conversation as read when it opens with unread messages and again whenever more arrive. */
 export function useMarkConversationRead(
   conversation: { id: string; unreadCount: number },
   currentUserId: string,
   isSystemThread: boolean
 ) {
   const utils = api.useUtils();
-  const markAsRead = api.messages.markMessagesAsRead.useMutation({
+  const { mutate: markAsRead } = api.messages.markMessagesAsRead.useMutation({
     onSuccess: () => {
       void utils.messages.getFolderCounts.invalidate();
       void utils.messages.getConversationsByFolder.invalidate();
@@ -271,19 +285,18 @@ export function useMarkConversationRead(
 
   useEffect(() => {
     if (!isSystemThread && conversation.id && currentUserId && conversation.unreadCount > 0) {
-      markAsRead.mutate({ conversationId: conversation.id, userId: currentUserId, messageIds: [] });
+      markAsRead({ conversationId: conversation.id, userId: currentUserId, messageIds: [] });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversation.id, currentUserId, isSystemThread]);
+  }, [conversation.id, conversation.unreadCount, currentUserId, isSystemThread, markAsRead]);
 }
 
 /**
- * Read receipts (SL-4): the id of the newest own message the other person has read, in a direct
+ * Read receipts: the id of the newest own message the other person has read, in a direct
  * conversation where both of you allow read receipts; null otherwise. Polled while open.
  */
 export function useSeenMessageId(
   conversationId: string,
-  messages: any[],
+  messages: readonly ThreadMessage[],
   currentUserId: string,
   enabled: boolean
 ): string | null {
@@ -291,13 +304,5 @@ export function useSeenMessageId(
     { conversationId },
     { enabled: enabled && !!conversationId, refetchInterval: 20_000, staleTime: 10_000 }
   );
-  return useMemo(() => {
-    const seenAt = data?.seenAt ? new Date(data.seenAt).getTime() : null;
-    if (seenAt === null) return null;
-    const seen = messages.filter(
-      (m) =>
-        m.accountId === currentUserId && !String(m.id).startsWith("temp-") && timeOf(m) < seenAt
-    );
-    return seen.at(-1)?.id ?? null;
-  }, [data?.seenAt, messages, currentUserId]);
+  return seenMessageId(messages, data?.seenAt, currentUserId);
 }

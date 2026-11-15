@@ -66,7 +66,8 @@ export const IIWIKI_TOUCHPOINTS: IiwikiTouchpoint[] = [
   },
   {
     id: "country-wiki",
-    label: "Country intros, rich intros, sections and images (countries.getWiki*)",
+    label:
+      "Country intros, rich intros, sections and images (countries.getWiki*); builder import (searchWiki, parseInfobox)",
     feature: "country",
     kind: "server",
     file: "src/server/api/routers/countries/wiki.ts",
@@ -261,6 +262,24 @@ export const IIWIKI_TOUCHPOINTS: IiwikiTouchpoint[] = [
     kind: "server",
     file: "src/lib/wiki-os/adapters/mediawiki/account-proof.ts",
     gate: "assert",
+    cache: "None",
+  },
+  {
+    id: "imports-league-teams",
+    label: "MyLeague team import (sports.previewWikiTeams)",
+    feature: "imports",
+    kind: "server",
+    file: "src/server/api/routers/sports/leagues/crud.ts",
+    gate: "guard",
+    cache: "None",
+  },
+  {
+    id: "imports-company",
+    label: "Exchange company page preview, charter and sync (exchange.previewWikiCompany)",
+    feature: "imports",
+    kind: "server",
+    file: "src/lib/exchange/company-wiki.ts",
+    gate: "guard",
     cache: "None",
   },
   {

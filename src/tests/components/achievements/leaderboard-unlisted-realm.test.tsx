@@ -22,8 +22,7 @@ jest.mock("~/trpc/react", () => ({
   api: {
     realms: { directory: { useQuery: () => ({ data: REALMS }) } },
     achievements: {
-      getLeaderboard: { useQuery: (...args: unknown[]) => mockLeaderboard(...args) },
-      getCountryLeaderboard: { useQuery: () => ({ data: [], isLoading: false }) },
+      getCountryLeaderboard: { useQuery: (...args: unknown[]) => mockLeaderboard(...args) },
     },
   },
 }));
@@ -52,7 +51,10 @@ it("says a draft or unlisted realm isn't ranked and asks the server for nothing"
   expect(screen.getByText("This realm isn't ranked")).toBeTruthy();
   expect(screen.queryByText(/No nations match/)).toBeNull();
   expect(screen.getByRole("combobox", { name: "Realm" })).toHaveTextContent("Pick a realm");
-  expect(mockLeaderboard).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ enabled: false }));
+  expect(mockLeaderboard).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ enabled: false })
+  );
 });
 
 it("ranks a listed realm as before", () => {

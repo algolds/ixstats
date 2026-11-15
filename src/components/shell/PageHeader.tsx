@@ -29,6 +29,7 @@ import { NavArrowLeft } from "iconoir-react";
 
 import { cn } from "~/lib/utils/cn";
 import { Button } from "~/components/ui/button";
+import { FacetMaterial } from "~/components/ui/facet";
 
 export interface PageHeaderProps {
   /** The page title (rendered as the page's `<h1>`). */
@@ -47,15 +48,10 @@ export interface PageHeaderProps {
   /**
    * Decorative art behind the expanded header. It is clipped to the header's rounded box, fades out
    * once the header collapses, and never reaches the compact toolbar. Readability is the header's
-   * job, not the art's: the title block sits on a plate (`BACKDROP_PLATE`), and trailing actions
-   * that need one apply the same classes.
+   * job, not the art's: the title block sits on a frosted Lens (`FacetMaterial layer="lens"` with
+   * `facet-lens-frosted`), and trailing actions that need a plate over the art apply `BACKDROP_PLATE`.
    */
   backdrop?: React.ReactNode;
-  /**
-   * Whether the backdrop actually shows art (default true). A header whose art is missing or failed
-   * keeps the backdrop layout, so nothing shifts, but drops the plate behind the title.
-   */
-  backdropVisible?: boolean;
   /**
    * For pages that already pad their content (the forum): pulls the header out by its own inner
    * gutter, so the title and toolbar actions line up with the page's content edge instead of
@@ -63,28 +59,35 @@ export interface PageHeaderProps {
    * `px-4` rather than `px-2`.
    */
   bleed?: boolean;
+  /**
+   * For pages whose `<h1>` lives elsewhere (the MyCountry command face): the header renders no
+   * large title block and collapses into the compact bar once this element scrolls up under the
+   * toolbar. Pass `null` while that element is not mounted yet; leave it out to use the header's
+   * own large title.
+   */
+  collapseOn?: HTMLElement | null;
   className?: string;
 }
 
 /**
- * The page background role at 90% behind text over backdrop art, opaque under Reduce Transparency
- * and Increase Contrast. At 90% the worst case (a pure black flag pixel in light mode, pure white
- * in dark) leaves label-secondary at 5.5:1 (light) and 6:1 (dark), over the 4.5:1 AA bar.
+ * The page background role at 90% behind toolbar action pills over backdrop art, opaque under
+ * Reduce Transparency and Increase Contrast (a toolbar is Chrome, so pills use a flat plate rather
+ * than a Lens). At 90% the worst case (a pure black flag pixel in light mode, pure white in dark)
+ * leaves label-secondary at 5.5:1 (light) and 6:1 (dark), over the 4.5:1 AA bar.
  */
 export const BACKDROP_PLATE =
   "bg-grouped/90 transparency-reduced:bg-grouped contrast-more:bg-grouped";
 
 const fade = "transition-opacity duration-fast ease-out-facet motion-reduce:transition-none";
 
-/** Tracks whether `target` has scrolled up under the sticky `toolbar`. */
+/** Tracks whether `titleEl` has scrolled up under the sticky `toolbar`. */
 function useCollapsed(
   toolbar: React.RefObject<HTMLElement | null>,
-  target: React.RefObject<HTMLElement | null>
+  titleEl: HTMLElement | null
 ): boolean {
   const [collapsed, setCollapsed] = React.useState(false);
 
   React.useEffect(() => {
-    const titleEl = target.current;
     if (!titleEl || typeof IntersectionObserver === "undefined") return;
     const bar = toolbar.current;
     // The band the toolbar covers once it sticks: its `top` plus its height.
@@ -100,7 +103,7 @@ function useCollapsed(
     );
     observer.observe(titleEl);
     return () => observer.disconnect();
-  }, [toolbar, target]);
+  }, [toolbar, titleEl]);
 
   return collapsed;
 }
@@ -112,14 +115,26 @@ export function PageHeader({
   leading,
   actions,
   backdrop,
-  backdropVisible = true,
   bleed,
+  collapseOn,
   className,
 }: PageHeaderProps) {
   const toolbarRef = React.useRef<HTMLDivElement>(null);
-  const titleRef = React.useRef<HTMLHeadingElement>(null);
-  const collapsed = useCollapsed(toolbarRef, titleRef);
+  // State, not a ref: the observer must re-attach when the observed title mounts.
+  const [ownTitle, setOwnTitle] = React.useState<HTMLHeadingElement | null>(null);
+  const titleElsewhere = collapseOn !== undefined;
+  const collapsed = useCollapsed(toolbarRef, titleElsewhere ? collapseOn : ownTitle);
   const hasToolbarContent = Boolean(back) || Boolean(actions);
+  const titleBlock = (
+    <>
+      <h1 ref={setOwnTitle} className="text-large-title text-label">
+        {title}
+      </h1>
+      {subtitle != null && subtitle !== false && (
+        <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+      )}
+    </>
+  );
 
   return (
     <header
@@ -215,29 +230,29 @@ export function PageHeader({
         </div>
       </div>
 
-      <div
-        className={cn(
-          "flex items-center gap-4",
-          backdrop != null ? "z-raised relative px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
-        )}
-      >
-        {leading}
+      {!titleElsewhere && (
         <div
-          data-slot={backdrop != null ? "page-header-plate" : undefined}
           className={cn(
-            "flex min-w-0 flex-col gap-1",
-            // Sized to the text, so long names are covered too.
-            backdrop != null && cn("rounded-card px-4 py-3", backdropVisible && BACKDROP_PLATE)
+            "flex items-center gap-4",
+            backdrop != null ? "z-raised relative px-4 pt-2 pb-6" : "px-2 pt-2 pb-4"
           )}
         >
-          <h1 ref={titleRef} className="text-large-title text-label">
-            {title}
-          </h1>
-          {subtitle != null && subtitle !== false && (
-            <div className="text-callout text-label-secondary max-w-2xl">{subtitle}</div>
+          {leading}
+          {/* A page has a backdrop or not, so the wrapper never swaps and the observed <h1> never
+              remounts. The Lens is sized to the text, so long names are covered too. */}
+          {backdrop != null ? (
+            <FacetMaterial
+              layer="lens"
+              data-slot="page-header-plate"
+              className="facet-lens-frosted rounded-card flex min-w-0 flex-col gap-1 px-4 py-3"
+            >
+              {titleBlock}
+            </FacetMaterial>
+          ) : (
+            <div className="flex min-w-0 flex-col gap-1">{titleBlock}</div>
           )}
         </div>
-      </div>
+      )}
     </header>
   );
 }

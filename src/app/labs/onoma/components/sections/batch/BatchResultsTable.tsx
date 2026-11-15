@@ -109,7 +109,7 @@ function PerplexityHelp() {
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top" className="text-footnote max-w-xs space-y-2 p-3">
-        <p className="text-label font-semibold">Perplexity (Linguistic Surprise)</p>
+        <p className="text-label font-medium">Perplexity (Linguistic Surprise)</p>
         <p className="text-label-secondary text-caption leading-relaxed">
           Measures how unexpected or unusual a word&apos;s letter transitions are relative to the
           training phonology model.
@@ -174,7 +174,7 @@ export function BatchResultsTable({
               aria-label="Maximum perplexity"
               className="w-20"
             />
-            <span className="text-tint text-caption font-mono font-semibold">
+            <span className="text-tint text-caption font-mono font-medium">
               {perplexityFilter > 0 ? `< ${perplexityFilter}` : "All"}
             </span>
           </div>
@@ -237,8 +237,8 @@ export function BatchResultsTable({
                     aria-label={`Select ${r.name}`}
                   />
                 </TableCell>
-                <TableCell className="text-label p-2 font-semibold">{r.name}</TableCell>
-                <TableCell className="text-label-secondary p-2 font-mono">{r.ipa || "—"}</TableCell>
+                <TableCell className="text-label p-2 font-medium">{r.name}</TableCell>
+                <TableCell className="text-label-secondary p-2 font-mono">{r.ipa || "–"}</TableCell>
                 <TableCell className="text-label-secondary p-2">{r.syllables}</TableCell>
                 <TableCell className="p-2">
                   {r.perplexity === null ? (
@@ -246,11 +246,11 @@ export function BatchResultsTable({
                       className="text-label-secondary text-caption font-mono"
                       title="Not scored"
                     >
-                      —
+                      –
                     </span>
                   ) : (
                     <span
-                      className={`text-caption font-mono font-semibold ${
+                      className={`text-caption font-mono font-medium ${
                         r.perplexity < 25
                           ? "text-green"
                           : r.perplexity < 50

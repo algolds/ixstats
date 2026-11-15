@@ -2,18 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  Trophy,
-  Play,
-  Settings,
-  SystemRestart as Loader2,
-  OpenBook as BookOpen,
-} from "iconoir-react";
+import { Play, Settings, SystemRestart as Loader2, OpenBook as BookOpen } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
+import { monogram } from "~/components/sports/monogram";
 import { PublishStandingsButton } from "~/components/sports/league/PublishStandingsButton";
 import { withBasePath } from "~/lib/base-path";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import type { SportThemeConfig as SportTheme } from "~/lib/sports/theming";
 import { cn } from "~/lib/utils";
 
@@ -24,6 +19,7 @@ interface LeagueMastheadProps {
     sportPreset?: string | null;
     logo?: string | null;
     wikiSlug?: string | null;
+    wikiSource?: string | null;
     teamCount?: number;
     archetype?: string;
   };
@@ -40,8 +36,8 @@ interface LeagueMastheadProps {
     status: string;
   } | null;
   nextMatchDay?: number | null;
-  totalMatchDays?: number;
-  progressPct?: number;
+  /** Fixtures (or races) played so far this season, out of the schedule's total. */
+  played?: { done: number; total: number; unit: "matches" | "races" };
   canManageLeague?: boolean;
   onOpenSettings?: () => void;
   onSimulateMatchDay?: () => void;
@@ -56,8 +52,7 @@ export function LeagueMasthead({
   activeSeason,
   latestSeason,
   nextMatchDay,
-  totalMatchDays = 38,
-  progressPct = 0,
+  played,
   canManageLeague = false,
   onOpenSettings,
   onSimulateMatchDay,
@@ -75,117 +70,98 @@ export function LeagueMasthead({
     onOpenSettings?.();
   };
 
+  const statusLabel = isSeasonActive
+    ? nextMatchDay
+      ? `Matchday ${nextMatchDay}`
+      : "Finals in progress"
+    : latestSeason?.status === "completed"
+      ? "Season completed"
+      : "Season not started";
+  const facts = [
+    archetypeLabel,
+    sportTheme.federationShort,
+    `${league.teamCount ?? 0} teams`,
+    `Season ${seasonNumber}`,
+    ...(isSeasonActive && played && played.total > 0
+      ? [
+          `${played.done.toLocaleString()} of ${played.total.toLocaleString()} ${played.unit} played`,
+        ]
+      : []),
+  ].join(" · ");
+
   return (
-    <header
+    <Card
+      content="entity"
+      padding="md"
       className={cn(
-        "bg-surface border-separator shadow-card text-label rounded-card relative overflow-hidden border p-6 md:p-8",
+        "flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between",
         className
       )}
     >
-      {canManageLeague && onOpenSettings && (
-        <div className="border-separator mb-5 flex justify-end border-b pb-4">
-          <Button size="sm" variant="outline" onClick={handleSettingsClick} className="px-3">
-            <Settings className="h-3.5 w-3.5" />
-            <span>Manage league</span>
-          </Button>
-        </div>
-      )}
-
-      {/* Masthead Main Identity Row */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left: League Crest & Identity */}
-        <div className="flex items-center gap-4">
-          <div className="rounded-card border-separator bg-surface-secondary shadow-card flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden border sm:h-20 sm:w-20">
-            {league.logo ? (
-              <img
-                src={withBasePath(league.logo)}
-                alt={league.name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <Trophy className="text-yellow h-8 w-8" />
-            )}
-          </div>
-
-          <div className="space-y-2">
+      <div className="flex min-w-0 items-center gap-3">
+        {league.logo ? (
+          <img
+            src={withBasePath(league.logo)}
+            alt=""
+            className="rounded-row size-14 shrink-0 object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="bg-tint-fill text-tint-ink rounded-row text-title-3 flex size-14 shrink-0 items-center justify-center select-none"
+          >
+            {monogram(league.name)}
+          </span>
+        )}
+        <div className="min-w-0 space-y-1">
+          <p className="text-headline text-label flex items-center gap-2">
+            <span
+              aria-hidden
+              className={cn("size-2 rounded-full", isSeasonActive ? "bg-green" : "bg-fill")}
+            />
+            {statusLabel}
+          </p>
+          <p className="text-footnote text-label-secondary tabular-nums">{facts}</p>
+          {league.wikiSlug && (
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-title-1 sm:text-large-title text-label">{league.name}</h2>
-              <Badge
-                variant="outline"
-                className={cn("text-eyebrow px-3 py-0.5", sportTheme.badgeClass)}
+              <Link
+                href={wikiReaderPath(league.wikiSlug, parseWikiSource(league.wikiSource))}
+                className="text-footnote text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm duration-fast inline-flex items-center gap-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                {sportTheme.name}
-              </Badge>
-              {league.wikiSlug && (
-                <Link
-                  href={titleToWikiOSRoute(league.wikiSlug)}
-                  className="text-footnote text-label-secondary hover:text-label inline-flex items-center gap-1 transition-colors"
-                >
-                  <BookOpen className="h-3.5 w-3.5" />
-                  <span>Wiki article</span>
-                </Link>
-              )}
-              {league.wikiSlug && canManageLeague && (
+                <BookOpen aria-hidden className="size-3.5" />
+                <span>Wiki article</span>
+              </Link>
+              {canManageLeague && parseWikiSource(league.wikiSource) === "ixwiki" && (
                 <PublishStandingsButton leagueId={league.id} />
               )}
             </div>
-
-            <div className="text-eyebrow text-label-secondary flex flex-wrap items-center gap-2">
-              <span>{archetypeLabel}</span>
-              <span className="text-label-tertiary">•</span>
-              <span>{sportTheme.federationShort}</span>
-              <span className="text-label-tertiary">•</span>
-              <span>{league.teamCount ?? 0} Teams</span>
-              <span className="text-label-tertiary">•</span>
-              <span className="text-label">Season {seasonNumber}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Season Progress Meter & Primary Simulate Trigger */}
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          {/* Status / Round Ticker */}
-          <div className="rounded-card border-separator bg-fill-4 text-footnote flex items-center justify-between gap-3 border px-4 py-2 sm:justify-end">
-            <div className="flex items-center gap-2">
-              <div
-                className={cn("h-2 w-2 rounded-full", isSeasonActive ? "bg-green" : "bg-fill")}
-              />
-              <span className="text-label font-semibold">
-                {isSeasonActive
-                  ? nextMatchDay
-                    ? `Matchday ${nextMatchDay}`
-                    : "Finals in Progress"
-                  : latestSeason?.status === "completed"
-                    ? "Season Completed"
-                    : "Season not started"}
-              </span>
-            </div>
-
-            {isSeasonActive && totalMatchDays > 0 && (
-              <span className="text-footnote text-label-secondary font-semibold tabular-nums">
-                {Math.round(progressPct)}%
-              </span>
-            )}
-          </div>
-
-          {/* Primary Action Button */}
-          {isSeasonActive && onSimulateMatchDay && (
-            <Button onClick={handleSimulateClick} disabled={isSimulatingMatchDay} className="px-5">
-              {isSimulatingMatchDay ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Simulating...</span>
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 fill-current" />
-                  <span>Simulate (Space)</span>
-                </>
-              )}
-            </Button>
           )}
         </div>
       </div>
-    </header>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {canManageLeague && onOpenSettings && (
+          <Button size="sm" variant="secondary" onClick={handleSettingsClick}>
+            <Settings />
+            Manage league
+          </Button>
+        )}
+        {isSeasonActive && onSimulateMatchDay && (
+          <Button size="sm" onClick={handleSimulateClick} disabled={isSimulatingMatchDay}>
+            {isSimulatingMatchDay ? (
+              <>
+                <Loader2 className="animate-spin motion-reduce:animate-none" />
+                Simulating
+              </>
+            ) : (
+              <>
+                <Play />
+                Simulate matchday
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }

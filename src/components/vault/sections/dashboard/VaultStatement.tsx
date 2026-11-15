@@ -72,6 +72,14 @@ const ROW_ICONS: Record<RowIconKey, React.ComponentType> = {
 
 const toDirection = (filter: Filter) => (filter === "all" ? undefined : filter);
 
+function formatRowUtcTime(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "00:00 UTC";
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  return `${hours}:${minutes} UTC`;
+}
+
 /** `rows` followed by `more`, each id once (a new transaction shifts later pages by one). */
 function mergeRows(rows: StatementRow[], more: StatementRow[]): StatementRow[] {
   const known = new Set(rows.map((row) => row.id));
@@ -90,7 +98,7 @@ function Credits({ value, className }: { value: number; className?: string }) {
 function DividendBreakdown({ lines }: { lines: DividendLine[] }) {
   return (
     <CollapsibleContent>
-      <ul className="border-separator mb-2 ml-9 space-y-1 border-l pl-3">
+      <ul className="border-separator mb-2.5 ml-9 space-y-1 border-l pl-3">
         {lines.map((line) => (
           <li key={line.key} className="text-footnote flex justify-between gap-4">
             <span className="text-label-secondary">{LINE_LABELS[line.key]}</span>
@@ -102,7 +110,6 @@ function DividendBreakdown({ lines }: { lines: DividendLine[] }) {
   );
 }
 
-/** Where the credits came from, as a tinted icon in a small well. */
 function RowIcon({ row }: { row: StatementRow }) {
   const key = rowIconKey(row);
   const Icon = ROW_ICONS[key];
@@ -123,43 +130,63 @@ function RowTitle({ info }: { info: RowDescription }) {
   );
 }
 
-/** One compact data row: icon, description with its detail, the signed amount and the running balance. */
+/**
+ * Bank statement row: leading source icon outside an inset `border-separator` hairline,
+ * description + detail, and right-aligned tabular amount, balance, and UTC timestamp.
+ */
 function StatementRowItem({ row }: { row: StatementRow }) {
   const info = describeRow(row);
   const earned = row.credits > 0;
+  const timestamp = formatRowUtcTime(row.createdAt);
+
   return (
-    <li data-row className="border-separator border-t first:border-t-0">
+    <li data-row className="group/statement-row px-4 md:px-5">
       <Collapsible>
-        <div className="flex min-h-9 items-center gap-3 py-1">
+        <div className="flex items-center gap-3">
           <RowIcon row={row} />
-          <div className="text-callout min-w-0 flex-1 truncate">
-            <RowTitle info={info} />
-            {info.detail && (
-              <span className="text-label-secondary text-footnote ml-2">{info.detail}</span>
+          <div className="border-separator flex min-h-11 min-w-0 flex-1 items-center gap-3 border-t py-2.5 group-first/statement-row:border-t-0">
+            <div className="min-w-0 flex-1">
+              <div className="text-callout truncate">
+                <RowTitle info={info} />
+              </div>
+              <div className="text-footnote text-label-secondary flex flex-wrap items-center gap-x-1.5 truncate tabular-nums">
+                <time dateTime={new Date(row.createdAt).toISOString()}>{timestamp}</time>
+                {info.detail && (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span className="truncate">{info.detail}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {info.lines && (
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="xs" className="group shrink-0 px-2">
+                  <NavArrowRight aria-hidden className="size-3 group-data-[state=open]:hidden" />
+                  <NavArrowDown aria-hidden className="size-3 group-data-[state=closed]:hidden" />
+                  Breakdown
+                </Button>
+              </CollapsibleTrigger>
             )}
-          </div>
-          {info.lines && (
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="xs" className="group shrink-0 px-2">
-                <NavArrowRight aria-hidden className="size-3 group-data-[state=open]:hidden" />
-                <NavArrowDown aria-hidden className="size-3 group-data-[state=closed]:hidden" />
-                Breakdown
-              </Button>
-            </CollapsibleTrigger>
-          )}
-          <div className="flex shrink-0 flex-col items-end sm:flex-row sm:items-center sm:gap-3">
-            <span
-              className={cn("text-callout text-right", earned ? "text-success-ink" : "text-label")}
-            >
-              {earned ? "+" : "-"}
-              <Credits value={Math.abs(row.credits)} />
-            </span>
-            <span
-              data-slot="statement-balance"
-              className="text-label-secondary text-footnote text-right tabular-nums sm:w-24"
-            >
-              {formatAmount(row.balanceAfter)}
-            </span>
+
+            <div className="flex shrink-0 flex-col items-end tabular-nums">
+              <span
+                className={cn(
+                  "text-callout text-right font-medium tabular-nums",
+                  earned ? "text-success-ink" : "text-label"
+                )}
+              >
+                {earned ? "+" : "-"}
+                <Credits value={Math.abs(row.credits)} />
+              </span>
+              <span
+                data-slot="statement-balance"
+                className="text-label-secondary text-footnote text-right tabular-nums"
+              >
+                {formatAmount(row.balanceAfter)}
+              </span>
+            </div>
           </div>
         </div>
         {info.lines && <DividendBreakdown lines={info.lines} />}
@@ -168,18 +195,30 @@ function StatementRowItem({ row }: { row: StatementRow }) {
   );
 }
 
+interface StatementPageState {
+  earlier: StatementRow[];
+  earlierHasMore: boolean | null;
+  loadingMore: boolean;
+  loadFailed: boolean;
+}
+
+const INITIAL_PAGE_STATE: StatementPageState = {
+  earlier: [],
+  earlierHasMore: null,
+  loadingMore: false,
+  loadFailed: false,
+};
+
 /**
- * The Wallet's bank statement: ledger rows grouped by UTC day, each with its signed amount and the
- * running balance. Pages load by offset; "Show earlier" fetches the next one.
+ * Full-width Wallet bank statement: ledger rows grouped by UTC day inside a flush `data` pane,
+ * with filter pills, inset `border-separator` hairlines, source icons, and right-aligned figures.
  */
 export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
   const utils = api.useUtils();
   const [now] = useState(() => new Date());
   const [filter, setFilter] = useState<Filter>("all");
-  const [earlier, setEarlier] = useState<StatementRow[]>([]);
-  const [earlierHasMore, setEarlierHasMore] = useState<boolean | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [pageState, setPageState] = useState<StatementPageState>(INITIAL_PAGE_STATE);
+  const { earlier, earlierHasMore, loadingMore, loadFailed } = pageState;
 
   const direction = toDirection(filter);
   const first = api.vault.getTransactions.useQuery({ limit: pageSize, offset: 0, direction });
@@ -197,16 +236,12 @@ export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
   const changeFilter = (next: Filter) => {
     filterRun.current += 1;
     setFilter(next);
-    setLoadingMore(false);
-    setEarlier([]);
-    setEarlierHasMore(null);
-    setLoadFailed(false);
+    setPageState(INITIAL_PAGE_STATE);
   };
 
   const showEarlier = async () => {
     const run = filterRun.current;
-    setLoadingMore(true);
-    setLoadFailed(false);
+    setPageState((prev) => ({ ...prev, loadingMore: true, loadFailed: false }));
     try {
       const page = await utils.vault.getTransactions.fetch({
         limit: pageSize,
@@ -214,18 +249,25 @@ export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
         direction,
       });
       if (run !== filterRun.current) return;
-      setEarlier((current) => mergeRows(current, page.transactions));
-      setEarlierHasMore(page.hasMore);
+      setPageState((prev) => ({
+        ...prev,
+        earlier: mergeRows(prev.earlier, page.transactions),
+        earlierHasMore: page.hasMore,
+      }));
     } catch {
-      if (run === filterRun.current) setLoadFailed(true);
+      if (run === filterRun.current) {
+        setPageState((prev) => ({ ...prev, loadFailed: true }));
+      }
     } finally {
-      if (run === filterRun.current) setLoadingMore(false);
+      if (run === filterRun.current) {
+        setPageState((prev) => ({ ...prev, loadingMore: false }));
+      }
     }
   };
 
   return (
-    <Card content="data" padding="md">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+    <Card content="data" padding="none" data-slot="vault-statement" className="overflow-hidden">
+      <div className="border-separator flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3.5 md:px-5">
         <CardTitle icon={<Wallet />}>Statement</CardTitle>
         <SegmentedControl
           aria-label="Filter the statement"
@@ -237,22 +279,25 @@ export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
       </div>
 
       {first.isLoading ? (
-        <div className="space-y-1">
+        <div className="space-y-2 p-4 md:p-5">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="rounded-row h-9 w-full" />
+            <Skeleton key={i} className="rounded-row h-11 w-full" />
           ))}
         </div>
       ) : first.isError ? (
-        <p role="alert" className="text-label-secondary text-footnote py-8 text-center">
+        <p role="alert" className="text-label-secondary text-footnote px-4 py-8 text-center">
           The statement could not be loaded.
         </p>
       ) : days.length === 0 ? (
-        <p className="text-label-secondary text-footnote py-8 text-center">{EMPTY[filter]}</p>
+        <p className="text-label-secondary text-footnote px-4 py-8 text-center">{EMPTY[filter]}</p>
       ) : (
-        <div className="space-y-2">
+        <div className="divide-separator divide-y">
           {days.map((day) => (
-            <section key={day.key} aria-labelledby={`statement-${day.key}`}>
-              <h3 id={`statement-${day.key}`} className="text-label-secondary text-caption pt-1">
+            <section key={day.key} aria-labelledby={`statement-${day.key}`} className="py-1">
+              <h3
+                id={`statement-${day.key}`}
+                className="text-label-secondary text-caption px-4 pt-2.5 pb-1 font-medium md:px-5"
+              >
                 {day.label}
               </h3>
               <ul>
@@ -265,16 +310,20 @@ export function VaultStatement({ pageSize = 10 }: { pageSize?: number }) {
         </div>
       )}
 
-      {loadFailed && (
-        <p role="alert" className="text-label-secondary text-footnote mt-3 text-center">
-          Earlier transactions could not be loaded.
-        </p>
-      )}
-      {hasMore && !first.isLoading && (
-        <div className="mt-3 flex justify-center">
-          <Button variant="ghost" size="sm" disabled={loadingMore} onClick={showEarlier}>
-            {loadingMore ? "Loading" : "Show earlier"}
-          </Button>
+      {(loadFailed || (hasMore && !first.isLoading)) && (
+        <div className="border-separator space-y-2 border-t px-4 py-3 md:px-5">
+          {loadFailed && (
+            <p role="alert" className="text-label-secondary text-footnote text-center">
+              Earlier transactions could not be loaded.
+            </p>
+          )}
+          {hasMore && !first.isLoading && (
+            <div className="flex justify-center">
+              <Button variant="ghost" size="sm" disabled={loadingMore} onClick={showEarlier}>
+                {loadingMore ? "Loading" : "Show earlier"}
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </Card>

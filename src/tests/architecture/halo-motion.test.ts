@@ -8,7 +8,7 @@ const walk = (d: string): string[] =>
     .flatMap((e) =>
       e.isDirectory()
         ? walk(path.join(d, e.name))
-        : e.name.endsWith(".tsx")
+        : /\.(?:ts|tsx)$/.test(e.name)
           ? [path.join(d, e.name)]
           : []
     );
@@ -26,6 +26,10 @@ const STILL: Record<string, RegExp> = {
   inlineSeconds: /\bduration:\s*\d*\.\d+/,
   glowAnimation: /animate-(?:flash-notification|di-critical|di-nav-pulse)/,
   shoutedCopy: /"(?:FULL TIME|LIVE)"/,
+  rawZIndex: /\bz-(?:10|20|30|40|50)\b/,
+  negativeZIndex: /(?:^|[\s"'`])-z-\d/,
+  layerShadow: /\bshadow-(?:card|floating|sheet)\b/,
+  hexAlphaConcat: /\$\{[^}]+\}[0-9a-fA-F]{2}\b/,
 };
 
 it.each(Object.keys(STILL))("Halo has no %s", (name) => {
@@ -45,4 +49,9 @@ it("the Halo glow keyframes are gone", () => {
     .map((p) => fs.readFileSync(path.join(src, p), "utf8"))
     .join("\n");
   expect(css).not.toMatch(/flash-notification|di-critical|di-nav-pulse/);
+});
+
+it("the island never animates width or height", () => {
+  const primitives = fs.readFileSync(path.join(src, "components/halo/HaloPrimitives.tsx"), "utf8");
+  expect(primitives).not.toMatch(/animate=\{\{[^}]*\b(width|height)\b/);
 });

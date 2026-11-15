@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
@@ -12,7 +13,6 @@ import {
   Bookmark as BookMarked,
   Calendar,
 } from "iconoir-react";
-import Link from "next/link";
 import { api } from "~/trpc/react";
 import type { SelectedFeature } from "./IxWorldMap";
 import { SnapBottomSheet } from "./SnapBottomSheet";
@@ -25,6 +25,7 @@ import { FacetMaterial } from "~/components/ui/facet";
 import { Stat } from "~/components/ui/stat";
 import { Card } from "~/components/ui/card";
 import { WikiLinkButton } from "~/components/maps/shared/WikiLinkButton";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 import { useMapRealm } from "./MapRealmContext";
 
 interface FeatureInfoPanelProps {
@@ -155,9 +156,10 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
   const isMobile = useIsMobile();
   const realm = useMapRealm();
 
-  // Fetch wiki intro on demand (only if wikiPageTitle is set), from the map's realm's wiki
+  // Fetch wiki intro on demand (only if wikiPageTitle is set), asking the stored wiki when known
+  const preferredWiki = feature.wikiSource ? parseWikiSource(feature.wikiSource) : undefined;
   const { data: wikiIntro, isLoading: wikiLoading } = api.geoWiki.getFeatureWikiIntro.useQuery(
-    { wikiPageTitle: feature.wikiPageTitle!, realm },
+    { wikiPageTitle: feature.wikiPageTitle!, realm, wiki: preferredWiki },
     {
       enabled: !!feature.wikiPageTitle,
       staleTime: 5 * 60_000,
@@ -221,10 +223,10 @@ export const FeatureInfoPanel = memo(function FeatureInfoPanel({
           )}
           {feature.countrySlug && (
             <Button asChild size="sm" className="bg-tint text-on-tint hover:bg-tint-hover">
-              <Link href={`/countries/${feature.countrySlug}`}>
+              <CountryLink country={{ slug: feature.countrySlug, name: feature.countryName }}>
                 View {feature.countryName}
                 <ExternalLink aria-hidden />
-              </Link>
+              </CountryLink>
             </Button>
           )}
         </div>

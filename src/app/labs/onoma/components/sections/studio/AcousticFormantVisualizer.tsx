@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/sections/studio/AcousticFormantVisualizer.tsx
 // Onoma Lab — Real-Time IPA Formant & Acoustic Spectrogram Visualizer
 
+import { Card } from "~/components/ui/card";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { AntennaSignal as Radio } from "iconoir-react";
 import {
@@ -216,9 +217,7 @@ export function AcousticFormantVisualizer({
         <div className="space-y-0.5 text-left">
           <div className="flex items-center gap-2">
             <Radio className="text-tint h-4 w-4" />
-            <h4 className="text-label text-body font-semibold">
-              Acoustic phonetics & formant space
-            </h4>
+            <h4 className="text-label text-headline">Acoustic phonetics & formant space</h4>
           </div>
           <p className="text-label-secondary text-caption">
             Vowel height ($F_1$) vs frontness ($F_2$) trajectory and FFT resonance.
@@ -240,17 +239,17 @@ export function AcousticFormantVisualizer({
 
       {activeTab === "quadrilateral" ? (
         <div className="space-y-3">
-          <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-2">
-            <div className="text-label-secondary text-eyebrow absolute top-2 left-3 font-mono">
+          <Card padding="none" className="relative overflow-hidden p-2">
+            <div className="text-label-secondary text-caption absolute top-2 left-3 font-mono">
               ← Front ($F_2$ High)
             </div>
-            <div className="text-label-secondary text-eyebrow absolute top-2 right-3 font-mono">
+            <div className="text-label-secondary text-caption absolute top-2 right-3 font-mono">
               Back ($F_2$ Low) →
             </div>
-            <div className="text-label-secondary text-eyebrow absolute bottom-2 left-3 font-mono">
+            <div className="text-label-secondary text-caption absolute bottom-2 left-3 font-mono">
               Close / High ($F_1$ Low) ↑
             </div>
-            <div className="text-label-secondary text-eyebrow absolute right-3 bottom-2 font-mono">
+            <div className="text-label-secondary text-caption absolute right-3 bottom-2 font-mono">
               ↓ Open / Low ($F_1$ High)
             </div>
 
@@ -377,12 +376,12 @@ export function AcousticFormantVisualizer({
                 </g>
               )}
             </svg>
-          </div>
+          </Card>
 
           <div className="grid grid-cols-2 gap-2 text-left sm:grid-cols-4">
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Active vowels</div>
-              <div className="text-label text-footnote font-mono font-semibold">
+              <div className="text-label-secondary text-caption">Active vowels</div>
+              <div className="text-label text-footnote font-mono font-medium">
                 {activeVowels.length > 0
                   ? activeVowels.map((v) => `/${v.ipa}/`).join(" ")
                   : "No vowels detected"}
@@ -390,22 +389,22 @@ export function AcousticFormantVisualizer({
             </div>
 
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Acoustic center</div>
-              <div className="text-tint text-footnote font-mono font-semibold">
-                {acousticCenter ? `${acousticCenter.f1}Hz / ${acousticCenter.f2}Hz` : "—"}
+              <div className="text-label-secondary text-caption">Acoustic center</div>
+              <div className="text-tint text-footnote font-mono font-medium">
+                {acousticCenter ? `${acousticCenter.f1}Hz / ${acousticCenter.f2}Hz` : "–"}
               </div>
             </div>
 
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Front / Back Ratio</div>
-              <div className="text-label text-footnote font-mono font-semibold">
+              <div className="text-label-secondary text-caption">Front / Back Ratio</div>
+              <div className="text-label text-footnote font-mono font-medium">
                 {frontnessCount.front}F · {frontnessCount.central}C · {frontnessCount.back}B
               </div>
             </div>
 
             <div className="border-separator bg-fill-4 rounded-control border p-2">
-              <div className="text-label-secondary text-eyebrow">Hovered formant</div>
-              <div className="text-footnote text-green font-mono font-semibold">
+              <div className="text-label-secondary text-caption">Hovered formant</div>
+              <div className="text-footnote text-green font-mono font-medium">
                 {hoveredVowel
                   ? `/${hoveredVowel.ipa}/ (${hoveredVowel.f1}Hz, ${hoveredVowel.f2}Hz)`
                   : "Hover point"}
@@ -416,14 +415,14 @@ export function AcousticFormantVisualizer({
       ) : (
         /* FFT Audio Spectrogram Canvas */
         <div className="space-y-3">
-          <div className="border-separator bg-surface rounded-row relative overflow-hidden border p-2">
+          <Card padding="none" className="relative overflow-hidden p-2">
             <canvas
               ref={canvasRef}
               width={600}
               height={240}
               className="rounded-control h-[220px] w-full"
             />
-          </div>
+          </Card>
 
           <div className="text-label-secondary text-caption flex items-center justify-between px-1 font-mono">
             <span>0 Hz (Fundamental $F_0$)</span>

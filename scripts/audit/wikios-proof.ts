@@ -76,6 +76,7 @@ import {
   type ProofThresholds,
   type TreeState,
 } from "../lib/wikios-proof-gate";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const USAGE = `Usage:
   bun scripts/audit/wikios-proof.ts run --profile local|launch|recurring [--out-dir d] [--mw-api url]
@@ -186,7 +187,7 @@ function readReport<T>(file: string, schema: z.ZodType<T>): T | null {
 
 async function withPrisma<T>(fn: (prisma: PrismaClient) => Promise<T>): Promise<T> {
   const { PrismaClient } = await import("@prisma/client");
-  const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+  const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
   try {
     return await fn(prisma);
   } finally {

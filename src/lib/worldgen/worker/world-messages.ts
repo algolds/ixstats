@@ -71,8 +71,9 @@ export type WorldWorkerResponse =
       generationMs: number;
       /** Packed lng, lat, height (m) per cell as Float32; transferred */
       cells: ArrayBuffer;
-      /** Hillshade as straight RGBA in Web Mercator rows (north up, +-MERCATOR_MAX_LAT); transferred */
-      relief: { width: number; height: number; rgba: ArrayBuffer };
+      /** Hillshade as straight RGBA in Web Mercator rows (north up, +-MERCATOR_MAX_LAT), and equirectangular
+       * (pole to pole) for a flat map; transferred */
+      relief: { width: number; height: number; rgba: ArrayBuffer; flat: FlatPixels<ArrayBuffer> };
     }
   | { type: "error"; id: number; message: string }
   | { type: "diagnostic-result"; requestId: number; world: number; image: DiagnosticPayload }
@@ -81,18 +82,24 @@ export type WorldWorkerResponse =
   | { type: "measure-result"; requestId: number; world: number; measures: WorldMeasures }
   | { type: "request-error"; requestId: number; message: string };
 
-/** A diagnostic as posted: the pixels are a buffer of their own, transferred. */
+/** An equirectangular image (pole to pole) for a flat (Plate Carrée) map. */
+export type FlatPixels<T> = { width: number; height: number; rgba: T };
+
+/** A diagnostic as posted: the pixels are buffers of their own, transferred. */
 export type DiagnosticPayload = {
   kind: DiagnosticKind;
   width: number;
   height: number;
   rgba: ArrayBuffer;
+  flat: FlatPixels<ArrayBuffer>;
   legend: DiagnosticLegend;
 };
 
-/** A diagnostic as the hook hands it out: Web Mercator rows, pinned at +-MERCATOR_MAX_LAT like the relief. */
-export type DiagnosticResult = Omit<DiagnosticPayload, "rgba"> & {
+/** A diagnostic as the hook hands it out: Web Mercator rows, pinned at +-MERCATOR_MAX_LAT like the relief, and its
+ * equirectangular image for a flat map. */
+export type DiagnosticResult = Omit<DiagnosticPayload, "rgba" | "flat"> & {
   rgba: Uint8ClampedArray<ArrayBuffer>;
+  flat: FlatPixels<Uint8ClampedArray<ArrayBuffer>>;
 };
 
 /** What the worker was asked for, by message type. */
@@ -113,7 +120,12 @@ export type WorldGenResult = {
   /** What the generator took for this run, in ms */
   generationMs: number;
   cells: Float32Array;
-  relief: { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
+  relief: {
+    width: number;
+    height: number;
+    rgba: Uint8ClampedArray<ArrayBuffer>;
+    flat: FlatPixels<Uint8ClampedArray<ArrayBuffer>>;
+  };
 };
 
 /** The worker as the hook sees it, so a test can stand in for the browser's `Worker`. */

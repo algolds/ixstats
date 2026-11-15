@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
-import { Sheet, SheetContent, SheetTitle } from "~/components/ui/sheet";
+import { LensSurface } from "~/components/ui/card";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { cn } from "~/lib/utils/cn";
 
 const INSPECTOR_QUERY = "(min-width: 1280px)";
@@ -86,12 +87,15 @@ export function Inspector({
           className
         )}
       >
-        {wide || !hydrated ? children : null}
+        {/* Cards in the aside are Lenses (LensCard for the full material); the sheet keeps panes. */}
+        {wide || !hydrated ? <LensSurface>{children}</LensSurface> : null}
       </aside>
       {!wide && (
         <Sheet open={open} onOpenChange={onOpenChange}>
-          <SheetContent>
-            <SheetTitle>{title}</SheetTitle>
+          <SheetContent className="flex flex-col gap-4 overflow-y-auto">
+            <SheetHeader className="text-left">
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
             {children}
           </SheetContent>
         </Sheet>

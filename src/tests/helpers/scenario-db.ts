@@ -6,16 +6,18 @@
  */
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const url = process.env.SCENARIOS_DATABASE_URL;
 const scratch = url !== undefined && /\/[^/?]*_scenarios(\?|$)/.test(url);
-if (url && !scratch) throw new Error("SCENARIOS_DATABASE_URL must name a *_scenarios scratch database");
+if (url && !scratch)
+  throw new Error("SCENARIOS_DATABASE_URL must name a *_scenarios scratch database");
 
 /** `describe` when a scratch database is configured, `describe.skip` otherwise. */
 export const describeWithDb = scratch ? describe : describe.skip;
 
 /** A client on the scratch database; call only inside `describeWithDb`. */
-export const scenarioDb = (): PrismaClient => new PrismaClient({ datasourceUrl: url });
+export const scenarioDb = (): PrismaClient => createPrismaClient({ url: url });
 
 /** A unique id prefix for one test's rows. */
 export const prefix = (): string => `scn-${randomUUID().slice(0, 8)}-`;

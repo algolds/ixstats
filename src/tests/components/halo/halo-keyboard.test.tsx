@@ -7,7 +7,7 @@ globalThis.ResizeObserver ??= class {
   unobserve() {}
   disconnect() {}
 } as never;
-const conversation = { id: "c1", title: "Caphiria", unreadCount: 1, messages: [] };
+const conversation = { id: "c1", name: "Caphiria", unreadCount: 1, lastMessage: null };
 
 describe("Halo keyboard paths", () => {
   it.each(["Enter", " "])("opens a conversation with %p", (key) => {

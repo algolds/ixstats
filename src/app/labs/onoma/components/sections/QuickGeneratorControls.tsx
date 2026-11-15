@@ -179,15 +179,14 @@ export function QuickGeneratorControls({
   const handleCleanWords = () => {
     const seen = new Set<string>();
     const unique: string[] = [];
-    // oxlint-disable-next-line eslint/no-shadow -- shadowed 'w' is intentional in this scope
-    for (const w of wordDraft
+    for (const word of wordDraft
       .split(/[,\r\n]+/)
       .map((w) => w.trim())
       .filter(Boolean)) {
-      const normalized = w.toLowerCase();
+      const normalized = word.toLowerCase();
       if (!seen.has(normalized)) {
         seen.add(normalized);
-        unique.push(w);
+        unique.push(word);
       }
     }
     setWordDraft(unique.join(", "));
@@ -247,7 +246,7 @@ export function QuickGeneratorControls({
       {/* 1. Dictionary Selector & Actions */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-footnote text-label font-semibold">Dictionary</label>
+          <label className="text-footnote text-label font-medium">Dictionary</label>
 
           {/* Dictionary Action Controls & Rules toggle */}
           <div className="flex items-center gap-2">
@@ -412,7 +411,7 @@ export function QuickGeneratorControls({
                 {customDicts.map((dict) => (
                   <SelectItem key={dict.id} value={dict.id} className="text-footnote font-medium">
                     <div className="flex w-full min-w-0 items-center justify-between gap-2">
-                      <span className="text-label truncate font-semibold">{dict.title}</span>
+                      <span className="text-label truncate font-medium">{dict.title}</span>
                       <span className="text-label-secondary text-caption ml-auto font-mono">
                         ({dict.values.length})
                       </span>

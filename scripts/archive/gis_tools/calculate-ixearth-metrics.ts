@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Calculate IxEarth Global Metrics
  *
@@ -8,9 +9,7 @@
  * - Scale factor verification
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 // Earth's actual metrics for comparison
 const EARTH_TOTAL_SURFACE_AREA = 196900000; // sq mi (including oceans)

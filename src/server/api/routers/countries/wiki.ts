@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { cachedStaticProcedure, rateLimitedPublicProcedure } from "~/server/api/trpc";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
-import { unlessUnavailable } from "~/lib/wiki-os/upstream-guard";
+import { WikiUnavailableError } from "~/lib/wiki-os/upstream-guard";
 import { searchWiki as searchWikiService } from "~/lib/wiki-os/core/native-search-service";
 import { parseInfobox as parseInfoboxParser } from "~/lib/wiki-os/transformers/infobox-parser";
 import {
@@ -94,7 +94,12 @@ export const wikiProcedures = {
       return fetchWikiSectionPreviews(name, await countryWikiPage(ctx.db, input.countryId));
     }),
 
+  /**
+   * The builder's "Import from the wiki" search, on the wiki the player picked. A wiki that cannot answer (the IIWiki
+   * switch, its breaker) is SERVICE_UNAVAILABLE in its own words ("IIWiki is switched off for now."), not a failure.
+   */
   searchWiki: rateLimitedPublicProcedure
+    .use(iiwikiFeatureMiddleware("country"))
     .input(
       z.object({
         query: z.string().min(1, "Search query is required"),
@@ -108,6 +113,7 @@ export const wikiProcedures = {
         const results = await searchWikiService(query, site, categoryFilter);
         return results;
       } catch (error) {
+        if (error instanceof WikiUnavailableError) throw error;
         console.error("[WikiSearch] Search failed:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -136,8 +142,8 @@ export const wikiProcedures = {
           return cached;
         }
 
-        // A wiki that cannot be reached is NOT_FOUND here, as a missing page.
-        const article = await unlessUnavailable(getArticleWikitextShadow(pageName, site));
+        // The player picked this wiki: one that cannot answer says so (SERVICE_UNAVAILABLE), a missing page is NOT_FOUND.
+        const article = await getArticleWikitextShadow(pageName, site);
         if (!article) {
           throw new TRPCError({
             code: "NOT_FOUND",
@@ -207,7 +213,7 @@ export const wikiProcedures = {
         );
         return unified;
       } catch (error) {
-        if (error instanceof TRPCError) throw error;
+        if (error instanceof TRPCError || error instanceof WikiUnavailableError) throw error;
         console.error("[WikiParse] Parse failed:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

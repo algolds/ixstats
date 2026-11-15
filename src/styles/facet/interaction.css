@@ -27,6 +27,47 @@
   --facet-press-scale: 0.99;
 }
 
+/* A top-of-page block that dissolves into Halo as the page scrolls (the scroll edge effect): it moves
+   1:1 with the page, so nothing collapses and everything below simply follows it up, and each line
+   fades as it reaches a band fixed just under Halo, from --shell-top-offset (solid) up to 1rem
+   (gone). The mask lives in the element's own box, so --page-scrolled (the root scroll offset, run
+   by a scroll-driven animation) holds the band still on screen while the element moves. Use it on a
+   block whose top sits at --shell-top-offset unscrolled. Its mask area is 16px wider than the box
+   each side and below, so the block's shadow survives. The mask makes it a backdrop root: a Lens
+   inside samples only what the block paints. Without scroll-driven animation it scrolls away. */
+@property --page-scrolled {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@utility scroll-dissolve {
+  @supports (animation-timeline: scroll()) {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent calc(var(--page-scrolled) - var(--shell-top-offset) + 1rem),
+      #000 var(--page-scrolled)
+    );
+    mask-clip: no-clip;
+    mask-repeat: no-repeat;
+    mask-size: calc(100% + 2rem) calc(100% + 1rem);
+    mask-position: -1rem 0;
+    animation: page-scrolled linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 2000px;
+  }
+}
+
+/* --page-scrolled equals the scroll offset: the range and the keyframes span the same 2000px. */
+@keyframes page-scrolled {
+  from {
+    --page-scrolled: 0px;
+  }
+  to {
+    --page-scrolled: 2000px;
+  }
+}
+
 @utility facet-lift {
   transition-property:
     color, background-color, border-color, outline-color, box-shadow, opacity, scale, translate;

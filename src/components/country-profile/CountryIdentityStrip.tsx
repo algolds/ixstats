@@ -23,28 +23,18 @@ export interface CountryIdentityStripProps {
   /** `logoUrl`: the realm's emblem (else its thumbnail); the globe icon shows without one. */
   realm?: { name: string; slug: string; logoUrl?: string | null } | null;
   /**
-   * `avatarUrl`: the sovereign's Clerk profile picture (the person icon shows without one). `role`: their Clerk
-   * role (`publicMetadata.role`), which colours the IxnayID pill's outline.
+   * `avatarUrl`: the sovereign's Clerk profile picture (the person icon shows without one). `roleName`: their
+   * role in words, as the passport shows it; a role is never a colour.
    */
   sovereign?: {
     username: string | null;
     roleName?: string | null;
     avatarUrl?: string | null;
-    role?: string | null;
   } | null;
   /** An unclaimed nation of a realm open to claims: "Claim this nation" beside "Unclaimed" for signed-in viewers. */
   claim?: { countryId: string; countryName: string } | null;
   className?: string;
 }
-
-/** The IxnayID pill's outline per Clerk role; a standard user (or none) has no outline. */
-const ROLE_BORDER: Record<string, string> = {
-  owner: "border-yellow/70",
-  admin: "border-red/60",
-  staff: "border-indigo/60",
-  moderator: "border-teal/60",
-  beta_tester: "border-green/60",
-};
 
 /** A pill's leading picture (realm logo, profile picture), or its icon when there is none. */
 function PillImage({
@@ -84,15 +74,11 @@ function MorphPill({
   icon,
   label,
   detail,
-  className,
-  role,
 }: {
   href: string;
   icon: ReactNode;
   label: string;
   detail?: ReactNode;
-  className?: string;
-  role?: string;
 }) {
   const [open, setOpen] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -107,11 +93,9 @@ function MorphPill({
       onPointerLeave={hover(false)}
       onFocus={() => setOpen(true)}
       onBlur={() => setOpen(false)}
-      data-role={role}
       className={cn(
         PILL,
-        "hover:bg-fill-3 duration-fast ease-out-facet focus-visible:outline-tint transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
-        className
+        "hover:bg-fill-3 duration-fast ease-out-facet focus-visible:outline-tint transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
       )}
     >
       {icon}
@@ -133,9 +117,10 @@ function MorphPill({
 
 /**
  * CountryIdentityStrip — provenance for a nation: the realm it belongs to (→ `/r/[realm]`, with its logo) and the
- * IxnayID of the player who holds it (→ `/@handle`, with their Clerk picture and a role-coloured outline), or
- * "Unclaimed" (with "Claim this nation" when the realm takes claims). Each pill morphs open on its own to show
- * "Primary realm" or the sovereign's role. Pills on `fill-4`, so it sits on any opaque card.
+ * IxnayID of the player who holds it (→ `/@handle`, with their Clerk picture), or "Unclaimed" (with "Claim this
+ * nation" when the realm takes claims). Each pill morphs open on its own to show "Primary realm" or the
+ * sovereign's role in words. Neutral pills on `fill-4`, like the passport's identity line: no realm or role
+ * colour, so it sits on any opaque card.
  */
 export function CountryIdentityStrip({
   realm,
@@ -147,7 +132,6 @@ export function CountryIdentityStrip({
   const realmSlug = realm?.slug || "default";
   const isPrimary = isIxnaySlug(realmSlug);
   const handle = sovereign?.username?.replace(/^@/, "").trim() || null;
-  const role = sovereign?.role ?? undefined;
 
   return (
     <nav
@@ -184,8 +168,6 @@ export function CountryIdentityStrip({
               </>
             )
           }
-          role={role}
-          className={cn("border", (role && ROLE_BORDER[role]) || "border-transparent")}
         />
       ) : (
         // Ownership, not a username, decides "Claimed": a new player may have no handle yet.

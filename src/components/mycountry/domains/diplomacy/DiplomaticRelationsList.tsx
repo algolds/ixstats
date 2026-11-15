@@ -4,10 +4,11 @@ import React from "react";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Badge } from "~/components/ui/badge";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import {
   Select,
   SelectContent,
@@ -141,9 +142,9 @@ function RelationCard({
   );
 
   return (
-    <Card
+    <div
       data-focus-id={rel.targetCountryId ?? rel.id}
-      className="rounded-card flex flex-col justify-between p-4"
+      className="flex flex-col justify-between p-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -155,19 +156,18 @@ function RelationCard({
             />
           </div>
           <div className="min-w-0">
-            <h4 className="text-label text-headline truncate">{targetName.replace(/_/g, " ")}</h4>
+            <h4 className="text-label text-headline truncate">
+              <CountryLink
+                country={{ id: rel.targetCountryId, name: targetName.replace(/_/g, " ") }}
+                className="hover:underline"
+              >
+                {targetName.replace(/_/g, " ")}
+              </CountryLink>
+            </h4>
             <p className="text-label-secondary text-footnote">
               Established: {formatStampAsClockDate(rel.establishedAt, clock)}
+              {sharedBloc ? ` · In bloc: ${sharedBloc.name}` : ""}
             </p>
-            {sharedBloc && (
-              <Badge
-                variant="outline"
-                className="mt-1"
-                title={`Shares alliance membership in ${sharedBloc.name}`}
-              >
-                In bloc · {sharedBloc.name}
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -178,10 +178,10 @@ function RelationCard({
 
       <div className="mt-4 space-y-1">
         <div className="text-footnote flex items-center justify-between">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Handshake className="h-3 w-3" />
             Relation strength
-          </Eyebrow>
+          </span>
           <span className={cn("font-semibold", band.textClass)}>{band.label}</span>
         </div>
         <Progress value={rel.strength} className="h-1.5" indicatorClassName={band.barClass} />
@@ -189,7 +189,7 @@ function RelationCard({
 
       <div className="border-separator text-footnote mt-3 grid grid-cols-2 gap-2 border-t pt-3">
         <div className="flex min-w-0 flex-col gap-1">
-          <Eyebrow>Your stance</Eyebrow>
+          <span className="text-label-secondary">Your stance</span>
           {isOwner ? (
             <Select
               value={rel.goalSelf || undefined}
@@ -212,15 +212,13 @@ function RelationCard({
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <Eyebrow>Their stance</Eyebrow>
-          <Badge variant="outline" className="w-fit">
-            {rel.goalTarget || "Not declared"}
-          </Badge>
+          <span className="text-label-secondary">Their stance</span>
+          <span className="text-label font-medium">{rel.goalTarget || "Not declared"}</span>
         </div>
       </div>
 
       {rel.goalSelf === "ALLY" && rel.goalTarget === "ALLY" && (
-        <p className="text-caption text-green mt-2 flex items-center gap-2">
+        <p className="text-caption text-success mt-2 flex items-center gap-2">
           <CheckCircle className="h-3.5 w-3.5 shrink-0" />
           Goals aligned: reaching Allied status significantly faster.
         </p>
@@ -240,25 +238,25 @@ function RelationCard({
 
       <div className="border-separator text-footnote mt-4 grid grid-cols-2 gap-2 border-t pt-3">
         <div className="flex flex-col gap-0.5">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Landmark className="h-3 w-3 shrink-0" />
             Bilateral trade
-          </Eyebrow>
+          </span>
           <span className="text-label font-semibold tabular-nums">
             {rel.tradeVolume ? formatExactCurrency(rel.tradeVolume) : "$0"}
           </span>
         </div>
         <div className="flex flex-col gap-0.5">
-          <Eyebrow className="flex items-center gap-1">
+          <span className="text-label-secondary flex items-center gap-1">
             <Calendar className="h-3 w-3 shrink-0" />
             Last contact
-          </Eyebrow>
+          </span>
           <span className="text-label font-semibold">
             {formatStampAsClockDate(rel.lastContact, clock)}
           </span>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -291,10 +289,7 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
     onError: (error) => notify.error("Could not set the stance", error.message),
   });
 
-  const allRelations = React.useMemo(
-    () => mergeEmbassyRelations(relations ?? [], rawEmbassies ?? [], countryId),
-    [relations, rawEmbassies, countryId]
-  );
+  const allRelations = mergeEmbassyRelations(relations ?? [], rawEmbassies ?? [], countryId);
 
   useScrollToFocus(focusId, [allRelations]);
 
@@ -335,29 +330,31 @@ export function DiplomaticRelationsList({ countryId, focusId }: DiplomaticRelati
 
   if (allRelations.length === 0) {
     return (
-      <Card className="rounded-card flex min-h-[200px] flex-col items-center justify-center p-6 text-center">
-        <Globe className="text-label-secondary mb-3 h-6 w-6" />
-        <h4 className="text-label text-headline">No diplomatic relations</h4>
-        <p className="text-label-secondary text-footnote mt-1 max-w-sm">
-          You haven't established diplomatic relationships with other nations yet. Create an embassy
-          to start building ties.
-        </p>
+      <Card className="rounded-card">
+        <EmptyState
+          compact
+          icon={<Globe />}
+          title="No diplomatic relations"
+          message="You haven't established diplomatic relationships with other nations yet. Create an embassy to start building ties."
+        />
       </Card>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-      {allRelations.map((rel) => (
-        <RelationCard
-          key={rel.id}
-          rel={rel}
-          isOwner={isOwner}
-          alliances={alliances ?? []}
-          goalPending={setGoalMutation.isPending}
-          onGoalChange={handleGoalChange}
-        />
-      ))}
-    </div>
+    <Card content="data" padding="none">
+      <div className="divide-separator/60 grid grid-cols-1 divide-y md:grid-cols-2 md:[&>*:nth-child(even)]:border-l md:[&>*:nth-child(even)]:border-separator/60">
+        {allRelations.map((rel) => (
+          <RelationCard
+            key={rel.id}
+            rel={rel}
+            isOwner={isOwner}
+            alliances={alliances ?? []}
+            goalPending={setGoalMutation.isPending}
+            onGoalChange={handleGoalChange}
+          />
+        ))}
+      </div>
+    </Card>
   );
 }

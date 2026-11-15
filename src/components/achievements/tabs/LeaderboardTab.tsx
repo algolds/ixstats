@@ -1,86 +1,161 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
+import { Trophy, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
-import { FacetList, FacetListSection } from "~/components/ui/facet-list";
-import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Skeleton } from "~/components/ui/skeleton";
-import { PodiumCard, Row } from "./leaderboard-parts";
 
-const LIMITS = [10, 25, 50, 100].map((l) => ({ value: String(l), label: String(l) }));
+export interface CollectorStandingRow {
+  key: string;
+  rank: number;
+  name: string;
+  achievementCount: number;
+  rareAchievements: number;
+  totalPoints: number;
+  isViewer?: boolean;
+}
 
-const detail = (e: { achievementCount: number; rareAchievements: number }) =>
-  `${e.achievementCount} unlocked • ${e.rareAchievements} rare+`;
-
-/** Players ranked by achievement points. The nation boards are `CountryLeaderboards` on /leaderboards. */
-export function LeaderboardTab() {
-  const [limit, setLimit] = useState(25);
-  const { data: board, isLoading } = api.achievements.getPlayerLeaderboard.useQuery(
-    { limit },
-    { staleTime: 60_000 }
+export function LeaderboardRankPill({ rank }: { rank: number }) {
+  if (rank <= 3) {
+    return (
+      <span className="bg-tint-fill text-tint text-caption inline-flex min-w-6 items-center justify-center rounded-full px-2 py-0.5 font-semibold tabular-nums">
+        {rank}
+      </span>
+    );
+  }
+  return (
+    <span className="text-callout text-label-secondary inline-block min-w-6 px-2 text-center tabular-nums">
+      {rank}
+    </span>
   );
-  const podium = board && board.length >= 3 ? board.slice(0, 3) : [];
+}
+
+function CollectorStandingsTable({ rows }: { rows: CollectorStandingRow[] }) {
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <EmptyState
+          compact
+          icon={<Trophy />}
+          title="No collector standings yet"
+          message="Earn achievements across IxStates to appear on the collector board."
+        />
+      </Card>
+    );
+  }
 
   return (
-    <Card padding="lg" className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-label text-title-2">Achievement leaderboard</h2>
-          <p className="text-label-secondary text-footnote">
-            Top {limit} players by achievement points
-          </p>
-        </div>
-
-        <SegmentedControl
-          aria-label="Players displayed"
-          size="sm"
-          value={String(limit)}
-          onValueChange={(value) => setLimit(Number(value))}
-          options={LIMITS}
-        />
-      </div>
-
-      {podium.length === 3 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {podium.map((entry, i) => (
-            <PodiumCard
-              key={`${i}-${entry.name}`}
-              rank={(i + 1) as 1 | 2 | 3}
-              name={entry.name}
-              primary={`${entry.totalPoints} pts`}
-              secondary={detail(entry)}
-            />
-          ))}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div aria-busy className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="rounded-row h-14" />
-          ))}
-        </div>
-      ) : board && board.length > 0 ? (
-        <FacetList>
-          <FacetListSection aria-label="Player rankings" groupClassName="bg-surface-secondary">
-            {board.map((entry, i) => (
-              <Row
-                key={`${i}-${entry.name}`}
-                rank={entry.rank}
-                name={entry.name}
-                primary={`${entry.totalPoints} pts`}
-                secondary={detail(entry)}
-                trailingBadge={entry.isViewer ? <Badge variant="default">You</Badge> : undefined}
-              />
+    <Card content="data" padding="none" className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left">
+          <thead>
+            <tr className="border-separator text-caption text-label-secondary border-b">
+              <th scope="col" className="w-16 px-4 py-2.5 font-medium">
+                Rank
+              </th>
+              <th scope="col" className="px-4 py-2.5 font-medium">
+                Collector
+              </th>
+              <th scope="col" className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">
+                Earned
+              </th>
+              <th scope="col" className="hidden px-4 py-2.5 text-right font-medium md:table-cell">
+                Rare tiers
+              </th>
+              <th scope="col" className="px-4 py-2.5 text-right font-medium">
+                Points
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((entry) => (
+              <tr
+                key={entry.key}
+                className="border-separator duration-fast hover:bg-fill-4 border-b transition-colors last:border-b-0"
+              >
+                <td className="px-4 py-2.5 align-middle">
+                  <LeaderboardRankPill rank={entry.rank} />
+                </td>
+                <td className="px-4 py-2.5 align-middle">
+                  <div className="flex items-center gap-2">
+                    <span className="text-callout text-label truncate font-medium">
+                      {entry.name}
+                    </span>
+                    {entry.isViewer && <Badge variant="secondary">You</Badge>}
+                  </div>
+                </td>
+                <td className="text-callout text-label-secondary hidden px-4 py-2.5 text-right align-middle tabular-nums sm:table-cell">
+                  {entry.achievementCount.toLocaleString()}
+                </td>
+                <td className="text-callout text-label-secondary hidden px-4 py-2.5 text-right align-middle tabular-nums md:table-cell">
+                  {entry.rareAchievements.toLocaleString()}
+                </td>
+                <td className="text-callout text-label px-4 py-2.5 text-right align-middle font-semibold tabular-nums">
+                  {entry.totalPoints.toLocaleString()} pts
+                </td>
+              </tr>
             ))}
-          </FacetListSection>
-        </FacetList>
-      ) : (
-        <EmptyState compact title="No achievements unlocked yet" />
-      )}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
+}
+
+function LivePlayerCollectorsBoard() {
+  const {
+    data: board,
+    isLoading,
+    isError,
+    refetch,
+  } = api.achievements.getPlayerLeaderboard.useQuery({ limit: 50 }, { staleTime: 60_000 });
+
+  if (isError) {
+    return (
+      <Card>
+        <EmptyState
+          compact
+          icon={<WarningCircle />}
+          title="Collector standings didn't load"
+          message="Please try again in a moment."
+          action={
+            <Button variant="secondary" size="sm" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card content="data" padding="md" aria-busy className="space-y-2">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <Skeleton key={idx} className="rounded-control-sm h-10" />
+        ))}
+      </Card>
+    );
+  }
+
+  const rows: CollectorStandingRow[] = (board ?? []).map((entry, idx) => ({
+    key: `${entry.rank}-${entry.name}-${idx}`,
+    rank: entry.rank,
+    name: entry.name,
+    achievementCount: entry.achievementCount,
+    rareAchievements: entry.rareAchievements,
+    totalPoints: entry.totalPoints,
+    isViewer: entry.isViewer,
+  }));
+
+  return <CollectorStandingsTable rows={rows} />;
+}
+
+/** The collectors standings: every player's achievements, points and rare unlocks. */
+export function LeaderboardTab() {
+  return <LivePlayerCollectorsBoard />;
 }

@@ -14,22 +14,20 @@ The activity feed is the running record of what's happening across IxStates: pos
 
 ## What appears in it
 
-| Kind | Examples |
-| --- | --- |
-| Posts | Public [feed](/help/social/thinkpages) posts, including Blurbs answers |
+| Kind            | Examples                                                                                                                  |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Posts           | Public [feed](/help/social/thinkpages) posts, including Blurbs answers                                                    |
 | Nation activity | An achievement unlocked by a player with a nation, an embassy opened, a border change, a new point of interest on the map |
-| Community | New polls, names shared from Onoma |
-| Wiki | New wiki pages and edits, with how many bytes changed |
-| Forum | New forum threads and replies |
+| Community       | New polls, names shared from Onoma                                                                                        |
+| Wiki            | New wiki pages and edits, with how many bytes changed                                                                     |
+| Forum           | New forum threads and replies                                                                                             |
 
-To keep it readable, several edits in a row to the same wiki page are shown as one item, and so are repeats of the same kind of activity by the same player. The Dashboard feed refreshes about once a minute.
+To keep it readable, edits to the same wiki page, achievement unlocks close in time, and repeats of the same kind of activity by the same player are each folded into one item. The Dashboard feed refreshes about once a minute.
 
 ## The Dashboard tabs
 
 - **All activity**: everything above.
 - **Following**: posts from personas you follow and activity from nations your nation follows. If you don't follow anyone yet, it links to the list of nations.
-- **Trending**: the posts getting the most reactions, replies and reposts, and the trending hashtags. It's empty when nothing qualifies.
-- **Community**: wiki and forum activity only.
 
 ## Following nations and personas
 
@@ -49,7 +47,7 @@ To keep it readable, several edits in a row to the same wiki page are shown as o
 Add a hashtag to a post by typing `#` followed by letters, numbers or underscores, for example `#TradeWeek`. The hashtag is saved with the post and becomes a link in the post's text.
 
 - **Hashtag pages.** Each hashtag has a page at `/hashtags/<tag>` listing the 20 most recent public posts with that exact tag. Tags are matched exactly, so `#TradeWeek` and `#tradeweek` have separate pages.
-- **Trending topics.** Every 15 minutes, IxStates looks at hashtags on public posts from the last three days. A hashtag can trend once at least two players have used it in at least two posts. The top ten show as topic chips on the Dashboard's **Trending** tab and in **Trending now** on [/feed](/feed), with their post counts. On [/feed](/feed), an arrow marks a topic that reached a new high in the last six hours. Select a topic to open its hashtag page.
+- **Trending topics.** Every 15 minutes, IxStates looks at hashtags on public posts from the last three days. A hashtag can trend once at least two players have used it in at least two posts. The top ten show in **Trending now** on [/feed](/feed), with their post counts. On [/feed](/feed), an arrow marks a topic that reached a new high in the last six hours. Select a topic to open its hashtag page.
 
 ## Hiding people
 

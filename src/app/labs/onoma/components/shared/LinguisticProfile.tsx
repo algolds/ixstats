@@ -3,6 +3,7 @@
 // src/app/labs/onoma/components/shared/LinguisticProfile.tsx
 // Onoma Custom Studio Workshop — Linguistic Profile Details Component
 
+import { Card } from "~/components/ui/card";
 import { useState, useEffect, useCallback } from "react";
 import { ValueSelect } from "~/components/ui/value-select";
 import type { MorphologyDetails } from "~/lib/onoma/morphology";
@@ -110,9 +111,9 @@ export function LinguisticProfile({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-tint text-footnote font-mono font-semibold">⟨{name}⟩</span>
+          <span className="text-tint text-footnote font-mono font-medium">⟨{name}⟩</span>
           <span className="text-label-secondary text-caption">
-            Gender: <span className="text-label font-semibold">{morphology.gender}</span>
+            Gender: <span className="text-label font-medium">{morphology.gender}</span>
           </span>
         </div>
 
@@ -138,14 +139,14 @@ export function LinguisticProfile({
       {(originLabel || savedAt) && (
         <div className="text-label-secondary text-caption flex flex-wrap items-center gap-2">
           {originLabel && (
-            <span className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-semibold capitalize">
+            <span className="bg-tint/10 text-tint rounded-control-sm px-2 py-0.5 font-medium capitalize">
               {originLabel}
             </span>
           )}
           {savedAt && (
             <span>
               Stashed{" "}
-              <span className="text-label font-semibold">
+              <span className="text-label font-medium">
                 {new Date(savedAt).toLocaleDateString(undefined, {
                   year: "numeric",
                   month: "short",
@@ -160,7 +161,7 @@ export function LinguisticProfile({
       {/* Tab 1: Case Declension Table */}
       {activeTab === "declensions" && (
         <div className="border-separator bg-surface rounded-row overflow-hidden border">
-          <div className="bg-fill-4 border-separator text-label-secondary text-eyebrow grid grid-cols-12 border-b px-3 py-2 font-mono">
+          <div className="bg-fill-4 border-separator text-label-secondary text-caption grid grid-cols-12 border-b px-3 py-2 font-mono">
             <span className="col-span-4">Grammatical case</span>
             <span className="col-span-4">Singular</span>
             <span className="col-span-4">Plural</span>
@@ -173,17 +174,15 @@ export function LinguisticProfile({
                 className="hover:bg-fill-4 text-footnote grid grid-cols-12 items-center px-3 py-2 transition-colors"
               >
                 <div className="col-span-4 flex flex-col pr-1">
-                  <span className="text-label text-caption font-semibold capitalize">
-                    {caseName}
-                  </span>
+                  <span className="text-label text-caption font-medium capitalize">{caseName}</span>
                   <span className="text-label-secondary text-caption leading-tight">
                     {declCase.descriptionSingular.split(" (")[0]}
                   </span>
                 </div>
-                <span className="text-tint text-footnote col-span-4 font-mono font-semibold break-all">
+                <span className="text-tint text-footnote col-span-4 font-mono font-medium break-all">
                   {declCase.singular}
                 </span>
-                <span className="text-tint text-footnote col-span-4 font-mono font-semibold break-all">
+                <span className="text-tint text-footnote col-span-4 font-mono font-medium break-all">
                   {declCase.plural}
                 </span>
               </div>
@@ -194,7 +193,7 @@ export function LinguisticProfile({
 
       {/* Tab 2: Lexicon Dictionary Entry */}
       {activeTab === "lexicon" && (
-        <div className="border-separator bg-surface rounded-row space-y-2 border p-4">
+        <Card padding="none" className="space-y-2 p-4">
           <div className="border-separator flex items-center justify-between border-b pb-2">
             <h4 className="text-label text-subhead font-mono">Conlang lexicon entry</h4>
             {!isEditingDef && definition && (
@@ -289,12 +288,12 @@ export function LinguisticProfile({
           ) : (
             <div className="text-footnote space-y-2">
               <div className="flex items-center justify-between">
-                <span className="bg-tint/15 text-tint rounded-control-sm text-eyebrow px-2 py-0.5 font-mono">
+                <span className="bg-tint/15 text-tint rounded-control-sm text-caption px-2 py-0.5 font-mono">
                   {definition.partOfSpeech}
                 </span>
                 {definition.root && (
                   <span className="text-label-secondary text-caption font-mono">
-                    Root: <span className="text-label font-semibold">{definition.root}</span>
+                    Root: <span className="text-label font-medium">{definition.root}</span>
                   </span>
                 )}
               </div>
@@ -308,7 +307,7 @@ export function LinguisticProfile({
               )}
             </div>
           )}
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -5,13 +5,11 @@ import { Play, SystemRestart as Loader2, Trophy, Activity, ArrowLeft, Clock } fr
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
-import { soundCues } from "~/lib/sound/cuelume";
 import { getSportTheme } from "~/lib/sports/theming";
 import { MatchSurface } from "~/components/sports/surfaces/MatchSurface";
 import { MatchPredictionPanel } from "~/components/sports/match/MatchPredictionPanel";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Stat } from "~/components/ui/stat";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Badge } from "~/components/ui/badge";
@@ -56,7 +54,6 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
   const simulateMutation = api.sports.simulateSingleMatch.useMutation({
     onSuccess: async () => {
-      soundCues.success();
       setIsSimulatingState(false);
       notify.success("Match simulation concluded");
       await utils.sports.getMatchDetails.invalidate({ matchId });
@@ -159,9 +156,9 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
   if (isLoading) {
     return (
-      <div className="rounded-sheet border-separator bg-surface space-y-6 border p-6">
+      <div className="space-y-6" aria-busy="true" aria-label="Loading match">
         <Skeleton className="rounded-card h-20 w-full" />
-        <Skeleton className="rounded-sheet h-64 w-full" />
+        <Skeleton className="rounded-card h-64 w-full" />
         <Skeleton className="rounded-card h-40 w-full" />
       </div>
     );
@@ -169,15 +166,18 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
 
   if (!match) {
     return (
-      <div className="text-label-secondary rounded-sheet border-separator bg-surface border p-12 text-center">
-        <Activity className="text-label-tertiary mx-auto mb-3 h-12 w-12" />
-        <p className="text-headline">Match fixture not found</p>
-        {onClose && (
-          <Button onClick={onClose} variant="outline" className="mt-4">
-            Return
-          </Button>
-        )}
-      </div>
+      <EmptyState
+        icon={<Activity />}
+        title="Match not found"
+        message="This fixture was removed or never scheduled."
+        action={
+          onClose ? (
+            <Button onClick={onClose} variant="secondary">
+              Close
+            </Button>
+          ) : undefined
+        }
+      />
     );
   }
 
@@ -276,11 +276,11 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
           <div className="flex flex-col items-center justify-center gap-2">
             <div className="bg-surface-secondary rounded-row flex items-center gap-3 px-4 py-2 tabular-nums sm:gap-5">
               <span className="text-large-title text-label">
-                {isCompleted ? (match.homeScore ?? 0) : "—"}
+                {isCompleted ? (match.homeScore ?? 0) : "–"}
               </span>
               <span className="text-headline text-label-tertiary">:</span>
               <span className="text-large-title text-label">
-                {isCompleted ? (match.awayScore ?? 0) : "—"}
+                {isCompleted ? (match.awayScore ?? 0) : "–"}
               </span>
             </div>
 
@@ -360,8 +360,12 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                     top: `${30 + ((idx * 13) % 40)}%`,
                   }}
                 >
-                  {evt.minute ? `${evt.minute}'` : ""}{" "}
-                  {evt.type === "goal" ? "⚽" : evt.type === "score" ? "🏈" : "•"}
+                  {[
+                    evt.minute ? `${evt.minute}'` : null,
+                    evt.type === "goal" ? "Goal" : evt.type === "score" ? "Score" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || "·"}
                 </div>
               ))}
             </MatchSurface>
@@ -379,7 +383,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
               />
             </Card>
           ) : (
-            <div className="bg-surface border-separator divide-separator rounded-row divide-y overflow-hidden border">
+            <Card content="feed" variant="well" padding="none" className="overflow-hidden">
               {trace.map((event, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3">
                   <div className="flex items-center gap-3">
@@ -404,7 +408,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                   )}
                 </div>
               ))}
-            </div>
+            </Card>
           )}
         </TabsContent>
 
@@ -469,7 +473,7 @@ export function MatchCenter({ matchId, onClose, sportPreset, className }: MatchC
                   <div className="flex items-center gap-3">
                     <Trophy className="text-yellow size-6 shrink-0" aria-hidden />
                     <div>
-                      <Eyebrow>Standout athlete</Eyebrow>
+                      <span className="text-caption text-label-secondary">Standout athlete</span>
                       <p className="text-headline text-label">
                         {analysisFacts.keyPerformer.athleteName} (
                         {analysisFacts.keyPerformer.teamName})

@@ -77,6 +77,7 @@ model City {
   isNationalCapital    Boolean                  @default(false)
   isSubdivisionCapital Boolean                  @default(false)
   wikiPageTitle        String?
+  wikiSource           String?
   elevation            Float?
   foundedYear          Int?
   gdpContribution      Float?
@@ -122,6 +123,7 @@ model PointOfInterest {
   coordinates     Json
   description     String?
   wikiPageTitle   String?
+  wikiSource      String?
   images          Json?
   metadata        Json?
   status          String                   @default("pending")
@@ -158,6 +160,7 @@ model StoryPin {
   eraLabel        String?
   coordinates     Json                     // [lng, lat]
   wikiPageTitle   String?
+  wikiSource      String?
   photos          Json?                    // string[] of image URLs
   thumbnailUrl    String?                  // cached hero image for map preview
   icon            String?
@@ -199,6 +202,7 @@ model Storyline {
   reviewedAt    DateTime?
   reviewNote    String?
   wikiPageTitle String?
+  wikiSource    String?
   /// Set when the approved chain's section is written; null on an approved chain means the cron retries it.
   wikiSyncedAt  DateTime?
   actionLinks   PostActionLink[]
@@ -234,6 +238,7 @@ model MapLabel {
   minZoom       Float                    @default(4)
   maxZoom       Float                    @default(18)
   wikiPageTitle String?
+  wikiSource    String?
   metadata      Json?
   status        String                   @default("approved")
   submittedBy   String
@@ -619,6 +624,7 @@ model Peak {
   elevation       Float
   prominence      Float?
   wikiPageTitle   String?
+  wikiSource      String?
   editableByOwner Boolean                  @default(true)
   status          String                   @default("pending")
   submittedBy     String
@@ -645,6 +651,7 @@ model NamedRiver {
   geometry        Json                     // GeoJSON LineString
   lengthKm        Float?
   wikiPageTitle   String?
+  wikiSource      String?
   editableByOwner Boolean                  @default(true)
   status          String                   @default("pending")
   submittedBy     String
@@ -670,6 +677,7 @@ model NamedLake {
   areaSqKm        Float?
   maxDepthM       Float?
   wikiPageTitle   String?
+  wikiSource      String?
   editableByOwner Boolean                  @default(true)
   status          String                   @default("pending")
   submittedBy     String

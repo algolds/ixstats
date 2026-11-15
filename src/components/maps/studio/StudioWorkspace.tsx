@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { EditorZoomControls } from "~/components/maps/editor/components/EditorZoomControls";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useStudioCountryPick } from "~/hooks/useStudioCountryPick";
 import { useStudioDiagnostics } from "~/hooks/useStudioDiagnostics";
 import { useStudioFit } from "~/hooks/useStudioFit";
@@ -159,29 +161,38 @@ export function StudioWorkspace({
 
   return (
     <StudioProvider value={value}>
-      <div className="flex h-full min-h-0 flex-col">
-        <StudioTopBar />
-        {presetsFallback && (
-          <p role="status" className="text-label-secondary text-footnote px-4 pt-2">
-            The saved presets could not be read, so the built-in ones stand in. Reload to try again.
-          </p>
-        )}
-        <div className="grid min-h-0 flex-1 grid-cols-[20rem_minmax(0,1fr)_22rem] gap-2 p-2">
-          <StudioRail />
-          <div className="rounded-card relative min-h-0 overflow-hidden">
-            <div
-              ref={containerRef}
-              className="absolute inset-0 h-full w-full"
-              data-testid="studio-map"
-            />
-            {map === null && (
-              <p className="text-label-secondary text-footnote pointer-events-none absolute inset-0 flex items-center justify-center">
-                Loading the map.
-              </p>
-            )}
-            {pick.slot && <StudioCountryCard slot={pick.slot} onClose={pick.clear} />}
+      <div data-app="maps" className="relative h-full min-h-0 w-full overflow-hidden">
+        <div
+          ref={containerRef}
+          className="absolute inset-0 z-0 h-full w-full"
+          data-testid="studio-map"
+        />
+        <div className="pointer-events-none relative z-10 flex h-full min-h-0 flex-col">
+          <StudioTopBar />
+          {presetsFallback && (
+            <FacetMaterial
+              as="p"
+              layer="chrome"
+              role="status"
+              className="facet-chrome-subtle text-label-secondary text-footnote rounded-control-sm pointer-events-auto mx-2 mt-2 px-3 py-1.5"
+            >
+              The saved presets could not be read, so the built-in ones stand in. Reload to try
+              again.
+            </FacetMaterial>
+          )}
+          <div className="grid min-h-0 flex-1 grid-cols-[20rem_minmax(0,1fr)_22rem] gap-2 p-2">
+            <StudioRail />
+            <div className="relative min-h-0">
+              {map === null && (
+                <p className="text-label-secondary text-footnote pointer-events-none absolute inset-0 flex items-center justify-center">
+                  Loading the map.
+                </p>
+              )}
+              <EditorZoomControls map={map} className="absolute top-2 right-2 z-10" />
+              {pick.slot && <StudioCountryCard slot={pick.slot} onClose={pick.clear} />}
+            </div>
+            <StudioInspector />
           </div>
-          <StudioInspector />
         </div>
       </div>
     </StudioProvider>

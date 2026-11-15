@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import {
   SeaWaves as Anchor,
@@ -144,9 +143,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
   return (
     <Card className="space-y-2 p-2">
       <div className="flex items-center justify-between">
-        <Eyebrow className="flex items-center gap-2">
-          <span>Site suitability</span>
-        </Eyebrow>
+        <span className="text-caption text-label-secondary font-medium">Site suitability</span>
         <span className="text-label-secondary text-footnote tabular-nums">
           {elev || "Terrain"} · {climate || "Climate"}
         </span>
@@ -173,7 +170,7 @@ export function SmartPlacement(props: SmartPlacementProps) {
             return (
               <div
                 key={i}
-                className="group border-separator bg-surface hover:bg-surface rounded-control-sm flex flex-col gap-1 border p-2 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
+                className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-control-sm flex flex-col gap-1 border p-2 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="text-caption flex items-center gap-2">

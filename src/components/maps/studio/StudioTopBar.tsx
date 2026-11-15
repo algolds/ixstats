@@ -5,7 +5,7 @@ import Link from "next/link";
 import { DiceFive, NavArrowLeft, SystemRestart } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
-import { FacetMaterial } from "~/components/ui/facet/shared/FacetMaterial";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useStudio } from "./StudioContext";
 import { StudioPresetPicker } from "./StudioPresetPicker";
 
@@ -111,7 +111,8 @@ export function StudioTopBar() {
   return (
     <FacetMaterial
       as="header"
-      className="mx-2 mt-2 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-2 py-2"
+      layer="chrome"
+      className="facet-chrome-subtle rounded-row pointer-events-auto mx-2 mt-2 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-1.5"
     >
       <Button asChild variant="ghost" size="sm">
         <Link href="/admin/maps">

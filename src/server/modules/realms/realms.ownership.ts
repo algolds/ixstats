@@ -9,7 +9,8 @@ import { isSystemOwner } from "~/lib/auth";
 import { capReachedMessage, nationCapacity } from "./realms.nation-cap";
 import { invalidateRealmMapFace } from "./realms.map-face-cache";
 
-type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user">;
+type OwnershipTx = Pick<Prisma.TransactionClient, "country" | "user" | "countryLoreAuthor">;
+type AssignTx = Pick<OwnershipTx, "country" | "user">;
 
 type NationOwnershipErrorCode =
   "COUNTRY_NOT_FOUND" | "ALREADY_OWNED" | "CAP_REACHED" | "NOT_CLAIMABLE";
@@ -31,7 +32,7 @@ const alreadyOwned = () =>
 export const isUnclaimable = (country: { claimable?: boolean }) => country.claimable === false;
 
 async function assign(
-  tx: OwnershipTx,
+  tx: AssignTx,
   input: { userId: string; countryId: string },
   claim: boolean
 ): Promise<void> {
@@ -77,12 +78,12 @@ async function assign(
  * It becomes their active nation only when they have none (ruling F-1): a player
  * acting as a nation of another realm keeps acting as it until they choose "Play as" (activateOwnedNation).
  */
-export const assignNation = (tx: OwnershipTx, input: { userId: string; countryId: string }) =>
+export const assignNation = (tx: AssignTx, input: { userId: string; countryId: string }) =>
   assign(tx, input, false);
 
 /** `assignNation` for an approved claim: a country that is not claimable (since it was claimed for) is refused. */
 export const assignClaimedNation = (
-  tx: OwnershipTx,
+  tx: AssignTx,
   input: { userId: string; countryId: string }
 ) => assign(tx, input, true);
 
@@ -95,6 +96,8 @@ export async function releaseNation(tx: OwnershipTx, countryId: string): Promise
   });
   invalidateRealmMapFace(realmId);
   await tx.user.updateMany({ where: { countryId }, data: { countryId: null } });
+  // Leave CountryLorePage curation (pins/hides) as is: it is the nation's Shared Record, not the old owner's.
+  await tx.countryLoreAuthor.deleteMany({ where: { countryId } });
 }
 
 /**
@@ -113,7 +116,7 @@ export async function dropOfficerPostWithoutNation(
 
 /** Move only the active pointer. Used for the system-owner override and for un-pointing without releasing. */
 export async function pointActiveNation(
-  tx: OwnershipTx,
+  tx: AssignTx,
   userId: string,
   countryId: string | null
 ): Promise<void> {
@@ -126,7 +129,7 @@ export async function pointActiveNation(
  * override through the admin paths only.
  */
 export async function activateOwnedNation(
-  tx: OwnershipTx,
+  tx: AssignTx,
   input: { userId: string; countryId: string }
 ): Promise<boolean> {
   const country = await tx.country.findUnique({

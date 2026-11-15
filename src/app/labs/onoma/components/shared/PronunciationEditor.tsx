@@ -113,7 +113,7 @@ export function PronunciationEditor({
               <div className="text-label-secondary text-caption mt-1 flex flex-wrap gap-1 font-mono">
                 <span>Phonemes: {result.phonemes || "(empty)"}</span>
                 {result.dropped.length > 0 && (
-                  <span className="text-yellow font-semibold">
+                  <span className="text-yellow font-medium">
                     (dropped: {result.dropped.join(", ")})
                   </span>
                 )}

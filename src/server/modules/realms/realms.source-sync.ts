@@ -33,6 +33,7 @@ import {
   withRealmWikiSettings,
   type RealmWikiSettings,
 } from "~/lib/realms/realm-wiki-settings";
+import { updateRealmSettings } from "./realm-settings";
 import {
   geometryHash,
   infoboxNeedsRead,
@@ -303,16 +304,15 @@ export async function loadSourcePreset(
 
 /** The preset's wiki values become the realm's wiki settings, unless the realm already has its own. */
 async function fillRealmWikiFromPreset(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   realmId: string,
   wiki: RealmWikiSettings
 ): Promise<boolean> {
   const realm = await db.realm.findUnique({ where: { id: realmId }, select: { settings: true } });
   if (!realm || realmWikiSettings(realm.settings)) return false;
-  await db.realm.update({
-    where: { id: realmId },
-    data: { settings: withRealmWikiSettings(realm.settings, wiki) },
-  });
+  await updateRealmSettings(db, realmId, (settings) =>
+    withRealmWikiSettings(settings as Prisma.JsonValue, wiki)
+  );
   return true;
 }
 

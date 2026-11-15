@@ -384,10 +384,13 @@ async function playerTotals(db: PrismaClient): Promise<PlayerTotals[]> {
 }
 
 export const achievementsProgressRouter = createTRPCRouter({
-  /** The signed-in player's achievement standing: unlocks of active achievements, their points and rank. */
+  /** The signed-in player's achievement standing: unlocks of active achievements, their points, rank, and per-category mastery. */
   getMySummary: protectedProcedure.query(async ({ ctx }) => {
-    const [activeTotal, totals, newest] = await Promise.all([
-      ctx.db.achievement.count({ where: { isActive: true } }),
+    const [activeRows, totals, newest, earnedRows] = await Promise.all([
+      ctx.db.achievement.findMany({
+        where: { isActive: true },
+        select: { category: true },
+      }),
       playerTotals(ctx.db),
       ctx.db.userAchievement.findMany({
         where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
@@ -400,13 +403,44 @@ export const achievementsProgressRouter = createTRPCRouter({
           },
         },
       }),
+      ctx.db.userAchievement.findMany({
+        where: { userId: ctx.user.clerkUserId, achievement: { isActive: true } },
+        select: { achievement: { select: { category: true } } },
+      }),
     ]);
+
+    const categoryMap = new Map<string, { earned: number; total: number }>();
+    for (const row of activeRows) {
+      const cat = row.category || "General";
+      const entry = categoryMap.get(cat) ?? { earned: 0, total: 0 };
+      entry.total += 1;
+      categoryMap.set(cat, entry);
+    }
+    for (const row of earnedRows) {
+      const cat = row.achievement?.category || "General";
+      const entry = categoryMap.get(cat);
+      if (entry) entry.earned += 1;
+    }
+
+    const categories = Array.from(categoryMap.entries())
+      .map(([category, stats]) => ({ category, ...stats }))
+      .sort((a, b) => {
+        const aStarted = a.earned > 0 ? 1 : 0;
+        const bStarted = b.earned > 0 ? 1 : 0;
+        if (bStarted !== aStarted) return bStarted - aStarted;
+        const aRatio = a.total > 0 ? a.earned / a.total : 0;
+        const bRatio = b.total > 0 ? b.earned / b.total : 0;
+        if (bRatio !== aRatio) return bRatio - aRatio;
+        return a.category.localeCompare(b.category);
+      });
+
     const mine = totals.find((t) => t.userId === ctx.user.clerkUserId);
     return {
       unlocked: mine?.achievementCount ?? 0,
-      activeTotal,
+      activeTotal: activeRows.length,
       points: mine?.totalPoints ?? 0,
       rank: mine?.rank ?? null,
+      categories,
       /** The newest unlocks, newest first. */
       recent: newest.map(({ achievement, metadata }) => ({
         ...achievement,

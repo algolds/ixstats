@@ -5,6 +5,7 @@
  * presence states, discussion bridge sync, and admin dispatch.
  */
 
+import type { PrismaClient } from "@prisma/client";
 import {
   MAX_GROUP_PARTICIPANTS,
   type CreateConversationInput,
@@ -14,6 +15,7 @@ import {
   type SendAdminBroadcastInput,
   type SendAdminMessageInput,
   type MessagingDependencies,
+  type WebSocketCollaborator,
 } from "./contracts";
 import {
   MessagingBlockedError,
@@ -21,6 +23,13 @@ import {
   MessagingNotFoundError,
   MessagingValidationError,
 } from "./errors";
+import {
+  assertNotPending,
+  assertUserCreatableSource,
+  assertWritableConversation,
+  canManageParticipants,
+} from "./access";
+import { directThreadWhere } from "./direct-thread";
 import { recipientsBlockingSender } from "~/server/shared/user-blocks";
 import {
   recipientsRefusing,
@@ -35,15 +44,44 @@ const NOTE_TO_SELF_NAME = "Notes to self";
 const GROUP_FULL_MESSAGE = `A group conversation holds at most ${MAX_GROUP_PARTICIPANTS} people`;
 
 export class MessagingConversationOperations {
-  private db: any;
-  private websocket?: any;
+  private db: PrismaClient;
+  private websocket?: WebSocketCollaborator | null;
 
   constructor(dependencies: MessagingDependencies) {
     this.db = dependencies.db;
     this.websocket = dependencies.websocket;
   }
 
+  /** Whether the player holds a nation: set on them, or one they own. */
+  private async ownsNation(actorId: string): Promise<boolean> {
+    const user = await this.db.user.findUnique({
+      where: { clerkUserId: actorId },
+      select: { countryId: true, ownedCountries: { select: { id: true }, take: 1 } },
+    });
+    return Boolean(user?.countryId) || (user?.ownedCountries.length ?? 0) > 0;
+  }
+
+  /**
+   * What only some people may start: an "official" conversation (administrators), a classification above
+   * PUBLIC (a nation's owner or an administrator, so nobody forges a TOP_SECRET thread), and a conversation
+   * in a channel the server alone writes to (never a user).
+   */
+  private async assertMayStart(actorId: string, input: CreateConversationInput) {
+    assertUserCreatableSource(input.source);
+    if (input.actorIsAdmin) return;
+    if (input.conversationType === "official") {
+      throw new MessagingForbiddenError("Only administrators can start an official conversation");
+    }
+    const classified =
+      input.diplomaticClassification && input.diplomaticClassification !== "PUBLIC";
+    if (classified && !(await this.ownsNation(actorId))) {
+      throw new MessagingForbiddenError("Only a nation's owner can classify a conversation");
+    }
+  }
+
   public async createConversation(actorId: string, input: CreateConversationInput) {
+    await this.assertMayStart(actorId, input);
+
     const allParticipants = [...new Set([actorId, ...input.participantIds])];
     if (allParticipants.length === 1) return await this.noteToSelf(actorId, input);
     if (allParticipants.length < 2) {
@@ -69,7 +107,14 @@ export class MessagingConversationOperations {
       for (const id of requests) pending.add(id);
     }
 
-    return await this.db.$transaction(async (tx: any) => {
+    // Two people have one direct conversation: asking again reopens it (and never re-asks someone who declined).
+    if (!isGroup) {
+      const existing = await this.reopenDirect(actorId, allParticipants, input);
+      if (existing) return existing;
+    }
+
+    const source = input.source ?? "thinkshare";
+    return await this.db.$transaction(async (tx) => {
       const conversation = await tx.thinkshareConversation.create({
         data: {
           name: input.subject,
@@ -78,11 +123,12 @@ export class MessagingConversationOperations {
           conversationType: input.conversationType,
           diplomaticClassification: input.diplomaticClassification,
           priority: input.priority,
-          source: input.source || "thinkshare",
+          source,
           participants: {
             create: allParticipants.map((uid) => ({
               userId: uid,
-              role: "participant",
+              // A group's creator manages it (adds people); everyone else is a plain participant.
+              role: isGroup && uid === actorId ? "admin" : "participant",
               ...(pending.has(uid) && { requestStatus: "pending" }),
             })),
           },
@@ -98,12 +144,49 @@ export class MessagingConversationOperations {
             conversationId: conversation.id,
             userId: actorId,
             content: input.initialMessage,
-            source: input.source || "thinkshare",
+            source,
           },
         });
       }
 
       return conversation;
+    });
+  }
+
+  /**
+   * The direct conversation the two already share, brought back for the actor when they had left it. Null when
+   * there is none to reuse (or the other person left it, who is not pulled back in). Throws when the other
+   * person declined it as a message request.
+   */
+  private async reopenDirect(
+    actorId: string,
+    participantIds: readonly string[],
+    input: CreateConversationInput
+  ) {
+    const otherId = participantIds.find((id) => id !== actorId);
+    if (!otherId) return null;
+    const existing = await this.db.thinkshareConversation.findFirst({
+      where: directThreadWhere(actorId, otherId, {
+        source: input.source ?? "thinkshare",
+        conversationType: input.conversationType ?? null,
+      }),
+      include: { participants: true },
+    });
+    if (!existing) return null;
+
+    const other = existing.participants.find((p) => p.userId === otherId);
+    if (other?.requestStatus === "declined") throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
+    if (!other?.isActive) return null;
+
+    const mine = existing.participants.find((p) => p.userId === actorId);
+    if (mine?.isActive) return existing;
+    await this.db.conversationParticipant.updateMany({
+      where: { conversationId: existing.id, userId: actorId },
+      data: { isActive: true, leftAt: null },
+    });
+    return await this.db.thinkshareConversation.findUniqueOrThrow({
+      where: { id: existing.id },
+      include: { participants: true },
     });
   }
 
@@ -138,7 +221,8 @@ export class MessagingConversationOperations {
    * who blocked the actor, nor someone whose direct-message setting excludes them (SL-4) unless
    * they filter message requests, in which case the group waits in their Requests folder. A
    * former member who left or was removed comes back only as a request they accept; one who
-   * declined it is not asked again. The group stays within MAX_GROUP_PARTICIPANTS.
+   * declined it is not asked again. The group stays within MAX_GROUP_PARTICIPANTS. Only the group's
+   * creator and its admins add people, and a person added reads only what is sent from then on.
    */
   public async addParticipant(actorId: string, input: AddParticipantInput) {
     const conv = await this.db.thinkshareConversation.findUnique({
@@ -147,16 +231,20 @@ export class MessagingConversationOperations {
     });
 
     if (!conv) throw new MessagingNotFoundError();
-    const myP = conv.participants.find((p: any) => p.userId === actorId && p.isActive);
+    const myP = conv.participants.find((p) => p.userId === actorId && p.isActive);
     if (!myP) throw new MessagingForbiddenError();
+    // A request is accepted before the invitee takes any part, adding people included.
+    assertNotPending(myP);
+    assertWritableConversation(conv);
     // A direct message stays between its two people, and a ThinkTank's chat follows its membership (invites, joins)
     if (conv.type === "direct" || conv.source === "thinktank") throw new MessagingForbiddenError();
+    if (!canManageParticipants(conv, actorId)) throw new MessagingForbiddenError();
 
     const target = input.targetUserId;
-    const existing = conv.participants.find((p: any) => p.userId === target);
+    const existing = conv.participants.find((p) => p.userId === target);
     if (existing?.isActive) return { success: true, pending: existing.requestStatus === "pending" };
     if (existing?.requestStatus === "declined") throw new MessagingBlockedError(DM_REFUSED_MESSAGE);
-    if (conv.participants.filter((p: any) => p.isActive).length >= MAX_GROUP_PARTICIPANTS) {
+    if (conv.participants.filter((p) => p.isActive).length >= MAX_GROUP_PARTICIPANTS) {
       throw new MessagingValidationError(GROUP_FULL_MESSAGE);
     }
     if ((await recipientsBlockingSender(this.db, actorId, [target])).length > 0) {
@@ -175,12 +263,12 @@ export class MessagingConversationOperations {
       where: {
         conversationId_userId: {
           conversationId: input.conversationId,
-          userId: input.targetUserId,
+          userId: target,
         },
       },
       create: {
         conversationId: input.conversationId,
-        userId: input.targetUserId,
+        userId: target,
         role: input.role || "member",
         isActive: true,
         requestStatus,
@@ -190,6 +278,8 @@ export class MessagingConversationOperations {
         role: input.role || "member",
         requestStatus,
         leftAt: null,
+        // Back in the group, they read from now on, not the stretch they were away.
+        joinedAt: new Date(),
       },
     });
 
@@ -238,9 +328,10 @@ export class MessagingConversationOperations {
     return { success: true, accepted: input.accept };
   }
 
+  /** Clears the actor's system notices; the rest of their notifications (social, sports, ...) stay. */
   public async clearAllSystemNotifications(actorId: string) {
     await this.db.notification.deleteMany({
-      where: { userId: actorId },
+      where: { userId: actorId, category: "system" },
     });
     return { success: true };
   }
@@ -275,12 +366,6 @@ export class MessagingConversationOperations {
       },
     });
 
-    if (this.websocket?.broadcastMessage) {
-      this.websocket.broadcastMessage({
-        type: "notification:new",
-        notification,
-      });
-    }
     // A notice to one user also goes out by email and push (SL-5); broadcasts stay in-app.
     if (userId) void deliverNotification({ ...notification, userId }, { db: this.db });
 
@@ -292,17 +377,21 @@ export class MessagingConversationOperations {
       throw new MessagingValidationError("targetUserId is required");
     }
 
+    // Participants are Clerk ids; the admin may name the recipient by either id.
+    const recipient = await this.db.user.findFirst({
+      where: { OR: [{ clerkUserId: input.targetUserId }, { id: input.targetUserId }] },
+      select: { clerkUserId: true },
+    });
+    if (!recipient) throw new MessagingNotFoundError("Recipient not found");
+    const targetId = recipient.clerkUserId;
+    if (targetId === actorId) {
+      throw new MessagingValidationError("You cannot message yourself as an administrator");
+    }
+
+    const source = input.source || "system";
     let conversation = await this.db.thinkshareConversation.findFirst({
-      where: {
-        type: "direct",
-        source: input.source || "system",
-        participants: {
-          every: {
-            userId: { in: [actorId, input.targetUserId] },
-          },
-        },
-      },
-      include: { participants: true },
+      where: directThreadWhere(actorId, targetId, { source }),
+      select: { id: true },
     });
 
     if (!conversation) {
@@ -311,15 +400,15 @@ export class MessagingConversationOperations {
           type: "direct",
           conversationType: input.conversationType || "official",
           diplomaticClassification: input.classification || null,
-          source: input.source || "system",
+          source,
           participants: {
             create: [
               { userId: actorId, role: "admin" },
-              { userId: input.targetUserId, role: "member" },
+              { userId: targetId, role: "member" },
             ],
           },
         },
-        include: { participants: true },
+        select: { id: true },
       });
     }
 
@@ -328,7 +417,7 @@ export class MessagingConversationOperations {
         conversationId: conversation.id,
         userId: actorId,
         content: input.content,
-        source: input.source || "system",
+        source,
         classification: input.classification || null,
         subject: input.subject || null,
         isSystem: input.source === "system",
@@ -340,16 +429,15 @@ export class MessagingConversationOperations {
       data: { lastActivity: new Date() },
     });
 
-    if (this.websocket?.broadcastToUsers) {
-      this.websocket.broadcastToUsers([input.targetUserId], "message:new", {
-        type: "message:new",
-        conversationId: conversation.id,
-        messageId: message.id,
-        accountId: actorId,
-        content: input.content,
-        timestamp: message.ixTimeTimestamp.toISOString(),
-      });
-    }
+    this.websocket?.broadcastMessage?.({
+      type: "message:new",
+      conversationId: conversation.id,
+      messageId: message.id,
+      accountId: actorId,
+      content: input.content,
+      timestamp: message.ixTimeTimestamp.getTime(),
+      recipientIds: [actorId, targetId],
+    });
 
     return { success: true, conversationId: conversation.id, messageId: message.id };
   }

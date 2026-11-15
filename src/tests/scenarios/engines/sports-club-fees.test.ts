@@ -135,7 +135,7 @@ describe("a retried request is charged and applied once", () => {
     expect(await wallet()).toBe(4000);
     expect(
       await db.exchangeTransaction.findMany({ select: { sovereigns: true, idempotencyKey: true } })
-    ).toEqual([{ sovereigns: -1000, idempotencyKey: `sports:stadium:${dev.id}:press-0001` }]);
+    ).toEqual([{ sovereigns: -1000_00n, idempotencyKey: `sports:stadium:${dev.id}:press-0001` }]);
 
     await club(as()).upgradeStadium({ teamId: "south", requestId: "press-0002" });
     expect(await capacity()).toBe(7000);

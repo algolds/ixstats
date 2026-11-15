@@ -1,5 +1,6 @@
 "use client";
 
+import { useCountryClick } from "~/components/shared/country-actions/CountryLink";
 import { useState } from "react";
 import Link from "next/link";
 import {
@@ -26,12 +27,19 @@ export function WikiAuthorPopover({ username }: { username: string }) {
   const wikiUserUrl = getWikiProfilePath(username);
   const wikiContribsUrl = `/util/contributions/${username}`;
   const country = author?.country;
+  const countryClick = useCountryClick();
   const links = [
     { href: wikiUserUrl, icon: BookOpen, label: "Wiki user page" },
     { href: wikiContribsUrl, icon: Clock, label: "Contributions" },
     ...(country?.slug
       ? [
-          { href: `/countries/${country.slug}`, icon: Globe, label: "Country page" },
+          {
+            href: `/countries/${country.slug}`,
+            icon: Globe,
+            label: "Country",
+            // The nation's actions sheet, as every country link opens.
+            onClick: countryClick({ id: country.id, slug: country.slug, name: country.name }),
+          },
           { href: `/maps?country=${country.id}`, icon: MapIcon, label: "View on map" },
         ]
       : []),
@@ -87,10 +95,11 @@ export function WikiAuthorPopover({ username }: { username: string }) {
             )}
 
             <div className="border-separator flex flex-col gap-0.5 border-t pt-2">
-              {links.map(({ href, icon: Icon, label }) => (
+              {links.map(({ href, icon: Icon, label, onClick }) => (
                 <Link
                   key={label}
                   href={href}
+                  onClick={onClick}
                   className="text-label-secondary hover:text-label hover:bg-fill-4 rounded-control-sm text-footnote flex items-center gap-2 px-2 py-1 transition-colors"
                 >
                   <Icon aria-hidden className="size-3.5 shrink-0" />

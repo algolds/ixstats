@@ -28,10 +28,7 @@ export default function MatchDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        showCloseButton={false}
-        className="border-separator bg-surface rounded-sheet max-h-[90vh] max-w-4xl overflow-y-auto p-6"
-      >
+      <DialogContent showCloseButton={false} className="max-h-[90vh] max-w-4xl overflow-y-auto p-6">
         <DialogHeader className="sr-only">
           <DialogTitle>Match center</DialogTitle>
           <DialogDescription>

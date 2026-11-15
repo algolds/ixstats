@@ -183,7 +183,13 @@ export function WikiContextProvider({ children }: { children: ReactNode }) {
   const [narratorActions, setNarratorActions] = useState<WikiNarratorActions | null>(null);
 
   const setNarratorState = useCallback((state: Partial<WikiNarratorState>) => {
-    setNarratorStateInternal((prev) => ({ ...prev, ...state }));
+    setNarratorStateInternal((prev) => {
+      // Returning prev when nothing differs skips the re-render of every context consumer.
+      const unchanged = (Object.keys(state) as (keyof WikiNarratorState)[]).every((key) =>
+        Object.is(prev[key], state[key])
+      );
+      return unchanged ? prev : { ...prev, ...state };
+    });
   }, []);
 
   const registerNarratorActions = useCallback((actions: WikiNarratorActions | null) => {

@@ -38,9 +38,6 @@ const config = {
   experimental: {
     // Enable optimizations for heavy packages (tree-shakes unused exports)
     optimizePackageImports: [
-      // NOTE: lucide-react removed from here — optimizePackageImports was
-      // incorrectly dropping Link2 and other icons. Next.js production builds
-      // still tree-shake unused lucide icons automatically.
       "recharts", // 8MB charting library
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
@@ -48,7 +45,6 @@ const config = {
       "@radix-ui/react-tooltip",
       "@radix-ui/react-popover",
       "@clerk/nextjs",
-      "@radix-ui/react-accordion",
       "@radix-ui/react-collapsible",
       "@radix-ui/react-hover-card",
       "@radix-ui/react-scroll-area",
@@ -66,7 +62,6 @@ const config = {
       static: 180,
     },
     // Reduce compilation time & memory footprint
-    esmExternals: true,
     serverSourceMaps: false,
     // Dev only until measured on a build (owner ruling 2026-10-29).
     ...(process.env.NODE_ENV === "development" && {
@@ -81,7 +76,7 @@ const config = {
   // TypeScript performance
   typescript: {
     ignoreBuildErrors: false,
-    tsconfigPath: "./tsconfig.json",
+    tsconfigPath: "./tsconfig.build.json",
   },
 
   // Build performance
@@ -122,8 +117,14 @@ const config = {
   // Production optimizations
   poweredByHeader: false, // Remove X-Powered-By header
 
-  // Output standalone for Docker/production deployment
-  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // Standalone output only for the builds that ship it (deploy-ixworld.sh, deploy-wikios.sh); the main app runs
+  // `next start` from .next and never reads .next/standalone.
+  output:
+    process.env.NEXT_BUILD_STANDALONE === "true" ||
+    process.env.NEXT_PUBLIC_IXWORLD_STANDALONE === "true" ||
+    process.env.NEXT_PUBLIC_WIKIOS_STANDALONE === "true"
+      ? "standalone"
+      : undefined,
   outputFileTracingExcludes: {
     "*": [
       "./backups/**/*",

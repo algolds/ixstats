@@ -6,7 +6,7 @@ import { DevCountryViewProvider } from "~/context/DevCountryViewContext";
 import { DemoModeProvider, useDemoMode } from "~/context/DemoModeContext";
 import { DevCountryViewToolbar, ViewingAsBanner } from "~/components/dev";
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
-import { MyCountryHalo } from "~/components/halo/plugins";
+import { MyCountryHalo } from "~/components/halo/plugins/mycountry/MyCountryHalo";
 import { PortalTintSync } from "~/components/providers/PortalTintSync";
 
 interface MyCountryLayoutClientProps {
@@ -26,9 +26,7 @@ function DemoModeBanner() {
       <AlertTriangle aria-hidden="true" className="text-orange size-3.5 shrink-0" />
       <span>
         <span className="font-semibold">Demo mode.</span>{" "}
-        <span className="text-label-secondary">
-          You&apos;re viewing seeded demo data.
-        </span>
+        <span className="text-label-secondary">You&apos;re viewing seeded demo data.</span>
       </span>
     </div>
   );

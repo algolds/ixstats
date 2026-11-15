@@ -5,13 +5,13 @@
 The authoritative reference catalog for all tRPC routers and endpoints registered across the IxStates platform in [`src/server/api/root.ts`](../../src/server/api/root.ts). Automatically synchronized via `bun run docs:sync`.
 
 <!-- BEGIN_DOCS:API_INVENTORY -->
-### Live tRPC API Inventory (80 Routers, 1118 Endpoints)
+### Live tRPC API Inventory (78 Routers, 1142 Endpoints)
 
 | Router Namespace | Q | M | Sub | Total | Primary Source |
 | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`api.achievements`** | 8 | 2 | 0 | **10** | `src/server/api/routers/achievements/index.ts` |
 | **`api.actionLinks`** | 7 | 5 | 0 | **12** | `src/server/api/routers/actionLinks.ts` |
-| **`api.activities`** | 6 | 3 | 0 | **9** | `src/server/api/routers/activities/index.ts` |
+| **`api.activities`** | 5 | 3 | 0 | **8** | `src/server/api/routers/activities/index.ts` |
 | **`api.admin`** | 38 | 49 | 0 | **87** | `src/server/api/routers/admin/index.ts` |
 | **`api.atlas`** | 0 | 0 | 0 | **5** | `src/server/api/routers/atlas/index.ts` |
 | **`api.atomicGovernment`** | 1 | 0 | 0 | **1** | `src/server/api/routers/atomicGovernment.ts` |
@@ -33,13 +33,13 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.diplomaticCore`** | 4 | 3 | 0 | **7** | `src/server/api/routers/diplomacy/core/index.ts` |
 | **`api.diplomaticCultural`** | 2 | 8 | 0 | **10** | `src/server/api/routers/diplomacy/cultural/index.ts` |
 | **`api.diplomaticEmbassies`** | 2 | 5 | 0 | **7** | `src/server/api/routers/diplomacy/embassies/index.ts` |
-| **`api.diplomaticPolicies`** | 5 | 9 | 0 | **14** | `src/server/api/routers/diplomacy/policies/index.ts` |
+| **`api.diplomaticPolicies`** | 6 | 10 | 0 | **16** | `src/server/api/routers/diplomacy/policies/index.ts` |
 | **`api.diplomaticScenarios`** | 4 | 4 | 0 | **8** | `src/server/api/routers/diplomaticScenarios/index.ts` |
 | **`api.economicArchetypes`** | 2 | 4 | 0 | **6** | `src/server/api/routers/economicArchetypes/index.ts` |
 | **`api.economicComponents`** | 3 | 1 | 0 | **4** | `src/server/api/routers/economicComponents/index.ts` |
 | **`api.economics`** | 0 | 2 | 0 | **2** | `src/server/api/routers/economics/index.ts` |
 | **`api.elections`** | 6 | 5 | 0 | **11** | `src/server/api/routers/elections/index.ts` |
-| **`api.exchange`** | 14 | 37 | 0 | **51** | `src/server/api/routers/exchange/index.ts` |
+| **`api.exchange`** | 24 | 49 | 0 | **73** | `src/server/api/routers/exchange/index.ts` |
 | **`api.formulas`** | 1 | 2 | 0 | **3** | `src/server/api/routers/formulas.ts` |
 | **`api.frontPage`** | 1 | 0 | 0 | **1** | `src/server/api/routers/frontPage.ts` |
 | **`api.geoAdmin`** | 0 | 2 | 0 | **2** | `src/server/api/routers/geo/admin/cities.ts` |
@@ -47,19 +47,18 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.geoEditor`** | 5 | 14 | 0 | **19** | `src/server/api/routers/geo/editor/index.ts` |
 | **`api.geoFeatures`** | 5 | 34 | 0 | **39** | `src/server/api/routers/geo/features/index.ts` |
 | **`api.geoSovereignty`** | 2 | 3 | 0 | **5** | `src/server/api/routers/geo/sovereignty.ts` |
-| **`api.geoWiki`** | 3 | 0 | 0 | **3** | `src/server/api/routers/geo/wiki.ts` |
-| **`api.government`** | 3 | 5 | 0 | **8** | `src/server/api/routers/government/index.ts` |
+| **`api.geoWiki`** | 4 | 0 | 0 | **4** | `src/server/api/routers/geo/wiki.ts` |
+| **`api.government`** | 4 | 8 | 0 | **12** | `src/server/api/routers/government/index.ts` |
 | **`api.governmentComponents`** | 2 | 1 | 0 | **3** | `src/server/api/routers/governmentComponents/index.ts` |
 | **`api.heraldry`** | 6 | 6 | 0 | **12** | `src/server/api/routers/heraldry/index.ts` |
 | **`api.historical`** | 1 | 0 | 0 | **1** | `src/server/api/routers/historical/index.ts` |
 | **`api.intelligence`** | 2 | 6 | 0 | **8** | `src/server/api/routers/intelligence/index.ts` |
 | **`api.intent`** | 5 | 3 | 0 | **8** | `src/server/api/routers/intent/index.ts` |
-| **`api.ixnayid`** | 11 | 9 | 0 | **20** | `src/server/api/routers/ixnayid/index.ts` |
+| **`api.ixnayid`** | 12 | 9 | 0 | **21** | `src/server/api/routers/ixnayid/index.ts` |
 | **`api.legislation`** | 2 | 2 | 0 | **4** | `src/server/api/routers/legislation.ts` |
 | **`api.loreCards`** | 0 | 0 | 0 | **0** | `src/server/api/routers/lore-cards/index.ts` |
 | **`api.lorewards`** | 12 | 5 | 0 | **17** | `src/server/api/routers/lorewards/index.ts` |
-| **`api.meetings`** | 2 | 6 | 0 | **8** | `src/server/api/routers/meetings/index.ts` |
-| **`api.messages`** | 6 | 14 | 0 | **20** | `src/server/api/routers/messages/index.ts` |
+| **`api.messages`** | 8 | 15 | 0 | **23** | `src/server/api/routers/messages/index.ts` |
 | **`api.militaryEquipment`** | 5 | 6 | 0 | **11** | `src/server/api/routers/militaryEquipment/index.ts` |
 | **`api.mycountry`** | 6 | 1 | 0 | **7** | `src/server/api/routers/mycountry/index.ts` |
 | **`api.nationalIssues`** | 11 | 10 | 0 | **21** | `src/server/api/routers/national-issues/index.ts` |
@@ -69,8 +68,7 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.onoma`** | 17 | 26 | 0 | **43** | `src/server/api/routers/onoma/index.ts` |
 | **`api.policies`** | 2 | 2 | 0 | **4** | `src/server/api/routers/policies/index.ts` |
 | **`api.polls`** | 2 | 5 | 0 | **7** | `src/server/api/routers/polls/index.ts` |
-| **`api.quickActions`** | 1 | 1 | 0 | **2** | `src/server/api/routers/quickactions/index.ts` |
-| **`api.realms`** | 12 | 5 | 0 | **23** | `src/server/api/routers/realms/index.ts` |
+| **`api.realms`** | 13 | 5 | 0 | **24** | `src/server/api/routers/realms/index.ts` |
 | **`api.resources`** | 1 | 0 | 0 | **1** | `src/server/api/routers/resources.ts` |
 | **`api.roles`** | 3 | 4 | 0 | **7** | `src/server/api/routers/roles/index.ts` |
 | **`api.security`** | 15 | 28 | 0 | **43** | `src/server/api/routers/security/index.ts` |
@@ -88,8 +86,8 @@ The authoritative reference catalog for all tRPC routers and endpoints registere
 | **`api.users`** | 12 | 14 | 0 | **26** | `src/server/api/routers/users/index.ts` |
 | **`api.vault`** | 17 | 12 | 0 | **29** | `src/server/api/routers/vault/index.ts` |
 | **`api.wikiCache`** | 1 | 1 | 0 | **2** | `src/server/api/routers/wikiCache.ts` |
-| **`api.wikios`** | 75 | 42 | 0 | **119** | `src/server/api/routers/wikios/index.ts` |
-| **TOTALS** | **519** | **585** | **0** | **1118** | **80 registered namespaces** |
+| **`api.wikios`** | 76 | 42 | 0 | **120** | `src/server/api/routers/wikios/index.ts` |
+| **TOTALS** | **533** | **595** | **0** | **1142** | **78 registered namespaces** |
 <!-- END_DOCS:API_INVENTORY -->
 
 > **Generator caveat (2026-09-29):** `docs:sync` counts procedures by static analysis and misses routers built by spreading procedure objects or `mergeRouters`. Counting `appRouter._def.procedures` at runtime gives **77 namespaces / 958 procedures** — the table undercounts `countries` (29, shown as 1), `geoCore` (23, shown as 0), `intelligence` (4, shown as 0) and `sports` (63, shown as 61). Fix the generator rather than editing the table by hand. It also does not follow a router nested inside `mergeRouters` (2026-10-17): `cards` shows 23, and its 64 `cards.admin.*` procedures are listed under [cards Router](#cards-router-87-procedures). It does not follow a re-exported router either: `loreCards` shows 0 for its one procedure, `getCardAuthorInfo`.
@@ -309,28 +307,28 @@ api.admin.saveCronSchedules.useMutation() // { cronSchedule_lorewardsScoring, cr
 
 ```typescript
 // Queries (1)
-api.atomicGovernment.getComponents.useQuery({ countryId })
+api.atomicGovernment.getComponents.useQuery({ countryId });
 ```
 
 ### economics Router (2 procedures)
 
 ```typescript
 // Mutations (2)
-api.economics.updateEconomicProfile.useMutation() // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
-api.economics.updateFiscalSystem.useMutation() // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
+api.economics.updateEconomicProfile.useMutation(); // { countryId, gdpGrowthVolatility?, economicComplexity?, innovationIndex?, competitivenessRank?, easeOfDoingBusiness?, corruptionIndex?, sectorBreakdown?, exportsGDPPercent?, importsGDPPercent?, tradeBalance? }
+api.economics.updateFiscalSystem.useMutation(); // { countryId, personalIncomeTaxRates?, corporateTaxRates?, salesTaxRate?, propertyTaxRate?, payrollTaxRate?, exciseTaxRates?, wealthTaxRate?, spendingByCategory?, fiscalBalanceGDPPercent?, primaryBalanceGDPPercent?, taxEfficiency? }
 ```
 
 ### taxSystem Router (5 procedures)
 
 ```typescript
 // Queries (1)
-api.taxSystem.getByCountryId.useQuery({ countryId })
+api.taxSystem.getByCountryId.useQuery({ countryId });
 
 // Mutations (4)
-api.taxSystem.create.useMutation() // { countryId, data, skipConflictCheck? }
-api.taxSystem.update.useMutation() // { countryId, data, skipConflictCheck? }
-api.taxSystem.delete.useMutation() // { countryId }
-api.taxSystem.checkConflicts.useMutation() // { countryId, data }
+api.taxSystem.create.useMutation(); // { countryId, data, skipConflictCheck? }
+api.taxSystem.update.useMutation(); // { countryId, data, skipConflictCheck? }
+api.taxSystem.delete.useMutation(); // { countryId }
+api.taxSystem.checkConflicts.useMutation(); // { countryId, data }
 ```
 
 ### government Router (8 procedures)
@@ -359,12 +357,12 @@ The former `unifiedIntelligence` executive-dashboard router no longer exists; `a
 
 ```typescript
 // Queries (1)
-api.intelligence.getAllTemplates.useQuery()
+api.intelligence.getAllTemplates.useQuery();
 
 // Mutations (3)
-api.intelligence.createTemplate.useMutation() // { reportType, classification, summaryTemplate, findingsTemplate, minimumLevel, confidenceBase }
-api.intelligence.updateTemplate.useMutation() // { id, reportType?, classification?, summaryTemplate?, findingsTemplate?, minimumLevel?, confidenceBase? }
-api.intelligence.deleteTemplate.useMutation() // { id }
+api.intelligence.createTemplate.useMutation(); // { reportType, classification, summaryTemplate, findingsTemplate, minimumLevel, confidenceBase }
+api.intelligence.updateTemplate.useMutation(); // { id, reportType?, classification?, summaryTemplate?, findingsTemplate?, minimumLevel?, confidenceBase? }
+api.intelligence.deleteTemplate.useMutation(); // { id }
 ```
 
 ### diplomaticCore Router (7 procedures)
@@ -373,30 +371,30 @@ The former monolithic `diplomatic` router is split into `diplomaticCore`, `diplo
 
 ```typescript
 // Queries (4)
-api.diplomaticCore.getRelationships.useQuery({ countryId })
-api.diplomaticCore.getFollowStatus.useQuery({ viewerCountryId, targetCountryId })
-api.diplomaticCore.getAllDiplomaticOptions.useQuery()
-api.diplomaticCore.getOptionUsageStats.useQuery()
+api.diplomaticCore.getRelationships.useQuery({ countryId });
+api.diplomaticCore.getFollowStatus.useQuery({ viewerCountryId, targetCountryId });
+api.diplomaticCore.getAllDiplomaticOptions.useQuery();
+api.diplomaticCore.getOptionUsageStats.useQuery();
 
 // Mutations (3)
-api.diplomaticCore.setDiplomaticGoal.useMutation() // { relationId, goal }
-api.diplomaticCore.followCountry.useMutation() // { followerCountryId, followedCountryId }
-api.diplomaticCore.unfollowCountry.useMutation() // { followerCountryId, followedCountryId }
+api.diplomaticCore.setDiplomaticGoal.useMutation(); // { relationId, goal }
+api.diplomaticCore.followCountry.useMutation(); // { followerCountryId, followedCountryId }
+api.diplomaticCore.unfollowCountry.useMutation(); // { followerCountryId, followedCountryId }
 ```
 
 ### diplomaticEmbassies Router (7 procedures)
 
 ```typescript
 // Queries (2)
-api.diplomaticEmbassies.getEmbassies.useQuery({ countryId })
-api.diplomaticEmbassies.getEmbassyDetails.useQuery({ embassyId })
+api.diplomaticEmbassies.getEmbassies.useQuery({ countryId });
+api.diplomaticEmbassies.getEmbassyDetails.useQuery({ embassyId });
 
 // Mutations (5)
-api.diplomaticEmbassies.establishEmbassy.useMutation() // { hostCountryId, guestCountryId, name, location?, ambassadorName? }
-api.diplomaticEmbassies.closeEmbassy.useMutation() // { embassyId, reason? }
-api.diplomaticEmbassies.reopenEmbassy.useMutation() // { embassyId }
-api.diplomaticEmbassies.deleteEmbassy.useMutation() // { embassyId }
-api.diplomaticEmbassies.updateEmbassyProfile.useMutation() // { embassyId, description?, strategicPriorities?, partnershipGoals?, keyAchievements? }
+api.diplomaticEmbassies.establishEmbassy.useMutation(); // { hostCountryId, guestCountryId, name, location?, ambassadorName? }
+api.diplomaticEmbassies.closeEmbassy.useMutation(); // { embassyId, reason? }
+api.diplomaticEmbassies.reopenEmbassy.useMutation(); // { embassyId }
+api.diplomaticEmbassies.deleteEmbassy.useMutation(); // { embassyId }
+api.diplomaticEmbassies.updateEmbassyProfile.useMutation(); // { embassyId, description?, strategicPriorities?, partnershipGoals?, keyAchievements? }
 ```
 
 ### diplomaticCultural Router (10 procedures)
@@ -583,7 +581,7 @@ Due changes are applied by the `scheduled-changes` cron job (`src/server/cron/jo
 
 ```typescript
 // Queries (1)
-api.scheduledChanges.getPendingChanges.useQuery()
+api.scheduledChanges.getPendingChanges.useQuery();
 ```
 
 ---
@@ -728,19 +726,19 @@ api.cards.reportInscription.useMutation() // { ownershipId, reason }; once per c
 api.cards.requestTakedown.useMutation() // { cardId, reason, contact? }; cards not from NationStates, one active request per card, at most 5 waiting per player
 ```
 
-| `api.cards.admin.*` | Queries | Mutations |
-| :--- | :--- | :--- |
-| `overview` | `summary`, `activity`, `realms`, `findCards` | |
-| `library` | `list` | `update`, `bulkSetRetired` |
-| `imports` | `searchCategories`, `categoryCounts`, `jobs`, `items` | `crawl`, `start`, `cancel`, `retry`, `resume` |
-| `nationstates` | `logs`, `logCards`, `active` | `start`, `pause`, `resume`, `stop`, `discoverRegions`, `filterCte` |
-| `curation` | `queue`, `suggestions` | `review`, `acceptSuggestion`, `declineSuggestion` |
-| `packs` | `list`, `preview` | `save`, `setActive` |
-| `economy` | `get` | `saveValues`, `recomputeValues`, `saveMarket`, `saveEconomy`, `saveBonuses`, `saveLorewardPayouts`, `saveRarityThresholds`, `saveDailyImport` |
-| `seasons` | `get` | `set` |
-| `compliance` | `takedowns`, `licences`, `inscriptionReports` | `file`, `hide`, `decline`, `restore`, `setLicence`, `resolveInscriptionReport` |
-| `designer` | `list`, `achievements` | `save` |
-| `tools` | `playerCards` | `grant`, `revoke`, `cancelAuction`, `cancelListing`, `voidTrade`, `awardPack` |
+| `api.cards.admin.*` | Queries                                               | Mutations                                                                                                                                     |
+| :------------------ | :---------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
+| `overview`          | `summary`, `activity`, `realms`, `findCards`          |                                                                                                                                               |
+| `library`           | `list`                                                | `update`, `bulkSetRetired`                                                                                                                    |
+| `imports`           | `searchCategories`, `categoryCounts`, `jobs`, `items` | `crawl`, `start`, `cancel`, `retry`, `resume`                                                                                                 |
+| `nationstates`      | `logs`, `logCards`, `active`                          | `start`, `pause`, `resume`, `stop`, `discoverRegions`, `filterCte`                                                                            |
+| `curation`          | `queue`, `suggestions`                                | `review`, `acceptSuggestion`, `declineSuggestion`                                                                                             |
+| `packs`             | `list`, `preview`                                     | `save`, `setActive`                                                                                                                           |
+| `economy`           | `get`                                                 | `saveValues`, `recomputeValues`, `saveMarket`, `saveEconomy`, `saveBonuses`, `saveLorewardPayouts`, `saveRarityThresholds`, `saveDailyImport` |
+| `seasons`           | `get`                                                 | `set`                                                                                                                                         |
+| `compliance`        | `takedowns`, `licences`, `inscriptionReports`         | `file`, `hide`, `decline`, `restore`, `setLicence`, `resolveInscriptionReport`                                                                |
+| `designer`          | `list`, `achievements`                                | `save`                                                                                                                                        |
+| `tools`             | `playerCards`                                         | `grant`, `revoke`, `cancelAuction`, `cancelListing`, `voidTrade`, `awardPack`                                                                 |
 
 ### cardPacks Router (4 procedures)
 
@@ -814,13 +812,13 @@ The card workshop ([cards.md](../systems/cards.md#dust-and-crafting)).
 
 ```typescript
 // Queries (2)
-api.crafting.getNumbers.useQuery() // public (read-only rate limit): the economy numbers card screens preview with
-api.crafting.getDust.useQuery() // your dust per realm
+api.crafting.getNumbers.useQuery(); // public (read-only rate limit): the economy numbers card screens preview with
+api.crafting.getDust.useQuery(); // your dust per realm
 
 // Mutations (3)
-api.crafting.breakDown.useMutation() // { ownershipIds }; up to 100 copies, dust to each card's realm
-api.crafting.fuse.useMutation() // { ownershipIds }; copies of one card at one finish become one at the next
-api.crafting.craft.useMutation() // { cardId }; a Standard copy for realm dust plus the rarity floor in IxC
+api.crafting.breakDown.useMutation(); // { ownershipIds }; up to 100 copies, dust to each card's realm
+api.crafting.fuse.useMutation(); // { ownershipIds }; copies of one card at one finish become one at the next
+api.crafting.craft.useMutation(); // { cardId }; a Standard copy for realm dust plus the rarity floor in IxC
 ```
 
 ### nsImport Router (7 procedures)
@@ -830,15 +828,15 @@ admin's Compliance queue). Region syncs and the CTE filter are `api.cards.admin.
 
 ```typescript
 // Queries (2)
-api.nsImport.getVerificationUrl.useQuery({ nationName })
-api.nsImport.getMyNSCards.useQuery()
+api.nsImport.getVerificationUrl.useQuery({ nationName });
+api.nsImport.getMyNSCards.useQuery();
 
 // Mutations (5)
-api.nsImport.requestVerification.useMutation() // { nationName }
-api.nsImport.checkVerification.useMutation() // { verificationId, checksum }
-api.nsImport.importDeck.useMutation() // { verificationId }
-api.nsImport.requestSelfServiceTakedown.useMutation() // { cardId, nationName, checksum, reason? }
-api.nsImport.hideMyCard.useMutation() // { nsCardId, nsSeason, reason? }
+api.nsImport.requestVerification.useMutation(); // { nationName }
+api.nsImport.checkVerification.useMutation(); // { verificationId, checksum }
+api.nsImport.importDeck.useMutation(); // { verificationId }
+api.nsImport.requestSelfServiceTakedown.useMutation(); // { cardId, nationName, checksum, reason? }
+api.nsImport.hideMyCard.useMutation(); // { nsCardId, nsSeason, reason? }
 ```
 
 ---
@@ -846,38 +844,41 @@ api.nsImport.hideMyCard.useMutation() // { nsCardId, nsSeason, reason? }
 ## Usage Patterns
 
 ### Basic Query
+
 ```typescript
 const { data, isLoading, error } = api.countries.getByIdBasic.useQuery({
-  id: "country123"
+  id: "country123",
 });
 ```
 
 ### Mutation with Optimistic Updates
+
 ```typescript
 const utils = api.useUtils();
 const mutation = api.countries.update.useMutation({
   onMutate: async (newData) => {
     await utils.countries.getByIdBasic.cancel();
     const previous = utils.countries.getByIdBasic.getData({ id: newData.id });
-    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) => (old ? { ...old, ...newData } : old));
+    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) =>
+      old ? { ...old, ...newData } : old
+    );
     return { previous };
   },
   onError: (err, variables, context) => {
     if (context?.previous) {
-      utils.countries.getByIdBasic.setData(
-        { id: variables.id },
-        context.previous
-      );
+      utils.countries.getByIdBasic.setData({ id: variables.id }, context.previous);
     }
   },
   onSettled: () => {
     utils.countries.invalidate();
-  }
+  },
 });
 ```
 
 ### Server-Side Caller
+
 React Server Components use the hydration helpers in `src/trpc/server.ts`, which wrap `createCaller(createTRPCContext)`:
+
 ```typescript
 import { api } from "~/trpc/server";
 
@@ -889,18 +890,15 @@ export default async function CountryPage({ params }: { params: Promise<{ id: st
 ```
 
 ### Infinite Query (Pagination)
+
 ```typescript
-const {
-  data,
-  fetchNextPage,
-  hasNextPage,
-  isFetchingNextPage
-} = api.thinkpages.getFeed.useInfiniteQuery(
-  { limit: 20 },
-  {
-    getNextPageParam: (lastPage) => lastPage.nextCursor
-  }
-);
+const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  api.thinkpages.getFeed.useInfiniteQuery(
+    { limit: 20 },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    }
+  );
 ```
 
 ---
@@ -909,23 +907,24 @@ const {
 
 Procedures are built from the builders in `src/server/api/trpc/procedures.ts`. Authentication is Clerk-backed (`authMiddleware`); rate limiting uses `rateLimiter` from `src/lib/cache/rate-limiter.ts` (Redis in production, in-memory fallback in development) and throws `RateLimitError` (`TOO_MANY_REQUESTS`).
 
-| Builder | Middleware chain |
-| --- | --- |
-| `publicProcedure` | timing → user logging |
-| `protectedProcedure` | timing → auth → user logging |
-| `countryOwnerProcedure` | timing → auth → country ownership → user logging |
-| `premiumProcedure` | timing → auth → premium tier → user logging (with performance) |
-| `adminProcedure` | auth → admin role → input validation → rate limit (100/min) → audit log → admin logging |
-| `standardMutationCountryOwnerProcedure` | `countryOwnerProcedure` + 60 mutations/min + input validation |
-| `lightMutationProcedure` | `protectedProcedure` + 100/min (`light_mutations`) |
-| `rateLimitedPublicProcedure` | `publicProcedure` + 100/min (`public`) |
-| `cachedPublicProcedure` / `cachedStaticProcedure` | response-cache variants (per-user caching: `.use(userCacheMiddleware)`) |
+| Builder                                           | Middleware chain                                                                        |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `publicProcedure`                                 | timing → user logging                                                                   |
+| `protectedProcedure`                              | timing → auth → user logging                                                            |
+| `countryOwnerProcedure`                           | timing → auth → country ownership → user logging                                        |
+| `premiumProcedure`                                | timing → auth → premium tier → user logging (with performance)                          |
+| `adminProcedure`                                  | auth → admin role → input validation → rate limit (100/min) → audit log → admin logging |
+| `standardMutationCountryOwnerProcedure`           | `countryOwnerProcedure` + 60 mutations/min + input validation                           |
+| `lightMutationProcedure`                          | `protectedProcedure` + 100/min (`light_mutations`)                                      |
+| `rateLimitedPublicProcedure`                      | `publicProcedure` + 100/min (`public`)                                                  |
+| `cachedPublicProcedure` / `cachedStaticProcedure` | response-cache variants (per-user caching: `.use(userCacheMiddleware)`)                 |
 
 ---
 
 ## Error Handling
 
 Standard error codes returned:
+
 - `BAD_REQUEST` - Invalid input
 - `UNAUTHORIZED` - Not authenticated
 - `FORBIDDEN` - Insufficient permissions
@@ -934,17 +933,18 @@ Standard error codes returned:
 - `INTERNAL_SERVER_ERROR` - Server error
 
 **Client-side handling:**
+
 ```typescript
 const mutation = api.countries.update.useMutation({
   onError: (error) => {
-    if (error.data?.code === 'UNAUTHORIZED') {
-      router.push('/sign-in');
-    } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
-      toast.error('Rate limit exceeded. Please wait.');
+    if (error.data?.code === "UNAUTHORIZED") {
+      router.push("/sign-in");
+    } else if (error.data?.code === "TOO_MANY_REQUESTS") {
+      toast.error("Rate limit exceeded. Please wait.");
     } else {
       toast.error(error.message);
     }
-  }
+  },
 });
 ```
 
@@ -1007,7 +1007,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ```typescript
 const { data } = api.countries.getAll.useQuery({
-  limit: 20, offset: 0, search: "", continent: undefined, economicTier: undefined
+  limit: 20,
+  offset: 0,
+  search: "",
+  continent: undefined,
+  economicTier: undefined,
 });
 ```
 
@@ -1015,16 +1019,16 @@ const { data } = api.countries.getAll.useQuery({
 
 ```typescript
 const createCountry = api.countries.createCountry.useMutation({
-  onSuccess: () => router.push("/mycountry")
+  onSuccess: () => router.push("/mycountry"),
 });
 createCountry.mutate({
   name: "Republic of Innovation",
   foundationCountry: null,
-  economicInputs: { /* builder economic inputs */ },
+  economicInputs: {/* builder economic inputs */},
   governmentComponents: [/* atomic component types */],
-  taxSystemData: { /* tax builder state */ },
-  governmentStructure: { /* government builder state */ },
-  economyBuilderState: { /* economy builder state */ },
+  taxSystemData: {/* tax builder state */},
+  governmentStructure: {/* government builder state */},
+  economyBuilderState: {/* economy builder state */},
 });
 ```
 
@@ -1039,7 +1043,8 @@ const { data: country } = api.countries.getByIdBasic.useQuery({ id: "clx8a1b2c3d
 
 ```typescript
 const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery({
-  countryId: "clx...", includeHistory: true
+  countryId: "clx...",
+  includeHistory: true,
 });
 // Returns country data with vitality scores, achievements, rankings and milestones
 ```
@@ -1048,11 +1053,14 @@ const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery({
 
 ```typescript
 const establishEmbassy = api.diplomaticEmbassies.establishEmbassy.useMutation({
-  onSuccess: () => utils.diplomaticEmbassies.getEmbassies.invalidate()
+  onSuccess: () => utils.diplomaticEmbassies.getEmbassies.invalidate(),
 });
 establishEmbassy.mutate({
-  hostCountryId: "clx9b...", guestCountryId: "clx...", name: "Embassy of Innovation",
-  location: "Techville", ambassadorName: "Ambassador Jane Smith"
+  hostCountryId: "clx9b...",
+  guestCountryId: "clx...",
+  name: "Embassy of Innovation",
+  location: "Techville",
+  ambassadorName: "Ambassador Jane Smith",
 });
 ```
 
@@ -1060,12 +1068,14 @@ establishEmbassy.mutate({
 
 ```typescript
 const createPost = api.thinkpages.createPost.useMutation({
-  onSuccess: () => utils.thinkpages.getFeed.invalidate()
+  onSuccess: () => utils.thinkpages.getFeed.invalidate(),
 });
 createPost.mutate({
-  accountId: "account_abc123", visibility: "public",
+  accountId: "account_abc123",
+  visibility: "public",
   content: "Excited to announce our new trade agreement! #diplomacy #trade",
-  hashtags: ["diplomacy", "trade"], mentions: ["RepublicOfTrade"]
+  hashtags: ["diplomacy", "trade"],
+  mentions: ["RepublicOfTrade"],
 });
 ```
 
@@ -1107,6 +1117,7 @@ const { data: status } = api.admin.getSystemStatus.useQuery();
 ### Best Practices
 
 **Query Invalidation**: After mutations, invalidate related queries:
+
 ```typescript
 utils.countries.getByIdBasic.invalidate({ id: countryId });
 utils.countries.invalidate();
@@ -1114,12 +1125,15 @@ utils.mycountry.getCountryDashboard.invalidate();
 ```
 
 **Optimistic Updates**: Update UI before server response, rollback on error:
+
 ```typescript
 const updateCountry = api.countries.update.useMutation({
   onMutate: async (newData) => {
     await utils.countries.getByIdBasic.cancel({ id: newData.id });
     const previousData = utils.countries.getByIdBasic.getData({ id: newData.id });
-    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) => (old ? { ...old, ...newData } : old));
+    utils.countries.getByIdBasic.setData({ id: newData.id }, (old) =>
+      old ? { ...old, ...newData } : old
+    );
     return { previousData };
   },
   onError: (err, newData, context) => {
@@ -1127,17 +1141,19 @@ const updateCountry = api.countries.update.useMutation({
   },
   onSettled: (data, error, variables) => {
     utils.countries.getByIdBasic.invalidate({ id: variables.id });
-  }
+  },
 });
 ```
 
 **Pagination**: Use offset-based pagination:
+
 ```typescript
 const [page, setPage] = useState(0);
 const { data } = api.countries.getAll.useQuery({ limit: 20, offset: page * 20 });
 ```
 
 **Type Safety**: Use TypeScript inference:
+
 ```typescript
 import { type RouterInputs, type RouterOutputs } from "~/trpc/react";
 type CreateCountryInput = RouterInputs["countries"]["createCountry"];
@@ -1146,12 +1162,12 @@ type Country = RouterOutputs["countries"]["getByIdBasic"];
 
 ### Rate Limiting
 
-| Endpoint Type | Rate Limit |
-|---------------|-----------|
-| `rateLimitedPublicProcedure` | 100 requests/minute |
-| `standardMutationCountryOwnerProcedure` | 60 requests/minute |
-| `lightMutationProcedure` | 100 requests/minute |
-| `adminProcedure` | 100 requests/minute |
+| Endpoint Type                           | Rate Limit          |
+| --------------------------------------- | ------------------- |
+| `rateLimitedPublicProcedure`            | 100 requests/minute |
+| `standardMutationCountryOwnerProcedure` | 60 requests/minute  |
+| `lightMutationProcedure`                | 100 requests/minute |
+| `adminProcedure`                        | 100 requests/minute |
 
 Plain `publicProcedure` / `protectedProcedure` carry no tRPC rate limit of their own. tRPC responses do not set `X-RateLimit-*` headers.
 
@@ -1161,13 +1177,25 @@ Plain `publicProcedure` / `protectedProcedure` carry no tRPC rate limit of their
 const mutation = api.countries.createCountry.useMutation({
   onError: (error) => {
     switch (error.data?.code) {
-      case "BAD_REQUEST": toast.error(error.message); break;
-      case "UNAUTHORIZED": toast.error("Please sign in"); router.push("/sign-in"); break;
-      case "FORBIDDEN": toast.error("Insufficient permissions"); break;
-      case "TOO_MANY_REQUESTS": toast.error("Rate limit exceeded, please wait"); break;
-      case "INTERNAL_SERVER_ERROR": toast.error("Server error, try again later"); break;
-      default: toast.error(error.message || "An error occurred");
+      case "BAD_REQUEST":
+        toast.error(error.message);
+        break;
+      case "UNAUTHORIZED":
+        toast.error("Please sign in");
+        router.push("/sign-in");
+        break;
+      case "FORBIDDEN":
+        toast.error("Insufficient permissions");
+        break;
+      case "TOO_MANY_REQUESTS":
+        toast.error("Rate limit exceeded, please wait");
+        break;
+      case "INTERNAL_SERVER_ERROR":
+        toast.error("Server error, try again later");
+        break;
+      default:
+        toast.error(error.message || "An error occurred");
     }
-  }
+  },
 });
 ```

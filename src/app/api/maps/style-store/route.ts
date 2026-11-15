@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "~/server/db";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { join } from "path";
 import { readFile } from "fs/promises";
 import { getMapGlyphsUrl } from "~/lib/base-path";
@@ -53,14 +54,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(styleJson, { status: 200 });
   } catch (error) {
-    console.error("❌ GET /api/maps/style-store failed:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to load style",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    return internalErrorResponse("GET /api/maps/style-store", error);
   }
 }
 
@@ -96,13 +90,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true, override }, { status: 200 });
   } catch (error) {
-    console.error("❌ PUT /api/maps/style-store failed:", error);
-    return NextResponse.json(
-      {
-        error: "Failed to save style",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 }
-    );
+    return internalErrorResponse("PUT /api/maps/style-store", error);
   }
 }

@@ -15,9 +15,10 @@ import {
 import { useCountryEconomicData } from "~/hooks/useCountryEconomicData";
 import { api } from "~/trpc/react";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { FACET_CHART_COLORS, FacetChartTooltip } from "~/components/ui/chart";
 import { BaseMetricDetailsModal } from "./BaseMetricDetailsModal";
 import { MetricModalLayout } from "./MetricModalLayout";
-import { CHART_TOOLTIP_STYLE, type MetricModalTab } from "./types";
+import type { MetricModalTab } from "./types";
 
 interface GovernmentSpendingModalProps {
   isOpen: boolean;
@@ -31,14 +32,7 @@ const TABS: MetricModalTab[] = [
   { id: "breakdown", label: "Breakdown", icon: PieChart },
 ];
 
-const SPENDING_COLORS = [
-  "var(--color-blue-500)", // blue - education
-  "var(--color-destructive)", // red - healthcare
-  "var(--chart-3)", // green - defense
-  "var(--color-amber-500)", // amber - social
-  "var(--chart-5)", // indigo - infrastructure
-  "var(--chart-2)", // cyan - other
-];
+const SPENDING_COLORS = FACET_CHART_COLORS;
 
 type EconomicData = ReturnType<typeof useCountryEconomicData>;
 type SpendingViewProps = Pick<EconomicData, "countryData" | "economyData">;
@@ -142,10 +136,10 @@ function SpendingBreakdown({ economyData }: Pick<SpendingViewProps, "economyData
     percent?: number;
     gdpPercent?: number;
   }>;
-  const categories = spendingCategories.slice(0, 6).map((cat, i) => ({
+  const categories = spendingCategories.slice(0, 8).map((cat, i) => ({
     name: cat.category,
     value: cat.percent || cat.gdpPercent || 0,
-    color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? "var(--color-blue-500)",
+    color: SPENDING_COLORS[i % SPENDING_COLORS.length] ?? FACET_CHART_COLORS[0],
   }));
 
   // No recorded split (or a visitor: the allocation split is served to the owner only).
@@ -168,39 +162,48 @@ function SpendingBreakdown({ economyData }: Pick<SpendingViewProps, "economyData
                   data={categories}
                   cx="50%"
                   cy="50%"
-                  innerRadius={45}
-                  outerRadius={60}
+                  innerRadius={48}
+                  outerRadius={66}
                   paddingAngle={2}
+                  stroke="none"
                   dataKey="value"
+                  nameKey="name"
                 >
                   {categories.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={CHART_TOOLTIP_STYLE} />
+                <Tooltip
+                  content={
+                    <FacetChartTooltip
+                      hideLabel
+                      valueFormatter={(val) => `${val.toFixed(1)}%`}
+                    />
+                  }
+                />
               </RechartsPieChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="max-h-[220px] w-full flex-1 space-y-2 overflow-y-auto pr-1">
+          <ul className="divide-separator/60 max-h-[220px] w-full flex-1 divide-y overflow-y-auto pr-1">
             {categories.map((category) => (
-              <div
+              <li
                 key={category.name}
-                className="bg-fill-3 rounded-row text-footnote flex items-center justify-between p-2"
+                className="text-footnote flex items-center justify-between py-2 first:pt-0 last:pb-0"
               >
                 <div className="flex items-center gap-2">
                   <div
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: category.color }}
                   />
-                  <span className="text-label-secondary font-medium">{category.name}</span>
+                  <span className="text-label">{category.name}</span>
                 </div>
                 <span className="text-label font-semibold tabular-nums">
                   {category.value.toFixed(1)}%
                 </span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </MetricModalLayout.Panel>
       </MetricModalLayout.MainArea>
     </MetricModalLayout>
@@ -246,7 +249,7 @@ export function GovernmentSpendingModal({
       title="Government spending analysis"
       description="Budget allocation and fiscal metrics"
       icon={Building}
-      iconColor="text-yellow"
+      iconColor="text-label-secondary"
       tabs={TABS}
       isLoading={isLoading}
       variant="economy"

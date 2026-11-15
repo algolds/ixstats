@@ -6,7 +6,10 @@ import { Button } from "~/components/ui/button";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { WikiSourcePicker, useWikiSource } from "~/components/wiki-os/shared/WikiSourcePicker";
 import { toWikiSlug, type WikiLeagueTeam } from "~/lib/sports/league-wiki";
+import type { WikiSource } from "~/lib/wiki-os/config";
+import { wikiReadErrorText, wikiSourceLabel } from "~/lib/wiki-os/wiki-source-availability";
 
 interface LeagueWikiImportProps {
   wikiSlug: string;
@@ -15,13 +18,19 @@ interface LeagueWikiImportProps {
   importedCount: number | null;
   minTeams: number;
   maxTeams: number;
-  onImport: (teams: WikiLeagueTeam[]) => void;
+  onImport: (
+    teams: WikiLeagueTeam[],
+    leagueWiki?: { wikiSlug: string; wikiSource: WikiSource }
+  ) => void;
   onClear: () => void;
 }
 
 const teamKey = (team: WikiLeagueTeam) => team.wikiSlug ?? team.name;
 
-/** The creator's wiki step: the league's IxWiki article, and a checklist of the teams that article names. */
+/**
+ * The creator's wiki step: the league's wiki article, and a checklist of the teams an article names. Teams imported
+ * from a sister wiki keep both their article slug and `wikiSource` so their links open the right wiki.
+ */
 export function LeagueWikiImport({
   wikiSlug,
   onWikiSlugChange,
@@ -31,12 +40,19 @@ export function LeagueWikiImport({
   onImport,
   onClear,
 }: LeagueWikiImportProps) {
-  const [requested, setRequested] = useState<string | null>(null);
+  const [requested, setRequested] = useState<{ wikiSlug: string; wiki: WikiSource } | null>(null);
   const [skipped, setSkipped] = useState<string[]>([]);
+  /** The page read on a sister wiki; the league's own article is always an IxWiki page. */
+  const [sisterTitle, setSisterTitle] = useState("");
+  const { source, setSource, options } = useWikiSource("imports");
+  const importSlug = toWikiSlug(source === "ixwiki" ? wikiSlug : sisterTitle);
 
   const preview = api.sports.previewWikiTeams.useQuery(
-    { wikiSlug: requested ?? "" },
-    { enabled: requested !== null, retry: false }
+    requested ?? { wikiSlug: "", wiki: source },
+    {
+      enabled: requested !== null,
+      retry: false,
+    }
   );
   const found = preview.data ?? [];
   const chosen = found.filter((team) => !skipped.includes(teamKey(team)));
@@ -53,7 +69,11 @@ export function LeagueWikiImport({
   };
 
   const handleAccept = () => {
-    onImport(chosen);
+    const importedFrom = requested ?? (importSlug ? { wikiSlug: importSlug, wiki: source } : null);
+    onImport(
+      chosen,
+      importedFrom ? { wikiSlug: importedFrom.wikiSlug, wikiSource: importedFrom.wiki } : undefined
+    );
     setRequested(null);
     setSkipped([]);
   };
@@ -61,28 +81,50 @@ export function LeagueWikiImport({
   return (
     <div className="space-y-2">
       <Label htmlFor="league-wiki-slug">Wiki article</Label>
+      <Input
+        id="league-wiki-slug"
+        placeholder="Article title, for example Varro_League"
+        value={wikiSlug}
+        onChange={(e) => handleSlugChange(e.target.value.slice(0, 500))}
+      />
+      <p className="text-label-secondary text-footnote">
+        Optional. Links the league to its wiki article, and can fill in the team names from it.
+      </p>
+
+      <p className="text-label text-footnote pt-1 font-medium">Import team names from</p>
+      <WikiSourcePicker
+        size="sm"
+        value={source}
+        options={options}
+        onValueChange={(next) => {
+          setRequested(null);
+          setSource(next);
+        }}
+      />
       <div className="flex gap-2">
-        <Input
-          id="league-wiki-slug"
-          placeholder="Article title, for example Varro_League"
-          value={wikiSlug}
-          onChange={(e) => handleSlugChange(e.target.value.slice(0, 500))}
-        />
+        {source !== "ixwiki" && (
+          <Input
+            aria-label={`${wikiSourceLabel(source)} article`}
+            placeholder={`Article title on ${wikiSourceLabel(source)}`}
+            value={sisterTitle}
+            onChange={(e) => {
+              setRequested(null);
+              setSisterTitle(e.target.value.slice(0, 500));
+            }}
+          />
+        )}
         <Button
           type="button"
           variant="outline"
-          disabled={!toWikiSlug(wikiSlug) || preview.isFetching}
+          disabled={!importSlug || preview.isFetching}
           onClick={() => {
             setSkipped([]);
-            setRequested(toWikiSlug(wikiSlug));
+            if (importSlug) setRequested({ wikiSlug: importSlug, wiki: source });
           }}
         >
           {preview.isFetching ? "Reading..." : "Import teams"}
         </Button>
       </div>
-      <p className="text-label-secondary text-footnote">
-        Optional. Links the league to its wiki article, and can fill in the team names from it.
-      </p>
 
       {importedCount !== null && (
         <div className="border-separator bg-fill-3 rounded-control flex items-center justify-between gap-3 border px-3 py-2">
@@ -95,7 +137,7 @@ export function LeagueWikiImport({
 
       {requested !== null && preview.isError && (
         <p className="text-destructive text-footnote" role="alert">
-          That article could not be read. Try again.
+          {wikiReadErrorText(preview.error, "That article could not be read. Try again.")}
         </p>
       )}
 

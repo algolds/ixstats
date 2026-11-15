@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import { motion } from "motion/react";
 import { InfoCircle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
@@ -43,7 +42,13 @@ function About({ copy }: { copy: NationFigureCopy }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button type="button" variant="ghost" size="icon-sm" aria-label={`About ${copy.label}`}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          className="shrink-0"
+          aria-label={`About ${copy.label}`}
+        >
           <InfoCircle aria-hidden />
         </Button>
       </PopoverTrigger>
@@ -79,7 +84,7 @@ interface NationCardProps {
 
 /** The live nation card: the server's dry run of the founding, in plain figures. */
 export function NationCard({ summary, stale, size = "sm", announce = true }: NationCardProps) {
-  const announcement = useMemo(() => announceSummary(summary), [summary]);
+  const announcement = announceSummary(summary);
   const withSentences = size === "md";
   return (
     <div className="flex flex-col gap-3">
@@ -87,8 +92,8 @@ export function NationCard({ summary, stale, size = "sm", announce = true }: Nat
         aria-busy={stale || undefined}
         data-stale={stale || undefined}
         className={cn(
-          "ease-out-facet grid gap-4 transition-opacity duration-150",
-          withSentences ? "sm:grid-cols-2" : "grid-cols-2",
+          "ease-out-facet grid transition-opacity duration-150",
+          withSentences ? "gap-4 sm:grid-cols-2" : "divide-separator/60 grid-cols-1 gap-0 divide-y",
           stale && "opacity-60"
         )}
       >
@@ -108,10 +113,14 @@ export function NationCard({ summary, stale, size = "sm", announce = true }: Nat
             <Stat
               key={copy.id}
               size={size}
+              className={cn(
+                "[&_[data-slot=stat-label-row]>span:last-child]:overflow-visible [&_[data-slot=stat-label-row]>span:last-child]:text-clip [&_[data-slot=stat-label-row]>span:last-child]:whitespace-normal",
+                !withSentences && "py-2.5 first:pt-0 last:pb-0"
+              )}
               value={<FigureValue figure={figure} text={text} />}
               label={
-                <span className="inline-flex items-center gap-0.5">
-                  {copy.label}
+                <span className="flex items-center justify-between gap-1.5 leading-snug">
+                  <span className="min-w-0 wrap-break-word">{copy.label}</span>
                   <About copy={copy} />
                 </span>
               }

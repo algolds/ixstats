@@ -9,7 +9,6 @@
  *   bun run scripts/wiki/migrate-media-assets.ts --from-db
  */
 
-import { PrismaClient } from "@prisma/client";
 import {
   getIxWikiPool,
   closeWikiBridge,
@@ -17,8 +16,9 @@ import {
 import { MediaAssetService } from "../../src/lib/wiki-os/core/media-asset-service";
 import { DEFAULT_USER_AGENT, mediaWikiOrigin } from "../../src/lib/wiki-os/config";
 import type mysql from "mysql2/promise";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface MediaRecord {
   name: string;

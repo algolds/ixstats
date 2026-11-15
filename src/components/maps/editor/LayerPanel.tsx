@@ -22,7 +22,7 @@ import {
 } from "iconoir-react";
 import { WikiPreviewTooltip } from "~/components/maps/editor/WikiPreviewTooltip";
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Input } from "~/components/ui/input";
 import type { EditorFeature } from "./types/editor-state";
 import { Slider } from "~/components/ui/slider";
 import { Button } from "~/components/ui/button";
@@ -151,6 +151,8 @@ function FeatureRow({
     typeof feature.properties?.wikiPageTitle === "string"
       ? feature.properties.wikiPageTitle
       : undefined;
+  const wikiSource =
+    typeof feature.properties?.wikiSource === "string" ? feature.properties.wikiSource : undefined;
 
   const row = (
     <div
@@ -162,12 +164,15 @@ function FeatureRow({
             : "hover:bg-fill-3"
       }`}
     >
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
         onClick={(e) => {
           if (e.shiftKey && onToggleSelect) onToggleSelect(feature.id);
           else onSelect?.(feature);
         }}
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        className="h-auto min-w-0 flex-1 justify-start gap-2 px-0 py-0 text-left font-normal hover:bg-transparent"
       >
         <Icon className={`h-3 w-3 shrink-0 ${colorClass}`} />
         <span className="text-label text-footnote truncate">{feature.name}</span>
@@ -176,7 +181,7 @@ function FeatureRow({
             <Crown className="text-yellow h-2.5 w-2.5 shrink-0" />
           </span>
         )}
-      </button>
+      </Button>
       <div
         className={`flex items-center gap-0.5 transition-opacity ${
           isSelected ? "opacity-100" : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
@@ -212,7 +217,13 @@ function FeatureRow({
     </div>
   );
 
-  return wikiTitle ? <WikiPreviewTooltip wikiTitle={wikiTitle}>{row}</WikiPreviewTooltip> : row;
+  return wikiTitle ? (
+    <WikiPreviewTooltip wikiTitle={wikiTitle} wikiSource={wikiSource}>
+      {row}
+    </WikiPreviewTooltip>
+  ) : (
+    row
+  );
 }
 
 type FeatureRowsProps = Omit<FeatureRowProps, "feature" | "isSelected" | "isMultiSelected"> & {
@@ -252,36 +263,38 @@ function SearchBox({
 }) {
   return (
     <div className="border-separator relative border-b px-2 py-2">
-      <Search className="text-label-secondary pointer-events-none absolute top-1/2 left-4 h-3 w-3 -translate-y-1/2" />
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => onQueryChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && onEnter) {
-            e.preventDefault();
-            onEnter();
-          } else if (e.key === "Escape") {
-            e.stopPropagation();
-            onQueryChange("");
-            (e.target as HTMLInputElement).blur();
-          }
-        }}
-        placeholder="Find a feature… (Enter zooms to it)"
-        aria-label="Find a feature"
-        className="border-separator bg-surface focus:ring-tint rounded-control-sm text-footnote w-full border py-1 pr-7 pl-7 outline-none focus:ring-1"
-      />
-      {query && (
-        <IconButton
-          onClick={() => onQueryChange("")}
-          aria-label="Clear search"
-          className="text-label-secondary hover:text-label absolute top-1/2 right-4 -translate-y-1/2"
-        >
-          <Xmark className="h-3 w-3" />
-        </IconButton>
-      )}
+      <div className="relative flex items-center">
+        <Search className="text-label-secondary pointer-events-none absolute left-2.5 h-3 w-3" />
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && onEnter) {
+              e.preventDefault();
+              onEnter();
+            } else if (e.key === "Escape") {
+              e.stopPropagation();
+              onQueryChange("");
+              (e.target as HTMLInputElement).blur();
+            }
+          }}
+          placeholder="Find a feature… (Enter zooms to it)"
+          aria-label="Find a feature"
+          className="text-footnote rounded-control-sm h-7 pr-7 pl-7"
+        />
+        {query && (
+          <IconButton
+            onClick={() => onQueryChange("")}
+            aria-label="Clear search"
+            className="text-label-secondary hover:text-label absolute right-1"
+          >
+            <Xmark className="h-3 w-3" />
+          </IconButton>
+        )}
+      </div>
       {query.trim() && (
-        <div className="text-label-secondary text-footnote mt-1 px-0.5">
+        <div className="text-label-secondary text-footnote mt-1 px-0.5 tabular-nums">
           {matchCount === 0 ? "No matches" : `${matchCount} match${matchCount === 1 ? "" : "es"}`}
         </div>
       )}
@@ -394,7 +407,9 @@ function LayerRow({
                 onValueChange={([v]) => v !== undefined && onOpacityChange?.(layer.id, v / 100)}
                 className="flex-1 py-2"
               />
-              <span className="text-label-secondary w-8 text-right">{opacityPercent}%</span>
+              <span className="text-label-secondary w-8 text-right tabular-nums">
+                {opacityPercent}%
+              </span>
             </div>
           )}
 
@@ -549,7 +564,9 @@ export const LayerPanel = React.memo(function LayerPanel({
 
   return (
     <div className="text-label text-footnote flex flex-col select-none">
-      <Eyebrow className="border-separator block border-b px-2 py-2">Layers & features</Eyebrow>
+      <div className="border-separator text-caption text-label-secondary border-b px-2.5 py-2 font-medium">
+        Layers & features
+      </div>
       {searchBox}
       <div className="flex flex-col">
         {layers.map((layer) => {

@@ -68,7 +68,11 @@ function rulerTicks(lo: number, hi: number, toScreen: (value: number) => number,
   return ticks;
 }
 
-function useMapFrameTick(map: MapLibreMap | null, isLoaded: boolean): number {
+function useMapFrameTick(
+  map: MapLibreMap | null,
+  isLoaded: boolean,
+  containerRef: React.RefObject<HTMLDivElement | null>
+): number {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     if (!map || !isLoaded) return;
@@ -83,20 +87,42 @@ function useMapFrameTick(map: MapLibreMap | null, isLoaded: boolean): number {
     schedule();
     map.on("move", schedule);
     map.on("resize", schedule);
+    const el = containerRef.current;
+    const observer =
+      el && typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
+    if (el && observer) observer.observe(el);
     return () => {
       if (frame !== null) cancelAnimationFrame(frame);
       map.off("move", schedule);
       map.off("resize", schedule);
+      observer?.disconnect();
     };
-  }, [map, isLoaded]);
+  }, [map, isLoaded, containerRef]);
   return tick;
 }
 
 type DragGuide = { type: "h" | "v"; currentVal: number; screenPos: number };
 
-/** The guide a drag at container pixel (x, y) would create: horizontal follows latitude, vertical longitude. */
-function dragGuideAt(map: MapLibreMap, type: "h" | "v", x: number, y: number): DragGuide {
-  const ll = map.unproject([x, y]);
+/** Offset from the full-bleed map canvas to the unobscured ruler viewport. */
+function viewportOffset(map: MapLibreMap, viewportRect: DOMRect) {
+  const mapEl = typeof map.getContainer === "function" ? map.getContainer() : null;
+  const mapRect = mapEl?.getBoundingClientRect();
+  return {
+    x: mapRect ? viewportRect.left - mapRect.left : 0,
+    y: mapRect ? viewportRect.top - mapRect.top : 0,
+  };
+}
+
+/** The guide a drag at viewport pixel (x, y) would create: horizontal follows latitude, vertical longitude. */
+function dragGuideAt(
+  map: MapLibreMap,
+  type: "h" | "v",
+  x: number,
+  y: number,
+  offsetX: number,
+  offsetY: number
+): DragGuide {
+  const ll = map.unproject([x + offsetX, y + offsetY]);
   return type === "h"
     ? { type, currentVal: ll.lat, screenPos: y }
     : { type, currentVal: ll.lng, screenPos: x };
@@ -110,7 +136,7 @@ export const EditorRulers = memo(function EditorRulers({
   setGuides,
   showGuides,
 }: EditorRulersProps) {
-  useMapFrameTick(map, isLoaded);
+  useMapFrameTick(map, isLoaded, containerRef);
 
   const [activeDragGuide, setActiveDragGuide] = useState<DragGuide | null>(null);
   const dragTypeRef = useRef<"h" | "v" | null>(null);
@@ -131,9 +157,10 @@ export const EditorRulers = memo(function EditorRulers({
       const rect = containerRef.current?.getBoundingClientRect();
       const type = dragTypeRef.current;
       if (!e || !rect || !map || !type) return;
+      const { x: offsetX, y: offsetY } = viewportOffset(map, rect);
       const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
       const y = Math.max(0, Math.min(rect.height, e.clientY - rect.top));
-      setActiveDragGuide(dragGuideAt(map, type, x, y));
+      setActiveDragGuide(dragGuideAt(map, type, x, y, offsetX, offsetY));
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -169,27 +196,31 @@ export const EditorRulers = memo(function EditorRulers({
     e.preventDefault();
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect || !map) return;
+    const { x: offsetX, y: offsetY } = viewportOffset(map, rect);
     dragTypeRef.current = type;
-    setActiveDragGuide(dragGuideAt(map, type, e.clientX - rect.left, e.clientY - rect.top));
+    setActiveDragGuide(
+      dragGuideAt(map, type, e.clientX - rect.left, e.clientY - rect.top, offsetX, offsetY)
+    );
   };
 
   const rect = containerRef.current?.getBoundingClientRect();
   if (!map || !isLoaded || !rect) return null;
 
+  const { x: offsetX, y: offsetY } = viewportOffset(map, rect);
   const rulerWidth = rect.width - RULER;
   const rulerHeight = rect.height - RULER;
   const center = map.getCenter();
 
   const ticks = rulerTicks(
-    map.unproject([RULER, 0]).lng,
-    map.unproject([rect.width, 0]).lng,
-    (lng) => map.project([lng, center.lat]).x,
+    map.unproject([offsetX + RULER, offsetY]).lng,
+    map.unproject([offsetX + rect.width, offsetY]).lng,
+    (lng) => map.project([lng, center.lat]).x - offsetX,
     rulerWidth
   );
   const yTicks = rulerTicks(
-    map.unproject([0, rect.height]).lat,
-    map.unproject([0, RULER]).lat,
-    (lat) => map.project([center.lng, lat]).y,
+    map.unproject([offsetX, offsetY + rect.height]).lat,
+    map.unproject([offsetX, offsetY + RULER]).lat,
+    (lat) => map.project([center.lng, lat]).y - offsetY,
     rulerHeight
   );
 
@@ -198,7 +229,7 @@ export const EditorRulers = memo(function EditorRulers({
   return (
     <>
       <svg
-        className="border-separator bg-fill-2 pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-b select-none"
+        className="facet-chrome-subtle pointer-events-auto absolute top-0 right-0 left-[24px] z-20 h-6 cursor-ns-resize border-x-0 border-t-0 shadow-none select-none"
         style={{ width: rulerWidth }}
         onMouseDown={startDrag("h")}
         aria-label="Longitude ruler: drag down to add a horizontal guide"
@@ -228,7 +259,7 @@ export const EditorRulers = memo(function EditorRulers({
       </svg>
 
       <svg
-        className="border-separator bg-fill-2 pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-r select-none"
+        className="facet-chrome-subtle pointer-events-auto absolute top-[24px] bottom-0 left-0 z-20 w-6 cursor-ew-resize border-y-0 border-l-0 shadow-none select-none"
         style={{ height: rulerHeight }}
         onMouseDown={startDrag("v")}
         aria-label="Latitude ruler: drag right to add a vertical guide"
@@ -257,15 +288,15 @@ export const EditorRulers = memo(function EditorRulers({
         ))}
       </svg>
 
-      <div className="border-separator bg-fill-3 pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-r border-b">
-        <span className="text-label-secondary text-caption font-mono font-semibold">°</span>
+      <div className="facet-chrome-subtle pointer-events-none absolute top-0 left-0 z-30 flex h-6 w-6 items-center justify-center border-t-0 border-l-0 shadow-none">
+        <span className="text-label-secondary text-caption font-semibold">°</span>
       </div>
 
       <svg className="pointer-events-none absolute inset-0 z-10 h-full w-full">
         {showGuides &&
           guides.map((guide) => {
             if (guide.type === "v") {
-              const x = map.project([guide.value, center.lat]).x;
+              const x = map.project([guide.value, center.lat]).x - offsetX;
               if (x < RULER || x > rect.width) return null;
               return (
                 <line
@@ -274,7 +305,7 @@ export const EditorRulers = memo(function EditorRulers({
                   y1={RULER}
                   x2={x}
                   y2={rect.height}
-                  className="stroke-cyan/80 pointer-events-auto cursor-col-resize"
+                  className="stroke-tint/80 pointer-events-auto cursor-col-resize"
                   strokeWidth={1.5}
                   strokeDasharray="4,4"
                   onDoubleClick={() => removeGuide(guide.id)}
@@ -283,7 +314,7 @@ export const EditorRulers = memo(function EditorRulers({
                 </line>
               );
             }
-            const y = map.project([center.lng, guide.value]).y;
+            const y = map.project([center.lng, guide.value]).y - offsetY;
             if (y < RULER || y > rect.height) return null;
             return (
               <line
@@ -292,7 +323,7 @@ export const EditorRulers = memo(function EditorRulers({
                 y1={y}
                 x2={rect.width}
                 y2={y}
-                className="stroke-cyan/80 pointer-events-auto cursor-row-resize"
+                className="stroke-tint/80 pointer-events-auto cursor-row-resize"
                 strokeWidth={1.5}
                 strokeDasharray="4,4"
                 onDoubleClick={() => removeGuide(guide.id)}
@@ -309,7 +340,7 @@ export const EditorRulers = memo(function EditorRulers({
               y1={RULER}
               x2={activeDragGuide.screenPos}
               y2={rect.height}
-              className="stroke-yellow/80"
+              className="stroke-tint"
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />
@@ -319,7 +350,7 @@ export const EditorRulers = memo(function EditorRulers({
               y1={activeDragGuide.screenPos}
               x2={rect.width}
               y2={activeDragGuide.screenPos}
-              className="stroke-yellow/80"
+              className="stroke-tint"
               strokeWidth={1.5}
               strokeDasharray="2,2"
             />

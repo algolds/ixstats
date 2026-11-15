@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "~/trpc/react";
 import AchievementCard from "./AchievementCard";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { SegmentedControl } from "~/components/ui/segmented-control";
 import { LoadingBlock } from "../LoadingBlock";
 
@@ -67,11 +68,14 @@ export default function RegistryBrowser() {
       </Card>
 
       {isLoading ? (
-        <LoadingBlock message="Consulting the Heraldic rolls..." />
+        <LoadingBlock message="Loading the registry" />
       ) : filteredAchievements.length === 0 ? (
-        <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote border p-20 text-center italic">
-          No achievements registered.
-        </div>
+        <Card>
+          <EmptyState
+            title="No coats of arms yet"
+            message="Published designs from the studio appear here."
+          />
+        </Card>
       ) : (
         <div className="space-y-8">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">

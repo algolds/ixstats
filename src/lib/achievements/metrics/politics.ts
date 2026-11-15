@@ -1,30 +1,23 @@
 /**
- * Politics metrics (country scope): bills, general elections, cabinet meetings and officials.
+ * Politics metrics (country scope): bills, general elections, summits and officials.
  * Real time only: the vote, election and meeting instants are `DateTime`s, never realm-clock floats
  * (a legacy bill's vote stamp is mapped back through its nation's realm clock).
  * Counts that need a floor are zeroed until it is met, so every rule reads one metric.
  */
 import { realTimeAt } from "~/lib/realms/realm-time-convert";
 import { clockForCountry, type RealmClockReader } from "~/server/shared/realm-time";
-import {
-  MONTH_MS,
-  distinctBuckets,
-  monthKey,
-  spanMs,
-  weekKey,
-} from "~/lib/achievements/time-buckets";
+import { MONTH_MS, distinctBuckets, monthKey, spanMs } from "~/lib/achievements/time-buckets";
+import { SUMMIT_TYPE, summitPartners } from "~/lib/diplomacy/summits";
 import type { MetricLoader } from "./registry";
 import { zeroed } from "./zeroed";
 
 const LAW_KEYS = ["lawsPassed", "lawMonths"] as const;
 const ELECTION_KEYS = ["electionsHeld", "fullTerm", "peacefulTransitions"] as const;
-const CABINET_KEYS = ["meetingsWithDecisions", "officials6m"] as const;
+const CABINET_KEYS = ["summitPartners", "officials6m"] as const;
 
 const FULL_TERM_MS = 18 * MONTH_MS;
 const TRANSITIONS_SPAN_MS = 36 * MONTH_MS;
 const SERVICE_MS = 6 * MONTH_MS;
-const COUNCIL_MIN_MEETINGS = 25;
-const COUNCIL_MIN_WEEKS = 10;
 
 /** What a bill vote leaves in `Policy.reviewNotes` (see the legislation router). */
 interface BillNotes {
@@ -145,29 +138,23 @@ export const electionsLoader: MetricLoader = {
   },
 };
 
-/** Meetings concluded with a decision count only when they are spread over enough different weeks. */
-export function councilMeetings(completedAt: Date[]): number {
-  return completedAt.length >= COUNCIL_MIN_MEETINGS &&
-    distinctBuckets(completedAt, weekKey) >= COUNCIL_MIN_WEEKS
-    ? completedAt.length
-    : 0;
-}
-
 export const cabinetLoader: MetricLoader = {
   id: "politics-cabinet",
   scope: "country",
   keys: CABINET_KEYS,
   async load({ db, countryId, now }) {
     if (!countryId) return zeroed(CABINET_KEYS);
-    const [meetings, officials] = await Promise.all([
-      db.cabinetMeeting.findMany({
+    const clockNow = (await clockForCountry(db, countryId)).now();
+    const [summits, officials] = await Promise.all([
+      // Agreed summits whose date has come, on the nation's realm clock.
+      db.foreignPolicyAction.findMany({
         where: {
-          countryId,
-          status: "completed",
-          completedAt: { not: null },
-          decisions: { some: {} },
+          actionType: SUMMIT_TYPE,
+          status: "active",
+          effectiveIxTime: { lte: clockNow },
+          OR: [{ initiatorId: countryId }, { targetId: countryId }],
         },
-        select: { completedAt: true },
+        select: { initiatorId: true, targetId: true },
       }),
       // createdAt, not the user-typed appointedDate, which can be back-dated.
       db.governmentOfficial.count({
@@ -182,9 +169,7 @@ export const cabinetLoader: MetricLoader = {
       }),
     ]);
     return {
-      meetingsWithDecisions: councilMeetings(
-        meetings.flatMap((m) => (m.completedAt ? [m.completedAt] : []))
-      ),
+      summitPartners: summitPartners(countryId, summits),
       officials6m: officials,
     };
   },

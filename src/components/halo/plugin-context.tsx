@@ -1,14 +1,19 @@
 "use client";
 
-import React, { createContext, useContext, useRef, useSyncExternalStore } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 import type { DIPlugin } from "./types";
 
 // Plugin Registry (external store for React 19 concurrency safety)
 
 type Listener = () => void;
 
+interface RegisteredPlugin {
+  plugin: DIPlugin;
+  token: symbol;
+}
+
 class DIPluginRegistry {
-  private _plugins = new Map<string, DIPlugin>();
+  private _plugins = new Map<string, RegisteredPlugin>();
   private _listeners = new Set<Listener>();
   private _snapshot: Map<string, DIPlugin> = new Map();
 
@@ -16,12 +21,15 @@ class DIPluginRegistry {
     return this._snapshot;
   }
 
-  register(plugin: DIPlugin) {
-    this._plugins.set(plugin.id, plugin);
+  register(plugin: DIPlugin): symbol {
+    const token = Symbol(plugin.id);
+    this._plugins.set(plugin.id, { plugin, token });
     this._emitChange();
+    return token;
   }
 
-  unregister(id: string) {
+  unregister(id: string, token: symbol) {
+    if (this._plugins.get(id)?.token !== token) return;
     this._plugins.delete(id);
     this._emitChange();
   }
@@ -39,30 +47,25 @@ class DIPluginRegistry {
 
   private _emitChange() {
     // Create a new Map reference so useSyncExternalStore detects the change
-    this._snapshot = new Map(this._plugins);
+    const next = new Map<string, DIPlugin>();
+    this._plugins.forEach((entry, id) => {
+      next.set(id, entry.plugin);
+    });
+    this._snapshot = next;
     this._listeners.forEach((listener) => listener());
   }
 }
 
 // Context
 
-interface DIPluginContextValue {
-  registry: DIPluginRegistry;
-}
-
-const DIPluginContext = createContext<DIPluginContextValue | null>(null);
+const DIPluginContext = createContext<DIPluginRegistry | null>(null);
 
 // Provider
 
 export function DIPluginProvider({ children }: { children: React.ReactNode }) {
-  const registryRef = useRef<DIPluginRegistry | null>(null);
-  // oxlint-disable-next-line
-  if (!registryRef.current) {
-    registryRef.current = new DIPluginRegistry();
-  }
+  const [registry] = useState(() => new DIPluginRegistry());
 
-  // oxlint-disable-next-line
-  return <DIPluginContext value={{ registry: registryRef.current }}>{children}</DIPluginContext>;
+  return <DIPluginContext value={registry}>{children}</DIPluginContext>;
 }
 
 const EMPTY_PLUGINS_MAP: Map<string, DIPlugin> = new Map();
@@ -82,14 +85,13 @@ const DUMMY_SNAPSHOT = () => EMPTY_PLUGINS_MAP;
  * });
  */
 export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
+  const registry = useContext(DIPluginContext);
 
   React.useEffect(() => {
     if (!registry) return;
-    registry.register(plugin as unknown as DIPlugin);
+    const token = registry.register(plugin as unknown as DIPlugin);
     return () => {
-      registry.unregister(plugin.id);
+      registry.unregister(plugin.id, token);
     };
   }, [registry, plugin]);
 }
@@ -99,8 +101,7 @@ export function useDIPlugin<F = unknown, C = unknown>(plugin: DIPlugin<F, C>) {
  * Returns null if no plugins are registered.
  */
 export function useActiveDIPlugin(): DIPlugin | null {
-  const ctx = useContext(DIPluginContext);
-  const registry = ctx?.registry;
+  const registry = useContext(DIPluginContext);
   const plugins = useSyncExternalStore(
     registry?.subscribe ?? DUMMY_SUBSCRIBE,
     registry?.getSnapshot ?? DUMMY_SNAPSHOT,

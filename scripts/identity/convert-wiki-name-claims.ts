@@ -18,6 +18,7 @@ import {
 } from "~/lib/identity/legacy-identity";
 import { IXWIKI } from "~/lib/identity/wiki-names";
 import { loadLegacySnapshot } from "./legacy-snapshot";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const BATCH = 500;
 const TX_OPTIONS = { timeout: 120_000 } as const;
@@ -124,7 +125,7 @@ function printPlan(plan: ConversionPlan): void {
 
 async function main(): Promise<void> {
   const { apply } = parseConvertArgs(process.argv.slice(2));
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const plan = planConversion(await loadLegacySnapshot(db));
     printPlan(plan);

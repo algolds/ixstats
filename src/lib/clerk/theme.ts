@@ -1,4 +1,6 @@
-import type { Appearance } from "@clerk/types";
+import type { NextClerkProviderProps } from "@clerk/nextjs/types";
+
+type Appearance = NonNullable<NextClerkProviderProps["appearance"]>;
 
 /**
  * Facet / Apple-Design system appearance configuration for Clerk components.
@@ -10,10 +12,10 @@ export const facetClerkAppearance: Appearance = {
   variables: {
     colorPrimary: "var(--tint, #5a493d)",
     colorBackground: "var(--color-bg-secondary, #16181d)",
-    colorText: "var(--color-text-primary, #e4e4e7)",
-    colorTextSecondary: "var(--color-text-muted, #a1a1aa)",
-    colorInputBackground: "var(--color-input-bg, #1e2028)",
-    colorInputText: "var(--color-text-primary, #e4e4e7)",
+    colorForeground: "var(--color-text-primary, #e4e4e7)",
+    colorMutedForeground: "var(--color-text-muted, #a1a1aa)",
+    colorInput: "var(--color-input-bg, #1e2028)",
+    colorInputForeground: "var(--color-text-primary, #e4e4e7)",
     borderRadius: "1rem", // 16px Apple squircle
     fontFamily: "var(--font-sans), system-ui, sans-serif",
   },

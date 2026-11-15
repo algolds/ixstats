@@ -9,8 +9,22 @@ jest.mock("~/lib/exchange/notify", () => ({
   notifyExchange: jest.fn(),
   sendExchangeNotices: jest.fn(),
 }));
+jest.mock("~/lib/exchange/guards", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/exchange/guards"),
+}));
+jest.mock("~/lib/exchange/treasury", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/exchange/treasury"),
+}));
+jest.mock("~/lib/vault/exchange-service", () => ({
+  __esModule: true,
+  ...jest.requireActual("~/lib/vault/exchange-service"),
+}));
 
-import { dissolveCompany } from "~/lib/exchange/companies";
+import { dissolveCompany, dissolveCompanyTx } from "~/lib/exchange/companies";
+import * as guards from "~/lib/exchange/guards";
+import type { Db } from "~/lib/exchange/guards";
 import { declareDividend } from "~/lib/exchange/dividends";
 import { notifyExchange } from "~/lib/exchange/notify";
 import { splitProRata } from "~/lib/exchange/ownership";
@@ -21,9 +35,13 @@ import {
   getOrderBook,
   issueShares,
   listShares,
+  matchCompanyOrders,
   placeBuyOrder,
+  returnBuyOrders,
   setShareTrading,
 } from "~/lib/exchange/shares";
+import * as treasuryModule from "~/lib/exchange/treasury";
+import * as exchangeService from "~/lib/vault/exchange-service";
 import { invalidateExchangeConfigCache } from "~/lib/vault/exchange-config";
 import { invalidateVaultConfigCache } from "~/lib/vault/vault-perks";
 import { createFakeExchangeDb, type FakeDb } from "~/tests/helpers/fake-exchange-db";
@@ -43,9 +61,9 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
     exchangeWallet: USERS.map((userId) => ({
       id: `w_${userId}`,
       userId,
-      sovereigns: wallets,
-      lifetimeEarned: wallets,
-      lifetimeSpent: 0,
+      sovereigns: BigInt(Math.round(wallets * 100)),
+      lifetimeEarned: BigInt(Math.round(wallets * 100)),
+      lifetimeSpent: 0n,
     })),
     company: [
       {
@@ -53,11 +71,11 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
         founderId: "alice",
         name: "Alice Works",
         sectorKey: "industry",
-        capital: 1000,
-        fairValue: 1000,
+        capital: 1000_00n,
+        fairValue: 1000_00n,
         standing: 0,
-        contractsWonValue: 0,
-        decisionValue: 0,
+        contractsWonValue: 0n,
+        decisionValue: 0n,
         sharesIssued: outstanding,
         sharesOutstanding: outstanding,
         tradingOpen: true,
@@ -69,14 +87,14 @@ function setup(holdings: Record<string, number> = { alice: 1000 }, wallets = 500
       companyId: "co",
       ownerUserId,
       shares,
-      avgCost: 1,
+      avgCost: 100n,
     })),
     systemConfig: [],
   });
 }
 
 const sov = (userId: string) =>
-  fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns as number;
+  Number(fake.tables.exchangeWallet!.find((w) => w.userId === userId)!.sovereigns) / 100;
 const cents = (n: number) => Math.round(n * 100);
 const company = () => fake.tables.company!.find((c) => c.id === "co")!;
 const holding = (userId: string) =>
@@ -84,8 +102,8 @@ const holding = (userId: string) =>
 const listing = (id: string) => fake.tables.shareListing!.find((l) => l.id === id)!;
 /** Every ₷ in wallets and company capital, in cents. */
 const totalCents = () =>
-  fake.tables.exchangeWallet!.reduce((s, w) => s + cents(w.sovereigns), 0) +
-  fake.tables.company!.reduce((s, c) => s + cents(c.capital), 0);
+  fake.tables.exchangeWallet!.reduce((s, w) => s + Number(w.sovereigns), 0) +
+  fake.tables.company!.reduce((s, c) => s + Number(c.capital), 0);
 const totalShares = () =>
   (fake.tables.shareholding ?? []).reduce((s, h) => s + h.shares, 0) +
   (fake.tables.shareListing ?? [])
@@ -247,7 +265,7 @@ describe("dividends", () => {
       )
     );
     expect(results.filter((r) => !r.alreadyApplied)).toHaveLength(1);
-    expect(company().capital).toBe(900);
+    expect(company().capital).toBe(900_00n);
     expect(sov("bob")).toBe(5040);
     expect(fake.tables.companyDividend).toHaveLength(1);
   });
@@ -260,14 +278,14 @@ describe("dividends", () => {
       )
     );
     expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-    expect(company().capital).toBe(400);
+    expect(company().capital).toBe(400_00n);
     expect(sov("bob")).toBe(5300);
   });
 
   // Regression: withdrawals refused while new shares were on sale at a price set from the capital, but a dividend
   // didn't, so the founder could take the capital out through a dividend while the issue still sold at that price
   it("is refused while a primary issue is on sale, and paid once it is cancelled", async () => {
-    setup({ alice: 900, bob: 100 });
+    setup({ alice: 950, bob: 50 });
     const issued = await issueShares(fake.client, {
       userId: "alice",
       companyId: "co",
@@ -297,12 +315,12 @@ describe("dividends", () => {
       amount: 100,
       requestId: rid(),
     });
-    expect(company().capital).toBe(before.capital - 100);
+    expect(company().capital).toBe((before.capital as bigint) - 100_00n);
   });
 });
 
 describe("dissolving a company with outside shareholders", () => {
-  it("cancels listings and pays the capital out pro rata, founder taking the remainder", async () => {
+  it("refuses a direct dissolve when outside holders own >= 10%, and via a vote cancels listings and pays capital pro rata", async () => {
     setup({ alice: 334, bob: 333, carol: 333 });
     await listShares(fake.client, {
       userId: "carol",
@@ -311,9 +329,14 @@ describe("dissolving a company with outside shareholders", () => {
       pricePerShare: 1,
       requestId: rid(),
     });
+    await expect(
+      dissolveCompany(fake.client, { userId: "alice", companyId: "co" })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
     const before = totalCents();
-    const r = await dissolveCompany(fake.client, { userId: "alice", companyId: "co" });
-    expect(company()).toMatchObject({ status: "DELISTED", capital: 0 });
+    const r = await fake.client.$transaction((tx: Db) =>
+      dissolveCompanyTx(tx, { userId: "alice", companyId: "co", viaVote: true })
+    );
+    expect(company()).toMatchObject({ status: "DELISTED", capital: 0n });
     // 100,000 cents: bob and carol 33,300 each, alice 33,400.
     expect(sov("bob")).toBe(5333);
     expect(sov("carol")).toBe(5333);
@@ -350,7 +373,7 @@ describe("bids", () => {
     expect(sov("alice")).toBe(5200);
     expect(holding("bob")).toBe(100);
     expect(listing(id)).toMatchObject({ shares: 0, status: "FILLED" });
-    expect(company().lastTradePrice).toBe(2);
+    expect(company().lastTradePrice).toBe(2_00n);
     expect(orders()).toHaveLength(0);
     expect(totalCents()).toBe(before);
   });
@@ -389,7 +412,7 @@ describe("bids", () => {
     expect(orders()[0]).toMatchObject({
       shares: 50,
       sharesOrdered: 50,
-      escrow: 200,
+      escrow: 200_00n,
       status: "OPEN",
     });
 
@@ -403,9 +426,9 @@ describe("bids", () => {
     expect(sov("alice")).toBe(5120);
     expect(holding("bob")).toBe(30);
     expect(holding("alice")).toBe(970);
-    expect(orders()[0]).toMatchObject({ shares: 20, escrow: 80, status: "OPEN" });
-    expect(company().lastTradePrice).toBe(4);
-    expect(totalCents() + cents(orders()[0]!.escrow as number)).toBe(before);
+    expect(orders()[0]).toMatchObject({ shares: 20, escrow: 80_00n, status: "OPEN" });
+    expect(company().lastTradePrice).toBe(4_00n);
+    expect(totalCents() + Number(orders()[0]!.escrow)).toBe(before);
     expect(totalShares()).toBe(1000);
   });
 
@@ -425,7 +448,7 @@ describe("bids", () => {
       refunded: 80,
     });
     expect(sov("bob")).toBe(4880);
-    expect(orders()[0]).toMatchObject({ status: "CANCELLED", shares: 0, escrow: 0 });
+    expect(orders()[0]).toMatchObject({ status: "CANCELLED", shares: 0, escrow: 0n });
     await expect(
       cancelBuyOrder(fake.client, { userId: "bob", orderId: bidId })
     ).rejects.toMatchObject({ code: "CONFLICT" });
@@ -487,7 +510,7 @@ describe("bids", () => {
     });
     expect(holding("bob")).toBe(10);
     expect(orders()[0]).toMatchObject({ shares: 0, status: "FILLED" });
-    expect(company()).toMatchObject({ capital: 1020, sharesOutstanding: 1010, lastTradePrice: 2 });
+    expect(company()).toMatchObject({ capital: 1020_00n, sharesOutstanding: 1010, lastTradePrice: 2_00n });
     expect(totalCents()).toBe(before);
     expect(totalShares()).toBe(1010);
   });
@@ -519,7 +542,7 @@ describe("bids", () => {
     await aliceLists(10, 2);
     const before = Date.now();
     await bid("bob", 10, 2);
-    expect(company()).toMatchObject({ lastTradePrice: 2 });
+    expect(company()).toMatchObject({ lastTradePrice: 2_00n });
     expect(company().lastTradeIxTime as number).toBeGreaterThanOrEqual(before);
     await expect(getOrderBook(fake.client, "co")).resolves.toMatchObject({ lastTradePrice: 2 });
   });
@@ -533,8 +556,8 @@ describe("capital gains tax on secondary sales", () => {
     await buyShares(fake.client, { userId: "bob", listingId: id, shares: 300, requestId: rid() });
     // Gross 900; gain over the average cost of 1 is 600; tax at 20% is 120.
     expect(sov("alice")).toBe(5780);
-    expect(treasury()).toMatchObject({ balance: 120, lifetimeTaxEarned: 120 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()).toMatchObject({ balance: 120_00n, lifetimeTaxEarned: 120_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });
 
   it("owes nothing when the sale is below average cost", async () => {
@@ -551,8 +574,8 @@ describe("capital gains tax on secondary sales", () => {
     const before = totalCents();
     await bid("bob", 300, 3);
     expect(sov("alice")).toBe(5780);
-    expect(treasury()).toMatchObject({ balance: 120, lifetimeTaxEarned: 120 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(treasury()).toMatchObject({ balance: 120_00n, lifetimeTaxEarned: 120_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
   });
 
   it("doesn't tax a primary issue, even with an HQ nation", async () => {
@@ -564,7 +587,7 @@ describe("capital gains tax on secondary sales", () => {
       shares: 100,
       requestId: rid(),
     });
-    expect(company().capital).toBe(1020);
+    expect(company().capital).toBe(1020_00n);
     expect(treasury()).toBeUndefined();
   });
 
@@ -579,7 +602,7 @@ describe("capital gains tax on secondary sales", () => {
 describe("dividend credit cap and withholding", () => {
   it("refuses a dividend above half the capital above credit drawn", async () => {
     setup({ alice: 600, bob: 400 });
-    company().creditDrawn = 600;
+    company().creditDrawn = 600_00n;
     await expect(
       declareDividend(fake.client, {
         userId: "alice",
@@ -588,7 +611,7 @@ describe("dividend credit cap and withholding", () => {
         requestId: rid(),
       })
     ).rejects.toMatchObject({ code: "CONFLICT" });
-    expect(company().capital).toBe(1000);
+    expect(company().capital).toBe(1000_00n);
 
     await declareDividend(fake.client, {
       userId: "alice",
@@ -596,7 +619,7 @@ describe("dividend credit cap and withholding", () => {
       amount: 200,
       requestId: rid(),
     });
-    expect(company().capital).toBe(800);
+    expect(company().capital).toBe(800_00n);
     expect(sov("bob")).toBe(5080);
   });
 
@@ -615,9 +638,9 @@ describe("dividend credit cap and withholding", () => {
     expect(r).toMatchObject({ paid: 100, alreadyApplied: false });
     expect(sov("alice")).toBe(5054);
     expect(sov("bob")).toBe(5036);
-    expect(company().capital).toBe(900);
-    expect(treasury()).toMatchObject({ balance: 10, lifetimeTaxEarned: 10 });
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(company().capital).toBe(900_00n);
+    expect(treasury()).toMatchObject({ balance: 10_00n, lifetimeTaxEarned: 10_00n });
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
 
     const again = await declareDividend(fake.client, {
       userId: "alice",
@@ -626,8 +649,8 @@ describe("dividend credit cap and withholding", () => {
       requestId,
     });
     expect(again.alreadyApplied).toBe(true);
-    expect(treasury()!.balance).toBe(10);
-    expect(company().capital).toBe(900);
+    expect(treasury()!.balance).toBe(10_00n);
+    expect(company().capital).toBe(900_00n);
   });
 
   it("withholds to the cent and leaves the sub-cent remainder in capital", async () => {
@@ -645,8 +668,155 @@ describe("dividend credit cap and withholding", () => {
     expect(cents(sov("alice"))).toBe(500031);
     expect(cents(sov("bob"))).toBe(500031);
     expect(cents(sov("carol"))).toBe(500031);
-    expect(cents(company().capital)).toBe(99901);
-    expect(cents(treasury()!.balance as number)).toBe(6);
-    expect(totalCents() + cents(treasury()!.balance as number)).toBe(before);
+    expect(Number(company().capital)).toBe(99901);
+    expect(treasury()!.balance).toBe(6n);
+    expect(totalCents() + Number(treasury()!.balance)).toBe(before);
+  });
+});
+
+describe("lock ordering in matching and buy-order refunds", () => {
+  it("locks all crossing party wallets in sorted order before the first capital-gains treasury lock", async () => {
+    setup({ alice: 500, bob: 300, carol: 200 });
+    setHq(20);
+    // Carol's ask (price 2) ranks ahead of Alice's ask (price 3), so without pre-locking
+    // Carol and Dave would lock first, then the HQ treasury, and only then Alice and Bob.
+    fake.tables.shareListing = [
+      {
+        id: "ask_carol",
+        companyId: "co",
+        sellerUserId: "carol",
+        shares: 10,
+        sharesListed: 10,
+        pricePerShare: 200n,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "ask_alice",
+        companyId: "co",
+        sellerUserId: "alice",
+        shares: 10,
+        sharesListed: 10,
+        pricePerShare: 300n,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+    ];
+    fake.tables.shareBuyOrder = [
+      {
+        id: "bid_dave",
+        companyId: "co",
+        buyerUserId: "dave",
+        shares: 10,
+        sharesOrdered: 10,
+        maxPricePerShare: 400n,
+        escrow: 40_00n,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "bid_bob",
+        companyId: "co",
+        buyerUserId: "bob",
+        shares: 10,
+        sharesOrdered: 10,
+        maxPricePerShare: 300n,
+        escrow: 30_00n,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+    ];
+
+    const walletLocksBeforeTreasury: string[] = [];
+    let treasuryLocked = false;
+    const walletSpy = jest.spyOn(guards, "lockWallet").mockImplementation(async (tx, userId) => {
+      if (!treasuryLocked) walletLocksBeforeTreasury.push(userId);
+      return exchangeService.lockWallet(tx, userId);
+    });
+    const origTransfer = treasuryModule.transferToTreasuryTx;
+    const treasurySpy = jest
+      .spyOn(treasuryModule, "transferToTreasuryTx")
+      .mockImplementation(async (tx, input) => {
+        treasuryLocked = true;
+        return origTransfer(tx, input);
+      });
+
+    try {
+      await fake.client.$transaction((tx: Db) => matchCompanyOrders(tx, "co"));
+    } finally {
+      walletSpy.mockRestore();
+      treasurySpy.mockRestore();
+    }
+
+    expect(treasuryLocked).toBe(true);
+    expect(walletLocksBeforeTreasury).toEqual(["alice", "bob", "carol", "dave"]);
+  });
+
+  it("returnBuyOrders refunds open bids in sorted buyerUserId order", async () => {
+    setup({ alice: 1000 });
+    fake.tables.shareBuyOrder = [
+      {
+        id: "b_dave",
+        companyId: "co",
+        buyerUserId: "dave",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
+        status: "OPEN",
+        createdIxTime: 1,
+      },
+      {
+        id: "b_bob",
+        companyId: "co",
+        buyerUserId: "bob",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
+        status: "OPEN",
+        createdIxTime: 2,
+      },
+      {
+        id: "b_carol",
+        companyId: "co",
+        buyerUserId: "carol",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
+        status: "OPEN",
+        createdIxTime: 3,
+      },
+      {
+        id: "b_alice",
+        companyId: "co",
+        buyerUserId: "alice",
+        shares: 5,
+        sharesOrdered: 5,
+        maxPricePerShare: 200n,
+        escrow: 10_00n,
+        status: "OPEN",
+        createdIxTime: 4,
+      },
+    ];
+
+    const refundedUsers: string[] = [];
+    const origEarn = exchangeService.earnSovereignsTx;
+    const earnSpy = jest
+      .spyOn(exchangeService, "earnSovereignsTx")
+      .mockImplementation(async (tx, input) => {
+        refundedUsers.push(input.userId);
+        return origEarn(tx, input);
+      });
+
+    try {
+      const refunded = await fake.client.$transaction((tx: Db) => returnBuyOrders(tx, "co"));
+      expect(refunded).toBe(40);
+    } finally {
+      earnSpy.mockRestore();
+    }
+
+    expect(refundedUsers).toEqual(["alice", "bob", "carol", "dave"]);
   });
 });

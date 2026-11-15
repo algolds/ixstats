@@ -5,19 +5,21 @@
 IxStates (dev codename: IxStats) is an alternate-history and nation-simulation platform that brings together strategic planning, collaborative storytelling, and operational dashboards. The codebase balances narrative-first UX with a data-rich backend, letting storytellers, game masters, and analysts all share a consistent source of truth.
 
 ## Core Goals
+
 - Provide a **command experience** for nation owners through the MyCountry suite (`src/app/mycountry`)
 - Deliver transparent **economic, diplomatic, and intelligence data** backed by tRPC routers in `src/server/api/routers`
 - Encourage **collaboration** through ThinkPages, ThinkShare, achievements, and live feeds
 - Support **rapid worldbuilding** with builder flows, wiki import tooling, and help content directly in the app
 
 ## Audience Personas
-| Persona | Needs | Key Routes |
-| --- | --- | --- |
-| Nation Executive | Real-time intel, compliance, defense posture, elections | `/mycountry`, `/mycountry/intelligence`, `/mycountry/politics` |
-| Game Master | Monitoring, audit scripts, environment management | `/admin`, `scripts/audit` |
-| Analyst / Researcher | Economic stats, diplomacy data, exports | `/dashboard`, `/leaderboards`, `/thinkpages` |
-| Collector / Trader | Card packs, trading, IxVault management, marketplace | `/vault`, `/vault/cards`, `/vault/store` |
-| New Player | Guided onboarding, documentation, tutorials | `/setup`, `/help`, `/help/getting-started/*`, docs in `docs/overview` |
+
+| Persona              | Needs                                                   | Key Routes                                                            |
+| -------------------- | ------------------------------------------------------- | --------------------------------------------------------------------- |
+| Nation Executive     | Real-time intel, compliance, defense posture, elections | `/mycountry`, `/mycountry/intelligence`, `/mycountry/politics`        |
+| Game Master          | Monitoring, audit scripts, environment management       | `/admin`, `scripts/audit`                                             |
+| Analyst / Researcher | Economic stats, diplomacy data, exports                 | `/dashboard`, `/leaderboards`, `/thinkpages`                          |
+| Collector / Trader   | Card packs, trading, IxVault management, marketplace    | `/vault`, `/vault/cards`, `/vault/store`                              |
+| New Player           | Guided onboarding, documentation, tutorials             | `/setup`, `/help`, `/help/getting-started/*`, docs in `docs/overview` |
 
 ## Release Cadence & Versioning
 
@@ -28,7 +30,7 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 <!-- BEGIN_DOCS:VERSION_MATRIX -->
 | Capability Domain | Component / Layer | Version / Release | Channel / Granularity |
 | :--- | :--- | :---: | :--- |
-| **Platform** | **IxStates (Lobster Crosby)** | **1.5.2 "Lobster Crosby"** | **Release Candidate** |
+| **Platform** | **IxStates (Lobster Crosby)** | **1.5.6 "Lobster Crosby"** | **Release Candidate** |
 | **Apps** | IxWorld | v3 | Standalone & Embedded Maps Engine |
 | | WikiOS | v1 | Headless Wiki & Canvas Architecture |
 | | IxVault | v3 | Wallet, Achievements, Cards & Store |
@@ -41,9 +43,9 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 | | Achievements | v3 | Achievements, Lorewards & Legacy |
 | | Stash | v1 | Article Stashing (was LoreStash) |
 | | Repository | v2 | Commons Media Explorer |
-| | Halo | v6 | Contextual Overlay System |
+| | Halo | v7 | Contextual Overlay System |
 | | Onoma | v4 | Conlang & Linguistics Studio |
-| **Design** | Facet | v4 | Refraction / Depth Design System |
+| **Design** | Facet | v6 | Refraction / Depth Design System |
 <!-- END_DOCS:VERSION_MATRIX -->
 
 ### Active Frameworks & Tooling
@@ -51,14 +53,14 @@ The matrix below is generated from the **internal** registry (`INTERNAL_VERSIONS
 <!-- BEGIN_DOCS:FRAMEWORK_MATRIX -->
 | Package / Layer | Version | Notes |
 | :--- | :---: | :--- |
-| **Next.js** | 16.4.3 | App Router architecture, Turbopack |
+| **Next.js** | 16.4.6 | App Router architecture, Turbopack |
 | **React** | 19.3.1 | React 19 concurrent features |
 | **TypeScript** | 7.0.2 | Native Go Engine concurrency |
-| **Prisma** | 6.19.3 | Multi-file schema partitioning |
-| **tRPC** | 11.18.0 | Domain-split modular routers |
-| **Tailwind CSS** | 4.3.3 | v4 CSS-first theme configuration |
+| **Prisma** | 7.10.1 | Multi-file schema partitioning |
+| **tRPC** | 11.28.0 | Domain-split modular routers |
+| **Tailwind CSS** | 4.3.5 | v4 CSS-first theme configuration |
 | **Zod** | 4.6.7 | Schema validation |
-| **Oxlint** | 1.80.0 | Flat config, TS 7 native (50-100× faster) |
+| **Oxlint** | 1.93.0 | Flat config, TS 7 native (50-100× faster) |
 | **Jest** | 30.4.2 | Unit and characterization suites |
 | **Runtime** | Bun 1.4+ | Native concurrency & virtual store |
 <!-- END_DOCS:FRAMEWORK_MATRIX -->
@@ -81,6 +83,7 @@ IxStates (platform — release: Lobster Crosby, public 1.0.0 Stable; internal 1.
 Each system has a dedicated guide in `docs/systems`. Cross-cutting architecture details live in `docs/architecture`.
 
 ## How to Use This Document
+
 - Share with new contributors during onboarding
 - Reference when planning roadmap or scoping new pillars
 - Keep the persona table aligned with actual routes and experiences
@@ -132,7 +135,7 @@ Hooks in `src/hooks` and `src/app/**/hooks` coordinate client state (e.g., `useM
 
 ### tRPC Routers
 
-**<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,118<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
+**<!-- BEGIN_DOCS:COUNT:routers -->78<!-- END_DOCS:COUNT:routers --> routers registered in `appRouter` / <!-- BEGIN_DOCS:COUNT:procedures -->1,142<!-- END_DOCS:COUNT:procedures --> procedures** (catalog: [`api-complete.md`](../reference/api-complete.md)) (most are domain-split into subdirectories via `mergeRouters`; some remain flat; a few are 3rd-level deep splits). Architecture guard (`bun run audit:arch`) enforces a ≤700-line per-file ceiling (ratcheted) and blocks new cross-router imports — see [`ts-graph-isolation.md`](../architecture/ts-graph-isolation.md) for the rationale.
 
 Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
@@ -148,7 +151,7 @@ Key groups (current top-level entries, `src/server/api/root.ts` `appRouter`):
 
 ### Database & Data Flow
 
-- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->340<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
+- Prisma schema: <!-- BEGIN_DOCS:COUNT:models -->346<!-- END_DOCS:COUNT:models --> models across <!-- BEGIN_DOCS:COUNT:schemaFiles -->24<!-- END_DOCS:COUNT:schemaFiles --> files (`prisma/schema/`)
 - Seed scripts: `scripts/setup/`
 - ETL & audits: `scripts/audit/` (wiring verifier, CRUD sweeps, economic calculators)
 - PostgreSQL database: `localhost:5433/ixstats` (migrated from SQLite October 2025)

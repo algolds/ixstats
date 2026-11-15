@@ -23,9 +23,11 @@ const linkClassName = cn(
 
 export function SidebarFooterLinks({
   signedIn,
+  onOpenFeedback,
   className,
 }: {
   signedIn: boolean;
+  onOpenFeedback?: () => void;
   className?: string;
 }) {
   const [feedbackOpen, setFeedbackOpen] = React.useState(false);
@@ -43,14 +45,20 @@ export function SidebarFooterLinks({
       </Link>
       {signedIn && (
         <>
-          <button type="button" onClick={() => setFeedbackOpen(true)} className={linkClassName}>
+          <button
+            type="button"
+            onClick={() => (onOpenFeedback ? onOpenFeedback() : setFeedbackOpen(true))}
+            className={linkClassName}
+          >
             Feedback
           </button>
-          <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
-            <DialogContent>
-              <FeedbackModal onClose={() => setFeedbackOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          {!onOpenFeedback && (
+            <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
+              <DialogContent>
+                <FeedbackModal onClose={() => setFeedbackOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          )}
         </>
       )}
       <Link href="/privacy" className={linkClassName}>

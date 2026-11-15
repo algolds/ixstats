@@ -11,6 +11,7 @@ import {
   MailIn,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { EmptyState as FacetEmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { SectionHelpIcon } from "~/components/ui/help-icon";
 import { api } from "~/trpc/react";
@@ -38,7 +39,7 @@ interface EmbassiesAndRelationsPanelProps {
   countryId: string;
 }
 
-type DiplomacyTab = "inbox" | "embassies" | "relations" | "alliances" | "exchanges" | "events";
+type DiplomacyTab = "inbox" | "embassies" | "relations" | "alliances" | "programs";
 
 /** Counts for the tab badges. Active embassies without a relation record count as relations. */
 function computeStats(
@@ -61,39 +62,28 @@ function computeStats(
   };
 }
 
-function PanelSection({
-  icon: Icon,
-  title,
+function PanelToolbar({
+  helpTitle,
   help,
   action,
-  children,
 }: {
-  icon: typeof Building2;
-  title: string;
-  /** Tooltip text; omitted for sections without a help icon. */
+  helpTitle: string;
   help?: string;
   action?: React.ReactNode;
-  children: React.ReactNode;
 }) {
-  const heading = (
-    <div className="flex items-center gap-2">
-      <Icon className="text-label-secondary h-4 w-4" />
-      <h3 className="text-label text-headline">{title}</h3>
-      {help && <SectionHelpIcon title={title} content={help} />}
-    </div>
-  );
+  if (!help && !action) return null;
   return (
-    <section className="space-y-3">
-      {action ? (
-        <div className="flex items-center justify-between">
-          {heading}
-          {action}
-        </div>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      {help ? (
+        <p className="text-label-secondary text-footnote flex items-center gap-1.5">
+          <span>About {helpTitle.toLowerCase()}</span>
+          <SectionHelpIcon title={helpTitle} content={help} />
+        </p>
       ) : (
-        heading
+        <span />
       )}
-      {children}
-    </section>
+      {action}
+    </div>
   );
 }
 
@@ -162,8 +152,9 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <SectionTabBar
+        aria-label="Diplomacy sections"
         tabs={[
           ...(isOwner
             ? [
@@ -177,51 +168,49 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
             : []),
           {
             id: "embassies",
-            label: "Embassy network",
+            label: "Embassies",
             icon: Building2,
             badge: stats.activeEmbassies,
           },
           {
             id: "relations",
-            label: "Bilateral relations",
+            label: "Relations",
             icon: Handshake,
             badge: stats.totalRelations,
           },
           {
             id: "alliances",
-            label: "Alliances & blocs",
+            label: "Alliances",
             icon: Users,
             badge: stats.allianceCount,
           },
-          { id: "exchanges", label: "Cultural exchanges", icon: Palette },
-          { id: "events", label: "Diplomatic events", icon: FileText },
+          { id: "programs", label: "Programs & events", icon: Palette },
         ]}
         activeTab={activeTab}
         onChange={setActiveTab}
-        activeClassName="text-cyan"
       />
 
       {activeTab === "inbox" && isOwner && (
-        <PanelSection
-          icon={MailIn}
-          title="Diplomatic inbox"
-          help="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
-        >
+        <section className="space-y-3" aria-label="Diplomatic inbox">
+          <PanelToolbar
+            helpTitle="Diplomatic inbox"
+            help="Free trade and military alliance proposals and alliance invitations need the other nation's consent. Answer incoming ones here, or withdraw your own while they are pending. Unanswered items expire after 14 days."
+          />
           <DiplomacyInbox countryId={countryId} />
-        </PanelSection>
+        </section>
       )}
 
       {activeTab === "embassies" && (
-        <PanelSection
-          icon={Building2}
-          title="Embassy network"
-          help="Your embassies abroad and the embassies other nations keep with you. Opening one starts formal relations with the host, and cultural exchange missions build its experience, influence and reputation."
-          action={
-            isOwner && (
-              <CreateButton label="Establish embassy" onClick={() => setShowEmbassyCreator(true)} />
-            )
-          }
-        >
+        <section className="space-y-3" aria-label="Embassy network">
+          <PanelToolbar
+            helpTitle="Embassy network"
+            help="Your embassies abroad and the embassies other nations keep with you. Opening one starts formal relations with the host, and cultural exchange missions build its experience, influence and reputation."
+            action={
+              isOwner && (
+                <CreateButton label="Establish embassy" onClick={() => setShowEmbassyCreator(true)} />
+              )
+            }
+          />
           {embassies.length > 0 ? (
             <EmbassyGrid
               embassies={embassies}
@@ -231,30 +220,32 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
           ) : (
             <EmptyState isOwner={isOwner} onEstablishEmbassy={() => setShowEmbassyCreator(true)} />
           )}
-        </PanelSection>
+        </section>
       )}
 
       {activeTab === "relations" && (
-        <PanelSection icon={Handshake} title="Diplomatic relations">
+        <section className="space-y-3" aria-label="Bilateral relations">
           <DiplomaticRelationsList countryId={countryId} />
-        </PanelSection>
+        </section>
       )}
 
       {activeTab === "alliances" && (
-        <PanelSection
-          icon={Users}
-          title="Alliances & blocs"
-          help="Form and manage alliances with other nations. Alliances give mutual defense, trade advantages and diplomatic standing."
-          action={
-            <CreateButton label="Create alliance" onClick={() => setShowAllianceCreator(true)} />
-          }
-        >
+        <section className="space-y-3" aria-label="Alliances and blocs">
+          <PanelToolbar
+            helpTitle="Alliances and blocs"
+            help="Form and manage alliances with other nations. Alliances give mutual defense, trade advantages and diplomatic standing."
+            action={
+              <CreateButton label="Create alliance" onClick={() => setShowAllianceCreator(true)} />
+            }
+          />
           {!alliances || alliances.length === 0 ? (
-            <Card className="rounded-card p-6 text-center">
-              <Users className="text-label-secondary mx-auto mb-3 h-6 w-6" />
-              <p className="text-label-secondary text-body">
-                Not a member of any alliances. Create one or wait for an invitation.
-              </p>
+            <Card className="rounded-card">
+              <FacetEmptyState
+                compact
+                icon={<Users />}
+                title="Not a member of any alliances"
+                message="Create one or wait for an invitation."
+              />
             </Card>
           ) : (
             <div className="space-y-3">
@@ -269,19 +260,25 @@ export function EmbassiesAndRelationsPanel({ countryId }: EmbassiesAndRelationsP
               ))}
             </div>
           )}
-        </PanelSection>
+        </section>
       )}
 
-      {activeTab === "exchanges" && (
-        <PanelSection icon={Palette} title="Cultural exchanges">
-          <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
-        </PanelSection>
-      )}
+      {activeTab === "programs" && (
+        <div className="space-y-6">
+          <section className="space-y-3" aria-label="Diplomatic events">
+            <div className="flex items-center gap-2">
+              <FileText className="text-label-secondary h-4 w-4" aria-hidden="true" />
+              <h3 className="text-label text-headline">Diplomatic events</h3>
+            </div>
+            <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
+          </section>
 
-      {activeTab === "events" && (
-        <PanelSection icon={FileText} title="Diplomatic events">
-          <DiplomaticEventsHub countryId={countryId} countryName={countryName} />
-        </PanelSection>
+          <hr className="border-separator/60" />
+
+          <section className="space-y-3" aria-label="Cultural exchanges">
+            <CulturalExchangeProgram primaryCountry={{ id: countryId, name: countryName }} />
+          </section>
+        </div>
       )}
 
       <EmbassyCreatorSheet

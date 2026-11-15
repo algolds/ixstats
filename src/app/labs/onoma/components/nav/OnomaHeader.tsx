@@ -1,33 +1,51 @@
 "use client";
 
-// src/app/labs/onoma/components/nav/OnomaHeader.tsx
-// Onoma page header (Product Model: CREATE · STUDIO · EXPLORE). The wordmark and
-// utility buttons sit on the grouped page; the pillar console is a thin material toolbar holding the
-// pillar and section tabs (SegmentedControl), or the Stash/Settings return bar.
+// Onoma's header: the wordmark beside the current section's title, then one navigation row. The
+// workspace switch (Create · Studio · Explore) is the primary control; the active workspace's
+// sections sit beside it as a smaller, secondary control. Stash and Settings replace the row with a
+// way back.
 
-import React from "react";
-import Link from "next/link";
-import { motion, AnimatePresence, useReducedMotion } from "motion/react";
-import { HelpCircle, Bookmark, Settings, SoundHigh, Code, ArrowLeft } from "iconoir-react";
-import { FacetMaterial } from "~/components/ui/facet";
-import { Button, buttonVariants } from "~/components/ui/button";
-import { Tooltip, TooltipTrigger, TooltipContent } from "~/components/ui/tooltip";
-import { tweenFast } from "~/lib/design/motion";
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowLeft, Bookmark, HelpCircle, Settings, SoundHigh } from "iconoir-react";
+import { PageHeader } from "~/components/shell/PageHeader";
+import { ActionPill } from "~/components/ui/action-pill";
+import { Button } from "~/components/ui/button";
+import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Tooltip, TooltipContent, TooltipTrigger } from "~/components/ui/tooltip";
 import { OnomaBrandLogo } from "~/components/onoma/OnomaBrandLogo";
 import type {
-  OnomaSection,
-  StudioSubTab,
   ExploreSubTab,
   OnomaProductPillar,
+  OnomaSection,
+  StudioSubTab,
 } from "~/lib/onoma/types";
-import { ONOMA_TABS, ONOMA_PILLAR_TABS, getStudioTabs, getExploreTabs } from "./onoma-tabs";
-import { cn } from "~/lib/utils";
-import { ActionPill } from "~/components/ui/action-pill";
-import { SegmentedControl } from "~/components/ui/segmented-control";
+import {
+  ONOMA_PILLAR_TABS,
+  ONOMA_TABS,
+  SECTION_TITLES,
+  exploreSubTabLabel,
+  getExploreTabs,
+  getStudioTabs,
+  studioSubTabLabel,
+} from "./onoma-tabs";
 
 const toOptions = (
-  tabs: readonly { id: string; label: string; icon: React.ComponentType<{ className?: string }> }[]
-) => tabs.map(({ id, label, icon: Icon }) => ({ value: id, label, icon: <Icon /> }));
+  tabs: readonly {
+    id: string;
+    label: string;
+    icon?: React.ComponentType<{ className?: string }>;
+  }[]
+) =>
+  tabs.map(({ id, label, icon: Icon }) => ({
+    value: id,
+    label,
+    icon: Icon ? <Icon /> : undefined,
+  }));
+
+const STUDIO_TABS = toOptions(getStudioTabs());
+const EXPLORE_TABS = toOptions(getExploreTabs());
+const CREATE_TABS = toOptions(ONOMA_TABS);
+const PILLAR_TABS = toOptions(ONOMA_PILLAR_TABS);
 
 interface OnomaHeaderProps {
   activeSection: OnomaSection;
@@ -44,14 +62,52 @@ interface OnomaHeaderProps {
   onNavigateExplore: (tab: ExploreSubTab) => void;
 }
 
-/** Cross-fade (+ a small lift) between the console's states. */
-function consoleMotion(reduce: boolean | null) {
-  return {
-    initial: reduce ? { opacity: 0 } : { opacity: 0, y: 3 },
-    animate: { opacity: 1, y: 0 },
-    exit: reduce ? { opacity: 0 } : { opacity: 0, y: -2 },
-    transition: tweenFast,
-  };
+/** The page title: the section, or the workspace section in Studio and Explore. */
+export function onomaPageTitle(
+  section: OnomaSection,
+  studioTab: StudioSubTab,
+  exploreTab: ExploreSubTab
+): string {
+  if (section === "studio") return studioSubTabLabel(studioTab);
+  if (section === "explore") return exploreSubTabLabel(exploreTab);
+  if (section === "bank") return "My stash";
+  return SECTION_TITLES[section];
+}
+
+const RETURN_LABELS: Partial<Record<OnomaSection, string>> = {
+  studio: "Studio",
+  explore: "Explore",
+  places: "Places",
+  people: "People",
+  organizations: "Factions",
+  culture: "Culture",
+};
+
+function Pronunciation({ played, onPlay }: { played: boolean; onPlay: () => void }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <ActionPill
+          onClick={onPlay}
+          aria-label="Play the pronunciation of Onoma"
+          className="group/audio bg-fill-3 hover:bg-fill-2 gap-1 px-2 font-mono"
+        >
+          <span>/ˈɒnəmə/</span>
+          <SoundHigh
+            aria-hidden
+            className={
+              played
+                ? "group-hover/audio:text-tint text-label-secondary size-3.5"
+                : "text-tint size-3.5"
+            }
+          />
+        </ActionPill>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" align="start">
+        The Greek word for name
+      </TooltipContent>
+    </Tooltip>
+  );
 }
 
 export function OnomaHeader({
@@ -61,7 +117,6 @@ export function OnomaHeader({
   lastActiveTab,
   shouldAnimateStash,
   hasInteractedPronunciation,
-  setHasInteractedPronunciation: _setHasInteractedPronunciation,
   playPronunciation,
   onOpenHelp,
   onNavigate,
@@ -69,274 +124,123 @@ export function OnomaHeader({
   onNavigateExplore,
 }: OnomaHeaderProps) {
   const shouldReduceMotion = useReducedMotion();
-  const studioTabs = React.useMemo(() => getStudioTabs(), []);
-  const exploreTabs = React.useMemo(() => getExploreTabs(), []);
-
   const isUtilitySection = activeSection === "bank" || activeSection === "settings";
-
   const activePillar: OnomaProductPillar =
     activeSection === "studio" ? "studio" : activeSection === "explore" ? "explore" : "create";
-
-  const returnLabel = React.useMemo(() => {
-    if (lastActiveTab === "studio") return "Studio";
-    if (lastActiveTab === "explore") return "Explore";
-    if (lastActiveTab === "places") return "Places";
-    if (lastActiveTab === "people") return "People";
-    if (lastActiveTab === "organizations") return "Factions";
-    if (lastActiveTab === "culture") return "Culture";
-    return "Generator";
-  }, [lastActiveTab]);
+  const returnLabel = RETURN_LABELS[lastActiveTab] ?? "Sandbox";
 
   const handleReturn = () => {
-    if (lastActiveTab === "studio") {
-      onNavigateStudio(activeSubTab || "workshop");
-    } else if (lastActiveTab === "explore") {
-      onNavigateExplore(activeExploreSubTab || "phonology");
-    } else {
-      onNavigate(lastActiveTab || "overview");
-    }
+    if (lastActiveTab === "studio") onNavigateStudio(activeSubTab || "workshop");
+    else if (lastActiveTab === "explore") onNavigateExplore(activeExploreSubTab || "phonology");
+    else onNavigate(lastActiveTab || "overview");
   };
 
-  const helpButton = (
-    <Button
-      variant="secondary"
-      size="sm"
-      onClick={onOpenHelp}
-      title="Open contextual help and system reference"
-      aria-label="Help"
-      className="shrink-0"
-    >
-      <HelpCircle />
-      <span className="hidden md:inline">Help</span>
-    </Button>
-  );
+  const handlePillar = (id: string) => {
+    if (id === "create") onNavigate(lastActiveTab || "overview");
+    else if (id === "studio") onNavigateStudio(activeSubTab || "workshop");
+    else if (id === "explore") onNavigateExplore(activeExploreSubTab || "phonology");
+  };
+
+  const handleSection = (id: string) => {
+    if (activePillar === "studio") onNavigateStudio(id as StudioSubTab);
+    else if (activePillar === "explore") onNavigateExplore(id as ExploreSubTab);
+    else onNavigate(id as OnomaSection);
+  };
+
+  const sectionOptions =
+    activePillar === "studio"
+      ? STUDIO_TABS
+      : activePillar === "explore"
+        ? EXPLORE_TABS
+        : CREATE_TABS;
+  const sectionValue =
+    activePillar === "studio"
+      ? activeSubTab
+      : activePillar === "explore"
+        ? activeExploreSubTab
+        : activeSection;
 
   return (
-    <header className="space-y-3">
-      {/* Top bar: wordmark + pronunciation + tagline, and the Glyphs / Stash / Settings utilities */}
-      <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              variant="ghost"
-              onClick={() => onNavigate("overview")}
-              className="group/brand h-auto px-1 py-1 hover:bg-transparent"
-              title="Onoma overview"
-              aria-label="Onoma overview"
-            >
-              <OnomaBrandLogo
-                variant="wordmark"
-                className="text-label group-hover/brand:text-tint h-6 w-auto transition-colors duration-150"
-              />
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <ActionPill
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    playPronunciation();
-                  }}
-                  aria-label="Play the pronunciation of Onoma"
-                  className="group/audio bg-fill-3 hover:bg-fill-2 gap-1 px-2 font-mono"
-                >
-                  <span>/ˈɒnəmə/</span>
-                  <span className="relative inline-flex items-center justify-center">
-                    {!hasInteractedPronunciation && !shouldReduceMotion && (
-                      <motion.span
-                        className="bg-tint/40 pointer-events-none absolute -inset-1 rounded-full"
-                        initial={{ scale: 0.8, opacity: 0.8 }}
-                        animate={{ scale: [0.8, 1.6, 0.8], opacity: [0.8, 0, 0.8] }}
-                        transition={{ duration: 1.2, repeat: 1, ease: "easeOut" }}
-                      />
-                    )}
-                    <SoundHigh
-                      className={cn(
-                        "relative size-3.5 transition-[color,opacity] duration-150",
-                        !hasInteractedPronunciation
-                          ? "text-tint"
-                          : "group-hover/audio:text-tint opacity-60 group-hover/audio:opacity-100"
-                      )}
-                    />
-                  </span>
-                </ActionPill>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" align="start">
-                Listen to the Greek pronunciation (“name”)
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          <p className="text-footnote flex min-w-0 items-center gap-2 select-none">
-            <span className="text-label font-medium whitespace-nowrap">Linguistic engine</span>
-            <span className="text-label-tertiary" aria-hidden="true">
-              ·
-            </span>
-            <span className="text-label-secondary truncate">
-              Build the language behind your world.
-            </span>
-          </p>
-        </div>
-
-        <div className="flex shrink-0 items-center justify-end gap-2 self-end sm:self-center">
-          {process.env.NODE_ENV === "development" && (
-            <Link
-              href="/labs/onoma/glyphs"
-              title="Open the Onoma glyphs catalog (dev tools)"
-              className={buttonVariants({ variant: "secondary", size: "sm" })}
-            >
-              <Code className="text-tint" />
-              <span className="hidden sm:inline">Glyphs</span>
-            </Link>
-          )}
-
-          <motion.button
+    <header className="space-y-4">
+      <PageHeader
+        title={onomaPageTitle(activeSection, activeSubTab, activeExploreSubTab)}
+        bleed
+        leading={
+          <button
             type="button"
-            animate={
-              shouldAnimateStash
-                ? shouldReduceMotion
-                  ? { opacity: [1, 0.6, 1] }
-                  : { scale: [1, 1.08, 0.98, 1] }
-                : { scale: 1, opacity: 1 }
-            }
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            onClick={() => onNavigate("bank")}
-            aria-pressed={activeSection === "bank"}
-            className={buttonVariants({
-              variant: activeSection === "bank" ? "secondary" : "secondary",
-              size: "sm",
-            })}
+            onClick={() => onNavigate("overview")}
+            aria-label="Onoma sandbox"
+            className="text-label hover:text-tint focus-visible:outline-tint rounded-control duration-fast transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
           >
-            <Bookmark />
-            <span>Stash</span>
-          </motion.button>
+            <OnomaBrandLogo variant="wordmark" className="h-7 w-auto" />
+          </button>
+        }
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2">
+            <Pronunciation played={hasInteractedPronunciation} onPlay={playPronunciation} />
+            <span>Build the language behind your world.</span>
+          </span>
+        }
+        actions={
+          <>
+            <motion.span
+              className="inline-flex"
+              animate={shouldAnimateStash ? { opacity: [1, 0.5, 1] } : { opacity: 1 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.4 }}
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => onNavigate("bank")}
+                aria-pressed={activeSection === "bank"}
+              >
+                <Bookmark />
+                <span className="hidden sm:inline">Stash</span>
+              </Button>
+            </motion.span>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onNavigate("settings")}
+              aria-pressed={activeSection === "settings"}
+            >
+              <Settings />
+              <span className="hidden sm:inline">Settings</span>
+            </Button>
+            {activeSection !== "settings" && (
+              <Button variant="secondary" size="sm" onClick={onOpenHelp} aria-label="Help">
+                <HelpCircle />
+                <span className="hidden md:inline">Help</span>
+              </Button>
+            )}
+          </>
+        }
+      />
 
-          <Button
-            variant={activeSection === "settings" ? "secondary" : "secondary"}
+      {isUtilitySection ? (
+        <Button variant="ghost" size="sm" onClick={handleReturn}>
+          <ArrowLeft />
+          Back to {returnLabel}
+        </Button>
+      ) : (
+        <nav aria-label="Onoma" className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          <SegmentedControl
+            options={PILLAR_TABS}
+            value={activePillar}
+            onValueChange={handlePillar}
+            aria-label="Onoma workspaces"
+          />
+          <SegmentedControl
+            key={activePillar}
+            options={sectionOptions}
+            value={sectionValue}
+            onValueChange={handleSection}
             size="sm"
-            onClick={() => onNavigate("settings")}
-            aria-pressed={activeSection === "settings"}
-            title="Configure conlang and voice settings"
-          >
-            <Settings />
-            <span className="hidden sm:inline">Settings</span>
-          </Button>
-        </div>
-      </div>
-
-      {/* Console: the return bar for Stash/Settings, or the pillar + section tabs */}
-      <FacetMaterial layer="chrome" className="rounded-card p-2">
-        <AnimatePresence mode="wait" initial={false}>
-          {isUtilitySection ? (
-            <motion.div
-              key="utility-breadcrumb"
-              {...consoleMotion(shouldReduceMotion)}
-              className="flex flex-col justify-between gap-2 px-1 py-0.5 sm:flex-row sm:items-center"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleReturn}
-                  title={`Return to ${returnLabel}`}
-                  className="shrink-0"
-                >
-                  <ArrowLeft />
-                  <span>Back to {returnLabel}</span>
-                </Button>
-
-                <div className="border-separator flex min-w-0 flex-col border-l py-0.5 pl-3 select-none">
-                  <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                    <h2 className="text-headline text-label flex shrink-0 items-center gap-2">
-                      {activeSection === "bank" ? (
-                        <Bookmark className="text-tint size-4" aria-hidden="true" />
-                      ) : (
-                        <Settings className="text-tint size-4" aria-hidden="true" />
-                      )}
-                      {activeSection === "bank" ? "My stash" : "Onoma preferences & sandbox"}
-                    </h2>
-                    <span className="text-label-tertiary hidden sm:inline" aria-hidden="true">
-                      ·
-                    </span>
-                    <span className="text-footnote text-label-secondary truncate">
-                      {activeSection === "bank"
-                        ? "Manage your saved names and custom dictionaries."
-                        : "Customize playback parameters, preview voices, and manage conlang dictionaries stored in this browser."}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Help is hidden on Settings */}
-              {activeSection !== "settings" && (
-                <div className="self-end sm:self-auto">{helpButton}</div>
-              )}
-            </motion.div>
-          ) : (
-            <motion.div
-              key="pillar-console"
-              {...consoleMotion(shouldReduceMotion)}
-              className="space-y-2"
-            >
-              {/* 1. Pillar tabs (Create · Studio · Explore) */}
-              <SegmentedControl
-                options={toOptions(ONOMA_PILLAR_TABS)}
-                value={activePillar}
-                onValueChange={(id) => {
-                  if (id === "create") onNavigate(lastActiveTab || "overview");
-                  else if (id === "studio") onNavigateStudio(activeSubTab || "workshop");
-                  else if (id === "explore") onNavigateExplore(activeExploreSubTab || "phonology");
-                }}
-                size="md"
-                aria-label="Onoma workspaces"
-                className="w-full"
-                asTabs
-              />
-
-              {/* 2. The active pillar's sections, with contextual help */}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={activePillar}
-                  {...consoleMotion(shouldReduceMotion)}
-                  className="flex items-center gap-2"
-                >
-                  <div className="min-w-0 flex-1">
-                    <SegmentedControl
-                      options={toOptions(
-                        activePillar === "studio"
-                          ? studioTabs
-                          : activePillar === "explore"
-                            ? exploreTabs
-                            : ONOMA_TABS
-                      )}
-                      value={
-                        activePillar === "studio"
-                          ? activeSubTab
-                          : activePillar === "explore"
-                            ? activeExploreSubTab
-                            : activeSection
-                      }
-                      onValueChange={(id) => {
-                        if (activePillar === "studio") {
-                          onNavigateStudio(id as StudioSubTab);
-                        } else if (activePillar === "explore") {
-                          onNavigateExplore(id as ExploreSubTab);
-                        } else {
-                          onNavigate(id as OnomaSection);
-                        }
-                      }}
-                      size="md"
-                      aria-label="Sections"
-                      className="w-full"
-                      asTabs
-                    />
-                  </div>
-                  {helpButton}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </FacetMaterial>
+            aria-label={`${PILLAR_TABS.find((p) => p.value === activePillar)?.label ?? ""} sections`}
+            className="max-w-full overflow-x-auto"
+          />
+        </nav>
+      )}
     </header>
   );
 }

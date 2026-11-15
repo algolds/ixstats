@@ -16,6 +16,7 @@
 
 import { spawnSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "postgres", "db"]);
 
@@ -147,7 +148,7 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const countries = await countRows(db, "Country");
     const users = await countRows(db, "User");

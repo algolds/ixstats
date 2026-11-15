@@ -1,19 +1,6 @@
 "use client";
 
 import { useMemo, memo } from "react";
-import {
-  WarningTriangle as AlertTriangle,
-  Globe,
-  Bank as Landmark,
-  Map as MapIcon,
-  RssFeed as Rss,
-  Shield,
-  StatUp as TrendingUp,
-  Trophy,
-  Group as Users,
-  ChatBubble as MessageCircle,
-  ClipboardCheck,
-} from "iconoir-react";
 import { DiscussedInBadge } from "~/components/action-links/DiscussedIn";
 import { Skeleton } from "~/components/ui/skeleton";
 import { FeedPollWidget } from "~/components/shared/polls/FeedPollWidget";
@@ -21,6 +8,7 @@ import { PostHtml } from "~/components/thinkpages/post/PostHtml";
 import { parseSportsBulletin } from "~/lib/sports/feed-bulletins";
 import { SportsBulletinCard } from "~/components/thinkpages/SportsBulletinCard";
 import { cn, formatThinkpagesContentForDisplay } from "~/lib/utils";
+import { getActivityLabel, SOURCE_CONFIG } from "~/lib/feed/activity-labels";
 import { FeedItemHeader } from "./feed/FeedItemHeader";
 import { FeedGroupedDrawer } from "./feed/FeedGroupedDrawer";
 import { WikiFeedCard } from "./feed/WikiFeedCard";
@@ -28,87 +16,24 @@ import { ForumFeedCard } from "./feed/ForumFeedCard";
 import type { ProcessedFeedItem } from "~/types/dashboard-feed";
 import { Card } from "~/components/ui/card";
 
-/** `app` scopes the badge to that app's tint (`data-app`), so an app's items wear the app's colour. */
-type FeedBadge = { icon: typeof Rss; color: string; bg: string; label: string; app?: string };
+export { getActivityLabel };
 
-const BLUE = { color: "text-blue", bg: "bg-blue/10" };
-const GREEN = { color: "text-green", bg: "bg-green/10" };
-const RED = { color: "text-red", bg: "bg-red/10" };
-const tintOf = (app: string) => ({ color: "text-tint", bg: "bg-tint-fill", app });
-
-const SOURCE_CONFIG: Record<string, FeedBadge> = {
-  activity: { icon: Rss, ...BLUE, label: "Activity" },
-  thinkpages: { icon: Users, ...tintOf("thinkpages"), label: "Social" },
-  forum: { icon: MessageCircle, ...tintOf("thinkpages"), label: "Forum" },
-};
-
-/** First match wins: an activity type, a category or a keyword in the title. */
-const ACTIVITY_RULES: (FeedBadge & { types?: string[]; cats?: string[]; words: string[] })[] = [
-  // A directive is named by its activity type; its title is the player's own goal text, so words never apply.
-  { label: "Directive", icon: ClipboardCheck, ...tintOf("mycountry"), types: ["directive"], words: [] },
-  { label: "POI", icon: MapIcon, ...tintOf("maps"), words: ["point of interest", "poi"] },
-  { label: "City", icon: MapIcon, ...tintOf("maps"), words: ["city", "settlement"] },
-  {
-    label: "Subdivision",
-    icon: MapIcon,
-    ...tintOf("maps"),
-    words: ["subdivision", "province", "state", "region"],
-  },
-  { label: "Maps", icon: MapIcon, ...tintOf("maps"), cats: ["map"], words: ["map", "claim"] },
-  {
-    label: "Economy",
-    icon: TrendingUp,
-    ...GREEN,
-    cats: ["economic"],
-    words: ["gdp", "econom", "trade"],
-  },
-  {
-    label: "Diplomacy",
-    icon: Globe,
-    color: "text-teal",
-    bg: "bg-teal/10",
-    cats: ["diplomatic"],
-    words: ["embassy", "diplom", "treaty"],
-  },
-  {
-    label: "Defense",
-    icon: Shield,
-    ...RED,
-    cats: ["military"],
-    words: ["military", "defense", "deploy"],
-  },
-  {
-    label: "Politics",
-    icon: Landmark,
-    color: "text-indigo",
-    bg: "bg-indigo/10",
-    cats: ["political", "government"],
-    words: ["govern", "politic", "election"],
-  },
-  { label: "Crisis", icon: AlertTriangle, ...RED, cats: ["crisis"], words: ["crisis"] },
-  {
-    label: "Achievement",
-    icon: Trophy,
-    color: "text-yellow",
-    bg: "bg-yellow/10",
-    cats: ["achievement"],
-    words: ["tier", "achieve"],
-  },
-];
-
-export function getActivityLabel(activity: any): FeedBadge {
-  const cat = activity.category ?? activity.content?.metadata?.category ?? "";
-  const title = (activity.content?.title ?? "").toLowerCase();
-  const rule = ACTIVITY_RULES.find(
-    (r) =>
-      r.types?.includes(activity.type) ||
-      r.cats?.includes(cat) ||
-      r.words.some((word) => title.includes(word))
-  );
-  return rule ?? SOURCE_CONFIG.activity!;
+function formatEditors(editors: string[]): string {
+  if (editors.length === 0) return "unknown";
+  if (editors.length === 1) return editors[0]!;
+  if (editors.length === 2) return `${editors[0]} and ${editors[1]}`;
+  const remaining = editors.length - 2;
+  return `${editors[0]}, ${editors[1]} and ${remaining} ${remaining === 1 ? "other" : "others"}`;
 }
 
 function Byline({ activity }: { activity: any }) {
+  if (activity._isAchievementGroup) {
+    return (
+      <span>
+        by <span className="text-label font-medium">{formatEditors(activity._editors ?? [])}</span>
+      </span>
+    );
+  }
   if (activity._grouped) {
     return (
       <span>
@@ -127,7 +52,14 @@ function Byline({ activity }: { activity: any }) {
 }
 
 function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulletin: any }) {
-  if (activity._grouped) return <FeedGroupedDrawer subEdits={activity._subEdits} />;
+  if (activity._grouped) {
+    return (
+      <FeedGroupedDrawer
+        subEdits={activity._subEdits}
+        itemLabel={activity._isAchievementGroup ? "achievements" : "items"}
+      />
+    );
+  }
   const description = activity.content?.description || activity.post?.content;
   return (
     <>
@@ -147,9 +79,10 @@ function ActivityBody({ activity, sportsBulletin }: { activity: any; sportsBulle
 }
 
 /** The item's open link: its wiki page or forum thread, else (an unlock) the achievement in the Vault. */
-function openUrlOf(metadata: Record<string, string | undefined>) {
+function openUrlOf(metadata: Record<string, string | undefined>, isAchievementGroup = false) {
   const external = metadata.wikiUrl ?? metadata.forumUrl;
   if (external) return external;
+  if (isAchievementGroup) return "/vault/achievements";
   return metadata.achievementKey
     ? `/vault/achievements?a=${encodeURIComponent(metadata.achievementKey)}`
     : undefined;
@@ -194,7 +127,7 @@ function ActivityCard({ activity }: { activity: any }) {
             label={badge.label}
             sportsBulletin={sportsBulletin}
             titleHtml={title ? formatThinkpagesContentForDisplay(title) : ""}
-            externalUrl={openUrlOf(metadata)}
+            externalUrl={openUrlOf(metadata, Boolean(activity._isAchievementGroup))}
           />
           <div className="text-label-secondary text-footnote flex flex-wrap items-center gap-2">
             <Byline activity={activity} />

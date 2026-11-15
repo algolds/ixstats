@@ -1,6 +1,10 @@
 "use client";
 
-/** Inline wiki search + infobox importer for feature forms; renders inline to keep panels compact. */
+/**
+ * Inline wiki search + infobox importer for feature forms; renders inline to keep panels compact. A realm whose map
+ * reads more than one wiki (Ixnay: Wiki, then IIWiki) gets the shared wiki picker; a wiki that cannot answer is listed
+ * but disabled, and a search in it says why instead of "no pages".
+ */
 
 import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
@@ -19,6 +23,10 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { distanceKm } from "~/lib/maps/geo-math";
 import { Card } from "~/components/ui/card";
 import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { WikiSourcePicker, useWikiSource } from "~/components/wiki-os/shared/WikiSourcePicker";
+import { createUrl } from "~/lib/utils/url-utils";
+import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import { wikiReadErrorText } from "~/lib/wiki-os/wiki-source-availability";
 
 interface WikiImportableFields {
   population?: number;
@@ -29,13 +37,16 @@ interface WikiImportableFields {
   area?: number;
   elevation?: number;
   wikiPageTitle: string;
+  wikiSource?: WikiSource | null;
 }
 
 interface WikiLinkWizardProps {
   /** Current wiki page title (if already linked) */
   value?: string;
-  /** Called when user selects a wiki page */
-  onChange: (pageTitle: string | undefined) => void;
+  /** Stored wiki source of the current link (if known) */
+  wikiSource?: WikiSource | string | null;
+  /** Called when user selects or unlinks a wiki page */
+  onChange: (pageTitle: string | undefined, wikiSource?: WikiSource | null) => void;
   /** Called when user wants to import parsed fields */
   onImport?: (fields: WikiImportableFields) => void;
   /** Current map coordinates for conflict detection */
@@ -62,7 +73,10 @@ const STRING_IMPORTS: Record<StringField, string[]> = {
 };
 
 function toImportableFields(infobox: Infobox, wikiPageTitle: string): WikiImportableFields {
-  const fields: WikiImportableFields = { wikiPageTitle };
+  const fields: WikiImportableFields = {
+    wikiPageTitle,
+    ...(infobox.wikiSource ? { wikiSource: infobox.wikiSource } : {}),
+  };
   for (const f of infobox.fields) {
     const key = f.key.toLowerCase();
     for (const [field, keys] of Object.entries(NUMBER_IMPORTS)) {
@@ -83,16 +97,25 @@ function toImportableFields(infobox: Infobox, wikiPageTitle: string): WikiImport
 function InfoboxCard({
   infobox,
   isLoading,
+  errorText,
   coordDistance,
   onImport,
 }: {
   infobox: Infobox | undefined;
   isLoading: boolean;
+  /** Why the page could not be read (its wiki is switched off or unreachable); null when it could. */
+  errorText: string | null;
   coordDistance: number | null;
   onImport?: () => void;
 }) {
   return (
     <Card className="p-2">
+      {errorText && (
+        <div className="text-destructive text-footnote py-1" role="alert">
+          {errorText}
+        </div>
+      )}
+
       {isLoading && (
         <div className="text-label-secondary text-footnote flex items-center gap-2 py-2">
           <Loader2 className="h-3 w-3 animate-spin" /> Parsing infobox...
@@ -146,12 +169,15 @@ function InfoboxCard({
 function WikiSearch({
   enabled,
   placeholder,
+  wiki,
   onSelect,
   onSkip,
 }: {
   enabled: boolean;
   placeholder: string;
-  onSelect: (title: string) => void;
+  /** The wiki to search; undefined searches the realm's wikis in order. */
+  wiki: WikiSource | undefined;
+  onSelect: (title: string, wiki: WikiSource | null) => void;
   onSkip: () => void;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -159,9 +185,13 @@ function WikiSearch({
 
   const realm = useMapRealm();
 
-  const { data: searchResults, isLoading: searchLoading } = api.geoWiki.searchWikiPages.useQuery(
-    { query: debouncedQuery, limit: 8, realm },
-    { enabled: enabled && debouncedQuery.length >= 2, staleTime: 30_000 }
+  const {
+    data: searchResults,
+    isLoading: searchLoading,
+    error: searchError,
+  } = api.geoWiki.searchWikiPages.useQuery(
+    { query: debouncedQuery, limit: 8, realm, wiki },
+    { enabled: enabled && debouncedQuery.length >= 2, staleTime: 30_000, retry: false }
   );
 
   return (
@@ -188,7 +218,7 @@ function WikiSearch({
               variant="ghost"
               size="sm"
               key={i}
-              onClick={() => onSelect(r.title)}
+              onClick={() => onSelect(r.title, searchResults.wikiSource)}
               className="h-auto min-h-(--control-height-sm) w-full justify-start gap-2 py-2 text-left whitespace-normal"
             >
               <Link2 className="text-label-secondary mt-0.5 h-3 w-3 shrink-0" />
@@ -201,6 +231,12 @@ function WikiSearch({
             </Button>
           ))}
         </Card>
+      )}
+
+      {searchError && debouncedQuery.length >= 2 && (
+        <div className="text-destructive text-footnote mt-1" role="alert">
+          {wikiReadErrorText(searchError, "The wiki search failed. Try again.")}
+        </div>
       )}
 
       {searchResults &&
@@ -223,6 +259,7 @@ function WikiSearch({
 
 export function WikiLinkWizard({
   value,
+  wikiSource,
   onChange,
   onImport,
   currentCoords,
@@ -230,29 +267,59 @@ export function WikiLinkWizard({
 }: WikiLinkWizardProps) {
   const [isSearching, setIsSearching] = useState(!value);
   const [showInfobox, setShowInfobox] = useState(false);
+  /** The wiki the linked page was found on in this session; falls back to the stored `wikiSource` prop, else the realm's wikis. */
+  const [linkedWiki, setLinkedWiki] = useState<WikiSource | null>(() =>
+    wikiSource ? parseWikiSource(wikiSource) : null
+  );
+  const [syncedWikiProp, setSyncedWikiProp] = useState(wikiSource);
+  if (syncedWikiProp !== wikiSource) {
+    setSyncedWikiProp(wikiSource);
+    setLinkedWiki(wikiSource ? parseWikiSource(wikiSource) : null);
+  }
+  const effectiveWiki: WikiSource | undefined =
+    linkedWiki ?? (wikiSource ? parseWikiSource(wikiSource) : undefined);
   const realm = useMapRealm();
+  const realmWikis = api.geoWiki.wikiSources.useQuery({ realm }, { staleTime: 5 * 60_000 }).data;
+  const choice = useWikiSource("country", realmWikis ?? []);
 
-  // Infobox parse (fires when a page is linked); looked up in the map's realm's wiki
-  const { data: infobox, isLoading: infoboxLoading } = api.geoWiki.parseWikiInfobox.useQuery(
-    { pageTitle: value!, realm },
-    { enabled: !!value && showInfobox, staleTime: 5 * 60_000 }
+  // Infobox parse (fires when a page is linked); looked up on the wiki it was picked from, else the realm's wikis
+  const {
+    data: infobox,
+    isLoading: infoboxLoading,
+    error: infoboxError,
+  } = api.geoWiki.parseWikiInfobox.useQuery(
+    { pageTitle: value!, realm, wiki: effectiveWiki },
+    { enabled: !!value && showInfobox, staleTime: 5 * 60_000, retry: false }
   );
 
   if (!value || isSearching) {
     return (
-      <WikiSearch
-        enabled={isSearching}
-        placeholder={placeholder}
-        onSelect={(title) => {
-          onChange(title);
-          setIsSearching(false);
-          setShowInfobox(true);
-        }}
-        onSkip={() => {
-          setIsSearching(false);
-          onChange(undefined);
-        }}
-      />
+      <div className="space-y-2">
+        {choice.options.length > 1 && (
+          <WikiSourcePicker
+            size="sm"
+            value={choice.source}
+            options={choice.options}
+            onValueChange={choice.setSource}
+          />
+        )}
+        <WikiSearch
+          enabled={isSearching}
+          placeholder={placeholder}
+          wiki={realmWikis ? choice.source : undefined}
+          onSelect={(title, wiki) => {
+            onChange(title, wiki);
+            setLinkedWiki(wiki);
+            setIsSearching(false);
+            setShowInfobox(true);
+          }}
+          onSkip={() => {
+            setIsSearching(false);
+            setLinkedWiki(null);
+            onChange(undefined, null);
+          }}
+        />
+      </div>
     );
   }
 
@@ -260,6 +327,7 @@ export function WikiLinkWizard({
     infobox?.coordinates && currentCoords
       ? Math.round(distanceKm(currentCoords, infobox.coordinates))
       : null;
+  const openPageUrl = infobox?.pageUrl ?? wikiReaderPath(value, effectiveWiki ?? "ixwiki");
 
   return (
     <div className="space-y-2">
@@ -275,9 +343,9 @@ export function WikiLinkWizard({
         >
           <Search className="h-3 w-3" />
         </Button>
-        {infobox?.pageUrl && (
+        {openPageUrl && (
           <a
-            href={infobox.pageUrl}
+            href={createUrl(openPageUrl)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-label-secondary hover:bg-fill-3 hover:text-label rounded-control-sm p-0.5"
@@ -291,7 +359,8 @@ export function WikiLinkWizard({
           size="icon"
           className="text-destructive hover:bg-destructive/10 hover:text-destructive h-6 w-6"
           onClick={() => {
-            onChange(undefined);
+            onChange(undefined, null);
+            setLinkedWiki(null);
             setIsSearching(true);
             setShowInfobox(false);
           }}
@@ -305,6 +374,9 @@ export function WikiLinkWizard({
         <InfoboxCard
           infobox={infobox}
           isLoading={infoboxLoading}
+          errorText={
+            infoboxError ? wikiReadErrorText(infoboxError, "That page could not be read.") : null
+          }
           coordDistance={coordDistance}
           onImport={
             infobox && onImport

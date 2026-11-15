@@ -7,11 +7,11 @@ import GalleryMode from "~/components/maps/vexel/GalleryMode";
 
 export default function VexelGeneratePage() {
   return (
-    <div className="bg-grouped text-label min-h-screen p-8">
+    <div className="px-4 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto max-w-6xl">
         <PageHeader
           title="Vexel gallery"
-          subtitle="Procedural armorial achievements generator."
+          subtitle="Random coats of arms, shaped by culture, faith and government."
           actions={
             <>
               <Button asChild variant="outline" size="sm">

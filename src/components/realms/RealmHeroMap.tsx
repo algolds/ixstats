@@ -15,9 +15,18 @@ import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig"
 import { SharedElement } from "~/components/ui/view-transition";
 import { getMapGlyphsUrl, assetUrl } from "~/lib/base-path";
 import type { CardRealmBadge } from "~/lib/cards/face/types";
+import { clampFlatCenterLat, toCarrierGeoJSON } from "~/lib/maps/flat-projection";
 import { loadMaplibre } from "~/lib/maps/load-maplibre";
 import { MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
-import { NPC_FILL, coverView, heroNationHref, heroNationStatus } from "~/lib/realms/hero-map";
+import {
+  NPC_FILL,
+  coverView,
+  heroNationHref,
+  heroNationStatus,
+  type HeroNationLink,
+} from "~/lib/realms/hero-map";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
 import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
 
@@ -116,11 +125,12 @@ function heroStyle(geo: HeroGeo, colours: MapColours, labelZoom: number): StyleS
     sources: {
       land: {
         type: "geojson",
-        data: geo.land ?? { type: "FeatureCollection", features: [] },
+        // Plate Carrée, like the SVG face (flat-projection.ts)
+        data: geo.land ? toCarrierGeoJSON(geo.land) : { type: "FeatureCollection", features: [] },
       },
       nations: {
         type: "geojson",
-        data: { type: "FeatureCollection", features: geo.nations },
+        data: toCarrierGeoJSON({ type: "FeatureCollection", features: geo.nations }),
         promoteId: "key",
       },
     },
@@ -242,7 +252,8 @@ interface MountOptions {
   isCancelled: () => boolean;
   onLive: () => void;
   onHover: (hovered: Hovered | null) => void;
-  onNavigate: (href: string) => void;
+  /** A founded nation opens its actions sheet; an open one goes to `href` to be claimed. */
+  onNavigate: (href: string, nation: HeroNationLink) => void;
 }
 
 const nationOf = (e: MapLayerMouseEvent) => e.features?.[0]?.properties as HeroNation | undefined;
@@ -277,7 +288,7 @@ function wireNations(map: MapLibreMap, opts: MountOptions) {
     map.on("click", layer, (e) => {
       const nation = nationOf(e);
       const href = nation ? heroNationHref(nation, opts.realmSlug) : null;
-      if (opts.hoverCapable && href) opts.onNavigate(href);
+      if (opts.hoverCapable && href && nation) opts.onNavigate(href, nation);
       else show(e);
     });
   }
@@ -294,6 +305,14 @@ async function mountHeroMap(opts: MountOptions): Promise<MapLibreMap | null> {
     container: opts.box,
     style: heroStyle(opts.geo, colours, Math.min(view.zoom + 1.5, MAX_ZOOM)),
     center: view.center,
+    // Never past a pole
+    transformConstrain: (center, z) => ({
+      center: new maplibregl.LngLat(
+        center.lng,
+        clampFlatCenterLat(center.lat, z, opts.box.clientHeight)
+      ),
+      zoom: z,
+    }),
     zoom: view.zoom,
     minZoom: Math.max(0, view.zoom - 1),
     maxZoom: Math.max(MAX_ZOOM, view.zoom + 2),
@@ -345,10 +364,19 @@ function HoverCard({
         <span className="truncate">{nation.name ?? "Unnamed region"}</span>
       </span>
       <span className="text-label-secondary text-caption">{heroNationStatus(nation.status)}</span>
-      {touch && href && (
+      {touch && href && nation.status === "open" && (
         <Link href={href} className="text-tint text-caption font-medium">
-          {nation.status === "open" ? "Claim this nation" : "View nation"}
+          Claim this nation
         </Link>
+      )}
+      {touch && href && nation.status !== "open" && nation.id && (
+        <CountryLink
+          country={{ id: nation.id, slug: nation.slug, name: nation.name ?? undefined }}
+          href={href}
+          className="text-tint text-caption font-medium"
+        >
+          View nation
+        </CountryLink>
       )}
     </div>
   );
@@ -368,6 +396,7 @@ export function RealmHeroMap({
   bannerUrl: string | null;
 }) {
   const router = useRouter();
+  const openCountryActions = useOpenCountryActions();
   const reduceMotion = useFacetReducedMotion();
   const idle = useIdle();
   const shellRef = useRef<HTMLDivElement>(null);
@@ -402,7 +431,11 @@ export function RealmHeroMap({
       isCancelled: () => cancelled,
       onLive: () => setLive(true),
       onHover: setHovered,
-      onNavigate: (href) => router.push(href),
+      onNavigate: (href, nation) => {
+        if (nation.status !== "open" && nation.id) {
+          openCountryActions({ id: nation.id, slug: nation.slug, name: nation.name ?? undefined });
+        } else router.push(href);
+      },
     }).then((map) => {
       if (cancelled) map?.remove();
       else mapRef.current = map;
@@ -414,7 +447,7 @@ export function RealmHeroMap({
       setLive(false);
       setHovered(null);
     };
-  }, [geo, realm.slug, reduceMotion, router]);
+  }, [geo, realm.slug, reduceMotion, router, openCountryActions]);
 
   useEffect(() => {
     const box = mapBoxRef.current;

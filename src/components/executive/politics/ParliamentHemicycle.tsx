@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { FACET_CHART_COLORS } from "~/components/ui/chart";
 
 interface SeatData {
   seatNumber: number;
@@ -112,8 +113,8 @@ export function ParliamentHemicycle({
               cx={pos.x}
               cy={pos.y}
               r={seatRadius}
-              fill={pos.color}
-              stroke="rgba(0,0,0,0.1)"
+              fill={pos.color || FACET_CHART_COLORS[0]}
+              stroke="var(--color-separator)"
               strokeWidth="0.5"
             >
               <title>{pos.name}</title>
@@ -123,10 +124,16 @@ export function ParliamentHemicycle({
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
-        {partySummary.map((ps) => (
-          <div key={ps.party.id} className="text-footnote flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: ps.party.color }} />
-            <span className="font-medium">{ps.party.shortName ?? ps.party.name}</span>
+        {partySummary.map((ps, idx) => (
+          <div key={ps.party.id} className="text-footnote flex items-center gap-2 tabular-nums">
+            <div
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor:
+                  ps.party.color || FACET_CHART_COLORS[idx % FACET_CHART_COLORS.length],
+              }}
+            />
+            <span className="text-label font-medium">{ps.party.shortName ?? ps.party.name}</span>
             <span className="text-label-secondary">
               {ps.seats} ({((ps.seats / totalSeats) * 100).toFixed(1)}%)
             </span>

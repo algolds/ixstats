@@ -12,6 +12,7 @@
  *   events merge into one timeline on the country's realm calendar (`buildChronicle`).
  */
 
+import type { CardFaceData } from "~/lib/cards/face/types";
 import { cleanWikiMarkup } from "~/lib/wiki-os/transformers/wikitext-parser";
 import { formatRealmDate, type RealmCalendar } from "~/lib/realms/realm-clock";
 import { realmFractionalYear } from "~/lib/realms/nation-time";
@@ -243,7 +244,7 @@ export function realNumber(value: unknown, { allowZero = false } = {}): number |
 }
 
 export function formatBig(value: number | null, { currency = false } = {}): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   const abs = Math.abs(value);
   const prefix = currency ? "$" : "";
   const sign = value < 0 ? "−" : "";
@@ -259,14 +260,14 @@ export function formatBig(value: number | null, { currency = false } = {}): stri
  * magnitude is treated as a fraction, matching the MyCountry formatters.
  */
 export function formatRate(value: number | null, { signed = true } = {}): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   const pct = Math.abs(value) < 1 ? value * 100 : value;
   const sign = signed && pct > 0 ? "+" : pct < 0 ? "−" : "";
   return `${sign}${Math.abs(pct).toFixed(1)}%`;
 }
 
 export function formatPercent(value: number | null, digits = 1): string {
-  if (value == null) return "—";
+  if (value == null) return "Not recorded";
   return `${value.toFixed(digits)}%`;
 }
 
@@ -285,4 +286,152 @@ export function yearlySeries(raw: unknown): { year: number; gdp: number; populat
     byYear.set(year, { year, gdp, population: Number.isFinite(population) ? population : 0 });
   }
   return [...byYear.values()].sort((a, b) => a.year - b.year);
+}
+
+export interface ProfileSectionCover {
+  url: string | null;
+  caption: string | null;
+  href?: string | null;
+  summary?: string | null;
+  readingTime?: number | null;
+}
+
+export interface ProfileMediaArticle {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  imageUrl: string | null;
+  readingTime: number;
+}
+
+export interface ProfileMedia {
+  sectionCovers: {
+    economy: ProfileSectionCover | null;
+    state: ProfileSectionCover | null;
+    foreign: ProfileSectionCover | null;
+  };
+  leaderPortraitUrl: string | null;
+  articles: ProfileMediaArticle[];
+  cards: CardFaceData[];
+}
+
+export const EMPTY_PROFILE_MEDIA: ProfileMedia = {
+  sectionCovers: {
+    economy: null,
+    state: null,
+    foreign: null,
+  },
+  leaderPortraitUrl: null,
+  articles: [],
+  cards: [],
+};
+
+const LEADER_KEYWORDS =
+  /\b(imperator|emperor|empress|king|queen|president|prime minister|chancellor|monarch|leader|list of)/i;
+
+const isSvgUrl = (url: string): boolean => /\.svg(?:$|\?)/i.test(url);
+
+const imageKey = (url: string): string => {
+  const trimmed = url.trim();
+  const lastSegment = trimmed.split("/").pop()?.split("?")[0];
+  return (lastSegment || trimmed).toLowerCase();
+};
+
+/** Candidate articles per Factbook block, best first (`countries.getCoverArticles`). */
+export type CoverCandidates = Record<
+  "economy" | "state" | "foreign",
+  readonly {
+    title: string;
+    slug: string;
+    summary: string | null;
+    imageUrl: string | null;
+    readingTime: number | null;
+  }[]
+>;
+
+/** The owner's pinned image slot for each block (`card_background_images.cardType`). */
+const PINNED_SLOT = {
+  economy: "economic_indicators",
+  state: "government",
+  foreign: "diplomacy",
+} as const;
+
+/**
+ * Assemble rich media for the country profile. Each Factbook block's cover is the owner's pinned
+ * image, else the first of its own candidate articles with a usable image (raster before SVG, no
+ * image twice), captioned and linked to the block's top article. With no candidate article the
+ * cover is null and the block falls back to its map crop. Cards and the lore spotlight come from
+ * the public record.
+ */
+export function buildProfileMedia(
+  raw:
+    | {
+        cardImages?: Record<string, string>;
+        articles?: readonly ProfileMediaArticle[];
+        cards?: readonly CardFaceData[];
+      }
+    | null
+    | undefined,
+  countryName: string,
+  covers?: CoverCandidates | null
+): ProfileMedia {
+  if (!raw && !covers) return EMPTY_PROFILE_MEDIA;
+  const cardImages = raw?.cardImages ?? {};
+  const allArticles = raw?.articles ?? [];
+  const cards = [...(raw?.cards ?? [])];
+
+  const leaderArticle = allArticles.find(
+    (a) => a.imageUrl && !isSvgUrl(a.imageUrl) && LEADER_KEYWORDS.test(a.title)
+  );
+  const leaderPortraitUrl =
+    cardImages.head_of_state?.trim() ||
+    cardImages.head_of_government?.trim() ||
+    leaderArticle?.imageUrl ||
+    null;
+
+  const usedKeys = new Set<string>();
+  if (leaderPortraitUrl) usedKeys.add(imageKey(leaderPortraitUrl));
+
+  // Exclude the bare country root article when sub-articles exist so spotlights show distinct topics.
+  const normCountry = countryName.trim().toLowerCase();
+  const subArticles = allArticles.filter((a) => a.title.trim().toLowerCase() !== normCountry);
+  const coverArticles = subArticles.length > 0 ? subArticles : allArticles;
+
+  const pickCover = (block: keyof typeof PINNED_SLOT): ProfileSectionCover | null => {
+    const candidates = covers?.[block] ?? [];
+    const top = candidates[0];
+    const images = candidates.flatMap((c) =>
+      c.imageUrl && !usedKeys.has(imageKey(c.imageUrl)) ? [c.imageUrl] : []
+    );
+    const pinned = cardImages[PINNED_SLOT[block]]?.trim() || null;
+    const url = pinned ?? images.find((u) => !isSvgUrl(u)) ?? images[0] ?? null;
+    if (!top && !pinned) return null;
+    if (url) usedKeys.add(imageKey(url));
+    return {
+      url,
+      caption: top?.title ?? null,
+      href: top ? `/wiki/${encodeURIComponent(top.slug)}` : null,
+      summary: top?.summary ?? null,
+      readingTime: top?.readingTime ?? null,
+    };
+  };
+
+  const finalEconomyCover = pickCover("economy");
+  const finalStateCover = pickCover("state");
+  const finalForeignCover = pickCover("foreign");
+
+  // Surface the top canonical dossiers in the Encyclopedia & lore bento grid (up to 6).
+  const spotlightArticles = coverArticles.slice(0, 6);
+
+  return {
+    sectionCovers: {
+      economy: finalEconomyCover,
+      state: finalStateCover,
+      foreign: finalForeignCover,
+    },
+    leaderPortraitUrl,
+    articles: spotlightArticles,
+    cards,
+  };
 }

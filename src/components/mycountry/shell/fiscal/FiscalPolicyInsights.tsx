@@ -19,7 +19,7 @@ import { currentBudgetYear } from "~/lib/government/budget-year";
 import { fiscalBalancePercent } from "~/components/mycountry/domains/government/budget/budgetTypes";
 import { TAX_CHANNELS, ACCENT_BG } from "~/lib/economy/tax-channels";
 import { nationalRevenue } from "~/lib/economy/national-revenue";
-import { RailCard, RailRow, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
+import { RailCard, STATUS_FILL, STATUS_TEXT } from "../rails/shared";
 
 type LafferPosition = "below-optimal" | "optimal" | "above-optimal";
 
@@ -35,8 +35,8 @@ function lafferPositionOf(burden: number | null): LafferPosition | null {
   return burden < 15 ? "below-optimal" : burden <= 35 ? "optimal" : "above-optimal";
 }
 
-const percentFlow = (value: number | null, decimalPlaces: number) =>
-  value != null ? <PercentageFlow value={value} decimalPlaces={decimalPlaces} /> : "—";
+const percentFlow = (value: number | null, decimalPlaces: number, empty = "Not set") =>
+  value != null ? <PercentageFlow value={value} decimalPlaces={decimalPlaces} /> : empty;
 
 type Country = ReturnType<typeof useCountryData>["country"];
 
@@ -102,7 +102,7 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
           {/* Optimal zone band (15–35% on a 0–50% scale) */}
           <div
             aria-hidden="true"
-            className="border-green/40 bg-green/10 absolute inset-y-0 border-x"
+            className="border-success/40 bg-success/10 absolute inset-y-0 border-x"
             style={{ left: "30%", width: "40%" }}
           />
           <div
@@ -160,21 +160,21 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
       </RailCard>
 
       <RailCard title="Fiscal health" icon={ShieldCheck}>
-        <div className="grid grid-cols-3 gap-2">
-          <RailRow className="p-2">
-            <span className="text-label-secondary text-footnote block">Efficiency</span>
-            <p className="text-label text-title-3 mt-0.5 tabular-nums">
-              {percentFlow(collectionEfficiency, 0)}
-            </p>
-          </RailRow>
-          <RailRow className="p-2">
-            <span
-              className="text-label-secondary text-footnote block"
+        <dl className="divide-separator grid grid-cols-3 divide-x">
+          <div className="pr-2">
+            <dt className="text-label-secondary text-footnote">Efficiency</dt>
+            <dd className="text-label text-title-3 mt-0.5 tabular-nums">
+              {percentFlow(collectionEfficiency, 0, "Not recorded")}
+            </dd>
+          </div>
+          <div className="px-2">
+            <dt
+              className="text-label-secondary text-footnote"
               title="Revenue left after the budget's allocations, as a share of revenue. Below zero is a deficit."
             >
               Balance
-            </span>
-            <p
+            </dt>
+            <dd
               className={cn(
                 "text-title-3 mt-0.5 tabular-nums",
                 balance == null
@@ -193,21 +193,21 @@ export function FiscalPolicyInsights({ countryId }: { countryId: string }) {
                   )}
                 </>
               )}
-              {percentFlow(balance, 1)}
-            </p>
-          </RailRow>
-          <RailRow className="p-2">
-            <span className="text-label-secondary text-footnote block">Burden</span>
-            <p
+              {percentFlow(balance, 1, "Not set")}
+            </dd>
+          </div>
+          <div className="pl-2">
+            <dt className="text-label-secondary text-footnote">Burden</dt>
+            <dd
               className={cn(
                 "text-headline mt-0.5",
                 lafferPosition == null ? "text-label" : laffer.text
               )}
             >
-              {lafferPosition == null ? "—" : laffer.label}
-            </p>
-          </RailRow>
-        </div>
+              {lafferPosition == null ? "Unrated" : laffer.label}
+            </dd>
+          </div>
+        </dl>
       </RailCard>
     </div>
   );

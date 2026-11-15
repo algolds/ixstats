@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
 import { Badge } from "~/components/ui/badge";
-import { WarningTriangle as AlertTriangle } from "iconoir-react";
+import { Card } from "~/components/ui/card";
+import { Signal } from "~/components/ui/signal";
 
 interface PolicyReconBannerProps {
   reconContext: { overCapacity: boolean; lowEfficiency: boolean } | undefined;
@@ -21,37 +21,26 @@ export function PolicyReconBanner({
   return (
     <div className="space-y-2">
       {targetDepartment && (
-        <div className="bg-fill-3 border-separator rounded-control flex items-center gap-2 border p-3">
-          <span className="text-caption">Managing department</span>
+        <Card variant="well" padding="sm" className="flex items-center justify-between gap-2">
+          <span className="text-caption text-label-secondary">Managing department</span>
           <Badge variant="outline">{targetDepartment.name || departmentKey}</Badge>
-        </div>
+        </Card>
       )}
       {needsDepartment && (
-        <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow-ink flex gap-2 border p-3">
-          <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
-          <div>
-            Custom policies in this category need a {departmentKey} department. Add one in the
-            Budget tab, or pick a template.
-          </div>
-        </div>
+        <Signal tone="warning" title="Department required">
+          Custom policies in this category need a {departmentKey} department. Add one in the Budget
+          tab, or pick a template.
+        </Signal>
       )}
       {reconContext?.overCapacity && (
-        <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow-ink flex gap-2 border p-3">
-          <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
-          <div>
-            <span className="font-semibold">Over capacity.</span> The civil service is overloaded,
-            so preview estimates may be off.
-          </div>
-        </div>
+        <Signal tone="warning" title="Over capacity">
+          The civil service is overloaded, so preview estimates may be off.
+        </Signal>
       )}
       {reconContext?.lowEfficiency && (
-        <div className="rounded-control border-yellow/20 bg-yellow/5 text-footnote text-yellow-ink flex gap-2 border p-3">
-          <AlertTriangle className="text-yellow h-4 w-4 shrink-0" />
-          <div>
-            <span className="font-semibold">Low efficiency.</span> Government efficiency is below
-            45%, so treat estimates as rough guesses.
-          </div>
-        </div>
+        <Signal tone="warning" title="Low efficiency">
+          Government efficiency is below 45%, so treat estimates as rough guesses.
+        </Signal>
       )}
     </div>
   );

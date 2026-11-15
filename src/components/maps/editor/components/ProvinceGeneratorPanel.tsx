@@ -1,6 +1,7 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import React, { useState, useCallback } from "react";
 import { useNotify } from "~/hooks/useNotify";
 import {
@@ -109,7 +110,9 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
 
       <div className="space-y-2">
         <div>
-          <Eyebrow className="block">Count ({count})</Eyebrow>
+          <span className="text-caption text-label-secondary block tabular-nums">
+            Count ({count})
+          </span>
           <Slider
             aria-label="Generate subdivisions"
             min={2}
@@ -121,23 +124,25 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         </div>
 
         <div className="flex items-center gap-2">
-          <Eyebrow className="block shrink-0">Seed</Eyebrow>
-          <input
+          <span className="text-caption text-label-secondary block shrink-0">Seed</span>
+          <Input
             type="number"
             value={seed}
             onChange={(e) => setSeed(parseInt(e.target.value) || 42)}
-            className="border-separator bg-surface focus:border-tint focus:ring-tint text-footnote rounded-control-sm w-20 border px-2 py-1 focus:ring-1 focus:outline-none"
+            className="text-footnote rounded-control-sm h-7 w-20 px-2 tabular-nums"
           />
         </div>
 
         <div>
-          <Eyebrow className="block">Names (one per line, optional)</Eyebrow>
-          <textarea
+          <span className="text-caption text-label-secondary mb-1 block">
+            Names (one per line, optional)
+          </span>
+          <Textarea
             value={names}
             onChange={(e) => setNames(e.target.value)}
             rows={3}
             placeholder="Province A&#10;Province B&#10;..."
-            className="border-separator bg-surface focus:border-tint focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+            className="text-footnote rounded-control-sm min-h-16 px-2 py-1.5"
           />
         </div>
       </div>
@@ -158,10 +163,10 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
         <>
           <Card className="space-y-1 p-2">
             <div className="flex items-center justify-between">
-              <Eyebrow className="flex items-center gap-1">
+              <span className="text-caption text-label-secondary flex items-center gap-1 font-medium tabular-nums">
                 <Grid3X3 className="h-3 w-3" />
                 Preview ({cells.length} cells)
-              </Eyebrow>
+              </span>
             </div>
             <div className="max-h-40 space-y-0.5 overflow-y-auto">
               {cells.map((cell, i) => (
@@ -172,7 +177,7 @@ export const ProvinceGeneratorPanel = React.memo(function ProvinceGeneratorPanel
                       .map((n) => n.trim())
                       .filter(Boolean)[i] || `Province ${i + 1}`}
                   </span>
-                  <span className="text-footnote font-mono">
+                  <span className="text-footnote tabular-nums">
                     {cell.type === "Polygon"
                       ? `${cell.coordinates[0].length} pts`
                       : `${cell.coordinates.length} polys`}

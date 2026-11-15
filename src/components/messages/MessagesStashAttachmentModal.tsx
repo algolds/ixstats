@@ -1,18 +1,29 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "~/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { api } from "~/trpc/react";
-import {
-  Bookmark,
-  Folder,
-  NavArrowLeft as ChevronLeft,
-  SystemRestart as Loader2,
-  ArrowRight,
-} from "iconoir-react";
+import { Bookmark, Folder, NavArrowLeft as ChevronLeft, ArrowRight } from "iconoir-react";
 import { SearchField } from "~/components/ui/search-field";
 import { Button } from "~/components/ui/button";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { Skeleton } from "~/components/ui/skeleton";
+
+function StashListSkeleton() {
+  return (
+    <div className="flex flex-col gap-1 py-2" aria-busy="true">
+      {Array.from({ length: 3 }, (_, i) => (
+        <div key={i} className="flex items-center gap-3 px-2 py-2">
+          <Skeleton className="size-4 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-1.5">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface MessagesStashAttachmentModalProps {
   isOpen: boolean;
@@ -81,10 +92,10 @@ export function MessagesStashAttachmentModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader className="border-separator border-b pb-3">
-          <DialogTitle className="text-title-3 flex items-center gap-2">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent>
+        <SheetHeader className="border-separator border-b pb-3">
+          <SheetTitle className="text-title-3 flex items-center gap-2">
             {selectedStashId ? (
               <Button
                 type="button"
@@ -109,10 +120,10 @@ export function MessagesStashAttachmentModal({
                 {activeStash.name}
               </span>
             ) : (
-              "Attach Lore Stash Link"
+              "Attach stash link"
             )}
-          </DialogTitle>
-        </DialogHeader>
+          </SheetTitle>
+        </SheetHeader>
 
         <div className="space-y-4 pt-2">
           <SearchField
@@ -125,12 +136,7 @@ export function MessagesStashAttachmentModal({
           <div className="max-h-72 scrollbar-thin overflow-y-auto pr-1">
             {selectedStashId ? (
               isLoadingItems ? (
-                <div className="flex justify-center py-8">
-                  <Loader2
-                    className="text-label-secondary size-6 animate-spin"
-                    aria-label="Loading"
-                  />
-                </div>
+                <StashListSkeleton />
               ) : filteredItems.length === 0 ? (
                 <p className="text-footnote text-label-secondary py-8 text-center">
                   {searchQuery.trim() ? "No matching pages found." : "No pages in this collection."}
@@ -143,10 +149,10 @@ export function MessagesStashAttachmentModal({
                         key={item.id}
                         onClick={() => handleSelectItem(item)}
                         title={item.pageTitle}
-                        subtitle={<span className="font-mono">/wiki/{item.pageSlug}</span>}
+                        subtitle={<span>/wiki/{item.pageSlug}</span>}
                         trailing={
                           <span className="text-caption text-tint flex items-center gap-1">
-                            Attach Link <ArrowRight className="size-3.5" aria-hidden="true" />
+                            Attach link <ArrowRight className="size-3.5" aria-hidden="true" />
                           </span>
                         }
                       />
@@ -155,19 +161,14 @@ export function MessagesStashAttachmentModal({
                 </FacetList>
               )
             ) : isLoadingStashes ? (
-              <div className="flex justify-center py-8">
-                <Loader2
-                  className="text-label-secondary size-6 animate-spin"
-                  aria-label="Loading"
-                />
-              </div>
+              <StashListSkeleton />
             ) : filteredStashes.length === 0 ? (
               <p className="text-footnote text-label-secondary py-8 text-center">
-                No Lore Stash collections found.
+                No stash collections found.
               </p>
             ) : (
               <FacetList variant="plain">
-                <FacetListSection aria-label="Lore Stash collections">
+                <FacetListSection aria-label="Stash collections">
                   {filteredStashes.map((stash) => (
                     <FacetRow
                       key={stash.id}
@@ -193,7 +194,7 @@ export function MessagesStashAttachmentModal({
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

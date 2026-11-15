@@ -9,6 +9,11 @@ import { GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS, invalidateCache } from "~/
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment } from "~/lib/maps/geo-validation";
 import { realmLabelRank } from "~/lib/maps/realm-labels";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { storedRealmLabelRank } from "~/server/modules/maps/realm-labels";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 
@@ -43,6 +48,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
         minZoom: z.number().min(0).max(18).default(4),
         maxZoom: z.number().min(0).max(22).default(18),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -69,7 +75,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
           opacity: input.opacity,
           minZoom: input.minZoom,
           maxZoom: input.maxZoom,
-          wikiPageTitle: input.wikiPageTitle,
+          ...normalizeFeatureWikiCreate(input),
           status: "approved",
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
         },
@@ -112,11 +118,12 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
         minZoom: z.number().min(0).max(18).optional(),
         maxZoom: z.number().min(0).max(22).optional(),
         wikiPageTitle: z.string().max(200).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      assertFound(
+      const existing = assertFound(
         await ctx.db.mapLabel.findFirst({
           where: { id: input.labelId, countryId: input.countryId },
         }),
@@ -133,10 +140,19 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
         );
       }
 
-      const { countryId: _, labelId: __, ...updateData } = input;
+      const {
+        countryId: _,
+        labelId: __,
+        wikiPageTitle: _wt,
+        wikiSource: _ws,
+        ...updateData
+      } = input;
       const updated = await ctx.db.mapLabel.update({
         where: { id: input.labelId },
-        data: Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== undefined)),
+        data: {
+          ...Object.fromEntries(Object.entries(updateData).filter(([, v]) => v !== undefined)),
+          ...normalizeFeatureWikiUpdate(input, existing),
+        },
       });
       await invalidateCache(GEO_FEATURE_INVALIDATE_KEYS_WITH_MAP_LABELS);
       broadcastMapUpdate("mapLabel", input.countryId);
@@ -199,6 +215,7 @@ export const geoFeaturesLabelsRouter = createTRPCRouter({
               minZoom: l.minZoom,
               maxZoom: l.maxZoom,
               wikiPageTitle: l.wikiPageTitle,
+              wikiSource: l.wikiSource,
               countryId: l.countryId,
               countryName: l.country?.name ?? null,
               realmLabel: l.countryId === null,

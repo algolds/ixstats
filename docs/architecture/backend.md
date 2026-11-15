@@ -4,7 +4,7 @@
 
 **Framework**: tRPC 11.18.0 · Prisma 6.19.3 · Next.js 16 route handlers · TypeScript 7.0.2  
 **Server model**: production runs plain `next start` through `start-production.sh` (PM2 `ixstats-web`, port 3550), with the WebSockets in `ixstats-ws` (`ws-backend.mjs`, port 3551) and the jobs in `ixstats-cron`; the custom Node server `server.mjs` (Next plus the sockets in one process, `bun run start`) is not used in production  
-**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->80<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->1,118<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
+**Location**: `src/server/api/` (<!-- BEGIN_DOCS:COUNT:routers -->78<!-- END_DOCS:COUNT:routers --> routers registered in `root.ts`, <!-- BEGIN_DOCS:COUNT:procedures -->1,142<!-- END_DOCS:COUNT:procedures --> procedures — the generated count is in [`api-complete.md`](../reference/api-complete.md)) · `src/server/db.ts` · `src/server/shared/`
 
 ---
 
@@ -55,15 +55,16 @@ export const createTRPCContext = async (opts: { headers: Headers; req?: NextRequ
 ```
 
 ### Standard Procedure Builders:
-| Builder | Access Level | Description |
-| :--- | :--- | :--- |
-| **`publicProcedure`** | Unauthenticated | Open to public queries (cached reads, public stats, factbook data). |
-| **`cachedPublicProcedure`** | Public + Cache | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h). There is no cached protected builder: per-user caching is `.use(userCacheMiddleware)` (30s) on a protected procedure. TTLs live in `cacheConfigs` in `src/lib/cache/trpc-cache.ts`. |
-| **`rateLimitedPublicProcedure`** | Public + Rate Limit | Public procedure with the public rate-limit bucket. |
-| **`protectedProcedure`** | Authenticated User | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variant: `lightMutationProcedure` (rate-limited mutations). |
-| **`countryOwnerProcedure`** | Country Owner | Authenticated + owns the target country (`standardMutationCountryOwnerProcedure` adds rate limiting and input validation). |
-| **`premiumProcedure`** | Premium User | Authenticated + premium membership. |
-| **`adminProcedure`** | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging. |
+
+| Builder                          | Access Level         | Description                                                                                                                                                                                                                                            |
+| :------------------------------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`publicProcedure`**            | Unauthenticated      | Open to public queries (cached reads, public stats, factbook data).                                                                                                                                                                                    |
+| **`cachedPublicProcedure`**      | Public + Cache       | Realm-aware response cache, 60s TTL (`cachedStaticProcedure`: 1h). There is no cached protected builder: per-user caching is `.use(userCacheMiddleware)` (30s) on a protected procedure. TTLs live in `cacheConfigs` in `src/lib/cache/trpc-cache.ts`. |
+| **`rateLimitedPublicProcedure`** | Public + Rate Limit  | Public procedure with the public rate-limit bucket.                                                                                                                                                                                                    |
+| **`protectedProcedure`**         | Authenticated User   | Requires valid Clerk session; guarantees `ctx.auth.userId` and `ctx.user` are non-null. Variant: `lightMutationProcedure` (rate-limited mutations).                                                                                                    |
+| **`countryOwnerProcedure`**      | Country Owner        | Authenticated + owns the target country (`standardMutationCountryOwnerProcedure` adds rate limiting and input validation).                                                                                                                             |
+| **`premiumProcedure`**           | Premium User         | Authenticated + premium membership.                                                                                                                                                                                                                    |
+| **`adminProcedure`**             | System Owner / Admin | System owner bypass, else role name `owner`/`admin`/`staff` or role level ≤ 20; blocked while impersonating (play-as). Adds rate limiting and audit logging.                                                                                           |
 
 Every builder starts with `playAsMoneyMiddleware`: while an admin plays as another user, a mutation on a `PLAY_AS_MONEY_ROUTES` path (`src/server/api/trpc/impersonation.ts`: the Vault, cards, packs, market, workshop, trades, the Exchange, NS imports, achievement payouts and the Sovereign moves in sports) is refused with `FORBIDDEN`; reads stay allowed.
 
@@ -86,12 +87,13 @@ export const wikiosRouter = mergeRouters(
   wikiosPageContentRouter,
   wikiosHistoryDiffRouter,
   wikiosSearchRouter,
-  wikiosEditingRouter,
+  wikiosEditingRouter
   // ...
 );
 ```
 
 ### Architectural Rules for Routers:
+
 1. **Preserve Exact API Shape**: `mergeRouters` preserves all `api.<router>.<procedure>` call paths. No frontend call-sites need changes when a flat router is split.
 2. **File Size Ceiling (≤700 Lines)**: Enforced by `scripts/audit/audit-arch.ts` as a ratchet — new router files must stay under 700 lines, and files already over it are frozen at their size in `scripts/audit/arch-baseline.json` (may only shrink).
 3. **No Direct Cross-Router Imports**: Routers must not import internal helpers directly from another router's sub-files. Shared logic must be extracted to `src/server/shared/` or `src/lib/`.

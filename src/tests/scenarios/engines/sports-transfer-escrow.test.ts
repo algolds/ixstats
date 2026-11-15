@@ -102,7 +102,7 @@ describe("transfer bids", () => {
     expect(await wallets()).toEqual({ [cleo.id]: 300, [dev.id]: 700, [ben.id]: 1000 });
     expect(await keyed("TRANSFER_ACCEPT:")).toEqual([
       {
-        sovereigns: 300,
+        sovereigns: 300_00n,
         source: `TRANSFER_ACCEPT:${bid.id}`,
         idempotencyKey: `TRANSFER_ACCEPT:${bid.id}`,
       },
@@ -160,7 +160,7 @@ describe("transfer bids", () => {
     expect((await wallets())[dev.id]).toBe(1000);
     expect(await keyed("TRANSFER_BID_REFUND:")).toEqual([
       {
-        sovereigns: 250,
+        sovereigns: 250_00n,
         source: `TRANSFER_BID_REFUND:${bid.id}`,
         idempotencyKey: `TRANSFER_BID_REFUND:${bid.id}`,
       },
@@ -251,7 +251,7 @@ describe("transfer bids", () => {
 
   it("refuses a bid on the bidder's own player, a fractional amount and one past the ceiling", async () => {
     const listing = await market(cleo).listPlayerForTransfer({ playerId: star, price: 300 });
-    await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 1000 } });
+    await db.exchangeWallet.update({ where: { userId: cleo.id }, data: { sovereigns: 1000_00n } });
 
     // From the selling club itself, and from another club of the same owner
     await expect(
@@ -318,7 +318,7 @@ describe("claimTeam", () => {
   });
 
   it("leaves the club unowned when the claimer cannot pay", async () => {
-    await db.exchangeWallet.update({ where: { userId: dev.id }, data: { sovereigns: 10 } });
+    await db.exchangeWallet.update({ where: { userId: dev.id }, data: { sovereigns: 10_00n } });
 
     await expect(
       teams(asPerson(db as never, dev)).claimTeam({ teamId: "west" })

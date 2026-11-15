@@ -17,6 +17,7 @@ import { useNotify } from "~/hooks/useNotify";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -28,12 +29,14 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Stat } from "~/components/ui/stat";
 import { Textarea } from "~/components/ui/textarea";
 import { formatSovereigns } from "~/lib/exchange/amounts";
 import { SUB_INDUSTRIES } from "~/lib/exchange/taxonomy";
 import { cn } from "~/lib/utils";
 import { SheetSection } from "./SheetSection";
 import { STATUS_TEXT } from "./rails/shared";
+import { EXCHANGE_PATHS, companyHref } from "~/lib/exchange/routes";
 
 const SECTORS = [
   { value: "agriculture", label: "Agriculture" },
@@ -89,10 +92,16 @@ const ENTRY_TYPE_LABELS: Record<string, string> = {
   TAX: "Corporate profit tax",
   TARIFF: "Cross-border trade tariff",
   INTEREST: "Central Bank credit interest",
+  PRINCIPAL: "Central Bank credit repayment",
   LOBBY: "Corporate lobby contribution",
   B2G_ESCROW: "Treasury tender escrow",
   B2G_REFUND: "Cancelled tender refund",
+  RECOVERY: "Closed company recovery",
   SPEND: "Treasury expenditure",
+  BOND_SALE: "Sovereign bond issue",
+  BOND_COUPON: "Bond coupon payment",
+  BOND_PRINCIPAL: "Bond principal repayment",
+  FUND_RETURN: "Wealth fund transfer",
 };
 
 function entryTypeLabel(type: string): string {
@@ -189,71 +198,73 @@ export function CorporationsTreasuryConsole({
   return (
     <div className="space-y-4">
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="rounded-card p-4">
-          <span className="text-label-secondary text-footnote block">Nation ₷ treasury</span>
-          <p className="text-label text-title-3 mt-1 tabular-nums">{formatSovereigns(balance)}</p>
-          <p className="text-label-secondary text-footnote mt-0.5 tabular-nums">
-            Cap {formatSovereigns(cap)} · +{formatSovereigns(dailyStipend)}/day stipend
-          </p>
-        </Card>
+      <Card content="data" padding="md">
+        <div className="sm:divide-separator/60 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-0 sm:divide-x">
+          <Stat
+            size="sm"
+            label="Nation ₷ treasury"
+            value={formatSovereigns(balance)}
+            className="sm:pr-4"
+            hint={`Cap ${formatSovereigns(cap)} · +${formatSovereigns(dailyStipend)}/day stipend`}
+          />
 
-        <Card className="rounded-card p-4">
-          <span className="text-label-secondary text-footnote block">Domiciled corporations</span>
-          <p className="text-label text-title-3 mt-1 tabular-nums">
-            {totals?.companyCount ?? 0} ({formatSovereigns(totals?.totalFairValue ?? 0)})
-          </p>
-          <p
-            className={cn(
-              "text-footnote mt-0.5 tabular-nums",
-              (totals?.distressedCount ?? 0) > 0 ? STATUS_TEXT.critical : "text-label-secondary"
-            )}
-          >
-            {(totals?.distressedCount ?? 0) > 0
-              ? `${totals?.distressedCount} in distress`
-              : "All in good standing"}
-          </p>
-        </Card>
+          <Stat
+            size="sm"
+            label="Domiciled corporations"
+            value={`${totals?.companyCount ?? 0} (${formatSovereigns(totals?.totalFairValue ?? 0)})`}
+            className="sm:px-4"
+            hint={
+              <span
+                className={cn(
+                  "tabular-nums",
+                  (totals?.distressedCount ?? 0) > 0 ? STATUS_TEXT.critical : "text-label-tertiary"
+                )}
+              >
+                {(totals?.distressedCount ?? 0) > 0
+                  ? `${totals?.distressedCount} in distress`
+                  : "All in good standing"}
+              </span>
+            }
+          />
 
-        <Card className="rounded-card p-4">
-          <span className="text-label-secondary text-footnote block">Corporate fiscal revenue</span>
-          <p className="text-label text-title-3 mt-1 tabular-nums">
-            {formatSovereigns(lifetimeFiscalInflow)}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5 tabular-nums">
-            Last tick tax {formatSovereigns(totals?.lastTickTax ?? 0)}
-          </p>
-        </Card>
+          <Stat
+            size="sm"
+            label="Corporate fiscal revenue"
+            value={formatSovereigns(lifetimeFiscalInflow)}
+            className="sm:px-4"
+            hint={`Last tick tax ${formatSovereigns(totals?.lastTickTax ?? 0)}`}
+          />
 
-        <Card className="rounded-card p-4">
-          <span className="text-label-secondary text-footnote block">Macro GDP feedback</span>
-          <p
-            className={cn(
-              "text-title-3 mt-1 tabular-nums",
-              gdpShift > 0
-                ? STATUS_TEXT.success
-                : gdpShift < 0
-                  ? STATUS_TEXT.critical
-                  : "text-label"
-            )}
-          >
-            {signedPct(gdpShift)}
-          </p>
-          <p className="text-label-secondary text-footnote mt-0.5 tabular-nums">
-            Corp tax {((tax?.effectiveCorpTaxRate ?? 0.2) * 100).toFixed(1)}% vs{" "}
-            {((tax?.realmAvgCorpTaxRate ?? 0.2) * 100).toFixed(1)}% realm avg
-          </p>
-        </Card>
-      </div>
+          <Stat
+            size="sm"
+            label="Macro GDP feedback"
+            className="sm:pl-4"
+            value={
+              <span
+                className={cn(
+                  gdpShift > 0
+                    ? STATUS_TEXT.success
+                    : gdpShift < 0
+                      ? STATUS_TEXT.critical
+                      : "text-label-secondary"
+                )}
+              >
+                {signedPct(gdpShift)}
+              </span>
+            }
+            hint={`Corp tax ${((tax?.effectiveCorpTaxRate ?? 0.2) * 100).toFixed(1)}% vs ${((tax?.realmAvgCorpTaxRate ?? 0.2) * 100).toFixed(1)}% realm avg`}
+          />
+        </div>
+      </Card>
 
       {/* Issue B2G Treasury Tender */}
       <SheetSection
         title="Issue B2G treasury tender"
         icon={Page}
         accessory={
-          <Badge variant="default" className="tabular-nums">
+          <span className="text-label-secondary text-footnote tabular-nums">
             {openTenders.length} active
-          </Badge>
+          </span>
         }
       >
         <div className="space-y-4">
@@ -389,11 +400,11 @@ export function CorporationsTreasuryConsole({
           {openTenders.length > 0 && (
             <div className="border-separator space-y-2 border-t pt-3">
               <h4 className="text-label text-footnote font-medium">Open & awarded B2G tenders</h4>
-              <div className="space-y-2">
+              <ul className="divide-separator/60 divide-y">
                 {openTenders.map((t) => (
-                  <Card
+                  <li
                     key={t.id}
-                    className="rounded-row flex flex-wrap items-center justify-between gap-2 p-2.5"
+                    className="flex flex-wrap items-center justify-between gap-2 py-2.5 first:pt-0 last:pb-0"
                   >
                     <div className="min-w-0">
                       <p className="text-label text-footnote truncate font-medium">{t.title}</p>
@@ -403,20 +414,17 @@ export function CorporationsTreasuryConsole({
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <Badge
-                        variant={t.bidCount > 0 ? "info" : "default"}
-                        className="tabular-nums"
-                      >
+                      <span className="text-label-secondary text-footnote tabular-nums">
                         {t.bidCount} {t.bidCount === 1 ? "bid" : "bids"}
                         {t.lowestBid != null ? ` (low ${formatSovereigns(t.lowestBid)})` : ""}
-                      </Badge>
-                      <Badge variant={t.status === "AWARDED" ? "secondary" : "default"}>
+                      </span>
+                      <Badge variant={t.status === "AWARDED" ? "secondary" : "outline"}>
                         {t.status === "AWARDED" ? "Awarded" : "Open"}
                       </Badge>
                     </div>
-                  </Card>
+                  </li>
                 ))}
-              </div>
+              </ul>
             </div>
           )}
         </div>
@@ -428,33 +436,40 @@ export function CorporationsTreasuryConsole({
         icon={Building}
         accessory={
           <Button asChild variant="outline" size="sm">
-            <Link href="/labs/exchange">
-              Open Exchange
+            <Link href={EXCHANGE_PATHS.treasury}>
+              Open the Treasury
               <ArrowUpRight aria-hidden="true" />
             </Link>
           </Button>
         }
       >
         {companies.length === 0 ? (
-          <p className="text-label-secondary text-footnote py-4 text-center">
-            No corporations are currently headquartered in this nation. Players can charter or
-            domicile corporations on the Exchange.
-          </p>
+          <EmptyState
+            compact
+            icon={<Building />}
+            title="No corporations headquartered here"
+            message="Players can charter or domicile corporations on the Exchange."
+          />
         ) : (
-          <div className="space-y-2">
+          <ul className="divide-separator/60 divide-y">
             {companies.map((c) => (
-              <Card key={c.id} className="rounded-row space-y-2 p-3">
+              <li key={c.id} className="space-y-2.5 py-3.5 first:pt-0 last:pb-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-label text-footnote truncate font-semibold">{c.name}</p>
+                    <Link
+                      href={companyHref(c.id)}
+                      className="text-label text-footnote block truncate font-semibold hover:underline"
+                    >
+                      {c.name}
+                    </Link>
                     <p className="text-label-secondary text-footnote">
                       {subIndustryLabelOf(c.subIndustryKey, c.sectorKey)}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <Badge variant="default" className="tabular-nums">
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       Rating {c.creditRating}
-                    </Badge>
+                    </span>
                     {c.status === "DISTRESSED" ? (
                       <Badge variant="destructive">
                         <WarningTriangle aria-hidden="true" className="mr-1 size-3" />
@@ -510,9 +525,9 @@ export function CorporationsTreasuryConsole({
                     </span>
                   </div>
                 </div>
-              </Card>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </SheetSection>
 
@@ -521,17 +536,19 @@ export function CorporationsTreasuryConsole({
         title="Recent nation treasury ledger"
         icon={Wallet}
         accessory={
-          <Badge variant="default" className="tabular-nums">
-            <Coins aria-hidden="true" className="mr-1 size-3" />
+          <span className="text-label-secondary text-footnote inline-flex items-center gap-1 tabular-nums">
+            <Coins aria-hidden="true" className="size-3.5" />
             Spent {formatSovereigns(treasury?.lifetimeSpent ?? 0)}
-          </Badge>
+          </span>
         }
       >
         {recentEntries.length === 0 ? (
-          <p className="text-label-secondary text-footnote py-4 text-center">
-            No treasury ledger entries recorded yet. Daily stipends and corporate taxes appear here
-            as the Exchange ticks.
-          </p>
+          <EmptyState
+            compact
+            icon={<Wallet />}
+            title="No treasury ledger entries yet"
+            message="Daily stipends and corporate taxes appear here as the Exchange ticks."
+          />
         ) : (
           <ul className="divide-separator divide-y">
             {recentEntries.map((entry) => (
@@ -565,25 +582,22 @@ export function CorporationsTreasuryConsole({
 
       {/* Tax Competitiveness Footnote */}
       <SheetSection title="Tax & monetary competitiveness" icon={StatUp}>
-        <div className="grid grid-cols-3 gap-3">
-          <Card className="rounded-row p-2.5">
-            <span className="text-label-secondary text-footnote block">Effective corp tax</span>
-            <p className="text-label text-title-3 mt-0.5 tabular-nums">
-              {((tax?.effectiveCorpTaxRate ?? 0.2) * 100).toFixed(1)}%
-            </p>
-          </Card>
-          <Card className="rounded-row p-2.5">
-            <span className="text-label-secondary text-footnote block">Capital gains rate</span>
-            <p className="text-label text-title-3 mt-0.5 tabular-nums">
-              {((tax?.capGainsTaxRate ?? 0.15) * 100).toFixed(1)}%
-            </p>
-          </Card>
-          <Card className="rounded-row p-2.5">
-            <span className="text-label-secondary text-footnote block">Central Bank rate</span>
-            <p className="text-label text-title-3 mt-0.5 tabular-nums">
-              {((tax?.interestRate ?? 0.05) * 100).toFixed(1)}%
-            </p>
-          </Card>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stat
+            size="sm"
+            label="Effective corp tax"
+            value={`${((tax?.effectiveCorpTaxRate ?? 0.2) * 100).toFixed(1)}%`}
+          />
+          <Stat
+            size="sm"
+            label="Capital gains rate"
+            value={`${((tax?.capGainsTaxRate ?? 0.15) * 100).toFixed(1)}%`}
+          />
+          <Stat
+            size="sm"
+            label="Central Bank rate"
+            value={`${((tax?.interestRate ?? 0.05) * 100).toFixed(1)}%`}
+          />
         </div>
       </SheetSection>
     </div>

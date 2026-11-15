@@ -54,7 +54,7 @@ export function DomainControlBar({
       {categories.length > 1 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-footnote text-label font-semibold">Category</label>
+            <label className="text-footnote text-label font-medium">Category</label>
             <Toggle
               variant="outline"
               size="sm"
@@ -89,7 +89,7 @@ export function DomainControlBar({
       {subTypes.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-footnote text-label font-semibold">Variant</label>
+            <label className="text-footnote text-label font-medium">Variant</label>
             {categories.length <= 1 && (
               <Toggle
                 variant="outline"
@@ -130,7 +130,7 @@ export function DomainControlBar({
 
       {/* 3. Cultural Profile / Seed Selector */}
       <div className="space-y-2">
-        <label className="text-label text-footnote font-semibold">Cultural seed</label>
+        <label className="text-label text-footnote font-medium">Cultural seed</label>
         <Select value={gen.culture} onValueChange={gen.setCulture}>
           <SelectTrigger className="text-footnote h-9 w-full">
             <SelectValue placeholder="Select culture family" />
@@ -188,7 +188,7 @@ export function DomainControlBar({
       {/* 3. Gender Modifier for People if applicable */}
       {category === "person" && gen.subType !== "generic" && (
         <div className="space-y-1">
-          <label className="text-footnote text-label block font-semibold">Gender modifier</label>
+          <label className="text-footnote text-label block font-medium">Gender modifier</label>
           <SegmentedControl
             size="sm"
             fullWidth

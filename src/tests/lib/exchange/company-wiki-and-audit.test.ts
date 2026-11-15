@@ -130,9 +130,9 @@ describe("Exchange financial & state invariants", () => {
   it("does not inflate fairValue when borrowing from or repaying a Central Bank credit line", async () => {
     const fake = createFakeExchangeDb({
       user: [{ id: "alice", clerkUserId: "c_alice" }],
-      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 5000 }],
+      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 5000_00n }],
       country: [{ id: "nation_a", realmId: "default", economicTier: "Developed" }],
-      nationTreasury: [{ id: "t_a", countryId: "nation_a", realmId: "default", balance: 50_000 }],
+      nationTreasury: [{ id: "t_a", countryId: "nation_a", realmId: "default", balance: 50_000_00n }],
       company: [
         {
           id: "co1",
@@ -142,13 +142,13 @@ describe("Exchange financial & state invariants", () => {
           sectorKey: "services",
           subIndustryKey: "software_media",
           hqCountryId: "nation_a",
-          capital: 1000,
+          capital: 1000_00n,
           standing: 2,
-          decisionValue: 10_000,
-          creditDrawn: 0,
+          decisionValue: 10_000_00n,
+          creditDrawn: 0n,
           creditRating: "A",
-          contractsWonValue: 0,
-          fairValue: 11_200,
+          contractsWonValue: 0n,
+          fairValue: 11_200_00n,
           status: "ACTIVE",
         },
       ],
@@ -171,10 +171,10 @@ describe("Exchange financial & state invariants", () => {
     });
 
     const afterBorrow = fake.tables.company!.find((c) => c.id === "co1")!;
-    expect(afterBorrow.capital).toBe(4000);
-    expect(afterBorrow.creditDrawn).toBe(3000);
+    expect(afterBorrow.capital).toBe(4000_00n);
+    expect(afterBorrow.creditDrawn).toBe(3000_00n);
     // Net liquid capital is still 4000 - 3000 = 1000, so fairValue remains 11,200
-    expect(afterBorrow.fairValue).toBe(11_200);
+    expect(afterBorrow.fairValue).toBe(11_200_00n);
 
     await repayCredit(fake.client, {
       userId: "alice",
@@ -184,15 +184,15 @@ describe("Exchange financial & state invariants", () => {
     });
 
     const afterRepay = fake.tables.company!.find((c) => c.id === "co1")!;
-    expect(afterRepay.capital).toBe(2500);
-    expect(afterRepay.creditDrawn).toBe(1500);
-    expect(afterRepay.fairValue).toBe(11_200);
+    expect(afterRepay.capital).toBe(2500_00n);
+    expect(afterRepay.creditDrawn).toBe(1500_00n);
+    expect(afterRepay.fairValue).toBe(11_200_00n);
   });
 
   it("counts DISTRESSED companies toward activeCompanyCap when chartering", async () => {
     const fake = createFakeExchangeDb({
       user: [{ id: "alice", clerkUserId: "c_alice" }],
-      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 50_000 }],
+      exchangeWallet: [{ id: "w_alice", userId: "alice", sovereigns: 50_000_00n }],
       systemConfig: [{ key: "exchange_active_company_cap", value: "2" }],
       company: [
         {
@@ -231,8 +231,8 @@ describe("Exchange financial & state invariants", () => {
         { id: "bob", clerkUserId: "c_bob" },
       ],
       exchangeWallet: [
-        { id: "w_alice", userId: "alice", sovereigns: 10_000 },
-        { id: "w_bob", userId: "bob", sovereigns: 10_000 },
+        { id: "w_alice", userId: "alice", sovereigns: 10_000_00n },
+        { id: "w_bob", userId: "bob", sovereigns: 10_000_00n },
       ],
       company: [
         {
@@ -245,12 +245,12 @@ describe("Exchange financial & state invariants", () => {
           tradingOpen: true,
           sharesIssued: 1000,
           sharesOutstanding: 1000,
-          fairValue: 10_000,
+          fairValue: 10_000_00n,
         },
       ],
       shareholding: [
-        { id: "sh_alice", companyId: "co1", ownerUserId: "alice", shares: 500, avgCost: 10 },
-        { id: "sh_bob", companyId: "co1", ownerUserId: "bob", shares: 500, avgCost: 10 },
+        { id: "sh_alice", companyId: "co1", ownerUserId: "alice", shares: 500, avgCost: 10_00n },
+        { id: "sh_bob", companyId: "co1", ownerUserId: "bob", shares: 500, avgCost: 10_00n },
       ],
     });
 
@@ -282,7 +282,7 @@ describe("Exchange financial & state invariants", () => {
     await cancelListing(fake.client, { userId: "alice", listingId: aliceListing.id });
     const aliceHolding = fake.tables.shareholding!.find((h) => h.ownerUserId === "alice")!;
     expect(aliceHolding.shares).toBe(600);
-    expect(aliceHolding.avgCost).toBeCloseTo(11.67, 2);
+    expect(aliceHolding.avgCost).toBe(11_67n);
   });
 });
 
@@ -299,16 +299,19 @@ describe("Live {{BusinessData}} placeholder bridge for Exchange companies", () =
             sectorKey: "government",
             subIndustryKey: "defense_aerospace",
             hqCountryId: "c_caph",
-            capital: 25_000,
+            capital: 25_000_00n,
             standing: 4.5,
-            fairValue: 80_000,
+            fairValue: 80_000_00n,
             sharesOutstanding: 1000,
-            decisionValue: 40_000,
-            creditDrawn: 5000,
+            decisionValue: 40_000_00n,
+            contractsWonValue: 0n,
+            creditDrawn: 5000_00n,
             creditRating: "AA",
-            lastTradePrice: 85,
-            lastTickRevenue: 1200,
-            lastTickNetIncome: 450,
+            lastTradePrice: 85_00n,
+            lastTickRevenue: 1200_00n,
+            lastTickExpenses: 0n,
+            lastTickTax: 0n,
+            lastTickNetIncome: 450_00n,
             status: "ACTIVE",
           },
         ]),

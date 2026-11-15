@@ -25,7 +25,7 @@ const PRODUCTION_ENV_FILES = [".env.production.local", ".env.local", ".env.produ
 /** The SQL files the deploy runs before its `db push`. */
 export function deploySqlBeforePush(script: string): string[] {
   const push = script.indexOf("bun run db:push:force");
-  return [...script.matchAll(/prisma db execute --schema prisma\/schema --file (\S+\.sql)/g)]
+  return [...script.matchAll(/prisma db execute (?:--schema prisma\/schema )?--file (\S+\.sql)/g)]
     .filter((m) => push === -1 || m.index < push)
     .map((m) => m[1]!);
 }
@@ -51,9 +51,8 @@ function main(): number {
   const diff = prisma([
     "migrate",
     "diff",
-    "--from-url",
-    url,
-    "--to-schema-datamodel",
+    "--from-config-datasource",
+    "--to-schema",
     SCHEMA,
     "--script",
   ]);
@@ -99,14 +98,14 @@ function main(): number {
       if (batch.length === 0) continue;
       const file = join(dir, `${name.replace(/ /g, "-")}.sql`);
       writeFileSync(file, `BEGIN;\n${batch.map((s) => `${s};`).join("\n")}\nCOMMIT;\n`);
-      const run = prisma(["db", "execute", "--schema", SCHEMA, "--file", file]);
+      const run = prisma(["db", "execute", "--file", file]);
       process.stdout.write(run.stdout);
       if (run.status !== 0) {
-        const kept =
+        const note =
           name === "enum values"
             ? "nothing was changed"
             : `the ${enumValues.length} enum value(s) stay added`;
-        console.error(`[additive-schema] Applying the ${name} failed; ${kept}:\n${run.stderr}`);
+        console.error(`[additive-schema] Applying the ${name} failed; ${note}:\n${run.stderr}`);
         return 1;
       }
     }

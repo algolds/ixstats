@@ -6,7 +6,34 @@ import { ResponsiveContainer, Tooltip } from "recharts";
 import { cn } from "~/lib/utils/cn";
 
 // Format: { THEME_NAME: CSS_SELECTOR }
-const THEMES = { light: "", dark: ".dark" } as const;
+const THEMES = { light: "", dark: ':is(.dark, [data-theme="dark"])' } as const;
+
+export const FACET_CHART_COLORS = [
+  "var(--color-chart-1)",
+  "var(--color-chart-2)",
+  "var(--color-chart-3)",
+  "var(--color-chart-4)",
+  "var(--color-chart-5)",
+  "var(--color-chart-6)",
+  "var(--color-chart-7)",
+  "var(--color-chart-8)",
+] as const;
+
+export const FACET_CHART_BG_CLASSES = [
+  "bg-chart-1",
+  "bg-chart-2",
+  "bg-chart-3",
+  "bg-chart-4",
+  "bg-chart-5",
+  "bg-chart-6",
+  "bg-chart-7",
+  "bg-chart-8",
+] as const;
+
+export const FACET_AXIS_TICK = {
+  fill: "var(--color-label-secondary)",
+  fontSize: 12,
+} as const;
 
 type ChartConfig = Record<
   string,
@@ -169,16 +196,18 @@ function ChartTooltipContent({
   return (
     <div
       className={cn(
-        "border-separator bg-surface-elevated text-label shadow-floating rounded-control text-caption grid min-w-[8rem] items-start gap-1 border px-3 py-2",
+        "facet-overlay text-label rounded-control text-caption grid min-w-[8rem] items-start gap-1.5 px-3 py-2 tabular-nums",
         className
       )}
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1">
-        {payload?.map((item: any, index: number) => {
+        {payload?.map((item: ChartPayloadEntry, index: number) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          const indicatorColor = color || item.payload.fill || item.color;
+          const payloadFill =
+            typeof item.payload?.fill === "string" ? item.payload.fill : undefined;
+          const indicatorColor = color || payloadFill || item.color;
 
           return (
             <div
@@ -198,10 +227,10 @@ function ChartTooltipContent({
                     !hideIndicator && (
                       <div
                         className={cn(
-                          "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
+                          "shrink-0 rounded-full border-(--color-border) bg-(--color-bg)",
                           {
-                            "h-2.5 w-2.5": indicator === "dot",
-                            "w-1": indicator === "line",
+                            "h-2 w-2": indicator === "dot",
+                            "w-1 rounded-[2px]": indicator === "line",
                             "w-0 border-[1.5px] border-dashed bg-transparent":
                               indicator === "dashed",
                             "my-0.5": nestLabel && indicator === "dashed",
@@ -218,7 +247,7 @@ function ChartTooltipContent({
                   )}
                   <div
                     className={cn(
-                      "flex flex-1 justify-between leading-none",
+                      "flex flex-1 justify-between gap-3 leading-none",
                       nestLabel ? "items-end" : "items-center"
                     )}
                   >
@@ -226,14 +255,98 @@ function ChartTooltipContent({
                       {nestLabel ? tooltipLabel : null}
                       <span className="text-label-secondary">{itemConfig?.label || item.name}</span>
                     </div>
-                    {item.value && (
-                      <span className="text-label font-mono font-medium tabular-nums">
+                    {item.value !== undefined && item.value !== null && (
+                      <span className="text-label font-semibold tabular-nums">
                         {item.value.toLocaleString()}
                       </span>
                     )}
                   </div>
                 </>
               )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+interface StandaloneTooltipItem {
+  name?: string | number;
+  value?: number | string;
+  dataKey?: string | number;
+  color?: string;
+  fill?: string;
+  stroke?: string;
+  payload?: Record<string, string | number | boolean | null | undefined>;
+}
+
+/**
+ * Facet glass overlay tooltip for standalone Recharts charts (without `<ChartContainer>`).
+ */
+function FacetChartTooltip({
+  active,
+  payload,
+  label,
+  hideLabel = false,
+  labelFormatter,
+  valueFormatter,
+}: {
+  active?: boolean;
+  payload?: readonly StandaloneTooltipItem[];
+  label?: string | number;
+  hideLabel?: boolean;
+  labelFormatter?: (
+    label: string | number,
+    payload: readonly StandaloneTooltipItem[]
+  ) => React.ReactNode;
+  valueFormatter?: (value: number, name: string, item: StandaloneTooltipItem) => React.ReactNode;
+}) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  const headerText =
+    hideLabel || label === undefined || label === ""
+      ? null
+      : labelFormatter
+        ? labelFormatter(label, payload)
+        : String(label);
+
+  return (
+    <div className="facet-overlay text-label rounded-control text-caption grid min-w-32 gap-1.5 px-3 py-2 tabular-nums">
+      {headerText && <div className="text-label-secondary font-medium">{headerText}</div>}
+      <div className="grid gap-1">
+        {payload.map((item, idx) => {
+          const rawName = String(item.name ?? item.payload?.name ?? item.dataKey ?? "");
+          const swatch =
+            item.color ||
+            item.stroke ||
+            item.fill ||
+            (typeof item.payload?.color === "string" ? item.payload.color : undefined) ||
+            (typeof item.payload?.fill === "string" ? item.payload.fill : undefined) ||
+            "var(--color-chart-1)";
+          const numVal = typeof item.value === "number" ? item.value : Number(item.value ?? 0);
+          const renderedValue = valueFormatter
+            ? valueFormatter(numVal, rawName, item)
+            : Number.isFinite(numVal)
+              ? numVal.toLocaleString()
+              : String(item.value ?? "");
+
+          return (
+            <div
+              key={`${String(item.dataKey ?? rawName)}-${idx}`}
+              className="flex items-center justify-between gap-3 leading-none"
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: swatch }}
+                />
+                <span className="text-label-secondary">{rawName}</span>
+              </div>
+              <span className="text-label font-semibold tabular-nums">{renderedValue}</span>
             </div>
           );
         })}
@@ -268,4 +381,4 @@ function getPayloadConfigFromPayload(config: ChartConfig, payload: unknown, key:
   return configLabelKey in config ? config[configLabelKey] : config[key];
 }
 
-export { ChartContainer, ChartTooltip, ChartTooltipContent };
+export { ChartContainer, ChartTooltip, ChartTooltipContent, FacetChartTooltip };

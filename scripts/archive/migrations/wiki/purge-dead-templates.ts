@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * purge-dead-templates.ts — Cleanse Zero-Usage & Redundant Templates from wiki_templates Registry
  *
@@ -11,9 +12,7 @@
  *   bun run scripts/wiki/purge-dead-templates.ts [--dry-run]
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 function extractTemplateNames(wikitext: string): Set<string> {
   const matches = new Set<string>();

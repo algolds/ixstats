@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useViewerRealmId } from "~/hooks/useViewerRealmId";
 import { SAME_REALM_MESSAGE, sameRealm } from "~/lib/realms/same-realm";
+import { pairStanding } from "~/lib/diplomacy/pair-standing";
 
 export type ForeignPolicyType = "free_trade" | "military_alliance" | "sanction" | "embargo";
 
@@ -25,7 +25,7 @@ interface Options {
   targetCountryName: string;
   /** The target's realm, when known: embassies and proposals need both nations in one realm. */
   targetRealmId?: string | null;
-  /** Whether the follow status is looked up (off for the viewer's own country). */
+  /** Whether the follow status and the pair's standing are looked up (off for the viewer's own country). */
   followStatusEnabled: boolean;
   /** Called after an embassy or foreign-policy proposal succeeds. */
   onProposed?: () => void;
@@ -53,6 +53,31 @@ export function useCountryDiplomacyActions({
       { enabled: followStatusEnabled }
     );
 
+  // What already stands between the two nations, so a row shows it rather than offering a duplicate.
+  const standingInput = { countryId: viewerCountryId || "" };
+  const { data: policies } = api.diplomaticPolicies.getActiveForeignPolicies.useQuery(
+    standingInput,
+    { enabled: followStatusEnabled }
+  );
+  const { data: embassies } = api.diplomaticEmbassies.getEmbassies.useQuery(standingInput, {
+    enabled: followStatusEnabled,
+  });
+  const standing = pairStanding(
+    viewerCountryId || "",
+    targetCountryId,
+    policies ?? [],
+    embassies ?? []
+  );
+
+  // After an act: this menu's rows, MyCountry's diplomacy views and the vitality rings it moves.
+  const utils = api.useUtils();
+  const refresh = () =>
+    Promise.all([
+      utils.diplomaticPolicies.invalidate(),
+      utils.diplomaticEmbassies.invalidate(),
+      utils.countries.getActivityRingsData.invalidate(),
+    ]);
+
   const followMutation = api.diplomaticCore.followCountry.useMutation({
     onSuccess: () => {
       notify.success(`Now following ${targetCountryName}`);
@@ -72,6 +97,7 @@ export function useCountryDiplomacyActions({
   const establishEmbassyMutation = api.diplomaticEmbassies.establishEmbassy.useMutation({
     onSuccess: () => {
       notify.success(`Embassy opened in ${targetCountryName}`);
+      void refresh();
       onProposed?.();
     },
     onError: (error) => notify.error(`Failed to establish embassy: ${error.message}`),
@@ -86,12 +112,13 @@ export function useCountryDiplomacyActions({
           ? `${label} proposed to ${targetCountryName}`
           : `${label} imposed on ${targetCountryName}`
       );
+      void refresh();
       onProposed?.();
     },
     onError: (error) => notify.error(`Failed: ${error.message}`),
   });
 
-  const toggleFollow = useCallback(() => {
+  const toggleFollow = () => {
     if (!viewerCountryId) {
       notify.error("You must be logged in to follow countries");
       return;
@@ -99,9 +126,9 @@ export function useCountryDiplomacyActions({
     const ids = { followerCountryId: viewerCountryId, followedCountryId: targetCountryId };
     if (followStatus?.isFollowing) unfollowMutation.mutate(ids);
     else followMutation.mutate(ids);
-  }, [viewerCountryId, followStatus, targetCountryId, followMutation, unfollowMutation, notify]);
+  };
 
-  const establishEmbassy = useCallback(() => {
+  const establishEmbassy = () => {
     if (!viewerCountryId) {
       notify.error("You must be logged in to establish embassies");
       return;
@@ -116,29 +143,19 @@ export function useCountryDiplomacyActions({
       name: `Embassy in ${targetCountryName}`,
       location: "Capital District",
     });
-  }, [
-    viewerCountryId,
-    crossRealm,
-    targetCountryId,
-    targetCountryName,
-    establishEmbassyMutation,
-    notify,
-  ]);
+  };
 
-  const proposeForeignPolicy = useCallback(
-    (actionType: ForeignPolicyType) => {
-      if (!viewerCountryId) {
-        notify.error("You must be logged in to propose foreign policy");
-        return;
-      }
-      if (crossRealm) {
-        notify.error(SAME_REALM_MESSAGE);
-        return;
-      }
-      foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
-    },
-    [viewerCountryId, crossRealm, targetCountryId, foreignPolicyMutation, notify]
-  );
+  const proposeForeignPolicy = (actionType: ForeignPolicyType) => {
+    if (!viewerCountryId) {
+      notify.error("You must be logged in to propose foreign policy");
+      return;
+    }
+    if (crossRealm) {
+      notify.error(SAME_REALM_MESSAGE);
+      return;
+    }
+    foreignPolicyMutation.mutate({ targetId: targetCountryId, actionType, severity: "moderate" });
+  };
 
   const isFollowPending = followMutation.isPending || unfollowMutation.isPending;
   const isPending =
@@ -151,6 +168,8 @@ export function useCountryDiplomacyActions({
     isPending,
     /** The target is in another realm: embassies, summits and proposals are not offered. */
     crossRealm,
+    /** The viewer's embassy in the target, and each act between them. */
+    standing,
     toggleFollow,
     establishEmbassy,
     proposeForeignPolicy,

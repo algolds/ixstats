@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { SegmentedControl } from "~/components/ui/segmented-control";
@@ -22,7 +23,12 @@ import {
 } from "~/components/ui/select";
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
 import type { OrderSource } from "~/lib/military/model";
-import { defaultOrderBranch, domesticBlock, fitsDomain, quoteOrder } from "~/lib/military/defense-console";
+import {
+  defaultOrderBranch,
+  domesticBlock,
+  fitsDomain,
+  quoteOrder,
+} from "~/lib/military/defense-console";
 import type { EquipmentPreset } from "~/lib/military/player-catalog";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 import type { OwnerDefense } from "~/hooks/useDefenseConsole";
@@ -57,13 +63,25 @@ function QuoteRow({ label, value }: { label: string; value: string }) {
 }
 
 const BLOCK_TEXT = {
-  frontier: "This design is newer than your industry can build. Import it, or fund research to close the gap.",
-  capacity: "Domestic industry cannot take this order on top of the ones it has. Import it, order fewer, or start a production surge.",
+  frontier:
+    "This design is newer than your industry can build. Import it, or fund research to close the gap.",
+  capacity:
+    "Domestic industry cannot take this order on top of the ones it has. Import it, order fewer, or start a production surge.",
 } as const;
 
 /** Order catalog equipment for a branch: built at home or imported, with its price, payments and delivery date. */
-export function OrderSheet({ item, overview, reader, nowClockMs, pending, onOpenChange, onPlace }: OrderSheetProps) {
-  const branches = item ? overview.branches.filter((b) => fitsDomain(item.catalogCategory, b.domain)) : [];
+export function OrderSheet({
+  item,
+  overview,
+  reader,
+  nowClockMs,
+  pending,
+  onOpenChange,
+  onPlace,
+}: OrderSheetProps) {
+  const branches = item
+    ? overview.branches.filter((b) => fitsDomain(item.catalogCategory, b.domain))
+    : [];
   const [branchId, setBranchId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [source, setSource] = useState<OrderSource>("domestic");
@@ -123,7 +141,9 @@ export function OrderSheet({ item, overview, reader, nowClockMs, pending, onOpen
                 max={MAX_QUANTITY}
                 value={quantity}
                 onChange={(e) =>
-                  setQuantity(Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(e.target.value) || 1))))
+                  setQuantity(
+                    Math.min(MAX_QUANTITY, Math.max(1, Math.floor(Number(e.target.value) || 1)))
+                  )
                 }
                 className="w-32 tabular-nums"
               />
@@ -146,16 +166,21 @@ export function OrderSheet({ item, overview, reader, nowClockMs, pending, onOpen
                   : "Built within your industry's capacity and technology."}
               </p>
             </div>
-            <dl className="bg-fill-4 rounded-row divide-separator divide-y px-4 py-2" aria-label="Order quote">
-              <QuoteRow label="Unit cost" value={formatCompactCurrency(quote.unitCost)} />
-              <QuoteRow label="Total" value={formatCompactCurrency(quote.total)} />
-              <QuoteRow label="Paid at order" value={formatCompactCurrency(quote.downPayment)} />
-              <QuoteRow
-                label="Then each month"
-                value={`${formatCompactCurrency(quote.monthlyPayment)} for ${quote.leadMonths} months`}
-              />
-              <QuoteRow label="Delivery" value={formatWhen(quote.deliveryClockMs, nowClockMs, reader)} />
-            </dl>
+            <Card variant="well" padding="sm">
+              <dl className="divide-separator divide-y" aria-label="Order quote">
+                <QuoteRow label="Unit cost" value={formatCompactCurrency(quote.unitCost)} />
+                <QuoteRow label="Total" value={formatCompactCurrency(quote.total)} />
+                <QuoteRow label="Paid at order" value={formatCompactCurrency(quote.downPayment)} />
+                <QuoteRow
+                  label="Then each month"
+                  value={`${formatCompactCurrency(quote.monthlyPayment)} for ${quote.leadMonths} months`}
+                />
+                <QuoteRow
+                  label="Delivery"
+                  value={formatWhen(quote.deliveryClockMs, nowClockMs, reader)}
+                />
+              </dl>
+            </Card>
             {block && (
               <p role="alert" className="text-warning-ink text-callout">
                 {BLOCK_TEXT[block]}
@@ -170,7 +195,8 @@ export function OrderSheet({ item, overview, reader, nowClockMs, pending, onOpen
           <Button
             disabled={!item || !branch || block !== null || pending}
             onClick={() => {
-              if (item && branch) onPlace({ branchId: branch.id, catalogKey: item.key, quantity, source });
+              if (item && branch)
+                onPlace({ branchId: branch.id, catalogKey: item.key, quantity, source });
             }}
           >
             {pending ? "Ordering..." : `Order for ${formatCompactCurrency(quote.total)}`}

@@ -39,7 +39,16 @@ jest.mock("~/lib/maps/load-maplibre", () => {
       queueMicrotask(callback);
     }
   }
-  return { loadMaplibre: jest.fn(async () => ({ Map: FakeMap })), instances };
+  // The flat-map adapter is installed on each new map and patches these classes
+  class Stand {}
+  const loaded = {
+    Map: FakeMap,
+    GeoJSONSource: Stand,
+    ImageSource: Stand,
+    LngLat: Stand,
+    LngLatBounds: Stand,
+  };
+  return { loadMaplibre: jest.fn(async () => loaded), instances };
 });
 
 describe("the version segment of a map URL", () => {

@@ -18,7 +18,6 @@ import { useVaultBalance } from "~/hooks/vault/useVaultBalance";
 import { useDailyReward } from "~/components/vault/DailyRewardProvider";
 import { SettingsHeader } from "../SettingsHeader";
 import { SettingsGroup, SettingsRow } from "../primitives";
-import { soundEffects } from "~/lib/sound/cuelume";
 
 export function VaultStatusPanel() {
   const notify = useNotify();
@@ -39,7 +38,6 @@ export function VaultStatusPanel() {
   const { open: openDailyReward } = useDailyReward();
 
   const handleRefresh = async () => {
-    soundEffects.press();
     await refreshBalance();
     void utils.vault.invalidate();
     notify.success("Vault status refreshed");
@@ -54,7 +52,7 @@ export function VaultStatusPanel() {
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="secondary" size="sm">
-              <Link href="/vault" data-cuelume-press="soft">
+              <Link href="/vault">
                 <ShoppingCart className="h-3.5 w-3.5" />
                 <span>Open Vault</span>
                 <ExternalLink className="h-3 w-3 opacity-60" />
@@ -63,7 +61,6 @@ export function VaultStatusPanel() {
             <Button
               type="button"
               onClick={handleRefresh}
-              data-cuelume-press="soft"
               title="Sync with server"
               variant="secondary"
               size="icon-sm"
@@ -95,13 +92,7 @@ export function VaultStatusPanel() {
           icon={Gift}
           glyphClass="bg-muted/60 text-foreground"
         >
-          <Button
-            type="button"
-            onClick={openDailyReward}
-            data-cuelume-press="soft"
-            variant="secondary"
-            size="sm"
-          >
+          <Button type="button" onClick={openDailyReward} variant="secondary" size="sm">
             Open daily reward
           </Button>
         </SettingsRow>

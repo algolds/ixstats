@@ -10,7 +10,6 @@ import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { Button } from "~/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { timeAgo } from "~/lib/format/compact";
 import { isGroupMember } from "./groupMembership";
 import { ThinktankInvitesPanel } from "./ThinktankInvitesPanel";
@@ -87,7 +86,6 @@ export function ThinktankDirectory({
             aria-label="Group list"
             value={activeTab}
             onValueChange={(value) => {
-              soundEffects.press();
               setActiveTab(value);
               setSelectedCategory("All");
             }}
@@ -100,7 +98,6 @@ export function ThinktankDirectory({
           <Button
             size="sm"
             onClick={() => {
-              soundEffects.press();
               onCreateGroup();
             }}
           >
@@ -126,7 +123,6 @@ export function ThinktankDirectory({
             aria-label="Filter by category"
             value={selectedCategory}
             onValueChange={(value) => {
-              soundEffects.press();
               setSelectedCategory(value || "All");
             }}
             className="no-scrollbar -mx-1 flex items-center gap-1 overflow-x-auto px-1 py-0.5"
@@ -182,7 +178,6 @@ export function ThinktankDirectory({
               <button
                 key={g.id}
                 onClick={() => {
-                  soundEffects.press();
                   onSelectGroup(g.id);
                 }}
                 className={cn(

@@ -5,11 +5,95 @@ All notable changes to IxStats will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows the [Versioning & Release Architecture](./docs/reference/revision.md) (`revision.md`): the
 platform uses `Major.Minor.Patch` + a permanent epoch **release name** + **channel** (current:
-**IxStates 1.0.2 "Lobster Crosby"**, channel Stable, to players; internally 1.5.1, see
+**IxStates 1.0.7 "Lobster Crosby"**, channel Stable, to players; internally 1.5.6, see
 [public and internal versions](./docs/reference/revision.md#5-public-and-internal-versions)), while Apps / Engines / Systems each carry a single
 capability integer. Each release entry below lists which components advanced and why.
 
 ## [Unreleased]
+
+## [1.5.6] — 2026-11-15 "Lobster Crosby" (public 1.0.7)
+
+### 🏝️ Halo 7: Island morph, nav-derived palette, "On this page" plugin commands & open-realm search (Halo 7, public 2)
+
+- **`HALO_VERSION` 7 (public 2).** End-to-end architecture, interaction, performance, and accessibility overhaul of the Halo contextual overlay and `Cmd+K` command palette (`src/components/halo/`, `src/lib/halo/`, [`docs/systems/halo.md`](./docs/systems/halo.md)).
+- **Derived from the sidebar nav model:** Command-palette navigation entries and the mobile `NavTray` now derive directly from `APPS` and `getVisibleApps()` (`src/lib/halo/commands-from-apps.ts`, `src/lib/navigation/app-sections.ts`), eliminating drift between `AppSidebar`, `TabBar`, `NavTray`, and `Cmd+K` while honoring realm context, sign-in state, nation ownership, and admin access.
+- **"On this page" plugin commands:** Active route plugins (`BuilderHalo`, `MyCountryHalo`, `WikiHalo`, and `SportsLiveHalo`) contribute contextual `PluginCommand` actions — editor/founding section jumps, MyCountry domain views, wiki article headings and narrator playback, and live match room navigation — ranked ahead of global navigation under an `"On this page"` badge.
+- **Open-realm search:** Added `realms.getSelectList` (`src/server/api/routers/realms/places.ts`) and lazy Halo search indexing so `PUBLIC` + `OPEN` realms appear under `"All"` with realm flags, nation counts, and direct `/realms/[slug]` navigation.
+- **Island morph, accessibility & keyboard fidelity:**
+  - Replaced manual `ResizeObserver` height plumbing with Motion layout morphing (`HaloPrimitives.tsx`), instant `prefers-reduced-motion` settling, and collapsed navigation-loading feedback.
+  - Non-modal dialog semantics (`role="dialog"`, `aria-modal="false"`), trigger focus restoration on close, native `<button>` / Next.js router navigation (no full-page reloads), and non-blocking global shortcuts (`Cmd/Ctrl+K`, `Escape`, `Tab`).
+  - Lazy-loaded expanded views, pure reducer state (`src/lib/halo/state.ts`) and pure search engine (`src/lib/halo/search.ts`), unified unread badges and truthful loading/empty/error states, shared view primitives, and zero React Compiler skips across Halo components.
+
+## [1.5.5] — 2026-11-14 "Lobster Crosby" (public 1.0.6)
+
+### 💎 Facet 6: Global OS UI/UX pass, subtle editor chrome & style ratchets (Facet 6, public 3)
+
+- **`FACET_VERSION` 6 (public 3).** Unified the Facet six-layer material hierarchy (`canvas`, `pane`, `well`, `chrome`, `overlay`, `lens`) across every first-party app, modal, sheet, and hub (MyCountry, Country Profile, Nation Builder, Vault, Exchange, Dashboard, Realms, Sports, and ThinkPages).
+- **Subtle editor chrome (`facet-chrome-subtle`):** Maps Editor, WikiOS Canvas / PlateJS floating toolbars, Onoma Studio, and Nation Builder workbars step down to `facet-chrome-subtle` so dense authoring workspaces stay legible without competing glass borders or stacked backdrops.
+- **Universal Country Actions sheet:** Every `CountryLink` surface (Dashboard, Leaderboards, Diplomatic Directory, Realms, Exchange, Sports, ThinkPages, Maps) opens the unified `CountryActionsMenu` sheet with realm context, live stats, and direct routes to Profile, MyCountry, Wiki, Map, and Diplomatic actions.
+- **Style ratchets locked:** Eliminated remaining raw arbitrary hex styling, arbitrary drop shadows, legacy glass classes, and manual `dark:` overrides across ~220 UI files, and ratcheted `audit:style` / Facet baselines downward to prevent regressions.
+
+### 🌐 First-Class IIWiki Persistence Across Sports, Maps & Exchange
+
+- **Additive `wikiSource` persistence:** Added nullable `wikiSource` columns to `SportLeague`, `SportTeam`, and all eight map feature models (`City`, `PointOfInterest`, `StoryPin`, `Storyline`, `MapLabel`, `Peak`, `NamedRiver`, `NamedLake`), wired end-to-end across server routers, GeoJSON bundles, conflict scanners, map inspectors, `WikiLinkWizard`, and Sports hub/detail views so IIWiki-linked leagues, teams, and map features read IIWiki directly without IxWiki homonym collisions.
+- **Sister-wiki publish guardrails:** Guarded MediaWiki-write pathways and Exchange lore/article links so IIWiki-sourced entities open in the sister-wiki reader (`/wiki/<Title>?source=iiwiki`) and never attempt writes against IxWiki's MediaWiki mirror.
+- **Prisma 7 additive deploy runner:** Updated `scripts/deployment/apply-additive-schema.ts` to Prisma 7 CLI flags (`--from-config-datasource --to-schema prisma/schema` and `db execute --file`).
+
+### 🔍 Facet 5: the Lens, and a new front-page hero (Facet 5, public 2)
+
+- **`FACET_VERSION` 5 (public 2).** Facet gains a sixth layer, **Lens**: refractive liquid glass for a brand moment. `FacetMaterial layer="lens"` renders its own filter (`LensFilter`), which bends the backdrop at the edges, splits red, green and blue there and leaves the middle clear. Chromium shows the refraction; other engines show a frosted pane, and Reduce Transparency and Increase Contrast make it solid. `Card variant="lens"` and `LensSurface` (top-level Cards inside become lenses, nested ones stay wells) bring it to content cards, and every lens shares one filter (`#facet-lens`, rendered once in the root layout). Rules (never on Chrome or an Overlay, never glass on glass, content panes only where the owner chooses) are in `docs/reference/facet-design-system.md` §3, and the guards and the materials lab cover it.
+- **Scroll depth utilities:** `scroll-recede` fades a top-of-page hero as it scrolls away and `scroll-parallax` makes its backdrop trail the page. Both are CSS only and off under Reduce Motion.
+- **Front-page hero:**
+  - A centred IxStates wordmark (Schibsted Grotesk 800, hand-spaced, also outlined as `public/images/ixstates-wordmark.svg`) under the free-standing Ixnay emblem, on a Lens.
+  - Behind it, an LV-style monogram of the emblem and the app marks (MyCountry crown, Maps compass, Wiki W, Realms hexagon), each lightly in its app's tint, with scroll and mouse parallax.
+  - One "Sign in" button (Clerk's sign-in-or-up flow) and "Explore realms". The nation counts use the MyCountry crown.
+- **Front page on the Lens:** the featured realm panel, every feed card and the Wiki pane are lenses instead of grey panes and wells, with hairlines in place of the grey fills inside them.
+- **Front-page fixes from the audit:**
+  - On phones, "Create a country" now sits under the hero instead of after the whole feed.
+  - The right rail stays pinned under the top bar as the feed scrolls; when it's taller than the window it scrolls inside itself.
+  - The feed lists each wiki page once per window (every edit to it folds into one entry), on the front page and the dashboard.
+  - Text links in the hero get 44px touch targets, and the feed has a heading for screen readers.
+  - The builder card has the IIWiki logo on its import row and a full-width Start building button.
+
+### 🔊 Cuelume 0.2.8
+
+- **Upgraded `cuelume` from 0.2.2 to 0.2.8:** fourteen cues named for their job (`open`, `close`, `navigate`, `ready`, `warning`, `attention` and so on), with emphasis. `soundCues` keeps its names, gains `warning` and `attention`, and each cue takes an optional emphasis. Turning sound on now unlocks audio in that click, so the first cue isn't lost.
+- **Audit:** the retired per-control sounds are gone: 52 press, 4 release and 12 toggle calls, and every `data-cuelume-*` attribute (about 85, with the delegated binding that read them). The legacy `soundEffects` palette is removed.
+- **No more double sounds:** 46 cues that played next to a toast, which already plays its own, are removed. Toasts play their cue at subtle emphasis; critical ones ask for attention.
+- **Dialogs:** Dialog, Sheet and AlertDialog play dismiss however they close (button, Escape or outside click), not only from their × button. Route arrival is subtle.
+
+## [1.5.4] — 2026-11-08 "Lobster Crosby" (public 1.0.5)
+
+### 💱 The Exchange, Release 2: the treasury as a player (Exchange 2)
+
+- **`EXCHANGE_VERSION` 2.** Design: `docs/specs/2026-11-06-exchange-overhaul-design.md` §8 and §11a.
+- **Wealth fund:**
+  - Each nation can open a fund that trades through the ordinary order book as its own account.
+  - The owner moves ₷ between treasury and fund, up to half of the two together.
+  - The fund can't buy its owner's companies or its own nation's bonds, or hold more than 25% of a company.
+  - Its holdings are public on the nation page. It never shows on leaderboards and gets no notices.
+- **Trading as the treasury:** a nation's owner switches the trade sheet between "You" and "<Nation> Treasury".
+- **Lending terms:** owners set a spread from −2% (a subsidy) to +10% and a per-company credit cap for companies domiciled in their nation. Credit stays open to the owner's own companies at the published terms; tenders can't be awarded to them.
+- **Treasury section:** an overview with lifetime inflows, the wealth fund, bonds and lending terms.
+- **Business press:** public, top-level ThinkPages posts tagged `#business` by a realm's media and government accounts, or by a company's linked corporate account, appear in the front page, company and nation news and open the post. They're read live, so ThinkPages moderation is the only moderation. Founders link a corporate account under their company's controls.
+- **Sector levers:** realm managers set each sector's demand modifier (−0.5 to 2) from Markets → Funds.
+- **Deploy:** `db push` adds four columns, with no SQL or data script (runbook `docs/history/operations/deploy-exchange-terminal-2026-11.md`, Release 2).
+
+## [1.5.3] — 2026-11-07 "Lobster Crosby" (public 1.0.4)
+
+### 💱 The Exchange becomes its own app: the market terminal (Exchange 1, new)
+
+- **New First-Party App, `EXCHANGE_VERSION` 1.** The Exchange leaves Labs for its own app at `/exchange`, public to watch, with a Chase-based brand. Its blue is the one named exception to the 30° palette rule, beside the Wiki navy. `/labs/exchange` and `/vault/exchange` redirect. Design: `docs/specs/2026-11-06-exchange-overhaul-design.md`; brand: `docs/systems/exchange-brand-guide.md`.
+- **The front page:** the realm index, Today in business, sectors, movers, nation bonds and live activity.
+- **Markets and object pages:** Markets (companies, nation bonds, sector funds), company, bond, nation and story pages, a trade sheet, a watch star and watcher alerts, Portfolio and Leaderboards.
+- **Nation bonds:**
+  - Owners issue 1–12 week bonds from Treasury, with weekly coupons from the treasury and principal in the last week.
+  - Nations get credit ratings.
+  - A short treasury defaults: holders are paid pro rata, the nation is rated D, and it can't issue for 30 days.
+- **Business news:** automatic headlines from trades, dividends, tenders, distress, bankruptcies, acquisitions, votes, bond events and MyCountry policy changes. Players show as "a private investor", never by username.
+- **Under the hood:** the money math is shared between the UI and the server; the old one-page workspace is gone.
+- **Help and runbook:** a help page at `/help/exchange/overview`, and the deploy runbook `docs/history/operations/deploy-exchange-terminal-2026-11.md`. The deploy turns on the `exchange-market` and `exchange-contract-expiry` cron jobs.
+- **Also in this release:** the deploy pipeline keeps the build cache, drops the unused standalone output on the main build, and writes zstd backups.
 
 ## [1.5.1] — 2026-11-03 "Lobster Crosby" (public 1.0.2)
 
@@ -330,6 +414,7 @@ No version or capability integer moves.
 
   `redirects()` is gone from `next.config.js`. The orphaned PWA files (`manifest.json`, `sw.js`, `offline.html`) are
   deleted.
+
 - **Old links still inside IxStates are rewritten** to the current pages:
   - wiki articles' old profile links, when an article renders (renderer version 4) and when an outdated stored copy
     of an article is read
@@ -721,6 +806,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **One list of MediaWiki hosts:** the sister wikis (iiwiki, AltHistory, Commons) are entries of
   `src/lib/wiki-os/wiki-hosts.ts`; the proxies' allowlists, `WIKI_SOURCES`, account proof and realm wiki settings are
   built from it, so adding a host is one entry and no setting can name a URL.
+
 ### 🗺️ Realm-Owned Maps & Map Display (2026-10-07)
 
 - **Map officer power:** a realm officer can hold **Map** ("Edit the realm's map, borders and labels, and import
@@ -782,6 +868,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   `Alliance.externalSourceKey`, Alliance name uniqueness per realm
   (`prisma/migrations/20261007120000_realm_source_sync/migration.sql`; apply it before `db push`, see the deploy
   runbook step 4).
+
 ### 🗺️ Map Safety & Correctness (2026-10-07)
 
 - **Upload bombs:** province imports cap their content at 25 MB (`geoAdmin.parseProvinceUpload`), the PNG province
@@ -823,6 +910,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   unchanged. Closes roadmap item 12 (per-realm calendar label).
 - **Schema (additive):** `Realm.communityLinks`, `rulesWikitext`, `rulesHtml`, `rulesUpdatedAt`, `rulesUpdatedBy`,
   `RealmClaim.rulesAcceptedAt` (`prisma/migrations/20261007_realm_links_rules_calendar.sql`; `db push` applies them).
+
 ### 🏰 Realm Ownership & Claims Officers (2026-10-07)
 
 - **Transfer a realm (site admins):** `/admin/realms` → Realms → **Transfer** hands a realm to an active account
@@ -1081,7 +1169,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 ### RC2 development log (2026-08-21 → 2026-09-22)
 
-
 ### 🌍 Countries Page UI/UX Polish & Apple Design Alignment (Plan 319)
 
 - **Permanent Idle Legibility on Country Cards**:
@@ -1222,7 +1309,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 ### 📑 Stash Research Vault & Apple Design Overhaul (STASH_VERSION: 1)
 
 - **Primary Brand Slogan & Architecture**:
-  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: *"Stash it once. Keep it forever."*).
+  - Adopted the official platform slogan: **"Save-for-later, built for lore."** (Retention hook: _"Stash it once. Keep it forever."_).
   - Published canonical system specification ([`docs/systems/stash.md`](docs/systems/stash.md)) and design style guide ([`docs/systems/stash-style-guide.md`](docs/systems/stash-style-guide.md)) covering cognitive offloading, research workflows, WCAG 2.1 AA contrast matrices, and export schemas.
 - **Apple Design Collection Creation Popover (`CreateStashPopover.tsx`)**:
   - Replaced the disruptive, layout-shifting inline form with an anchored, non-disruptive Apple Design popover.
@@ -1496,7 +1583,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Implemented sub-10ms atomic single-batch metadata extraction, eliminating 7 separate subshell invocations.
   - Modernized `scripts/deploy-ixworld.sh` to native `bun run next build` while preserving zero-downtime hardlink rollback snapshotting.
 
-
 ### Development log included in 1.4.0 (2026-08-04 → 2026-08-20)
 
 ### 💬 Messaging & Atomic Architecture Consolidation (Wave 7: Plans 163, 166)
@@ -1730,7 +1816,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Streamlined `src/types/economy-builder.ts` from 1,053 lines down to **397 lines** ($-656\text{L}$).
   - Removed `src/types/economy-builder.ts` from `scripts/audit/arch-baseline.json`.
 
-
 ### 💎 Platform-Wide Radix UI Prune, Modals Unification & Builder Monolith Decomposition (Plan 138)
 
 - **Radix UI & Dependency Pruning**:
@@ -1752,7 +1837,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **Country Management Routers Payload Builder**:
   - Created [`src/server/shared/country-payload-builder.ts`](src/server/shared/country-payload-builder.ts) extracting shared Zod schemas (`countryEconomicInputsSchema`, `countryGovernmentComponentSchema`) across [`create.ts`](src/server/api/routers/countries/management/create.ts) and `update.ts` ($-300\text{L}$).
-
 
 ### ✂️ Gold Master Over-Engineering Prune, Dependency Trimming & Sports AST Router Splits (Plans 133–137)
 
@@ -1885,7 +1969,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Added physical `:active` tactile feedback (`active:scale-[0.97]`) across buttons and cards throughout all sections.
   - Added unique `runHash` (`#onoma-xxxx`) per generation batch with live search, copy badge, and historical handoffs ("Load to Studio", "Save as Dictionary").
 
-
 - **Standalone Core Engine & Architectural Decoupling (`src/lib/wiki-os/`)**:
   - Extracted pure, zero-dependency core engine primitives from `src/lib/wiki/` into `src/lib/wiki-os/` ([config.ts](src/lib/wiki-os/config.ts), [types.ts](src/lib/wiki-os/types.ts), `bridge.ts`, `image-url.ts`, `infobox-parser.ts`).
   - Enforced strict graduation boundary: zero game couplings (`Country`, `Card`, `PointOfInterest`) in the core engine, preparing `@wikios/core` for independent packaging and distribution.
@@ -1916,8 +1999,6 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Eliminated deprecated `src/server/api/routers/wiki/` monolith (`articles.ts`, `discovery.ts`, `index.ts`, `media.ts`, `data.ts`), standardizing 100% of wiki API procedures under `api.wikios.*`.
   - Removed legacy `wiki` router registration from [src/server/api/root.ts](src/server/api/root.ts).
   - Added Nginx lockdown configs and audit tools (stage3-nginx-cutover.conf and verify-stage3-cutover.ts, since renamed [wikios-takeover.conf](scripts/ops/nginx/wikios-takeover.conf) and [verify-wikios-takeover.ts](scripts/ops/verify-wikios-takeover.ts), [wikios-mw-surface.sh](scripts/audit/wikios-mw-surface.sh)).
-
-
 
 ### Component Architecture Consolidation & MyCountry 4-Tier Subsystem Modularization (`systems.mycountry` v5, `design.facet` v2, `systems.halo` v4, `systems.builder` v3)
 
@@ -1973,7 +2054,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 - **Phase 4: Wiki-OS, Achievements, Diplomatic Network & Subsystems (12 Components)**:
   - **Wiki-OS & MediaWiki**: Aligned [ArticleRenderer.tsx](src/components/wiki-os/reader/ArticleRenderer.tsx) and `RepositoryWelcomeModal.tsx`.
   - **Diplomatic Network**: Aligned `EmbassyCard.tsx`.
-  - **Achievements & WikiLore**: Aligned `WikiLoreDayModal.tsx`, `WikiLoreTab.tsx`, [AllAchievementsTab.tsx](src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx), [ShowcaseTab.tsx](src/components/achievements/tabs/ShowcaseTab.tsx), `QuestPathCard.tsx`, and `ForumRibbonRack.tsx`.
+  - **Achievements & WikiLore**: Aligned `WikiLoreDayModal.tsx`, `WikiLoreTab.tsx`, [AllAchievementsTab.tsx](src/components/achievements/tabs/AllAchievementsTab.tsx), [LeaderboardTab.tsx](src/components/achievements/tabs/LeaderboardTab.tsx), `ShowcaseTab.tsx`, `QuestPathCard.tsx`, and `ForumRibbonRack.tsx`.
   - **Defense & MyClub**: Aligned `ReadinessOverviewCard.tsx` and `ClubResultsCard.tsx`.
 
 - **Verification**:
@@ -1988,7 +2069,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - Modernized high-traffic components to semantic design tokens:
     - [src/components/ui/select.tsx](src/components/ui/select.tsx): Replaced legacy slate classes with `bg-popover/95`, `border-border`, `text-foreground`, and backdrop blur.
     - `src/components/profile/WikiPreferencesCard.tsx`: Aligned preference toggle cards to semantic `card`, `secondary`, and `border-border` tokens.
-    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, [VaultParticleExplosionModal.tsx](src/components/vault/VaultParticleExplosionModal.tsx). `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
+    - Vault modals & marketplace: `src/components/vault/DailyBonusWidget.tsx`, [ImportNationStep.tsx](src/components/vault/sections/import/ImportNationStep.tsx), [StorePurchaseDialog.tsx](src/components/vault/sections/marketplace/store/StorePurchaseDialog.tsx), [PackHolographicCard.tsx](src/components/vault/sections/marketplace/store/PackHolographicCard.tsx), `CreateAuctionModal.tsx`, `VaultParticleExplosionModal.tsx`. `CreateAuctionModal.tsx` was removed in the cards refresh (2026-10-17).
     - ThinkPages composer & social cards: [SportsBulletinCard.tsx](src/components/thinkpages/SportsBulletinCard.tsx), [GlassCanvasComposer.tsx](src/components/thinkpages/GlassCanvasComposer.tsx), [ComposerPollModal.tsx](src/components/thinkpages/composer/ComposerPollModal.tsx), [ComposerAccountSwitcher.tsx](src/components/thinkpages/composer/ComposerAccountSwitcher.tsx), `MentionMenuPortal.tsx`, `WikiAndStashPopovers.tsx`.
     - Maps & navigation HUDs: [TourHUD.tsx](src/components/maps/core/components/TourHUD.tsx), `NotificationsView.tsx`, `MatchDetailModal.tsx`, [DevCountryViewToolbar.tsx](src/components/dev/DevCountryViewToolbar.tsx).
     - Sports widgets: `PlayerCard1.tsx`, `Scoreboard1.tsx`, `Standings1.tsx`, `LatestResults1.tsx`, `PlayerStats1.tsx`, `MatchSchedule1.tsx`.
@@ -2222,10 +2303,10 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
   - **Color Compliance**: Polished MyCountry pill and standing badge in [DashboardHero.tsx](src/components/dashboard/hero/DashboardHero.tsx) for contrast compliance across light and dark modes.
 
 - **Trending Topics & Intelligent Sports News Bulletin Parser**:
-  - **Apple Control Surface Redesign**: Redesigned [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
-  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
-  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](src/server/api/routers/activities/trending.ts) and [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx), extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
-  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in [TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx) for instant SPA client-side transitions.
+  - **Apple Control Surface Redesign**: Redesigned `TrendingSectionWidget.tsx` into an Apple Control Surface glass card (`bg-white/60 dark:bg-black/40 shadow-xl backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-2xl`).
+  - **Streamlined 3-Tab Segmented Control Bar**: Updated category filter tabs in `TrendingSectionWidget.tsx` to 3 clean tabs (`All`, `Forum`, `Wiki`), eliminating redundancy with the main social feed stream per `/apple-design`.
+  - **Intelligent Sports News Bulletin Parser**: Automatically parses `<!-- sports-bulletin:{...} -->` JSON metadata in [trending.ts](src/server/api/routers/activities/trending.ts) and `TrendingSectionWidget.tsx`, extracting clean titles (`⚽ Imperial League — Matchday 15`, `🏆 Imperial League Champion Crowned!`) and matchday narration excerpts.
+  - **Direct Sports Navigation Links**: Attached `/myleague/[leagueId]` and `/myclub/[championId]` target routes to sports bulletin items in [trending.ts](src/server/api/routers/activities/trending.ts), utilizing Next.js `<Link>` in `TrendingSectionWidget.tsx` for instant SPA client-side transitions.
   - **Apple Ranking & Velocity Decay**: Weighted engagement velocity scoring with exponential recency decay ($\frac{1}{(age + 2)^{1.2}}$) and round-robin channel interleaving in `All` view ([trending.ts](src/server/api/routers/activities/trending.ts)).
 
 - **Standalone 'Blurb of the Day' Apple Glass Widget**:
@@ -2475,7 +2556,7 @@ filled from a preset (Eurth's is `eurth-map`) and edited in the admin panel. Spe
 
 - **MyCountry Decisions-to-Effects Bridge & Agenda Management (MyCountry System v5)**:
   - **Cabinet Meetings Finalization Flow**: Added a **Complete & Finalize Meeting** dialog flow in `MeetingDetailModal.tsx` to submit final notes and transition cabinet meetings to completed.
-  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in [meetings.ts](src/server/api/routers/quickactions/meetings.ts) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
+  - **Automatic Calendar & Agenda Sync**: Updated the backend `completeMeeting` mutation in `quickactions/meetings.ts` (since removed) to also transition related `ActivitySchedule` items to `"completed"`, clearing them from the player's upcoming agenda and daily schedule.
   - **Decision Implementation & Stat Effects**: Integrated **Implement** buttons next to pending meeting decisions in `MeetingDetailModal.tsx` to invoke the tRPC `implementDecision` mutation, which runs narrative effects, updates stats in the database, logs the event in the country ledger, and creates ThinkPages news.
   - **Custom Decision Recording & Metric Selectors**: Added a **Record New Decision** form to let players record custom decisions with precise percentage adjustments on national metrics (e.g. Political Stability +2% or Poverty Rate -1%), serialized as `estimatedEffect` JSON fields.
   - **Card Navigation Shortcuts**: Configured click actions in `MeetingsAndDecisionsPanel.tsx` to automatically open the details modal for pending and upcoming meetings.
@@ -3544,7 +3625,7 @@ We refactored the monolithic `UnifiedDashboardSection.tsx` (~2,076 lines) into m
 - **[UnifiedFeedContent.tsx](src/components/dashboard/sections/UnifiedFeedContent.tsx)**: Coordinates all state and queries (`getGlobalFeed`, `getFollowingFeed`, `getRecentChanges`) for the primary dashboard activity streams.
 - **[UnifiedFeedItem.tsx](src/components/dashboard/sections/UnifiedFeedItem.tsx)**: Standardizes rendering of activity updates and external links.
 - **[WikiAuthorPopover.tsx](src/components/dashboard/sections/WikiAuthorPopover.tsx)**: Displays user details and links when hovering over wiki editors.
-- **[TrendingSectionWidget.tsx](src/components/dashboard/sections/TrendingSectionWidget.tsx)**: Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
+- **`TrendingSectionWidget.tsx`** (removed 2026-11): Handles the "Trending Now" item cards (with popover preview cards for wiki pages and forum threads).
 - **[CountriesToExploreCard.tsx](src/components/dashboard/sections/CountriesToExploreCard.tsx)**: Displays recommended random countries to follow.
 - **[BlurbSection.tsx](src/components/dashboard/sections/BlurbSection.tsx)**: Houses the "Blurb of the Day" prompt, response submission form, and community answers.
 

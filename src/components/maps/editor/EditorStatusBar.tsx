@@ -11,6 +11,7 @@ import {
 } from "iconoir-react";
 import type { EditorMode } from "~/hooks/useMapEditor";
 import { Badge } from "~/components/ui/badge";
+import { FacetMaterial } from "~/components/ui/facet";
 import { useTransientMapStore } from "~/components/maps/editor/utils/transientStore";
 import { timeAgo } from "~/lib/format/compact";
 import { Button } from "~/components/ui/button";
@@ -181,12 +182,13 @@ export function EditorStatusBar({
   useMinuteTick(!!lastSavedAt && !isSaving);
 
   return (
-    <div
-      className="border-separator bg-surface text-label-secondary text-footnote flex h-7 shrink-0 items-center border-t px-2"
+    <FacetMaterial
+      layer="chrome"
+      className="facet-chrome-subtle text-label-secondary text-footnote pointer-events-auto flex h-7 shrink-0 items-center rounded-none border-x-0 border-b-0 px-2.5 shadow-none"
       role="status"
       aria-live="polite"
     >
-      <div className="flex min-w-[140px] items-center gap-1 font-mono">
+      <div className="font-data flex min-w-[140px] items-center gap-1 tabular-nums">
         {activeCoords ? (
           <>
             <span>{formatCoord(activeCoords[1], "N", "S")}</span>
@@ -194,7 +196,7 @@ export function EditorStatusBar({
             <span>{formatCoord(activeCoords[0], "E", "W")}</span>
           </>
         ) : (
-          <span className="text-label-secondary">— , —</span>
+          <span className="text-label-secondary">–, –</span>
         )}
       </div>
 
@@ -205,7 +207,7 @@ export function EditorStatusBar({
         {activeTerrain?.elevation ? (
           <span className="truncate">{activeTerrain.elevation}</span>
         ) : (
-          <span className="text-label-secondary">—</span>
+          <span className="text-label-secondary">–</span>
         )}
         {activeTerrain?.climate && (
           <>
@@ -277,6 +279,6 @@ export function EditorStatusBar({
           </Button>
         </>
       )}
-    </div>
+    </FacetMaterial>
   );
 }

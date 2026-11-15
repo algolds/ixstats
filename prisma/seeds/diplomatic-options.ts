@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Diplomatic Options Seed Script
  * Migrates hardcoded diplomatic profile options from src/lib/diplomatic-profile-options.ts to database
@@ -5,9 +6,7 @@
  * Run with: npx tsx prisma/seeds/diplomatic-options.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 /**
  * Auto-categorize options based on keywords in the label

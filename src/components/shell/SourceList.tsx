@@ -1,32 +1,36 @@
 "use client";
 /**
- * The app navigation tree: every app as a row, the current app (and any the user opened) showing
- * its sections, live badges on rows. Inside Admin and Settings it becomes that area's grouped
- * list with a way back. Presentational: hosts (AppSidebar, the TabBar More sheet, the rail
- * popover) pass state, badges and callbacks.
+ * The app navigation tree: every app as a row, the current app contextually disclosing its
+ * subordinate sections along a hairline guide, and live Facet badges on rows. Inside Admin and
+ * Settings it becomes that area's grouped list (`Settings` open, `Admin` collapsible) with a way
+ * back. Presentational: hosts (AppSidebar, the TabBar More sheet, the rail HoverCard) pass state,
+ * badges and callbacks.
  */
 import * as React from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { NavArrowLeft, NavArrowRight } from "iconoir-react";
 import { cn } from "~/lib/utils/cn";
+import { Badge } from "~/components/ui/badge";
 import { focusRing } from "~/components/ui/button";
-import { springSmooth } from "~/lib/design/motion";
+import { springSmooth, springSnappy } from "~/lib/design/motion";
 import {
   getActiveSectionId,
   getVisibleAppForPath,
   groupSections,
   type AppDefinition,
+  type CountryRowMeta,
   type NavAction,
   type NavBadge,
   type NavBadges,
   type SearchParamsLike,
   withCountryRows,
 } from "~/lib/navigation/app-sections";
+import { COUNTRY_ATTRS } from "~/lib/navigation/context-target";
 
 /**
- * Every row's icon sits in one 28px slot, so labels line up; the slot of the current app, section or page is
- * pressed in (`facet-recess`), so where you are reads from the icons alone.
+ * Top-level app and area icons sit in one 28px slot so labels line up; only the active top-level
+ * app (or active area/inline row) wears `facet-recess` ("key held down" into `facet-chrome`).
  */
 function NavMark({
   current = false,
@@ -34,7 +38,7 @@ function NavMark({
   children,
 }: {
   current?: boolean;
-  /** The app tint the mark wears (an app row); a section row inherits its app's. */
+  /** The app tint the mark wears (an app row); an area row inherits its app's. */
   tint?: string;
   children: React.ReactNode;
 }) {
@@ -53,7 +57,10 @@ function NavMark({
 }
 
 export const sourceRowClassName =
-  "relative flex min-h-9 w-full items-center gap-3 rounded-control px-2 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11";
+  "relative flex min-h-(--control-height) w-full items-center gap-3 rounded-control px-2 text-body transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11";
+
+const subtabRowClassName =
+  "relative flex min-h-(--control-height-sm) w-full items-center gap-2 rounded-control-sm px-2.5 text-subhead transition-colors duration-fast ease-out-facet pointer-coarse:min-h-11";
 
 interface SourceListProps {
   pathname: string;
@@ -63,16 +70,21 @@ interface SourceListProps {
   onToggle: (id: string) => void;
   badges: NavBadges;
   onAction?: (action: NavAction) => void;
-  /** Called after a link is followed, so a sheet or popover host can close. */
+  /** Called after a link is followed, so a sheet or flyout host can close. */
   onNavigate?: () => void;
   variant?: "sidebar" | "sheet" | "popover";
-  /** The single app whose sections a popover lists. */
+  /** The single app whose sections a rail flyout lists. */
   app?: AppDefinition;
-  /** The user's public country profile; MyCountry lists it, and the editor, as rows once it is known. */
+  /** The user's public country profile; MyCountry lists it, and the editors, once known. */
   countryHref?: string;
+  /** Optional nation identity attached to `Public profile` for `SystemContextMenu`. */
+  countryMeta?: CountryRowMeta;
+  /** Return destination for `All apps` when inside Settings or Admin. */
+  backHref?: string;
 }
 
 type Ctx = Pick<SourceListProps, "badges" | "onAction" | "onNavigate" | "expanded" | "onToggle"> & {
+  variant: NonNullable<SourceListProps["variant"]>;
   /** Section ids repeat across apps, so a current section only counts inside its own app. */
   activeAppId: string | undefined;
   activeSectionId: string | undefined;
@@ -95,17 +107,22 @@ export const isListed = (s: Section, badges: NavBadges) =>
 function Trailing({ badge }: { badge: NavBadge | undefined }) {
   if (!badge) return null;
   if (badge.kind === "count") {
-    return badge.value > 0 ? (
-      <span className="bg-tint-fill text-tint-ink text-caption rounded-full px-2 font-medium tabular-nums">
-        {badge.value}
-      </span>
-    ) : null;
+    return badge.value > 0 ? <Badge variant="secondary">{badge.value}</Badge> : null;
   }
-  // Only the `action` kind is left (the union is count | action): its label as text.
-  return <span className="text-footnote text-label-secondary tabular-nums">{badge.label}</span>;
+  return <span className="text-caption text-label-secondary tabular-nums">{badge.label}</span>;
 }
 
-function ActionRow({ section, action, ctx }: { section: Section; action: NavAction; ctx: Ctx }) {
+function ActionRow({
+  section,
+  action,
+  ctx,
+  subordinate,
+}: {
+  section: Section;
+  action: NavAction;
+  ctx: Ctx;
+  subordinate: boolean;
+}) {
   const Icon = section.icon;
   const badge = section.badge ? ctx.badges[section.badge] : undefined;
   return (
@@ -117,14 +134,19 @@ function ActionRow({ section, action, ctx }: { section: Section; action: NavActi
           ctx.onNavigate?.();
         }}
         className={cn(
-          sourceRowClassName,
+          subordinate || ctx.variant === "popover" ? subtabRowClassName : sourceRowClassName,
           focusRing,
-          "text-tint-ink hover:bg-tint-fill font-medium"
+          "text-tint-ink hover:bg-tint-fill cursor-pointer font-medium"
         )}
       >
-        <NavMark>
-          <Icon aria-hidden className="size-4" />
-        </NavMark>
+        {!subordinate &&
+          (ctx.variant === "popover" ? (
+            <Icon aria-hidden className="size-4 shrink-0 opacity-80" />
+          ) : (
+            <NavMark>
+              <Icon aria-hidden className="size-4" />
+            </NavMark>
+          ))}
         <span className="min-w-0 flex-1 truncate text-left">{section.label}</span>
         <Trailing badge={badge} />
       </button>
@@ -132,20 +154,111 @@ function ActionRow({ section, action, ctx }: { section: Section; action: NavActi
   );
 }
 
-function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
+function SectionRow({
+  section,
+  ctx,
+  subordinate,
+}: {
+  section: Section;
+  ctx: Ctx;
+  subordinate: boolean;
+}) {
   const Icon = section.icon;
   const badge = section.badge ? ctx.badges[section.badge] : undefined;
   const active = section.id === ctx.activeSectionId;
-  // An external invite leaves the app, so it is a plain anchor in a new tab, never the current row.
   const RowLink = section.external ? "a" : Link;
   const externalProps = section.external
     ? ({ target: "_blank", rel: "noopener noreferrer" } as const)
     : {};
+  const countryAttrs = section.country
+    ? {
+        ...(section.country.id ? { [COUNTRY_ATTRS.id]: section.country.id } : {}),
+        ...(section.country.slug ? { [COUNTRY_ATTRS.slug]: section.country.slug } : {}),
+        ...(section.country.name ? { [COUNTRY_ATTRS.name]: section.country.name } : {}),
+      }
+    : undefined;
+
+  if (subordinate) {
+    return (
+      <li className="relative">
+        {active && (
+          <span
+            aria-hidden
+            className="bg-tint absolute top-1.5 bottom-1.5 -left-[11px] w-0.5 rounded-full"
+          />
+        )}
+        <RowLink
+          href={section.href}
+          {...externalProps}
+          {...countryAttrs}
+          aria-current={active ? "page" : undefined}
+          onClick={ctx.onNavigate}
+          className={cn(
+            subtabRowClassName,
+            focusRing,
+            active
+              ? "text-tint-ink font-medium"
+              : "text-label-secondary hover:bg-fill-4 hover:text-label"
+          )}
+        >
+          {active && (
+            <motion.span
+              aria-hidden
+              layoutId={ctx.indicatorId}
+              transition={springSnappy}
+              className="bg-tint-fill rounded-control-sm absolute inset-0"
+            />
+          )}
+          <span className="relative min-w-0 flex-1 truncate">{section.label}</span>
+          <span className="relative">
+            <Trailing badge={badge} />
+          </span>
+        </RowLink>
+      </li>
+    );
+  }
+
+  if (ctx.variant === "popover") {
+    return (
+      <li>
+        <RowLink
+          href={section.href}
+          {...externalProps}
+          {...countryAttrs}
+          aria-current={active ? "page" : undefined}
+          onClick={ctx.onNavigate}
+          className={cn(
+            subtabRowClassName,
+            focusRing,
+            active
+              ? "text-tint-ink font-medium"
+              : "text-label-secondary hover:bg-fill-4 hover:text-label"
+          )}
+        >
+          {active && (
+            <motion.span
+              aria-hidden
+              layoutId={ctx.indicatorId}
+              transition={springSnappy}
+              className="bg-tint-fill rounded-control-sm absolute inset-0"
+            />
+          )}
+          <Icon aria-hidden className="relative size-4 shrink-0 opacity-80" />
+          <span className="relative min-w-0 flex-1 truncate">{section.label}</span>
+          <span className="relative">
+            <Trailing badge={badge} />
+          </span>
+        </RowLink>
+      </li>
+    );
+  }
+
   return (
     <li>
       <RowLink
         href={section.href}
         {...externalProps}
+        {...countryAttrs}
         aria-current={active ? "page" : undefined}
         onClick={ctx.onNavigate}
         className={cn(
@@ -158,7 +271,7 @@ function SectionRow({ section, ctx }: { section: Section; ctx: Ctx }) {
           <motion.span
             aria-hidden
             layoutId={ctx.indicatorId}
-            transition={springSmooth}
+            transition={springSnappy}
             className="bg-tint-fill rounded-control absolute inset-0"
           />
         )}
@@ -205,7 +318,7 @@ function GroupHeading({
       onClick={onToggle}
       className={cn(
         focusRing,
-        "text-footnote text-label-secondary hover:bg-fill-4 rounded-control flex w-full items-center gap-2 px-2 pt-3 pb-1 font-medium"
+        "text-footnote text-label-secondary hover:bg-fill-4 rounded-control flex w-full cursor-pointer items-center gap-2 px-2 pt-3 pb-1 font-medium"
       )}
     >
       <NavArrowRight
@@ -222,8 +335,8 @@ function SectionRows({
   ctx,
   collapsibleGroups,
   id,
-  hidden = false,
   flat = false,
+  isArea = false,
 }: {
   app: AppDefinition;
   ctx: Ctx;
@@ -231,16 +344,19 @@ function SectionRows({
   id?: string;
   /** Rows sit level with the app rows instead of indented under one (`inline` apps). */
   flat?: boolean;
-  /** Collapsed but still mounted, so the toggle's `aria-controls` always resolves. */
-  hidden?: boolean;
+  /** Dedicated area view (`Settings`, `Admin`) where rows are primary destinations. */
+  isArea?: boolean;
 }) {
   const visible = app.sections.filter((s) => isListed(s, ctx.badges));
   const rowCtx = app.id === ctx.activeAppId ? ctx : { ...ctx, activeSectionId: undefined };
+  const subordinate = !flat && !isArea && ctx.variant !== "popover";
   return (
     <div
       id={id}
-      hidden={hidden}
-      className={cn("flex flex-col", !collapsibleGroups && !flat && "pl-4")}
+      className={cn(
+        "flex flex-col",
+        subordinate && "border-separator mt-0.5 ml-[21px] border-l py-0.5 pl-2.5"
+      )}
       data-app={app.tint}
     >
       {groupSections(visible).map(({ group, sections }, index) => {
@@ -259,7 +375,6 @@ function SectionRows({
               <GroupHeading
                 id={headingId}
                 group={group}
-                // The group holding the current page stays open, so toggling it would do nothing.
                 collapsible={collapsibleGroups && !containsActive}
                 open={open}
                 listId={listId}
@@ -269,9 +384,20 @@ function SectionRows({
             <ul id={listId} hidden={!open} className="flex flex-col gap-0.5">
               {sections.map((section) =>
                 section.action ? (
-                  <ActionRow key={section.id} section={section} action={section.action} ctx={ctx} />
+                  <ActionRow
+                    key={section.id}
+                    section={section}
+                    action={section.action}
+                    ctx={ctx}
+                    subordinate={subordinate}
+                  />
                 ) : (
-                  <SectionRow key={section.id} section={section} ctx={rowCtx} />
+                  <SectionRow
+                    key={section.id}
+                    section={section}
+                    ctx={rowCtx}
+                    subordinate={subordinate}
+                  />
                 )
               )}
             </ul>
@@ -284,57 +410,52 @@ function SectionRows({
 
 function AppRow({ app, isCurrent, ctx }: { app: AppDefinition; isCurrent: boolean; ctx: Ctx }) {
   const hasSections = app.sections.length > 0;
-  const open = hasSections && (isCurrent || ctx.expanded.has(app.id));
+  const open = hasSections && isCurrent;
   const listId = `source-list-${ctx.indicatorId}-${app.id}`;
   const appBadge = app.badge ? ctx.badges[app.badge] : undefined;
-  const pendingInside = app.sections.some((s) => s.badge && isPending(ctx.badges[s.badge]));
-  const dot = !open && pendingInside && (
+  const countBadge = appBadge?.kind === "count" ? appBadge : undefined;
+  const pendingInside =
+    isPending(appBadge) || app.sections.some((s) => s.badge && isPending(ctx.badges[s.badge]));
+  const dot = !open && !countBadge && pendingInside && (
     <span role="img" aria-label="Has updates" className="bg-tint size-2 shrink-0 rounded-full" />
   );
   const Icon = app.icon;
+  const appCtx: Ctx = { ...ctx, indicatorId: `${ctx.indicatorId}-${app.id}` };
+
   return (
     <li>
-      <div className="flex items-center gap-0.5">
-        <Link
-          href={app.href}
-          aria-current={isCurrent && !hasSections ? "page" : undefined}
-          onClick={ctx.onNavigate}
-          className={cn(
-            sourceRowClassName,
-            focusRing,
-            "min-w-0 flex-1",
-            isCurrent ? "text-label font-semibold" : "text-label hover:bg-fill-4"
-          )}
-        >
-          <NavMark current={isCurrent} tint={app.tint}>
-            <Icon aria-hidden className="size-5" />
-          </NavMark>
-          <span className="flex-1 whitespace-nowrap">{app.label}</span>
-          <Trailing badge={appBadge} />
-          {dot}
-        </Link>
-        {hasSections && !isCurrent && (
-          <button
-            type="button"
-            aria-expanded={open}
-            aria-controls={listId}
-            aria-label={`${open ? "Collapse" : "Expand"} ${app.label}`}
-            onClick={() => ctx.onToggle(app.id)}
-            className={cn(
-              focusRing,
-              "rounded-control text-label-secondary hover:bg-fill-4 grid size-9 shrink-0 place-items-center pointer-coarse:size-11"
-            )}
-          >
-            <NavArrowRight
-              aria-hidden
-              className={cn("duration-fast size-4 transition-transform", open && "rotate-90")}
-            />
-          </button>
+      <Link
+        href={app.href}
+        aria-current={isCurrent && !hasSections ? "page" : undefined}
+        onClick={ctx.onNavigate}
+        className={cn(
+          sourceRowClassName,
+          focusRing,
+          "min-w-0",
+          isCurrent ? "text-label font-semibold" : "text-label hover:bg-fill-4"
         )}
-      </div>
-      {hasSections && (
-        <SectionRows id={listId} hidden={!open} app={app} ctx={ctx} collapsibleGroups={false} />
-      )}
+      >
+        <NavMark current={isCurrent} tint={app.tint}>
+          <Icon aria-hidden className="size-5" />
+        </NavMark>
+        <span className="flex-1 whitespace-nowrap">{app.label}</span>
+        <Trailing badge={countBadge} />
+        {dot}
+      </Link>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="sections"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={springSmooth}
+            className="overflow-hidden"
+          >
+            <SectionRows id={listId} app={app} ctx={appCtx} collapsibleGroups={false} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </li>
   );
 }
@@ -404,6 +525,8 @@ export function SourceList({
   searchParams,
   apps: appList,
   countryHref,
+  countryMeta,
+  backHref = "/dashboard",
   expanded,
   onToggle,
   badges,
@@ -412,9 +535,10 @@ export function SourceList({
   variant = "sidebar",
   app,
 }: SourceListProps) {
-  const apps = withCountryRows(appList, countryHref);
+  const apps = withCountryRows(appList, countryHref, countryMeta);
   const { current, activeSectionId } = resolveCurrent(pathname, searchParams, apps, badges);
   const ctx: Ctx = {
+    variant,
     badges,
     onAction,
     onNavigate,
@@ -422,7 +546,6 @@ export function SourceList({
     onToggle,
     activeAppId: current?.id,
     activeSectionId,
-    // One pill per list: a shared layoutId would make it glide between the rail's separate popovers.
     indicatorId: `source-list-${variant}${app ? `-${app.id}` : ""}`,
   };
 
@@ -430,7 +553,7 @@ export function SourceList({
     return (
       <nav aria-label={app.label} data-slot="source-list" data-mode="popover">
         <SectionRows
-          app={withCountryRows([app], countryHref)[0]!}
+          app={withCountryRows([app], countryHref, countryMeta)[0]!}
           ctx={ctx}
           collapsibleGroups={false}
         />
@@ -442,7 +565,7 @@ export function SourceList({
     return (
       <nav aria-label="App navigation" data-slot="source-list" data-mode="area">
         <Link
-          href="/dashboard"
+          href={backHref}
           onClick={onNavigate}
           className={cn(sourceRowClassName, focusRing, "text-label-secondary hover:bg-fill-4")}
         >
@@ -450,7 +573,12 @@ export function SourceList({
           All apps
         </Link>
         <h2 className="text-headline text-label px-2 pt-3 pb-1">{current.label}</h2>
-        <SectionRows app={current} ctx={ctx} collapsibleGroups />
+        <SectionRows
+          app={current}
+          ctx={{ ...ctx, indicatorId: `${ctx.indicatorId}-${current.id}` }}
+          collapsibleGroups={current.id === "admin"}
+          isArea
+        />
       </nav>
     );
   }
@@ -463,7 +591,12 @@ export function SourceList({
           .map((a) =>
             a.inline ? (
               <li key={a.id}>
-                <SectionRows app={a} ctx={ctx} collapsibleGroups={false} flat />
+                <SectionRows
+                  app={a}
+                  ctx={{ ...ctx, indicatorId: `${ctx.indicatorId}-${a.id}` }}
+                  collapsibleGroups={false}
+                  flat
+                />
               </li>
             ) : (
               <AppRow key={a.id} app={a} isCurrent={a.id === current?.id} ctx={ctx} />

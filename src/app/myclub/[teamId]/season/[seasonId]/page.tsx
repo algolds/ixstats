@@ -1,10 +1,9 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { usePageTitle } from "~/hooks/usePageTitle";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
 import { MatchCommentary } from "~/components/sports/MatchCommentary";
 import { Badge } from "~/components/ui/badge";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -23,7 +22,6 @@ import { motion } from "motion/react";
 import { springSmooth, tweenFast } from "~/lib/design/motion";
 import { cn } from "~/lib/utils";
 import {
-  ArrowLeft,
   ArrowUp,
   ArrowDown,
   Minus,
@@ -35,16 +33,9 @@ import {
   Group as Users,
 } from "iconoir-react";
 import { Card } from "~/components/ui/card";
-
-const SPORT_EMOJIS: Record<string, string> = {
-  soccer: "\u26BD",
-  football: "\uD83C\uDFC8",
-  hockey: "\uD83C\uDFD2",
-  basketball: "\uD83C\uDFC0",
-  baseball: "\u26BE",
-  f1: "\uD83C\uDFCE\uFE0F",
-  boxing: "\uD83E\uDD4A",
-};
+import { PageHeader } from "~/components/shell/PageHeader";
+import { Signal } from "~/components/ui/signal";
+import { SportGlyph } from "~/components/sports/SportGlyph";
 
 const MATCH_STATUS_ICON: Record<string, React.ReactNode> = {
   scheduled: <Clock className="text-label-secondary" />,
@@ -181,7 +172,6 @@ export default function MyClubSeasonDetailPage() {
   const params = useParams();
   const teamId = typeof params.teamId === "string" ? params.teamId : "";
   const seasonId = typeof params.seasonId === "string" ? params.seasonId : "";
-  const router = useRouter();
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
   const { data: season, isLoading } = api.sports.getSeason.useQuery(
@@ -199,10 +189,7 @@ export default function MyClubSeasonDetailPage() {
   if (!season) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to team
-        </Button>
+        <PageHeader title="Season" back={{ href: `/myclub/${teamId}`, label: "Club" }} bleed />
         <Card>
           <EmptyState
             icon={<Trophy />}
@@ -214,7 +201,6 @@ export default function MyClubSeasonDetailPage() {
     );
   }
 
-  const emoji = SPORT_EMOJIS[season.league?.sportPreset ?? ""] ?? "\uD83C\uDFC6";
   const isCompleted = season.status === "completed";
 
   const teamStanding = season.standings?.find(
@@ -247,97 +233,86 @@ export default function MyClubSeasonDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => router.push(`/myclub/${teamId}`)} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to team
-      </Button>
-
-      <Card padding="lg" className="mb-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="text-large-title" aria-hidden>
-            {emoji}
+      <PageHeader
+        title={`Season ${season.seasonNumber}`}
+        back={{ href: `/myclub/${teamId}`, label: "Club" }}
+        bleed
+        leading={
+          <span className="bg-tint-fill text-tint-ink rounded-row flex size-12 items-center justify-center">
+            <SportGlyph sportPreset={season.league?.sportPreset} className="size-6" />
           </span>
-          <h1 className="text-large-title">Season {season.seasonNumber}</h1>
-          <Badge
-            variant={
-              season.status === "in_progress"
-                ? "secondary"
+        }
+        subtitle={
+          <span className="flex flex-wrap items-center gap-2">
+            <Badge variant={season.status === "in_progress" ? "success" : "default"}>
+              {season.status === "in_progress"
+                ? "Active"
                 : season.status === "completed"
-                  ? "outline"
-                  : "default"
-            }
-          >
-            {season.status === "in_progress"
-              ? "Active"
-              : season.status === "completed"
-                ? "Completed"
-                : "Upcoming"}
-          </Badge>
-        </div>
-        <p className="text-body text-label-secondary mt-2">{season.league?.name}</p>
-        {season.startIxTime && (
-          <p className="text-label-secondary text-footnote mt-1">
-            <Calendar className="mr-1 inline size-3.5" aria-hidden />
-            Started {new Date(season.startIxTime).toLocaleDateString()}
-            {season.endIxTime && ` \u2014 Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
-          </p>
-        )}
-      </Card>
+                  ? "Completed"
+                  : "Upcoming"}
+            </Badge>
+            <span>{season.league?.name}</span>
+            {season.startIxTime && (
+              <span>
+                · Started {new Date(season.startIxTime).toLocaleDateString()}
+                {season.endIxTime && ` · Ended ${new Date(season.endIxTime).toLocaleDateString()}`}
+              </span>
+            )}
+          </span>
+        }
+      />
 
       {season.champion?.id === teamId && isCompleted && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={springSmooth}
-          className="bg-surface rounded-card border-yellow/30 mb-6 border p-6 text-center"
-        >
-          <Trophy className="text-yellow mx-auto mb-2 size-10" aria-hidden />
-          <h2 className="text-title-1">{season.champion.name}</h2>
-          <p className="text-body text-label-secondary mt-1">
-            Season {season.seasonNumber} Champion
-          </p>
-        </motion.div>
+        <Signal
+          tone="success"
+          title={`${season.champion.name} won season ${season.seasonNumber}`}
+          className="my-6"
+        />
       )}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card padding="md">
-          <Stat
-            label="Record"
-            value={
-              teamStanding
-                ? `${teamStanding.wins}-${teamStanding.losses}${teamStanding.draws > 0 ? `-${teamStanding.draws}` : ""}`
-                : "-"
-            }
-          />
-        </Card>
-        <Card padding="md">
-          <Stat label="Points" value={teamStanding?.points ?? "-"} />
-        </Card>
-        <Card padding="md">
-          <Stat
-            label="PF / PA"
-            value={teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "-"}
-          />
-        </Card>
-        <Card padding="md">
-          <Stat
-            label="Position"
-            value={
-              finishPosition ? (
-                <span className="flex items-center gap-1">
-                  #{finishPosition}
-                  {finishPosition === 1 && (
-                    <Trophy className="text-yellow size-5" aria-label="Champion" />
-                  )}
-                </span>
-              ) : (
-                "-"
-              )
-            }
-            hint={`of ${season.standings?.length ?? 0} teams`}
-          />
-        </Card>
-      </div>
+      <Card padding="md" content="data" className="mb-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <Stat
+              label="Record"
+              value={
+                teamStanding
+                  ? `${teamStanding.wins}-${teamStanding.losses}${teamStanding.draws > 0 ? `-${teamStanding.draws}` : ""}`
+                  : "–"
+              }
+            />
+          </div>
+          <div>
+            <Stat label="Points" value={teamStanding?.points ?? "–"} />
+          </div>
+          <div>
+            <Stat
+              label="PF / PA"
+              value={
+                teamStanding ? `${teamStanding.pointsFor} / ${teamStanding.pointsAgainst}` : "–"
+              }
+            />
+          </div>
+          <div>
+            <Stat
+              label="Position"
+              value={
+                finishPosition ? (
+                  <span className="flex items-center gap-1">
+                    #{finishPosition}
+                    {finishPosition === 1 && (
+                      <Trophy className="text-yellow size-5" aria-label="Champion" />
+                    )}
+                  </span>
+                ) : (
+                  "–"
+                )
+              }
+              hint={`of ${season.standings?.length ?? 0} teams`}
+            />
+          </div>
+        </div>
+      </Card>
 
       <Tabs defaultValue="matches">
         <TabsList className="mb-6 gap-1">
@@ -362,7 +337,7 @@ export default function MyClubSeasonDetailPage() {
         <TabsContent value="matches">
           <div>
             <h2 className="text-title-3 text-label mb-4">
-              Match Results <span className="tabular-nums">({teamMatches.length})</span>
+              Match results <span className="tabular-nums">({teamMatches.length})</span>
             </h2>
             {teamMatches.length > 0 ? (
               <div className="space-y-2">
@@ -430,7 +405,7 @@ export default function MyClubSeasonDetailPage() {
                             {(s.team as Record<string, string>).name}
                           </span>
                           {(s.team as Record<string, string>).id === teamId && (
-                            <Badge variant="secondary">YOU</Badge>
+                            <Badge variant="secondary">You</Badge>
                           )}
                         </div>
                       </TableCell>

@@ -43,6 +43,7 @@ interface ExactFigureProps {
   preset: string;
   range: string;
   unit: string;
+  formatValue: (value: number) => string;
   error?: string;
   onChange: (value: number | null) => void;
   onReset: () => void;
@@ -56,14 +57,26 @@ function ExactFigure({
   preset,
   range,
   unit,
+  formatValue,
   error,
   onChange,
   onReset,
 }: ExactFigureProps) {
-  const helper = `${preset} · Range ${range}`;
   const [text, setText] = useState(value === null ? "" : String(value));
+  const [syncedValue, setSyncedValue] = useState(value);
+  if (value !== syncedValue) {
+    setSyncedValue(value);
+    const digits = text.replace(/[^\d.]/g, "");
+    const parsed = digits ? Number(digits) : NaN;
+    const currentParsed = Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : null;
+    if (currentParsed !== value) {
+      setText(value === null ? "" : String(value));
+    }
+  }
+  const helper =
+    value !== null ? `${formatValue(value)} · ${preset} · Range ${range}` : `${preset} · Range ${range}`;
   return (
-    <div className="flex flex-col gap-1">
+    <div className="bg-fill-4/50 rounded-row flex flex-col gap-1.5 p-3">
       <label htmlFor={id} className="text-subhead text-label">
         {label}
       </label>
@@ -72,6 +85,7 @@ function ExactFigure({
           id={id}
           inputMode="numeric"
           value={text}
+          className="tabular-nums"
           onChange={(event) => {
             setText(event.target.value);
             const digits = event.target.value.replace(/[^\d.]/g, "");
@@ -87,7 +101,7 @@ function ExactFigure({
           {error}
         </p>
       )}
-      <div className="text-label-secondary text-caption flex items-center justify-between gap-2">
+      <div className="text-label-secondary text-caption flex items-center justify-between gap-2 tabular-nums">
         <span id={error ? undefined : `${id}-helper`} className="min-w-0">
           {helper}
         </span>
@@ -95,7 +109,10 @@ function ExactFigure({
           type="button"
           variant="ghost"
           size="xs"
-          onClick={onReset}
+          onClick={() => {
+            setText("");
+            onReset();
+          }}
           aria-label={`Reset ${label.toLowerCase()}`}
           className="shrink-0"
         >
@@ -214,6 +231,7 @@ export const EconomyStep = forwardRef<HTMLDivElement, EconomyStepProps>(function
             preset={presetPopulation}
             range={`${formatPeople(POPULATION_RANGE.min)} to ${formatPeople(POPULATION_RANGE.max)}`}
             unit="people"
+            formatValue={formatPeople}
             error={errors.exactPopulation}
             onChange={(value) => onExact("exactPopulation", value)}
             onReset={() => reset("exactPopulation")}
@@ -255,6 +273,7 @@ export const EconomyStep = forwardRef<HTMLDivElement, EconomyStepProps>(function
             preset={presetWealth}
             range={`${formatMoney(GDP_PER_CAPITA_RANGE.min)} to ${formatMoney(GDP_PER_CAPITA_RANGE.max)}`}
             unit="US dollars"
+            formatValue={formatMoney}
             error={errors.exactGdpPerCapita}
             onChange={(value) => onExact("exactGdpPerCapita", value)}
             onReset={() => reset("exactGdpPerCapita")}

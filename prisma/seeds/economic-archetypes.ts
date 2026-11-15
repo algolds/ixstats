@@ -11,10 +11,10 @@
  * Run with: bun prisma/seeds/economic-archetypes.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { buildArchetypeSeedRows } from "../../src/lib/economy/archetypes/seed";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("🌱 Starting Economic Archetypes seed...\n");

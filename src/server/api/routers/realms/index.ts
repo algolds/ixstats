@@ -19,6 +19,7 @@ import {
   listBuilderRealms,
   listMyNations,
   realmSettings,
+  updateRealmSettings,
   withMaxNationsPerUser,
   type NationAssignedEvent,
 } from "~/server/modules/realms";
@@ -40,7 +41,7 @@ import { queueAchievementCheck } from "~/lib/achievements/queue";
 import { ActivityHooks } from "~/lib/activity/hooks";
 import { globalCache, invalidateCache } from "~/lib/cache";
 import { invalidateRealmMap } from "~/server/shared/map-invalidation";
-import { listRealmDirectory, searchDirectoryNations } from "./places";
+import { listRealmDirectory, listRealmSelectList, searchDirectoryNations } from "./places";
 import { realmRegionRouter } from "./region";
 import { realmSourceSyncRouter } from "./source-sync";
 import { realmMapRouter } from "./map";
@@ -127,7 +128,7 @@ function slugTaken(error: Error): never {
 
 /** An admin's edit of a realm row; a nation cap is merged into `Realm.settings` (NOT_FOUND when there is no realm). */
 async function updateRealm(
-  db: Pick<PrismaClient, "realm">,
+  db: PrismaClient,
   id: string,
   data: Prisma.RealmUpdateInput,
   maxNationsPerUser?: number
@@ -136,10 +137,13 @@ async function updateRealm(
 
   const realm = await db.realm.findUnique({ where: { id }, select: { settings: true } });
   if (!realm) throw new TRPCError({ code: "NOT_FOUND", message: "Realm not found" });
-  return db.realm.update({
-    where: { id },
-    data: { ...data, settings: withMaxNationsPerUser(realm.settings, maxNationsPerUser) },
-  });
+  await updateRealmSettings(
+    db,
+    id,
+    (current) => withMaxNationsPerUser(current as Prisma.JsonValue, maxNationsPerUser),
+    data
+  );
+  return db.realm.findUniqueOrThrow({ where: { id } });
 }
 
 export const realmsRouter = createTRPCRouter({
@@ -264,6 +268,7 @@ export const realmsRouter = createTRPCRouter({
     const nation = { id: true, name: true, realmId: true, realm: { select: { name: true } } };
     const users = await ctx.db.user.findMany({
       orderBy: { updatedAt: "desc" },
+      take: 1000,
       select: {
         id: true,
         clerkUserId: true,
@@ -354,6 +359,9 @@ export const realmsRouter = createTRPCRouter({
   directory: rateLimitedPublicProcedure.query(({ ctx }) =>
     listRealmDirectory(ctx.db, ctx.user?.id ?? null)
   ),
+
+  /** Lightweight open-realm select list for Halo command-palette search. */
+  getSelectList: rateLimitedPublicProcedure.query(({ ctx }) => listRealmSelectList(ctx.db)),
 
   /** A realm's map face for its directory card and page header: political SVG paths, cached an hour. */
   mapFace: rateLimitedPublicProcedure

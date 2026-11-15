@@ -1,5 +1,4 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import React, { useMemo } from "react";
 import { SeaWaves as Waves, Compass } from "iconoir-react";
 import type { EditorFeature } from "~/hooks/useMapEditor";
@@ -56,7 +55,7 @@ function courseLabel(source: Coord | null, mouth: Coord | null) {
   return `${compassDirection(b)} (${Math.round(b)}°)`;
 }
 
-const formatMeters = (m: number | null) => (m != null ? `${m.toLocaleString()} m` : "—");
+const formatMeters = (m: number | null) => (m != null ? `${m.toLocaleString()} m` : "–");
 
 function useSampledElevation(point: Coord | null) {
   const realm = useMapRealm();
@@ -87,7 +86,7 @@ function EndpointTile({
         {zoneName || (point ? fallbackZone : missing)}
       </span>
       {point && (
-        <span className="text-label-tertiary text-footnote block truncate font-mono tabular-nums">
+        <span className="text-label-tertiary text-footnote font-data block truncate tabular-nums">
           {point[1].toFixed(2)}°, {point[0].toFixed(2)}°
         </span>
       )}
@@ -120,7 +119,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
       <div className="grid grid-cols-2 gap-2">
         <MetricCard
           label="Course length"
-          value={lengthKm != null ? Math.round(lengthKm).toLocaleString() : "—"}
+          value={lengthKm != null ? Math.round(lengthKm).toLocaleString() : "–"}
           unit={lengthKm != null && "km"}
         >
           {lengthMi != null && (
@@ -144,7 +143,9 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Waves className="text-cyan h-3.5 w-3.5" />
-            <Eyebrow>Hydrological profile</Eyebrow>
+            <span className="text-caption text-label-secondary font-medium">
+              Hydrological profile
+            </span>
           </div>
           {(sourceSample.isLoading || mouthSample.isLoading) && (
             <div className="border-separator border-t-cyan h-2.5 w-2.5 animate-spin rounded-full border-2" />
@@ -174,7 +175,7 @@ export const RiverHydrologySection = React.memo(function RiverHydrologySection({
           <ReadoutRow label="Total drop" value={formatMeters(elevDropM)} />
           <ReadoutRow
             label="Mean gradient"
-            value={gradientMPerKm != null ? `${gradientMPerKm.toFixed(1)} m/km` : "—"}
+            value={gradientMPerKm != null ? `${gradientMPerKm.toFixed(1)} m/km` : "–"}
           />
           {flowRegime && (
             <ReadoutRow

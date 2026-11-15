@@ -26,6 +26,7 @@ import { formatCurrency, formatNumber } from "~/lib/utils/format-utils";
 import { CollectiveActionsPanel } from "./CollectiveActionsPanel";
 import { CountrySearchSelect } from "../CountrySearchSelect";
 import { Card } from "~/components/ui/card";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 
 interface AllianceDashboardProps {
   allianceId: string;
@@ -99,11 +100,13 @@ export function AllianceDashboard({
           </div>
           <div>
             <h3 className="text-label text-title-3 truncate">{alliance.name}</h3>
-            <div className="text-label-secondary text-footnote flex items-center gap-2">
-              <Badge variant="outline">{alliance.type}</Badge>
-              <Badge variant="outline">{alliance.visibility}</Badge>
-              <span>{alliance.memberCount} members</span>
-            </div>
+            <p className="text-label-secondary text-footnote flex flex-wrap items-center gap-x-2 gap-y-0.5 capitalize">
+              <span>{alliance.type}</span>
+              <span aria-hidden="true">·</span>
+              <span>{alliance.visibility}</span>
+              <span aria-hidden="true">·</span>
+              <span className="normal-case">{alliance.memberCount} members</span>
+            </p>
           </div>
         </div>
 
@@ -185,11 +188,16 @@ export function AllianceDashboard({
             return (
               <div key={m.id} className="text-body flex items-center justify-between py-1">
                 <div className="flex items-center gap-2">
-                  {m.role === "founder" && <Crown className="text-yellow h-3 w-3" />}
+                  {m.role === "founder" && <Crown className="text-warning h-3 w-3" />}
                   {m.role === "observer" && <Eye className="text-label-secondary h-3 w-3" />}
-                  <span className={m.countryId === countryId ? "font-medium" : ""}>
+                  <CountryLink
+                    country={{ id: m.countryId, name: m.country.name }}
+                    className={
+                      m.countryId === countryId ? "hover:text-tint font-medium" : "hover:text-tint"
+                    }
+                  >
                     {m.country.name}
-                  </span>
+                  </CountryLink>
                 </div>
                 <Badge variant={roleBadge.variant}>{roleBadge.label}</Badge>
               </div>

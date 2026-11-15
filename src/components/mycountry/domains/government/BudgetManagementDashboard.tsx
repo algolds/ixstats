@@ -131,7 +131,7 @@ function NewYearBanner({
   return (
     <div
       role="status"
-      className="rounded-control border-yellow/40 flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
+      className="rounded-control border-separator bg-fill-4 flex flex-wrap items-center justify-between gap-3 border px-4 py-3"
     >
       <p className="text-label text-body">
         A new fiscal year has begun. Your FY {yearLabel(effectiveYear)} budget stays in effect until
@@ -139,6 +139,7 @@ function NewYearBanner({
       </p>
       {startFrom && (
         <Button
+          variant="outline"
           size="sm"
           onClick={() => startBudgetYear.mutate({ countryId: startFrom })}
           disabled={startBudgetYear.isPending}
@@ -232,9 +233,9 @@ function BudgetTitle({
 }) {
   return (
     <div className="min-w-0">
-      <h2 className="text-label text-title-2">
+      <h3 className="text-label text-headline">
         {structure?.governmentName ?? "National"} Fiscal Budget
-      </h2>
+      </h3>
       <p className="text-label-secondary text-footnote mt-0.5">
         {structure?.governmentType ? `${toTitleCase(structure.governmentType)} • ` : ""}
         {yearLabel(year)} {structure?.fiscalYear ?? "FY"}
@@ -319,7 +320,7 @@ function BudgetManagementBody({
     name: item.category,
     value: item.amount,
     percent: item.percent,
-    color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-amber-500)",
+    color: REVENUE_CHART_COLORS[idx % REVENUE_CHART_COLORS.length] ?? "var(--color-chart-1)",
   }));
   const budgetTrendData = buildTrendData(budgetAllocations).map((item) => ({
     ...item,

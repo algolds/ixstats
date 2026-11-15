@@ -181,6 +181,7 @@ export const countryProcedures = {
           coordinates: true,
           population: true,
           wikiPageTitle: true,
+          wikiSource: true,
           countryId: true,
           country: { select: { name: true, slug: true } },
         },
@@ -203,6 +204,7 @@ export const countryProcedures = {
                 countrySlug: c.country.slug,
                 population: c.population,
                 wikiPageTitle: c.wikiPageTitle,
+                wikiSource: c.wikiSource,
               },
             };
           }),

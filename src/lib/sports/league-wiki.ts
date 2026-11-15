@@ -7,9 +7,12 @@
  * stores and `titleToWikiOSRoute` links.
  */
 
+import type { WikiSource } from "~/lib/wiki-os/config";
+
 export interface WikiLeagueTeam {
   name: string;
   wikiSlug: string | null;
+  wikiSource?: WikiSource | null;
 }
 
 const TEAMS_WORDS = "teams|clubs|members|participants|franchises";
@@ -178,4 +181,17 @@ export function extractLeagueTeams(wikitext: string): WikiLeagueTeam[] {
   const clean = stripNoise(wikitext);
   const fromSections = teamsSections(clean).flatMap(sectionTeams);
   return dropDuplicates(fromSections.length > 0 ? fromSections : infoboxTeams(clean));
+}
+
+/**
+ * Teams as a league can store them. A team read from a sister wiki keeps its `wikiSlug` alongside `wikiSource`, so
+ * its link opens the right wiki instead of an IxWiki homonym.
+ */
+export function storableLeagueTeams(teams: WikiLeagueTeam[], wiki: WikiSource): WikiLeagueTeam[] {
+  if (wiki === "ixwiki") return teams;
+  return teams.map((team) => ({
+    name: team.name,
+    wikiSlug: team.wikiSlug,
+    wikiSource: team.wikiSlug ? wiki : null,
+  }));
 }

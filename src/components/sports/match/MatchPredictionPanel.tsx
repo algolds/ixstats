@@ -1,9 +1,9 @@
 "use client";
 
+import { Card } from "~/components/ui/card";
 import React, { useState } from "react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundCues } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { RadioCard, RadioCardGroup } from "~/components/ui/radio-card";
@@ -27,12 +27,10 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
 
   const place = api.sports.placePrediction.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Prediction placed");
       void utils.sports.getMatchPredictions.invalidate({ matchId });
     },
     onError: (err) => {
-      soundCues.error();
       notify.error(err.message || "Failed to place prediction");
     },
   });
@@ -50,7 +48,7 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
     stakeNumber <= (data?.maxStake ?? 10000);
 
   return (
-    <div className="border-separator bg-surface rounded-card space-y-3 border p-4">
+    <Card variant="well" className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-label text-footnote font-semibold">Predict the result</span>
         {data && (
@@ -126,6 +124,6 @@ export function MatchPredictionPanel({ matchId, homeName, awayName }: MatchPredi
           </p>
         </>
       )}
-    </div>
+    </Card>
   );
 }

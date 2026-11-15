@@ -1,8 +1,7 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 export async function seedVaultStoreItems() {
   console.log("💎 Seeding Vault Store Items...");

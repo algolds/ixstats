@@ -21,6 +21,7 @@ import {
 } from "~/lib/lorewards/week-merge";
 import { isUniqueViolation } from "~/lib/prisma-error";
 import { lorewardBonusKey, type LorewardPlace } from "~/lib/vault/vault-bonus";
+import { createPrismaClient } from "~/server/prisma-client";
 
 /** Rows per page: an explicit `take` with keyset paging by id, so none is dropped. */
 const PAGE = 500;
@@ -169,7 +170,7 @@ function printPlan(plan: WeeklyPlan): void {
 
 async function main(): Promise<void> {
   const { apply } = parseMergeArgs(process.argv.slice(2));
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   try {
     const plan = await loadWeeklyPlan(db);
     printPlan(plan);

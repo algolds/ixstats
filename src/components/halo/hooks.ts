@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Book, Globe, HomeSimple, LogIn, LogOut } from "iconoir-react";
+import { useEffect, useEffectEvent, useReducer, useState } from "react";
 import { createAbsoluteUrl } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import { useAuth, useUser } from "~/context/auth-context";
@@ -8,596 +7,420 @@ import { useSoundSettings } from "~/hooks/useSoundSettings";
 import { useNotificationStore } from "~/stores/notificationStore";
 import { useNotify } from "~/hooks/useNotify";
 import { useDebounce } from "~/hooks/useDebounce";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { navigateWithBasePath } from "~/lib/base-path";
 import type { ViewMode, SearchFilter, SearchResult, CountriesData } from "./types";
 import { extractCountriesList } from "./types";
+import type { AppDefinition } from "~/lib/navigation/app-sections";
+import { toggleSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
 import { useActiveDIPlugin } from "./plugin-context";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
-import { commandsFor, CORE_FEATURES } from "./halo-registry";
+import type { SystemActionId } from "./halo-registry";
+import { haloReducer, INITIAL_HALO_STATE } from "~/lib/halo/halo-state";
+import {
+  buildIndex,
+  commandEntriesFor,
+  indexPluginCommands,
+  indexRealms,
+  searchCatalog,
+  type CatalogDescriptor,
+} from "~/lib/halo/search";
+
+// Safe module-level hook wrappers so isolated unit tests with partial `~/trpc/react` mocks still run.
+const useTrpcUtilsSafe = typeof api.useUtils === "function" ? api.useUtils : () => null;
+const useMarkAllNotificationsMutationSafe =
+  api.notifications?.markAllAsRead?.useMutation ?? (() => null);
+const useMarkAllMessagesMutationSafe = api.messages?.markAllAsRead?.useMutation ?? (() => null);
 
 /**
  * Shared state management hook for the Halo (Dynamic Island) system.
  * Handles mode transitions, debounced search, keyboard navigation shortcuts,
  * and external event synchronization.
  */
-export function useDynamicIslandState() {
+export function useDynamicIslandState(options?: { searchApps?: readonly AppDefinition[] }) {
   const { user, isSignedIn } = useUser();
   const { signOut } = useAuth();
   const { toggleTheme, toggleCompactMode } = useTheme();
   const soundSettings = useSoundSettings();
   const notify = useNotify();
   const markAllNotificationsAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const trpcUtils = useTrpcUtilsSafe();
+  const markAllServerNotifications = useMarkAllNotificationsMutationSafe();
+  const markAllServerMessages = useMarkAllMessagesMutationSafe();
   const pathname = usePathname();
+  const router = useRouter();
   const activePlugin = useActiveDIPlugin();
   const isWikiActive = activePlugin?.id === "wiki";
   const isAdmin = useCanOpenAdmin();
 
-  const [mode, setMode] = useState<ViewMode>("compact");
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [expandedMode, setExpandedMode] = useState<ViewMode>("search");
+  const [haloState, dispatch] = useReducer(haloReducer, INITIAL_HALO_STATE);
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 150);
   const [searchFilter, setSearchFilter] = useState<SearchFilter>("all");
-  const [isUserInteracting, setIsUserInteracting] = useState(false);
+  const [prevPluginKey, setPrevPluginKey] = useState("");
 
-  // Lazy-load countries only when expanded
-  const { data: countriesData } = api.countries.getSelectList.useQuery(
+  const mode: ViewMode = haloState.status === "compact" ? "compact" : haloState.view;
+  const isExpanded = haloState.status === "expanded";
+  const expandedMode: ViewMode = haloState.status === "expanded" ? haloState.view : "search";
+
+  // Sync open plugin view if the active plugin or its available views change
+  const viewKeys = activePlugin?.expandedViews ? Object.keys(activePlugin.expandedViews) : [];
+  const pluginKey = activePlugin ? `${activePlugin.id}:${viewKeys.join(",")}` : "";
+  if (pluginKey !== prevPluginKey) {
+    setPrevPluginKey(pluginKey);
+    dispatch({
+      type: "plugin-changed",
+      firstView: viewKeys[0] ?? null,
+      availableViews: viewKeys,
+      pluginGone: !activePlugin,
+    });
+  }
+
+  // Countries and open realms are only needed while the search view can list them
+  const countriesEnabled =
+    isExpanded &&
+    expandedMode === "search" &&
+    (searchFilter === "all" || searchFilter === "countries");
+  const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
     { limit: 500 },
-    { staleTime: 30 * 60 * 1000, enabled: isExpanded }
+    { staleTime: 30 * 60 * 1000, enabled: countriesEnabled }
+  );
+
+  const realmsEnabled =
+    isExpanded &&
+    expandedMode === "search" &&
+    (searchFilter === "all" || searchFilter === "realms");
+  const { data: realmsData, isLoading: realmsLoading } = api.realms.getSelectList.useQuery(
+    undefined,
+    { staleTime: 30 * 60 * 1000, enabled: realmsEnabled }
   );
 
   // Wiki search query
-  const { data: wikiSearchData } = api.wikios.advancedSearch.useQuery(
-    { query: debouncedSearchQuery, limit: searchFilter === "wiki" ? 12 : 5 },
-    {
-      enabled:
-        debouncedSearchQuery.length >= 2 && (searchFilter === "all" || searchFilter === "wiki"),
-      staleTime: 60_000,
-    }
+  const wikiEnabled =
+    debouncedSearchQuery.trim().length >= 2 && (searchFilter === "all" || searchFilter === "wiki");
+  const { data: wikiSearchData, isFetching: wikiFetching } = api.wikios.advancedSearch.useQuery(
+    { query: debouncedSearchQuery.trim(), limit: searchFilter === "wiki" ? 12 : 5 },
+    { enabled: wikiEnabled, staleTime: 60_000 }
   );
+  const isSearchPending =
+    searchQuery !== debouncedSearchQuery ||
+    countriesLoading ||
+    realmsLoading ||
+    (wikiEnabled && wikiFetching);
 
-  // Shortcut debounce refs
-  const [isProcessingShortcut, setIsProcessingShortcut] = useState(false);
-  const shortcutTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastTabTimestampRef = useRef<number>(0);
-  const interactionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  // Undefined at first, so a plugin active on mount counts as a change
-  const [prevActivePluginId, setPrevActivePluginId] = useState<string | undefined>(undefined);
+  const applyInitialSearchFilter = () => {
+    let isDynamicWikiSearchEnabled = true;
+    try {
+      const stored = localStorage.getItem("wikios:dynamicSearchWiki");
+      if (stored !== null) {
+        isDynamicWikiSearchEnabled = stored === "true";
+      }
+    } catch {
+      // SSR fallback
+    }
+    setSearchFilter(isDynamicWikiSearchEnabled && isWikiActive ? "wiki" : "all");
+  };
 
   // Mode switching with auto-expand management
-  const switchMode = useCallback(
-    (newMode: ViewMode) => {
-      setMode(newMode);
-      setIsUserInteracting(true);
-      window.dispatchEvent(new CustomEvent("ix:di-mode-changed", { detail: { mode: newMode } }));
+  const switchMode = (newMode: ViewMode) => {
+    if (newMode === "compact") {
+      dispatch({ type: "close" });
+      return;
+    }
+    dispatch({ type: "open", view: newMode });
+    if (newMode === "search") {
+      applyInitialSearchFilter();
+    }
+  };
 
-      if (interactionTimeoutRef.current) {
-        clearTimeout(interactionTimeoutRef.current);
-      }
-      interactionTimeoutRef.current = setTimeout(() => setIsUserInteracting(false), 30000);
-
-      const isExpandedMode =
-        newMode === "search" ||
-        newMode === "notifications" ||
-        newMode === "settings" ||
-        newMode === "mycountry" ||
-        newMode.startsWith("plugin:");
-
-      if (isExpandedMode) {
-        setIsExpanded(true);
-        setExpandedMode(newMode);
-      } else {
-        setIsExpanded(false);
-      }
-
-      if (newMode === "search") {
-        let isDynamicWikiSearchEnabled = true;
-        try {
-          const stored = localStorage.getItem("wikios:dynamicSearchWiki");
-          if (stored !== null) {
-            isDynamicWikiSearchEnabled = stored === "true";
-          }
-        } catch {
-          // SSR fallback
-        }
-        if (isDynamicWikiSearchEnabled && isWikiActive) {
-          setSearchFilter("wiki");
-        } else {
-          setSearchFilter("all");
-        }
-      }
-    },
-    [isWikiActive, setSearchFilter]
+  const commandIndex = buildIndex(
+    commandEntriesFor({
+      isAdmin,
+      signedIn: Boolean(isSignedIn && user),
+      pathname,
+      searchApps: options?.searchApps,
+    })
   );
+  const countryIndex = buildIndex(extractCountriesList(countriesData as CountriesData | undefined));
+  const pluginCommandIndex = indexPluginCommands(activePlugin?.commands ?? []);
+  const realmIndex = indexRealms(realmsData ?? []);
 
-  // Listen to external mode change triggers
-  useEffect(() => {
-    const handleSwitch = (e: Event) => {
-      const customEvent = e as CustomEvent<{ mode: ViewMode }>;
-      if (customEvent.detail?.mode) {
-        switchMode(customEvent.detail.mode);
-      }
-    };
-    window.addEventListener("ix:switch-di-mode", handleSwitch);
-    return () => {
-      window.removeEventListener("ix:switch-di-mode", handleSwitch);
-    };
-  }, [switchMode]);
-
-  // Pre-compute lowercase command index with category & keywords
-  const commandIndex = useMemo(() => {
-    const ctx = commandsFor(isAdmin);
-    if (!isSignedIn || !user) {
-      ctx.push(
-        {
-          name: "Sign in",
-          path: "/sign-in",
-          icon: LogIn,
-          category: "System",
-          description: "Sign in to your IxStates account",
-          keywords: ["login", "auth", "signin", "session"],
-        },
-        {
-          name: "Sign up",
-          path: "/sign-up",
-          icon: LogIn,
-          category: "System",
-          description: "Create a new IxStates account",
-          keywords: ["register", "signup", "join", "new account"],
-        }
-      );
-    } else {
-      ctx.push({
-        name: "Sign out",
-        actionId: "sign-out",
-        icon: LogOut,
-        category: "System",
-        description: "Sign out of your account",
-        keywords: ["logout", "exit", "signoff"],
-      });
-    }
-
-    if (pathname !== "/") {
-      ctx.unshift({
-        name: "Home",
-        path: "/",
-        icon: HomeSimple,
-        category: "System",
-        description: "Return to IxStates homepage",
-        keywords: ["home", "landing", "main"],
-      });
-    }
-
-    if (pathname?.includes("/countries/") && !pathname?.includes("/countries/new")) {
-      const cid = pathname.split("/countries/")[1]?.split("/")[0];
-      if (cid) {
-        ctx.push({
-          name: "Country profile",
-          path: `/countries/${cid}`,
-          icon: Globe,
-          category: "Geography",
-          description: "View detailed country profile and economy",
-          keywords: ["profile", "showcase", "country"],
-        });
-      }
-    }
-
-    return ctx.map((c) => ({
-      ...c,
-      _lower:
-        `${c.name}\t${c.description}\t${c.category}\t${c.keywords?.join(" ") ?? ""}`.toLowerCase(),
-    }));
-  }, [isSignedIn, user, pathname, isAdmin]);
-
-  const featureIndex = useMemo(
-    () =>
-      CORE_FEATURES.map((f) => ({
-        ...f,
-        _lower:
-          `${f.name}\t${f.description}\t${f.category}\t${f.keywords?.join(" ") ?? ""}`.toLowerCase(),
-      })),
-    []
-  );
-
-  const countryIndex = useMemo(() => {
-    const list = extractCountriesList(countriesData as CountriesData | undefined);
-    return list.map((c) => ({ ...c, _lower: c.name.toLowerCase() }));
-  }, [countriesData]);
-
-  // Combined and filtered search results
-  const searchResults: SearchResult[] = useMemo(() => {
-    if (!debouncedSearchQuery.trim()) return [];
-
-    const query = debouncedSearchQuery.toLowerCase();
-    const matchedCountries: SearchResult[] = [];
-    const matchedCommands: SearchResult[] = [];
-    const matchedFeatures: SearchResult[] = [];
-    const matchedWiki: SearchResult[] = [];
-
-    const handleExecute = (actionId?: string, targetPath?: string) => {
-      if (actionId) {
-        switch (actionId) {
-          case "toggle-theme": {
-            toggleTheme();
-            return;
-          }
-          case "toggle-sound": {
-            const next = !soundSettings.enabled;
-            soundSettings.setEnabled(next);
-            if (next) soundEffects.toggle();
-            return;
-          }
-          case "toggle-compact": {
-            toggleCompactMode();
-            return;
-          }
-          case "mark-all-read": {
-            markAllNotificationsAsRead();
-            notify.success("All notifications marked as read");
-            return;
-          }
-          case "reload-data": {
-            window.location.reload();
-            return;
-          }
-          case "random-wiki": {
-            window.location.href = createAbsoluteUrl("/util/random");
-            return;
-          }
-          case "sign-out": {
-            void signOut().finally(() => {
-              window.location.href = createAbsoluteUrl("/");
-            });
-            return;
-          }
-          case "random-country": {
-            if (countryIndex.length > 0) {
-              const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
-              const slug = random?.slug ?? random?.id;
-              if (slug) window.location.href = createAbsoluteUrl(`/countries/${slug}`);
-            }
-            return;
-          }
-        }
-      }
-      if (targetPath === "#search") {
-        (
-          document.querySelector('[data-command-palette-search="true"]') as HTMLInputElement
-        )?.focus();
-        return;
-      }
-      if (targetPath === "#notifications") {
-        switchMode("notifications");
-        return;
-      }
-      if (targetPath === "#settings") {
-        switchMode("settings");
-        return;
-      }
-      if (targetPath) {
-        window.location.href = createAbsoluteUrl(targetPath);
-      }
-    };
-
-    // 1. Gather Countries
-    if (searchFilter === "all" || searchFilter === "countries") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const country of countryIndex) {
-        if (country._lower.includes(query)) {
-          const slug = country.slug ?? country.id;
-          matchedCountries.push({
-            id: `country-${country.id}`,
-            type: "country",
-            title: country.name,
-            subtitle: `Economic Tier: ${country.economicTier || "Standard"}`,
-            description: country.economicTier
-              ? `Tier: ${country.economicTier}`
-              : "View country profile",
-            metadata: {
-              countryName: country.name,
-              category: "Country",
-              flagUrl: country.flagUrl || country.flag || undefined,
-              economicTier: country.economicTier,
-            },
-            action: () => (window.location.href = createAbsoluteUrl(`/countries/${slug}`)),
-          });
-        }
-        if (matchedCountries.length >= limit) break;
-      }
-    }
-
-    // 2. Gather Commands
-    if (searchFilter === "all" || searchFilter === "commands") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const cmd of commandIndex) {
-        if (cmd._lower.includes(query)) {
-          // oxlint-disable-next-line
-          matchedCommands.push({
-            id: `command-${cmd.name.toLowerCase().replace(/\s+/g, "-")}`,
-            type: "command",
-            title: cmd.name,
-            description: cmd.description,
-            icon: cmd.icon,
-            metadata: {
-              category: cmd.category,
-            },
-            action: () => handleExecute(cmd.actionId, cmd.path),
-          });
-        }
-        if (matchedCommands.length >= limit) break;
-      }
-    }
-
-    // 3. Gather Features
-    if (searchFilter === "all" || searchFilter === "features") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const feat of featureIndex) {
-        if (feat._lower.includes(query)) {
-          // oxlint-disable-next-line
-          matchedFeatures.push({
-            id: `feature-${feat.name.toLowerCase().replace(/\s+/g, "-")}`,
-            type: "feature",
-            title: feat.name,
-            description: feat.description,
-            icon: feat.icon,
-            metadata: {
-              category: feat.category,
-            },
-            action: () => handleExecute(feat.actionId, feat.path),
-          });
-        }
-        if (matchedFeatures.length >= limit) break;
-      }
-    }
-
-    // 4. Gather Wiki Articles
-    if (searchFilter === "all" || searchFilter === "wiki") {
-      const limit = searchFilter === "all" ? 3 : 12;
-      for (const article of wikiSearchData?.results ?? []) {
-        matchedWiki.push({
-          id: `wiki-${article.title}`,
-          type: "wiki",
-          title: article.title,
-          description: article.snippet
-            ? article.snippet.replace(/<[^>]*>/g, "").slice(0, 120)
-            : "Wiki article",
-          icon: Book,
-          metadata: {
-            category: "Wiki",
-          },
-          action: () => {
-            window.location.href = createAbsoluteUrl(
-              `/wiki/${encodeURIComponent(article.title.replace(/ /g, "_"))}`
+  const executeCommand = (actionId?: SystemActionId, targetPath?: string) => {
+    if (actionId) {
+      switch (actionId) {
+        case "toggle-theme":
+          toggleTheme();
+          return;
+        case "toggle-sound":
+          soundSettings.setEnabled(!soundSettings.enabled);
+          return;
+        case "toggle-compact":
+          toggleCompactMode();
+          return;
+        case "toggle-sidebar":
+          toggleSidebarCollapsed();
+          return;
+        case "daily-reward":
+          window.dispatchEvent(new CustomEvent("ix:open-daily-reward"));
+          return;
+        case "open-feedback":
+          window.dispatchEvent(new CustomEvent("ix:open-feedback"));
+          return;
+        case "mark-all-read":
+          markAllNotificationsAsRead();
+          if (user?.id && markAllServerNotifications) {
+            markAllServerNotifications.mutate(
+              { userId: user.id },
+              {
+                onSettled: () => {
+                  void trpcUtils?.notifications?.getUserNotifications?.invalidate?.();
+                  void trpcUtils?.notifications?.getUnreadCount?.invalidate?.();
+                },
+              }
             );
-          },
-        });
-        if (matchedWiki.length >= limit) break;
+          }
+          if (user?.id && markAllServerMessages) {
+            markAllServerMessages.mutate(undefined, {
+              onSettled: () => {
+                void trpcUtils?.messages?.getConversationsByFolder?.invalidate?.();
+                void trpcUtils?.messages?.getFolderCounts?.invalidate?.();
+              },
+            });
+          }
+          notify.success?.("All notifications marked as read");
+          return;
+        case "reload-data":
+          window.location.reload();
+          return;
+        case "random-wiki":
+          navigateWithBasePath("/util/random", router);
+          return;
+        case "sign-out":
+          void signOut().finally(() => {
+            window.location.href = createAbsoluteUrl("/");
+          });
+          return;
+        case "random-country": {
+          if (countryIndex.length > 0) {
+            const random = countryIndex[Math.floor(Math.random() * countryIndex.length)];
+            const slug = random?.slug ?? random?.id;
+            if (slug) navigateWithBasePath(`/countries/${slug}`, router);
+          }
+          return;
+        }
       }
     }
+    if (targetPath === "#search") {
+      switchMode("search");
+      return;
+    }
+    if (targetPath === "#notifications") {
+      switchMode("notifications");
+      return;
+    }
+    if (targetPath === "#settings") {
+      switchMode("settings");
+      return;
+    }
+    if (targetPath === "#mycountry") {
+      switchMode("mycountry");
+      return;
+    }
+    if (targetPath) {
+      navigateWithBasePath(targetPath, router);
+    }
+  };
 
-    // Combine results
-    if (searchFilter === "all") {
-      if (isWikiActive) {
-        return [...matchedWiki, ...matchedCountries, ...matchedCommands, ...matchedFeatures].slice(
-          0,
-          12
-        );
-      }
-      return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
-        0,
-        12
-      );
+  const toSearchResult = (descriptor: CatalogDescriptor): SearchResult => {
+    if (descriptor.pluginCommandKey) {
+      return {
+        id: descriptor.key,
+        type: "command",
+        title: descriptor.title,
+        description: descriptor.description,
+        icon: descriptor.icon,
+        metadata: {
+          category: descriptor.category,
+        },
+        action: () => {
+          const cmd = activePlugin?.commands?.find((c) => c.key === descriptor.pluginCommandKey);
+          if (cmd?.run) {
+            cmd.run();
+            return;
+          }
+          if (cmd?.pluginView) {
+            switchMode(`plugin:${cmd.pluginView}`);
+            return;
+          }
+          const dest = cmd?.path ?? descriptor.path;
+          if (dest) navigateWithBasePath(dest, router);
+        },
+      };
     }
 
-    return [...matchedCountries, ...matchedCommands, ...matchedFeatures, ...matchedWiki].slice(
-      0,
-      12
-    );
-  }, [
+    if (descriptor.kind === "realm") {
+      return {
+        id: descriptor.key,
+        type: "realm",
+        title: descriptor.title,
+        description: descriptor.description,
+        icon: descriptor.icon,
+        metadata: {
+          category: descriptor.category,
+          thumbnail: descriptor.thumbnail,
+        },
+        action: () => {
+          if (descriptor.path) navigateWithBasePath(descriptor.path, router);
+        },
+      };
+    }
+
+    if (descriptor.kind === "country") {
+      return {
+        id: descriptor.key,
+        type: "country",
+        title: descriptor.title,
+        description: descriptor.description,
+        metadata: {
+          countryName: descriptor.title,
+          category: descriptor.category,
+          flagUrl: descriptor.flagUrl,
+          economicTier: descriptor.economicTier,
+        },
+        action: () => {
+          if (descriptor.path) navigateWithBasePath(descriptor.path, router);
+        },
+      };
+    }
+
+    return {
+      id: descriptor.key,
+      type: descriptor.kind,
+      title: descriptor.title,
+      description: descriptor.description,
+      icon: descriptor.icon,
+      metadata: {
+        category: descriptor.category,
+      },
+      action: () => executeCommand(descriptor.actionId, descriptor.path),
+    };
+  };
+
+  const searchResults: SearchResult[] = searchCatalog(
     debouncedSearchQuery,
     searchFilter,
-    countryIndex,
-    commandIndex,
-    featureIndex,
-    switchMode,
-    wikiSearchData,
-    isWikiActive,
-    toggleTheme,
-    soundSettings,
-    toggleCompactMode,
-    markAllNotificationsAsRead,
-    notify,
-    signOut,
-  ]);
+    {
+      pluginCommands: pluginCommandIndex,
+      realms: realmIndex,
+      countries: countryIndex,
+      commands: commandIndex,
+      wiki: wikiSearchData?.results ?? [],
+    },
+    { wikiFirst: isWikiActive, pluginId: activePlugin?.id }
+  ).map(toSearchResult);
 
-  // Plugin view sync: a newly active plugin's first view becomes the expanded view, and a plugin
-  // view left open after its plugin goes away falls back to compact
-  if (activePlugin?.id !== prevActivePluginId) {
-    setPrevActivePluginId(activePlugin?.id);
-    const firstViewKey = activePlugin?.expandedViews
-      ? Object.keys(activePlugin.expandedViews)[0]
-      : undefined;
-    if (firstViewKey) setExpandedMode(`plugin:${firstViewKey}`);
-  }
-  if (!activePlugin && mode.startsWith("plugin:")) {
-    setMode("compact");
-    setIsExpanded(false);
-  }
+  // Global Keyboard Shortcuts (Cmd+K, Cmd+comma, Esc). Never preventDefault keys we do not handle.
+  const onKey = useEffectEvent((e: KeyboardEvent) => {
+    // Holding a toggle chord must not flip the mode on every auto-repeat
+    if (e.repeat && (e.metaKey || e.ctrlKey || e.key === "Escape")) return;
 
-  // Global Keyboard Shortcuts (Cmd+K, Tab, Esc)
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (isProcessingShortcut) {
-        e.preventDefault();
-        return;
-      }
+    const activeElement = document.activeElement as HTMLElement | null;
+    const isInputFocused =
+      activeElement?.tagName === "INPUT" ||
+      activeElement?.tagName === "TEXTAREA" ||
+      activeElement?.getAttribute("contenteditable") === "true" ||
+      activeElement?.closest('[contenteditable="true"]') != null ||
+      activeElement?.closest(".cm-editor") != null ||
+      activeElement?.closest("[data-slate-editor]") != null;
 
-      const activeElement = document.activeElement as HTMLElement | null;
-      const isInputFocused =
-        activeElement?.tagName === "INPUT" ||
-        activeElement?.tagName === "TEXTAREA" ||
-        activeElement?.getAttribute("contenteditable") === "true" ||
-        activeElement?.closest('[contenteditable="true"]') != null ||
-        activeElement?.closest(".cm-editor") != null ||
-        activeElement?.closest("[data-slate-editor]") != null;
+    const isOurSearchInput =
+      activeElement?.closest("[data-command-palette-search]") ||
+      activeElement?.closest("[data-command-palette]");
+    const hasSearchAttribute = activeElement?.hasAttribute("data-command-palette-search");
 
-      const isOurSearchInput =
-        activeElement?.closest("[data-command-palette-search]") ||
-        activeElement?.closest("[data-command-palette]");
-      const hasSearchAttribute = activeElement?.hasAttribute("data-command-palette-search");
+    if ((isOurSearchInput || hasSearchAttribute) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      return;
+    }
 
-      if ((isOurSearchInput || hasSearchAttribute) && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        return;
-      }
-
-      // Cmd+K / Ctrl+K
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        if (!isInputFocused || isOurSearchInput) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          if (isProcessingShortcut) return;
-          setIsProcessingShortcut(true);
-
-          if (mode === "search") {
-            switchMode("compact");
-          } else {
-            switchMode("search");
-          }
-
-          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-          shortcutTimeoutRef.current = setTimeout(() => {
-            setIsProcessingShortcut(false);
-          }, 300);
-        }
-        return;
-      }
-
-      if (isInputFocused && !isOurSearchInput && e.key !== "Escape") {
-        return;
-      }
-
-      // Secondary shortcuts
-      if (e.metaKey || e.ctrlKey) {
-        switch (e.key) {
-          case "n":
-            e.preventDefault();
-            e.stopPropagation();
-            setIsProcessingShortcut(true);
-            switchMode(mode === "notifications" ? "compact" : "notifications");
-            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-            shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
-            break;
-          case ",":
-            e.preventDefault();
-            e.stopPropagation();
-            setIsProcessingShortcut(true);
-            switchMode(mode === "settings" ? "compact" : "settings");
-            if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-            shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
-            break;
-        }
-      }
-
-      // Tab filter cycling
-      if (e.key === "Tab" && mode === "search" && !isProcessingShortcut && !isInputFocused) {
-        e.preventDefault();
-        const filters: SearchFilter[] = ["all", "countries", "commands", "features", "wiki"];
-        const currentIndex = filters.indexOf(searchFilter);
-        const nextIndex = (currentIndex + 1) % filters.length;
-        const nextFilter = filters[nextIndex];
-        if (nextFilter) setSearchFilter(nextFilter);
-      }
-
-      // Wiki mode toggle
-      if (
-        e.key === "Tab" &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !isInputFocused &&
-        mode !== "search" &&
-        !isProcessingShortcut &&
-        isWikiActive
-      ) {
+    // Cmd+K / Ctrl+K
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      if (!isInputFocused || isOurSearchInput) {
         e.preventDefault();
         e.stopPropagation();
 
-        const now = Date.now();
-        const timeSinceLastTab = now - (lastTabTimestampRef.current ?? 0);
-        lastTabTimestampRef.current = now;
-
-        setIsProcessingShortcut(true);
-        if (timeSinceLastTab < 400 && mode === "plugin:wiki") {
-          switchMode("compact");
+        if (mode === "search") {
+          dispatch({ type: "close" });
         } else {
-          switchMode(mode === "plugin:wiki" ? "compact" : "plugin:wiki");
-        }
-        if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-        shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
-      }
-
-      // Escape to close. Only claim the event when Halo has something to close, so that other
-      // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
-      if (e.key === "Escape" && !isProcessingShortcut && !isInputFocused && mode !== "compact") {
-        e.preventDefault();
-        if (mode === "search" && searchQuery) {
-          setSearchQuery("");
-          setSearchFilter("all");
-        } else {
-          setIsProcessingShortcut(true);
-          switchMode("compact");
-          if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
-          shortcutTimeoutRef.current = setTimeout(() => setIsProcessingShortcut(false), 500);
+          switchMode("search");
         }
       }
-    };
+      return;
+    }
 
-    window.addEventListener("keydown", handleKeyPress, { capture: true, passive: false });
+    if (isInputFocused && !isOurSearchInput && e.key !== "Escape") {
+      return;
+    }
+
+    // Secondary shortcuts
+    if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+      e.preventDefault();
+      e.stopPropagation();
+      dispatch({ type: "toggle", view: "settings" });
+    }
+
+    // Escape to close. Only claim the event when Halo has something to close, so that other
+    // Escape handlers that respect `defaultPrevented` (e.g. detail rails) still run.
+    if (e.key === "Escape" && !isInputFocused && mode !== "compact") {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      if (mode === "search" && searchQuery) {
+        setSearchQuery("");
+        setSearchFilter("all");
+      } else {
+        dispatch({ type: "close" });
+      }
+    }
+  });
+
+  useEffect(() => {
+    window.addEventListener("keydown", onKey);
     return () => {
-      window.removeEventListener("keydown", handleKeyPress, { capture: true });
-      if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+      window.removeEventListener("keydown", onKey);
     };
-  }, [mode, switchMode, searchFilter, searchQuery, isProcessingShortcut, isWikiActive]);
+  }, []);
 
   // Tour step transitions
+  const onTourStep = useEffectEvent((e: Event) => {
+    const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
+    if (!customEvent.detail || !customEvent.detail.active) return;
+
+    switch (customEvent.detail.step) {
+      case 1:
+      case 3:
+        switchMode("compact");
+        break;
+      case 2:
+      case 4:
+        switchMode("mycountry");
+        break;
+      case 5:
+        switchMode("settings");
+        break;
+    }
+  });
+
+  const onOpenHaloMode = useEffectEvent((e: Event) => {
+    const customEvent = e as CustomEvent<ViewMode>;
+    if (!customEvent.detail) return;
+    switchMode(customEvent.detail);
+  });
+
   useEffect(() => {
-    const handleTourStep = (e: Event) => {
-      const customEvent = e as CustomEvent<{ step: number; active: boolean }>;
-      if (!customEvent.detail || !customEvent.detail.active) return;
-
-      const { step } = customEvent.detail;
-      switch (step) {
-        case 1:
-          switchMode("compact");
-          break;
-        case 2:
-          switchMode("mycountry");
-          break;
-        case 3:
-          switchMode("compact");
-          break;
-        case 4:
-          switchMode("mycountry");
-          break;
-        case 5:
-          switchMode("settings");
-          break;
-      }
-    };
-
-    window.addEventListener("ix:halo-tour-step", handleTourStep);
+    window.addEventListener("ix:halo-tour-step", onTourStep);
+    window.addEventListener("ix:open-halo-mode", onOpenHaloMode);
     return () => {
-      window.removeEventListener("ix:halo-tour-step", handleTourStep);
-    };
-  }, [switchMode]);
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (interactionTimeoutRef.current) clearTimeout(interactionTimeoutRef.current);
-      if (shortcutTimeoutRef.current) clearTimeout(shortcutTimeoutRef.current);
+      window.removeEventListener("ix:halo-tour-step", onTourStep);
+      window.removeEventListener("ix:open-halo-mode", onOpenHaloMode);
     };
   }, []);
 
@@ -608,15 +431,11 @@ export function useDynamicIslandState() {
     searchQuery,
     debouncedSearchQuery,
     searchFilter,
-    isUserInteracting,
     searchResults,
+    isSearchPending,
     countriesData,
-    setMode,
-    setIsExpanded,
-    setExpandedMode,
     setSearchQuery,
     setSearchFilter,
-    setIsUserInteracting,
     switchMode,
   };
 }

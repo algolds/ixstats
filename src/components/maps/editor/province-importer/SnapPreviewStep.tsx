@@ -62,7 +62,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         />
         <div className="text-label-secondary text-footnote flex justify-between">
           <span>Tight (1km)</span>
-          <span className="font-mono">{importer.snapTolerance.toFixed(2)}°</span>
+          <span className="font-data tabular-nums">{importer.snapTolerance.toFixed(2)}°</span>
           <span>Loose (220km)</span>
         </div>
       </div>
@@ -82,7 +82,7 @@ export const SnapPreviewStep = memo(function SnapPreviewStep({ importer }: SnapP
         />
         <div className="text-label-secondary text-footnote flex justify-between">
           <span>More detail</span>
-          <span className="font-mono">{importer.simplifyTolerance.toFixed(3)}°</span>
+          <span className="font-data tabular-nums">{importer.simplifyTolerance.toFixed(3)}°</span>
           <span>Fewer points</span>
         </div>
       </div>

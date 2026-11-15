@@ -3,10 +3,10 @@
  * Run with: bunx tsx scripts/recalculate-vitality-scores.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { calculateAllVitalityScores } from "../src/lib/vitality-calculator";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("Starting vitality scores recalculation...\n");

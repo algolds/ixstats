@@ -4,59 +4,78 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { StatsReport as BarChart3, MoreHoriz as MoreHorizontal } from "iconoir-react";
-import { WikiOSLogomark } from "~/components/wiki-os/shared/WikiOSLogomark";
-import { MyCountryLogomark } from "~/lib/navigation/icons/MyCountryLogomark";
-import { RealmsLogomark } from "~/lib/navigation/icons/RealmsLogomark";
-import { Compass as SolidCompass, MultiBubble as SolidMultiBubble } from "iconoir-react/solid";
+import { MoreHoriz as MoreHorizontal } from "iconoir-react";
+import { useUser } from "~/context/auth-context";
 import { stripBasePath } from "~/lib/base-path";
-import { FORUM_HOME } from "~/lib/thinkpages-forum/links";
+import { cn } from "~/lib/utils";
+import {
+  getVisibleAppForPath,
+  getVisibleApps,
+  TAB_BAR_PRIORITY,
+  type AppDefinition,
+} from "~/lib/navigation/app-sections";
 import { PreText } from "~/components/ui/pretext";
-import { springSmooth, tweenExit } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springSmooth, tweenExit } from "~/lib/design/motion";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { FacetMaterial } from "~/components/ui/facet";
 import { focusRing } from "~/components/ui/button";
+import { useHaloMaterial } from "../halo-material";
+import { HaloWell } from "./shared/HaloViewParts";
 
-// Primary nav items for the tray
+/**
+ * Splits visible non-footer sidebar apps into the 6 primary grid items and optional secondary row,
+ * ordered by `TAB_BAR_PRIORITY`.
+ */
+export function splitNavTrayApps(visibleApps: readonly AppDefinition[]): {
+  primary: AppDefinition[];
+  secondary: AppDefinition[];
+} {
+  const byId = new Map<AppDefinition["id"], AppDefinition>();
+  for (const app of visibleApps) {
+    if (app.placement !== "footer") {
+      byId.set(app.id, app);
+    }
+  }
 
-interface NavTrayItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** The app's `data-app` tint; the item's accent is that scope's `--tint`. Omitted = the default tint. */
-  app?: string;
+  const ordered: AppDefinition[] = [];
+  for (const id of TAB_BAR_PRIORITY) {
+    const app = byId.get(id);
+    if (app) ordered.push(app);
+  }
+  for (const app of byId.values()) {
+    if (!ordered.includes(app)) ordered.push(app);
+  }
+
+  return {
+    primary: ordered.slice(0, 6),
+    secondary: ordered.slice(6),
+  };
 }
 
-const PRIMARY_NAV: NavTrayItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-  { name: "MyCountry", href: "/mycountry", icon: MyCountryLogomark, app: "mycountry" },
-  { name: "Realms", href: "/realms", icon: RealmsLogomark, app: "realms" },
-  { name: "Wiki", href: "/w", icon: WikiOSLogomark, app: "wiki" },
-  { name: "Maps", href: "/maps", icon: SolidCompass, app: "maps" },
-  { name: "Forum", href: FORUM_HOME, icon: SolidMultiBubble, app: "thinkpages" },
-];
-
-const SECONDARY_NAV: { name: string; href: string }[] = [
-  { name: "Vault", href: "/vault" },
-  { name: "Labs", href: "/labs/onoma" },
-  { name: "Help", href: "/help" },
-];
-
-// NavTray Component
-
-interface NavTrayProps {
+export interface NavTrayProps {
   isOpen: boolean;
   onClose: () => void;
+  apps?: readonly AppDefinition[];
 }
 
-function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
+export function NavTray({ isOpen, onClose, apps }: NavTrayProps) {
   const pathname = usePathname();
+  const material = useHaloMaterial();
   const normalized = stripBasePath(pathname || "/");
   const trayRef = React.useRef<HTMLDivElement>(null);
+  const reduceMotion = useFacetReducedMotion();
+  const { user } = useUser();
+
+  const trayApps = apps ?? getVisibleApps({ signedIn: Boolean(user), isAdmin: false });
+  const { primary, secondary } = splitNavTrayApps(trayApps);
+  const activeAppId = getVisibleAppForPath(normalized, trayApps)?.id;
 
   // Close on an outside press or Escape.
   React.useEffect(() => {
     if (!isOpen) return;
     const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest?.('[data-halo-trigger="nav-tray"]')) return;
       if (trayRef.current && !trayRef.current.contains(event.target as Node)) onClose();
     };
     const onKeyDown = (event: KeyboardEvent) => {
@@ -70,12 +89,6 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
     };
   }, [isOpen, onClose]);
 
-  const isActive = (href: string) => {
-    const clean = href.split("?")[0].split("#")[0] || "/";
-    if (normalized === clean) return true;
-    return clean !== "/" && normalized.startsWith(`${clean}/`);
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
@@ -83,45 +96,54 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
           key="nav-tray"
           ref={trayRef}
           aria-label="Quick navigation"
-          className="pointer-events-auto absolute top-full left-1/2 z-30 mt-3 w-[280px] -translate-x-1/2"
-          initial={{ opacity: 0, y: -8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.96, transition: tweenExit }}
-          transition={springSmooth}
+          className="z-popover pointer-events-auto absolute top-full left-1/2 mt-3 w-[280px] -translate-x-1/2"
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.96 }}
+          animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+          exit={
+            reduceMotion
+              ? { opacity: 0, transition: REDUCED_MOTION_FADE }
+              : { opacity: 0, y: -8, scale: 0.96, transition: tweenExit }
+          }
+          transition={reduceMotion ? REDUCED_MOTION_FADE : springSmooth}
         >
-          {/* The island's expanded acrylic sheet. */}
+          {/* The island's material: Lens, frosted so app names hold over the page (Chrome for the comparison). */}
           <FacetMaterial
-            layer="chrome"
+            layer={material === "lens" ? "lens" : "chrome"}
             data-expanded="true"
-            className="rounded-card isolate overflow-hidden"
+            className={cn(
+              "rounded-sheet isolate space-y-2 overflow-hidden p-2",
+              material === "lens" && "facet-lens-frosted"
+            )}
           >
             {/* Primary nav grid */}
-            <div className="grid grid-cols-2 gap-1 p-2">
-              {PRIMARY_NAV.map((item, i) => {
+            <HaloWell className="grid grid-cols-2 gap-1 p-1.5">
+              {primary.map((item, i) => {
                 const Icon = item.icon;
-                const active = isActive(item.href);
+                const active = item.id === activeAppId;
 
                 return (
                   <motion.div
-                    key={item.name}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...springSmooth, delay: i * 0.03 }}
+                    key={item.id}
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+                    animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                    transition={
+                      reduceMotion ? REDUCED_MOTION_FADE : { ...springSmooth, delay: i * 0.03 }
+                    }
                   >
                     <Link
                       href={item.href}
-                      data-app={item.app}
+                      data-app={item.tint}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className={`group rounded-row duration-fast flex items-center gap-2 px-3 py-2 transition-[color,background-color,box-shadow] ${focusRing} ${
+                      className={`group rounded-row duration-fast flex items-center gap-2 px-3 py-2 transition-[color,background-color] ${focusRing} ${
                         active
-                          ? "bg-fill-3 text-label shadow-card"
+                          ? "bg-fill-3 text-label"
                           : "text-label-secondary hover:bg-fill-4 hover:text-label"
                       }`}
                     >
                       <div
                         className={`rounded-control-sm duration-fast flex size-8 shrink-0 items-center justify-center transition-colors ${
-                          active ? "shadow-card" : "bg-fill-4 group-hover:bg-fill-3"
+                          active ? "" : "bg-fill-4 group-hover:bg-fill-3"
                         }`}
                         style={
                           active
@@ -132,6 +154,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                         }
                       >
                         <div
+                          aria-hidden="true"
                           className="flex items-center justify-center"
                           style={active ? { color: "var(--tint)" } : undefined}
                         >
@@ -139,7 +162,7 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                         </div>
                       </div>
                       <PreText className="text-caption font-medium" whiteSpace="nowrap">
-                        {item.name}
+                        {item.label}
                       </PreText>
                       {active && (
                         <div
@@ -152,36 +175,38 @@ function NavTrayComponent({ isOpen, onClose }: NavTrayProps) {
                   </motion.div>
                 );
               })}
-            </div>
+            </HaloWell>
 
-            {/* Secondary nav — compact row */}
-            <div className="border-separator border-t px-3 py-2">
-              <div className="flex items-center gap-1">
+            {/* Secondary nav — compact row when >6 apps are visible */}
+            {secondary.length > 0 && (
+              <HaloWell className="flex items-center gap-1 px-2.5 py-1.5">
                 <MoreHorizontal className="text-label-secondary mr-1 size-3.5" aria-hidden="true" />
-                {SECONDARY_NAV.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={onClose}
-                    aria-current={isActive(item.href) ? "page" : undefined}
-                    className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${focusRing} ${
-                      isActive(item.href)
-                        ? "bg-fill-3 text-label"
-                        : "text-label-secondary hover:bg-fill-4 hover:text-label"
-                    }`}
-                  >
-                    <PreText className="text-inherit" whiteSpace="nowrap">
-                      {item.name}
-                    </PreText>
-                  </Link>
-                ))}
-              </div>
-            </div>
+                {secondary.map((item) => {
+                  const active = item.id === activeAppId;
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      data-app={item.tint}
+                      onClick={onClose}
+                      aria-current={active ? "page" : undefined}
+                      className={`text-caption rounded-control-sm px-2 py-1 transition-colors ${focusRing} ${
+                        active
+                          ? "bg-fill-3 text-label"
+                          : "text-label-secondary hover:bg-fill-4 hover:text-label"
+                      }`}
+                    >
+                      <PreText className="text-inherit" whiteSpace="nowrap">
+                        {item.label}
+                      </PreText>
+                    </Link>
+                  );
+                })}
+              </HaloWell>
+            )}
           </FacetMaterial>
         </motion.nav>
       )}
     </AnimatePresence>
   );
 }
-
-export const NavTray = React.memo(NavTrayComponent);

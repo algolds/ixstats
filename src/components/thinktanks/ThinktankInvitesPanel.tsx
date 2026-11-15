@@ -9,7 +9,7 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 
 export function ThinktankInvitesPanel({ onJoined }: { onJoined: (groupId: string) => void }) {
   const notify = useNotify();
@@ -24,13 +24,12 @@ export function ThinktankInvitesPanel({ onJoined }: { onJoined: (groupId: string
     void utils.thinkpages.getThinktanks.invalidate();
   };
   const onError = (err: { message: string }) => {
-    soundEffects.error();
     notify.error(err.message);
   };
 
   const accept = api.thinkpages.acceptThinktankInvite.useMutation({
     onSuccess: (_res, { inviteId }) => {
-      soundEffects.bloom();
+      soundCues.success();
       refresh();
       const groupId = invites.find((i) => i.id === inviteId)?.group.id;
       if (groupId) onJoined(groupId);
@@ -43,7 +42,7 @@ export function ThinktankInvitesPanel({ onJoined }: { onJoined: (groupId: string
   });
   const joinByCode = api.thinkpages.joinThinktankByCode.useMutation({
     onSuccess: (res) => {
-      soundEffects.bloom();
+      soundCues.success();
       setCode("");
       refresh();
       onJoined(res.groupId);

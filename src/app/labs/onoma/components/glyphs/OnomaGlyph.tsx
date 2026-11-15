@@ -72,13 +72,13 @@ export function OnomaGlyph({
   const stroke = strokeWidth || sizeConfig.defaultStroke;
   const isActive = state === "active";
   const accentStyle = isActive && accentColor ? { color: accentColor } : undefined;
-  const textTone = isActive ? "text-label font-semibold" : "text-label-secondary";
+  const textTone = isActive ? "text-label font-medium" : "text-label-secondary";
 
   if (variant === "framed" && label) {
     return (
       <span
         className={cn(
-          "inline-flex items-center font-mono font-semibold transition-colors select-none",
+          "inline-flex items-center font-mono font-medium transition-colors select-none",
           FRAMED_SIZE_CLASS[size],
           textTone,
           className
@@ -105,7 +105,7 @@ export function OnomaGlyph({
         style={accentStyle}
         title={title || `${from} → ${to}`}
       >
-        <span className="text-label font-semibold">{from}</span>
+        <span className="text-label font-medium">{from}</span>
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -117,7 +117,7 @@ export function OnomaGlyph({
         >
           <path d="M4 12h14m-5-5l5 5-5 5" />
         </svg>
-        <span className="text-label font-semibold">{to}</span>
+        <span className="text-label font-medium">{to}</span>
       </span>
     );
   }
@@ -128,7 +128,7 @@ export function OnomaGlyph({
         "inline-flex shrink-0 items-center justify-center transition-transform duration-150 select-none",
         sizeConfig.className,
         state === "idle" && "text-label-secondary hover:text-label",
-        isActive && "text-label font-semibold drop-shadow-xs",
+        isActive && "text-label font-medium drop-shadow-xs",
         state === "disabled" && "text-label-tertiary pointer-events-none",
         className
       )}

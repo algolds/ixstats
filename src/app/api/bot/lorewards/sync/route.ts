@@ -6,6 +6,7 @@ import {
   type BotLorewardPayload,
 } from "~/lib/lorewards/bot-result";
 import { safeEqual } from "~/lib/security/safe-equal";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -44,10 +45,6 @@ export async function POST(request: Request) {
     if (error instanceof BotWeekConflict) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
-    console.error("[Lorewards Sync Webhook] Error processing payload:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 }
-    );
+    return internalErrorResponse("Lorewards Sync Webhook", error);
   }
 }

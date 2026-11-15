@@ -1,2 +1,1 @@
-export { MyCountryHalo } from "./MyCountryHalo";
-export * from "./views";
+export { MyCountryHalo, MYCOUNTRY_PLUGIN_COMMANDS } from "./MyCountryHalo";

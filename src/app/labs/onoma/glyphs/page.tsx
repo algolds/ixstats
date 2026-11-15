@@ -4,6 +4,7 @@
 // ⟨ONOMA⟩ Glyph Catalog — Interactive Developer & Design Engineering Gallery
 // Philosophy: Apple SF Symbols × IPA × Linguistic Notation × Scientific Diagrams
 
+import { Card } from "~/components/ui/card";
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Component, ControlSlider, Copy, Search, ViewGrid } from "iconoir-react";
@@ -299,7 +300,7 @@ export default function OnomaGlyphsDevPage() {
                 <span>Labs / Onoma</span>
               </Link>
               <span>/</span>
-              <span className="text-label font-semibold">Glyph catalog</span>
+              <span className="text-label font-medium">Glyph catalog</span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -307,7 +308,7 @@ export default function OnomaGlyphsDevPage() {
                 <OnomaGlyph name="emerge-engine" size="lg" />
               </div>
               <div>
-                <h1 className="text-title-1 font-mono font-bold">
+                <h1 className="text-title-1 font-mono">
                   Onoma Glyph Catalog{" "}
                   <span className="text-label-secondary bg-fill-3 border-separator text-footnote rounded-full border px-2 py-0.5 font-mono">
                     v0.1
@@ -324,7 +325,7 @@ export default function OnomaGlyphsDevPage() {
           <div className="flex items-center gap-2 self-start md:self-auto">
             <Link
               href="/labs/onoma"
-              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
+              className="border-separator bg-fill-3 hover:bg-fill-3 rounded-row text-footnote inline-flex items-center gap-2 border px-4 py-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity]"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Onoma workspace</span>
@@ -332,9 +333,9 @@ export default function OnomaGlyphsDevPage() {
           </div>
         </div>
 
-        <div className="border-separator bg-fill-4 rounded-card shadow-card space-y-4 border p-4 sm:p-6">
+        <Card padding="none" className="space-y-4 p-4 sm:p-6">
           <div className="border-separator flex items-center justify-between gap-2 border-b pb-3">
-            <div className="text-label-secondary text-eyebrow flex items-center gap-2 font-mono">
+            <div className="text-label-secondary text-caption flex items-center gap-2 font-mono">
               <ControlSlider className="text-tint h-4 w-4" />
               <span>Live testing controls</span>
             </div>
@@ -459,7 +460,7 @@ export default function OnomaGlyphsDevPage() {
               </ToggleGroup>
             </div>
           </div>
-        </div>
+        </Card>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredGlyphs.map((glyph) => {
@@ -473,7 +474,7 @@ export default function OnomaGlyphsDevPage() {
               >
                 <div className="flex items-center justify-between gap-2">
                   <span
-                    className="rounded-control-sm text-eyebrow border px-2 py-0.5 font-mono"
+                    className="rounded-control-sm text-caption text-label-secondary border px-2 py-0.5 font-mono"
                     style={{
                       color: DOMAIN_COLORS[glyph.domain],
                       borderColor: `${DOMAIN_COLORS[glyph.domain]}40`,
@@ -487,7 +488,7 @@ export default function OnomaGlyphsDevPage() {
                   </span>
                 </div>
 
-                <div className="bg-surface border-separator rounded-row my-6 flex h-24 items-center justify-center border transition-transform group-hover:scale-[1.02]">
+                <div className="bg-surface border-separator rounded-row my-6 flex h-24 items-center justify-center border">
                   <OnomaGlyph
                     name={glyph.name}
                     size={selectedSize}
@@ -499,9 +500,7 @@ export default function OnomaGlyphsDevPage() {
 
                 <div className="space-y-2">
                   <div>
-                    <h3 className="text-label text-footnote sm:text-body font-semibold">
-                      {glyph.title}
-                    </h3>
+                    <h3 className="text-label text-footnote sm:text-headline">{glyph.title}</h3>
                     <p className="text-label-secondary text-caption font-mono">{glyph.name}</p>
                   </div>
 
@@ -532,9 +531,9 @@ export default function OnomaGlyphsDevPage() {
         </div>
 
         {/* Special Variants Playground (Composed & Framed) */}
-        <div className="border-separator bg-fill-4 rounded-card space-y-6 border p-6">
+        <Card padding="none" className="space-y-6 p-6">
           <div className="border-separator border-b pb-3">
-            <h2 className="text-title-3 flex items-center gap-2 font-mono font-bold">
+            <h2 className="text-title-3 flex items-center gap-2 font-mono">
               <Component className="text-tint h-4 w-4" />
               <span>Special linguistic notation variants</span>
             </h2>
@@ -545,7 +544,7 @@ export default function OnomaGlyphsDevPage() {
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {/* Framed Linguistic Objects ⟨LABEL⟩ */}
-            <div className="bg-surface border-separator rounded-row space-y-3 border p-4">
+            <Card padding="none" className="space-y-3 p-4">
               <h3 className="text-label-secondary text-subhead font-mono">
                 1. Framed Linguistic Objects (⟨LABEL⟩)
               </h3>
@@ -576,10 +575,10 @@ export default function OnomaGlyphsDevPage() {
               <p className="text-label-secondary text-caption font-mono">
                 Usage: {'<OnomaGlyph variant="framed" label="ONOMA" size="lg" />'}
               </p>
-            </div>
+            </Card>
 
             {/* Composed Sound Shift Expressions from → to */}
-            <div className="bg-surface border-separator rounded-row space-y-3 border p-4">
+            <Card padding="none" className="space-y-3 p-4">
               <h3 className="text-label-secondary text-subhead font-mono">
                 2. Sound Shift Expressions (From → To)
               </h3>
@@ -605,13 +604,13 @@ export default function OnomaGlyphsDevPage() {
               <p className="text-label-secondary text-caption font-mono">
                 Usage: {'<OnomaGlyph variant="composed" from="[p]" to="[f]" />'}
               </p>
-            </div>
+            </Card>
           </div>
-        </div>
+        </Card>
 
-        <div className="border-separator bg-fill-4 rounded-card space-y-4 border p-6">
+        <Card padding="none" className="space-y-4 p-6">
           <div className="border-separator border-b pb-3">
-            <h2 className="text-title-3 flex items-center gap-2 font-mono font-bold">
+            <h2 className="text-title-3 flex items-center gap-2 font-mono">
               <ViewGrid className="text-tint h-4 w-4" />
               <span>Optical scale verification matrix</span>
             </h2>
@@ -633,7 +632,7 @@ export default function OnomaGlyphsDevPage() {
             <TableBody>
               {GLYPH_METADATA.map((glyph) => (
                 <TableRow key={glyph.name} className="hover:bg-fill-3">
-                  <TableCell className="text-label pr-4 font-semibold">{glyph.name}</TableCell>
+                  <TableCell className="text-label pr-4 font-medium">{glyph.name}</TableCell>
                   <TableCell className="px-4 text-center">
                     <div className="bg-surface border-separator rounded-control-sm inline-flex items-center justify-center border p-1">
                       <OnomaGlyph name={glyph.name} size="sm" />
@@ -653,7 +652,7 @@ export default function OnomaGlyphsDevPage() {
               ))}
             </TableBody>
           </Table>
-        </div>
+        </Card>
       </div>
     </div>
   );

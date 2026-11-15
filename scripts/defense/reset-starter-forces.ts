@@ -21,14 +21,19 @@
  */
 import { readFileSync } from "fs";
 import { join } from "path";
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { type Prisma } from "@prisma/client";
 import { syncDefense } from "~/server/modules/defense";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const SQL_DIR = join(__dirname, "../migrations/2026-10-realm-time");
 /** The SQL the reset needs before it runs, in order: the defense model, then D3's policy columns. */
 export const DRY_RUN_SQL = ["d2a-defense-model.sql", "d3-combat.sql"] as const;
 /** Clones the reset may run on without `--i-know`. */
-export const CLONE_DATABASES: readonly string[] = ["ixstats_wv1", "ixstats_dryrun", "ixstats_scenarios"];
+export const CLONE_DATABASES: readonly string[] = [
+  "ixstats_wv1",
+  "ixstats_dryrun",
+  "ixstats_scenarios",
+];
 const BAND = { min: 0.002, max: 0.011 };
 
 class RolledBack extends Error {}
@@ -84,7 +89,8 @@ export interface Row {
 }
 
 async function resetCountry(db: Prisma.TransactionClient, id: string): Promise<Row | null> {
-  if (await db.defensePolicy.findUnique({ where: { countryId: id }, select: { id: true } })) return null;
+  if (await db.defensePolicy.findUnique({ where: { countryId: id }, select: { id: true } }))
+    return null;
   const snap = await syncDefense(db, id);
   const active = snap.state.branches.reduce((s, b) => s + b.active, 0);
   const reserves = snap.state.branches.reduce((s, b) => s + b.reserves, 0);
@@ -104,7 +110,10 @@ async function resetCountry(db: Prisma.TransactionClient, id: string): Promise<R
     cLevel: snap.view.cLevel,
     combatPower: snap.view.combatPower,
     branches: snap.view.branches
-      .map((b) => `${b.domain} ${Math.round(b.active).toLocaleString("en-US")}/${(b.capital / 1e9).toFixed(1)}bn ${b.cLevel}`)
+      .map(
+        (b) =>
+          `${b.domain} ${Math.round(b.active).toLocaleString("en-US")}/${(b.capital / 1e9).toFixed(1)}bn ${b.cLevel}`
+      )
       .join("; "),
   };
 }
@@ -115,21 +124,36 @@ const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 export function report(rows: Row[], show: string[]) {
   console.log(`\nNations reset: ${rows.length}`);
   if (rows.length === 0) return;
-  const shares = rows.filter((r) => r.population > 0).map((r) => r.activeShare).sort((a, b) => a - b);
+  const shares = rows
+    .filter((r) => r.population > 0)
+    .map((r) => r.activeShare)
+    .sort((a, b) => a - b);
   const q = (p: number) => shares[Math.min(shares.length - 1, Math.floor(p * shares.length))] ?? 0;
-  const outside = rows.filter((r) => r.population > 0 && (r.activeShare < BAND.min || r.activeShare > BAND.max));
+  const outside = rows.filter(
+    (r) => r.population > 0 && (r.activeShare < BAND.min || r.activeShare > BAND.max)
+  );
   console.log(
     `Active share of population: min ${pct(q(0))}, p10 ${pct(q(0.1))}, median ${pct(q(0.5))}, p90 ${pct(q(0.9))}, max ${pct(q(1))}`
   );
   console.log(`Outside the 0.2–1.1% sanity band: ${outside.length}`);
   for (const r of outside.slice(0, 15)) {
-    console.log(`  ${r.name}: ${pct(r.activeShare)} (pop ${fmt(r.population)}, GDPpc ${fmt(r.gdpPerCapita)}, ${r.source})`);
+    console.log(
+      `  ${r.name}: ${pct(r.activeShare)} (pop ${fmt(r.population)}, GDPpc ${fmt(r.gdpPerCapita)}, ${r.source})`
+    );
   }
-  const bySource = rows.reduce<Record<string, number>>((m, r) => ({ ...m, [r.source]: (m[r.source] ?? 0) + 1 }), {});
+  const bySource = rows.reduce<Record<string, number>>(
+    (m, r) => ({ ...m, [r.source]: (m[r.source] ?? 0) + 1 }),
+    {}
+  );
   console.log(`Budget sources: ${JSON.stringify(bySource)}`);
-  const cLevels = rows.reduce<Record<string, number>>((m, r) => ({ ...m, [r.cLevel]: (m[r.cLevel] ?? 0) + 1 }), {});
+  const cLevels = rows.reduce<Record<string, number>>(
+    (m, r) => ({ ...m, [r.cLevel]: (m[r.cLevel] ?? 0) + 1 }),
+    {}
+  );
   console.log(`C-levels: ${JSON.stringify(cLevels)}`);
-  const picked = rows.filter((r) => show.some((name) => r.name.toLowerCase() === name.toLowerCase()));
+  const picked = rows.filter((r) =>
+    show.some((name) => r.name.toLowerCase() === name.toLowerCase())
+  );
   for (const r of picked) {
     console.log(
       `\n${r.name}: pop ${fmt(r.population)}, GDPpc ${fmt(r.gdpPerCapita)}, defense ${fmt(r.budget)} (${pct(r.burden)} of GDP, ${r.source})` +
@@ -143,9 +167,10 @@ async function main() {
   const apply = process.argv.includes("--apply");
   const only = flag("--country");
   const show = (flag("--show") ?? "Caphiria,E2E Testland,Fiannria").split(",").map((s) => s.trim());
-  const db = new PrismaClient();
-  const [{ current_database: database }] =
-    await db.$queryRaw<{ current_database: string }[]>`SELECT current_database()`;
+  const db = createPrismaClient();
+  const [{ current_database: database }] = await db.$queryRaw<
+    { current_database: string }[]
+  >`SELECT current_database()`;
   const refusal = resetRefusal(database, process.argv);
   if (refusal) {
     await db.$disconnect();
@@ -154,7 +179,11 @@ async function main() {
   console.log(`${apply ? "APPLY" : "DRY RUN (rolled back)"} on ${database}`);
 
   const ids = async (tx: Prisma.TransactionClient) =>
-    only ? [only] : (await tx.country.findMany({ select: { id: true }, orderBy: { name: "asc" } })).map((c) => c.id);
+    only
+      ? [only]
+      : (await tx.country.findMany({ select: { id: true }, orderBy: { name: "asc" } })).map(
+          (c) => c.id
+        );
   const rows: Row[] = [];
   try {
     if (apply) {

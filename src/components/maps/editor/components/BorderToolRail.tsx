@@ -41,7 +41,7 @@ export function BorderToolRail({
       role="toolbar"
       aria-label="Border tools"
       aria-orientation="vertical"
-      className="flex h-full w-10 flex-col items-center gap-0.5 rounded-none py-1"
+      className="facet-chrome-subtle pointer-events-auto flex h-full w-10 flex-col items-center gap-0.5 rounded-none border-y-0 border-l-0 py-1 shadow-none"
     >
       {BORDER_TOOLS.map(({ id, label, icon: Icon, shortcut }, i) => {
         const isActive = mode === id;
@@ -50,12 +50,16 @@ export function BorderToolRail({
             {i === 4 && <div className="bg-separator my-0.5 h-px w-5" />}
             <Tooltip content={label} shortcut={shortcut} side="right">
               <Button
-                variant={isActive ? "default" : "ghost"}
+                variant="ghost"
                 size="icon"
                 onClick={() => onModeChange(id)}
                 aria-label={`${label} (${shortcut})`}
                 aria-pressed={isActive}
-                className={isActive ? "" : "text-label-secondary"}
+                className={
+                  isActive
+                    ? "bg-tint text-on-tint hover:bg-tint-hover hover:text-on-tint"
+                    : "text-label-secondary"
+                }
               >
                 <Icon aria-hidden />
               </Button>

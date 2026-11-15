@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 import { cn } from "~/lib/utils";
 import { Airplane, Home } from "iconoir-react";
 import { assetUrl } from "~/lib/base-path";
@@ -47,15 +48,10 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
   };
 
   return (
-    <div
-      className={cn(
-        "rounded-card border-separator bg-surface shadow-card relative overflow-hidden border p-3",
-        className
-      )}
-    >
+    <Card padding="sm" className={cn("overflow-hidden", className)}>
       <div className="mb-2 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <span className="text-eyebrow text-label-secondary">Round matches</span>
+          <span className="text-caption text-label-secondary">Round matches</span>
           {matchDay && (
             <Badge
               variant="outline"
@@ -116,11 +112,11 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
                     <span>{match.awayScore ?? 0}</span>
                   </div>
                 ) : (
-                  <span className="text-eyebrow text-label-secondary">VS</span>
+                  <span className="text-caption text-label-secondary">VS</span>
                 )}
                 <span
                   className={cn(
-                    "text-eyebrow mt-0.5",
+                    "text-caption text-label-secondary mt-0.5",
                     isCompleted ? "text-green" : isScheduled ? "text-blue" : "text-yellow"
                   )}
                 >
@@ -149,6 +145,6 @@ export function MatchdayTape({ matches, matchDay, onMatchClick, className }: Mat
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -7,7 +7,6 @@ import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { soundEffects } from "~/lib/sound/cuelume";
 import { useNotify } from "~/hooks/useNotify";
 
 interface ThinktankChatTabProps {
@@ -46,12 +45,10 @@ export function ThinktankChatTab({
 
   const sendMutation = api.messages.sendMessage.useMutation({
     onSuccess: () => {
-      soundEffects.success();
       setDraft("");
       void utils.messages.getConversationMessages.invalidate(queryInput);
     },
     onError: (err) => {
-      soundEffects.error();
       notify.error(err.message || "Failed to send message");
     },
   });
@@ -69,7 +66,6 @@ export function ThinktankChatTab({
     e.preventDefault();
     const content = draft.trim();
     if (!content || !conversationId) return;
-    soundEffects.press();
     sendMutation.mutate({ conversationId, userId: currentUserId, content });
   };
 

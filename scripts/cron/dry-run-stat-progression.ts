@@ -18,6 +18,7 @@ import {
   projectedStatsUpdate,
 } from "~/server/shared/country-helpers";
 import { isProjectionUnchanged } from "~/server/cron/stat-progression";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const pct = (x: number) => `${(100 * x).toFixed(2)}%`;
 
@@ -92,7 +93,7 @@ async function main(db: PrismaClient) {
 }
 
 if (import.meta.main) {
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   main(db)
     .catch((error: Error) => {
       console.error(error);

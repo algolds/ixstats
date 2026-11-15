@@ -66,6 +66,7 @@ import { createCallerFactory } from "~/server/api/trpc";
 import { ixnayidPassportRouter } from "~/server/api/routers/ixnayid/passport";
 import {
   getHistory,
+  getOwnPassportCard,
   getPassport,
   getPassportCard,
   getRealms,
@@ -732,6 +733,33 @@ describe("the passport card", () => {
     expect(JSON.stringify(shown)).not.toContain("900");
     expect(loader.loadLoreStats).not.toHaveBeenCalled();
     expect(loader.loadLoreRank).not.toHaveBeenCalled();
+  });
+
+  it("returns the owner's own card and Lorewards via getOwnPassportCard / getMyPassportCard even when link previews and accolades are hidden", async () => {
+    claimed("Alex");
+    mocked.passportPreference.findUnique.mockResolvedValue(ALL_HIDDEN);
+    resolvesTo("clerk_1", cardHolder, "alex");
+
+    const own = await getOwnPassportCard({ ...holder, ...cardHolder });
+    expect(own).toMatchObject({
+      preview: true,
+      handle: "alex",
+      lorewards: { score: 900, rank: 4 },
+      signature: "A. Pav",
+    });
+
+    const caller = createCallerFactory(ixnayidPassportRouter)(
+      createMockRouterContext({
+        auth: { userId: "clerk_1" } as never,
+        user: { ...holder, ...cardHolder } as never,
+        db,
+      }) as never
+    );
+    await expect(caller.getMyPassportCard()).resolves.toMatchObject({
+      preview: true,
+      handle: "alex",
+      lorewards: { score: 900, rank: 4 },
+    });
   });
 
   it("falls back to the forum name, then the handle, with no avatar or bio", async () => {

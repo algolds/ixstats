@@ -1,7 +1,7 @@
 /** @jest-environment node */
 /**
  * Plan 346: pins the Facet anti-slop gates (docs/reference/facet-design-system.md §8) so they
- * cannot regrow, and the live Facet rules of the stylesheets: the five layers (only chrome and
+ * cannot regrow, and the live Facet rules of the stylesheets: the six layers (only chrome and
  * overlay blur), the content-type scopes, facet-on-dark, the one rarity palette, and the accent
  * utilities as Tailwind compiles them.
  *
@@ -46,7 +46,6 @@ const MICRO_TYPE = /\btext-\[(?:(?:\d|1[01])(?:\.\d+)?px|0?\.(?:[0-6]\d*|7(?:[0-
 // Fixed-geometry glyphs where a 12px line box cannot fit.
 const MICRO_TYPE_ALLOWED = new Set([
   "components/sports/surfaces/FootballField.tsx: text-[3px]", // SVG user units, not CSS px
-  "components/cards/pack-opening/PackHolographicCover.tsx: text-[7px]", // size="sm" pack art
   "components/thinkpages/composer/ComposerActionBar.tsx: text-[7px]", // 14px count badge
   "components/thinkpages/post/PostComposers.tsx: text-[7px]", // 14px count badge
 ]);
@@ -162,8 +161,6 @@ const PALETTE_STOP =
  */
 const ART_GRADIENT_FILES = [
   "components/cards/",
-  "components/vault/NeonFrameOverlay.tsx",
-  "components/vault/VaultParticleExplosionModal.tsx",
   "components/mycountry/shared/primitives/mycountry-logo.tsx",
 ].map((dir) => dir.split("/").join(path.sep));
 
@@ -174,10 +171,7 @@ const ART_GRADIENT_FILES = [
  */
 const RAW_BACKDROP = /(?<![\w-])backdrop-(?:blur|saturate)(?:-[\w[\]/.()%-]+)?(?![\w-])/g;
 const INLINE_BACKDROP = /\b(?:Webkit)?[bB]ackdropFilter\s*:/g;
-const RAW_BACKDROP_ALLOWED = new Set([
-  // The drill sheet's own blur (pinned to exactly one by the drill-sheet test above).
-  `${path.join("components", "mycountry", "shell", "DrillSheets.tsx")}: backdrop-blur-xl`,
-]);
+const RAW_BACKDROP_ALLOWED = new Set<string>([]);
 
 /**
  * Textures in converted feature code are the sanctioned ones
@@ -217,11 +211,11 @@ describe("Facet anti-slop guards", () => {
     expect(hits(/animate-pulse/g).length).toBeLessThanOrEqual(ANIMATE_PULSE_CEILING);
   });
 
-  it("keeps nested drill-sheet cards opaque (only the sheet itself blurs)", () => {
+  it("keeps drill sheets on SheetContent's facet-overlay with zero raw backdrop-blur", () => {
     const drillSheets = sources.find(({ file }) =>
       file.endsWith("mycountry/shell/DrillSheets.tsx")
     );
-    expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(1);
+    expect(drillSheets?.content.match(/backdrop-blur/g) ?? []).toHaveLength(0);
   });
 
   it("wraps the app in one reduced-motion FacetMotionConfig and no route blur wrapper", () => {
@@ -402,17 +396,56 @@ describe("Facet layers", () => {
   const utility = (name: string) =>
     new RegExp(`@utility ${name} \\{([\\s\\S]*?)\\n\\}`).exec(layers)?.[1] ?? "";
 
-  it.each(["facet-canvas", "facet-pane", "facet-well", "facet-chrome", "facet-overlay"])(
-    "defines the %s layer utility",
-    (name) => {
-      expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
-    }
-  );
+  it.each([
+    "facet-canvas",
+    "facet-pane",
+    "facet-well",
+    "facet-chrome",
+    "facet-chrome-subtle",
+    "facet-overlay",
+    "facet-lens",
+    "facet-glass-cta",
+  ])("defines the %s layer utility", (name) => {
+    expect(layers).toMatch(new RegExp(`@utility ${name} \\{`));
+  });
 
-  it("blurs only chrome and overlay (the pane has no backdrop-filter)", () => {
+  it("blurs only chrome and overlay (the pane and glass CTA have no backdrop-filter)", () => {
     expect(utility("facet-pane")).not.toMatch(/backdrop-filter/);
+    expect(utility("facet-glass-cta")).not.toMatch(/backdrop-filter/);
     expect(utility("facet-chrome")).toMatch(/backdrop-filter/);
+    expect(utility("facet-chrome-subtle")).toMatch(/backdrop-filter/);
     expect(utility("facet-overlay")).toMatch(/backdrop-filter/);
+  });
+
+  it("facet-glass-cta stays neutral (no tint wash, gradient or coloured glow) and goes solid under Reduce Transparency and Increase Contrast", () => {
+    const cta = utility("facet-glass-cta");
+    expect(cta).toMatch(/var\(--color-surface-elevated\)/);
+    expect(cta).toMatch(/color:\s*var\(--color-label\)/);
+    expect(cta).not.toMatch(/--tint|--facet-accent|linear-gradient|backdrop-filter/);
+    expect(cta).toMatch(
+      /@variant transparency-reduced \{[\s\S]*?background-color: var\(--color-surface-elevated\);/
+    );
+    expect(cta).toMatch(
+      /@variant contrast-more \{[\s\S]*?background-color: var\(--color-surface-elevated\);[\s\S]*?border-color: var\(--color-separator-opaque\);/
+    );
+  });
+
+  it("facet-chrome-subtle keeps vibrant secondary labels and goes solid under Reduce Transparency and Increase Contrast", () => {
+    const subtle = utility("facet-chrome-subtle");
+    expect(subtle).toMatch(/--color-label-secondary: var\(--color-label-vibrant-secondary\)/);
+    expect(subtle).toMatch(
+      /@variant transparency-reduced \{[^}]*background-color: var\(--color-surface\);[\s\S]*?backdrop-filter: none;/
+    );
+    expect(subtle).toMatch(
+      /@variant contrast-more \{[^}]*background-color: var\(--color-surface\);[\s\S]*?border-color: var\(--color-separator-opaque\);[\s\S]*?backdrop-filter: none;/
+    );
+  });
+
+  it("the lens refracts through the one shared filter and goes solid when asked", () => {
+    const lens = utility("facet-lens");
+    expect(lens).toMatch(/backdrop-filter: var\(--lens-refraction, url\(#facet-lens\)\)/);
+    expect(lens).toMatch(/@variant transparency-reduced \{[^}]*backdrop-filter: none;/);
+    expect(lens).toMatch(/@variant contrast-more \{[^}]*backdrop-filter: none;/);
   });
 
   it("chrome points secondary labels at the vibrant role; pane and well read the accent before the tint", () => {

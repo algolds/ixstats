@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
+import { useOpenCountryActions } from "~/components/shared/country-actions/CountryActionsProvider";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Coins,
   Compass,
+  Crown,
   Globe,
-  Group as Users,
   Map as MapIcon,
   NavArrowRight,
   TriangleFlag,
@@ -17,17 +19,19 @@ import {
   type EmbedPoliticalFeature,
 } from "~/components/maps/widgets/CoordinatesMapEmbed";
 import { RealmAvatar } from "~/components/realms/RealmAvatar";
+import { FacetMaterial } from "~/components/ui/facet";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
+import { Button, hitSlop } from "~/components/ui/button";
 import { Card } from "~/components/ui/card";
-import { FlagWatermark } from "~/components/ui/facet/identity/FlagWatermark";
 import { Skeleton } from "~/components/ui/skeleton";
-import { SignInButton, SignUpButton } from "~/context/auth-context";
 import { useFlag } from "~/hooks/useUnifiedFlags";
-import { assetUrl, withBasePath } from "~/lib/base-path";
+import { assetUrl } from "~/lib/base-path";
+import { flatWorldCoverZoom } from "~/lib/maps/flat-projection";
+import { coveredRight } from "~/lib/maps/panel-inset";
 import { formatCurrency } from "~/lib/utils";
 import { cn } from "~/lib/utils/cn";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { PlatformTopBar } from "./PlatformTopBar";
 
 type FrontPageData = RouterOutputs["frontPage"]["get"];
 export type FeaturedRealmItem = NonNullable<FrontPageData["featured"]>;
@@ -39,123 +43,69 @@ const SNAPSHOT_CELL =
 const ICON_TINT =
   "transition-colors duration-fast group-hover:text-label group-focus-visible:text-label";
 
-function useIdleWorldZoom(box: React.RefObject<HTMLDivElement | null>): number | null {
-  const [zoom, setZoom] = useState<number | null>(null);
-  useEffect(() => {
-    const fit = () => {
-      const w = Math.max(box.current?.clientWidth ?? 512, 256);
-      const h = Math.max(box.current?.clientHeight ?? 320, 200);
-      setZoom(Math.log2(Math.max(w, h) / 512));
-    };
-    if ("requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(fit, { timeout: 2000 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(fit, 200);
-    return () => clearTimeout(id);
-  }, [box]);
-  return zoom;
+interface MapStageFit {
+  zoom: number | null;
+  insetRight: number;
 }
 
-function PlatformTopBar({ facts }: { facts: FrontPageData["facts"] | undefined }) {
-  const platformStats = [
-    {
-      href: "/realms",
-      icon: Globe,
-      tone: "text-blue",
-      label: "realms",
-      value: facts ? facts.realms.toLocaleString() : "–",
-    },
-    {
-      href: "/countries",
-      icon: TriangleFlag,
-      tone: "text-green",
-      label: "nations",
-      value: facts ? facts.nations.toLocaleString() : "–",
-    },
-    {
-      href: "/thinkpages",
-      icon: Users,
-      tone: "text-teal",
-      label: "players",
-      value: facts ? facts.players.toLocaleString() : "–",
-    },
-  ] as const;
-
-  return (
-    <div className="border-separator relative flex flex-wrap items-center justify-between gap-3 border-b px-3 py-3 md:px-4">
-      <div className="flex min-w-0 flex-wrap items-center gap-3.5">
-        <Link
-          href="/realms"
-          className="group/brand rounded-control focus-visible:outline-tint flex items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          <span className="bg-surface border-separator group-hover/brand:border-tint/40 rounded-control flex size-10 shrink-0 items-center justify-center overflow-hidden border p-1.5 transition-colors duration-fast">
-            <img
-              src={withBasePath("/images/ix-logo.svg?v=2")}
-              alt=""
-              className="size-full object-contain"
-            />
-          </span>
-          <span className="flex min-w-0 flex-col">
-            <span className="text-title-2 text-label leading-none font-semibold tracking-tight">
-              IxStates
-            </span>
-            <span className="text-footnote text-label-secondary mt-1 leading-tight">
-              The operating system for worldbuilding
-            </span>
-          </span>
-        </Link>
-
-        <div
-          aria-label="Platform totals"
-          className="border-separator hidden items-center gap-3 border-l pl-3.5 lg:flex"
-        >
-          {platformStats.map(({ href, icon: Icon, tone, label, value }) => (
-            <Link
-              key={label}
-              href={href}
-              className="text-footnote text-label-secondary hover:text-label focus-visible:outline-tint rounded-control-sm inline-flex items-center gap-1.5 tabular-nums transition-colors duration-fast focus-visible:outline-2"
-            >
-              <Icon aria-hidden className={cn(tone, "size-3.5 shrink-0")} />
-              <span className="text-label font-medium">{value}</span>
-              <span>{label}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" className="hidden rounded-full sm:inline-flex" asChild>
-          <Link href="/realms">Explore realms</Link>
-        </Button>
-        <SignInButton mode="modal">
-          <Button variant="secondary" size="sm" className="rounded-full">
-            Sign in
-          </Button>
-        </SignInButton>
-        <SignUpButton mode="modal">
-          <Button size="sm" className="shrink-0 rounded-full">
-            <span>Join</span>
-            <NavArrowRight aria-hidden />
-          </Button>
-        </SignUpButton>
-      </div>
-    </div>
-  );
+/**
+ * Fits the world to the part of the map the realm panel leaves uncovered (once, when the page is
+ * idle), then keeps the covered width current as either box resizes.
+ */
+function useMapStageFit(
+  box: React.RefObject<HTMLDivElement | null>,
+  panel: React.RefObject<HTMLElement | null>
+): MapStageFit {
+  const [fit, setFit] = useState<MapStageFit>({ zoom: null, insetRight: 0 });
+  useEffect(() => {
+    const measureInset = () =>
+      coveredRight(
+        box.current?.getBoundingClientRect() ?? null,
+        panel.current?.getBoundingClientRect() ?? null
+      );
+    const fitWorld = () => {
+      const insetRight = measureInset();
+      const w = Math.max((box.current?.clientWidth ?? 512) - insetRight, 256);
+      const h = Math.max(box.current?.clientHeight ?? 320, 200);
+      setFit({ zoom: flatWorldCoverZoom(w, h), insetRight });
+    };
+    const observer = new ResizeObserver(() => {
+      const insetRight = measureInset();
+      setFit((prev) => (prev.insetRight === insetRight ? prev : { ...prev, insetRight }));
+    });
+    for (const el of [box.current, panel.current]) if (el) observer.observe(el);
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(fitWorld, { timeout: 2000 });
+      return () => {
+        window.cancelIdleCallback(id);
+        observer.disconnect();
+      };
+    }
+    const id = setTimeout(fitWorld, 200);
+    return () => {
+      clearTimeout(id);
+      observer.disconnect();
+    };
+  }, [box, panel]);
+  return fit;
 }
 
 function HeroMapStage({
   realm,
   nations,
+  panel,
   className,
 }: {
   realm: FeaturedRealmItem | undefined;
   nations: FrontPageData["nations"];
+  /** The realm panel floating over the map's right side. */
+  panel: React.RefObject<HTMLElement | null>;
   className?: string;
 }) {
   const router = useRouter();
+  const openCountryActions = useOpenCountryActions();
   const box = useRef<HTMLDivElement>(null);
-  const zoom = useIdleWorldZoom(box);
+  const { zoom, insetRight } = useMapStageFit(box, panel);
   const [hoveredCountry, setHoveredCountry] = useState<EmbedPoliticalFeature | null>(null);
 
   const { data: realmCountries } = api.countries.getSelectList.useQuery(
@@ -176,13 +126,16 @@ function HeroMapStage({
       ))
     : undefined;
 
-  const { flagUrl: fallbackFlagUrl } = useFlag(
-    hoveredCountry && !matchedCountry?.flagUrl ? hoveredCountry.displayName : undefined,
+  const isClaimedHover = Boolean(matchedCountry?.id || hoveredCountry?.countryId);
+  const { flagUrl: fallbackFlagUrl, isPlaceholder } = useFlag(
+    hoveredCountry && isClaimedHover && !matchedCountry?.flagUrl
+      ? hoveredCountry.displayName
+      : undefined,
     realm?.slug
   );
-  const hoveredFlagUrl = matchedCountry?.flagUrl ?? fallbackFlagUrl;
+  const hoveredFlagUrl = matchedCountry?.flagUrl ?? (!isPlaceholder ? fallbackFlagUrl : null);
 
-  const handleCountryHover = useCallback((next: EmbedPoliticalFeature | null) => {
+  const handleCountryHover = (next: EmbedPoliticalFeature | null) => {
     setHoveredCountry((prev) => {
       if (!prev && !next) return prev;
       if (
@@ -196,28 +149,25 @@ function HeroMapStage({
       }
       return next;
     });
-  }, []);
+  };
 
-  const handleCountryClick = useCallback(
-    (country: EmbedPoliticalFeature) => {
-      if (country.countryId) {
-        const match =
-          nations.find((n) => n.id === country.countryId) ??
-          realmCountries?.find((c) => c.id === country.countryId);
-        const slugOrId = match?.slug || country.countryId;
-        router.push(`/countries/${encodeURIComponent(slugOrId)}`);
-        return;
-      }
-      const params = new URLSearchParams();
-      if (realm?.slug) params.set("realm", realm.slug);
-      params.set("name", country.displayName);
-      params.set("lat", country.centroidLat.toFixed(2));
-      params.set("lng", country.centroidLng.toFixed(2));
-      params.set("zoom", "4");
-      router.push(`/maps?${params.toString()}`);
-    },
-    [nations, realm?.slug, realmCountries, router]
-  );
+  const handleCountryClick = (country: EmbedPoliticalFeature) => {
+    if (country.countryId) {
+      const match =
+        nations.find((n) => n.id === country.countryId) ??
+        realmCountries?.find((c) => c.id === country.countryId);
+      // The nation's actions sheet, as every country link opens.
+      openCountryActions({ id: country.countryId, slug: match?.slug, name: match?.name });
+      return;
+    }
+    const params = new URLSearchParams();
+    if (realm?.slug) params.set("realm", realm.slug);
+    params.set("name", country.displayName);
+    params.set("lat", country.centroidLat.toFixed(2));
+    params.set("lng", country.centroidLng.toFixed(2));
+    params.set("zoom", "4");
+    router.push(`/maps?${params.toString()}`);
+  };
 
   return (
     <div
@@ -236,6 +186,7 @@ function HeroMapStage({
           zoom={zoom}
           marker={false}
           options="height=100%"
+          insetRight={insetRight}
           className="absolute inset-0 rounded-none border-0"
           onCountryHover={handleCountryHover}
           onCountryClick={handleCountryClick}
@@ -275,7 +226,10 @@ function HeroMapStage({
             ) : (
               <Link
                 href={`/r/${encodeURIComponent(realm.slug)}`}
-                className="text-footnote text-label truncate font-medium hover:underline"
+                className={cn(
+                  "text-footnote text-label relative truncate font-medium hover:underline",
+                  hitSlop
+                )}
               >
                 {realm.name}
               </Link>
@@ -289,7 +243,10 @@ function HeroMapStage({
           ) : (
             <Link
               href={`/maps?realm=${encodeURIComponent(realm.slug)}`}
-              className="text-footnote text-tint-ink inline-flex shrink-0 items-center gap-0.5 font-medium hover:underline"
+              className={cn(
+                "text-footnote text-tint-ink relative inline-flex shrink-0 items-center gap-0.5 font-medium hover:underline",
+                hitSlop
+              )}
             >
               Open in Atlas
               <NavArrowRight aria-hidden className="size-3.5" />
@@ -322,14 +279,14 @@ function RealmHeroIdentity({ realm }: { realm: FeaturedRealmItem | undefined }) 
       className="group/title rounded-control focus-visible:outline-tint flex min-w-0 cursor-pointer items-center gap-2.5 focus-visible:outline-2 focus-visible:outline-offset-2"
       title={`Visit ${realm.name}`}
     >
-      <div className="bg-surface border-separator group-hover/title:border-tint/40 rounded-control flex size-11 shrink-0 items-center justify-center overflow-hidden border p-1 transition-colors duration-fast">
+      <div className="bg-surface border-separator group-hover/title:border-tint/40 rounded-control duration-fast flex size-11 shrink-0 items-center justify-center overflow-hidden border p-1 transition-colors">
         <RealmAvatar thumbnail={realm.thumbnail} className="size-full" />
       </div>
 
       <div className="flex min-w-0 flex-col">
-        <h1 className="text-label text-title-3 group-hover/title:text-tint truncate transition-colors duration-fast group-hover/title:underline">
+        <h2 className="text-label text-title-3 group-hover/title:text-tint duration-fast truncate transition-colors group-hover/title:underline">
           {realm.name}
-        </h1>
+        </h2>
         <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
           <Badge variant="default">Featured realm</Badge>
           {foundedYear && (
@@ -360,15 +317,15 @@ export function FrontPageHero({
   facts: FrontPageData["facts"] | undefined;
   isLoading?: boolean;
 }) {
-  const watermarkSrc = assetUrl(realm?.thumbnail) ?? withBasePath("/images/ix-logo.svg?v=2");
+  const realmPanel = useRef<HTMLDivElement>(null);
   const topNations = nations.slice(0, 4);
   const topGdpSum = nations.reduce((sum, n) => sum + (n.currentTotalGdp || 0), 0);
 
   const realmHeadline = [
     {
       href: realm ? `/countries?realm=${encodeURIComponent(realm.slug)}` : "/countries",
-      icon: TriangleFlag,
-      tone: "text-blue",
+      icon: Crown,
+      tone: "text-yellow",
       label: "Nations",
       value: realm ? realm.nationCount.toLocaleString() : "–",
     },
@@ -393,15 +350,24 @@ export function FrontPageHero({
   ] as const;
 
   return (
-    <Card className="relative overflow-hidden">
-      <FlagWatermark src={watermarkSrc} />
-
+    <Card className="scroll-dissolve relative overflow-hidden">
       <PlatformTopBar facts={facts} />
 
+      {/* From md up the map fills the row and the realm panel floats over its right side in the
+          same grid cell, so the Lens has the map under it to show through and bend. Phones stack. */}
       <div className="relative grid gap-3 p-3 md:grid-cols-5">
-        <HeroMapStage realm={realm} nations={nations} className="md:col-span-3" />
+        <HeroMapStage
+          realm={realm}
+          nations={nations}
+          panel={realmPanel}
+          className="md:col-span-5 md:col-start-1 md:row-start-1"
+        />
 
-        <div className="bg-surface-secondary rounded-row shadow-card relative flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2">
+        <FacetMaterial
+          ref={realmPanel}
+          layer="lens"
+          className="facet-lens-frosted rounded-row flex h-full flex-col gap-2.5 overflow-hidden p-3 md:col-span-2 md:col-start-4 md:row-start-1 md:m-3 md:h-auto"
+        >
           <div className="flex items-start justify-between gap-2">
             <RealmHeroIdentity realm={realm} />
             {realm && (
@@ -418,8 +384,8 @@ export function FrontPageHero({
             <p className="text-footnote text-label-secondary line-clamp-2">{realm.description}</p>
           )}
 
-          <div className="bg-surface rounded-row border-separator flex min-h-0 flex-1 flex-col overflow-hidden border">
-            <div className="divide-separator bg-surface-secondary grid grid-cols-3 divide-x p-2">
+          <div className="rounded-row border-separator flex min-h-0 flex-1 flex-col overflow-hidden border">
+            <div className="divide-separator grid grid-cols-3 divide-x p-2">
               {realmHeadline.map(({ href, icon: Icon, tone, label, value }) => (
                 <Link key={label} href={href} className={SNAPSHOT_CELL}>
                   <Icon aria-hidden className={cn(tone, "size-4 shrink-0", ICON_TINT)} />
@@ -445,10 +411,10 @@ export function FrontPageHero({
               ) : topNations.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
                   {topNations.map((nation) => (
-                    <Link
+                    <CountryLink
                       key={nation.id}
-                      href={`/countries/${encodeURIComponent(nation.slug ?? nation.id)}`}
-                      className="bg-surface-secondary hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group flex items-center gap-2 p-2 text-left transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2"
+                      country={{ id: nation.id, slug: nation.slug, name: nation.name }}
+                      className="bg-fill-4 hover:bg-fill-3 rounded-control facet-press focus-visible:outline-tint group duration-fast flex items-center gap-2 p-2 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
                       title={`${nation.name} (${nation.economicTier})`}
                     >
                       {nation.flagUrl ? (
@@ -472,7 +438,7 @@ export function FrontPageHero({
                           {`${formatCurrency(nation.currentTotalGdp)} · ${nation.economicTier}`}
                         </span>
                       </span>
-                    </Link>
+                    </CountryLink>
                   ))}
                 </div>
               ) : (
@@ -492,14 +458,14 @@ export function FrontPageHero({
               )}
             </div>
 
-            <dl className="border-separator divide-separator bg-surface-secondary grid grid-cols-2 divide-x border-t py-2">
+            <dl className="border-separator divide-separator grid grid-cols-2 divide-x border-t py-2">
               <div className="flex min-w-0 items-center justify-center gap-1.5 px-2">
                 <MapIcon aria-hidden className="text-blue size-3.5 shrink-0" />
                 <dt className="text-label-secondary text-footnote">Atlas</dt>
                 <dd className="text-label text-caption truncate font-medium">
                   <Link
                     href={realm ? `/maps?realm=${encodeURIComponent(realm.slug)}` : "/maps"}
-                    className="hover:underline"
+                    className={cn("relative hover:underline", hitSlop)}
                   >
                     Interactive map
                   </Link>
@@ -513,7 +479,7 @@ export function FrontPageHero({
                     href={
                       realm ? `/countries?realm=${encodeURIComponent(realm.slug)}` : "/countries"
                     }
-                    className="hover:underline"
+                    className={cn("relative hover:underline", hitSlop)}
                   >
                     {realm ? `All ${realm.nationCount.toLocaleString()} nations` : "All nations"}
                   </Link>
@@ -521,7 +487,7 @@ export function FrontPageHero({
               </div>
             </dl>
           </div>
-        </div>
+        </FacetMaterial>
       </div>
     </Card>
   );

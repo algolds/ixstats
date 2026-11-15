@@ -13,10 +13,10 @@ export interface VitalityRing {
 }
 
 function getAppleVitalityColor(score: number): string {
-  if (score >= 80) return "var(--color-emerald-500)"; // Optimal
-  if (score >= 65) return "var(--color-cyan-500)"; // Strong
-  if (score >= 45) return "var(--color-amber-500)"; // Moderate
-  return "var(--color-red-500)"; // Strained
+  if (score >= 80) return "var(--color-green)"; // Optimal
+  if (score >= 65) return "var(--color-teal)"; // Strong
+  if (score >= 45) return "var(--color-yellow)"; // Moderate
+  return "var(--color-red)"; // Strained
 }
 
 /**

@@ -3,6 +3,10 @@
  * breaker, the last live test and every place the app reaches IIWiki), the switch flip and the breaker reset (both
  * written to AdminAuditLog and DMed to the admin), and the live test.
  */
+import {
+  iiwikiAvailability,
+  type IiwikiAvailability,
+} from "~/lib/wiki-os/wiki-source-availability";
 import type { PrismaClient } from "@prisma/client";
 import { sendAdminDm } from "~/lib/discord/admin-dm";
 import { DEFAULT_USER_AGENT, getMediaWikiApiUrl } from "~/lib/wiki-os/config";
@@ -75,6 +79,16 @@ export async function getIiwikiStatus(): Promise<IiwikiStatus> {
     lastProbe: lastIiwikiProbe(),
     touchpoints: IIWIKI_TOUCHPOINTS,
   };
+}
+
+/**
+ * Whether IIWiki answers for each feature right now, for every visitor's wiki pickers (`wikios.iiwikiAvailability`):
+ * the switch as last read (at most `TTL_MS` old, no forced read) and this process's breaker. It says on, switched off
+ * or resting per feature and nothing else: no host, no counts, no probe.
+ */
+export async function getIiwikiAvailability(): Promise<IiwikiAvailability> {
+  const state = await refreshIiwikiSwitch();
+  return iiwikiAvailability(state, upstreamGuard.circuitStatus(appHost()));
 }
 
 /** Which switches differ between two states, for the audit row and the DM. */

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { serverFlagResolver } from "~/lib/flags/server";
 import { api } from "~/trpc/server";
 import { requireAdminSession } from "~/server/shared/route-auth";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { ALL_REALMS } from "~/lib/realms/realm-ids";
 
 const allCountryNames = async (): Promise<string[]> => {
@@ -12,13 +13,8 @@ const allCountryNames = async (): Promise<string[]> => {
 const invalidAction = (usage: string) =>
   NextResponse.json({ success: false, error: `Invalid action. Use ${usage}` }, { status: 400 });
 
-const failureResponse = (method: string, error: unknown) => {
-  console.error(`[FlagCache API] ${method} error:`, error);
-  return NextResponse.json(
-    { success: false, error: error instanceof Error ? error.message : "Unknown error" },
-    { status: 500 }
-  );
-};
+const failureResponse = (method: string, error: unknown) =>
+  internalErrorResponse(`FlagCache API ${method}`, error);
 
 /** Resolver counters in the shapes the admin panel reads. */
 function resolverSnapshot() {
@@ -32,6 +28,8 @@ function resolverSnapshot() {
     hitRate: lookups > 0 ? stats.hits / lookups : 0,
   };
 }
+
+const MAX_REQUESTED_COUNTRIES = 50;
 
 const NO_PROGRESS = { current: 0, total: 0, percentage: 0 };
 
@@ -70,6 +68,12 @@ async function flagsResponse(countryParam: string | null) {
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
+  if (requested.length > MAX_REQUESTED_COUNTRIES) {
+    return NextResponse.json(
+      { success: false, error: `At most ${MAX_REQUESTED_COUNTRIES} countries per request` },
+      { status: 400 }
+    );
+  }
   const countryNames = requested.length > 0 ? requested : await allCountryNames();
 
   const resolved = await serverFlagResolver.resolveBatch(countryNames);
@@ -93,8 +97,11 @@ export async function GET(request: NextRequest) {
         return statsResponse();
       case "status":
         return statusResponse();
-      case "flags":
+      case "flags": {
+        const denied = await requireAdminSession();
+        if (denied instanceof NextResponse) return denied;
         return await flagsResponse(searchParams.get("countries"));
+      }
       default:
         return invalidAction("?action=stats, ?action=status, or ?action=flags");
     }

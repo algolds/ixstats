@@ -13,6 +13,7 @@ import { countryBudgetYear, findEffectiveBudgetYear } from "~/lib/government/bud
 import {
   allocationAt,
   allocationOverCap,
+  batchAllocationOverCap,
   initialTotalBudget,
   maintenanceByYear,
   nudgeShare,
@@ -231,6 +232,73 @@ export async function setDepartmentAllocation(
     },
     update: values,
   });
+}
+
+/**
+ * Set several department shares in one transaction so rebalancing across departments never trips an
+ * intermediate >100% cap check.
+ */
+export async function setDepartmentAllocations(
+  db: Db,
+  input: {
+    countryId: string;
+    allocations: ReadonlyArray<{ departmentId: string; allocatedPercent: number }>;
+  }
+) {
+  if (input.allocations.length === 0) return { updated: 0 };
+  const structure = await db.governmentStructure.findUnique({
+    where: { countryId: input.countryId },
+    select: {
+      id: true,
+      totalBudget: true,
+      departments: { select: { id: true } },
+    },
+  });
+  if (!structure) notFound("Create a government structure first");
+  const ownedIds = new Set(structure.departments.map((d) => d.id));
+  for (const item of input.allocations) {
+    if (!ownedIds.has(item.departmentId)) notFound("Department not found");
+  }
+
+  const budgetYear = await editableBudgetYear(db, input.countryId);
+  const existingLines = await db.budgetAllocation.findMany({
+    where: { governmentStructureId: structure.id, budgetYear },
+    select: { departmentId: true, allocatedPercent: true },
+  });
+  const currentMap = new Map(existingLines.map((l) => [l.departmentId, l.allocatedPercent]));
+  const currentTotal = [...currentMap.values()].reduce((sum, pct) => sum + pct, 0);
+
+  const nextMap = new Map(currentMap);
+  const prepared = input.allocations.map((item) => {
+    const figures = allocationAt(structure.totalBudget, item.allocatedPercent);
+    nextMap.set(item.departmentId, figures.allocatedPercent);
+    return { departmentId: item.departmentId, figures };
+  });
+  const nextTotal = [...nextMap.values()].reduce((sum, pct) => sum + pct, 0);
+  const problem = batchAllocationOverCap({ currentTotal, nextTotal });
+  if (problem) throw new TRPCError({ code: "BAD_REQUEST", message: problem });
+
+  const reviewedAt = new Date();
+  await db.$transaction(async (tx) => {
+    for (const { departmentId, figures } of prepared) {
+      const values = {
+        ...figures,
+        availableAmount: figures.allocatedAmount,
+        lastReviewed: reviewedAt,
+      };
+      await tx.budgetAllocation.upsert({
+        where: { departmentId_budgetYear: { departmentId, budgetYear } },
+        create: {
+          governmentStructureId: structure.id,
+          departmentId,
+          budgetYear,
+          ...values,
+        },
+        update: values,
+      });
+    }
+  });
+  return { updated: prepared.length, budgetYear };
 }
 
 /**

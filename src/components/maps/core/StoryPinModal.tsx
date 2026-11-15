@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import { Skeleton } from "~/components/ui/skeleton";
 import { memo } from "react";
 import {
@@ -10,7 +11,6 @@ import {
   NavArrowLeft as ChevronLeft,
   Eye,
 } from "iconoir-react";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import remarkGfm from "remark-gfm";
 
@@ -244,10 +244,10 @@ function StoryPinFooter({
       )}
       {pin.country.slug && (
         <Button asChild variant="outline" size="sm">
-          <Link href={`/countries/${pin.country.slug}`}>
+          <CountryLink country={{ slug: pin.country.slug, name: pin.country.name }}>
             View {pin.country.name}
             <ExternalLink aria-hidden />
-          </Link>
+          </CountryLink>
         </Button>
       )}
       <Button size="sm" onClick={onFlyTo} className="bg-tint text-on-tint hover:bg-tint-hover">

@@ -1,15 +1,14 @@
 "use client";
 
-import React from "react";
 import { Activity } from "iconoir-react";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Progress } from "~/components/ui/progress";
+import { levelWord } from "~/lib/qualitative-rating";
 import { cn } from "~/lib/utils";
 import type { CLevel, SubScores } from "~/lib/military/model";
 import { SUB_SCORE_KEYS, worstSubScore } from "~/lib/military/defense-console";
 import { C_LEVEL_COPY, SUB_SCORE_COPY } from "../defense-copy";
-import { formatPercent } from "../forces/force-fields";
 
 interface ReadinessCardProps {
   readiness: number;
@@ -20,7 +19,7 @@ interface ReadinessCardProps {
 }
 
 /** Readiness as a C-level with its four areas; the weakest is named with what lifts it. */
-export const ReadinessCard = React.memo(function ReadinessCard({
+export function ReadinessCard({
   readiness,
   cLevel,
   subScores,
@@ -34,12 +33,12 @@ export const ReadinessCard = React.memo(function ReadinessCard({
         <CardTitle icon={<Activity />}>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 px-5 pb-5">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-large-title text-label tabular-nums">{cLevel}</span>
-          <span className="text-headline text-label">{level.label}</span>
-          <span className="text-label-secondary text-callout tabular-nums">
-            {formatPercent(readiness)} readiness
-          </span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-large-title text-label tabular-nums">{cLevel}</span>
+            <span className="text-headline text-label">{level.label}</span>
+          </div>
+          <Progress value={readiness * 100} className="h-1.5" aria-label={`${title} meter`} />
         </div>
         <p className="text-label-secondary text-footnote">{level.detail}</p>
         {subScores && worst && (
@@ -52,7 +51,7 @@ export const ReadinessCard = React.memo(function ReadinessCard({
       </CardContent>
     </Card>
   );
-});
+}
 
 function SubScoreRow({
   area,
@@ -72,8 +71,8 @@ function SubScoreRow({
           <span className="text-label-tertiary text-footnote shrink-0">{copy.analyst}</span>
           {worst && <Badge variant="warning">Weakest</Badge>}
         </span>
-        <span className={cn("text-callout tabular-nums", worst ? "text-warning-ink" : "text-label")}>
-          {formatPercent(value)}
+        <span className={cn("text-callout", worst ? "text-warning-ink" : "text-label")}>
+          {levelWord(value * 100)}
         </span>
       </div>
       <Progress

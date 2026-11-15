@@ -9,10 +9,11 @@ echo "📦 Running post-build script for standalone deployment..."
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
-# Check if standalone build exists
+# Only the standalone builds (next.config.js `output`) have a .next/standalone to fill; the main app's `next start`
+# serves .next and public/ in place. `bun run build` runs this as its postbuild lifecycle hook.
 if [ ! -d ".next/standalone" ]; then
-    echo "❌ Error: Standalone build not found. Did the build complete successfully?"
-    exit 1
+    echo "ℹ️  No .next/standalone (not a standalone build): nothing to copy"
+    exit 0
 fi
 
 echo "📁 Copying static files to standalone directory..."

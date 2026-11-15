@@ -60,8 +60,6 @@ export function SculptedMainPageContent({
             <h2 className="text-label text-headline">Browse by topic</h2>
             <Link
               href="/util/categories/Countries"
-              data-cuelume-press="press"
-              data-cuelume-hover="tick"
               className="text-label-secondary hover:text-label group/all text-caption flex items-center gap-1 transition-colors"
             >
               <span>All topics</span>
@@ -79,8 +77,6 @@ export function SculptedMainPageContent({
                     <Link
                       key={cat.name}
                       href={`/util/categories/${encodeURIComponent(cat.name)}`}
-                      data-cuelume-press="page"
-                      data-cuelume-hover="tick"
                       className={cn(
                         "rounded-row flex items-center gap-2 p-2 sm:p-3",
                         "hover:bg-fill-4 group transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] duration-150"
@@ -114,8 +110,6 @@ export function SculptedMainPageContent({
 
                 <Link
                   href="/wiki/Category:Bureau_of_International_Statistics"
-                  data-cuelume-press="page"
-                  data-cuelume-hover="tick"
                   className="text-label-secondary hover:text-label rounded-control-sm text-caption inline-flex shrink-0 items-center gap-1 px-2 py-0.5 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] hover:bg-black/5"
                   title="Browse full statistical category index"
                 >
@@ -143,8 +137,6 @@ export function SculptedMainPageContent({
                   {/* Visual Frame */}
                   <Link
                     href={`/wiki/${almanacSpotlight.slug}`}
-                    data-cuelume-press="droplet"
-                    data-cuelume-hover="tick"
                     className="group/img group/media rounded-row border-separator sm:rounded-card relative block aspect-[16/10] w-full shrink-0 overflow-hidden border bg-black/5 sm:aspect-[4/3] sm:w-[150px] md:w-[170px]"
                   >
                     {almanacSpotlight.thumbnail ? (
@@ -176,8 +168,6 @@ export function SculptedMainPageContent({
 
                       <Link
                         href={`/wiki/${almanacSpotlight.slug}`}
-                        data-cuelume-press="page"
-                        data-cuelume-hover="tick"
                         className="group/title mt-1 block"
                       >
                         <h3 className="text-label text-headline group-hover/title:text-tint sm:text-headline leading-snug transition-colors lg:text-[17px]">
@@ -193,8 +183,6 @@ export function SculptedMainPageContent({
                     <div className="border-separator mt-3 flex items-center justify-between border-t pt-3">
                       <Link
                         href={`/wiki/${almanacSpotlight.slug}`}
-                        data-cuelume-press="droplet"
-                        data-cuelume-hover="tick"
                         className="group/cta text-caption text-tint hover:text-tint ml-2 inline-flex shrink-0 items-center gap-1 font-semibold transition-colors"
                       >
                         <span>Explore index</span>

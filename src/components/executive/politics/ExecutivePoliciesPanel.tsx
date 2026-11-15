@@ -2,6 +2,7 @@
 
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { RepealPolicyButton } from "./RepealPolicyButton";
 
@@ -21,40 +22,46 @@ export function ExecutivePoliciesPanel({ countryId }: ExecutivePoliciesPanelProp
   const policies = (data ?? []).filter((p) => p.policyType !== "legislative_bill");
 
   return (
-    <Card className="flex flex-col gap-6 py-6">
-      <CardHeader className="pb-0">
-        <CardTitle className="text-body">Executive policies in force</CardTitle>
-        <CardDescription className="text-body">
+    <Card content="data" padding="none">
+      <CardHeader className="border-separator/60 border-b p-4">
+        <CardTitle className="text-headline">Executive policies in force</CardTitle>
+        <CardDescription className="text-footnote mt-0.5">
           Enacted from Directives. Repealing one ends its effects from now on.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 pt-0">
+      <CardContent className="p-0">
         {isLoading ? (
-          <Skeleton className="rounded-row h-16" />
+          <div className="p-4">
+            <Skeleton className="rounded-control h-16" />
+          </div>
         ) : policies.length === 0 ? (
-          <p className="text-label-secondary text-footnote">No executive policies in force.</p>
+          <div className="p-4">
+            <EmptyState compact title="No executive policies in force" />
+          </div>
         ) : (
-          policies.map((policy) => (
-            <div
-              key={policy.id}
-              className="bg-fill-4 border-separator rounded-row flex items-center justify-between gap-3 border p-3"
-            >
-              <div className="min-w-0">
-                <p className="text-body truncate font-medium">{policy.name}</p>
-                <p className="text-label-secondary text-footnote tabular-nums">
-                  {policy.category}
-                  {policy.gdpEffect
-                    ? `, ${policy.gdpEffect > 0 ? "+" : ""}${policy.gdpEffect}% GDP`
-                    : ""}
-                </p>
-              </div>
-              <RepealPolicyButton
-                policyId={policy.id}
-                policyName={policy.name}
-                onRepealed={() => void refetch()}
-              />
-            </div>
-          ))
+          <ul className="divide-separator/60 divide-y">
+            {policies.map((policy) => (
+              <li
+                key={policy.id}
+                className="flex items-center justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0">
+                  <p className="text-label text-body truncate font-medium">{policy.name}</p>
+                  <p className="text-label-secondary text-footnote tabular-nums">
+                    {policy.category}
+                    {policy.gdpEffect
+                      ? `, ${policy.gdpEffect > 0 ? "+" : ""}${policy.gdpEffect}% GDP`
+                      : ""}
+                  </p>
+                </div>
+                <RepealPolicyButton
+                  policyId={policy.id}
+                  policyName={policy.name}
+                  onRepealed={() => void refetch()}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </CardContent>
     </Card>

@@ -1,8 +1,9 @@
 "use client";
 import React, { useMemo } from "react";
 import type { NamedLakeFormData, EditorFeature } from "~/hooks/map-editor/editor-types";
+import { Input } from "~/components/ui/input";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
-import { Field, GeometryStatus, inputClasses, WikiLinkField } from "./fields";
+import { Field, GeometryStatus, WikiLinkField } from "./fields";
 
 interface LakePropertyFormProps {
   form: NamedLakeFormData;
@@ -34,24 +35,24 @@ export const LakePropertyForm = React.memo(function LakePropertyForm({
 
   return (
     <div className="space-y-2">
-      <input
+      <Input
         type="text"
         placeholder="Lake name"
         value={form.name}
         onChange={(e) => onChange({ ...form, name: e.target.value })}
-        className={inputClasses}
+        className="text-footnote h-8 px-2.5"
         autoFocus
       />
 
-      <Field label="Max Depth (meters, optional)">
-        <input
+      <Field label="Max depth (meters, optional)">
+        <Input
           type="number"
           placeholder="e.g. 150"
           value={form.maxDepthM ?? ""}
           onChange={(e) =>
             onChange({ ...form, maxDepthM: parseFloat(e.target.value) || undefined })
           }
-          className={inputClasses}
+          className="text-footnote h-8 px-2.5 tabular-nums"
         />
       </Field>
 

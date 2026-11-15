@@ -167,7 +167,7 @@ export function CardBack({ card, size, story = null, shine = null, className }: 
             <span>
               {story && `#${story.facts.serialNumber} · ${FINISH_LABEL[story.facts.finish]}`}
             </span>
-            <span className="text-headline text-label flex items-center gap-1 font-semibold tracking-tight">
+            <span className="text-headline text-label flex items-center gap-1 tracking-tight">
               <CardsLogomark className="text-tint" />
               Cards
             </span>

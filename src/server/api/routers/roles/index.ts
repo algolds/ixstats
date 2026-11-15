@@ -3,6 +3,47 @@ import { createTRPCRouter, adminProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { isSystemOwner } from "~/lib/auth";
 import { globalCache } from "~/lib/cache";
+import type { PrismaClient } from "@prisma/client";
+
+/** Lower level = more privilege. A non-owner may act only on levels strictly below (numerically above) their own. */
+function assertOutranks(isOwner: boolean, callerLevel: number, targetLevel: number, what: string) {
+  if (!isOwner && targetLevel <= callerLevel) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: `You can't change ${what} at or above your own rank`,
+    });
+  }
+}
+
+/** A non-owner may only hand out permissions their own role holds. */
+async function assertGrantable(
+  db: PrismaClient,
+  isOwner: boolean,
+  caller: { roleId?: string | null; role?: { id?: string; name: string } | null },
+  permissionIds: string[]
+) {
+  if (isOwner || permissionIds.length === 0) return;
+
+  let callerRoleId = caller.role?.id ?? caller.roleId ?? null;
+  if (!callerRoleId && caller.role?.name) {
+    const found = await db.role.findFirst({ where: { name: caller.role.name } });
+    callerRoleId = found?.id ?? null;
+  }
+
+  const held = callerRoleId
+    ? await db.rolePermission.findMany({
+        where: { roleId: callerRoleId },
+        select: { permissionId: true },
+      })
+    : [];
+  const heldIds = new Set(held.map((rp) => rp.permissionId));
+  if (permissionIds.some((id) => !heldIds.has(id))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You can only grant permissions your own role has",
+    });
+  }
+}
 
 export const rolesRouter = createTRPCRouter({
   // Get all active roles with assigned permissions and user counts
@@ -86,9 +127,9 @@ export const rolesRouter = createTRPCRouter({
           .max(50)
           .regex(/^[a-z_]+$/, "Role name must be lowercase with underscores only"),
         displayName: z.string().min(1).max(100),
-        description: z.string().optional(),
+        description: z.string().max(500).optional(),
         level: z.number().int().min(0).max(1000),
-        permissionIds: z.array(z.string()).optional().default([]),
+        permissionIds: z.array(z.string()).max(200).optional().default([]),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -102,6 +143,8 @@ export const rolesRouter = createTRPCRouter({
           message: "Cannot create a role with higher privileges than your own",
         });
       }
+
+      await assertGrantable(ctx.db, isOwner, ctx.user, input.permissionIds);
 
       const existingName = await ctx.db.role.findUnique({
         where: { name: input.name },
@@ -174,9 +217,9 @@ export const rolesRouter = createTRPCRouter({
       z.object({
         roleId: z.string(),
         displayName: z.string().min(1).max(100).optional(),
-        description: z.string().optional(),
+        description: z.string().max(500).optional(),
         level: z.number().int().min(0).max(1000).optional(),
-        permissionIds: z.array(z.string()).optional(),
+        permissionIds: z.array(z.string()).max(200).optional(),
         isActive: z.boolean().optional(),
       })
     )
@@ -201,6 +244,12 @@ export const rolesRouter = createTRPCRouter({
           code: "FORBIDDEN",
           message: "Cannot modify owner role",
         });
+      }
+
+      assertOutranks(isOwner, callerLevel, role.level, "a role");
+
+      if (input.permissionIds !== undefined) {
+        await assertGrantable(ctx.db, isOwner, ctx.user, input.permissionIds);
       }
 
       if (input.level !== undefined && input.level !== role.level) {
@@ -287,6 +336,9 @@ export const rolesRouter = createTRPCRouter({
         });
       }
 
+      const callerIsOwner = isSystemOwner(ctx.user.clerkUserId) || ctx.user?.role?.level === 0;
+      assertOutranks(callerIsOwner, ctx.user?.role?.level ?? 999, role.level, "a role");
+
       if (role.isSystem) {
         throw new TRPCError({
           code: "FORBIDDEN",
@@ -360,6 +412,10 @@ export const rolesRouter = createTRPCRouter({
             code: "FORBIDDEN",
             message: "Cannot modify roles for system owners",
           });
+        }
+
+        if (targetUser.role) {
+          assertOutranks(isOwner, callerLevel, targetUser.role.level, "a user");
         }
       }
 

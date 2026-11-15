@@ -20,6 +20,9 @@ jest.mock("~/server/modules/realms/realms.map-face-cache", () => ({
   invalidateRealmMapFace: jest.fn(),
 }));
 jest.mock("~/lib/auth", () => ({ isSystemOwner: (id: string) => id === "sys_owner" }));
+jest.mock("~/lib/wiki-os/editing-switch", () => ({
+  refreshWikiosEditingFlag: jest.fn().mockResolvedValue(true),
+}));
 jest.mock("~/server/modules/realms", () => {
   const actual = jest.requireActual("~/server/modules/realms");
   return { ...actual, assignNation: jest.fn(actual.assignNation) };
@@ -47,6 +50,8 @@ import { globalCache } from "~/lib/cache";
 import { assignClaimedNation } from "~/server/modules/realms/realms.ownership";
 import { assignNation, NationOwnershipError, releaseNation } from "~/server/modules/realms";
 import { invalidateRealmMapFace } from "~/server/modules/realms/realms.map-face-cache";
+import { addLoreAuthor, getLoreAccess } from "~/server/modules/lore/lore.service";
+import { db as serverDb } from "~/server/db";
 
 type Db = ReturnType<typeof createMockPrisma>;
 
@@ -304,6 +309,7 @@ describe("nation ownership writers", () => {
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      countryLoreAuthor: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
     };
     return d;
   }
@@ -484,6 +490,9 @@ describe("the ownership module", () => {
         update: jest.fn().mockResolvedValue({}),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
+      countryLoreAuthor: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      },
     } as any;
   }
   const unowned = { id: "c1", realmId: "default", ownerUserId: null, realm: { settings: null } };
@@ -540,6 +549,101 @@ describe("the ownership module", () => {
       expect(t.user.updateMany).toHaveBeenCalledWith({
         where: { countryId: "c1" },
         data: { countryId: null },
+      });
+      expect(t.countryLoreAuthor.deleteMany).toHaveBeenCalledWith({
+        where: { countryId: "c1" },
+      });
+    });
+
+    it("clears the lore team on release so former lore authors lose access while a newly assigned owner has access", async () => {
+      const state = {
+        country: {
+          id: "c1",
+          name: "Caphiria",
+          realmId: "default",
+          ownerUserId: "u_old" as string | null,
+          realm: { settings: null },
+        },
+        authors: [] as Array<{ countryId: string; userId: string; addedById: string }>,
+      };
+      const t = {
+        country: {
+          findUnique: jest.fn(async () => state.country),
+          count: jest.fn(async () => 0),
+          update: jest.fn(async ({ data }: any) => {
+            if ("ownerUserId" in data) state.country.ownerUserId = data.ownerUserId;
+            return { realmId: state.country.realmId };
+          }),
+          updateMany: jest.fn(async ({ where, data }: any) => {
+            if (where.ownerUserId === null && state.country.ownerUserId !== null)
+              return { count: 0 };
+            if ("ownerUserId" in data) state.country.ownerUserId = data.ownerUserId;
+            return { count: 1 };
+          }),
+        },
+        user: {
+          findUnique: jest.fn(async ({ where }: any) => ({
+            id: where.clerkUserId?.replace(/^clerk_/, "") ?? where.id,
+            membershipTier: "basic",
+            countryId: null,
+            role: null,
+          })),
+          update: jest.fn(async () => ({})),
+          updateMany: jest.fn(async () => ({ count: 1 })),
+        },
+        countryLoreAuthor: {
+          findUnique: jest.fn(async ({ where: { countryId_userId } }: any) =>
+            state.authors.find(
+              (a) => a.countryId === countryId_userId.countryId && a.userId === countryId_userId.userId
+            )
+              ? { id: "la_1" }
+              : null
+          ),
+          create: jest.fn(async ({ data }: any) => {
+            state.authors.push(data);
+            return data;
+          }),
+          deleteMany: jest.fn(async ({ where }: any) => {
+            const before = state.authors.length;
+            state.authors = state.authors.filter((a) => a.countryId !== where.countryId);
+            return { count: before - state.authors.length };
+          }),
+        },
+      } as any;
+      Object.assign(serverDb, t);
+      const asUser = (userId: string) =>
+        createMockRouterContext({
+          db: t,
+          auth: { userId: `clerk_${userId}` },
+          user: { id: userId, clerkUserId: `clerk_${userId}`, countryId: null },
+        });
+
+      await addLoreAuthor(asUser("u_old"), "c1", "coauthor", {
+        userOfHandle: async (h) => (h === "coauthor" ? "u_coauthor" : null),
+      });
+      expect(await getLoreAccess(asUser("u_coauthor"), "c1")).toEqual({
+        enabled: true,
+        isOwner: false,
+        canWrite: true,
+      });
+
+      await releaseNation(t, "c1");
+      expect(await getLoreAccess(asUser("u_coauthor"), "c1")).toEqual({
+        enabled: true,
+        isOwner: false,
+        canWrite: false,
+      });
+
+      await assignNation(t, { userId: "u_new", countryId: "c1" });
+      expect(await getLoreAccess(asUser("u_new"), "c1")).toEqual({
+        enabled: true,
+        isOwner: true,
+        canWrite: true,
+      });
+      expect(await getLoreAccess(asUser("u_coauthor"), "c1")).toEqual({
+        enabled: true,
+        isOwner: false,
+        canWrite: false,
       });
     });
   });

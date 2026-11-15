@@ -35,7 +35,9 @@ const mockState: { country: object } = { country: completeCountry };
 
 jest.mock("~/trpc/react", () => ({
   api: {
-    government: { getByCountryId: { useQuery: () => ({ data: mockGovernment, isLoading: false }) } },
+    government: {
+      getByCountryId: { useQuery: () => ({ data: mockGovernment, isLoading: false }) },
+    },
   },
 }));
 
@@ -65,11 +67,11 @@ describe("useMyCountryCompliance", () => {
     expect(result.current.isCompliant).toBe(false);
   });
 
-  it("asks for tax rates when none is saved, and sends Review to the Fiscal policy tab", () => {
+  it("asks for tax rates when none is saved, and sends Review to the country editor taxes pane", () => {
     mockState.country = { ...completeCountry, fiscalSystem: null };
     const { result } = renderHook(() => useMyCountryCompliance());
     const taxes = result.current.sections.find((s) => s.id === "taxes");
     expect(taxes?.missing).toEqual(["Tax rates"]);
-    expect(complianceReviewHref(taxes)).toBe("/mycountry/economy?tab=taxes");
+    expect(complianceReviewHref(taxes)).toBe("/mycountry/editor#taxes");
   });
 });

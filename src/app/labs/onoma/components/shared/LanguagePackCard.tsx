@@ -93,7 +93,7 @@ export function LanguagePackCard({
             <BookmarkBook className={cn("h-7 w-7", theme.text)} />
           </div>
 
-          <h3 className="text-label text-body line-clamp-1 font-semibold">{pack.name}</h3>
+          <h3 className="text-label text-headline line-clamp-1">{pack.name}</h3>
 
           {pack.authorName && (
             <span className="text-label-secondary text-caption mt-0.5 font-mono">

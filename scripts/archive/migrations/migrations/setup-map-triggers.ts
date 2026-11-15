@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Setup PostGIS triggers for map_layers table.
  * Auto-syncs JSON geometry to PostGIS native geometry column.
@@ -5,9 +6,7 @@
  * Run: npx tsx scripts/migrations/setup-map-triggers.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function main() {
   console.log("Setting up PostGIS triggers for map_layers...");

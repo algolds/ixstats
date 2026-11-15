@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import React, { useState, useMemo } from "react";
 import { useSportsFocus } from "~/components/sports/core/SportsFocusProvider";
 import { getPlayerPhotoUrl } from "~/lib/sports/photos";
@@ -76,16 +84,11 @@ export function SquadRosterTable({
   const isFootball = sportPreset === "football";
 
   return (
-    <div
-      className={cn(
-        "rounded-card border-separator bg-surface shadow-card overflow-x-auto border",
-        className
-      )}
-    >
-      <table className="text-footnote w-full border-collapse text-left">
+    <>
+      <Table containerClassName={className}>
         {/* Table Header */}
-        <thead>
-          <tr className="border-separator bg-fill-4 text-eyebrow text-label-secondary border-b select-none">
+        <TableHeader>
+          <TableRow>
             <SortableTh
               field="number"
               sortField={sortField}
@@ -135,49 +138,49 @@ export function SquadRosterTable({
             {/* Sport-Adaptive Columns */}
             {isHockey ? (
               <>
-                <th className="px-3 py-3 text-center">GP</th>
-                <th className="px-3 py-3 text-center">G</th>
-                <th className="px-3 py-3 text-center">A</th>
-                <th className="px-3 py-3 text-center">PTS</th>
+                <TableHead className="text-center">GP</TableHead>
+                <TableHead className="text-center">G</TableHead>
+                <TableHead className="text-center">A</TableHead>
+                <TableHead className="text-center">PTS</TableHead>
               </>
             ) : isFootball ? (
               <>
-                <th className="px-3 py-3 text-center">GP</th>
-                <th className="px-3 py-3 text-center">Pass</th>
-                <th className="px-3 py-3 text-center">Rush</th>
-                <th className="px-3 py-3 text-center">TD</th>
+                <TableHead className="text-center">GP</TableHead>
+                <TableHead className="text-center">Pass</TableHead>
+                <TableHead className="text-center">Rush</TableHead>
+                <TableHead className="text-center">TD</TableHead>
               </>
             ) : (
               <>
-                <th className="px-3 py-3 text-center">Apps</th>
-                <th className="px-3 py-3 text-center">G</th>
-                <th className="px-3 py-3 text-center">A</th>
+                <TableHead className="text-center">Apps</TableHead>
+                <TableHead className="text-center">G</TableHead>
+                <TableHead className="text-center">A</TableHead>
               </>
             )}
 
-            <th className="px-4 py-3 text-right">Action</th>
-          </tr>
-        </thead>
+            <TableHead className="text-right">Action</TableHead>
+          </TableRow>
+        </TableHeader>
 
         {/* Table Body */}
-        <tbody className="divide-separator divide-y">
+        <TableBody>
           {sortedPlayers.map((player) => {
             const ratings = (player.ratings as Record<string, number> | null) ?? {};
             const overall = ratings.overall;
 
             return (
-              <tr
+              <TableRow
                 key={player.id}
                 onClick={() => focusAthlete(player.id)}
                 className="group hover:bg-fill-4 cursor-pointer transition-colors"
               >
                 {/* Number */}
-                <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
-                  {player.number ?? "—"}
-                </td>
+                <TableCell className="text-label-secondary text-center">
+                  {player.number ?? "–"}
+                </TableCell>
 
                 {/* Athlete Name & Thumbnail */}
-                <td className="px-4 py-3">
+                <TableCell>
                   <div className="flex items-center gap-3">
                     <div className="rounded-row border-separator bg-fill-3 h-8 w-8 shrink-0 overflow-hidden border">
                       <img
@@ -195,75 +198,65 @@ export function SquadRosterTable({
                       </p>
                     </div>
                   </div>
-                </td>
+                </TableCell>
 
                 {/* Position */}
-                <td className="px-3 py-3 text-center">
+                <TableCell className="text-center">
                   <Badge variant="default">{player.position}</Badge>
-                </td>
+                </TableCell>
 
                 {/* Age */}
-                <td className="text-label-secondary px-3 py-3 text-center font-medium">
-                  {player.age}
-                </td>
+                <TableCell className="text-label-secondary text-center">{player.age}</TableCell>
 
                 {/* Overall Rating */}
-                <td className="px-3 py-3 text-center">
+                <TableCell className="text-center">
                   <Badge
                     variant="outline"
                     className={cn("tabular-nums", attributeBadgeClass(overall))}
                   >
-                    {overall ?? <span aria-label="Not recorded">—</span>}
+                    {overall ?? <span aria-label="Not recorded">–</span>}
                   </Badge>
-                </td>
+                </TableCell>
 
                 {/* Sport-Adaptive Stat Values */}
                 {isHockey ? (
                   <>
-                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
+                    <TableCell className="text-label-secondary text-center">
                       {ratings.gamesPlayed ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
-                      {ratings.goals ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
-                      {ratings.assists ?? 0}
-                    </td>
-                    <td className="text-teal px-3 py-3 text-center font-medium tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-label text-center">{ratings.goals ?? 0}</TableCell>
+                    <TableCell className="text-label text-center">{ratings.assists ?? 0}</TableCell>
+                    <TableCell className="text-teal text-center">
                       {(ratings.goals ?? 0) + (ratings.assists ?? 0)}
-                    </td>
+                    </TableCell>
                   </>
                 ) : isFootball ? (
                   <>
-                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
+                    <TableCell className="text-label-secondary text-center">
                       {ratings.gamesPlayed ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-label text-center">
                       {ratings.passYards ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-label text-center">
                       {ratings.rushYards ?? 0}
-                    </td>
-                    <td className="text-yellow px-3 py-3 text-center font-medium tabular-nums">
+                    </TableCell>
+                    <TableCell className="text-yellow text-center">
                       {ratings.touchdowns ?? 0}
-                    </td>
+                    </TableCell>
                   </>
                 ) : (
                   <>
-                    <td className="text-label-secondary px-3 py-3 text-center font-medium tabular-nums">
+                    <TableCell className="text-label-secondary text-center">
                       {ratings.appearances ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
-                      {ratings.goals ?? 0}
-                    </td>
-                    <td className="text-label px-3 py-3 text-center font-medium tabular-nums">
-                      {ratings.assists ?? 0}
-                    </td>
+                    </TableCell>
+                    <TableCell className="text-label text-center">{ratings.goals ?? 0}</TableCell>
+                    <TableCell className="text-label text-center">{ratings.assists ?? 0}</TableCell>
                   </>
                 )}
 
                 {/* Actions */}
-                <td className="px-4 py-3 text-right">
+                <TableCell className="text-right">
                   <div
                     className="flex items-center justify-end gap-2"
                     onClick={(e) => e.stopPropagation()}
@@ -277,17 +270,17 @@ export function SquadRosterTable({
                       Focus
                     </Button>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
-    </div>
+        </TableBody>
+      </Table>
+    </>
   );
 }
 
-/** A sortable column header: the `<th>` carries `aria-sort`, a button inside toggles it. */
+/** A sortable column header: the `<TableHead>` carries `aria-sort`, a button inside toggles it. */
 function SortableTh({
   field,
   sortField,
@@ -305,18 +298,21 @@ function SortableTh({
 }) {
   const active = sortField === field;
   return (
-    <th aria-sort={active ? (sortAsc ? "ascending" : "descending") : "none"} className={className}>
+    <TableHead
+      aria-sort={active ? (sortAsc ? "ascending" : "descending") : "none"}
+      className={className}
+    >
       <Button
         variant="ghost"
         size="sm"
         onClick={() => onSort(field)}
         className={cn(
-          "text-eyebrow h-auto px-1 py-0.5",
+          "text-footnote -mx-1 h-auto px-1 py-0.5",
           active ? "text-label" : "text-label-secondary hover:text-label"
         )}
       >
         {children}
       </Button>
-    </th>
+    </TableHead>
   );
 }

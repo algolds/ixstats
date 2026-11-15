@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Archery as Crosshair, Navigator as Navigation } from "iconoir-react";
 import { Button, type ButtonProps } from "~/components/ui/button";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { Input } from "~/components/ui/input";
 import { cn } from "~/lib/utils/cn";
 
 type ToolbarButtonTone = "default" | "active" | "danger";
@@ -23,6 +23,7 @@ export const ToolbarButton = React.forwardRef<
       className={cn(
         "h-6 gap-1 px-2 [&_svg]:size-3",
         tone === "default" && "text-label-secondary",
+        tone === "active" && "bg-tint-fill text-tint-ink hover:bg-tint-fill",
         tone === "danger" && "text-destructive hover:bg-destructive/10 hover:text-destructive",
         className
       )}
@@ -32,8 +33,6 @@ export const ToolbarButton = React.forwardRef<
 });
 
 export const dividerClass = "bg-separator h-4 w-px";
-export const selectClass =
-  "h-6 rounded-control-sm border border-separator bg-surface px-2 text-footnote text-label outline-none focus:ring-1 focus:ring-tint/50";
 
 export function ToolLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
   return (
@@ -64,23 +63,23 @@ export function MoveToCoordsInput({ onMove }: { onMove: (lng: number, lat: numbe
   };
   return (
     <div className="flex items-center gap-1">
-      <Eyebrow>Move to</Eyebrow>
-      <input
+      <span className="text-caption text-label-secondary">Move to</span>
+      <Input
         type="number"
         placeholder="Lng"
         value={lng}
         onChange={(e) => setLng(e.target.value)}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16`}
+        className="text-footnote font-data rounded-control-sm h-6 w-16 px-2 py-0 tabular-nums"
         step="any"
       />
-      <input
+      <Input
         type="number"
         placeholder="Lat"
         value={lat}
         onChange={(e) => setLat(e.target.value)}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} w-16`}
+        className="text-footnote font-data rounded-control-sm h-6 w-16 px-2 py-0 tabular-nums"
         step="any"
       />
       <ToolbarButton onClick={handle} title="Go">
@@ -141,30 +140,29 @@ export function CoordinateSnappingControls({
 
   return (
     <div className="flex items-center gap-2">
-      <Eyebrow>Coord</Eyebrow>
-      <input
+      <span className="text-caption text-label-secondary">Coord</span>
+      <Input
         type="text"
         placeholder="Lng"
         value={lng}
         onChange={(e) => setLng(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} text-footnote w-16`}
+        className="text-footnote font-data rounded-control-sm h-6 w-16 px-2 py-0 tabular-nums"
       />
-      <input
+      <Input
         type="text"
         placeholder="Lat"
         value={lat}
         onChange={(e) => setLat(e.target.value)}
         onBlur={handleApply}
         onKeyDown={handleKeyDown}
-        className={`${selectClass} text-footnote w-16`}
+        className="text-footnote font-data rounded-control-sm h-6 w-16 px-2 py-0 tabular-nums"
       />
 
       {onTogglePickingLocation && (
         <ToolbarButton
           tone={isPickingLocation ? "active" : "default"}
-
           onClick={onTogglePickingLocation}
           title="Reposition with crosshair teleport tool"
         >

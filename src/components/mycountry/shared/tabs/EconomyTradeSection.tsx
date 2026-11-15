@@ -29,7 +29,7 @@ function tradeCell(
     value:
       amount == null ? (
         <span role="img" aria-label="Not recorded">
-          —
+          –
         </span>
       ) : (
         formatCompactCurrency(amount, "N/A", currency)

@@ -69,8 +69,6 @@ export default function HelpPage() {
             <Link
               key={href}
               href={href}
-              data-cuelume-press="tick"
-              data-cuelume-hover="tick"
               className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:outline-none"
             >
               <Card className="group-hover:border-foreground/20 flex min-h-11 items-center gap-3 rounded-xl p-4 transition-[border-color,scale,translate] duration-150 group-active:scale-[0.99]">

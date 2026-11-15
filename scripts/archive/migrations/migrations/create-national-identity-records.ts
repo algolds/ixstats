@@ -1,4 +1,5 @@
 #!/usr/bin/env npx tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Create National Identity Records Migration Script
@@ -7,9 +8,7 @@
  * It populates basic information from the Country table.
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 interface Country {
   id: string;

@@ -12,7 +12,7 @@
 import { randomBytes } from "node:crypto";
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { isTileCoord, isTiledLayer, type TiledLayer } from "~/lib/maps/decorative-tiles";
+import { isTileCoord, parseTileLayerKey, type TileLayerKey } from "~/lib/maps/decorative-tiles";
 import { ByteBoundedCache } from "~/lib/cache/byte-bounded-cache";
 import { TILE_FORMAT_VERSION } from "~/lib/maps/tile-format";
 
@@ -37,11 +37,11 @@ export function mapTileDir(): string {
   );
 }
 
-/** A tile of a realm's map at one version: realm id, version, layer, z, x, y. */
+/** A tile of a realm's map at one version: realm id, version, layer (or its flat tiles, `<layer>.flat`), z, x, y. */
 export type TileArgs = readonly [
   realmId: string,
   version: number,
-  layer: TiledLayer,
+  layer: TileLayerKey,
   z: number,
   x: number,
   y: number,
@@ -66,7 +66,7 @@ function versionDir(realmId: string, version: number): string | null {
 /** The tile's file, or null when any part of the address is not one a tile has. */
 function tileFile(...[realmId, version, layer, z, x, y]: TileArgs): string | null {
   const dir = versionDir(realmId, version);
-  if (!dir || !isTiledLayer(layer) || !isTileCoord(z, x, y)) return null;
+  if (!dir || !parseTileLayerKey(layer) || !isTileCoord(z, x, y)) return null;
   return path.join(/*turbopackIgnore: true*/ dir, layer, String(z), String(x), `${y}.pbf`);
 }
 
@@ -79,7 +79,7 @@ const memory = new ByteBoundedCache<Buffer>({
 export async function readTile(
   realmId: string,
   version: number,
-  layer: TiledLayer,
+  layer: TileLayerKey,
   z: number,
   x: number,
   y: number
@@ -104,7 +104,7 @@ export async function readTile(
 export async function writeTile(
   realmId: string,
   version: number,
-  layer: TiledLayer,
+  layer: TileLayerKey,
   z: number,
   x: number,
   y: number,

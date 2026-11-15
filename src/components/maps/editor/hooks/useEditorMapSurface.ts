@@ -70,12 +70,6 @@ export function useEditorMapSurface({
       theme,
       projectionMode: "mercator",
       interactive: true,
-      onCreate: (map, maplibregl) => {
-        map.addControl(
-          new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
-          "top-right"
-        );
-      },
       onReady: (map) => {
         mapRef.current = map;
         // The engine resolves ready after style.load, so the style is safe to touch here.

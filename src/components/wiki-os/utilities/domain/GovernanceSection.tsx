@@ -146,8 +146,6 @@ export function GovernanceSection({ searchFilter }: { searchFilter: string }) {
       </div>
       <Link
         href={ixstatesLinkHref("/admin/wikios-settings")}
-        data-cuelume-press="press"
-        data-cuelume-hover="tick"
         className="border-tint/40 bg-tint/10 text-tint hover:bg-tint/20 rounded-control text-caption border px-3 py-2 transition-colors"
       >
         Open Sysop panel

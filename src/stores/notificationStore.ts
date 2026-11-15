@@ -504,7 +504,7 @@ export const useNotificationStore = create<NotificationStore>()(
 function calculateStats(notifications: UnifiedNotification[]): NotificationStats {
   const stats: NotificationStats = {
     total: notifications.length,
-    unread: notifications.filter((n) => n.status !== "read").length,
+    unread: notifications.filter((n) => n.status !== "read" && n.status !== "dismissed").length,
     byCategory: {} as Record<NotificationCategory, number>,
     byPriority: {} as Record<NotificationPriority, number>,
     delivered: notifications.filter((n) => n.status === "delivered").length,

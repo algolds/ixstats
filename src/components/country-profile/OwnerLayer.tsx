@@ -32,7 +32,7 @@ export function OwnerLayer({
     <section
       aria-label="Owner view"
       className={cn(
-        "bg-tint-fill border-tint/30 rounded-row flex flex-wrap items-center gap-x-4 gap-y-2 border px-4 py-3",
+        "bg-fill-4 border-separator rounded-row flex flex-wrap items-center gap-x-4 gap-y-2 border px-4 py-3",
         className
       )}
     >

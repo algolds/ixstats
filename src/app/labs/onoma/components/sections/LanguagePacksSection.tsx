@@ -4,6 +4,8 @@
 // Onoma Lab — Community Language Packs (Linguistic Models, Phonology Sets, & Dictionaries)
 // Layout: Tactile 3D Vault-Style Pack Cards · Apple Spring Physics · Emil Kowalski Craft Polish
 
+import { Skeleton } from "~/components/ui/skeleton";
+import { EmptyState } from "~/components/ui/empty-state";
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import {
@@ -125,7 +127,7 @@ export function LanguagePacksSection({
       {/* Header & Vault Bridge Banner */}
       <div className="border-separator flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
-          <h2 className="text-label text-title-2 font-bold">Community packs</h2>
+          <h2 className="text-label text-title-2">Community packs</h2>
           <p className="text-label-secondary text-footnote mt-0.5">
             Discover, inspect, and fork community conlang models, phonological rule sets, and seed
             dictionaries, or publish your own.
@@ -135,7 +137,7 @@ export function LanguagePacksSection({
         {/* IxVault Platform Marketplace Bridge Link */}
         <Link
           href="/vault/store?view=packs"
-          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
+          className="group border-separator bg-fill-4 hover:bg-fill-3 rounded-row text-footnote flex shrink-0 items-center gap-2 border px-4 py-2 font-medium transition-[color,background-color,border-color,box-shadow,opacity]"
         >
           <Shop className="text-yellow h-4 w-4" />
           <span className="text-label">Browse on IxVault</span>
@@ -181,16 +183,23 @@ export function LanguagePacksSection({
       <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
         <div className={activePack ? "space-y-4 lg:col-span-7" : "space-y-4 lg:col-span-12"}>
           {isLoading ? (
-            <div className="flex h-64 items-center justify-center">
-              <RefreshCw className="text-label-secondary text-tint h-6 w-6 animate-spin" />
+            <div
+              className="grid gap-4 sm:grid-cols-2"
+              aria-busy="true"
+              aria-label="Loading language packs"
+            >
+              {Array.from({ length: 4 }, (_, i) => (
+                <Skeleton key={i} className="rounded-row h-36" />
+              ))}
             </div>
           ) : !marketplaceData?.packs || marketplaceData.packs.length === 0 ? (
-            <Card variant="well" padding="none" className="p-12 text-center">
-              <BookmarkBook className="text-label-secondary text-tint mx-auto mb-3 h-12 w-12 opacity-30" />
-              <h4 className="text-label text-body font-semibold">No language packs found</h4>
-              <p className="text-label-secondary text-footnote mt-1">
-                Try adjusting your search terms or language family filters.
-              </p>
+            <Card variant="well">
+              <EmptyState
+                compact
+                icon={<BookmarkBook />}
+                title="No language packs match"
+                message="Change the search or the language family."
+              />
             </Card>
           ) : (
             <div
@@ -243,8 +252,11 @@ export function LanguagePacksSection({
               <div className="border-separator flex items-start justify-between border-b pb-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-label text-body font-semibold">{activePack.name}</h3>
-                    <Badge variant="outline" className="text-eyebrow font-mono">
+                    <h3 className="text-label text-headline">{activePack.name}</h3>
+                    <Badge
+                      variant="outline"
+                      className="text-caption text-label-secondary font-mono"
+                    >
                       {activePack.culturalFamily || "General"}
                     </Badge>
                   </div>
@@ -288,8 +300,8 @@ export function LanguagePacksSection({
                     {activePack.description || "No extended documentation provided."}
                   </p>
 
-                  <div className="bg-surface border-separator rounded-row space-y-2 border p-3 font-mono">
-                    <div className="text-label text-eyebrow">Phonological constraints</div>
+                  <Card padding="none" className="space-y-2 p-3 font-mono">
+                    <div className="text-label text-caption">Phonological constraints</div>
                     <div className="text-caption grid grid-cols-2 gap-2">
                       <div>
                         <span className="text-label-secondary">Family: </span>
@@ -300,13 +312,13 @@ export function LanguagePacksSection({
                         <span className="text-label">{activePack.forkCount}</span>
                       </div>
                     </div>
-                  </div>
+                  </Card>
 
                   <Button
                     type="button"
                     onClick={() => handleFork(activePack as LanguagePack)}
                     disabled={forkMutation.isPending}
-                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-semibold transition-[color,background-color,border-color,box-shadow,opacity]"
+                    className="bg-tint hover:bg-tint-hover rounded-row text-on-tint shadow-card h-9 w-full cursor-pointer font-medium transition-[color,background-color,border-color,box-shadow,opacity]"
                   >
                     <GitFork className="mr-2 h-4 w-4" />
                     <span>Fork pack to my studio</span>
@@ -320,24 +332,25 @@ export function LanguagePacksSection({
                   <p className="text-label-secondary">
                     Seed dictionary vocabulary provided with this language pack:
                   </p>
-                  <div className="bg-surface border-separator text-label rounded-row text-caption max-h-48 overflow-y-auto border p-3 font-mono leading-relaxed">
+                  <Card
+                    padding="none"
+                    className="text-label text-caption max-h-48 overflow-y-auto p-3 font-mono leading-relaxed"
+                  >
                     {(() => {
                       const packObj = activePack as { lexiconSeed?: unknown };
                       return Array.isArray(packObj.lexiconSeed) && packObj.lexiconSeed.length > 0
                         ? (packObj.lexiconSeed as string[]).join(", ")
                         : "Lexicon seed words bundled in package.";
                     })()}
-                  </div>
+                  </Card>
                 </div>
               )}
 
               {/* Tab 3: Reviews */}
               {activeSubTab === "reviews" && (
                 <div className="text-footnote space-y-4">
-                  <div className="bg-surface border-separator rounded-row space-y-2 border p-3">
-                    <label className="text-label block font-semibold">
-                      Leave a community rating
-                    </label>
+                  <Card padding="none" className="space-y-2 p-3">
+                    <label className="text-label block font-medium">Leave a community rating</label>
                     <div role="radiogroup" aria-label="Rating" className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Button
@@ -359,7 +372,7 @@ export function LanguagePacksSection({
                           />
                         </Button>
                       ))}
-                      <span className="text-yellow ml-2 font-mono font-semibold">
+                      <span className="text-yellow ml-2 font-mono font-medium">
                         {reviewRating}.0 / 5.0
                       </span>
                     </div>
@@ -377,11 +390,11 @@ export function LanguagePacksSection({
                       size="sm"
                       onClick={() => handleSubmitReview(activePack.id)}
                       disabled={rateMutation.isPending}
-                      className="bg-fill-2 text-label hover:bg-fill-2 border-separator rounded-control h-8 w-full border font-semibold"
+                      className="bg-fill-2 text-label hover:bg-fill-2 border-separator rounded-control h-8 w-full border font-medium"
                     >
                       Submit rating
                     </Button>
-                  </div>
+                  </Card>
                 </div>
               )}
             </Card>

@@ -17,6 +17,7 @@ import {
 } from "~/lib/country-geo";
 import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 
 const GEO_CACHE_KEYS = [
   "geoCore.getCountryFeatures",
@@ -93,6 +94,7 @@ export const countryGeoRouter = createTRPCRouter({
         isSubdivisionCapital: z.boolean().nullish(),
         subdivisionId: z.string().nullish(),
         wikiPageTitle: z.string().max(200).nullish(),
+        wikiSource: wikiSourceSchema.nullish(),
         elevation: z.number().int().min(-500).max(9000).nullish(),
         foundedYear: z.number().int().nullish(),
         gdpContribution: z.number().min(0).nullish(),

@@ -13,6 +13,7 @@ import { createTRPCRouter, cachedPublicProcedure } from "~/server/api/trpc";
 import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import { parseWikiSource, wikiReaderPath, type WikiSource } from "~/lib/wiki-os/config";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import {
   parseInfobox,
   extractCoordsFromFields,
@@ -42,11 +43,36 @@ async function realmWikis(
   return lore ? [parseWikiSource(lore.wikiSource)] : IXNAY_WIKIS;
 }
 
+/** A wiki the editor picked (`wiki`), one of the realm's own; with none, or one the realm does not read, all of them. */
+const wikiPick = { wiki: wikiSourceSchema.optional() };
+
+function lookupWikis(
+  wikis: readonly WikiSource[],
+  picked: WikiSource | undefined
+): readonly WikiSource[] {
+  return picked && wikis.includes(picked) ? [picked] : wikis;
+}
+
+/**
+ * A lookup across the realm's wikis passes over one that cannot answer; a lookup in the one wiki the editor picked
+ * says so instead (SERVICE_UNAVAILABLE, "IIWiki is switched off for now."), so an outage never reads as "no pages".
+ */
+async function lookup<T>(work: Promise<T>, picked: WikiSource | undefined): Promise<T | null> {
+  if (picked) return work;
+  const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
+  return unlessUnavailable(work);
+}
+
 export const geoWikiRouter = createTRPCRouter({
+  /** The wikis this realm's map looks pages up in, in lookup order: what the editor's wiki picker lists. */
+  wikiSources: cachedPublicProcedure
+    .input(realmScopeInput)
+    .query(async ({ ctx, input }) => [...(await realmWikis(ctx, input.realm))]),
+
   /** Fetch wiki article intro for a map feature (city/POI) by its linked wiki page title. */
   getFeatureWikiIntro: cachedPublicProcedure
     .use(iiwikiFeatureMiddleware("country"))
-    .input(realmScopeInput.extend({ wikiPageTitle: z.string() }))
+    .input(realmScopeInput.extend({ wikiPageTitle: z.string(), ...wikiPick }))
     .query(async ({ ctx, input }) => {
       const name = input.wikiPageTitle.trim();
       if (!name) return null;
@@ -54,7 +80,7 @@ export const geoWikiRouter = createTRPCRouter({
       const { getArticleIntro } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
       const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      for (const wiki of await realmWikis(ctx, input.realm)) {
+      for (const wiki of lookupWikis(await realmWikis(ctx, input.realm), input.wiki)) {
         const result = await unlessUnavailable(getArticleIntro(name, wiki));
         if (result?.text) {
           return {
@@ -73,14 +99,13 @@ export const geoWikiRouter = createTRPCRouter({
    */
   parseWikiInfobox: cachedPublicProcedure
     .use(iiwikiFeatureMiddleware("country"))
-    .input(realmScopeInput.extend({ pageTitle: z.string().min(1).max(200) }))
+    .input(realmScopeInput.extend({ pageTitle: z.string().min(1).max(200), ...wikiPick }))
     .query(async ({ ctx, input }) => {
       const title = input.pageTitle.trim();
       const { getArticleWikitext } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      for (const wiki of await realmWikis(ctx, input.realm)) {
-        const article = await unlessUnavailable(getArticleWikitext(title, wiki));
+      for (const wiki of lookupWikis(await realmWikis(ctx, input.realm), input.wiki)) {
+        const article = await lookup(getArticleWikitext(title, wiki), input.wiki);
         if (!article) continue;
 
         const pageUrl = wikiReaderPath(article.title, wiki);
@@ -140,14 +165,14 @@ export const geoWikiRouter = createTRPCRouter({
       realmScopeInput.extend({
         query: z.string().min(1).max(100),
         limit: z.number().min(1).max(20).default(10),
+        ...wikiPick,
       })
     )
     .query(async ({ ctx, input }) => {
       const { searchPages } = await import("~/lib/wiki-os/adapters/mediawiki/bridge");
-      const { unlessUnavailable } = await import("~/lib/wiki-os/upstream-guard");
 
-      for (const wiki of await realmWikis(ctx, input.realm)) {
-        const results = await unlessUnavailable(searchPages(input.query, input.limit, wiki));
+      for (const wiki of lookupWikis(await realmWikis(ctx, input.realm), input.wiki)) {
+        const results = await lookup(searchPages(input.query, input.limit, wiki), input.wiki);
         if (results?.length) {
           return {
             wikiSource: wiki,

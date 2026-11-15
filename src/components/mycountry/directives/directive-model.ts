@@ -40,28 +40,28 @@ type Tone = "positive" | "caution" | "negative" | "info" | "neutral";
 export const TONE_CLASSES: Record<Tone, { dot: string; text: string; badge: string; bar: string }> =
   {
     positive: {
-      dot: "bg-green",
-      text: "text-green",
-      badge: "border-green/30 bg-green/10 text-green-ink",
-      bar: "bg-green",
+      dot: "bg-success",
+      text: "text-success",
+      badge: "border-success/30 bg-success/15 text-success-ink",
+      bar: "bg-success",
     },
     caution: {
-      dot: "bg-yellow",
-      text: "text-yellow",
-      badge: "border-yellow/30 bg-yellow/10 text-yellow-ink",
-      bar: "bg-yellow",
+      dot: "bg-warning",
+      text: "text-warning",
+      badge: "border-warning/30 bg-warning/15 text-warning-ink",
+      bar: "bg-warning",
     },
     negative: {
       dot: "bg-destructive",
       text: "text-destructive",
-      badge: "border-destructive/30 bg-destructive/10 text-destructive",
+      badge: "border-destructive/30 bg-destructive/15 text-destructive-ink",
       bar: "bg-destructive",
     },
     info: {
-      dot: "bg-blue",
-      text: "text-blue",
-      badge: "border-blue/30 bg-blue/10 text-blue-ink",
-      bar: "bg-blue",
+      dot: "bg-info",
+      text: "text-info",
+      badge: "border-info/30 bg-info/15 text-info-ink",
+      bar: "bg-info",
     },
     neutral: {
       dot: "bg-label-tertiary",

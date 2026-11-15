@@ -1,10 +1,12 @@
 "use client";
 
 import { formatCompactCurrency } from "~/lib/utils/format-utils";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import {
+  ArrowUpRight,
   StatUp as TrendingUp,
   Bank as Landmark,
   Building,
@@ -14,11 +16,13 @@ import {
   Reports as PieChart,
   ScaleFrameEnlarge as Scale,
 } from "iconoir-react";
-import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
+import { EmptyState } from "~/components/ui/empty-state";
+import { Progress } from "~/components/ui/progress";
 import { Skeleton } from "~/components/ui/skeleton";
-import { cn } from "~/lib/utils";
+import { Stat } from "~/components/ui/stat";
 import { useCountryData } from "~/components/mycountry/shared/primitives";
-import { api, type RouterOutputs } from "~/trpc/react";
 import { SectionTabBar } from "~/components/mycountry/shared/primitives/SectionTabBar";
 import { parseSectorBreakdown } from "~/lib/economy/sector-breakdown";
 import {
@@ -29,36 +33,14 @@ import {
 } from "~/lib/economy/country-relations";
 import { incomeSharesOf } from "~/lib/economy/income-classes";
 import { nationalRevenue, REVENUE_BASIS_NOTE } from "~/lib/economy/national-revenue";
-import { Card } from "~/components/ui/card";
 import { SheetSection } from "./SheetSection";
-import { economyTabFromParam, type EconomyTab } from "~/lib/mycountry/routes";
+import { TaxesTelemetryView, TradeTelemetryView } from "./EconomyTelemetryTabs";
+import { economyTabFromParam, editorHref, type EconomyTab } from "~/lib/mycountry/routes";
 
 const BudgetManagementDashboard = dynamic(
   () =>
     import("~/components/mycountry/domains/government/BudgetManagementDashboard").then((m) => ({
       default: m.BudgetManagementDashboard,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="rounded-card h-64" />,
-  }
-);
-
-const FiscalPolicyConsole = dynamic(
-  () =>
-    import("./FiscalPolicyConsole").then((m) => ({
-      default: m.FiscalPolicyConsole,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="rounded-card h-64" />,
-  }
-);
-
-const TradeCommerceConsole = dynamic(
-  () =>
-    import("./TradeCommerceConsole").then((m) => ({
-      default: m.TradeCommerceConsole,
     })),
   {
     ssr: false,
@@ -90,50 +72,31 @@ const InfrastructureMaintenanceCard = dynamic(
   }
 );
 
-/** A captioned figure: label, value, optional footnote. */
-function StatTile({
-  label,
-  value,
-  note,
-  className,
-  roomy,
-}: {
-  label: string;
-  value: React.ReactNode;
-  note?: string;
-  className?: string;
-  /** Larger card padding for the headline figures. */
-  roomy?: boolean;
-}) {
-  return (
-    <Card className={cn(roomy ? "rounded-card p-4" : "rounded-row p-2", className)}>
-      <span className="text-label-secondary text-footnote block">{label}</span>
-      <p className={cn("text-label text-title-3 tabular-nums", roomy ? "mt-1" : "mt-0.5")}>
-        {value}
-      </p>
-      {note && <p className="text-label-secondary text-footnote mt-0.5">{note}</p>}
-    </Card>
-  );
-}
-
 /** The note on a figure the nation never recorded, shown as its estimate (owner decision 2026-10-28). */
 const ESTIMATE_NOTE = "Estimated from your economy";
 
-/** Missing data renders as "—", never a stand-in figure. */
-function pct(value: number | null, digits = 1): string {
-  return value == null ? "—" : `${value.toFixed(digits)}%`;
+/** Missing data renders as a plain reason in secondary ink, never a stand-in figure, bare dash, or loud tinted headline. */
+function unrecorded(reason = "Not recorded"): React.ReactNode {
+  return <span className="text-label-secondary text-callout font-normal">{reason}</span>;
+}
+
+function pct(value: number | null, digits = 1): React.ReactNode {
+  return value == null ? unrecorded() : `${value.toFixed(digits)}%`;
+}
+
+function pctNote(value: number | null, digits = 1): string {
+  return value == null ? "not recorded" : `${value.toFixed(digits)}%`;
 }
 
 /** Gini on a 0–100 scale (stored as either a 0–1 coefficient or a 0–100 index), with a band. */
 function giniLabel(raw: number | null): string {
-  if (raw == null) return "—";
+  if (raw == null) return "not recorded";
   const gini = raw <= 1 ? raw * 100 : raw;
   const band = gini < 30 ? "Low" : gini < 40 ? "Moderate" : gini < 50 ? "High" : "Very high";
   return `${gini.toFixed(1)} (${band})`;
 }
 
 type Country = ReturnType<typeof useCountryData>["country"];
-type Dashboard = RouterOutputs["mycountry"]["getCountryDashboard"];
 
 // Short labels so all five fit a phone-width bar without truncating.
 const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = [
@@ -144,21 +107,20 @@ const TABS: Array<{ id: EconomyTab; label: string; icon: typeof TrendingUp }> = 
   { id: "corporations", label: "Corporations", icon: Building },
 ];
 
-/** Whole dollars in compact notation, e.g. "$1.3B", "$44.5T"; "—" when missing or zero. */
-const billions = (amount: number | null | undefined, suffix = "") =>
-  amount ? `${formatCompactCurrency(amount)}${suffix}` : "—";
-
-const outOf100 = (score: number | null | undefined) => (score != null ? `${score}/100` : "—");
+/** Whole dollars in compact notation, e.g. "$1.3B", "$44.5T"; plain reason when missing or zero. */
+const billions = (
+  amount: number | null | undefined,
+  suffix = "",
+  empty = "Not recorded"
+): React.ReactNode => (amount ? `${formatCompactCurrency(amount)}${suffix}` : unrecorded(empty));
 
 function MacroTab({
   country,
   countryId,
-  dashboard,
   onDeclare,
 }: {
   country: Country;
   countryId: string;
-  dashboard: Dashboard | undefined;
   onDeclare?: (goal: string) => void;
 }) {
   // Economy relation rows ride along on the country record (getByIdWithEconomicData).
@@ -174,58 +136,81 @@ function MacroTab({
   const sectors = parseSectorBreakdown(profile?.sectorBreakdown);
   const complexity = finiteOrNull(profile?.economicComplexity);
   const growth = figures.gdpGrowth;
+  const exportsPct = finiteOrNull(profile?.exportsGDPPercent);
+  const importsPct = finiteOrNull(profile?.importsGDPPercent);
   const medianWage = finiteOrNull(labor?.medianWage);
   const shares = incomeSharesOf(income?.economicClasses);
   const mobility = figures.socialMobilityIndex ?? finiteOrNull(income?.intergenerationalMobility);
 
-  const metrics = [
+  const metrics: Array<{ label: string; value: React.ReactNode; note?: string }> = [
     {
       label: "Total GDP",
       value: billions(figures.currentTotalGdp),
-      sub: "Gross Domestic Product",
     },
     {
       label: "GDP growth",
-      value: growth != null ? `${(growth * 100).toFixed(2)}%` : "—",
-      sub: "Annual real rate",
+      value: growth != null ? `${(growth * 100).toFixed(2)}%` : unrecorded(),
     },
     {
-      label: "Economic vitality",
-      value: outOf100(dashboard?.economicVitality),
-      sub: "National vitality band",
+      label: "Exports",
+      value: pct(exportsPct),
+      note: exportsPct != null ? "Share of GDP" : "No trade recorded yet",
     },
     {
-      label: "Government efficiency",
-      value: outOf100(dashboard?.governmentalEfficiency),
-      sub: "Administrative capacity",
+      label: "Imports",
+      value: pct(importsPct),
+      note: importsPct != null ? "Share of GDP" : "No trade recorded yet",
     },
   ];
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {metrics.map(({ label, value, sub }) => (
-          <StatTile key={label} label={label} value={value} note={sub} roomy />
-        ))}
-      </div>
+      <Card content="data" padding="md">
+        <div className="sm:divide-separator/60 grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-0 sm:divide-x">
+          {metrics.map(({ label, value, note }) => (
+            <Stat
+              key={label}
+              size="sm"
+              label={label}
+              value={value}
+              hint={note}
+              className="sm:px-4 first:sm:pl-0 last:sm:pr-0"
+            />
+          ))}
+        </div>
+      </Card>
 
       <SheetSection
         title="Sector output and complexity"
         icon={PieChart}
         accessory={
-          <Badge variant="default" className="tabular-nums">
-            Complexity {complexity != null ? complexity.toFixed(1) : "—"}
-          </Badge>
+          <span className="text-label-secondary text-footnote tabular-nums">
+            Complexity {complexity != null ? complexity.toFixed(1) : "not recorded"}
+          </span>
         }
       >
         {sectors.length === 0 ? (
-          <p className="text-label-secondary text-footnote py-2 text-center">
-            No sector breakdown is recorded for this nation.
-          </p>
+          <EmptyState
+            compact
+            icon={<PieChart />}
+            title="No sector breakdown is recorded for this nation."
+            message="Declare an economic Directive to diversify or record output across sectors."
+            action={
+              onDeclare ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDeclare("Develop and diversify national economic sectors")}
+                >
+                  Declare Directive
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
-          <div className="text-footnote grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div className="text-footnote grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
             {sectors.map((sector, idx) => (
-              <Card key={`${sector.name}-${idx}`} className="space-y-2 p-2">
+              <div key={`${sector.name}-${idx}`} className="space-y-1.5">
                 <div className="text-footnote flex justify-between gap-2">
                   <span className="text-label-secondary truncate font-medium capitalize">
                     {sector.name}
@@ -234,13 +219,12 @@ function MacroTab({
                     {sector.share.toFixed(1)}%
                   </span>
                 </div>
-                <div className="bg-fill-3 h-1.5 w-full overflow-hidden rounded-full">
-                  <div
-                    className="bg-tint/70 h-full rounded-full"
-                    style={{ width: `${Math.min(sector.share, 100)}%` }}
-                  />
-                </div>
-              </Card>
+                <Progress
+                  value={Math.min(sector.share, 100)}
+                  aria-hidden
+                  className="bg-fill-3 h-1.5"
+                />
+              </div>
             ))}
           </div>
         )}
@@ -250,46 +234,63 @@ function MacroTab({
         title="Labor market and employment"
         icon={Briefcase}
         accessory={
-          <Badge variant="default" className="tabular-nums">
-            Female participation {pct(finiteOrNull(labor?.femaleParticipationRate))}
-          </Badge>
+          <span className="text-label-secondary text-footnote tabular-nums">
+            Female participation {pctNote(finiteOrNull(labor?.femaleParticipationRate))}
+          </span>
         }
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatTile
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <Stat
+            size="sm"
             label="Unemployment"
             value={pct(unemployment.value)}
-            note={unemployment.estimated ? ESTIMATE_NOTE : "Nominal rate"}
+            hint={unemployment.estimated ? ESTIMATE_NOTE : undefined}
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Youth unemployment"
             value={pct(finiteOrNull(labor?.youthUnemploymentRate))}
-            note="Ages 18-24"
+            hint="Ages 18–24"
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Median annual wage"
-            value={medianWage != null ? `$${Math.round(medianWage).toLocaleString()}` : "—"}
-            note="Annual full-time"
+            value={
+              medianWage != null ? `$${Math.round(medianWage).toLocaleString()}` : unrecorded()
+            }
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Informal labor"
             value={pct(finiteOrNull(labor?.informalEmploymentRate))}
-            note="Unregulated employment"
           />
         </div>
       </SheetSection>
 
-      <SheetSection title="Prices and public debt" icon={Coins}>
-        <div className="grid grid-cols-2 gap-3">
-          <StatTile
+      <SheetSection
+        title="Prices and public debt"
+        icon={Coins}
+        accessory={
+          <Button asChild variant="outline" size="sm">
+            <Link href={editorHref("scale")}>
+              Edit baselines
+              <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </Button>
+        }
+      >
+        <div className="grid grid-cols-2 gap-4">
+          <Stat
+            size="sm"
             label="Inflation"
             value={pct(inflation.value)}
-            note={inflation.estimated ? ESTIMATE_NOTE : "Annual consumer prices"}
+            hint={inflation.estimated ? ESTIMATE_NOTE : undefined}
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Debt to GDP"
             value={pct(debt.value)}
-            note={debt.estimated ? ESTIMATE_NOTE : "Public debt"}
+            hint={debt.estimated ? ESTIMATE_NOTE : undefined}
           />
         </div>
       </SheetSection>
@@ -298,25 +299,18 @@ function MacroTab({
         title="Income and wealth equality"
         icon={Scale}
         accessory={
-          <Badge variant="default" className="tabular-nums">
+          <span className="text-label-secondary text-footnote tabular-nums">
             Gini {giniLabel(figures.incomeInequalityGini)}
-          </Badge>
+          </span>
         }
       >
-        <div className="grid grid-cols-3 gap-3">
-          <StatTile
-            label="Top 10% wealth share"
-            value={pct(shares.top10WealthShare)}
-            note="From income classes"
-          />
-          <StatTile
-            label="Middle class share"
-            value={pct(shares.middleClassShare)}
-            note="Of the population"
-          />
-          <StatTile
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stat size="sm" label="Top 10% wealth share" value={pct(shares.top10WealthShare)} />
+          <Stat size="sm" label="Middle class share" value={pct(shares.middleClassShare)} />
+          <Stat
+            size="sm"
             label="Social mobility"
-            value={mobility != null ? `${Math.round(mobility)}/100` : "—"}
+            value={mobility != null ? `${Math.round(mobility)}/100` : unrecorded()}
           />
         </div>
       </SheetSection>
@@ -337,33 +331,38 @@ function FiscalTab({ country, countryId }: { country: Country; countryId: string
       <SheetSection
         title="Revenue integration and budget balance"
         icon={Landmark}
-        accessory={<Badge variant="default">Integrated treasury</Badge>}
+        accessory={
+          <Button asChild variant="outline" size="sm">
+            <Link href={editorHref("budget")}>
+              Configure budget
+              <ArrowUpRight aria-hidden="true" />
+            </Link>
+          </Button>
+        }
       >
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <StatTile
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+          <Stat
+            size="sm"
             label="Tax revenue yield"
-            value={billions(revenue.total, " / yr")}
-            note={revenue.basis ? REVENUE_BASIS_NOTE[revenue.basis] : "No tax rates set yet"}
+            value={billions(revenue.total, " / yr", "No tax rates set")}
+            hint={revenue.basis ? REVENUE_BASIS_NOTE[revenue.basis] : "No tax rates set yet"}
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Trade tariff revenue"
-            value={billions(tariffRevenue, " / yr")}
-            note={
-              efficiency == null
-                ? "Import tariff yield, before collection losses"
-                : "Import tariff yield after collection"
-            }
+            value={billions(tariffRevenue, " / yr", "Not recorded")}
+            hint={efficiency == null ? "Before collection losses" : "After collection"}
           />
-          <StatTile
+          <Stat
+            size="sm"
             label="Tax system efficiency"
             value={pct(efficiency != null ? efficiency * 100 : null, 0)}
-            note="Collection efficiency"
             className="col-span-2 sm:col-span-1"
           />
         </div>
       </SheetSection>
 
-      <BudgetManagementDashboard countryId={countryId} revenue={revenue} />
+      <BudgetManagementDashboard countryId={countryId} revenue={revenue} isReadOnly />
     </div>
   );
 }
@@ -375,7 +374,7 @@ interface EconomyDrillDownProps {
 }
 
 /** Economy drill-down: report, budget, taxes, trade and corporations tabs. Shared between the drill sheet and the full-page economy surface. */
-function EconomyDrillDownComponent({
+export function EconomyDrillDown({
   countryId,
   onDeclare,
 }: EconomyDrillDownProps): React.JSX.Element {
@@ -384,35 +383,31 @@ function EconomyDrillDownComponent({
   const [activeTab, setActiveTab] = useState<EconomyTab>(
     () => economyTabFromParam(tabParam) ?? "report"
   );
-  useEffect(() => {
+  const [syncedTabParam, setSyncedTabParam] = useState(tabParam);
+  if (tabParam !== syncedTabParam) {
+    setSyncedTabParam(tabParam);
     const next = economyTabFromParam(tabParam);
     if (next) setActiveTab(next);
-  }, [tabParam]);
+  }
   const { country } = useCountryData();
-  const { data: dashboard } = api.mycountry.getCountryDashboard.useQuery(
-    { countryId },
-    { enabled: !!countryId }
-  );
 
   return (
     <div className="space-y-4">
-      <SectionTabBar tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <SectionTabBar
+        aria-label="Economy sections"
+        tabs={TABS}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
       {activeTab === "report" && (
-        <MacroTab
-          country={country}
-          countryId={countryId}
-          dashboard={dashboard}
-          onDeclare={onDeclare}
-        />
+        <MacroTab country={country} countryId={countryId} onDeclare={onDeclare} />
       )}
       {activeTab === "budget" && <FiscalTab country={country} countryId={countryId} />}
-      {activeTab === "taxes" && <FiscalPolicyConsole countryId={countryId} />}
-      {activeTab === "trade" && <TradeCommerceConsole countryId={countryId} />}
+      {activeTab === "taxes" && <TaxesTelemetryView />}
+      {activeTab === "trade" && <TradeTelemetryView countryId={countryId} />}
       {activeTab === "corporations" && (
         <CorporationsTreasuryConsole countryId={countryId} countryName={country?.name} />
       )}
     </div>
   );
 }
-
-export const EconomyDrillDown = React.memo(EconomyDrillDownComponent);

@@ -1,5 +1,6 @@
 "use client";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -7,7 +8,6 @@ import {
   Star,
   NavArrowDown as ChevronDown,
   StatsReport as BarChart3,
-  Refresh as RefreshCw,
   Copy,
   Check,
   Hashtag as Hash,
@@ -120,8 +120,10 @@ export default function HistorySection({
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <RefreshCw className="text-label-secondary h-6 w-6 animate-spin" />
+      <div className="space-y-3" aria-busy="true" aria-label="Loading history">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="rounded-row h-16 w-full" />
+        ))}
       </div>
     );
   }
@@ -131,7 +133,7 @@ export default function HistorySection({
       <div className="flex items-center justify-between">
         {!hideHeader ? (
           <div>
-            <h2 className="text-label text-title-2 font-bold">Generation history</h2>
+            <h2 className="text-label text-title-2">Generation history</h2>
             <p className="text-label-secondary text-body mt-1">
               Every name you&apos;ve generated, searchable and replayable.
             </p>
@@ -156,26 +158,22 @@ export default function HistorySection({
             <Card variant="well" padding="none" className="p-4">
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <div className="text-center">
-                  <p className="text-title-1 text-yellow font-bold">
-                    {stats.totalNames.toLocaleString()}
-                  </p>
+                  <p className="text-title-1 text-yellow">{stats.totalNames.toLocaleString()}</p>
                   <p className="text-label-secondary text-footnote">Names generated</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-title-1 text-yellow font-bold">
-                    {stats.totalEvents.toLocaleString()}
-                  </p>
+                  <p className="text-title-1 text-yellow">{stats.totalEvents.toLocaleString()}</p>
                   <p className="text-label-secondary text-footnote">Sessions</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-title-1 text-yellow font-bold">
+                  <p className="text-title-1 text-yellow">
                     {stats.totalFavorites.toLocaleString()}
                   </p>
                   <p className="text-label-secondary text-footnote">Favorites</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-label text-title-1 font-bold capitalize">
-                    {stats.categoryBreakdown[0]?.category ?? "—"}
+                  <p className="text-label text-title-1 capitalize">
+                    {stats.categoryBreakdown[0]?.category ?? "–"}
                   </p>
                   <p className="text-label-secondary text-footnote">Top category</p>
                 </div>
@@ -288,7 +286,7 @@ export default function HistorySection({
                         className="rounded-row h-auto w-full justify-between p-3 text-left font-normal whitespace-normal"
                       >
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div className="bg-fill-3 rounded-control-sm text-footnote px-2 py-0.5 font-semibold capitalize">
+                          <div className="bg-fill-3 rounded-control-sm text-footnote px-2 py-0.5 font-medium capitalize">
                             {event.category}
                           </div>
                           {event.sessionId && (
@@ -476,7 +474,7 @@ export default function HistorySection({
                 onClick={() => loadMore()}
                 disabled={isLoadingMore}
               >
-                {isLoadingMore ? "Loading..." : "Load More"}
+                {isLoadingMore ? "Loading" : "Load more"}
               </Button>
             </div>
           )}

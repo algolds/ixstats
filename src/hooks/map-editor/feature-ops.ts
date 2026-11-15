@@ -1,6 +1,7 @@
 import type { FeatureType } from "./editor-types";
 import type { FeatureMutations } from "./feature-mutations";
 import type { EditorAction, HistoryData } from "./useMapHistory";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 import {
   bool,
   coords,
@@ -17,6 +18,11 @@ import {
   usable,
   type GeometryInput,
 } from "./history-coercion";
+
+const wikiSrc = (v: Parameters<typeof str>[0]) => {
+  const s = str(v);
+  return s ? parseWikiSource(s) : null;
+};
 
 export interface FeatureOps {
   remove: (id: string) => Promise<unknown>;
@@ -105,6 +111,7 @@ export function createFeatureOps(
             isSubdivisionCapital: bool(data.isSubdivisionCapital) ?? false,
             subdivisionId: str(data.subdivisionId),
             wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -117,6 +124,8 @@ export function createFeatureOps(
             population: int,
             isNationalCapital: bool,
             isSubdivisionCapital: bool,
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
           }),
         }),
     },
@@ -151,6 +160,7 @@ export function createFeatureOps(
             description: str(data.description),
             icon: str(data.icon),
             wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -158,7 +168,12 @@ export function createFeatureOps(
           countryId,
           poiId: id,
           ...usable(data, { name: str, category: str, coordinates: coords }),
-          ...present(data, { description: str, icon: str }),
+          ...present(data, {
+            description: str,
+            icon: str,
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
+          }),
         }),
     },
     storyPin: {
@@ -177,6 +192,7 @@ export function createFeatureOps(
               num(data.ixTimeYear) !== undefined ? Math.round(num(data.ixTimeYear)!) : undefined,
             eraLabel: str(data.eraLabel),
             wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -188,6 +204,10 @@ export function createFeatureOps(
             content: str,
             category: storyCategory,
             coordinates: coords,
+          }),
+          ...present(data, {
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
           }),
         }),
     },
@@ -206,6 +226,7 @@ export function createFeatureOps(
             fontWeight: data.fontWeight === "bold" ? "bold" : undefined,
             opacity: num(data.opacity),
             wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -219,6 +240,10 @@ export function createFeatureOps(
             fontSize: num,
             color: hexColor,
           }),
+          ...present(data, {
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
+          }),
         }),
     },
     peak: {
@@ -231,6 +256,8 @@ export function createFeatureOps(
             coordinates: coords(data.coordinates) ?? [0, 0],
             elevation: num(data.elevation) ?? 1000,
             prominence: num(data.prominence),
+            wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -238,7 +265,11 @@ export function createFeatureOps(
           countryId,
           peakId: id,
           ...usable(data, { name: str, coordinates: coords, elevation: num }),
-          ...present(data, { prominence: (v) => num(v) ?? null }),
+          ...present(data, {
+            prominence: (v) => num(v) ?? null,
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
+          }),
         }),
     },
     river: {
@@ -249,6 +280,8 @@ export function createFeatureOps(
             countryId,
             name: str(data.name) ?? "Restored River",
             geometry: data.geometry as Parameters<typeof m.river.create.mutateAsync>[0]["geometry"],
+            wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -256,6 +289,10 @@ export function createFeatureOps(
           countryId,
           riverId: id,
           ...usable(data, { name: str, geometry }),
+          ...present(data, {
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
+          }),
         }),
     },
     lake: {
@@ -266,6 +303,8 @@ export function createFeatureOps(
             countryId,
             name: str(data.name) ?? "Restored Lake",
             geometry: data.geometry as Parameters<typeof m.lake.create.mutateAsync>[0]["geometry"],
+            wikiPageTitle: str(data.wikiPageTitle),
+            wikiSource: wikiSrc(data.wikiSource),
           })
         ).id,
       restore: (id, data) =>
@@ -273,6 +312,10 @@ export function createFeatureOps(
           countryId,
           lakeId: id,
           ...usable(data, { name: str, geometry }),
+          ...present(data, {
+            wikiPageTitle: (v) => str(v) ?? null,
+            wikiSource: wikiSrc,
+          }),
         }),
     },
     route: {

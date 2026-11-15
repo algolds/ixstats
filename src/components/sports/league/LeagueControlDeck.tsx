@@ -6,16 +6,15 @@ import {
   Shield,
   Play,
   FastArrowRight as FastForward,
-  SystemRestart as Loader2,
   Trophy,
   Refresh,
 } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
-import { Button } from "~/components/ui/button";
-import { Badge } from "~/components/ui/badge";
+import { CardTitle } from "~/components/ui/card";
+import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
+import { LensCard } from "~/components/ui/lens-card";
 import { Switch } from "~/components/ui/switch";
-import { soundCues } from "~/lib/sound/cuelume";
 import { cn } from "~/lib/utils";
 
 interface LeagueControlDeckProps {
@@ -70,7 +69,6 @@ export function LeagueControlDeck({
 
   const setFeaturedMutation = api.sports.setFeaturedLeague.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success(
         isFeatured ? "League removed from lobby showcase" : "League pinned to lobby showcase"
       );
@@ -84,7 +82,6 @@ export function LeagueControlDeck({
   // Purge cache live mutation
   const clearCacheMutation = api.sports.clearSportsCache.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Sports cache purged");
       void utils.sports.getLeague.invalidate({ id: leagueId });
       void utils.sports.getStandings.invalidate();
@@ -98,7 +95,6 @@ export function LeagueControlDeck({
   // Regenerate schedule live mutation
   const regenerateScheduleMutation = api.sports.regenerateSchedule.useMutation({
     onSuccess: () => {
-      soundCues.success();
       notify.success("Schedule regenerated and shuffled");
       if (activeSeason) {
         void utils.sports.getSchedule.invalidate({ seasonId: activeSeason.id });
@@ -115,40 +111,58 @@ export function LeagueControlDeck({
     return null;
   }
 
-  return (
-    <div
-      className={cn(
-        "bg-surface-secondary border-separator rounded-card bg-surface shadow-card space-y-4 border p-4",
-        className
+  const seasonRows = (
+    <>
+      {isSeasonActive && onSimulateFullSeason && (
+        <FacetRow
+          leading={<FastForward />}
+          title={isSimulatingFullSeason ? "Simulating" : "Simulate rest of season"}
+          onClick={onSimulateFullSeason}
+          disabled={isSimulatingFullSeason || isSimulatingMatchDay}
+        />
       )}
-    >
-      {/* 1. Header: Commissioner Identity */}
-      <div className="border-separator flex items-center justify-between border-b pb-3">
-        <div className="flex items-center gap-2">
-          <div className="rounded-control border-tint/30 bg-tint-fill text-tint flex h-7 w-7 items-center justify-center border">
-            <Shield className="h-4 w-4" />
-          </div>
-          <div>
-            <h4 className="text-eyebrow text-label">Admin controls</h4>
-            <span className="text-footnote text-label-secondary font-semibold">Commissioner</span>
-          </div>
-        </div>
+      {isSeasonActive && !hasMatchesPlayed && activeSeason && (
+        <FacetRow
+          leading={<Refresh />}
+          title={regenerateScheduleMutation.isPending ? "Regenerating" : "Regenerate schedule"}
+          onClick={() => regenerateScheduleMutation.mutate({ seasonId: activeSeason.id })}
+          disabled={regenerateScheduleMutation.isPending}
+        />
+      )}
+      {latestSeason?.status === "completed" && onTransitionSeason && (
+        <FacetRow
+          leading={<Trophy />}
+          title={
+            isTransitioningSeason
+              ? "Starting season"
+              : `Start season ${(latestSeason.seasonNumber ?? 1) + 1}`
+          }
+          onClick={onTransitionSeason}
+          disabled={isTransitioningSeason}
+        />
+      )}
+      {!activeSeason && latestSeason?.status !== "completed" && onStartSeason && (
+        <FacetRow
+          leading={<Play />}
+          title={isStartingSeason ? "Starting" : "Start season 1"}
+          onClick={onStartSeason}
+          disabled={isStartingSeason}
+        />
+      )}
+    </>
+  );
 
-        <Badge variant="outline" className="border-green/40 bg-green/10 text-eyebrow text-green">
-          Admin
-        </Badge>
-      </div>
+  return (
+    <LensCard padding="md" className={cn("space-y-3", className)}>
+      <CardTitle icon={<Shield />}>League controls</CardTitle>
 
-      {/* 2. Live Lobby Featured Toggle */}
-      <div className="rounded-row border-separator bg-fill-4 flex items-center justify-between border p-3">
-        <div className="space-y-0.5">
-          <span className="text-footnote text-label block font-semibold">
-            Feature on sports page
-          </span>
+      <label className="flex items-center justify-between gap-3">
+        <span className="min-w-0">
+          <span className="text-subhead text-label block">Feature on MyLeague</span>
           <span className="text-footnote text-label-secondary block">
-            Show at top of leagues list
+            Shows this league above the list
           </span>
-        </div>
+        </span>
         <Switch
           checked={isFeatured}
           onCheckedChange={(checked) => {
@@ -156,146 +170,24 @@ export function LeagueControlDeck({
           }}
           disabled={setFeaturedMutation.isPending}
         />
-      </div>
+      </label>
 
-      {/* 3. Simulation & Season Runtime */}
-      <div className="border-separator space-y-2 border-t pt-1">
-        <span className="text-eyebrow text-label-secondary block">Season controls</span>
-
-        {/* Fast-Forward Full Season */}
-        {isSeasonActive && onSimulateFullSeason && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              onSimulateFullSeason();
-            }}
-            disabled={isSimulatingFullSeason || isSimulatingMatchDay}
-            className="rounded-row border-yellow/30 bg-yellow/10 text-footnote text-yellow hover:bg-yellow/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-          >
-            {isSimulatingFullSeason ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Simulating...</span>
-              </>
-            ) : (
-              <>
-                <FastForward className="h-3.5 w-3.5" />
-                <span>Simulate rest of season</span>
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Reshuffle / Regenerate Schedule (Allowed before matches played) */}
-        {isSeasonActive && !hasMatchesPlayed && activeSeason && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              regenerateScheduleMutation.mutate({ seasonId: activeSeason.id });
-            }}
-            disabled={regenerateScheduleMutation.isPending}
-            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-4 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-          >
-            {regenerateScheduleMutation.isPending ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Regenerating...</span>
-              </>
-            ) : (
-              <>
-                <Refresh className="text-label-secondary h-3.5 w-3.5" />
-                <span>Regenerate schedule</span>
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Launch Next Season */}
-        {latestSeason?.status === "completed" && onTransitionSeason && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              onTransitionSeason();
-            }}
-            disabled={isTransitioningSeason}
-            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-          >
-            {isTransitioningSeason ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Starting Season...</span>
-              </>
-            ) : (
-              <>
-                <Trophy className="h-3.5 w-3.5" />
-                <span>Start Season {(latestSeason.seasonNumber ?? 1) + 1}</span>
-              </>
-            )}
-          </Button>
-        )}
-
-        {/* Start Inaugural Season */}
-        {!activeSeason && latestSeason?.status !== "completed" && onStartSeason && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              onStartSeason();
-            }}
-            disabled={isStartingSeason}
-            className="rounded-row border-green/30 bg-green/10 text-footnote text-green hover:bg-green/20 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-          >
-            {isStartingSeason ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>Starting...</span>
-              </>
-            ) : (
-              <>
-                <Play className="h-3.5 w-3.5 fill-current" />
-                <span>Start Season 1</span>
-              </>
-            )}
-          </Button>
-        )}
-      </div>
-
-      {/* 4. Administration & Utilities */}
-      <div className="border-separator space-y-2 border-t pt-1">
-        <span className="text-eyebrow text-label-secondary block">League settings</span>
-
-        {/* Open Settings Modal */}
-        {onOpenSettings && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              onOpenSettings();
-            }}
-            className="rounded-row border-separator bg-surface text-footnote text-label hover:bg-fill-3 h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-          >
-            <Settings className="text-label-secondary h-3.5 w-3.5" />
-            <span>Rules and teams</span>
-          </Button>
-        )}
-
-        {/* Purge Cache Button */}
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            clearCacheMutation.mutate();
-          }}
-          disabled={clearCacheMutation.isPending}
-          className="rounded-row border-separator bg-surface text-footnote text-label-secondary hover:text-label h-8.5 w-full cursor-pointer justify-start gap-2 font-semibold"
-        >
-          <Refresh className={cn("h-3.5 w-3.5", clearCacheMutation.isPending && "animate-spin")} />
-          <span>Clear cache</span>
-        </Button>
-      </div>
-    </div>
+      <FacetList variant="plain" className="gap-3">
+        <FacetListSection header="Season" headerAs="h4">
+          {seasonRows}
+        </FacetListSection>
+        <FacetListSection header="Settings" headerAs="h4">
+          {onOpenSettings && (
+            <FacetRow leading={<Settings />} title="Rules and teams" onClick={onOpenSettings} />
+          )}
+          <FacetRow
+            leading={<Refresh />}
+            title={clearCacheMutation.isPending ? "Clearing cache" : "Clear cache"}
+            onClick={() => clearCacheMutation.mutate()}
+            disabled={clearCacheMutation.isPending}
+          />
+        </FacetListSection>
+      </FacetList>
+    </LensCard>
   );
 }

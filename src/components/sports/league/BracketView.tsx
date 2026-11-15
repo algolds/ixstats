@@ -88,15 +88,10 @@ function BracketRounds({
   onTeamClick?: (teamId: string) => void;
 }) {
   return (
-    <Card
-      className={cn(
-        "rounded-sheet border-separator bg-surface shadow-card relative space-y-6 overflow-hidden border p-6 md:p-8",
-        className
-      )}
-    >
+    <Card className={cn("space-y-6 overflow-hidden p-4 md:p-6", className)}>
       <div className="border-separator flex items-center justify-between border-b pb-4">
         <div className="flex items-center gap-2">
-          <div className="rounded-row border-separator bg-surface-secondary text-label shadow-card flex h-9 w-9 items-center justify-center border">
+          <div className="bg-tint-fill text-tint-ink rounded-row flex size-9 items-center justify-center">
             <Swords className="h-5 w-5" />
           </div>
           <div>
@@ -120,7 +115,7 @@ function BracketRounds({
               <div className="flex items-center gap-2">
                 {isFinalRound ? (
                   <Badge
-                    className="border-yellow/40 bg-yellow/20 text-eyebrow text-yellow px-3 py-0.5"
+                    className="border-yellow/40 bg-yellow/20 text-caption text-yellow px-3 py-0.5"
                     variant="secondary"
                   >
                     <Trophy className="mr-1 h-3.5 w-3.5" />
@@ -129,7 +124,7 @@ function BracketRounds({
                 ) : (
                   <Badge
                     variant="outline"
-                    className="border-separator bg-fill-4 text-eyebrow text-label px-3 py-0.5"
+                    className="border-separator bg-fill-4 text-caption text-label px-3 py-0.5"
                   >
                     {round === 1
                       ? "First Round"
@@ -155,8 +150,7 @@ function BracketRounds({
                     <div
                       key={b.id}
                       className={cn(
-                        "rounded-card border-separator bg-surface-secondary shadow-card flex items-center justify-between gap-3 border px-4 py-4 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]",
-                        isCompleted && "border-separator bg-surface-secondary"
+                        "facet-well rounded-row flex items-center justify-between gap-3 px-4 py-4"
                       )}
                     >
                       {/* Fighter 1 */}
@@ -193,7 +187,7 @@ function BracketRounds({
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-eyebrow px-2 py-0.5",
+                            "text-caption text-label-secondary px-2 py-0.5",
                             isCompleted
                               ? "border-yellow/30 bg-yellow/10 text-yellow"
                               : "border-separator text-label-secondary"

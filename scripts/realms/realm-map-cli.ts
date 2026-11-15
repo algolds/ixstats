@@ -24,6 +24,7 @@ import {
   startMapPipelineRun,
 } from "~/server/modules/maps/realm-map-pipeline.config";
 import type { PipelineSummary } from "~/server/modules/maps/realm-map-pipeline.job";
+import { createPrismaClient } from "~/server/prisma-client";
 
 function optionalArg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -109,7 +110,7 @@ async function run(db: PrismaClient, actor: RealmActor, defaults: readonly MapPi
 
 /** Run the CLI with the script's default steps; `name` identifies the script in the run history and audit log. */
 export function realmMapCli(name: string, defaults: readonly MapPipelineStep[]): void {
-  const db = new PrismaClient();
+  const db = createPrismaClient();
   const actor: RealmActor = {
     id: `script:${name}`,
     clerkUserId: `script:${name}`,

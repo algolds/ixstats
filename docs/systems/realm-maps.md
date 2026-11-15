@@ -210,11 +210,11 @@ cron runner, scripts); tiles are built by sharp, one zoom at a time (about 500 M
   (the deploy runbook's step 5c).
 - **`MAP_IMPORT_DIR`** (default `.map-imports` under the app): uploads and fetched art, by SHA-256. Web server and cron
   runner must share it (one host: the app directory). Fetched art accumulates there (a few MB per art version).
-- **`public/flags`**: the flags step writes `public/flags/` under the process's working directory, but the standalone
-  server serves `.next/standalone/public/` (copied at build by `scripts/post-build.sh`) and picks up new files only on
-  restart. Run the flags step from the app root (the CLI), then
-  `cp public/flags/<realm>--* public/flags/metadata.json .next/standalone/public/flags/` and restart, or run it before
-  a deploy. `/public/*` is git-ignored.
+- **`public/flags`**: the flags step writes `public/flags/` under the process's working directory. Run it from the app
+  root (the CLI). The main app (`next start`) serves `public/` in place. Only a standalone build (`deploy-ixworld.sh`)
+  serves `.next/standalone/public/`, copied at build by `scripts/post-build.sh`, and picks up new files only on
+  restart: there, `cp public/flags/<realm>--* public/flags/metadata.json .next/standalone/public/flags/` and restart, or
+  run it before a deploy. `/public/*` is git-ignored.
 - **PostGIS** is needed by `repair` (and by the exact comparisons of `physical`, `defaultView` and `areas`).
 - A run applies to the database the process is connected to: on production, run the CLI on the server itself.
 

@@ -9,6 +9,7 @@ import { writeFile, mkdir, access, rename, unlink } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 import { rateLimiter } from "~/lib/cache";
+import { internalErrorResponse } from "~/server/shared/route-errors";
 import { SISTER_WIKI_HOSTS } from "~/lib/wiki-os/wiki-hosts";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -163,7 +164,6 @@ async function writeAtomically(filePath: string, buffer: Buffer): Promise<void> 
 }
 
 export async function POST(request: NextRequest) {
-  let imageUrl = "unknown";
   try {
     // Authenticate the request
     const { userId } = await auth();
@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
     if (!body.imageUrl || typeof body.imageUrl !== "string") {
       return badRequest("Invalid image URL");
     }
-    imageUrl = body.imageUrl;
+    const imageUrl = body.imageUrl;
 
     // Validate URL format
     if (!imageUrl.startsWith("http://") && !imageUrl.startsWith("https://")) {
@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
     if (/svg/i.test(contentType)) return badRequest("SVG images are not supported for download");
     if (!ALLOWED_TYPES.includes(contentType)) {
       return badRequest(
-        `Invalid file type: ${contentType}. Allowed types: PNG, JPG, GIF, WEBP. URL: ${imageUrl}`
+        `Invalid file type: ${contentType}. Allowed types: PNG, JPG, GIF, WEBP`
       );
     }
 
@@ -269,13 +269,6 @@ export async function POST(request: NextRequest) {
       downloadedAt: Date.now(),
     });
   } catch (error) {
-    console.error("[ExternalImageDownload] Error:", error);
-    console.error("[ExternalImageDownload] Error details:", {
-      imageUrl,
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-
     if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
       return NextResponse.json(
         { success: false, error: "Download timeout - image took too long to download" },
@@ -283,13 +276,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: error instanceof Error ? error.message : "Failed to download image",
-      },
-      { status: 500 }
-    );
+    return internalErrorResponse("ExternalImageDownload", error);
   }
 }
 

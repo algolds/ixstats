@@ -22,13 +22,15 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { ExchangeError, isUniqueViolation, spendSovereignsTx } from "~/lib/vault/exchange-service";
 import { getExchangeConfig } from "~/lib/vault/exchange-config";
 import { refreshFairValue, requireOwnedCompany, type SectorKey } from "./companies";
-import { assertExchangeOpen, type Db } from "./guards";
+import { assertExchangeOpen, requireCountryOwner, type Db } from "./guards";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns, round2 } from "./amounts";
-import { payContractor, refundIssuer } from "./contract-settlement";
+import { alertWatchers, publishContractNewsTx, type PublishedHeadline } from "./news";
+import { assertNotOwnersCompany } from "./lending";
+import { centsOf, dbCents, formatSovereigns, fromCents, toCents } from "./amounts";
+import { contractView, payContractor, refundIssuer } from "./contract-settlement";
 import { debitTreasuryTx } from "./treasury";
 
-export { refundIssuer } from "./contract-settlement";
+export { contractView, refundIssuer } from "./contract-settlement";
 
 export const CONTRACT_STATUSES = ["OPEN", "AWARDED", "COMPLETED", "CANCELLED", "DISPUTED"] as const;
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
@@ -98,15 +100,24 @@ async function founderOf(tx: Db, companyId: string | null): Promise<string | nul
  * The issuer may act only while they still found the issuing company (B2B), or as the
  * player who posted and funded the tender (B2G, and the faucet's tenders).
  */
-async function requireIssuer(tx: Db, contractId: string, userId: string) {
+async function requireIssuer(tx: Db, contractId: string, userId: string, opts?: { allowClosed?: boolean }) {
   const contract = await tx.contract.findUnique({ where: { id: contractId } });
   if (!contract) throw new ExchangeError("NOT_FOUND", "Contract not found");
   if (contract.issuerUserId !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuer can do that");
   }
   if (contract.type === "B2G") return contract;
-  if (!contract.issuerCompanyId || (await founderOf(tx, contract.issuerCompanyId)) !== userId) {
+  const issuer = contract.issuerCompanyId
+    ? await tx.company.findUnique({
+        where: { id: contract.issuerCompanyId },
+        select: { founderId: true, status: true },
+      })
+    : null;
+  if (!issuer || issuer.founderId !== userId) {
     throw new ExchangeError("FORBIDDEN", "Only the issuing company can do that");
+  }
+  if (!opts?.allowClosed && issuer.status !== "ACTIVE" && issuer.status !== "DISTRESSED") {
+    throw new ExchangeError("CONFLICT", "This company is closed");
   }
   return contract;
 }
@@ -164,13 +175,14 @@ function assertValue(value: number) {
 
 function contractData(input: ContractTerms, key: string, realmId: string) {
   const now = Date.now();
+  const valueCents = dbCents(toCents(input.value));
   return {
     realmId,
     title: input.title.trim(),
     description: input.description?.trim() || null,
     sectorKey: input.sectorKey,
-    value: input.value,
-    escrow: input.value,
+    value: valueCents,
+    escrow: valueCents,
     status: "OPEN",
     issuerUserId: input.userId,
     createdIxTime: now,
@@ -190,7 +202,7 @@ async function keyedPost<T extends { contract: object }>(
   } catch (error) {
     if (isUniqueViolation(error)) {
       const contract = await db.contract.findUnique({ where: { idempotencyKey: key } });
-      if (contract) return { contract, alreadyApplied: true };
+      if (contract) return { contract: contractView(contract), alreadyApplied: true };
     }
     throw error;
   }
@@ -204,7 +216,7 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
     db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
       const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
-      if (existing) return { contract: existing, alreadyApplied: true };
+      if (existing) return { contract: contractView(existing), alreadyApplied: true };
 
       const company = await requireOwnedCompany(tx, input.issuerCompanyId, input.userId);
       const open = await tx.contract.count({
@@ -217,9 +229,10 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
         );
       }
 
+      const valueCents = dbCents(toCents(input.value));
       const { count } = await tx.company.updateMany({
-        where: { id: input.issuerCompanyId, status: "ACTIVE", capital: { gte: input.value } },
-        data: { capital: { decrement: input.value } },
+        where: { id: input.issuerCompanyId, status: "ACTIVE", capital: { gte: valueCents } },
+        data: { capital: { decrement: valueCents } },
       });
       if (count !== 1) {
         throw new ExchangeError(
@@ -237,22 +250,9 @@ export async function createContract(db: PrismaClient, input: CreateContractInpu
         },
       });
       await refreshFairValue(tx, input.issuerCompanyId);
-      return { contract, alreadyApplied: false };
+      return { contract: contractView(contract), alreadyApplied: false };
     })
   );
-}
-
-/** The nation must be the caller's: they own it or play as it. */
-async function requireCountryOwner(tx: Db, countryId: string, userId: string) {
-  const country = await tx.country.findUnique({
-    where: { id: countryId },
-    select: { id: true, name: true, ownerUserId: true, realmId: true },
-  });
-  if (!country) throw new ExchangeError("NOT_FOUND", "Nation not found");
-  if (country.ownerUserId === userId) return country;
-  const user = await tx.user.findUnique({ where: { id: userId }, select: { countryId: true } });
-  if (user?.countryId === countryId) return country;
-  throw new ExchangeError("FORBIDDEN", "Only the nation's owner can issue its tenders");
 }
 
 /** Take a tender's escrow from the owner's wallet or from the nation's treasury. */
@@ -295,7 +295,7 @@ export async function createGovernmentContract(db: PrismaClient, input: CreateTe
     db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
       const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
-      if (existing) return { contract: existing, alreadyApplied: true };
+      if (existing) return { contract: contractView(existing), alreadyApplied: true };
 
       const country = await requireCountryOwner(tx, input.countryId, input.userId);
       const open = await tx.contract.count({
@@ -318,7 +318,7 @@ export async function createGovernmentContract(db: PrismaClient, input: CreateTe
           linkedIssueId: input.linkedIssueId ?? null,
         },
       });
-      return { contract, alreadyApplied: false };
+      return { contract: contractView(contract), alreadyApplied: false };
     })
   );
 }
@@ -328,12 +328,12 @@ async function lockRealm(tx: Db, realmId: string): Promise<void> {
   await tx.$queryRaw`SELECT id FROM "realms" WHERE id = ${realmId} FOR UPDATE`;
 }
 
-async function faucetMintedSince(tx: Db, realmId: string, sinceMs: number): Promise<number> {
+async function faucetMintedCentsSince(tx: Db, realmId: string, sinceMs: number): Promise<number> {
   const totals = await tx.contract.aggregate({
     where: { realmId, fundedBy: "FAUCET", createdIxTime: { gte: sinceMs } },
     _sum: { value: true },
   });
-  return totals._sum.value ?? 0;
+  return centsOf(totals._sum.value ?? 0n);
 }
 
 /**
@@ -351,14 +351,14 @@ export async function createFaucetTender(db: PrismaClient, input: CreateFaucetTe
     db.$transaction(async (tx) => {
       await assertExchangeOpen(tx);
       const existing = await tx.contract.findUnique({ where: { idempotencyKey: key } });
-      if (existing) return { contract: existing, alreadyApplied: true };
+      if (existing) return { contract: contractView(existing), alreadyApplied: true };
 
       await lockRealm(tx, input.realmId);
-      const cap = (await getExchangeConfig(tx)).realmWeeklyFaucetCap;
+      const capCents = toCents((await getExchangeConfig(tx)).realmWeeklyFaucetCap);
       const since = Date.now() - FAUCET_WINDOW_DAYS * DAY_MS;
-      const minted = await faucetMintedSince(tx, input.realmId, since);
-      if (round2(minted + input.value) > cap) {
-        const left = Math.max(0, round2(cap - minted));
+      const mintedCents = await faucetMintedCentsSince(tx, input.realmId, since);
+      if (mintedCents + toCents(input.value) > capCents) {
+        const left = Math.max(0, fromCents(capCents - mintedCents));
         throw new ExchangeError(
           "LIMIT_REACHED",
           `This realm's faucet has ${formatSovereigns(left)} left this week`
@@ -371,7 +371,7 @@ export async function createFaucetTender(db: PrismaClient, input: CreateFaucetTe
           fundedBy: "FAUCET",
         },
       });
-      return { contract, alreadyApplied: false };
+      return { contract: contractView(contract), alreadyApplied: false };
     })
   );
 }
@@ -401,7 +401,8 @@ export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
     if (contract.issuerCompanyId === input.companyId || contract.issuerUserId === input.userId) {
       throw new ExchangeError("FORBIDDEN", "You can't bid on your own contract");
     }
-    if (!Number.isFinite(input.amount) || input.amount <= 0 || input.amount > contract.value) {
+    const amountCents = toCents(input.amount);
+    if (!Number.isFinite(input.amount) || amountCents <= 0 || amountCents > centsOf(contract.value)) {
       throw new ExchangeError("INVALID_AMOUNT", "A bid must be positive and at most the value");
     }
     const where = { contractId_companyId: { contractId: contract.id, companyId: input.companyId } };
@@ -414,16 +415,17 @@ export async function placeBid(db: PrismaClient, input: PlaceBidInput) {
         priority: "low",
       });
     }
-    return tx.contractBid.upsert({
+    const row = await tx.contractBid.upsert({
       where,
-      update: { amount: input.amount },
+      update: { amount: dbCents(amountCents) },
       create: {
         contractId: contract.id,
         companyId: input.companyId,
-        amount: input.amount,
+        amount: dbCents(amountCents),
         createdIxTime: Date.now(),
       },
     });
+    return { ...row, amount: fromCents(centsOf(row.amount)) };
   });
   notifyExchange(notices);
   return bid;
@@ -467,6 +469,7 @@ export async function awardContract(
   input: { userId: string; contractId: string; bidId: string }
 ) {
   const notices: ExchangeNotice[] = [];
+  let headline: PublishedHeadline | null = null;
   const result = await db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
     await requireIssuer(tx, input.contractId, input.userId);
@@ -480,6 +483,13 @@ export async function awardContract(
     if (bid.company.status !== "ACTIVE") {
       throw new ExchangeError("CONFLICT", "That company is no longer active");
     }
+    const tender = await tx.contract.findUnique({
+      where: { id: input.contractId },
+      select: { type: true, issuerCountryId: true },
+    });
+    if (tender?.type === "B2G" && tender.issuerCountryId) {
+      await assertNotOwnersCompany(tx, tender.issuerCountryId, bid.companyId);
+    }
     const before = await transition(tx, input.contractId, "OPEN", "AWARDED", {
       winnerCompanyId: bid.companyId,
       awardedBidId: bid.id,
@@ -490,11 +500,13 @@ export async function awardContract(
       where: { contractId: input.contractId, id: { not: bid.id } },
       data: { outcome: "LOST" },
     });
-    await refundIssuer(tx, before, before.escrow - bid.amount, "award");
+    const bidSovereigns = fromCents(centsOf(bid.amount));
+    await refundIssuer(tx, before, fromCents(centsOf(before.escrow) - centsOf(bid.amount)), "award");
+    headline = await publishContractNewsTx(tx, before, bid.companyId, "tender_awarded");
     notices.push({
       userId: bid.company.founderId,
       title: `You won ${before.title}`,
-      message: `Awarded at ${formatSovereigns(bid.amount)}, held in escrow until the issuer confirms delivery.`,
+      message: `Awarded at ${formatSovereigns(bidSovereigns)}, held in escrow until the issuer confirms delivery.`,
     });
     for (const userId of await bidderFounders(tx, input.contractId, bid.companyId)) {
       notices.push({
@@ -507,6 +519,7 @@ export async function awardContract(
     return { awarded: true };
   });
   notifyExchange(notices);
+  if (headline) await alertWatchers(db, [headline]);
   return result;
 }
 
@@ -516,14 +529,23 @@ export async function completeContract(
   input: { userId: string; contractId: string }
 ) {
   const notices: ExchangeNotice[] = [];
+  let headline: PublishedHeadline | null = null;
   const result = await db.$transaction(async (tx) => {
     await assertExchangeOpen(tx);
-    await requireIssuer(tx, input.contractId, input.userId);
+    await requireIssuer(tx, input.contractId, input.userId, { allowClosed: true });
     const before = await transition(tx, input.contractId, "AWARDED", "COMPLETED", {
-      escrow: 0,
+      escrow: 0n,
       closedIxTime: Date.now(),
     });
-    const { net, tariffPaid } = await payContractor(tx, before, before.escrow);
+    const { net, tariffPaid } = await payContractor(tx, before, fromCents(centsOf(before.escrow)));
+    if (before.winnerCompanyId) {
+      headline = await publishContractNewsTx(
+        tx,
+        before,
+        before.winnerCompanyId,
+        "tender_completed"
+      );
+    }
     const founder = await founderOf(tx, before.winnerCompanyId);
     if (founder) {
       notices.push({
@@ -545,6 +567,7 @@ export async function completeContract(
     return { paid: net, tariffPaid };
   });
   notifyExchange(notices);
+  if (headline) await alertWatchers(db, [headline]);
   return result;
 }
 
@@ -557,15 +580,16 @@ export async function cancelContract(
     await assertExchangeOpen(tx);
     await requireIssuer(tx, input.contractId, input.userId);
     const before = await transition(tx, input.contractId, "OPEN", "CANCELLED", {
-      escrow: 0,
+      escrow: 0n,
       closedIxTime: Date.now(),
     });
     await tx.contractBid.updateMany({
       where: { contractId: input.contractId },
       data: { outcome: "LOST" },
     });
-    await refundIssuer(tx, before, before.escrow, "close");
-    return { refunded: before.escrow };
+    const refunded = fromCents(centsOf(before.escrow));
+    await refundIssuer(tx, before, refunded, "close");
+    return { refunded };
   });
 }
 
@@ -579,19 +603,20 @@ export async function releaseContract(
     await assertExchangeOpen(tx);
     await requireContractor(tx, input.contractId, input.userId);
     const before = await transition(tx, input.contractId, "AWARDED", "CANCELLED", {
-      escrow: 0,
+      escrow: 0n,
       closedIxTime: Date.now(),
     });
-    await refundIssuer(tx, before, before.escrow, "close");
+    const refunded = fromCents(centsOf(before.escrow));
+    await refundIssuer(tx, before, refunded, "close");
     await penaliseContractor(tx, before.winnerCompanyId!, before.awardedBidId);
     if (before.issuerUserId) {
       notices.push({
         userId: before.issuerUserId,
         title: `${before.title} was released`,
-        message: `The contractor walked away; ${formatSovereigns(before.escrow)} came back to you.`,
+        message: `The contractor walked away; ${formatSovereigns(refunded)} came back to you.`,
       });
     }
-    return { refunded: before.escrow };
+    return { refunded };
   });
   notifyExchange(notices);
   return result;
@@ -642,14 +667,15 @@ export async function resolveDispute(
   const result = await db.$transaction(async (tx) => {
     const to: ContractStatus = input.outcome === "PAY_CONTRACTOR" ? "COMPLETED" : "CANCELLED";
     const before = await transition(tx, input.contractId, "DISPUTED", to, {
-      escrow: 0,
+      escrow: 0n,
       resolutionNote: input.note.trim(),
       closedIxTime: Date.now(),
     });
+    const escrowSovereigns = fromCents(centsOf(before.escrow));
     if (input.outcome === "PAY_CONTRACTOR") {
-      await payContractor(tx, before, before.escrow);
+      await payContractor(tx, before, escrowSovereigns);
     } else {
-      await refundIssuer(tx, before, before.escrow, "close");
+      await refundIssuer(tx, before, escrowSovereigns, "close");
       await penaliseContractor(tx, before.winnerCompanyId!, before.awardedBidId);
     }
     const decision =
@@ -663,7 +689,7 @@ export async function resolveDispute(
         priority: "high",
       });
     }
-    return { status: to, amount: before.escrow, title: before.title };
+    return { status: to, amount: escrowSovereigns, title: before.title };
   });
   notifyExchange(notices);
   return result;

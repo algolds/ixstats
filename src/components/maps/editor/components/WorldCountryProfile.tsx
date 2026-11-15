@@ -1,6 +1,7 @@
 "use client";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Textarea } from "~/components/ui/textarea";
 import React, { useState } from "react";
 import {
   EditPencil as Pencil,
@@ -69,9 +70,6 @@ export interface WorldCountryProfileProps {
   onSlotDeleted?: () => void;
 }
 
-const inputClasses =
-  "w-full rounded-control border border-separator bg-surface px-3 py-2 text-footnote text-label disabled:opacity-50 focus:border-tint focus:outline-none focus:ring-1 focus:ring-tint";
-
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1">
@@ -96,7 +94,9 @@ function ProfileHeader({
 }: Pick<WorldCountryProfileProps, "isUnclaimed"> & { title: string }) {
   return (
     <div className="flex items-center justify-between">
-      <Eyebrow>{isUnclaimed ? "Unclaimed Territory" : "Country Profile"}</Eyebrow>
+      <span className="text-caption text-label-secondary font-medium">
+        {isUnclaimed ? "Unclaimed territory" : "Country profile"}
+      </span>
       <div className="flex min-w-0 items-center gap-2">
         {!isUnclaimed && (
           <Card className="relative h-4 w-6 shrink-0 overflow-hidden rounded-xs">
@@ -133,14 +133,14 @@ function DetailsCard(props: WorldCountryProfileProps) {
 
   return (
     <Card className="space-y-3 p-3">
-      <Eyebrow className="block">Details</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">Details</span>
       <div className="space-y-2">
         <Field label="Name">
-          <input
+          <Input
             type="text"
             value={editableFeatureName}
             onChange={(e) => props.setEditableFeatureName(e.target.value)}
-            className={inputClasses}
+            className="text-footnote h-8 px-2.5"
             placeholder="e.g. Caphiria"
           />
         </Field>
@@ -156,12 +156,12 @@ function DetailsCard(props: WorldCountryProfileProps) {
 
         {!isUnclaimed && (
           <Field label="Wiki article">
-            <input
+            <Input
               type="text"
               value={props.wikiPageTitle}
               onChange={(e) => props.setWikiPageTitle(e.target.value)}
               placeholder="e.g. Caphiria"
-              className={inputClasses}
+              className="text-footnote h-8 px-2.5"
             />
           </Field>
         )}
@@ -184,16 +184,16 @@ function DetailsCard(props: WorldCountryProfileProps) {
 function FeatureDataCard({ country }: { country: SelectedCountry }) {
   return (
     <Card className="space-y-2 p-3">
-      <Eyebrow className="block">Feature data</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">Feature data</span>
       <div className="space-y-1">
         <DataRow label="Feature ID">
-          <span className="text-label-secondary text-footnote max-w-[180px] truncate font-mono">
-            {country.featureId || "—"}
+          <span className="text-label-secondary text-footnote font-data max-w-[180px] truncate">
+            {country.featureId || "–"}
           </span>
         </DataRow>
         <DataRow label="Centroid">
-          <span className="text-label-secondary text-footnote font-mono">
-            {country.centroidLng?.toFixed(4)},{country.centroidLat?.toFixed(4)}
+          <span className="text-label-secondary text-footnote font-data tabular-nums">
+            {country.centroidLng?.toFixed(4)}, {country.centroidLat?.toFixed(4)}
           </span>
         </DataRow>
         <DataRow label="Fill color">
@@ -202,8 +202,8 @@ function FeatureDataCard({ country }: { country: SelectedCountry }) {
               className="border-separator inline-block h-3 w-3 rounded-xs border"
               style={{ backgroundColor: country.fillColor || "var(--color-surface-secondary)" }}
             />
-            <span className="text-label-secondary text-footnote tabular-nums">
-              {country.fillColor || "—"}
+            <span className="text-label-secondary text-footnote font-data tabular-nums">
+              {country.fillColor || "–"}
             </span>
           </span>
         </DataRow>
@@ -221,7 +221,7 @@ function DatabaseRecordCard({
 }) {
   return (
     <Card className="space-y-2 p-3">
-      <Eyebrow className="block">Database record</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">Database record</span>
       <div className="space-y-1">
         {details.flagUrl && (
           <img
@@ -237,7 +237,7 @@ function DatabaseRecordCard({
         )}
         {details.areaKm2 != null && (
           <DataRow label="Area">
-            <span className="text-label-secondary">
+            <span className="text-label-secondary tabular-nums">
               {Math.round(Number(details.areaKm2)).toLocaleString()} km²
             </span>
           </DataRow>
@@ -268,18 +268,18 @@ function PropertiesJsonCard(props: WorldCountryProfileProps) {
   return (
     <Card className="p-3">
       <div className="mb-2 flex items-center justify-between">
-        <Eyebrow className="block">Properties JSON</Eyebrow>
+        <span className="text-caption text-label-secondary block font-medium">Properties JSON</span>
         <Button variant="ghost" size="sm" onClick={toggleEdit}>
           {isEditingJson ? "Save" : "Edit JSON"}
         </Button>
       </div>
       {isEditingJson ? (
         <div className="space-y-1">
-          <textarea
+          <Textarea
             value={propertiesJsonString}
             onChange={(e) => props.setPropertiesJsonString(e.target.value)}
             rows={6}
-            className="border-separator bg-surface focus:border-tint rounded-control text-footnote w-full border px-3 py-2 leading-relaxed tabular-nums focus:outline-none"
+            className="text-footnote font-data min-h-28 px-3 py-2 leading-relaxed tabular-nums"
           />
           {props.jsonError && <p className="text-destructive text-footnote">{props.jsonError}</p>}
         </div>
@@ -332,14 +332,14 @@ function CreateCountryFromShape({
 
   return (
     <div className="rounded-control border-green/30 bg-green/5 space-y-2 border p-2">
-      <Eyebrow className="block">New country name</Eyebrow>
-      <input
+      <span className="text-caption text-label-secondary block font-medium">New country name</span>
+      <Input
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Enter country name..."
         autoFocus
-        className="border-separator bg-surface text-label text-footnote focus:ring-green rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+        className="text-footnote rounded-control-sm h-7 px-2"
         onKeyDown={(e) => {
           if (e.key === "Enter") submit();
           else if (e.key === "Escape") close();
@@ -367,14 +367,16 @@ function UnclaimedActions(props: WorldCountryProfileProps) {
 
       {setAssignCountryId && handleAssignLink && availableCountries && (
         <div className="space-y-2">
-          <Eyebrow className="block">Assign to country</Eyebrow>
+          <span className="text-caption text-label-secondary block font-medium">
+            Assign to country
+          </span>
           <div className="flex gap-2">
             <OptionSelect
               aria-label="Assign to country"
               value={assignCountryId ?? ""}
               onValueChange={setAssignCountryId}
               options={[
-                { value: "", label: "— select country —" },
+                { value: "", label: "Select country…" },
                 ...availableCountries.map((c) => ({ value: c.id, label: c.name })),
               ]}
               size="sm"

@@ -1,11 +1,12 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { keepPreviousData } from "@tanstack/react-query";
-import { MultiplePages, Plus } from "iconoir-react";
+import { Filter, MultiplePages, WarningCircle, Xmark } from "iconoir-react";
 import { api } from "~/trpc/react";
 import { Button, focusRing } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useDebounce } from "~/hooks/useDebounce";
@@ -124,6 +125,9 @@ interface ExplorePaneProps {
   onOpenCard: (cardId: string) => void;
   /** A realm slug from the address (`?realm=`): the old NationStates library redirects here with `nationstates`. */
   initialRealmSlug: string | null;
+  /** A nation from the address (`?country=`): the grid shows only cards tied to it, until cleared. */
+  countryId?: string | null;
+  onClearCountry?: () => void;
   /** Whether the suggestion dialog is open; the hub keeps it in the address. */
   suggesting: boolean;
   onSuggestingChange: (open: boolean) => void;
@@ -133,11 +137,13 @@ interface ExplorePaneProps {
 export function ExplorePane({
   onOpenCard,
   initialRealmSlug,
+  countryId = null,
+  onClearCountry = () => {},
   suggesting,
   onSuggestingChange,
 }: ExplorePaneProps) {
   const shelves = api.cards.exploreShelves.useQuery();
-  const realms = useMemo(() => shelves.data?.realms ?? [], [shelves.data]);
+  const realms = shelves.data?.realms ?? [];
   const facets = api.cards.exploreFacets.useQuery(undefined, { staleTime: FACETS_STALE_MS });
   const { filters, setFilters, change, nsRealmId } = useExploreFilters(realms, initialRealmSlug);
   const [sort, setSort] = useState<ExploreSort>("newest");
@@ -146,7 +152,12 @@ export function ExplorePane({
   const headingId = useId();
   const search = useDebounce(filters.search, 300);
   const query = api.cards.exploreGrid.useInfiniteQuery(
-    { ...exploreFilterInput({ ...filters, search }), sort, limit: PAGE },
+    {
+      ...exploreFilterInput({ ...filters, search }),
+      ...(countryId ? { countryId } : {}),
+      sort,
+      limit: PAGE,
+    },
     {
       getNextPageParam: (last) => last.nextCursor ?? undefined,
       // A new search or filter keeps the cards on screen until its page arrives.
@@ -154,7 +165,8 @@ export function ExplorePane({
     }
   );
   const pages = query.data?.pages;
-  const faces = useMemo(() => uniqueFaces(pages ?? []), [pages]);
+  const totalCount = pages?.[0]?.total;
+  const faces = uniqueFaces(pages ?? []);
   // A picked realm id is a string or null, so with no NationStates shelf this is false.
   const { regions, regionSearch } = useRegionSearch(filters.realmId === nsRealmId);
   const open = (face: CardFaceData) => onOpenCard(face.cardId);
@@ -168,42 +180,49 @@ export function ExplorePane({
 
   return (
     <div className="space-y-8">
-      <RealmShelves
-        loading={shelves.isLoading}
-        failed={shelves.isError && !shelves.data}
-        onRetry={() => void shelves.refetch()}
-        shelves={shelves.data?.shelves ?? []}
-        onOpen={open}
-        onBrowse={browseRealm}
-      />
+      {/* Arriving for one nation's cards, the shelves would only push them down the page. */}
+      {!countryId && (
+        <RealmShelves
+          loading={shelves.isLoading}
+          failed={shelves.isError && !shelves.data}
+          onRetry={() => void shelves.refetch()}
+          shelves={shelves.data?.shelves ?? []}
+          onOpen={open}
+          onBrowse={browseRealm}
+        />
+      )}
       <section
         ref={gridSection}
         aria-labelledby={headingId}
         className="scroll-mt-(--shell-top-offset) space-y-4"
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 ref={gridHeading} id={headingId} tabIndex={-1} className="text-title-3 outline-none">
             All cards
           </h2>
-          <Button variant="secondary" size="sm" onClick={() => onSuggestingChange(true)}>
-            <Plus />
-            Suggest a card
-          </Button>
+          {totalCount !== undefined && (
+            <span className="text-footnote text-label-secondary tabular-nums">
+              {totalCount.toLocaleString()} {totalCount === 1 ? "card" : "cards"}
+            </span>
+          )}
         </div>
-        <CardFilterBar
-          filters={filters}
-          onChange={change}
-          dimensions={EXPLORE_DIMENSIONS}
-          types={facets.data?.types ?? []}
-          categories={facets.data?.categories ?? []}
-          facets={facetsStatus(facets)}
-          realms={realms}
-          regions={regions}
-          regionSearch={regionSearch}
-          sort={sort}
-          sortOptions={EXPLORE_SORT_OPTIONS}
-          onSortChange={setSort}
-        />
+        <Card variant="well" padding="sm" className="space-y-2">
+          {countryId && <CountryFilterChip countryId={countryId} onClear={onClearCountry} />}
+          <CardFilterBar
+            filters={filters}
+            onChange={change}
+            dimensions={EXPLORE_DIMENSIONS}
+            types={facets.data?.types ?? []}
+            categories={facets.data?.categories ?? []}
+            facets={facetsStatus(facets)}
+            realms={realms}
+            regions={regions}
+            regionSearch={regionSearch}
+            sort={sort}
+            sortOptions={EXPLORE_SORT_OPTIONS}
+            onSortChange={setSort}
+          />
+        </Card>
         <div aria-busy={query.isFetching && !query.isFetchingNextPage}>
           <GridBody
             loading={query.isLoading}
@@ -211,9 +230,14 @@ export function ExplorePane({
             failed={query.isError && !query.data}
             onRetry={() => void query.refetch()}
             faces={faces}
-            filtered={activeFilterCount(filters) > 0 || filters.search.trim() !== ""}
+            filtered={
+              activeFilterCount(filters) > 0 || filters.search.trim() !== "" || countryId !== null
+            }
             onOpen={open}
-            onClearFilters={() => setFilters(EMPTY_CARD_FILTERS)}
+            onClearFilters={() => {
+              setFilters(EMPTY_CARD_FILTERS);
+              onClearCountry();
+            }}
           />
         </div>
         <MoreCards
@@ -241,14 +265,19 @@ function ShelvesBody(props: ShelvesProps) {
   if (props.loading) return <Skeleton className="rounded-card h-48" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Realms did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Realms did not load"
+          message="Try loading the realm shelves again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   return (
@@ -279,6 +308,18 @@ function RealmShelves(props: ShelvesProps) {
   );
 }
 
+/** The nation the grid is narrowed to, as a chip that clears it. */
+function CountryFilterChip({ countryId, onClear }: { countryId: string; onClear: () => void }) {
+  const { data: country } = api.countries.getByIdBasic.useQuery({ id: countryId });
+  return (
+    <Button variant="secondary" size="sm" onClick={onClear}>
+      Cards of {country?.name ?? "this nation"}
+      <Xmark aria-hidden />
+      <span className="sr-only">, show every nation</span>
+    </Button>
+  );
+}
+
 function GridBody(props: {
   loading: boolean;
   failed: boolean;
@@ -291,14 +332,19 @@ function GridBody(props: {
   if (props.loading) return <Skeleton className="rounded-card h-64" />;
   if (props.failed) {
     return (
-      <EmptyState
-        title="Cards did not load"
-        action={
-          <Button variant="secondary" onClick={props.onRetry}>
-            Try again
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          role="alert"
+          icon={<WarningCircle />}
+          title="Cards did not load"
+          message="Try loading the card catalogue again."
+          action={
+            <Button variant="secondary" onClick={props.onRetry}>
+              Try again
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   if (props.faces.length > 0) {
@@ -306,32 +352,38 @@ function GridBody(props: {
   }
   if (props.filtered) {
     return (
-      <EmptyState
-        title="No cards match these filters"
-        action={
-          <Button variant="secondary" onClick={props.onClearFilters}>
-            Clear filters
-          </Button>
-        }
-      />
+      <Card>
+        <EmptyState
+          icon={<Filter />}
+          title="No cards match these filters"
+          message="Clear or loosen your filters to see more cards."
+          action={
+            <Button variant="secondary" onClick={props.onClearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      </Card>
     );
   }
   return (
-    <EmptyState
-      icon={<MultiplePages />}
-      title="No cards yet"
-      message={
-        <>
-          Cards appear here as realms publish them. Packs are in the{" "}
-          <Link
-            href={STORE_PATH}
-            className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
-          >
-            Store
-          </Link>
-          .
-        </>
-      }
-    />
+    <Card>
+      <EmptyState
+        icon={<MultiplePages />}
+        title="No cards yet"
+        message={
+          <>
+            Cards appear here as realms publish them. Packs are in the{" "}
+            <Link
+              href={STORE_PATH}
+              className={cn("text-tint-ink rounded-control-sm underline", focusRing)}
+            >
+              Store
+            </Link>
+            .
+          </>
+        }
+      />
+    </Card>
   );
 }

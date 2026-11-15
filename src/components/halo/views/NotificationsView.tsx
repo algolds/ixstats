@@ -2,8 +2,10 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import { createAbsoluteUrl } from "~/lib/utils";
+import { navigateWithBasePath } from "~/lib/base-path";
+import { PendingIssuesRow } from "./tray/PendingIssuesRow";
 import { api } from "~/trpc/react";
 import { useNotify } from "~/hooks/useNotify";
 import { useNotificationStore } from "~/stores/notificationStore";
@@ -11,7 +13,6 @@ import { useUser } from "~/context/auth-context";
 import {
   Bell,
   BellNotification as BellRing,
-  Xmark as X,
   CheckCircle,
   NavArrowRight as ChevronRight,
   Expand as Maximize2,
@@ -33,12 +34,26 @@ import {
   getColors,
   relativeTime,
 } from "./tray/types";
-import { soundEffects } from "~/lib/sound/cuelume";
-import { tweenFast } from "~/lib/design/motion";
-import { Button } from "~/components/ui/button";
+import { soundCues } from "~/lib/sound/cuelume";
+import { REDUCED_MOTION_FADE, tweenFast } from "~/lib/design/motion";
+import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
+import { HaloEmpty, HaloViewHeader, HaloWell } from "./shared/HaloViewParts";
 
-function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
+function TrayLoading({ label }: { label: string }) {
+  return (
+    <div className="space-y-2" role="status" aria-label={label}>
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+      <Skeleton className="h-12 w-full" />
+    </div>
+  );
+}
+
+export function NotificationsView({ onClose }: NotificationsViewProps) {
+  const router = useRouter();
   const notify = useNotify();
   const { user } = useUser();
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -46,18 +61,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const [locallyDismissedIds, setLocallyDismissedIds] = useState<Set<string>>(new Set());
   const { size: haloSize, setSize } = useHaloSize();
   const isUltra = haloSize === SIZE_PRESETS.ULTRA;
-
-  // ESC to close
-  React.useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose]);
+  const reduceMotion = useFacetReducedMotion();
 
   // Data sources
 
@@ -69,7 +73,12 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const dismissEnhanced = useNotificationStore((s) => s.dismissNotification);
 
   const utils = api.useUtils();
-  const { data: notificationsData } = api.notifications.getUserNotifications.useQuery(
+  const {
+    data: notificationsData,
+    isLoading: notificationsLoading,
+    isError: notificationsError,
+    refetch: refetchNotifications,
+  } = api.notifications.getUserNotifications.useQuery(
     { limit: 8, unreadOnly: false },
     {
       enabled: !!user?.id,
@@ -79,15 +88,19 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     }
   );
 
-  const { data: messagesData, refetch: refetchMessages } =
-    api.messages.getConversationsByFolder.useQuery(
-      { folder: "inbox", limit: 8 },
-      {
-        enabled: !!user?.id,
-        staleTime: 30 * 1000,
-        refetchOnWindowFocus: false,
-      }
-    );
+  const {
+    data: messagesData,
+    isLoading: messagesLoading,
+    isError: messagesError,
+    refetch: refetchMessages,
+  } = api.messages.getConversationsByFolder.useQuery(
+    { folder: "inbox", limit: 8 },
+    {
+      enabled: !!user?.id,
+      staleTime: 30 * 1000,
+      refetchOnWindowFocus: false,
+    }
+  );
 
   // No input → invalidates every getUserNotifications list size (Halo, dashboard, messages).
   const invalidateNotifications = () => {
@@ -106,6 +119,7 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   const markAllMessagesMutation = api.messages.markAllAsRead.useMutation({
     onSuccess: () => {
       void refetchMessages();
+      void utils.messages.getFolderCounts?.invalidate?.();
     },
   });
 
@@ -208,23 +222,28 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
     });
   };
 
-  const handleMarkAllRead = () => {
-    if (user?.id && unreadNotifications > 0) markAllAsReadMutation.mutate({ userId: user.id });
+  const handleMarkAllRead = async () => {
+    const pending: Promise<unknown>[] = [];
+    if (user?.id && unreadNotifications > 0) {
+      pending.push(markAllAsReadMutation.mutateAsync({ userId: user.id }));
+    }
     if (enhancedUnreadCount > 0) markAllEnhancedAsRead();
-    if (messageUnreadCount > 0) markAllMessagesMutation.mutate();
-    notify.success("All notifications and messages marked as read");
+    if (messageUnreadCount > 0) pending.push(markAllMessagesMutation.mutateAsync());
+    const results = await Promise.allSettled(pending);
+    if (results.every((r) => r.status === "fulfilled")) notify.success("All marked as read");
+    else notify.error("Couldn't mark everything as read");
   };
 
   const handleClick = (n: NotificationItem) => {
     const isRead = n.status === "read" || n.read;
     if (!isRead) handleMarkRead(n);
     const targetUrl = n.actionUrl || n.href;
-    if (targetUrl) window.location.href = createAbsoluteUrl(targetUrl);
+    if (targetUrl) navigateWithBasePath(targetUrl, router);
     if (n.source === "enhanced") recordEngagement(n.id, "click");
   };
 
   const handleMessageClick = (conv: MessageTrayConversation) => {
-    window.location.href = createAbsoluteUrl(`/messages?conversationId=${conv.id}`);
+    navigateWithBasePath(`/messages?conversation=${conv.id}`, router);
   };
 
   const toggleGroup = (key: string) => {
@@ -242,55 +261,62 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
   ];
 
   return (
-    <div className="p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <div className="text-label text-headline flex items-center gap-2">
-          <BellRing className="text-yellow h-4 w-4" />
-          <PreText className="text-inherit" whiteSpace="nowrap">
-            Notifications
-          </PreText>
-          {totalUnreadCount > 0 && (
-            <PreText
-              className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
-              whiteSpace="nowrap"
-            >
-              {String(totalUnreadCount)}
+    <div className="space-y-3 p-3">
+      <HaloViewHeader
+        leading={<BellRing className="text-yellow h-4 w-4 shrink-0" />}
+        title={
+          <span className="inline-flex items-center gap-2">
+            <PreText className="text-inherit" whiteSpace="nowrap">
+              Notifications
             </PreText>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          {totalUnreadCount > 0 && (
+            {totalUnreadCount > 0 && (
+              <PreText
+                className="bg-yellow text-caption text-on-yellow min-w-[18px] rounded-full px-2 py-0.5 text-center font-semibold"
+                whiteSpace="nowrap"
+              >
+                {String(totalUnreadCount)}
+              </PreText>
+            )}
+          </span>
+        }
+        trailing={
+          <>
+            {totalUnreadCount > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void handleMarkAllRead()}
+                disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
+                className="text-label-secondary hover:text-label"
+                title="Mark all notifications and messages as read"
+              >
+                <CheckCircle aria-hidden className="text-green" />
+                <PreText className="text-inherit" whiteSpace="nowrap">
+                  Read all
+                </PreText>
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              onClick={handleMarkAllRead}
-              disabled={markAllAsReadMutation.isPending || markAllMessagesMutation.isPending}
+              size="icon-sm"
+              onClick={() => {
+                setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
+              }}
               className="text-label-secondary hover:text-label"
-              title="Mark all notifications and messages as read"
+              title={isUltra ? "Standard view" : "Expanded view"}
+              aria-label={isUltra ? "Standard view" : "Expanded view"}
             >
-              <CheckCircle aria-hidden className="text-green" />
-              <PreText className="text-inherit" whiteSpace="nowrap">
-                Read all
-              </PreText>
+              {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => {
-              soundEffects.droplet();
-              onClose();
-            }}
-            className="text-label-secondary hover:text-label"
-            title="Close tray"
-            aria-label="Close tray"
-          >
-            <X aria-hidden />
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+        onClose={() => {
+          soundCues.dismiss();
+          onClose();
+        }}
+      />
 
       {/* Segmented Filter Pills (Notifications vs Messages) */}
       <SegmentedControl
@@ -298,7 +324,6 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
         asTabs
         fullWidth
         size="sm"
-        className="mb-3"
         value={activeTab}
         onValueChange={setActiveTab}
         options={tabs.map((tab) => {
@@ -320,54 +345,79 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
       >
         {activeTab === "messages" ? (
           /* Messages View */
-          <div className="space-y-2">
+          <HaloWell className="p-2">
             {conversationsList.length > 0 ? (
               <div className="space-y-1">
                 {conversationsList.map((conv) => (
                   <MessageTrayItem
                     key={conv.id}
                     conversation={conv}
-                    currentUserId={user?.id}
                     relativeTime={relativeTime}
                     onClick={handleMessageClick}
                     onDismiss={handleDismissMessage}
                   />
                 ))}
               </div>
+            ) : messagesLoading ? (
+              <TrayLoading label="Loading messages" />
+            ) : messagesError ? (
+              <HaloEmpty
+                title="Couldn't load messages"
+                action={
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={() => void refetchMessages()}
+                  >
+                    Try again
+                  </Button>
+                }
+              />
             ) : (
-              <div className="py-10 text-center">
-                <MessageCircle className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
-                <p className="text-label-secondary text-caption font-semibold">
-                  No recent messages
-                </p>
-                <Link
-                  href="/messages"
-                  className="text-tint text-caption mt-2 inline-block font-semibold hover:underline"
-                >
-                  Start a conversation
-                </Link>
-              </div>
+              <HaloEmpty
+                icon={<MessageCircle />}
+                title="No recent messages"
+                action={
+                  <Link
+                    href="/messages"
+                    className="text-tint text-caption inline-block font-semibold hover:underline"
+                  >
+                    Start a conversation
+                  </Link>
+                }
+              />
             )}
-          </div>
+          </HaloWell>
         ) : (
           /* Notifications View */
           <div className="space-y-2">
+            <PendingIssuesRow
+              onOpen={() => {
+                onClose();
+                navigateWithBasePath("/mycountry/executive", router);
+              }}
+            />
             {groups.length > 0 ? (
               groups.map((group) => {
-                const isCollapsed = collapsedGroups.has(group.label);
+                const groupCollapsed = collapsedGroups.has(group.label);
                 return (
-                  <div key={group.label}>
+                  <HaloWell key={group.label} className="space-y-1 p-2">
                     {/* Group header */}
                     <button
                       type="button"
                       onClick={() => toggleGroup(group.label)}
-                      aria-expanded={!isCollapsed}
-                      className="hover:bg-fill-4 rounded-control-sm focus-visible:outline-tint mb-1 flex w-full items-center justify-between px-1 py-0.5 transition-colors focus-visible:outline-2"
+                      aria-expanded={!groupCollapsed}
+                      className={cn(
+                        "hover:bg-fill-4 rounded-control-sm relative flex w-full cursor-pointer items-center justify-between px-1 py-0.5 transition-colors",
+                        focusRing,
+                        hitSlop
+                      )}
                     >
                       <div className="flex items-center gap-2">
                         <motion.div
-                          animate={{ rotate: isCollapsed ? 0 : 90 }}
-                          transition={tweenFast}
+                          animate={{ rotate: groupCollapsed ? 0 : 90 }}
+                          transition={reduceMotion ? { duration: 0 } : tweenFast}
                         >
                           <ChevronRight className="text-label-tertiary h-3 w-3" />
                         </motion.div>
@@ -382,12 +432,12 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
 
                     {/* Items */}
                     <AnimatePresence>
-                      {!isCollapsed && (
+                      {!groupCollapsed && (
                         <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={tweenFast}
+                          initial={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                          animate={reduceMotion ? { opacity: 1 } : { height: "auto", opacity: 1 }}
+                          exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                          transition={reduceMotion ? REDUCED_MOTION_FADE : tweenFast}
                           className="space-y-1 overflow-hidden"
                         >
                           <SwipeableGroup>
@@ -420,39 +470,37 @@ function NotificationsViewComponent({ onClose }: NotificationsViewProps) {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </HaloWell>
                 );
               })
+            ) : notificationsLoading ? (
+              <HaloWell className="p-2">
+                <TrayLoading label="Loading notifications" />
+              </HaloWell>
+            ) : notificationsError ? (
+              <HaloWell>
+                <HaloEmpty
+                  title="Couldn't load notifications"
+                  action={
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      onClick={() => void refetchNotifications()}
+                    >
+                      Try again
+                    </Button>
+                  }
+                />
+              </HaloWell>
             ) : (
-              <div className="py-10 text-center">
-                <Bell className="text-label-tertiary mx-auto mb-3 h-8 w-8" />
-                <PreText className="text-label-secondary text-body font-medium" whiteSpace="nowrap">
-                  No notifications
-                </PreText>
-              </div>
+              <HaloWell>
+                <HaloEmpty icon={<Bell />} title="No notifications" />
+              </HaloWell>
             )}
           </div>
         )}
       </div>
-
-      {/* Expand / Minimize DI Size Toggle */}
-      <div className="border-separator mt-3 flex justify-center border-t pt-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          onClick={() => {
-            setSize(isUltra ? SIZE_PRESETS.TALL : SIZE_PRESETS.ULTRA);
-          }}
-          className="text-label-secondary hover:text-label rounded-full"
-          title={isUltra ? "Standard view" : "Expanded view"}
-          aria-label={isUltra ? "Standard view" : "Expanded view"}
-        >
-          {isUltra ? <Minimize2 aria-hidden /> : <Maximize2 aria-hidden />}
-        </Button>
-      </div>
     </div>
   );
 }
-
-export const NotificationsView = React.memo(NotificationsViewComponent);

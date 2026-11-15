@@ -16,13 +16,9 @@ type Handler = (auth: () => Promise<Session>, req: NextRequest) => Promise<Respo
 let session: Session = { userId: null, sessionClaims: null };
 const isAdminClerkUser = jest.fn<(clerkUserId: string) => Promise<boolean>>();
 
-jest.mock("@clerk/nextjs/server", () => {
-  const actual = jest.requireActual<typeof import("@clerk/nextjs/server")>("@clerk/nextjs/server");
-  return {
-    createRouteMatcher: actual.createRouteMatcher,
-    clerkMiddleware: (handler: Handler) => (req: NextRequest) => handler(async () => session, req),
-  };
-});
+jest.mock("@clerk/nextjs/server", () => ({
+  clerkMiddleware: (handler: Handler) => (req: NextRequest) => handler(async () => session, req),
+}));
 jest.mock("~/server/shared/admin-access", () => ({
   isAdminClerkUser: (id: string) => isAdminClerkUser(id),
 }));

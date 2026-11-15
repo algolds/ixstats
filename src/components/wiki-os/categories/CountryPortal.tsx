@@ -1,5 +1,6 @@
 "use client";
 
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import Link from "next/link";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
 import dynamic from "next/dynamic";
@@ -104,13 +105,14 @@ export function CountryPortal({ country, subcategories, pages }: CountryPortalPr
               <span>Wiki article</span>
             </Link>
 
-            <Link
+            <CountryLink
+              country={{ id: country.id, slug: country.slug, name: country.name }}
               href={ixstatesLinkHref(`/countries/${country.slug ?? country.id}`)}
               className="rounded-row bg-tint text-caption text-on-tint shadow-card hover:bg-tint inline-flex items-center gap-2 px-4 py-2 font-semibold transition-[color,background-color,border-color,box-shadow,opacity,scale,translate]"
             >
               <TrendingUp className="h-3.5 w-3.5" />
-              <span>National dashboard</span>
-            </Link>
+              <span>Open nation</span>
+            </CountryLink>
           </div>
         </div>
       </div>

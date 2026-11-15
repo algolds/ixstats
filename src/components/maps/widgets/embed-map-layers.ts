@@ -2,9 +2,17 @@ import type { FilterSpecification, Map as MapLibreMap, MapLayerMouseEvent } from
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { getCountryColor, MAP_SYMBOL_FONTS } from "~/lib/maps/map-config";
 import { createStarImage } from "~/components/maps/core/utils/map-core-helpers";
+import { toCarrierGeoJSON, toCarrierLngLat } from "~/lib/maps/flat-projection";
 import type { useCountryMapEmbedState } from "./hooks/useCountryMapEmbedState";
 
 type EmbedState = ReturnType<typeof useCountryMapEmbedState>;
+
+/** Per map, because the state hook returns a new object each render and cannot carry the callback. */
+const fitSettledByMap = new WeakMap<MapLibreMap, () => void>();
+
+export function getEmbedFitSettled(map: MapLibreMap): (() => void) | undefined {
+  return fitSettledByMap.get(map);
+}
 
 export interface EmbedLayerOptions {
   state: EmbedState;
@@ -69,10 +77,9 @@ function removeEmbedLayers(map: MapLibreMap) {
   for (const id of EMBED_SOURCE_IDS) if (map.getSource(id)) map.removeSource(id);
 }
 
-const collection = (features: Feature[]): FeatureCollection => ({
-  type: "FeatureCollection",
-  features,
-});
+/** A source's features, in Plate Carrée as the flat embed draws them (flat-projection.ts). */
+const collection = (features: Feature[]): FeatureCollection =>
+  toCarrierGeoJSON({ type: "FeatureCollection", features });
 
 const featureProps = (e: MapLayerMouseEvent) => e.features?.[0]?.properties;
 
@@ -447,8 +454,33 @@ function fitBbox(state: EmbedState): Bbox | null {
   return bbox;
 }
 
+/** Fits the country bbox, adding `insetRight` to the right padding when a panel floats over the map. */
+export function fitEmbedToCountry(
+  map: MapLibreMap,
+  state: EmbedState,
+  padding: number,
+  insetRight?: number
+): boolean {
+  const bbox = fitBbox(state);
+  if (!bbox) return false;
+  map.fitBounds(
+    [toCarrierLngLat(bbox.minLng, bbox.minLat), toCarrierLngLat(bbox.maxLng, bbox.maxLat)],
+    {
+      padding: {
+        top: padding,
+        bottom: padding,
+        left: padding,
+        right: padding + (insetRight ?? 0),
+      },
+      maxZoom: 10,
+      duration: 0,
+    }
+  );
+  return true;
+}
+
 /** Draw the embed's own layers onto a freshly loaded map and wire up its interactions. */
-export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
+export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions): (() => void) | undefined {
   hideWorldLayers(map);
   removeEmbedLayers(map);
 
@@ -456,16 +488,10 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
   addSubdivisions(map, o);
   addCountry(map, o);
   const onFitSettled = addCities(map, o);
+  if (onFitSettled) fitSettledByMap.set(map, onFitSettled);
+  else fitSettledByMap.delete(map);
 
-  const bbox = fitBbox(o.state);
-  if (bbox) {
-    map.fitBounds(
-      [
-        [bbox.minLng, bbox.minLat],
-        [bbox.maxLng, bbox.maxLat],
-      ],
-      { padding: o.boundsPadding, maxZoom: 10, duration: 0 }
-    );
+  if (fitEmbedToCountry(map, o.state, o.boundsPadding)) {
     map.once("idle", () => onFitSettled?.());
   }
 
@@ -483,6 +509,7 @@ export function populateEmbedMap(map: MapLibreMap, o: EmbedLayerOptions) {
       if (id) onFeatureClick({ kind: "subdivision", id: String(id) });
     });
   }
+  return onFitSettled;
 }
 
 type Nested = number | readonly Nested[];

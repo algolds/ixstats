@@ -1,204 +1,137 @@
 "use client";
 
-import { springSmooth } from "~/lib/design/motion";
-import React from "react";
-import { motion, AnimatePresence } from "motion/react";
-import {
-  Globe,
-  OpenNewWindow as ExternalLink,
-  ShieldCheck,
-  Download,
-  ArrowRight,
-  SystemRestart as Loader2,
-} from "iconoir-react";
-import { cn } from "~/lib/utils";
+import React, { useId } from "react";
+import { Globe, ArrowRight } from "iconoir-react";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
-import { NationStatesAttribution } from "~/components/cards/display/NationStatesAttribution";
 import { Card } from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { proxyNSImage } from "~/lib/cards/ns-image-proxy";
 
 interface ImportNationStepProps {
   nationName: string;
   setNationName: (name: string) => void;
-  showNameInput: boolean;
-  setShowNameInput: (show: boolean) => void;
   onRequestVerification: (nationName: string) => void;
   isPending: boolean;
 }
 
+const HOW_IT_WORKS = [
+  {
+    step: "1",
+    title: "Enter nation",
+    desc: "Provide your NationStates nation name.",
+  },
+  {
+    step: "2",
+    title: "Open verification link",
+    desc: "Visit the official NationStates verification page.",
+  },
+  {
+    step: "3",
+    title: "Paste code",
+    desc: "Copy the checksum NationStates gives you into IxVault.",
+  },
+  {
+    step: "4",
+    title: "Mint deck",
+    desc: "Your NationStates trading cards are imported.",
+  },
+] as const;
+
 export function ImportNationStep({
   nationName,
   setNationName,
-  showNameInput,
-  setShowNameInput,
   onRequestVerification,
   isPending,
 }: ImportNationStepProps) {
+  const inputId = useId();
+
   return (
-    <div className="space-y-6">
-      {/* Hero visual / Header */}
-      <div className="flex flex-col items-center py-4 text-center">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <h2 className="text-label text-large-title select-none">Trading cards</h2>
-          <div className="relative h-7 w-10 shrink-0 select-none">
-            <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-0 h-6.5 w-4 -rotate-12 rounded-[4px] border-2" />
-            <div className="border-foreground/80 bg-surface shadow-card absolute top-0 left-3 flex h-6.5 w-4 items-center justify-center rounded-[4px] border-2">
-              <div className="bg-surface-secondary h-1.5 w-1.5 rounded-full" />
-            </div>
-            <div className="border-foreground/80 bg-surface shadow-card absolute top-0.5 left-6 flex h-6.5 w-4 rotate-12 items-center justify-center rounded-[4px] border-2">
-              <div className="bg-surface-secondary h-1.5 w-1.5 rounded-full" />
-            </div>
-          </div>
-        </div>
-        <p className="text-label-secondary text-body max-w-md">
-          Bring your NationStates trading cards into Cards. Verify nation ownership and import in
-          minutes.
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-label text-title-3">Connect your NationStates nation</h2>
+        <p className="text-label-secondary text-body">
+          Verify ownership of a NationStates nation and bring its trading card deck into your Vault.
         </p>
       </div>
 
-      {/* How it works cards */}
+      {/* Compact framed NationStates badge (Well) */}
+      <div
+        data-slot="ns-compact-badge"
+        className="rounded-row border-separator bg-surface-secondary flex flex-wrap items-center gap-3 border px-3 py-2"
+      >
+        <img
+          src={proxyNSImage("https://www.nationstates.net/images/bannertitle.png")}
+          alt="NationStates"
+          className="h-6 w-auto shrink-0 object-contain"
+        />
+        <p className="text-footnote text-label-secondary min-w-0 flex-1 leading-snug">
+          Read-only verification via the{" "}
+          <a
+            href="https://www.nationstates.net/page=api"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-tint underline-offset-4 hover:underline"
+          >
+            NationStates API
+          </a>
+          . Your NationStates password is never requested.
+        </p>
+      </div>
+
+      {/* Immediate nation-name input with zero extra click gate */}
+      <Card variant="well" padding="md" className="space-y-3">
+        <div className="space-y-2">
+          <Label htmlFor={inputId}>NationStates nation name</Label>
+          <div className="relative">
+            <Globe
+              aria-hidden
+              className="text-label-secondary pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+            />
+            <Input
+              id={inputId}
+              value={nationName}
+              onChange={(e) => setNationName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && nationName.trim()) {
+                  onRequestVerification(nationName.trim());
+                }
+              }}
+              placeholder="e.g. Testlandia"
+              className="pl-9"
+            />
+          </div>
+        </div>
+        <Button
+          type="button"
+          onClick={() => onRequestVerification(nationName.trim())}
+          disabled={!nationName.trim() || isPending}
+          className="w-full"
+        >
+          {isPending ? (
+            "Starting verification..."
+          ) : (
+            <>
+              Start verification
+              <ArrowRight className="size-4" />
+            </>
+          )}
+        </Button>
+      </Card>
+
       <div className="grid gap-3 sm:grid-cols-2">
-        {[
-          {
-            step: "1",
-            title: "Enter nation",
-            desc: "Type your NationStates nation name",
-            icon: Globe,
-            color: "amber",
-          },
-          {
-            step: "2",
-            title: "Visit NS link",
-            desc: "Open a NationStates verification page",
-            icon: ExternalLink,
-            color: "cyan",
-          },
-          {
-            step: "3",
-            title: "Paste code",
-            desc: "Copy the code NS gives you and paste it here",
-            icon: ShieldCheck,
-            color: "emerald",
-          },
-          {
-            step: "4",
-            title: "Import",
-            desc: "Your NS trading cards are imported",
-            icon: Download,
-            color: "indigo",
-          },
-        ].map((item) => (
-          <Card key={item.step} padding="md" className="flex items-start gap-3">
-            <div
-              className={cn(
-                "bg-tint-fill text-tint rounded-control text-footnote flex size-8 shrink-0 items-center justify-center font-semibold tabular-nums"
-              )}
-            >
+        {HOW_IT_WORKS.map((item) => (
+          <Card key={item.step} variant="well" padding="sm" className="flex items-start gap-3">
+            <div className="bg-tint-fill text-tint-ink rounded-control-sm text-footnote flex size-7 shrink-0 items-center justify-center font-semibold tabular-nums">
               {item.step}
             </div>
-            <div>
-              <p className="text-label text-headline">{item.title}</p>
+            <div className="min-w-0">
+              <p className="text-label text-subhead">{item.title}</p>
               <p className="text-label-secondary text-footnote">{item.desc}</p>
             </div>
           </Card>
         ))}
       </div>
-
-      {/* Safety Disclaimer */}
-      <Card className="text-label-secondary rounded-row text-footnote flex items-start gap-2 p-4 select-none">
-        <ShieldCheck className="text-blue mt-0.5 h-4 w-4 shrink-0" />
-        <div className="space-y-0.5">
-          <p className="text-label font-semibold">Important</p>
-          <p className="leading-relaxed">
-            Verification uses the official{" "}
-            <a
-              href="https://www.nationstates.net/page=api"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue hover:underline"
-            >
-              NationStates API
-            </a>{" "}
-            and only grants read-only access to verify public deck contents. We will never ask for
-            your NationStates password or account credentials.
-          </p>
-          <NationStatesAttribution className="pt-1" />
-        </div>
-      </Card>
-
-      <AnimatePresence mode="wait">
-        {!showNameInput ? (
-          <motion.div
-            key="start-btn"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={springSmooth}
-          >
-            <Button
-              onClick={() => setShowNameInput(true)}
-              className="text-headline h-11 w-full"
-              size="lg"
-            >
-              Get started
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="name-input"
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={springSmooth}
-          >
-            <Card className="rounded-row space-y-3 p-5">
-              <div className="flex items-center justify-between">
-                <label className="text-label text-headline">Your nation name</label>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => {
-                    setNationName("");
-                    setShowNameInput(false);
-                  }}
-                  className="text-label-secondary h-auto px-0 underline"
-                >
-                  Cancel
-                </Button>
-              </div>
-              <div className="relative">
-                <Globe className="text-label-secondary absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                <Input
-                  value={nationName}
-                  onChange={(e) => setNationName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && nationName.trim()) {
-                      onRequestVerification(nationName);
-                    }
-                  }}
-                  placeholder="e.g. Testlandia"
-                  className="bg-fill-4 focus:bg-background text-body h-12 pl-10"
-                  autoFocus
-                />
-              </div>
-              <Button
-                onClick={() => onRequestVerification(nationName)}
-                disabled={!nationName.trim() || isPending}
-                size="lg"
-                className="w-full"
-              >
-                {isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="mr-2 h-4 w-4" />
-                )}
-                Start verification
-              </Button>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

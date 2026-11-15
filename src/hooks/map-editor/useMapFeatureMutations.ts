@@ -12,9 +12,35 @@ import type {
 } from "./editor-types";
 
 import type { FeatureType } from "~/types/maps/editor-domain";
+import { parseWikiSource } from "~/lib/wiki-os/config";
 import { createFeatureOps } from "./feature-ops";
 import { useFeatureMutations } from "./feature-mutations";
 import type { EditorAction } from "./useMapHistory";
+
+const toWikiCreateFields = (form: { wikiPageTitle?: string; wikiSource?: string }) =>
+  form.wikiPageTitle
+    ? {
+        wikiPageTitle: form.wikiPageTitle,
+        wikiSource: form.wikiSource ? parseWikiSource(form.wikiSource) : "ixwiki",
+      }
+    : {};
+
+const toWikiEditFields = (
+  form: { wikiPageTitle?: string; wikiSource?: string },
+  isFormEdit: boolean
+) => {
+  if (form.wikiPageTitle !== undefined) {
+    return {
+      wikiPageTitle: form.wikiPageTitle || null,
+      wikiSource: form.wikiPageTitle
+        ? form.wikiSource
+          ? parseWikiSource(form.wikiSource)
+          : "ixwiki"
+        : null,
+    };
+  }
+  return isFormEdit ? { wikiPageTitle: null, wikiSource: null } : {};
+};
 
 type HistoryEntry = Record<string, string | number | boolean | object | null | undefined>;
 type HistoryPair = [HistoryEntry, HistoryEntry];
@@ -193,6 +219,7 @@ export function useMapFeatureMutations({
         isNationalCapital: cityForm.isNationalCapital,
         isSubdivisionCapital: cityForm.isSubdivisionCapital,
         subdivisionId: cityForm.subdivisionId,
+        ...toWikiCreateFields(cityForm),
       })
     );
 
@@ -210,6 +237,7 @@ export function useMapFeatureMutations({
           population: form.population,
           isNationalCapital: form.isNationalCapital,
           isSubdivisionCapital: form.isSubdivisionCapital,
+          ...toWikiEditFields(form, overrideForm === undefined),
         }),
       atPoint
     );
@@ -256,7 +284,7 @@ export function useMapFeatureMutations({
         coordinates,
         description: poiForm.description,
         icon: poiForm.icon,
-        wikiPageTitle: poiForm.wikiPageTitle,
+        ...toWikiCreateFields(poiForm),
       })
     );
 
@@ -273,7 +301,7 @@ export function useMapFeatureMutations({
           coordinates: feature.coordinates!,
           description: form.description,
           icon: form.icon,
-          wikiPageTitle: form.wikiPageTitle,
+          ...toWikiEditFields(form, overrideForm === undefined),
         }),
       atPoint
     );
@@ -287,6 +315,7 @@ export function useMapFeatureMutations({
         content: storyPinForm.content,
         ixTimeYear: storyPinForm.ixTimeYear,
         category: storyPinForm.category,
+        ...toWikiCreateFields(storyPinForm),
       })
     );
 
@@ -303,6 +332,7 @@ export function useMapFeatureMutations({
           content: form.content,
           ixTimeYear: form.ixTimeYear,
           category: form.category,
+          ...toWikiEditFields(form, true),
         }),
       atPoint
     );
@@ -316,6 +346,7 @@ export function useMapFeatureMutations({
         coordinates,
         fontSize: mapLabelForm.fontSize,
         color: mapLabelForm.color,
+        ...toWikiCreateFields(mapLabelForm),
       })
     );
 
@@ -332,6 +363,7 @@ export function useMapFeatureMutations({
           coordinates: feature.coordinates!,
           fontSize: form.fontSize,
           color: form.color,
+          ...toWikiEditFields(form, true),
         }),
       atPoint
     );
@@ -343,6 +375,7 @@ export function useMapFeatureMutations({
         name: peakForm.name,
         elevation: peakForm.elevation,
         coordinates,
+        ...toWikiCreateFields(peakForm),
       })
     );
 
@@ -357,6 +390,7 @@ export function useMapFeatureMutations({
           name: form.name,
           elevation: form.elevation,
           coordinates: feature.coordinates!,
+          ...toWikiEditFields(form, overrideForm === undefined),
         }),
       atPoint
     );
@@ -367,6 +401,7 @@ export function useMapFeatureMutations({
         ...scope,
         name: riverForm.name,
         geometry: geometry as Parameters<typeof m.river.create.mutateAsync>[0]["geometry"],
+        ...toWikiCreateFields(riverForm),
       })
     );
 
@@ -375,7 +410,12 @@ export function useMapFeatureMutations({
       river,
       overrideForm,
       (scope, feature, form) =>
-        m.river.update.mutateAsync({ ...scope, riverId: feature.id, name: form.name }),
+        m.river.update.mutateAsync({
+          ...scope,
+          riverId: feature.id,
+          name: form.name,
+          ...toWikiEditFields(form, overrideForm === undefined),
+        }),
       renamed
     );
 
@@ -385,6 +425,7 @@ export function useMapFeatureMutations({
         ...scope,
         name: lakeForm.name,
         geometry: geometry as Parameters<typeof m.lake.create.mutateAsync>[0]["geometry"],
+        ...toWikiCreateFields(lakeForm),
       })
     );
 
@@ -393,7 +434,12 @@ export function useMapFeatureMutations({
       lake,
       overrideForm,
       (scope, feature, form) =>
-        m.lake.update.mutateAsync({ ...scope, lakeId: feature.id, name: form.name }),
+        m.lake.update.mutateAsync({
+          ...scope,
+          lakeId: feature.id,
+          name: form.name,
+          ...toWikiEditFields(form, overrideForm === undefined),
+        }),
       renamed
     );
 

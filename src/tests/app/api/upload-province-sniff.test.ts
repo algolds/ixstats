@@ -11,7 +11,8 @@ jest.mock("~/server/db", () => ({
   },
 }));
 jest.mock("@clerk/nextjs/server", () => ({ auth: async () => ({ userId: "owner_1" }) }));
-jest.mock("~/lib/auth", () => ({ isSystemOwner: () => true }));
+jest.mock("~/server/shared/admin-access", () => ({ isAdminClerkUser: async () => true }));
+jest.mock("~/lib/cache", () => ({ rateLimiter: { check: async () => ({ success: true }) } }));
 
 import type { NextRequest } from "next/server";
 import { POST } from "~/app/api/upload-province/route";

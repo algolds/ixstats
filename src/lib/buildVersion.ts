@@ -29,7 +29,7 @@ export const INTERNAL_VERSIONS = {
   platform: {
     major: 1,
     minor: 5,
-    patch: 2,
+    patch: 6,
     release: "Lobster Crosby",
     channel: "Release Candidate" as ReleaseChannel,
   },
@@ -38,6 +38,7 @@ export const INTERNAL_VERSIONS = {
   apps: {
     ixworld: 3, // v3: PostGIS vector tiles for terrain, packed map data, ~1 MB first load; v2: modular authoring suite, responsive unified controls, shared lore atoms, and clean domain boundaries
     wikios: 1, // Canvas nests under WikiOS (see subSystems.canvas)
+    exchange: 2, // v2: the treasury as a player (wealth fund, lending terms, trading as the treasury), #business press from ThinkPages, realm sector levers; v1: the market terminal at /exchange: front page and business news, markets, company, bond and nation pages, portfolio, nation bonds (2026-11)
     ixvault: 3, // v3: the collectathon hub (Wallet statement, Achievements, Cards, Store and Lorewards under one app, in the sidebar for everyone), the nightly Vault dividend, trophy cards; v2: type-safe domain models, atomic credit ledger, concurrency locks, and UTC calendar streak engine
   },
 
@@ -56,13 +57,13 @@ export const INTERNAL_VERSIONS = {
     achievements: 3, // incl. LoreWards / Wiki Awards; v3: moved into the Vault, nation achievements rebuilt around live MyCountry systems (real-time floors), new Wiki, Community, Cards, Lorewards and cross-platform achievements, Legacy achievements, tiered Loreward payouts with trophy cards; v2: automatic collector resync on page load
     stash: 1, // save-for-later wiki articles (was "LoreStash")
     repository: 2, // WikiOS Commons image explorer
-    halo: 6, // global contextual overlay (was "Dynamic Island"); v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution; v6: standard chrome glass with no glow
+    halo: 7, // global contextual overlay (was "Dynamic Island"); v7: layout-animated island morph with Reduce Motion and nav activity, sidebar-derived command palette and NavTray, "On this page" plugin commands, and open-realm search; v6: standard chrome glass with no glow; v5: modular views directory, comprehensive multi-domain command palette, keyword synonym indexing, and in-palette system execution
     onoma: 4, // name generation + linguistics studio; v4: codebase modularization, custom studio advanced conlang & phonotactics constraints
   },
 
   // Design system.
   design: {
-    facet: 4, // v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
+    facet: 6, // v6: global OS pass across every first-party app, editor, modal, and sheet, facet-chrome-subtle editor chrome, Facet style ratchets; v5: the Lens layer (refractive liquid glass with dispersion, FacetMaterial layer="lens"), scroll-linked hero depth; v4: five layers (canvas, pane, well, chrome, overlay), content types, tinted canvas, one layers.css (docs/reference/facet-design-system.md)
   },
 
   // WikiOS sub-systems (nested, not top-level).
@@ -80,11 +81,11 @@ export const VERSIONS = {
   platform: {
     major: 1,
     minor: 0,
-    patch: 3,
+    patch: 7,
     release: "Lobster Crosby",
     channel: "Stable" as ReleaseChannel,
   },
-  apps: { ixworld: 1, wikios: 1, ixvault: 1 },
+  apps: { ixworld: 1, wikios: 1, ixvault: 1, exchange: 2 },
   engines: INTERNAL_VERSIONS.engines,
   systems: {
     mycountry: 1,
@@ -93,10 +94,10 @@ export const VERSIONS = {
     achievements: 1,
     stash: 1,
     repository: 1,
-    halo: 1,
+    halo: 2,
     onoma: 1,
   },
-  design: { facet: 1 },
+  design: { facet: 3 },
   subSystems: { canvas: 1 },
   build: BUILD_VERSION,
 } as const;
@@ -195,6 +196,7 @@ export function getChannelStatus(channel: ReleaseChannel): ChannelStatus {
 export const IXWORLD_VERSION = String(VERSIONS.apps.ixworld);
 export const WIKIOS_VERSION = String(VERSIONS.apps.wikios);
 export const IXVAULT_VERSION = String(VERSIONS.apps.ixvault);
+export const EXCHANGE_VERSION = String(VERSIONS.apps.exchange);
 
 // IxForum is NOT independently versioned yet — it inherits the platform
 // version (Major.Minor) until it is promoted to a first-class App.

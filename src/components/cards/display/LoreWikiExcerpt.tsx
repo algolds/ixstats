@@ -7,12 +7,9 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
-import {
-  OpenNewWindow as ExternalLink,
-  OpenBook as BookOpen,
-  SystemRestart as Loader2,
-} from "iconoir-react";
+import { OpenNewWindow as ExternalLink, OpenBook as BookOpen } from "iconoir-react";
 import { api } from "~/trpc/react";
+import { Skeleton } from "~/components/ui/skeleton";
 import { WikiLinkPreview, WikiHtmlContent } from "~/components/wiki-os/reader/WikiLinkPreview";
 import { cardSourceLabel, parseCardWikiSource } from "~/lib/cards/card-sources";
 import { parseWikitextToPreviewHtml } from "~/lib/wiki-os/transformers/wikitext-preview";
@@ -65,9 +62,10 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
       </h4>
 
       {isLoading && !storedExcerpt ? (
-        <div className="text-label-secondary text-footnote flex items-center gap-2 py-4">
-          <Loader2 className="text-tint h-3.5 w-3.5 animate-spin" />
-          Loading article excerpt...
+        <div aria-busy className="space-y-2 py-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-2/3" />
         </div>
       ) : excerptText ? (
         <div className="text-label-secondary text-callout max-h-80 space-y-2 overflow-y-auto pr-1 leading-relaxed">
@@ -83,7 +81,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
             href={wikiUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-tint text-footnote inline-flex items-center gap-2 font-semibold hover:underline"
+            className="text-tint-ink text-subhead inline-flex items-center gap-1.5 hover:underline"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             View the file page
@@ -108,7 +106,7 @@ export const LoreWikiExcerpt = React.memo<LoreWikiExcerptProps>(({ card, wikiUrl
           <span className="inline-flex flex-wrap items-center gap-x-3 pt-1">
             <Link
               href={wikiUrl}
-              className="text-tint text-footnote inline-flex items-center gap-2 font-semibold hover:underline"
+              className="text-tint-ink text-subhead inline-flex items-center gap-1.5 hover:underline"
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Read the full article

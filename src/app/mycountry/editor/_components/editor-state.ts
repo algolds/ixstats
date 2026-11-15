@@ -84,6 +84,7 @@ export function withSection(
         baselineGdpPerCapita: source.baselineGdpPerCapita,
         currentPopulation: source.currentPopulation,
         currentGdpPerCapita: source.currentGdpPerCapita,
+        currentTotalGdp: source.currentTotalGdp,
       };
     case "figures":
       return {
@@ -92,6 +93,13 @@ export function withSection(
         unemploymentRate: source.unemploymentRate,
         totalDebtGDPRatio: source.totalDebtGDPRatio,
         figureEstimates: source.figureEstimates,
+      };
+    case "taxes":
+    case "tariffs":
+      return {
+        ...target,
+        fiscalSystem: source.fiscalSystem,
+        economicProfile: source.economicProfile,
       };
     default:
       return target;

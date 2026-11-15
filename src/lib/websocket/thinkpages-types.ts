@@ -19,17 +19,35 @@ export interface TypingIndicator {
   timestamp: number;
 }
 
-export interface MessageUpdate {
-  documentId: string | undefined;
-  id: string;
-  type: "message:new" | "message:updated" | "message:deleted" | "message:read";
+/** A message event as the server broadcasts it to a room (and through the Redis bridge). */
+export interface ThinkPagesMessageEvent {
+  type: "message:new" | "message:updated" | "message:deleted";
   conversationId?: string;
   groupId?: string;
   messageId: string;
   accountId: string;
   content?: string;
   timestamp: number;
-  readBy?: string[];
+  /**
+   * Clerk ids allowed to receive this event. When set, only those users' sockets in the room get
+   * it (the sender filtered out blockers and pending requests); unset means every room member.
+   */
+  recipientIds?: string[];
+}
+
+/** What the server emits on `message:update`: the event wrapped, which the client hook unwraps. */
+export interface MessageUpdateEnvelope {
+  type: "message:update";
+  data: ThinkPagesMessageEvent;
+  timestamp: number;
+  channel: string;
+}
+
+/** A lightweight "something arrived in this thread" ping to a recipient's user room: no content. */
+export interface InboxUpdate {
+  type: "inbox:update";
+  conversationId: string;
+  timestamp: number;
 }
 
 interface GroupUpdate {
@@ -82,7 +100,10 @@ export interface ThinkPagesWebSocketHookOptions {
   subscribeToPresence?: boolean;
   onPresenceUpdate?: (update: PresenceUpdate) => void;
   onTypingUpdate?: (update: TypingIndicator) => void;
-  onMessageUpdate?: (update: MessageUpdate) => void;
+  /** Receives the unwrapped event (`message:new`, `message:updated` or `message:deleted`). */
+  onMessageUpdate?: (event: ThinkPagesMessageEvent) => void;
+  /** A thread the user is not viewing got a message (the inbox should refresh). */
+  onInboxUpdate?: (update: InboxUpdate) => void;
   onGroupUpdate?: (update: GroupUpdate) => void;
   onConversationUpdate?: (update: ConversationUpdate) => void;
   onReadReceipt?: (receipt: ReadReceipt) => void;

@@ -18,17 +18,17 @@
 
 process.env.SKIP_ENV_VALIDATION = "1";
 
-import { PrismaClient } from "@prisma/client";
 import * as fs from "fs";
 import * as path from "path";
 import * as https from "https";
 import * as http from "http";
 import { fileURLToPath } from "url";
+import { createPrismaClient } from "~/server/prisma-client";
 
 const __filename_local = fileURLToPath(import.meta.url);
 const __dirname_local = path.dirname(__filename_local);
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 const WIKI_API = "https://ixwiki.com/api.php";
 const USER_AGENT = "IxStats-Builder";

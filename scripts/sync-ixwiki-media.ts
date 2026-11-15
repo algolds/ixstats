@@ -6,17 +6,12 @@
  */
 
 import "./lib/load-env"; // first: the config below reads process.env when it loads
-import { PrismaClient } from "@prisma/client";
+
 import { MediaAssetService } from "../src/lib/wiki-os/core/media-asset-service";
 import { DEFAULT_USER_AGENT, mediaWikiApiUrl, mediaWikiOrigin } from "../src/lib/wiki-os/config";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
-    },
-  },
-});
+const prisma = createPrismaClient({ url: process.env.DATABASE_URL });
 
 // The wiki's address comes from the one WikiOS config object (src/lib/wiki-os/config.ts).
 const API_URL = mediaWikiApiUrl({ internal: true });

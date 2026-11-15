@@ -87,9 +87,11 @@ function ToolSeparator({ horizontal }: { horizontal?: boolean }) {
 }
 
 function toolButtonClass(horizontal: boolean | undefined, isActive: boolean, isDisabled: boolean) {
-  return `${horizontal ? "h-8 w-8" : "h-9 w-9"} ${isActive ? "" : "text-label-secondary"} ${
-    isDisabled ? "opacity-30" : ""
-  }`;
+  return `${horizontal ? "h-8 w-8" : "h-9 w-9"} ${
+    isActive
+      ? "bg-tint text-on-tint hover:bg-tint-hover hover:text-on-tint"
+      : "text-label-secondary"
+  } ${isDisabled ? "opacity-30" : ""}`;
 }
 
 interface RailButtonProps {
@@ -125,7 +127,7 @@ function SingleToolButton({
       disabled={isToolDisabled}
     >
       <Button
-        variant={isActive ? "default" : "ghost"}
+        variant="ghost"
         size="icon"
         onClick={() => onModeChange(tool.mode === mode ? "view" : tool.mode)}
         disabled={isToolDisabled}
@@ -183,7 +185,7 @@ function GroupToolButton({
       >
         <PopoverTrigger asChild>
           <Button
-            variant={isActive ? "default" : "ghost"}
+            variant="ghost"
             size="icon"
             onClick={handleClick}
             onMouseDown={() => {
@@ -222,13 +224,17 @@ function GroupToolButton({
             return (
               <Button
                 key={subTool.mode}
-                variant={isSubActive ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => {
                   onModeChange(subTool.mode);
                   setIsOpen(false);
                 }}
-                className={`w-full justify-between px-2 ${isSubActive ? "" : "text-label-secondary"}`}
+                className={`w-full justify-between px-2 ${
+                  isSubActive
+                    ? "bg-tint text-on-tint hover:bg-tint-hover hover:text-on-tint"
+                    : "text-label-secondary"
+                }`}
               >
                 <div className="flex items-center gap-2">
                   <SubIcon aria-hidden />
@@ -261,8 +267,8 @@ export const MapEditorToolbar = memo(function MapEditorToolbar({
   const activeMode = mode.startsWith("edit-") ? "view" : mode;
 
   const containerClass = horizontal
-    ? "flex h-10 items-center gap-0.5 rounded-none px-1"
-    : "flex h-full w-10 flex-col items-center gap-0.5 rounded-none py-1";
+    ? "facet-chrome-subtle pointer-events-auto flex h-10 items-center gap-0.5 rounded-none border-x-0 border-b-0 px-1 shadow-none"
+    : "facet-chrome-subtle pointer-events-auto flex h-full w-10 flex-col items-center gap-0.5 rounded-none border-y-0 border-l-0 py-1 shadow-none";
 
   const railItems = useMemo(() => {
     const items = getPlugins().flatMap((p) => p.toolbarItems || []);

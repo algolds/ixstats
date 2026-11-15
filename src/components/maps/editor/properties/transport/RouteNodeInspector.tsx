@@ -1,8 +1,8 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { memo, useState, useMemo } from "react";
 import {
   NavArrowLeft as ArrowLeft,
@@ -39,9 +39,6 @@ const STATUS_OPTIONS = [
   { value: "planned", label: "Planned" },
   { value: "abandoned", label: "Abandoned" },
 ];
-
-const INPUT_BASE =
-  "border-separator bg-surface text-label focus:border-tint rounded-control-sm text-footnote w-full border focus:outline-none";
 
 interface RouteForm {
   name: string;
@@ -120,7 +117,7 @@ function VertexList({
         return (
           <div
             key={idx}
-            className="group bg-surface hover:bg-surface text-footnote rounded-control-sm flex items-center justify-between px-2 py-1 transition"
+            className="group bg-fill-4 hover:bg-fill-3 text-footnote rounded-control-sm flex items-center justify-between px-2 py-1 transition-colors"
           >
             <div className="flex min-w-0 items-center gap-2">
               <MapPin
@@ -134,7 +131,7 @@ function VertexList({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <span className="text-label-secondary text-footnote font-mono tabular-nums">
+              <span className="text-label-secondary text-footnote font-data tabular-nums">
                 {coord[0].toFixed(4)}°, {coord[1].toFixed(4)}°
               </span>
               {onFlyToCoords && (
@@ -221,24 +218,24 @@ function RouteMetadataFields({
   const { name, routeType, status, isInternational, speedKmh } = form;
   const activeStyle = ROUTE_STYLES[routeType] ?? {
     label: routeType,
-    color: "var(--color-slate-400)",
+    color: "var(--color-label-tertiary)",
   };
 
   return (
     <div className="space-y-2">
       <div className="space-y-1">
-        <Eyebrow className="block">Route name</Eyebrow>
-        <input
+        <span className="text-caption text-label-secondary block">Route name</span>
+        <Input
           type="text"
           value={name}
           onChange={(e) => onChange({ name: e.target.value })}
           placeholder="Route name"
-          className={`${INPUT_BASE} placeholder:text-label-secondary px-3 py-2`}
+          className="rounded-control-sm text-footnote h-8 px-2.5"
         />
       </div>
 
       <div className="space-y-1">
-        <Eyebrow className="block">Route Sub-Type</Eyebrow>
+        <span className="text-caption text-label-secondary block">Route subtype</span>
         <div className="relative">
           <OptionSelect
             aria-label="Route type"
@@ -257,7 +254,7 @@ function RouteMetadataFields({
 
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1">
-          <Eyebrow className="block">Status</Eyebrow>
+          <span className="text-caption text-label-secondary block">Status</span>
           <OptionSelect
             aria-label="Status"
             value={status}
@@ -269,8 +266,8 @@ function RouteMetadataFields({
         </div>
 
         <div className="space-y-1">
-          <Eyebrow className="block">Design Speed (km/h)</Eyebrow>
-          <input
+          <span className="text-caption text-label-secondary block">Design speed (km/h)</span>
+          <Input
             type="number"
             min={5}
             max={2000}
@@ -279,7 +276,7 @@ function RouteMetadataFields({
               onChange({ speedKmh: e.target.value ? Number(e.target.value) : undefined })
             }
             placeholder={String(baseSpeed)}
-            className={`${INPUT_BASE} px-2 py-2 tabular-nums`}
+            className="rounded-control-sm text-footnote h-8 px-2.5 tabular-nums"
           />
         </div>
       </div>
@@ -438,7 +435,9 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
           <ArrowLeft className="h-3 w-3" />
           <span>All routes</span>
         </Button>
-        <Eyebrow>{currentVertices.length} Nodes</Eyebrow>
+        <span className="text-caption text-label-secondary tabular-nums">
+          {currentVertices.length} nodes
+        </span>
       </div>
 
       <RouteMetadataFields form={form} onChange={patch} baseSpeed={baseSpeed} />
@@ -458,8 +457,10 @@ export const RouteNodeInspector = memo(function RouteNodeInspector({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Eyebrow className="block">Path vertices & nodes</Eyebrow>
-          <span className="text-label-secondary text-footnote">
+          <span className="text-caption text-label-secondary block font-medium">
+            Path vertices & nodes
+          </span>
+          <span className="text-label-secondary text-footnote tabular-nums">
             {currentVertices.length} points
           </span>
         </div>

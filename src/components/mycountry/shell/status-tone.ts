@@ -8,7 +8,7 @@ export type StatusTone = "critical" | "warning" | "accent" | "neutral";
 /** Text colour for a status label or glyph. */
 export const STATUS_TEXT: Record<StatusTone, string> = {
   critical: "text-destructive",
-  warning: "text-orange",
+  warning: "text-warning",
   accent: "text-tint",
   neutral: "text-label-secondary",
 };

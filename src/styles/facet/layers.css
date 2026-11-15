@@ -76,6 +76,34 @@
   }
 }
 
+/* 3b · Subtler Chrome for dense full-bleed editors (Map Editor, Atlas Studio): thinner frost,
+   quieter blur and saturation, lighter hairline and softer shadow than facet-chrome, while keeping
+   secondary labels vibrant over any map backdrop and going opaque under Reduce Transparency and
+   Increase Contrast. */
+@utility facet-chrome-subtle {
+  --color-label-secondary: var(--color-label-vibrant-secondary);
+  background-color: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(12px) saturate(125%);
+  backdrop-filter: blur(12px) saturate(125%);
+  border: 1px solid color-mix(in srgb, var(--color-label) 7%, transparent);
+  --tw-shadow: var(--shadow-card);
+  box-shadow:
+    var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000),
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000),
+    var(--tw-shadow, 0 0 #0000);
+  @variant transparency-reduced {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface);
+    border-color: var(--color-separator-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
 /* 4 · Dialogs, sheets, popovers, menus and tooltips. Dialogs and sheets sit over a scrim;
    popovers, menus and tooltips float without one. */
 @utility facet-overlay {
@@ -141,27 +169,132 @@
   }
 }
 
-/* Fills carry the app tint. The neutral fills (Input, the SegmentedControl track and thumb, secondary and ghost
-   buttons, hovers, toolbars) read as sterile grey on the tinted canvas; here each is the same strength of an ink that
-   is the tint pulled toward the label, recomposed at every [data-app] scope as --tint-fill is in tokens.css. Light
-   fills darken toward ink, dark fills lighten toward it. Under Increase Contrast the tint is already stronger. */
+/* Neutral Apple fills across all [data-app] scopes so controls, tracks, and hover states never
+   pick up a yellow/amber or warm-taupe cast from the surrounding app tint. */
 @layer base {
   :root,
   [data-app] {
-    --fill-ink: color-mix(in srgb, var(--tint) 40%, rgb(9 9 11));
+    --fill-ink: rgb(9 9 11);
     --color-fill: color-mix(in srgb, var(--fill-ink) 16%, transparent);
     --color-fill-2: color-mix(in srgb, var(--fill-ink) 12%, transparent);
     --color-fill-3: color-mix(in srgb, var(--fill-ink) 8%, transparent);
     --color-fill-4: color-mix(in srgb, var(--fill-ink) 5%, transparent);
-    --color-control-thumb: color-mix(in srgb, var(--tint) 6%, #ffffff);
+    --color-control-thumb: #ffffff;
   }
   :root[data-theme="dark"],
   :root[data-theme="dark"] [data-app] {
-    --fill-ink: color-mix(in srgb, var(--tint) 45%, rgb(244 244 245));
+    --fill-ink: rgb(244 244 245);
     --color-fill: color-mix(in srgb, var(--fill-ink) 24%, transparent);
     --color-fill-2: color-mix(in srgb, var(--fill-ink) 18%, transparent);
     --color-fill-3: color-mix(in srgb, var(--fill-ink) 12%, transparent);
     --color-fill-4: color-mix(in srgb, var(--fill-ink) 8%, transparent);
-    --color-control-thumb: color-mix(in srgb, var(--fill-ink) 26%, transparent);
+    --color-control-thumb: rgba(244, 244, 245, 0.24);
+  }
+}
+
+/* One layer of the Ixnay monogram: a tile from public/images/ix-monogram-*.svg painted lightly in
+   its app's tint, so set data-app on the element. Stack the layers (they share one lattice). The
+   component sets --monogram to the tile's url() (base-path aware). --monogram-strength lightens it
+   for a quieter texture than the hero's. Off under Reduce Transparency and Increase Contrast. */
+@utility facet-monogram {
+  background-color: color-mix(in srgb, var(--tint) var(--monogram-strength, 11%), transparent);
+  mask-image: var(--monogram);
+  mask-size: 280px 140px;
+  mask-repeat: repeat;
+  @variant transparency-reduced {
+    background-color: transparent;
+  }
+  @variant contrast-more {
+    background-color: transparent;
+  }
+}
+
+/* 5 · Lens: refractive glass over a decorative backdrop (LensCard for cards, FacetMaterial
+   layer="lens" for other panels, Card variant="lens" under LensSurface). It bends what lies under its
+   edges, splits the colours there and leaves its middle clear, with a light rim along the top. The
+   refraction is the one shared SVG filter #facet-lens, rendered once in the root layout
+   (components/ui/facet/shared/LensFilter.tsx); Chromium applies it, other engines show a plain frosted
+   pane. Keep it out of any ancestor with opacity, a filter or a mask, or its backdrop ends there.
+   Solid under Reduce Transparency and Increase Contrast. --lens-frost and --lens-diffuse are set only
+   by facet-lens-frosted, --lens-refraction only by facet-lens-flat. */
+@utility facet-lens {
+  background-color: color-mix(in srgb, var(--color-surface) var(--lens-frost, 40%), transparent);
+  backdrop-filter: var(--lens-refraction, url(#facet-lens)) var(--lens-diffuse,);
+  border: 1px solid var(--glass-hairline);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / calc(0.55 * var(--shadow-strength, 1))),
+    inset 0 -1px 0 0 rgb(0 0 0 / calc(0.04 * var(--shadow-strength, 1))),
+    0 8px 24px -12px rgb(0 0 0 / calc(0.18 * var(--shadow-strength, 1)));
+  @variant transparency-reduced {
+    background-color: var(--color-surface);
+    backdrop-filter: none;
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface);
+    backdrop-filter: none;
+  }
+}
+
+/* On an ancestor of Lens cards over the plain canvas (the front page feed): the same frost and rim,
+   no bend. Over a smooth wash the refraction moves nothing you can see, and the filter is the Lens's
+   whole cost: about a quarter of a scrolling frame for the feed's cards. Not with facet-lens-frosted. */
+@utility facet-lens-flat {
+  --lens-refraction: none;
+}
+
+/* With facet-lens, for text over busy imagery (a map, a photo): Apple's regular glass where the plain
+   Lens is its clear glass. The rim refracts the same; the body is thicker and lightly blurred so text
+   holds over anything, and secondary labels go vibrant as on Chrome. */
+@utility facet-lens-frosted {
+  --lens-frost: var(--lens-frosted-fill);
+  --lens-diffuse: blur(12px) saturate(150%);
+  --color-label-secondary: var(--color-label-vibrant-secondary);
+}
+
+/* 6 · Neutral Lens glass control (`Button variant="glass"`): clear/frosted elevated surface with a
+   pure white top specular rim, crisp glass hairline and neutral contact shadow. Paint-only and
+   free of backdrop-filter so it never stacks a second blur inside a LensCard or Sheet, with zero
+   tint wash, gradient or coloured glow. Solid under Reduce Transparency and Increase Contrast. */
+@utility facet-glass-cta {
+  background-color: color-mix(in srgb, var(--color-surface-elevated) 78%, var(--color-fill-4));
+  color: var(--color-label);
+  border: 1px solid color-mix(in srgb, var(--color-label) 12%, transparent);
+  box-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / calc(0.65 * var(--shadow-strength, 1))),
+    inset 0 -1px 0 0 rgb(0 0 0 / calc(0.05 * var(--shadow-strength, 1))),
+    0 1px 2px 0 rgb(0 0 0 / calc(0.06 * var(--shadow-strength, 1))),
+    0 2px 6px -1px rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 70%, var(--color-fill-2));
+      border-color: color-mix(in srgb, var(--color-label) 18%, transparent);
+    }
+  }
+  &:active {
+    background-color: color-mix(in srgb, var(--color-surface-elevated) 65%, var(--color-fill));
+    box-shadow: inset 0 1px 2px 0 rgb(0 0 0 / calc(0.08 * var(--shadow-strength, 1)));
+  }
+  @variant transparency-reduced {
+    background-color: var(--color-surface-elevated);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: color-mix(in srgb, var(--color-surface-elevated) 90%, var(--color-label));
+      }
+    }
+    &:active {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 84%, var(--color-label));
+    }
+  }
+  @variant contrast-more {
+    background-color: var(--color-surface-elevated);
+    border-color: var(--color-separator-opaque);
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        background-color: color-mix(in srgb, var(--color-surface-elevated) 90%, var(--color-label));
+      }
+    }
+    &:active {
+      background-color: color-mix(in srgb, var(--color-surface-elevated) 84%, var(--color-label));
+    }
   }
 }

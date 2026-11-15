@@ -21,6 +21,7 @@ import { resolveDispute } from "~/lib/exchange/contracts";
 import { runExchangeMarketTick } from "~/lib/exchange/market";
 import { listDisputes } from "~/lib/exchange/queries";
 import { setSectorDmModifier } from "~/lib/exchange/sectors";
+import { withJobLock } from "~/lib/system/job-lock";
 import { guard } from "./_errors";
 
 const bounded = (field: keyof ExchangeConfig) =>
@@ -63,7 +64,18 @@ export const exchangeAdminRouter = createTRPCRouter({
   ),
 
   adminRunMarketTick: adminProcedure.mutation(({ ctx }) =>
-    guard("run the market tick", () => runExchangeMarketTick(ctx.db))
+    guard("run the market tick", async () => {
+      const locked = await withJobLock(
+        ctx.db,
+        "exchange-market",
+        () => runExchangeMarketTick(ctx.db),
+        { timeoutMs: 30 * 60_000 }
+      );
+      if (!locked.ran) {
+        throw new ExchangeError("CONFLICT", "The market tick is already running");
+      }
+      return locked.result;
+    })
   ),
 
   adminSetSectorDmModifier: adminProcedure

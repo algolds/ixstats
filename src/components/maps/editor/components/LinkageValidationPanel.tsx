@@ -1,5 +1,6 @@
 "use client";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import React, { useState } from "react";
 import { Refresh as RefreshCw, MagicWand as Wand2 } from "iconoir-react";
 import { cn } from "~/lib/utils";
@@ -136,8 +137,10 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
     <div className="text-footnote space-y-4 p-3">
       <Card className="flex items-center justify-between p-3">
         <div className="space-y-0.5">
-          <span className="text-stat-label text-label-secondary block">Issues / Desyncs</span>
-          <span className="text-label text-title-2">{validationData?.issues?.length ?? 0}</span>
+          <span className="text-caption text-label-secondary block">Issues / desyncs</span>
+          <span className="text-label text-title-2 tabular-nums">
+            {validationData?.issues?.length ?? 0}
+          </span>
         </div>
         <div className="flex gap-1">
           <Button
@@ -239,12 +242,12 @@ export const LinkageValidationPanel = React.memo(function LinkageValidationPanel
           {validationTab === "features" && featureList && (
             <div className="space-y-2">
               <div className="flex gap-1">
-                <input
+                <Input
                   type="text"
                   placeholder="Search features..."
                   value={featureSearch}
                   onChange={(e) => setFeatureSearch(e.target.value)}
-                  className="bg-surface border-separator focus:ring-tint text-footnote rounded-control-sm w-full border px-2 py-1 focus:ring-1 focus:outline-none"
+                  className="text-footnote rounded-control-sm h-7 flex-1 px-2"
                 />
                 <OptionSelect
                   aria-label="Filter features"

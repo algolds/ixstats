@@ -1,3 +1,4 @@
+import { createPrismaClient } from "../src/server/prisma-client";
 /**
  * seed-blurbs.ts — Seed the BlurbPrompt table with curated prompts
  * derived from the #lore-prompts Discord channel (2022–2025).
@@ -5,9 +6,7 @@
  * Run: npx tsx prisma/seed-blurbs.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 const SYSTEM_USER_ID = "system";
 

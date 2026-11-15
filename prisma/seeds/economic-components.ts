@@ -7,10 +7,10 @@
  * Run with: npx tsx prisma/seeds/economic-components.ts
  */
 
-import { PrismaClient } from "@prisma/client";
 import { ATOMIC_ECONOMIC_COMPONENTS } from "../../src/lib/economy/atomic-data";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 /**
  * Extract icon name from React component

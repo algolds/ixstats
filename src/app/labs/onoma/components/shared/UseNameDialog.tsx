@@ -21,7 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { FacetList, FacetListSection, FacetRow } from "~/components/ui/facet-list";
 
 interface UseNameDialogProps {
@@ -138,7 +137,7 @@ export function UseNameDialog({ isOpen, onClose, name, category }: UseNameDialog
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <Eyebrow>Deploy entity name</Eyebrow>
+          <span className="text-caption text-label-secondary">Deploy entity name</span>
           <DialogTitle className="text-title-3 select-all">{name}</DialogTitle>
           <DialogDescription>
             Deploy this generated name to one of the following creation forms:

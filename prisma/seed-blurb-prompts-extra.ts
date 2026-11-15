@@ -1,11 +1,10 @@
+import { createPrismaClient } from "../src/server/prisma-client";
 /**
  * seed-blurb-prompts-extra.ts — Add missing prompts from Discord #lore-prompts (2021-2022 era).
  * Run: npx tsx prisma/seed-blurb-prompts-extra.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 const PROMPTS = [
   {

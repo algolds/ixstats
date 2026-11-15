@@ -173,7 +173,9 @@ export function DocumentLayout({ meta, sections, back, children }: DocumentLayou
                     >
                       <span
                         className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                          isActive ? "bg-tint" : "bg-muted-foreground/40 group-hover:bg-foreground"
+                          isActive
+                            ? "bg-tint"
+                            : "bg-muted-foreground/40 group-hover:bg-primary-fill"
                         }`}
                       />
                       <span className="min-w-0 flex-1 leading-snug">{section.title}</span>

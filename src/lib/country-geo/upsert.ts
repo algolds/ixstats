@@ -1,5 +1,9 @@
 import { getTerrainAtPoint } from "./base-layer-query";
 import { geometryAreaSqKm } from "~/lib/maps/geo-math";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
 import { DEFAULT_REALM_ID } from "~/lib/realms/realm-ids";
 import {
   findSubdivisionAtPoint,
@@ -81,7 +85,6 @@ const CITY_FIELDS = [
   "coordinates",
   "population",
   "subdivisionId",
-  "wikiPageTitle",
   "gdpContribution",
   "economyOutput",
   "specialization",
@@ -111,6 +114,7 @@ async function updateExistingCity(db: any, countryId: string, data: any) {
     where: { id: data.id },
     data: {
       ...pickFields(data, CITY_FIELDS),
+      ...normalizeFeatureWikiUpdate(data, existing),
       type: data.type,
       isNationalCapital: isCapital,
       isSubdivisionCapital: data.isSubdivisionCapital,
@@ -147,6 +151,7 @@ async function createCity(db: any, countryId: string, data: any, autoElevation?:
     data: {
       countryId,
       ...pickFields(data, CITY_FIELDS),
+      ...normalizeFeatureWikiCreate(data),
       type: data.type || "city",
       isNationalCapital: !!data.isNationalCapital,
       isSubdivisionCapital: !!data.isSubdivisionCapital,
@@ -385,7 +390,7 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
         icon: data.icon,
         coordinates: data.coordinates,
         description: data.description,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiUpdate(data, existing),
         subdivisionId: data.subdivisionId,
         status: "approved",
       },
@@ -399,7 +404,7 @@ export async function upsertPoi(db: any, countryId: string, data: any): Promise<
         icon: data.icon,
         coordinates: data.coordinates,
         description: data.description,
-        wikiPageTitle: data.wikiPageTitle,
+        ...normalizeFeatureWikiCreate(data),
         subdivisionId: data.subdivisionId,
         status: "approved",
         submittedBy: data.submittedBy || "owner",

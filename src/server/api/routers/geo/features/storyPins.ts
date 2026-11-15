@@ -9,6 +9,11 @@ import { realmScopeInput, viewerRealmId } from "~/server/api/trpc/realm-scope";
 import { GEO_FEATURE_INVALIDATE_KEYS_WITH_STORY_PINS, invalidateCache } from "~/lib/cache";
 import { broadcastMapUpdate } from "~/lib/maps/map-update-bus";
 import { validatePointContainment, checkNameUniqueness } from "~/lib/maps/geo-validation";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 import { assertStorylineInCountry } from "./storylines";
 
@@ -41,6 +46,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
         ixTimeYear: z.number().int().optional(),
         eraLabel: z.string().max(100).optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
         photos: z.array(z.string().url()).max(10).optional(),
         thumbnailUrl: z.string().url().optional(),
         icon: z.string().optional(),
@@ -74,7 +80,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           coordinates: input.coordinates,
           ixTimeYear: input.ixTimeYear,
           eraLabel: input.eraLabel,
-          wikiPageTitle: input.wikiPageTitle,
+          ...normalizeFeatureWikiCreate(input),
           photos: input.photos ?? [],
           thumbnailUrl: input.thumbnailUrl,
           icon: input.icon,
@@ -141,6 +147,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
         ixTimeYear: z.number().int().nullable().optional(),
         eraLabel: z.string().max(100).nullable().optional(),
         wikiPageTitle: z.string().max(200).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
         photos: z.array(z.string().url()).max(10).optional(),
         thumbnailUrl: z.string().url().nullable().optional(),
         icon: z.string().nullable().optional(),
@@ -150,7 +157,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       assertOwnCountry(ctx, input.countryId);
-      assertFound(
+      const existing = assertFound(
         await ctx.db.storyPin.findFirst({
           where: { id: input.pinId, countryId: input.countryId },
         }),
@@ -190,7 +197,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
           ...(input.coordinates && { coordinates: input.coordinates }),
           ...(input.ixTimeYear !== undefined && { ixTimeYear: input.ixTimeYear }),
           ...(input.eraLabel !== undefined && { eraLabel: input.eraLabel }),
-          ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
+          ...normalizeFeatureWikiUpdate(input, existing),
           ...(input.photos && { photos: input.photos }),
           ...(input.thumbnailUrl !== undefined && { thumbnailUrl: input.thumbnailUrl }),
           ...(input.icon !== undefined && { icon: input.icon }),
@@ -256,7 +263,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
       if (pin.wikiPageTitle) {
         try {
           const { enrichFromWiki } = await import("~/lib/maps/story-pin-enrichment");
-          wikiEnrichment = await enrichFromWiki(pin.wikiPageTitle);
+          wikiEnrichment = await enrichFromWiki(pin.wikiPageTitle, pin.wikiSource);
         } catch {
           // Wiki enrichment is best-effort
         }
@@ -337,6 +344,7 @@ export const geoFeaturesStoryPinsRouter = createTRPCRouter({
               ixTimeYear: p.ixTimeYear,
               eraLabel: p.eraLabel,
               wikiPageTitle: p.wikiPageTitle,
+              wikiSource: p.wikiSource,
               icon: p.icon,
               thumbnailUrl: p.thumbnailUrl,
               countryId: p.countryId,

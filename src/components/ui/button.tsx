@@ -25,6 +25,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary-fill text-on-primary hover:bg-primary-fill-hover active:opacity-80",
+        glass:
+          "facet-glass-cta transition-[color,background-color,border-color,outline-color,box-shadow,opacity]",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/80",
         outline:

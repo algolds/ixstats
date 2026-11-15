@@ -12,19 +12,31 @@ export function formatBadgeCount(count: number): string {
 
 interface HaloIconButtonProps {
   label: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Optional circular avatar image URL rendered instead of `icon` (e.g. Clerk portrait). */
+  iconSrc?: string | null;
   onClick: () => void;
   badge?: number;
   iconClassName?: string;
+  /** The view this button opens; marks it as a dialog trigger and the target for focus return. */
+  triggerFor?: string;
+  /** Optional platform shortcut hint rendered inside the tooltip (`⌘K`, `⌘,`). */
+  shortcut?: string;
+  /** Toggle disclosure state for non-dialog popovers such as `NavTray`. */
+  expanded?: boolean;
 }
 
 /** A compact Halo action: 28px on fine pointers, 44px wide on touch so neighbouring hit areas meet without overlap. */
 export function HaloIconButton({
   label,
   icon: Icon,
+  iconSrc,
   onClick,
   badge,
   iconClassName,
+  triggerFor,
+  shortcut,
+  expanded,
 }: HaloIconButtonProps) {
   const unread = badge ?? 0;
   const hasBadge = unread > 0;
@@ -37,9 +49,23 @@ export function HaloIconButton({
           size="icon-sm"
           onClick={onClick}
           aria-label={hasBadge ? `${label}, ${unread} unread` : label}
+          aria-haspopup={triggerFor && expanded === undefined ? "dialog" : undefined}
+          aria-expanded={expanded}
+          data-halo-trigger={triggerFor}
           className="text-label-secondary hover:text-label hover:bg-fill-4 focus-visible:-outline-offset-2 pointer-coarse:w-11"
         >
-          <Icon className={cn("size-3.5", iconClassName)} />
+          {iconSrc ? (
+            <img
+              src={iconSrc}
+              alt=""
+              className={cn(
+                "ring-separator size-4 rounded-full object-cover ring-1",
+                iconClassName
+              )}
+            />
+          ) : (
+            <Icon className={cn("size-3.5", iconClassName)} />
+          )}
           {hasBadge && (
             <span
               aria-hidden="true"
@@ -51,7 +77,16 @@ export function HaloIconButton({
           )}
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
+      <TooltipContent side="bottom">
+        {shortcut ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span>{label}</span>
+            <kbd className="text-label-tertiary font-sans">{shortcut}</kbd>
+          </span>
+        ) : (
+          label
+        )}
+      </TooltipContent>
     </Tooltip>
   );
 }

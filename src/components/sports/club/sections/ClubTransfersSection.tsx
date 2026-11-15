@@ -47,9 +47,11 @@ export function ClubTransfersSection({
   const [searchQuery, setSearchQuery] = useState("");
   const [comparePlayer, setComparePlayer] = useState<ComparePlayerItem | null>(null);
 
+  // The server wants at least 2 trimmed characters
+  const trimmedQuery = searchQuery.trim();
   const { data: searchResults } = api.sports.searchSportsEntities.useQuery(
-    { query: searchQuery },
-    { enabled: searchQuery.length > 1 }
+    { query: trimmedQuery },
+    { enabled: trimmedQuery.length > 1 }
   );
 
   const { data: bidsData, refetch: refetchBids } = api.sports.getTeamBids.useQuery({ teamId });
@@ -219,7 +221,7 @@ export function ClubTransfersSection({
                         </span>
                       </PositionTooltip>{" "}
                       &middot; {l.player.team.name} &middot; OVR{" "}
-                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "—"}
+                      {(l.player.ratings as { overall?: number } | undefined)?.overall ?? "–"}
                     </p>
                     <p className="text-footnote text-tint mt-0.5 font-medium tabular-nums">
                       Asking Price: ₷{l.price}

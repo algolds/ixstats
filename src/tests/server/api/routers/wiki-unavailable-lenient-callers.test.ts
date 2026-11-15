@@ -3,8 +3,9 @@
 //
 // Callers outside WikiOS's read surfaces keep the outcome they had before sister reads threw WikiUnavailableError
 // (plan 2026-10-25 sister wikis, C3b): an unreachable wiki reads as a missing page there, by `unlessUnavailable`.
-// The map's wiki lookups try the next wiki, a lore card's excerpt is empty, a country's infobox parse is NOT_FOUND
-// and the wiki cache has no page. Any other error still fails.
+// The map's wiki lookups try the next wiki, a lore card's excerpt is empty and the wiki cache has no page. Any other
+// error still fails. A read of the one wiki someone picked (the builder's import, the map editor's wiki picker) says
+// why instead: SERVICE_UNAVAILABLE in the wiki's own words ("IIWiki is switched off for now.").
 jest.mock("~/env", () => ({ env: { DATABASE_URL: "file:./test.db", NODE_ENV: "test" } }));
 jest.mock("~/server/db", () => ({ __esModule: true, db: {}, isDatabaseReadOnly: true }));
 jest.mock("~/lib/wiki-os/adapters/mediawiki/bridge", () => ({
@@ -34,7 +35,6 @@ jest.mock("~/server/api/trpc/realm-scope", () => ({
 }));
 
 import { beforeEach, describe, expect, it } from "@jest/globals";
-import { TRPCError } from "@trpc/server";
 import {
   getArticleIntro,
   getArticleWikitext,
@@ -106,6 +106,25 @@ describe("the map's wiki lookups (geo.wiki)", () => {
     intro.mockImplementation(byWiki<WikiIntro | null>({ ixwiki: null, iiwiki: unreachable() }));
     await expect(geo().getFeatureWikiIntro({ wikiPageTitle: "Bashan" })).resolves.toBeNull();
     expect(intro).toHaveBeenLastCalledWith("Bashan", "iiwiki");
+  });
+
+  it("asks a feature's stored wikiSource directly even when IxWiki has a homonym", async () => {
+    intro.mockImplementation(
+      byWiki<WikiIntro | null>({
+        ixwiki: { title: "Lucrecia", text: "IxWiki homonym." },
+        iiwiki: { title: "Lucrecia", text: "IIWiki city." },
+      })
+    );
+
+    await expect(
+      geo().getFeatureWikiIntro({ wikiPageTitle: "Lucrecia", wiki: "iiwiki" })
+    ).resolves.toEqual({
+      extract: "IIWiki city.",
+      wikiSource: "iiwiki",
+      wikiUrl: "/wiki/Lucrecia?source=iiwiki",
+    });
+    expect(intro).toHaveBeenCalledTimes(1);
+    expect(intro).toHaveBeenCalledWith("Lucrecia", "iiwiki");
   });
 
   it("an infobox lookup of an unreachable wiki is not found, as a missing page", async () => {
@@ -184,18 +203,65 @@ describe("a lore card's wiki excerpt (cards.getWikiArticleExcerpt)", () => {
   });
 });
 
-describe("a country's infobox parse (countries.parseInfobox)", () => {
+describe("the builder's wiki import (countries.parseInfobox, countries.searchWiki)", () => {
   const countries = () => createCallerFactory(createTRPCRouter(wikiProcedures))(visitor());
+  const switchedOff = () => new WikiUnavailableError("IIWiki", "disabled");
 
-  it("is NOT_FOUND when the wiki is unreachable, as for a missing page", async () => {
-    shadow.mockRejectedValue(unreachable());
+  it("says the picked wiki is switched off, in its own words, not that the page is missing", async () => {
+    shadow.mockRejectedValue(switchedOff());
 
     const error = await countries()
       .parseInfobox({ pageName: "Unreached Land", site: "iiwiki" })
       .catch((e: Error) => e);
 
-    expect(error).toBeInstanceOf(TRPCError);
-    expect(error).toMatchObject({ code: "NOT_FOUND" });
+    expect(error).toMatchObject({ message: "IIWiki is switched off for now." });
+    expect(error).toMatchObject({ cause: { trpcCode: "SERVICE_UNAVAILABLE" } });
+  });
+
+  it("is NOT_FOUND for a page the picked wiki does not have", async () => {
+    shadow.mockResolvedValue(null);
+
+    await expect(
+      countries().parseInfobox({ pageName: "Nowhere", site: "iiwiki" })
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("the map editor's picked wiki (geo.wiki with `wiki`)", () => {
+  it("looks only in the picked wiki", async () => {
+    search.mockImplementation(
+      byWiki<WikiSearchResult[]>({
+        ixwiki: [{ title: "Aurelia (Wiki)", pageId: 1, length: 0 }],
+        iiwiki: [{ title: "Aurelia", pageId: 2, length: 0 }],
+      })
+    );
+    await expect(geo().searchWikiPages({ query: "Aur", wiki: "iiwiki" })).resolves.toMatchObject({
+      wikiSource: "iiwiki",
+      results: [{ title: "Aurelia", url: "/wiki/Aurelia?source=iiwiki" }],
+    });
+    expect(search).toHaveBeenCalledTimes(1);
+
+    wikitext.mockImplementation(byWiki<WikiArticle | null>({ ixwiki: PAGE, iiwiki: PAGE }));
+    await expect(
+      geo().parseWikiInfobox({ pageTitle: "Aurelia", wiki: "iiwiki" })
+    ).resolves.toMatchObject({ wikiSource: "iiwiki", pageUrl: "/wiki/Aurelia?source=iiwiki" });
+    expect(wikitext).toHaveBeenCalledTimes(1);
+  });
+
+  it("says the picked wiki is switched off instead of finding nothing", async () => {
+    search.mockRejectedValue(new WikiUnavailableError("IIWiki", "disabled"));
+    await expect(geo().searchWikiPages({ query: "Aur", wiki: "iiwiki" })).rejects.toThrow(
+      "IIWiki is switched off for now."
+    );
+
+    wikitext.mockRejectedValue(new WikiUnavailableError("IIWiki", "disabled"));
+    await expect(geo().parseWikiInfobox({ pageTitle: "Aurelia", wiki: "iiwiki" })).rejects.toThrow(
+      "IIWiki is switched off for now."
+    );
+  });
+
+  it("lists the realm's wikis for the picker: Wiki, then IIWiki for Ixnay", async () => {
+    await expect(geo().wikiSources({})).resolves.toEqual(["ixwiki", "iiwiki"]);
   });
 });
 

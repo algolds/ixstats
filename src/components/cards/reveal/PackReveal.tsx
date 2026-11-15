@@ -1,28 +1,41 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+} from "react";
 import Link from "next/link";
-import { motion } from "motion/react";
+import { animate, motion, useMotionValue } from "motion/react";
 import { api } from "~/trpc/react";
 import { useCardsRefresh } from "~/hooks/useCardsRefresh";
 import { cn } from "~/lib/utils/cn";
 import { focusedElement, refocus } from "~/lib/utils/focus";
-import { Button, focusRing } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "~/components/ui/dialog";
 import { useFacetReducedMotion } from "~/components/providers/FacetMotionConfig";
 import { CardFace } from "~/components/cards/face/CardFace";
 import { CardFaceDown } from "~/components/cards/face/CardFaceDown";
+import { CardFlip } from "~/components/cards/face/CardFlip";
+import { CardTilt } from "~/components/cards/face/CardTilt";
 import { PackHolographicCover } from "~/components/cards/pack-opening/PackHolographicCover";
 import { cardFaceLabel } from "~/lib/cards/face/accessible-name";
-import { nextFaceDown, rarestFace, revealBeatMs } from "~/lib/cards/face/reveal";
+import { nextFaceDown, rarestFace, revealBeatMs, revealShines } from "~/lib/cards/face/reveal";
 import type { CardFaceData } from "~/lib/cards/face/types";
 import { CARD_HUB_PATHS } from "~/lib/cards/hub-routes";
-import { springGentle, tweenFast } from "~/lib/design/motion";
+import { REDUCED_MOTION_FADE, springGentle, springMomentum, tweenFast } from "~/lib/design/motion";
 import { playRevealFeedback } from "./reveal-feedback";
 import { RevealSummary } from "./RevealSummary";
 
-/** Pixels a horizontal swipe must travel to turn the next card. */
-const SWIPE_PX = 40;
+/** Horizontal drag slop before capturing the pointer away from a card tap. */
+const DRAG_LOCK_PX = 6;
+/** Edge resistance multiplier when dragging past the first or last card. */
+const EDGE_RUBBER_BAND = 0.32;
+/** Projection horizon (ms) combining displacement (`dx`) with release velocity (`vx`, px/ms). */
+const VELOCITY_PROJECTION_MS = 160;
 /** The arrow keys that turn the next card; Up and Left stay free to scroll a stage that overflows. */
 const TURN_KEYS: ReadonlySet<string> = new Set(["ArrowRight", "ArrowDown"]);
 
@@ -65,29 +78,21 @@ export function PackReveal({
   returnFocus,
 }: PackRevealProps) {
   const reduce = useFacetReducedMotion();
-  const [stage, setStage] = useState<Stage>("sealed");
-  const [faces, setFaces] = useState<CardFaceData[]>([]);
+  const [{ stage, faces }, setReveal] = useState<{ stage: Stage; faces: CardFaceData[] }>({
+    stage: "sealed",
+    faces: [],
+  });
   const opener = usePackOpener(userPackId, (pulled) => {
-    setFaces(pulled);
-    setStage(pulled.length > 0 ? "fan" : "summary");
+    setReveal({ faces: pulled, stage: pulled.length > 0 ? "fan" : "summary" });
   });
   const turns = useCardTurns(faces, reduce);
   const onCloseAutoFocus = useReturnFocus(returnFocus);
-  const swipeStart = useRef<number | null>(null);
   const fanning = stage === "fan";
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!fanning || turns.allUp || !TURN_KEYS.has(event.key)) return;
     event.preventDefault();
     turns.turnNext();
-  };
-  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
-    swipeStart.current = event.clientX;
-  };
-  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
-    const start = swipeStart.current;
-    swipeStart.current = null;
-    if (fanning && start !== null && Math.abs(start - event.clientX) > SWIPE_PX) turns.turnNext();
   };
 
   return (
@@ -97,8 +102,6 @@ export function PackReveal({
         data-content="reveal"
         className="flex h-dvh max-h-dvh w-screen max-w-none flex-col gap-0 overflow-y-auto rounded-none border-0 p-6"
         onKeyDown={onKeyDown}
-        onPointerDown={onPointerDown}
-        onPointerUp={onPointerUp}
         onCloseAutoFocus={onCloseAutoFocus}
         onEscapeKeyDown={(event) => {
           // Esc reveals every card still face down; it closes only once they are all up.
@@ -126,7 +129,7 @@ export function PackReveal({
               faces={faces}
               turns={turns}
               reduce={reduce}
-              onSummary={() => setStage("summary")}
+              onSummary={() => setReveal((current) => ({ ...current, stage: "summary" }))}
             />
           )}
           {stage === "summary" && (
@@ -192,12 +195,22 @@ function usePackOpener(userPackId: string, onOpened: (faces: CardFaceData[]) => 
  * to `fallback` once that has left the page, unless something already holds it (the next pack's reveal).
  */
 function useReturnFocus(fallback?: () => HTMLElement | null) {
-  const [opener] = useState(() => (typeof document === "undefined" ? null : focusedElement()));
+  const opener = useRef<HTMLElement | null | undefined>(undefined);
+  if (opener.current === undefined) {
+    opener.current = typeof document === "undefined" ? null : focusedElement();
+  }
   return (event: Event) => {
     event.preventDefault();
     if (focusedElement()) return;
-    refocus(opener?.isConnected ? opener : (fallback?.() ?? null));
+    refocus(opener.current?.isConnected ? opener.current : (fallback?.() ?? null));
   };
+}
+
+interface TurnState {
+  up: ReadonlySet<number>;
+  lastTurned: number;
+  turns: number;
+  text: string;
 }
 
 /**
@@ -205,35 +218,52 @@ function useReturnFocus(fallback?: () => HTMLElement | null) {
  * is announced as a new line, so a second copy of the same card is read out again.
  */
 function useCardTurns(faces: readonly CardFaceData[], reduce: boolean) {
-  const [up, setUp] = useState<ReadonlySet<number>>(() => new Set());
-  const [lastTurned, setLastTurned] = useState(-1);
-  const [said, setSaid] = useState({ turns: 0, text: "" });
+  const [state, setState] = useState<TurnState>(() => ({
+    up: new Set(),
+    lastTurned: -1,
+    turns: 0,
+    text: "",
+  }));
   const busyUntil = useRef(0);
-  const revealed = faces.map((_, index) => up.has(index));
-  const announce = (text: string) => setSaid((last) => ({ turns: last.turns + 1, text }));
+  const revealed = faces.map((_, index) => state.up.has(index));
 
   const turn = (index: number) => {
     const face = faces[index];
-    if (!face || up.has(index) || Date.now() < busyUntil.current) return;
+    if (!face || state.up.has(index) || Date.now() < busyUntil.current) return;
     busyUntil.current = Date.now() + revealBeatMs(face.rarity);
-    setUp((current) => new Set(current).add(index));
-    setLastTurned(index);
-    announce(cardFaceLabel(face));
+    setState((current) => ({
+      up: new Set(current.up).add(index),
+      lastTurned: index,
+      turns: current.turns + 1,
+      text: cardFaceLabel(face),
+    }));
     playRevealFeedback(face.rarity, reduce);
   };
   const turnNext = () => {
-    const index = nextFaceDown(revealed, lastTurned);
+    const index = nextFaceDown(revealed, state.lastTurned);
     if (index >= 0) turn(index);
   };
   // One cue for the lot, at the strength of the rarest card still face down.
   const revealAll = () => {
-    const rarest = rarestFace(faces.filter((_, index) => !up.has(index)));
-    setUp(new Set(faces.keys()));
-    announce(faces.length === 1 ? "The card is turned" : `All ${faces.length} cards turned`);
+    const rarest = rarestFace(faces.filter((_, index) => !state.up.has(index)));
+    setState((current) => ({
+      up: new Set(faces.keys()),
+      lastTurned: faces.length - 1,
+      turns: current.turns + 1,
+      text: faces.length === 1 ? "The card is turned" : `All ${faces.length} cards turned`,
+    }));
     if (rarest) playRevealFeedback(rarest.rarity, reduce);
   };
-  const allUp = faces.length > 0 && up.size === faces.length;
-  return { revealed, lastTurned, allUp, said, turn, turnNext, revealAll };
+  const allUp = faces.length > 0 && state.up.size === faces.length;
+  return {
+    revealed,
+    lastTurned: state.lastTurned,
+    allUp,
+    said: { turns: state.turns, text: state.text },
+    turn,
+    turnNext,
+    revealAll,
+  };
 }
 
 type CardTurns = ReturnType<typeof useCardTurns>;
@@ -260,6 +290,7 @@ function SealedPack({
           packName={pack.name}
           packArtwork={pack.artwork ?? undefined}
           size="md"
+          interactive
           className="h-full w-full"
         />
       </div>
@@ -290,9 +321,39 @@ function SealedPack({
   );
 }
 
+interface DragGesture {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  lastX: number;
+  lastTime: number;
+  velocityX: number;
+  captured: boolean;
+}
+
+function rubberBandedOffset(dx: number, index: number, total: number): number {
+  const pastStart = index === 0 && dx > 0;
+  const pastEnd = index >= total - 1 && dx < 0;
+  return pastStart || pastEnd ? dx * EDGE_RUBBER_BAND : dx;
+}
+
+function projectedNextIndex(
+  dx: number,
+  vx: number,
+  width: number,
+  index: number,
+  total: number
+): number {
+  const projected = dx + vx * VELOCITY_PROJECTION_MS;
+  const threshold = Math.max(40, Math.min(80, width * 0.22));
+  if (projected <= -threshold && index < total - 1) return index + 1;
+  if (projected >= threshold && index > 0) return index - 1;
+  return index;
+}
+
 /**
- * The cards face down in a row. A turned card is a picture: a stray tap or swipe across it must not leave the reveal,
- * so cards open from the summary.
+ * The cards face down in a desktop fan or a 1:1 mobile pager. Tapping an unrevealed card performs a continuous
+ * two-sided 3D `CardFlip` (`springGentle`); cards open from the summary so stray taps during reveal stay safe.
  */
 function RevealFan({
   faces,
@@ -305,53 +366,184 @@ function RevealFan({
   reduce: boolean;
   onSummary: () => void;
 }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const dragX = useMotionValue(0);
+  const dragRef = useRef<DragGesture | null>(null);
+  const suppressClickUntil = useRef(0);
   const faceDown = useRef<(HTMLButtonElement | null)[]>([]);
   const proceed = useRef<HTMLButtonElement>(null);
   const next = nextFaceDown(turns.revealed, turns.lastTurned);
-  // A turned card's button leaves the page, so after every turn focus moves on: to the next card still face down,
-  // or to Continue once all are up.
+
   useEffect(() => {
-    (next >= 0 ? faceDown.current[next] : proceed.current)?.focus();
+    (next >= 0 ? faceDown.current[next] : proceed.current)?.focus({ preventScroll: true });
   }, [turns.said.turns, next]);
+
+  const settleDrag = (vx: number) => {
+    void animate(
+      dragX,
+      0,
+      reduce ? REDUCED_MOTION_FADE : { ...springMomentum, velocity: vx * 1000 }
+    );
+  };
+
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (
+      faces.length <= 1 ||
+      !Number.isFinite(event.clientX) ||
+      (event.pointerType === "mouse" && event.button !== 0)
+    ) {
+      return;
+    }
+    dragRef.current = {
+      pointerId: event.pointerId ?? 0,
+      startX: event.clientX,
+      startY: event.clientY,
+      lastX: event.clientX,
+      lastTime: performance.now(),
+      velocityX: 0,
+      captured: false,
+    };
+  };
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const gesture = dragRef.current;
+    const pointerId = event.pointerId ?? 0;
+    if (!gesture || gesture.pointerId !== pointerId || !Number.isFinite(event.clientX)) return;
+    const dx = event.clientX - gesture.startX;
+    const dy = event.clientY - gesture.startY;
+    if (!gesture.captured) {
+      if (Math.abs(dx) < DRAG_LOCK_PX) return;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        dragRef.current = null;
+        return;
+      }
+      gesture.captured = true;
+      event.currentTarget.setPointerCapture?.(pointerId);
+    }
+    const now = performance.now();
+    const dt = now - gesture.lastTime;
+    if (dt > 0) gesture.velocityX = (event.clientX - gesture.lastX) / dt;
+    gesture.lastX = event.clientX;
+    gesture.lastTime = now;
+    if (!reduce) dragX.set(rubberBandedOffset(dx, activeIndex, faces.length));
+  };
+
+  const finishPointer = (event: PointerEvent<HTMLDivElement>, cancelled: boolean) => {
+    const gesture = dragRef.current;
+    const pointerId = event.pointerId ?? 0;
+    if (!gesture || gesture.pointerId !== pointerId) return;
+    dragRef.current = null;
+    if (!gesture.captured) return;
+    if (event.currentTarget.hasPointerCapture?.(pointerId)) {
+      event.currentTarget.releasePointerCapture(pointerId);
+    }
+    suppressClickUntil.current = Date.now() + 80;
+    if (!cancelled) {
+      const dx = event.clientX - gesture.startX;
+      const width = event.currentTarget.clientWidth || 240;
+      const targetIndex = projectedNextIndex(
+        dx,
+        gesture.velocityX,
+        width,
+        activeIndex,
+        faces.length
+      );
+      if (targetIndex !== activeIndex) setActiveIndex(targetIndex);
+    }
+    settleDrag(gesture.velocityX);
+  };
+
+  const onClickCapture = (event: MouseEvent<HTMLDivElement>) => {
+    if (Date.now() < suppressClickUntil.current) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
 
   return (
     <>
-      <ul
-        aria-label="Cards in this pack"
-        className="flex touch-pan-y flex-wrap justify-center gap-3"
+      <div
+        data-slot="reveal-pager"
+        className="w-full touch-pan-y max-md:max-w-xs max-md:overflow-hidden md:max-w-none"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={(event) => finishPointer(event, false)}
+        onPointerCancel={(event) => finishPointer(event, true)}
+        onClickCapture={onClickCapture}
       >
-        {faces.map((face, index) => (
-          <motion.li
-            key={face.copy?.ownershipId ?? face.cardId}
-            className="perspective-distant"
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={reduce ? tweenFast : { ...springGentle, delay: index * 0.06 }}
+        <motion.div style={{ x: dragX }} className="md:transform-none!">
+          <motion.ul
+            aria-label="Cards in this pack"
+            animate={{ x: `-${activeIndex * 100}%` }}
+            transition={reduce ? REDUCED_MOTION_FADE : springMomentum}
+            className="flex md:transform-none! md:flex-wrap md:justify-center md:gap-3"
           >
-            {turns.revealed[index] ? (
-              <motion.div
-                initial={reduce ? { opacity: 0 } : { opacity: 0, rotateY: 90 }}
-                animate={{ opacity: 1, rotateY: 0 }}
-                transition={reduce ? tweenFast : springGentle}
-              >
-                <CardFace face={face} size="M" />
-              </motion.div>
-            ) : (
+            {faces.map((face, index) => {
+              const isRevealed = turns.revealed[index] === true;
+              return (
+                <motion.li
+                  key={face.copy?.ownershipId ?? face.cardId}
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={reduce ? tweenFast : { ...springGentle, delay: index * 0.06 }}
+                  className="max-md:flex max-md:w-full max-md:shrink-0 max-md:justify-center"
+                >
+                  <CardFlip
+                    flipped={!isRevealed}
+                    transition={springGentle}
+                    front={
+                      <CardTilt active={isRevealed && revealShines(face.rarity)}>
+                        <CardFace face={face} size="M" />
+                      </CardTilt>
+                    }
+                    back={
+                      <button
+                        ref={(element) => {
+                          faceDown.current[index] = element;
+                        }}
+                        type="button"
+                        aria-label={`Card ${index + 1} of ${faces.length}, face down`}
+                        className={cn("rounded-card facet-press block cursor-pointer", focusRing)}
+                        onClick={() => turns.turn(index)}
+                      >
+                        <CardFaceDown size="M" />
+                      </button>
+                    }
+                  />
+                </motion.li>
+              );
+            })}
+          </motion.ul>
+        </motion.div>
+      </div>
+      {faces.length > 1 && (
+        <div className="flex items-center justify-center gap-2 md:hidden">
+          {faces.map((face, index) => {
+            const current = index === activeIndex;
+            return (
               <button
-                ref={(element) => {
-                  faceDown.current[index] = element;
-                }}
+                key={face.copy?.ownershipId ?? `${face.cardId}-${index}`}
                 type="button"
-                aria-label={`Card ${index + 1} of ${faces.length}, face down`}
-                className={cn("rounded-card facet-press block cursor-pointer", focusRing)}
-                onClick={() => turns.turn(index)}
+                aria-label={`Show card ${index + 1} of ${faces.length}`}
+                aria-current={current ? "step" : undefined}
+                onClick={() => setActiveIndex(index)}
+                className={cn("relative rounded-full p-1.5 transition-colors", hitSlop, focusRing)}
               >
-                <CardFaceDown size="M" />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "block size-2 rounded-full transition-colors",
+                    current ? "bg-tint" : "bg-fill-2"
+                  )}
+                />
               </button>
-            )}
-          </motion.li>
-        ))}
-      </ul>
+            );
+          })}
+          <span className="text-footnote text-label-secondary ml-1 tabular-nums">
+            {activeIndex + 1} / {faces.length}
+          </span>
+        </div>
+      )}
       <div className="flex gap-2">
         {turns.allUp ? (
           <Button ref={proceed} onClick={onSummary}>

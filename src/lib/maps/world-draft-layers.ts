@@ -15,7 +15,7 @@
  * borders and country names stay visible over the draft.
  */
 
-import type { FeatureCollection, Point } from "geojson";
+import type { FeatureCollection, GeoJSON, Point } from "geojson";
 import type {
   ExpressionSpecification,
   GeoJSONSource,
@@ -26,6 +26,8 @@ import type {
   MapSourceDataEvent,
   VisibilitySpecification,
 } from "maplibre-gl";
+import { isFlatMap } from "~/lib/maps/flat-map-adapter";
+import { toCarrierGeoJSON } from "~/lib/maps/flat-projection";
 import { isMapStyleReady } from "~/lib/maps/geojson-layer-helpers";
 import { LAYER_CONFIGS } from "~/lib/maps/map-config";
 import { MERCATOR_MAX_LAT } from "~/lib/maps/realm-map-settings";
@@ -91,7 +93,13 @@ export const DRAFT_LAYER_KEYS: readonly DraftLayerKey[] = [
 ];
 
 /** A diagnostic image to draw: straight RGBA in Web Mercator rows, pinned like the relief. */
-export type DraftImage = { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
+export type DraftImage = {
+  width: number;
+  height: number;
+  rgba: Uint8ClampedArray<ArrayBuffer>;
+  /** The same image equirectangular (pole to pole), shown instead on a flat (Plate Carrée) map */
+  flat?: { width: number; height: number; rgba: Uint8ClampedArray<ArrayBuffer> };
+};
 
 /** Whether a layer is shown when nothing says otherwise: all but climate and ice caps, which are opt-in. */
 export const isShownByDefault = (key: DraftLayerKey): boolean =>
@@ -116,6 +124,14 @@ const RELIEF_COORDINATES: [[number, number], [number, number], [number, number],
     [180, -MERCATOR_MAX_LAT],
     [-180, -MERCATOR_MAX_LAT],
   ];
+
+/** An equirectangular image on a flat map is pinned at the poles (true latitudes; the flat-map adapter converts). */
+const FLAT_IMAGE_COORDINATES: typeof RELIEF_COORDINATES = [
+  [-180, 90],
+  [180, 90],
+  [180, -90],
+  [-180, -90],
+];
 
 const FILL_COLOR: ExpressionSpecification = ["coalesce", ["get", "_fillColor"], "#e8e5da"];
 const lineColor = (fallback: string): ExpressionSpecification => [
@@ -221,6 +237,8 @@ export class WorldDraft {
   private readonly hidden = new Map<string, VisibilitySpecification | undefined>();
   /** The JSON last given to each draft source, so an unchanged layer is not parsed again */
   private readonly pushed = new Map<string, string>();
+  /** Whether each source's data was given flat (Plate Carrée), so a switch re-pushes it */
+  private readonly pushedFlat = new Map<string, boolean>();
   /** The polygons each outline source was made from, so an unchanged layer is not outlined again */
   private readonly outlined = new Map<string, string>();
   /** Blob URLs handed to a source and not yet revoked, by source */
@@ -228,7 +246,10 @@ export class WorldDraft {
   private listening = false;
   private busy = false;
   /** The decoded image of each image source, kept for as long as the same pixels are shown */
-  private readonly images = new Map<string, { pixels: DraftImage; data: ImageData }>();
+  private readonly images = new Map<
+    string,
+    { pixels: DraftImage; flat: boolean; data: ImageData }
+  >();
   /** The image each image source holds, so a source made anew after a style reload is fed again */
   private readonly imageOn = new WeakMap<ImageSource, ImageData>();
   private diagnostic: DraftImage | null = null;
@@ -275,6 +296,7 @@ export class WorldDraft {
     this.shown = null;
     this.images.clear();
     this.pushed.clear();
+    this.pushedFlat.clear();
     this.outlined.clear();
     if (isMapStyleReady(map)) {
       for (const id of STACK) if (map.getLayer(id)) map.removeLayer(id);
@@ -328,21 +350,37 @@ export class WorldDraft {
     }
   }
 
-  /** Gives a GeoJSON source `json` as a blob URL, adding the source when it is missing; an unchanged layer is left. */
+  /**
+   * Gives a GeoJSON source `json` as a blob URL, adding the source when it is missing; an unchanged layer is left.
+   * On a flat map the JSON goes in Plate Carrée (a URL is not converted by the flat-map adapter).
+   */
   private pushSource(sourceId: string, json: string): void {
     const { map } = this;
+    const flat = isFlatMap(map);
     const source = map.getSource(sourceId) as GeoJSONSource | undefined;
-    if (source && this.pushed.get(sourceId) === json) return;
-    const url = this.blobUrl(sourceId, json);
+    if (source && this.pushed.get(sourceId) === json && this.pushedFlat.get(sourceId) === flat) {
+      return;
+    }
+    // ponytail: parsed and rewritten on the main thread; move it into the world worker if flat regenerations stutter
+    const data = flat ? JSON.stringify(toCarrierGeoJSON(JSON.parse(json) as GeoJSON)) : json;
+    const url = this.blobUrl(sourceId, data);
     if (source) void source.setData(url).catch(() => {});
     else map.addSource(sourceId, { type: "geojson", data: url, ...GEOJSON_OPTIONS });
     this.pushed.set(sourceId, json);
+    this.pushedFlat.set(sourceId, flat);
   }
 
   /** The stroke's source, made from the polygons in `json` when they or the source are new. */
   private pushOutline(type: DraftType, json: string): void {
     const id = outlineIdOf(type);
-    if (this.map.getSource(id) && this.outlined.get(id) === json) return;
+    const flat = isFlatMap(this.map);
+    if (
+      this.map.getSource(id) &&
+      this.outlined.get(id) === json &&
+      this.pushedFlat.get(id) === flat
+    ) {
+      return;
+    }
     this.pushSource(id, JSON.stringify(seamlessOutline(JSON.parse(json) as FeatureCollection)));
     this.outlined.set(id, json);
   }
@@ -353,6 +391,7 @@ export class WorldDraft {
       if (map.getLayer(DRAFT_SEEDS_ID)) map.removeLayer(DRAFT_SEEDS_ID);
       if (map.getSource(DRAFT_SEEDS_ID)) map.removeSource(DRAFT_SEEDS_ID);
       this.pushed.delete(DRAFT_SEEDS_ID);
+      this.pushedFlat.delete(DRAFT_SEEDS_ID);
       this.release(DRAFT_SEEDS_ID);
       return;
     }
@@ -382,6 +421,7 @@ export class WorldDraft {
     for (const id of [sourceIdOf(type), outlineIdOf(type)]) {
       if (map.getSource(id)) map.removeSource(id);
       this.pushed.delete(id);
+      this.pushedFlat.delete(id);
       this.outlined.delete(id);
       this.release(id);
     }
@@ -396,18 +436,23 @@ export class WorldDraft {
       this.images.delete(id);
       return;
     }
+    // A flat map shows the equirectangular image, pinned at the poles
+    const flat = isFlatMap(map) && pixels.flat !== undefined;
+    const shownPixels = flat && pixels.flat ? pixels.flat : pixels;
+    const coordinates = flat ? FLAT_IMAGE_COORDINATES : RELIEF_COORDINATES;
     let image = this.images.get(id);
-    if (image?.pixels !== pixels) {
-      image = { pixels, data: new ImageData(pixels.rgba, pixels.width, pixels.height) };
+    if (image?.pixels !== pixels || image.flat !== flat) {
+      const data = new ImageData(shownPixels.rgba, shownPixels.width, shownPixels.height);
+      image = { pixels, flat, data };
       this.images.set(id, image);
     }
     let source = map.getSource(id) as ImageSource | undefined;
     if (!source) {
-      map.addSource(id, { type: "image", coordinates: RELIEF_COORDINATES });
+      map.addSource(id, { type: "image", coordinates });
       source = map.getSource(id) as ImageSource;
     }
     if (this.imageOn.get(source) !== image.data) {
-      source.updateImage({ image: image.data, coordinates: RELIEF_COORDINATES });
+      source.updateImage({ image: image.data, coordinates });
       this.imageOn.set(source, image.data);
     }
     if (!map.getLayer(id)) {

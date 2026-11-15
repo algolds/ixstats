@@ -1,19 +1,20 @@
 "use client";
 
+import { Skeleton } from "~/components/ui/skeleton";
 import React from "react";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import {
-  SystemRestart as Loader2,
   Activity,
   Trophy,
   WarningTriangle as AlertTriangle,
   StatUp as TrendingUp,
-  Sparks as Sparkles,
+  Flash,
   Clock,
 } from "iconoir-react";
 import { Button } from "~/components/ui/button";
 import { EmptyState } from "~/components/ui/empty-state";
+import { Signal } from "~/components/ui/signal";
 
 interface MatchCommentaryProps {
   matchId: string;
@@ -45,18 +46,19 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
 
   if (isLoading) {
     return (
-      <div className="text-label-secondary rounded-card border-separator bg-surface-secondary text-footnote flex flex-col items-center justify-center gap-3 border py-10">
-        <Loader2 className="text-teal h-5 w-5 animate-spin" />
-        <span className="font-semibold">Retrieving match event timeline...</span>
+      <div className="space-y-2" aria-busy="true" aria-label="Loading match events">
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={i} className="rounded-row h-10 w-full" />
+        ))}
       </div>
     );
   }
 
   if (error || !match) {
     return (
-      <div className="rounded-card border-red/20 bg-red/5 text-footnote text-red border py-6 text-center">
-        Failed to load match commentary: {error?.message ?? "Match details not found"}
-      </div>
+      <Signal tone="destructive" title="Commentary did not load">
+        {error?.message ?? "This match has no recorded details."}
+      </Signal>
     );
   }
 
@@ -106,27 +108,31 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
       {evaluation && (
         <div className="border-separator text-footnote grid grid-cols-2 gap-3 border-b pb-3 select-none md:grid-cols-4">
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Win prob</span>
+            <span className="text-caption text-label-tertiary block">Win prob</span>
             <span className="text-label font-semibold tabular-nums">
-              {evaluation.winProbability != null ? `${Math.round(evaluation.winProbability * 100)}% Home` : "—"}
+              {evaluation.winProbability != null
+                ? `${Math.round(evaluation.winProbability * 100)}% Home`
+                : "–"}
             </span>
           </div>
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Possession</span>
+            <span className="text-caption text-label-tertiary block">Possession</span>
             <span className="text-label font-semibold tabular-nums">
-              {evaluation.dominance != null ? `${Math.round(evaluation.dominance * 100)}% Dom` : "—"}
+              {evaluation.dominance != null
+                ? `${Math.round(evaluation.dominance * 100)}% Dom`
+                : "–"}
             </span>
           </div>
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Tempo</span>
+            <span className="text-caption text-label-tertiary block">Tempo</span>
             <span className="text-label font-semibold tabular-nums">
-              {evaluation.tempo != null ? `${evaluation.tempo.toFixed(1)}x speed` : "—"}
+              {evaluation.tempo != null ? `${evaluation.tempo.toFixed(1)}x speed` : "–"}
             </span>
           </div>
           <div>
-            <span className="text-eyebrow text-label-tertiary block">Upset volatility</span>
+            <span className="text-caption text-label-tertiary block">Upset volatility</span>
             <span className="text-label font-semibold tabular-nums">
-              {evaluation.volatility != null ? `${evaluation.volatility.toFixed(1)} index` : "—"}
+              {evaluation.volatility != null ? `${evaluation.volatility.toFixed(1)} index` : "–"}
             </span>
           </div>
         </div>
@@ -138,7 +144,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
           <h4 className="text-subhead text-label-secondary select-none">Live match feed</h4>
           {hasCommentary && !isGenerating && (
             <Button size="sm" variant="ghost" onClick={(e) => handleGenerate(e, true)}>
-              <Sparkles />
+              <Flash />
               Regenerate
             </Button>
           )}
@@ -151,7 +157,7 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
                 role="status"
                 className="bg-surface rounded-row flex flex-col items-center justify-center space-y-3 py-12 text-center"
               >
-                <Sparkles
+                <Flash
                   className="text-tint size-6 animate-spin motion-reduce:animate-none"
                   aria-hidden
                 />
@@ -166,12 +172,12 @@ export function MatchCommentary({ matchId }: MatchCommentaryProps) {
               <EmptyState
                 compact
                 className="bg-surface rounded-row"
-                icon={<Sparkles />}
+                icon={<Flash />}
                 title="No AI commentary generated"
                 message="Generate commentary for this match."
                 action={
                   <Button size="sm" variant="secondary" onClick={handleGenerate}>
-                    <Sparkles />
+                    <Flash />
                     Generate AI commentary
                   </Button>
                 }

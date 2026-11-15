@@ -1,22 +1,26 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useId, useState } from "react";
 import { skipToken } from "@tanstack/react-query";
 import {
   ShieldAlert,
   OpenNewWindow as ExternalLink,
   CheckCircle as CheckCircle2,
-  WarningCircle as AlertCircle,
-  SystemRestart as Loader2,
 } from "iconoir-react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "~/components/ui/dialog";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Signal } from "~/components/ui/signal";
+import { useDebounce } from "~/hooks/useDebounce";
+import { cn } from "~/lib/utils/cn";
 import { api } from "~/trpc/react";
 import {
   Select,
@@ -53,20 +57,19 @@ export function CardTakedownVerificationModal({
   onTakedownSuccess,
   onCloseAutoFocus,
 }: CardTakedownVerificationModalProps) {
+  const baseId = useId();
+  const nationInputId = `${baseId}-nation`;
+  const tokenInputId = `${baseId}-token`;
+  const reasonSelectId = `${baseId}-reason`;
+  const customReasonId = `${baseId}-custom-reason`;
+
   const [nationName, setNationName] = useState(defaultNationName || cardTitle || "");
-  const [debouncedNation, setDebouncedNation] = useState(defaultNationName || cardTitle || "");
   const [checksum, setChecksum] = useState("");
   const [selectedReason, setSelectedReason] = useState("");
   const [customReason, setCustomReason] = useState("");
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const debouncedNation = useDebounce(nationName.trim(), 400);
   const submittedReason = selectedReason === "custom" ? customReason.trim() : selectedReason;
-
-  // Debounce nation name for URL fetch (avoids request-per-keystroke)
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedNation(nationName.trim()), 400);
-    return () => clearTimeout(t);
-  }, [nationName]);
 
   const { data: verifyUrlData } = api.nsImport.getVerificationUrl.useQuery(
     debouncedNation ? { nationName: debouncedNation } : skipToken,
@@ -76,13 +79,14 @@ export function CardTakedownVerificationModal({
   const verifyUrl = verifyUrlData?.url ?? "https://www.nationstates.net/page=verify_login";
 
   const takedownMutation = api.nsImport.requestSelfServiceTakedown.useMutation({
-    onSuccess: (data) => {
-      setSuccessMessage(data.message);
+    onSuccess: () => {
       if (onTakedownSuccess) {
         onTakedownSuccess();
       }
     },
   });
+
+  const successMessage = takedownMutation.data?.message ?? null;
 
   const handleVerifyAndTakedown = () => {
     if (!nationName.trim() || !checksum.trim()) return;
@@ -95,7 +99,6 @@ export function CardTakedownVerificationModal({
   };
 
   const handleClose = () => {
-    setSuccessMessage(null);
     setChecksum("");
     setSelectedReason("");
     setCustomReason("");
@@ -105,20 +108,17 @@ export function CardTakedownVerificationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent
-        className="border-separator bg-surface rounded-card shadow-card p-6 sm:max-w-md"
-        onCloseAutoFocus={onCloseAutoFocus}
-      >
+      <DialogContent className="sm:max-w-md" onCloseAutoFocus={onCloseAutoFocus}>
         <DialogHeader className="space-y-2">
-          <div className="flex items-center gap-2">
-            <div className="rounded-row border-red/30 bg-red/10 text-red border p-2">
+          <div className="flex items-center gap-2.5">
+            <div className="rounded-row border-destructive/25 bg-destructive/10 text-destructive-ink border p-2">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <div>
               <DialogTitle className="text-label text-title-3">Content removal request</DialogTitle>
               <DialogDescription className="text-label-secondary text-footnote">
                 Submit a verified ownership claim to request immediate removal of associated artwork
-                for <span className="text-label font-semibold">{cardTitle}</span>
+                for <span className="text-label font-medium">{cardTitle}</span>
                 {nsCardId && season ? ` (Card #${nsCardId})` : ""}.
               </DialogDescription>
             </div>
@@ -127,48 +127,51 @@ export function CardTakedownVerificationModal({
 
         {successMessage ? (
           <div className="space-y-4 py-4 text-center">
-            <div className="border-green/30 bg-green/20 text-green mx-auto flex h-12 w-12 items-center justify-center rounded-full border">
+            <div className="border-success/30 bg-success/15 text-success-ink mx-auto flex h-12 w-12 items-center justify-center rounded-full border">
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <p className="text-label text-footnote font-medium">{successMessage}</p>
-            <Button onClick={handleClose} className="w-full">
-              Done
-            </Button>
+            <DialogFooter>
+              <Button onClick={handleClose} className="w-full">
+                Done
+              </Button>
+            </DialogFooter>
           </div>
         ) : (
           <div className="space-y-4 pt-2">
-            {/* Nation name first — drives the dynamic verify URL */}
-            <div>
-              <label className="text-label-secondary text-footnote mb-1 block font-semibold">
-                Nation Name <span className="text-red">*</span>
-              </label>
-              <input
+            {/* Nation name drives the dynamic verification URL */}
+            <div className="space-y-1.5">
+              <Label htmlFor={nationInputId}>
+                Nation name <span className="text-destructive-ink">*</span>
+              </Label>
+              <Input
+                id={nationInputId}
                 type="text"
                 value={nationName}
                 onChange={(e) => setNationName(e.target.value)}
                 placeholder="e.g. The Grendels"
-                className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
               />
             </div>
 
-            {/* Verification Instructions — OAuth-style steps */}
-            <div className="border-separator bg-fill-3 text-label-secondary rounded-row text-footnote space-y-2 border p-3">
+            {/* Verification instructions */}
+            <div className="border-separator bg-surface-secondary text-label-secondary rounded-row text-footnote space-y-2 border p-3">
               <div className="flex items-center justify-between">
-                <span className="text-label text-footnote font-semibold">
-                  How to verify ownership
-                </span>
+                <span className="text-label text-subhead font-medium">How to verify ownership</span>
                 <a
                   href="https://www.nationstates.net/pages/api.html#verification"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-footnote text-blue inline-flex items-center gap-1 font-medium hover:underline"
+                  className={cn(
+                    "text-footnote text-tint-ink rounded-control-sm inline-flex items-center gap-1 font-medium hover:underline",
+                    focusRing
+                  )}
                 >
-                  NS API Docs <ExternalLink className="h-2.5 w-2.5" />
+                  NS API Docs <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
               <ol className="text-footnote space-y-2 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     1
                   </span>
                   <span>
@@ -177,7 +180,10 @@ export function CardTakedownVerificationModal({
                       href={verifyUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue font-medium hover:underline"
+                      className={cn(
+                        "text-tint-ink rounded-control-sm font-medium hover:underline",
+                        focusRing
+                      )}
                     >
                       nation-specific verify page
                     </a>
@@ -187,13 +193,13 @@ export function CardTakedownVerificationModal({
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     2
                   </span>
                   <span>Copy the one-time verification token shown on that page.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-semibold">
+                  <span className="bg-separator text-label text-footnote mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full font-medium tabular-nums">
                     3
                   </span>
                   <span>
@@ -204,33 +210,30 @@ export function CardTakedownVerificationModal({
               </ol>
             </div>
 
-            {/* Remaining inputs */}
             <div className="space-y-3">
-              <div>
-                <label className="text-label-secondary text-footnote mb-1 block font-semibold">
-                  Verification Token <span className="text-red">*</span>
-                </label>
-                <input
+              <div className="space-y-1.5">
+                <Label htmlFor={tokenInputId}>
+                  Verification token <span className="text-destructive-ink">*</span>
+                </Label>
+                <Input
+                  id={tokenInputId}
                   type="text"
                   value={checksum}
                   onChange={(e) => setChecksum(e.target.value)}
                   placeholder="Paste one-time token"
-                  className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 font-mono transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
+                  className="font-data"
                 />
               </div>
 
               <div className="space-y-2">
-                <label
-                  id="takedown-reason-label"
-                  className="text-label-secondary text-footnote block font-semibold"
-                >
-                  Basis for Removal <span className="text-label-tertiary">(Optional)</span>
-                </label>
+                <Label htmlFor={reasonSelectId}>
+                  Basis for removal <span className="text-label-tertiary">(optional)</span>
+                </Label>
                 <Select
                   value={selectedReason || NO_REASON}
                   onValueChange={(v) => setSelectedReason(v === NO_REASON ? "" : v)}
                 >
-                  <SelectTrigger aria-labelledby="takedown-reason-label" className="w-full">
+                  <SelectTrigger id={reasonSelectId} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -244,51 +247,46 @@ export function CardTakedownVerificationModal({
                     <SelectItem value="Privacy concern: I do not want my nation's flag publicly displayed here.">
                       Privacy concern: do not display my flag
                     </SelectItem>
-                    <SelectItem value="custom">Other / Custom reason…</SelectItem>
+                    <SelectItem value="custom">Other / Custom reason</SelectItem>
                   </SelectContent>
                 </Select>
                 {selectedReason === "custom" && (
-                  <input
-                    type="text"
-                    value={customReason}
-                    onChange={(e) => setCustomReason(e.target.value)}
-                    placeholder="Describe your basis for removal"
-                    autoFocus
-                    className="border-separator bg-background text-label placeholder:text-label-secondary rounded-row text-footnote focus:border-red focus:ring-red h-9 w-full border px-3 transition-[color,background-color,border-color,box-shadow,opacity,scale,translate] outline-none focus:ring-1"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor={customReasonId} className="sr-only">
+                      Custom reason
+                    </Label>
+                    <Input
+                      id={customReasonId}
+                      type="text"
+                      value={customReason}
+                      onChange={(e) => setCustomReason(e.target.value)}
+                      placeholder="Describe your basis for removal"
+                      autoFocus
+                    />
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Error Display */}
             {takedownMutation.error && (
-              <div className="rounded-row border-red/30 bg-red/10 text-footnote text-red flex items-start gap-2 border p-3">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{takedownMutation.error.message}</p>
-              </div>
+              <Signal tone="destructive" title="Verification failed">
+                {takedownMutation.error.message}
+              </Signal>
             )}
 
-            {/* Submit Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <DialogFooter>
               <Button variant="ghost" size="sm" onClick={handleClose}>
                 Cancel
               </Button>
               <Button
+                variant="destructive"
                 size="sm"
                 disabled={!nationName.trim() || !checksum.trim() || takedownMutation.isPending}
                 onClick={handleVerifyAndTakedown}
-                className="border-red/30 bg-red text-on-red border"
               >
-                {takedownMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    Validating Identity...
-                  </>
-                ) : (
-                  "Submit Removal Request"
-                )}
+                {takedownMutation.isPending ? "Validating identity..." : "Submit removal request"}
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         )}
       </DialogContent>

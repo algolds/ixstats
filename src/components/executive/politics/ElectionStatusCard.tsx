@@ -2,10 +2,12 @@
 
 import { WarningTriangle as AlertTriangle } from "iconoir-react";
 import { Button } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { api, type RouterOutputs } from "~/trpc/react";
 import { useNationClock } from "~/hooks/useNationClock";
 import { formatClockDate } from "~/lib/realms/nation-time";
 import { electionDisplayName } from "~/lib/realms/realm-year";
+import { collapseResultsByParty } from "~/lib/government/party-election-results";
 import type { RealmClockReader } from "~/lib/realms/realm-clock";
 
 interface ElectionStatusCardProps {
@@ -65,7 +67,7 @@ export function describeElection(
 }
 
 /**
- * Where the country stands in the election lifecycle — what setup is missing, when the
+ * Where the country stands in the election lifecycle: what setup is missing, when the
  * (first) election falls due on the nation's realm clock, the last result and the seat composition.
  * Every number comes from `elections.getElectionStatus`; nothing is estimated.
  */
@@ -92,11 +94,11 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
   const vacant = status.totalSeats - status.seatedSeats;
 
   return (
-    <div className="border-separator rounded-row space-y-3 border p-4">
+    <Card padding="md" className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           {(upcoming?.isDue || needsParties || !status.hasLegislature) && (
-            <AlertTriangle aria-hidden className="text-yellow mt-0.5 h-5 w-5 shrink-0" />
+            <AlertTriangle aria-hidden className="text-warning mt-0.5 h-5 w-5 shrink-0" />
           )}
           <div className="min-w-0">
             <h4 className="text-headline">{headline}</h4>
@@ -114,7 +116,9 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
           </Button>
         )}
       </div>
-      {resolveDue.error && <p className="text-footnote text-red">{resolveDue.error.message}</p>}
+      {resolveDue.error && (
+        <p className="text-footnote text-destructive">{resolveDue.error.message}</p>
+      )}
 
       {status.hasLegislature && (
         <p className="text-label-secondary text-footnote">
@@ -131,7 +135,7 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
             · {formatClockDate(lastElection.scheduledIxTime, clock)}
             {lastElection.turnout != null ? ` · turnout ${lastElection.turnout}%` : ""}
           </p>
-          {lastElection.results.map((r) => (
+          {collapseResultsByParty(lastElection.results).map((r) => (
             <div key={r.partyId} className="text-footnote flex items-center justify-between gap-2">
               <span className="flex min-w-0 items-center gap-2">
                 <span
@@ -147,6 +151,6 @@ export function ElectionStatusCard({ countryId, canManage = true }: ElectionStat
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

@@ -3,96 +3,45 @@
 import React, { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Trophy,
+  Dashboard as Gauge,
   Dollar as DollarSign,
   Group as Users,
-  Dashboard as Gauge,
-  Map,
   StatUp as TrendingUp,
-  Suitcase as Briefcase,
-  GraduationCap,
-  Heart,
-  Bank as Landmark,
+  Trophy,
 } from "iconoir-react";
-import { formatPercent, formatYears } from "~/lib/utils";
+import { formatPercent } from "~/lib/utils";
 import { formatCompact } from "~/lib/format/compact";
 import { api } from "~/trpc/react";
-import { EmptyState } from "~/components/ui/empty-state";
-import { FacetList, FacetListSection } from "~/components/ui/facet-list";
-import { SearchField } from "~/components/ui/search-field";
-import { SegmentedControl } from "~/components/ui/segmented-control";
-import { Skeleton } from "~/components/ui/skeleton";
-import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { ActionPill } from "~/components/ui/action-pill";
 import { Card } from "~/components/ui/card";
-import { PodiumCard, Row } from "./leaderboard-parts";
+import { EmptyState } from "~/components/ui/empty-state";
+import { SearchField } from "~/components/ui/search-field";
+import { Skeleton } from "~/components/ui/skeleton";
+import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
 import { assetUrl } from "~/lib/base-path";
-import { LeaderboardRealmSelect } from "./LeaderboardRealmSelect";
 import { isUnlistedRankingRealm } from "~/lib/realms/realm-scope-select";
+import { LeaderboardRealmSelect } from "./LeaderboardRealmSelect";
+import { LeaderboardRankPill, LeaderboardTab } from "./LeaderboardTab";
 
-const CATEGORIES = [
-  { id: "all", label: "All categories" },
-  { id: "economy", label: "Economy & wealth" },
-  { id: "demographics", label: "Demographics & labor" },
-  { id: "governance", label: "Quality & governance" },
+const METRIC_PILLS = [
+  { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency" },
+  { id: "gdpPerCapita", label: "GDP per capita", icon: DollarSign, fmt: "currency" },
+  { id: "population", label: "Population", icon: Users, fmt: "number" },
+  { id: "populationDensity", label: "Density", icon: Gauge, fmt: "density" },
+  { id: "gdpGrowth", label: "Growth", icon: TrendingUp, fmt: "percent" },
+  { id: "collectors", label: "Collectors", icon: Trophy, fmt: "points" },
 ] as const;
 
-const FILTERS = [
-  { id: "achievements", label: "Achievements", icon: Trophy, fmt: "achievements", domain: "all" },
-  { id: "totalGdp", label: "Total GDP", icon: DollarSign, fmt: "currency", domain: "economy" },
-  {
-    id: "gdpPerCapita",
-    label: "GDP per capita",
-    icon: DollarSign,
-    fmt: "currency",
-    domain: "economy",
-  },
-  { id: "population", label: "Population", icon: Users, fmt: "number", domain: "demographics" },
-  {
-    id: "populationDensity",
-    label: "Pop. density",
-    icon: Gauge,
-    fmt: "number",
-    domain: "demographics",
-  },
-  { id: "landArea", label: "Land area", icon: Map, fmt: "number", domain: "demographics" },
-  { id: "gdpGrowth", label: "GDP growth", icon: TrendingUp, fmt: "percent", domain: "economy" },
-  { id: "avgIncome", label: "Avg income", icon: DollarSign, fmt: "currency", domain: "economy" },
-  { id: "workforce", label: "Workforce", icon: Users, fmt: "number", domain: "demographics" },
-  {
-    id: "employmentRate",
-    label: "Employment",
-    icon: Briefcase,
-    fmt: "percent",
-    domain: "demographics",
-  },
-  {
-    id: "literacyRate",
-    label: "Literacy",
-    icon: GraduationCap,
-    fmt: "percent",
-    domain: "governance",
-  },
-  {
-    id: "lifeExpectancy",
-    label: "Life expectancy",
-    icon: Heart,
-    fmt: "years",
-    domain: "governance",
-  },
-  { id: "govRevenue", label: "Gov. revenue", icon: Landmark, fmt: "currency", domain: "economy" },
-  { id: "govSpending", label: "Gov. spending", icon: Landmark, fmt: "currency", domain: "economy" },
-] as const;
+type MetricId = (typeof METRIC_PILLS)[number]["id"];
+type NationMetricId = Exclude<MetricId, "collectors">;
 
-type FilterId = (typeof FILTERS)[number]["id"];
-
-function fmt(type: string, val?: number | null) {
-  if (val === undefined || val === null) return "—";
-  if (type === "currency") return `$${formatCompact(val)}`;
-  if (type === "percent") return formatPercent(val);
-  if (type === "years") return formatYears(val);
-  if (type === "number") return formatCompact(val);
-  return String(val);
+function formatMetricFigure(fmtType: string, val?: number | null): string {
+  if (val === undefined || val === null) return "–";
+  if (fmtType === "currency") return `$${formatCompact(val)}`;
+  if (fmtType === "percent") return formatPercent(val);
+  if (fmtType === "density") return `${formatCompact(val)}/km²`;
+  if (fmtType === "number") return formatCompact(val);
+  return val.toLocaleString();
 }
 
 function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string | null }) {
@@ -115,205 +64,152 @@ function FlagGraphic({ countryName, flag }: { countryName: string; flag?: string
 }
 
 export function CountryLeaderboards() {
-  const [filter, setFilter] = useState<FilterId>("achievements");
-  const [activeDomain, setActiveDomain] = useState<string>("all");
+  const [metric, setMetric] = useState<MetricId>("totalGdp");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [limit, setLimit] = useState<number>(25);
-  // ?realm=<slug> ranks that realm (the selector sets it); without it the server uses the viewer's active nation's realm.
-  const realm = useSearchParams().get("realm") ?? undefined;
+
+  const realm = useSearchParams()?.get("realm") ?? undefined;
   const { data: realms } = api.realms.directory.useQuery(undefined, { staleTime: 5 * 60_000 });
-  // A draft or unlisted realm named by link has no public ranking: say so instead of ranking nothing.
   const unlisted = isUnlistedRankingRealm(realms, realm);
 
-  const { data: effectiveAchievements } = api.achievements.getLeaderboard.useQuery(
-    { limit, realm },
-    { enabled: filter === "achievements" && !unlisted }
-  );
+  const isCollectors = metric === "collectors";
+  const nationMetric: NationMetricId = isCollectors ? "totalGdp" : metric;
 
   const { data: countryBoard, isLoading } = api.achievements.getCountryLeaderboard.useQuery(
     {
-      metric: filter as Exclude<FilterId, "achievements">,
-      limit,
+      metric: nationMetric,
+      limit: 50,
       searchQuery: searchQuery.trim() || undefined,
       realm,
     },
-    { enabled: filter !== "achievements" && !unlisted }
+    { enabled: !isCollectors && !unlisted }
   );
 
-  const active = FILTERS.find((f) => f.id === filter)!;
-  const visibleFilters = FILTERS.filter(
-    (f) => activeDomain === "all" || f.domain === activeDomain || f.id === "achievements"
-  );
+  const activeMetric = METRIC_PILLS.find((m) => m.id === metric) ?? METRIC_PILLS[0];
+  const secondaryStatHeader = metric === "population" ? "Scale" : "Population";
 
-  const filteredAchievements = effectiveAchievements?.filter((entry) =>
-    searchQuery ? entry.countryName.toLowerCase().includes(searchQuery.toLowerCase()) : true
-  );
+  return (
+    <section aria-labelledby="leaderboards-table-heading" className="space-y-4">
+      <h2 id="leaderboards-table-heading" className="sr-only">
+        Standings
+      </h2>
 
-  const topThree =
-    filter === "achievements"
-      ? filteredAchievements?.slice(0, 3).map((e) => ({
-          countryId: e.countryId,
-          countryName: e.countryName,
-          primary: `${e.totalPoints} pts`,
-          secondary: `${e.achievementCount} unlocked • ${e.rareAchievements} rare+`,
-          flag: e.flag,
-        }))
-      : countryBoard?.slice(0, 3).map((e) => ({
-          countryId: e.countryId,
-          countryName: e.countryName,
-          primary: fmt(active.fmt, e.value),
-          secondary: `${e.economicTier} • ${e.populationTier}`,
-          flag: e.flag,
-        }));
-
-  const mainContent = (
-    <Card padding="lg" className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-label text-title-2">Realm leaderboards</h2>
-          <p className="text-label-secondary text-footnote">
-            Rankings across {active.label.toLowerCase()} • top {limit} nations of one realm, since
-            each realm runs at its own speed
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <LeaderboardRealmSelect realmParam={realm} />
-          <SearchField
-            size="sm"
-            placeholder="Search nations"
-            aria-label="Search nations"
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-            containerClassName="w-full sm:w-64"
-          />
-
-          <SegmentedControl
-            aria-label="Nations displayed"
-            size="sm"
-            value={String(limit)}
-            onValueChange={(value) => setLimit(Number(value))}
-            options={[10, 25, 50, 100].map((l) => ({ value: String(l), label: String(l) }))}
-          />
-        </div>
-      </div>
-
-      <div className="border-separator space-y-3 border-b pb-4">
-        <SegmentedControl
-          aria-label="Category"
-          size="sm"
-          value={activeDomain}
-          onValueChange={setActiveDomain}
-          options={CATEGORIES.map((cat) => ({ value: cat.id, label: cat.label }))}
-          className="max-w-full overflow-x-auto"
-        />
-
-        <ToggleGroup
-          type="single"
-          aria-label="Metric"
-          size="sm"
-          variant="pill"
-          value={filter}
-          onValueChange={(value) => {
-            if (value) setFilter(value as FilterId);
-          }}
-          className="flex-wrap"
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div
+          role="group"
+          aria-label="Leaderboard metric"
+          className="flex flex-wrap items-center gap-1.5"
         >
-          {visibleFilters.map((f) => {
-            const Icon = f.icon;
+          {METRIC_PILLS.map((pill) => {
+            const Icon = pill.icon;
             return (
-              <ToggleGroupItem key={f.id} value={f.id} className="gap-2">
-                <Icon aria-hidden className="size-3.5" />
-                {f.label}
-              </ToggleGroupItem>
+              <ActionPill
+                key={pill.id}
+                size="md"
+                pressed={metric === pill.id}
+                icon={<Icon />}
+                onClick={() => setMetric(pill.id)}
+              >
+                {pill.label}
+              </ActionPill>
             );
           })}
-        </ToggleGroup>
+        </div>
+
+        {!isCollectors && (
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <SearchField
+              size="sm"
+              placeholder="Search nations"
+              aria-label="Search nations"
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+              containerClassName="w-full sm:w-56"
+            />
+            <LeaderboardRealmSelect realmParam={realm} />
+          </div>
+        )}
       </div>
 
-      {!isLoading && topThree && topThree.length >= 3 && !searchQuery && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <PodiumCard
-            rank={1}
-            name={topThree[0].countryName}
-            primary={topThree[0].primary}
-            secondary={topThree[0].secondary}
-            lead={<FlagGraphic countryName={topThree[0].countryName} flag={topThree[0].flag} />}
+      {isCollectors ? (
+        <LeaderboardTab />
+      ) : unlisted ? (
+        <Card>
+          <EmptyState
+            compact
+            title="This realm isn't ranked"
+            message="Only listed realms have leaderboards. Pick one from the realm menu."
           />
-          <PodiumCard
-            rank={2}
-            name={topThree[1].countryName}
-            primary={topThree[1].primary}
-            secondary={topThree[1].secondary}
-            lead={<FlagGraphic countryName={topThree[1].countryName} flag={topThree[1].flag} />}
-          />
-          <PodiumCard
-            rank={3}
-            name={topThree[2].countryName}
-            primary={topThree[2].primary}
-            secondary={topThree[2].secondary}
-            lead={<FlagGraphic countryName={topThree[2].countryName} flag={topThree[2].flag} />}
-          />
-        </div>
-      )}
-
-      {unlisted ? (
-        <EmptyState
-          compact
-          title="This realm isn't ranked"
-          message="Only listed realms have leaderboards. Pick one from the realm menu."
-        />
-      ) : filter === "achievements" ? (
-        filteredAchievements && filteredAchievements.length > 0 ? (
-          <FacetList>
-            <FacetListSection
-              aria-label="Achievement rankings"
-              groupClassName="bg-surface-secondary"
-            >
-              {filteredAchievements.map((entry, index) => (
-                <Row
-                  key={entry.countryId}
-                  rank={index + 1}
-                  name={entry.countryName}
-                  lead={<FlagGraphic countryName={entry.countryName} flag={entry.flag} />}
-                  primary={`${entry.totalPoints} pts`}
-                  secondary={`${entry.achievementCount} achievements • ${entry.rareAchievements} rare+`}
-                />
-              ))}
-            </FacetListSection>
-          </FacetList>
-        ) : (
-          <EmptyState compact title="No nations match your search" />
-        )
+        </Card>
       ) : isLoading ? (
-        <div aria-busy className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="rounded-row h-14" />
+        <Card content="data" padding="md" aria-busy className="space-y-2">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Skeleton key={idx} className="rounded-control-sm h-10" />
           ))}
-        </div>
+        </Card>
       ) : countryBoard && countryBoard.length > 0 ? (
-        <FacetList>
-          <FacetListSection
-            aria-label={`${active.label} rankings`}
-            groupClassName="bg-surface-secondary"
-          >
-            {countryBoard.map((entry, index) => (
-              <Row
-                key={entry.countryId}
-                rank={index + 1}
-                name={entry.countryName}
-                lead={<FlagGraphic countryName={entry.countryName} flag={entry.flag} />}
-                primary={fmt(active.fmt, entry.value)}
-                secondary={`${entry.economicTier} • ${entry.populationTier}`}
-              />
-            ))}
-          </FacetListSection>
-        </FacetList>
+        <Card content="data" padding="none" className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr className="border-separator text-caption text-label-secondary border-b">
+                  <th scope="col" className="w-16 px-4 py-2.5 font-medium">
+                    Rank
+                  </th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">
+                    Nation
+                  </th>
+                  <th scope="col" className="hidden px-4 py-2.5 font-medium sm:table-cell">
+                    Tier
+                  </th>
+                  <th scope="col" className="hidden px-4 py-2.5 font-medium md:table-cell">
+                    {secondaryStatHeader}
+                  </th>
+                  <th scope="col" className="px-4 py-2.5 text-right font-medium">
+                    {activeMetric.label}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {countryBoard.map((entry, index) => (
+                  <tr
+                    key={entry.countryId}
+                    className="border-separator duration-fast hover:bg-fill-4 border-b transition-colors last:border-b-0"
+                  >
+                    <td className="px-4 py-2.5 align-middle">
+                      <LeaderboardRankPill rank={index + 1} />
+                    </td>
+                    <td className="px-4 py-2.5 align-middle">
+                      <div className="flex items-center gap-2.5">
+                        <FlagGraphic countryName={entry.countryName} flag={entry.flag} />
+                        <span className="text-callout text-label truncate font-medium">
+                          {entry.countryName}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="text-footnote text-label-secondary hidden px-4 py-2.5 align-middle sm:table-cell">
+                      {entry.economicTier || "–"}
+                    </td>
+                    <td className="text-footnote text-label-secondary hidden px-4 py-2.5 align-middle md:table-cell">
+                      {entry.populationTier || "–"}
+                    </td>
+                    <td className="text-callout text-label px-4 py-2.5 text-right align-middle font-semibold tabular-nums">
+                      {formatMetricFigure(activeMetric.fmt, entry.value)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       ) : (
-        <EmptyState compact title="No nations match your filters" />
+        <Card>
+          <EmptyState
+            compact
+            title="No nations match your search"
+            message="Try another search term or pick a different realm."
+          />
+        </Card>
       )}
-    </Card>
+    </section>
   );
-
-  return mainContent;
 }

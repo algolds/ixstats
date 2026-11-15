@@ -4,10 +4,11 @@ import { api, type RouterOutputs } from "~/trpc/react";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "~/components/ui/sheet";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
 import { Progress } from "~/components/ui/progress";
-import { Eyebrow } from "~/components/ui/eyebrow";
+import { CountryLink } from "~/components/shared/country-actions/CountryLink";
 import {
   City as Building2,
   User,
@@ -94,10 +95,10 @@ function StatusBadge({ status }: { status: string | undefined }) {
 
 function SectionTitle({ icon: Icon, children }: { icon: IconType; children: React.ReactNode }) {
   return (
-    <Eyebrow className="mb-2 flex items-center gap-2">
-      <Icon className="h-3.5 w-3.5" />
+    <h4 className="text-label text-headline mb-2 flex items-center gap-2">
+      <Icon className="text-tint h-4 w-4" />
       {children}
-    </Eyebrow>
+    </h4>
   );
 }
 
@@ -110,12 +111,32 @@ function EmbassyBody({ embassy }: { embassy: EmbassyDetails }) {
       <div className="space-y-2">
         <InfoRow
           label="Host country"
-          value={embassy.hostCountryName ?? embassy.hostCountryId}
+          value={
+            <CountryLink
+              country={{
+                id: embassy.hostCountryId,
+                name: embassy.hostCountryName ?? embassy.hostCountryId,
+              }}
+              className="hover:text-tint font-medium"
+            >
+              {embassy.hostCountryName ?? embassy.hostCountryId}
+            </CountryLink>
+          }
           icon={MapPin}
         />
         <InfoRow
           label="Guest country"
-          value={embassy.guestCountryName ?? embassy.guestCountryId}
+          value={
+            <CountryLink
+              country={{
+                id: embassy.guestCountryId,
+                name: embassy.guestCountryName ?? embassy.guestCountryId,
+              }}
+              className="hover:text-tint font-medium"
+            >
+              {embassy.guestCountryName ?? embassy.guestCountryId}
+            </CountryLink>
+          }
           icon={Building2}
         />
         {embassy.ambassadorName && (
@@ -152,23 +173,21 @@ function EmbassyBody({ embassy }: { embassy: EmbassyDetails }) {
             <SectionTitle icon={Zap}>Active Missions ({activeMissions.length})</SectionTitle>
             <div className="space-y-2">
               {activeMissions.map((m) => (
-                <div
-                  key={m.id}
-                  className="border-separator bg-surface rounded-control text-footnote border p-2"
-                >
-                  <div className="flex items-center justify-between">
+                <Card key={m.id} variant="well" padding="sm" className="text-footnote">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-label font-medium">{m.name}</span>
-                    <Badge variant="outline">{m.type}</Badge>
+                    <span className="text-label-secondary capitalize">{m.type}</span>
                   </div>
                   {m.progress != null && (
                     <div className="mt-2">
-                      <Progress value={m.progress} className="h-1" />
-                      <span className="text-label-secondary text-footnote mt-0.5 block">
-                        {m.progress}% complete
-                      </span>
+                      <Progress
+                        value={m.progress}
+                        aria-label={`${m.name} progress`}
+                        className="h-1"
+                      />
                     </div>
                   )}
-                </div>
+                </Card>
               ))}
             </div>
           </div>
@@ -267,9 +286,9 @@ export function EmbassyDetailSheet({
           {embassy && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <StatusBadge status={embassy.status} />
-              <Badge variant="default">
+              <span className="text-label-secondary text-footnote">
                 {LEVEL_LABELS[embassy.level ?? 1] ?? `Level ${embassy.level ?? 1}`}
-              </Badge>
+              </span>
             </div>
           )}
         </SheetHeader>

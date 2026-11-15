@@ -7,7 +7,7 @@ import { SwipeableRow, SwipeActionButton } from "~/components/ui/facet/swipeable
 import { cn } from "~/lib/utils";
 import { tweenFast } from "~/lib/design/motion";
 import type { NotificationItem } from "./types";
-import { soundEffects } from "~/lib/sound/cuelume";
+import { soundCues } from "~/lib/sound/cuelume";
 import { Button } from "~/components/ui/button";
 
 interface NotificationRowProps {
@@ -62,7 +62,7 @@ export function NotificationRow({
       <SwipeableRow.Trailing
         commit={{
           action: () => {
-            soundEffects.droplet();
+            soundCues.dismiss();
             handleDismiss(n);
           },
           label: "Clear",
@@ -83,7 +83,7 @@ export function NotificationRow({
           icon={X}
           label="Clear"
           onClick={() => {
-            soundEffects.droplet();
+            soundCues.dismiss();
             handleDismiss(n);
           }}
           color="var(--color-error)"

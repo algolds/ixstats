@@ -10,7 +10,7 @@
  * without reading their wiki infobox.
  * New nations are unclaimed; nothing is deleted and no claimed nation changes hands.
  */
-import { PrismaClient } from "@prisma/client";
+
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { refSchema, repoPathSchema, repoSchema } from "~/lib/realms/sources/config";
@@ -23,8 +23,9 @@ import {
   validateSettings,
   type RunDeps,
 } from "~/server/modules/realms/realms.source-sync";
+import { createPrismaClient } from "~/server/prisma-client";
 
-const db = new PrismaClient();
+const db = createPrismaClient();
 const apply = process.argv.includes("--apply");
 
 function optionalArg(name: string): string | undefined {

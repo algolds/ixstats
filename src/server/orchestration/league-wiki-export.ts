@@ -18,6 +18,8 @@ import {
   type StandingRow,
 } from "~/lib/sports/standings-wikitext";
 import type { WikiAuthContext } from "~/lib/wiki-os/auth";
+import { parseWikiSource } from "~/lib/wiki-os/config";
+import { wikiSourceLabel } from "~/lib/wiki-os/wiki-source-availability";
 import { getArticleWikitextShadow } from "~/lib/wiki-os/adapters/mediawiki/article-store";
 import { getHeadRevisionRefs } from "~/lib/wiki-os/core/edit-conflict";
 import { parseRedirect } from "~/lib/wiki-os/core/redirect";
@@ -41,6 +43,7 @@ async function loadLeague(db: PublishStandingsContext["db"], leagueId: string) {
     select: {
       name: true,
       wikiSlug: true,
+      wikiSource: true,
       seasons: {
         select: { id: true, seasonNumber: true, status: true },
         orderBy: { seasonNumber: "desc" },
@@ -50,6 +53,12 @@ async function loadLeague(db: PublishStandingsContext["db"], leagueId: string) {
   if (!league) throw new TRPCError({ code: "NOT_FOUND", message: "League not found" });
   if (!league.wikiSlug) {
     throw precondition("Link a wiki article to this league before publishing its standings.");
+  }
+  const source = parseWikiSource(league.wikiSource);
+  if (source !== "ixwiki") {
+    throw precondition(
+      `Standings can only be published to a Wiki article, not ${wikiSourceLabel(source)}.`
+    );
   }
   return { ...league, wikiSlug: league.wikiSlug };
 }
@@ -78,7 +87,7 @@ async function loadStandings(
   const rows = standings.map((s) => ({
     position: s.position,
     teamName: s.team.name,
-    wikiSlug: s.team.wikiSlug,
+    wikiSlug: parseWikiSource(s.team.wikiSource) === "ixwiki" ? s.team.wikiSlug : null,
     wins: s.wins,
     draws: s.draws,
     losses: s.losses,

@@ -53,7 +53,7 @@ export function MapHintPill({
     <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 max-w-[90%] -translate-x-1/2">
       <FacetMaterial
         layer="chrome"
-        className="text-label-secondary text-footnote truncate rounded-full px-3 py-1"
+        className="facet-chrome-subtle text-label-secondary rounded-control text-footnote truncate px-3 py-1"
       >
         {text}
       </FacetMaterial>

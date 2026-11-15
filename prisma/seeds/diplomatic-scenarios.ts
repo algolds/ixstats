@@ -1,3 +1,4 @@
+import { createPrismaClient } from "~/server/prisma-client";
 /**
  * Diplomatic Scenarios Seed Script
  *
@@ -14,9 +15,7 @@
  * Based on: src/lib/diplomatic-scenario-generator.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+const prisma = createPrismaClient();
 
 async function seedDiplomaticScenarios() {
   console.log("🌱 Seeding diplomatic scenarios...\n");

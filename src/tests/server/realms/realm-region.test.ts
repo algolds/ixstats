@@ -781,6 +781,7 @@ describe("inactivity runs", () => {
       },
       user: { updateMany: jest.fn().mockResolvedValue({ count: 1 }) },
       realmOfficer: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      countryLoreAuthor: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
       nationMaterialHold: {
         upsert: jest.fn().mockResolvedValue({}),
         findMany: jest

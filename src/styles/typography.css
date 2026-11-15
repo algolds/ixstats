@@ -320,6 +320,51 @@
   unicode-range: U+002C, U+002E, U+003A;
 }
 
+/* The Sovereign sign (₷, U+20B7) for the Exchange: none of the UI faces carry it, so without this it fell back to
+   whatever the reader's system had (often nothing). The Charis SIL files are used unmodified (OFL, with Reserved Font
+   Names, so no subset), and unicode-range means a page downloads one only when it shows a ₷. One face per weight, as
+   with the punctuation faces above: a browser matches the weight first, so a weight range would never be consulted. */
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Charis SIL-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B7;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Charis SIL-Regular.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B7;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Charis SIL-700.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B7;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Charis SIL-700.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B7;
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  src: url("/fonts/Charis SIL-700.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+20B7;
+}
+
 /* --- 5. Azeret Mono --- */
 @font-face {
   font-family: "Azeret Mono";

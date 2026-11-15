@@ -250,7 +250,7 @@ export function LeagueScheduleTab({
                       )}
                     </div>
 
-                    <span className="text-label-secondary text-footnote font-mono">
+                    <span className="text-label-secondary text-footnote tabular-nums">
                       Match #{m.id.slice(-4).toUpperCase()}
                     </span>
                   </div>

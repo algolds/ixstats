@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
+import { useCountryClick } from "~/components/shared/country-actions/CountryLink";
 import { Skeleton } from "~/components/ui/skeleton";
 import { api } from "~/trpc/react";
 import { ixstatesLinkHref } from "~/lib/system/wikios-standalone";
@@ -365,8 +366,13 @@ interface PopoverCardProps {
   titleClass: string;
   subtitle?: React.ReactNode;
   subtitleClass?: string;
-  /** Each `href` is already a path for `<Link>` (ixstatesLinkHref). */
-  actions: Array<{ href: string; label: string; tone: keyof typeof ACTION_TONES }>;
+  /** Each `href` is already a path for `<Link>` (ixstatesLinkHref); `onClick` may take a plain click over. */
+  actions: Array<{
+    href: string;
+    label: string;
+    tone: keyof typeof ACTION_TONES;
+    onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  }>;
 }
 
 /** Profile summary inside a mention's hover card: leading glyph, title, subtitle and link buttons. */
@@ -392,6 +398,7 @@ function PopoverCard({
           <Link
             key={action.href}
             href={action.href}
+            onClick={action.onClick}
             className={`rounded-control-sm text-caption flex-1 py-1 text-center font-semibold ${ACTION_TONES[action.tone]}`}
           >
             {action.label}
@@ -437,6 +444,7 @@ function MentionProfile({
   profile: ReturnType<typeof useMentionProfile>;
 }) {
   const { isLeague, isClub, isCountry, isUser } = entityKinds(href);
+  const countryClick = useCountryClick();
 
   return (
     <div className="flex flex-col gap-3">
@@ -488,15 +496,12 @@ function MentionProfile({
           subtitle={countryData.paragraphs?.[0] || "Explore country details."}
           subtitleClass="text-footnote text-label-secondary line-clamp-2"
           actions={[
+            // The nation's actions sheet, as every country link opens: profile, embassy and the rest.
             {
               href: ixstatesLinkHref(`/countries/${entityId}`),
-              label: "View profile",
+              label: "Open nation",
               tone: "green",
-            },
-            {
-              href: ixstatesLinkHref("/mycountry/diplomacy"),
-              label: "Open embassy",
-              tone: "neutral",
+              onClick: countryClick({ slug: entityId }),
             },
           ]}
         />
@@ -549,6 +554,8 @@ function MentionPopover({
 }) {
   const [open, setOpen] = useState(false);
   const profile = useMentionProfile(open, href);
+  const countryClick = useCountryClick();
+  const { isCountry } = entityKinds(href);
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={200} closeDelay={100}>
@@ -556,7 +563,11 @@ function MentionPopover({
         <Link
           href={ixstatesLinkHref(href)}
           className={badgeStyle}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            // A country mention opens the nation's actions sheet, like every country link.
+            if (isCountry && profile.entityId) countryClick({ slug: profile.entityId })(e);
+          }}
         >
           {icon && <span className="text-footnote shrink-0 leading-none">{icon}</span>}
           <span>{label}</span>

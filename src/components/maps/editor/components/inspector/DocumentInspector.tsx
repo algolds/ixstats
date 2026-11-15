@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "~/components/ui/badge";
-import { Eyebrow } from "~/components/ui/eyebrow";
 import { Button } from "~/components/ui/button";
 import React, { useMemo } from "react";
 import {
@@ -112,13 +111,13 @@ function GeographyCard({
 }) {
   return (
     <Card className="space-y-2 p-3">
-      <Eyebrow>Geography</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">Geography</span>
 
       <div className="grid grid-cols-2 gap-2">
         <MetricCard
           plain
           label="Land area"
-          value={areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "—"}
+          value={areaKm2 != null ? Math.round(areaKm2).toLocaleString() : "–"}
           unit={areaKm2 != null && "km²"}
         />
         <MetricCard plain label="Total features" value={totalFeatures.toLocaleString()} />
@@ -142,7 +141,7 @@ function GeographyCard({
 /** Headline value for a hydrology total: the figure when known, otherwise "Mapped" or a dash. */
 function hydroMetric(total: number | null | undefined, hasMappedFeatures: boolean, unit: string) {
   if (total != null && total > 0) return { value: total.toLocaleString(), unit };
-  return { value: hasMappedFeatures ? "Mapped" : "—", unit: undefined };
+  return { value: hasMappedFeatures ? "Mapped" : "–", unit: undefined };
 }
 
 function HydrologyCard({
@@ -163,7 +162,7 @@ function HydrologyCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Waves className="text-label-secondary h-3.5 w-3.5" />
-          <Eyebrow>Hydrology system</Eyebrow>
+          <span className="text-caption text-label-secondary font-medium">Hydrology system</span>
         </div>
         {hydro?.drainageDensity != null && (
           <span className="text-label-secondary text-footnote tabular-nums">
@@ -204,7 +203,7 @@ function HydrologyCard({
 function QuickAddCard({ onModeChange }: { onModeChange: (mode: EditorMode) => void }) {
   return (
     <Card className="space-y-2 p-3">
-      <Eyebrow>Quick add</Eyebrow>
+      <span className="text-caption text-label-secondary block font-medium">Quick add</span>
       <div className="grid grid-cols-3 gap-2">
         {QUICK_ADD.map(({ mode, label, key, icon: Icon, iconClass }) => (
           <Button

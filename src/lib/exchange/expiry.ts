@@ -16,7 +16,7 @@ import type { PrismaClient } from "@prisma/client";
 import { ExchangeError } from "~/lib/vault/exchange-service";
 import { DAY_MS, refundIssuer, transition } from "./contracts";
 import { notifyExchange, type ExchangeNotice } from "./notify";
-import { formatSovereigns } from "./amounts";
+import { centsOf, formatSovereigns, fromCents } from "./amounts";
 
 /** Real days an issuer has to award after bidding closes, before the contract expires. */
 export const AWARD_GRACE_DAYS = 3;
@@ -42,12 +42,13 @@ export async function expireLapsedContracts(
   });
 
   const result: ExpiryResult = { expired: 0, skipped: 0, refunded: 0 };
+  let refundedCents = 0;
   for (const { id } of lapsed) {
     const notices: ExchangeNotice[] = [];
     try {
       const refunded = await db.$transaction(async (tx) => {
         const before = await transition(tx, id, "OPEN", "CANCELLED", {
-          escrow: 0,
+          escrow: 0n,
           closedIxTime: nowMs,
           resolutionNote: "Expired: not awarded in time",
         });
@@ -56,13 +57,15 @@ export async function expireLapsedContracts(
           include: { company: { select: { founderId: true } } },
         });
         await tx.contractBid.updateMany({ where: { contractId: id }, data: { outcome: "LOST" } });
-        await refundIssuer(tx, before, before.escrow, "close");
+        const escrowCents = centsOf(before.escrow);
+        const escrowSovereigns = fromCents(escrowCents);
+        await refundIssuer(tx, before, escrowSovereigns, "close");
 
         if (before.issuerUserId) {
           notices.push({
             userId: before.issuerUserId,
             title: `${before.title} expired`,
-            message: `It was never awarded, so ${formatSovereigns(before.escrow)} of escrow came back to you.`,
+            message: `It was never awarded, so ${formatSovereigns(escrowSovereigns)} of escrow came back to you.`,
           });
         }
         const bidders = new Set(
@@ -76,10 +79,10 @@ export async function expireLapsedContracts(
             priority: "low",
           });
         }
-        return before.escrow;
+        return escrowCents;
       });
       result.expired++;
-      result.refunded += refunded;
+      refundedCents += refunded;
       notifyExchange(notices);
     } catch (error) {
       // Someone (an award, a cancel, another run) moved it first: nothing to refund here.
@@ -91,6 +94,6 @@ export async function expireLapsedContracts(
       result.skipped++;
     }
   }
-  result.refunded = Math.round(result.refunded * 100) / 100;
+  result.refunded = fromCents(refundedCents);
   return result;
 }

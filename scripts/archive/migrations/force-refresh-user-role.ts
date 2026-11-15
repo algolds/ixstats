@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { createPrismaClient } from "~/server/prisma-client";
 
 /**
  * Force refresh user role script
@@ -9,9 +10,7 @@
  * Run with: npx tsx scripts/force-refresh-user-role.ts
  */
 
-import { PrismaClient } from "@prisma/client";
-
-const db = new PrismaClient();
+const db = createPrismaClient();
 
 // System owner Clerk IDs
 const SYSTEM_OWNER_IDS = [

@@ -9,6 +9,7 @@
  */
 import type { Prisma } from "@prisma/client";
 import { FORMER_MEMBER, formerUsername } from "~/lib/account/deletion";
+import { recountReactions } from "~/server/modules/thinkpages-forum/reactions";
 
 type Tx = Prisma.TransactionClient;
 
@@ -78,6 +79,26 @@ async function eraseSessionsAndSettings(tx: Tx, ids: ErasureIds): Promise<void> 
   await tx.notification.deleteMany({ where });
 }
 
+/**
+ * The user's conversation memberships, then any conversation they leave with nobody in it (their notes to
+ * themselves, a sports desk or feedback thread only they were in). A ThinkTank's chat is kept, since its group
+ * still owns it and rebuilds the participants from its members.
+ */
+async function eraseConversationMemberships(tx: Tx, ids: ErasureIds): Promise<void> {
+  const mine = await tx.conversationParticipant.findMany({
+    where: { userId: both(ids) },
+    select: { conversationId: true },
+  });
+  await tx.conversationParticipant.deleteMany({ where: { userId: both(ids) } });
+  await tx.thinkshareConversation.deleteMany({
+    where: {
+      id: { in: [...new Set(mine.map((p) => p.conversationId))] },
+      source: { not: "thinktank" },
+      participants: { none: {} },
+    },
+  });
+}
+
 /** Connections both ways, follows by the user or their personas, bookmarks, memberships, officer posts and founding-member credits. */
 async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): Promise<void> {
   const where = { userId: both(ids) };
@@ -89,7 +110,7 @@ async function eraseSocialGraph(tx: Tx, ids: ErasureIds, personaIds: string[]): 
   });
   await tx.thinkpagesPersonalAccount.deleteMany({ where: { clerkUserId: both(ids) } });
   await tx.postBookmark.deleteMany({ where });
-  await tx.conversationParticipant.deleteMany({ where });
+  await eraseConversationMemberships(tx, ids);
   await tx.thinktankMember.deleteMany({ where });
   await tx.realmOfficer.deleteMany({ where });
   await tx.realmFounder.deleteMany({ where });
@@ -130,6 +151,57 @@ async function erasePrivateRows(tx: Tx, ids: ErasureIds): Promise<void> {
   await eraseGenerationHistory(tx, ids);
 }
 
+/** The user's forum reactions go and every post they reacted to is recounted, so `reactionCounts` stops including them. */
+async function eraseReactions(tx: Tx, ids: ErasureIds): Promise<void> {
+  const reacted = await tx.forumPostReaction.findMany({
+    where: { userId: both(ids) },
+    select: { postId: true },
+  });
+  await tx.forumPostReaction.deleteMany({ where: { userId: both(ids) } });
+  for (const postId of new Set(reacted.map((r) => r.postId))) {
+    await recountReactions(tx, postId);
+  }
+}
+
+/**
+ * Map edit requests: a pending one is rejected (a moderator must not approve an emptied proposal), and every one of
+ * the user's loses its proposal. Reviewed ones keep their status and review rows.
+ */
+async function eraseMapEditRequests(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { userId: both(ids) };
+  await tx.mapEditRequest.updateMany({
+    where: { ...where, status: "pending" },
+    data: { status: "rejected", reviewNote: "Withdrawn: the requester closed their account." },
+  });
+  await tx.mapEditRequest.updateMany({ where, data: { proposedData: {} } });
+}
+
+/**
+ * Preferences, watches, mutes, alert thresholds, editor sessions, lore team and forum moderator memberships, the
+ * user's own custom government type names, poll votes and forum reactions are deleted; proposals and requests keep their review rows with free-text fields cleared.
+ */
+async function eraseMiscRows(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { userId: both(ids) };
+  await tx.mapEditorSession.deleteMany({ where });
+  await tx.pollVote.deleteMany({ where });
+  await eraseReactions(tx, ids);
+  await tx.intelligenceAlertThreshold.deleteMany({ where });
+  await tx.cardWatchlist.deleteMany({ where });
+  await tx.cardNotificationMute.deleteMany({ where });
+  await tx.exchangeWatch.deleteMany({ where });
+  await tx.countryLoreAuthor.deleteMany({ where });
+  await tx.forumCategoryModerator.deleteMany({ where });
+  await tx.customGovernmentType.deleteMany({ where });
+  await tx.cardCategorySuggestion.updateMany({ where, data: { note: null } });
+  await eraseMapEditRequests(tx, ids);
+  await tx.contract.updateMany({
+    where: { disputedByUserId: both(ids) },
+    data: { disputeReason: null },
+  });
+  await tx.loreCardRequest.deleteMany({ where: { userId: both(ids), status: "PENDING" } });
+  await tx.loreCardRequest.updateMany({ where, data: { adminNotes: null } });
+}
+
 async function eraseLogs(tx: Tx, ids: ErasureIds): Promise<void> {
   await tx.systemLog.deleteMany({ where: { userId: both(ids) } });
   await tx.auditLog.deleteMany({ where: { userId: both(ids) } });
@@ -149,6 +221,7 @@ export async function eraseRecords(
     personas.map((p) => p.id)
   );
   await erasePrivateRows(tx, ids);
+  await eraseMiscRows(tx, ids);
   await eraseLogs(tx, ids);
 }
 
@@ -221,6 +294,27 @@ async function anonymiseContributions(tx: Tx, ids: ErasureIds): Promise<void> {
   await tx.activityFeed.updateMany({ where: { userId: both(ids) }, data: { userId: null } });
 }
 
+/**
+ * Map features the user submitted stay (the realm's shared map, Privacy 5.2(2)-(3)), credited to nobody; uploaded
+ * images stay in the posts that use them, with no uploader.
+ */
+async function anonymiseMapSubmissions(tx: Tx, ids: ErasureIds): Promise<void> {
+  const where = { submittedBy: both(ids) };
+  const data = { submittedBy: ids.sentinel };
+  await tx.subdivision.updateMany({ where, data });
+  await tx.city.updateMany({ where, data });
+  await tx.pointOfInterest.updateMany({ where, data });
+  await tx.storyPin.updateMany({ where, data });
+  await tx.mapLabel.updateMany({ where, data });
+  await tx.peak.updateMany({ where, data });
+  await tx.namedRiver.updateMany({ where, data });
+  await tx.namedLake.updateMany({ where, data });
+  await tx.uploadedAsset.updateMany({
+    where: { uploaderClerkId: both(ids) },
+    data: { uploaderClerkId: null },
+  });
+}
+
 export async function anonymiseRecords(
   tx: Tx,
   ids: ErasureIds,
@@ -229,6 +323,7 @@ export async function anonymiseRecords(
   await anonymisePersonas(tx, ids, personas);
   await anonymiseForum(tx, ids);
   await anonymiseContributions(tx, ids);
+  await anonymiseMapSubmissions(tx, ids);
 }
 
 /**

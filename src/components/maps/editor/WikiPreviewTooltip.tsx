@@ -1,16 +1,17 @@
 "use client";
 
 /**
- * WikiPreviewTooltip — Shows a small preview card when hovering over
- * a wiki-linked feature in the feature list.
+ * WikiPreviewTooltip: a small preview card when hovering over a wiki-linked feature in the feature list.
  *
- * Fetches the article intro on hover (with 5-minute stale time).
- * Uses createPortal to render to body so it escapes overflow containers.
+ * Fetches the article intro on hover (with 5-minute stale time) from the map's realm's wikis, as the map's own
+ * feature panel does (`geoWiki.getFeatureWikiIntro`): Wiki first, then IIWiki for Ixnay, so a feature linked to an
+ * IIWiki page previews and opens that page. Uses createPortal to render to body so it escapes overflow containers.
  */
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { titleToWikiOSRoute } from "~/lib/wiki-os/transformers/url-compat";
+import { useMapRealm } from "~/components/maps/core/MapRealmContext";
+import { parseWikiSource, wikiReaderPath } from "~/lib/wiki-os/config";
 import { createPortal } from "react-dom";
 import { OpenNewWindow as ExternalLink, SystemRestart as Loader2 } from "iconoir-react";
 import { api } from "~/trpc/react";
@@ -18,6 +19,7 @@ import { useHydrated } from "~/hooks/useHydrated";
 
 interface WikiPreviewTooltipProps {
   wikiTitle: string;
+  wikiSource?: string | null;
   children: React.ReactNode;
 }
 
@@ -29,20 +31,22 @@ function firstSentences(text: string, n: number): string {
   return sentences.slice(0, n).join("").trim();
 }
 
-export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipProps) {
+export function WikiPreviewTooltip({ wikiTitle, wikiSource, children }: WikiPreviewTooltipProps) {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useHydrated();
+  const realm = useMapRealm();
+  const preferredWiki = wikiSource ? parseWikiSource(wikiSource) : undefined;
 
-  // Only fetch when visible (enabled flag)
-  const { data: intro, isLoading } = api.wikios.getIntro.useQuery(
-    { title: wikiTitle, wiki: "ixwiki" },
+  // Only fetch when visible (enabled flag); asks the stored wiki when known, else the realm's wikis in order
+  const { data: intro, isLoading } = api.geoWiki.getFeatureWikiIntro.useQuery(
+    { wikiPageTitle: wikiTitle, realm, wiki: preferredWiki },
     { enabled: visible, staleTime: 5 * 60_000 }
   );
 
-  const showTooltip = useCallback(() => {
+  const showTooltip = () => {
     hoverTimerRef.current = setTimeout(() => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
@@ -54,14 +58,14 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
       }
       setVisible(true);
     }, 400); // 400ms delay before showing
-  }, []);
+  };
 
-  const hideTooltip = useCallback(() => {
+  const hideTooltip = () => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current);
     }
     setVisible(false);
-  }, []);
+  };
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -90,18 +94,13 @@ export function WikiPreviewTooltip({ wikiTitle, children }: WikiPreviewTooltipPr
                 </div>
               ) : intro ? (
                 <p className="text-label-secondary text-footnote leading-relaxed">
-                  {firstSentences(
-                    typeof intro === "string"
-                      ? intro
-                      : ((intro as { intro?: string })?.intro ?? ""),
-                    2
-                  )}
+                  {firstSentences(intro.extract, 2)}
                 </p>
               ) : (
                 <p className="text-label-secondary text-footnote">No article found.</p>
               )}
               <Link
-                href={titleToWikiOSRoute(wikiTitle)}
+                href={intro?.wikiUrl ?? wikiReaderPath(wikiTitle, preferredWiki ?? "ixwiki")}
                 className="text-tint text-caption mt-2 flex items-center gap-1 hover:underline"
               >
                 Open on wiki

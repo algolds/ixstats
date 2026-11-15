@@ -18,6 +18,7 @@ export async function getSeasonStandings(db: StandingsDb, seasonId: string) {
           color: true,
           logo: true,
           wikiSlug: true,
+          wikiSource: true,
         },
       },
     },

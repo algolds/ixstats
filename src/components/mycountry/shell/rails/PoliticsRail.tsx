@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import {
   City as Building2,
   Group as Users,
@@ -119,70 +119,61 @@ export function PoliticsRail({ countryId }: { countryId: string }) {
   const legislature = legislatureRaw as LegislatureItem | undefined;
   const parliament = parliamentRaw as ParliamentData | null | undefined;
 
-  const kpis = useMemo<Kpi[]>(() => {
-    return [
-      { label: "Parties", value: parties?.length ?? 0 },
-      { label: "Seats", value: legislature?.totalSeats ?? 0 },
-      { label: "Approval", value: approvalKpiValue(country?.publicApproval) },
-    ];
-  }, [parties, legislature, country?.publicApproval]);
+  const kpis: Kpi[] = [
+    { label: "Parties", value: parties?.length ?? 0 },
+    { label: "Seats", value: legislature?.totalSeats ?? 0 },
+    { label: "Approval", value: approvalKpiValue(country?.publicApproval) },
+  ];
 
-  const activity = useMemo<ActivityEntry[]>(() => {
-    const entries: ActivityEntry[] = [];
-
-    if (legislature && legislature.totalSeats > 0) {
-      pushRecorded(
-        entries,
-        {
-          id: "legislature",
-          icon: Landmark,
-          iconColor: STATUS_TEXT.neutral,
-          text: `Legislature: ${legislatureStructure(legislature)}${legislature.totalSeats} seats configured`,
-        },
-        legislature.updatedAt,
-        legislature.createdAt
-      );
-    }
-
-    parties?.forEach((p) => {
-      pushRecorded(
-        entries,
-        {
-          id: `party-${p.id}`,
-          icon: Users,
-          iconColor: STATUS_TEXT.neutral,
-          text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
-        },
-        p.createdAt
-      );
-    });
-
-    elections?.forEach((e) => {
-      const isCompleted = e.status === "COMPLETED" || e.status === "completed";
-      pushRecorded(
-        entries,
-        {
-          id: `election-${e.id}`,
-          icon: isCompleted ? CheckCircle : BarChart3,
-          iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
-          text: isCompleted
-            ? `Completed: ${e.name ?? "Election"}`
-            : `Scheduled: ${e.name ?? "Election"}`,
-        },
-        e.updatedAt,
-        e.createdAt
-      );
-    });
-
-    return entries.sort((a, b) => b.time.getTime() - a.time.getTime());
-  }, [parties, elections, legislature]);
+  const entries: ActivityEntry[] = [];
+  if (legislature && legislature.totalSeats > 0) {
+    pushRecorded(
+      entries,
+      {
+        id: "legislature",
+        icon: Landmark,
+        iconColor: STATUS_TEXT.neutral,
+        text: `Legislature: ${legislatureStructure(legislature)}${legislature.totalSeats} seats configured`,
+      },
+      legislature.updatedAt,
+      legislature.createdAt
+    );
+  }
+  parties?.forEach((p) => {
+    pushRecorded(
+      entries,
+      {
+        id: `party-${p.id}`,
+        icon: Users,
+        iconColor: STATUS_TEXT.neutral,
+        text: `Party: ${p.name} (${p.ideology?.replace(/_/g, " ") ?? "Independent"})`,
+      },
+      p.createdAt
+    );
+  });
+  elections?.forEach((e) => {
+    const isCompleted = e.status === "COMPLETED" || e.status === "completed";
+    pushRecorded(
+      entries,
+      {
+        id: `election-${e.id}`,
+        icon: isCompleted ? CheckCircle : BarChart3,
+        iconColor: isCompleted ? STATUS_TEXT.success : STATUS_TEXT.neutral,
+        text: isCompleted
+          ? `Completed: ${e.name ?? "Election"}`
+          : `Scheduled: ${e.name ?? "Election"}`,
+      },
+      e.updatedAt,
+      e.createdAt
+    );
+  });
+  const activity = entries.sort((a, b) => b.time.getTime() - a.time.getTime());
 
   const hasParliamentSeats = parliament?.seats && parliament.seats.length > 0;
 
   // Seats a party actually holds in the chamber (from LegislativeSeat rows; 0 until elected).
-  const seatsByParty = useMemo(
-    () => new Map((parliament?.partySummary ?? []).map((ps) => [ps.party.id, ps.seats])),
-    [parliament]
+  const seatsByParty = new Map(
+    (parliament?.partySummary ?? []).map((ps) => [ps.party.id, ps.seats])
   );
 
   return (

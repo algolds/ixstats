@@ -59,6 +59,7 @@ export interface SelectedFeature {
   ixTimeYear?: number | null;
   eraLabel?: string | null;
   wikiPageTitle?: string | null;
+  wikiSource?: string | null;
 }
 
 export interface HoveredCountry extends SelectedCountry {
@@ -78,6 +79,8 @@ export interface CapitalsGeoJson {
       countryName: string;
       countrySlug: string | null;
       population: number | null;
+      wikiPageTitle?: string | null;
+      wikiSource?: string | null;
     };
   }>;
 }
@@ -262,6 +265,7 @@ const IxWorldMap = memo(
       baseImageUrl,
       rasterRealmId,
       rasterLayers,
+      flat: projectionMode === "mercator",
     });
 
     useWorldMapOverlayFeatures({

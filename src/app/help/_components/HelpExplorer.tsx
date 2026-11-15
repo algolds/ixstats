@@ -175,7 +175,6 @@ export function HelpExplorer({ sections = helpSections }: { sections?: HelpSecti
                     <Link
                       key={article.id}
                       href={article.path}
-                      data-cuelume-press="tick"
                       className="group focus-visible:ring-ring rounded-lg focus-visible:ring-2 focus-visible:outline-none"
                     >
                       <Card className="group-hover:bg-accent flex min-h-11 items-center justify-between gap-3 rounded-lg p-3.5 transition-[background-color] duration-150">

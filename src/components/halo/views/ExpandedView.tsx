@@ -1,23 +1,44 @@
-import { useSyncExternalStore } from "react";
 import { AnimatePresence } from "motion/react";
 import { HaloContainer } from "../HaloPrimitives";
-import { SearchView } from "./SearchView";
-import { NotificationsView } from "./NotificationsView";
-import { SettingsView } from "./SettingsView";
-import { MyCountryView } from "../plugins/mycountry";
-import type { ExpandedViewProps, DIPlugin } from "../types";
+import dynamic from "next/dynamic";
+import type { ExpandedViewProps, DIPlugin, ViewMode } from "../types";
 import { Button } from "~/components/ui/button";
-import { setPlayAsCookie } from "~/app/admin/users/play-as-cookie";
+import { setPlayAsCookie } from "~/lib/auth/play-as-cookie";
+import { usePlayAsTarget } from "~/hooks/usePlayAsTarget";
+import { withBasePath } from "~/lib/base-path";
 
-const subscribeNever = () => () => {};
-/** The admin "play as" target, re-read on every render (each mode switch re-renders this). */
-const readPlayAs = () => {
-  try {
-    return localStorage.getItem("ixstats.play_as_user") ?? "";
-  } catch {
-    return "";
+function dialogLabelForMode(mode: ViewMode, activePlugin?: DIPlugin | null): string {
+  if (mode === "search") return "Search";
+  if (mode === "notifications") return "Notifications and messages";
+  if (mode === "settings") return "Quick settings";
+  if (mode === "mycountry") return "Account";
+  if (mode === "plugin:profile") return "Wiki workspace";
+  if (mode.startsWith("plugin:")) {
+    const raw = activePlugin?.id || mode.slice(7);
+    return raw ? raw.charAt(0).toUpperCase() + raw.slice(1) : "Plugin";
   }
-};
+  return "Halo";
+}
+
+// The views are not needed until the Halo opens, so each is its own chunk fetched then; the fallback
+// keeps the island's height stable while the chunk loads.
+const viewLoading = () => <div className="h-40" aria-busy="true" />;
+const SearchView = dynamic(() => import("./SearchView").then((m) => m.SearchView), {
+  ssr: false,
+  loading: viewLoading,
+});
+const NotificationsView = dynamic(
+  () => import("./NotificationsView").then((m) => m.NotificationsView),
+  { ssr: false, loading: viewLoading }
+);
+const SettingsView = dynamic(() => import("./SettingsView").then((m) => m.SettingsView), {
+  ssr: false,
+  loading: viewLoading,
+});
+const AccountView = dynamic(() => import("./account/AccountView").then((m) => m.AccountView), {
+  ssr: false,
+  loading: viewLoading,
+});
 
 export function ExpandedView({
   mode,
@@ -29,15 +50,16 @@ export function ExpandedView({
   setSearchFilter,
   debouncedSearchQuery,
   searchResults,
+  isSearchPending,
   activePlugin,
 }: ExpandedViewProps & { activePlugin?: DIPlugin | null }) {
-  const targetUser = useSyncExternalStore(subscribeNever, readPlayAs, () => "");
+  const targetUser = usePlayAsTarget();
   const isImpersonating = targetUser !== "";
 
   const handleStopImpersonating = () => {
     localStorage.removeItem("ixstats.play_as_user");
     setPlayAsCookie(false);
-    window.location.href = "/admin/users";
+    window.location.href = withBasePath("/admin/users");
   };
 
   // Don't render if mode is compact
@@ -47,11 +69,36 @@ export function ExpandedView({
 
   return (
     <div
-      className="relative max-h-[80vh] w-full overflow-y-auto text-left"
+      id="halo-panel"
+      role="dialog"
+      aria-modal="false"
+      aria-label={dialogLabelForMode(mode, activePlugin)}
+      tabIndex={-1}
+      ref={(el) => {
+        if (
+          el &&
+          !el.contains(document.activeElement) &&
+          !document.activeElement?.closest('[data-slot="virtual-anchor-popover"]')
+        ) {
+          el.focus({ preventScroll: true });
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !e.defaultPrevented) {
+          e.preventDefault();
+          if (mode === "search" && searchQuery) {
+            setSearchQuery("");
+            setSearchFilter("all");
+          } else {
+            onClose();
+          }
+        }
+      }}
+      className="relative max-h-[80vh] w-full overflow-y-auto text-left outline-none"
       style={{ scrollbarWidth: "thin" }}
     >
       {isImpersonating && (
-        <div className="border-red/20 bg-red/10 text-footnote text-red flex items-center justify-between border-b px-4 py-3">
+        <div className="bg-red/10 text-footnote text-red rounded-row mx-3 mt-3 flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2 font-medium">
             <span className="bg-red size-2 rounded-full" />
             <span>
@@ -63,7 +110,7 @@ export function ExpandedView({
           </Button>
         </div>
       )}
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout" initial={false}>
         {mode === "search" && (
           <HaloContainer key="search" className="w-full">
             <SearchView
@@ -73,6 +120,7 @@ export function ExpandedView({
               setSearchFilter={setSearchFilter}
               debouncedSearchQuery={debouncedSearchQuery}
               searchResults={searchResults}
+              isSearchPending={isSearchPending}
               closeDropdown={onClose}
             />
           </HaloContainer>
@@ -89,7 +137,7 @@ export function ExpandedView({
         )}
         {mode === "mycountry" && (
           <HaloContainer key="mycountry" className="w-full">
-            <MyCountryView onClose={onClose} />
+            <AccountView onClose={onClose} />
           </HaloContainer>
         )}
 

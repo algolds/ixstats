@@ -11,6 +11,7 @@ import {
   type RealmMapSettings,
 } from "~/lib/maps/realm-map-settings";
 import { canImportRealmMap, type RealmActor } from "~/server/modules/realms/realms.access";
+import { updateRealmSettings } from "~/server/modules/realms/realm-settings";
 
 /** How long a realm's import job lease lasts, and its name: one job of a realm (an import, a rollback, a relief build) at a time. */
 export const MAP_IMPORT_LOCK_MS = 30 * 60_000;
@@ -123,14 +124,15 @@ export const realmMapSettings = (realm: ImportRealm): RealmMapSettings =>
 
 /** Save a georeference as the realm's (Realm.settings.map); other settings keys are kept. */
 export async function saveRealmGeoreference(
-  db: Pick<PrismaClient, "realm">,
+  db: Pick<PrismaClient, "realm" | "$queryRaw">,
   realm: ImportRealm,
   georef: MapGeoreference
 ): Promise<void> {
-  const settings = withRealmMapSettings(realm.settings, {
-    projection: georef.projection ?? null,
-    bounds: georef.bounds ?? null,
-    controlPoints: georef.controlPoints ?? null,
-  });
-  await db.realm.update({ where: { id: realm.id }, data: { settings: settings as object } });
+  await updateRealmSettings(db, realm.id, (settings) =>
+    withRealmMapSettings(settings, {
+      projection: georef.projection ?? null,
+      bounds: georef.bounds ?? null,
+      controlPoints: georef.controlPoints ?? null,
+    })
+  );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CountryProfileLayer } from "~/app/countries/[slug]/_hooks/useCountryProfileLayer";
-import { conditionPillars, toDnaAxes } from "./derive";
+import { conditionPillars, nationalFacts, toDnaAxes } from "./derive";
 import type { HeroCover } from "./HeroMedia";
 import { ProfileHero } from "./ProfileHero";
 import { StandingBand } from "./StandingBand";
@@ -18,11 +18,14 @@ export function ProfileFace({
   cover,
   action,
   onExpandMap,
+  shared = true,
 }: {
   layer: CountryProfileLayer;
   cover: HeroCover | null;
   action?: React.ReactNode;
   onExpandMap?: () => void;
+  /** False while the document is flipped to its back face, so hidden elements do not claim shared names. */
+  shared?: boolean;
 }) {
   const { identity, vitals, land, world, state } = layer;
   return (
@@ -46,9 +49,11 @@ export function ProfileFace({
       cover={cover}
       action={action}
       onExpandMap={onExpandMap}
+      shared={shared}
       footer={({ rings, openVitality }) => (
         <StandingBand
           axes={toDnaAxes(world.rankings)}
+          facts={nationalFacts(layer)}
           pillars={conditionPillars(vitals).filter((p) => !PANEL_READINGS.has(p.key))}
           rings={rings}
           onOpenRings={openVitality}

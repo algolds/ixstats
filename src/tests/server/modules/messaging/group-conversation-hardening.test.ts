@@ -23,6 +23,7 @@ import {
   MAX_MESSAGE_LENGTH,
 } from "~/server/modules/messaging";
 import { createMemoryPrisma, type MemoryPrisma } from "~/tests/helpers/memory-prisma";
+import { answerMessagingSql } from "~/tests/helpers/messaging-sql";
 import { createMockPrisma } from "~/tests/helpers/mock-db";
 import { privacyConfigRow } from "~/tests/helpers/privacy-config-fake";
 import { createMockCallerContext } from "~/tests/helpers/router-context";
@@ -37,11 +38,11 @@ const EVE = clerk("eve");
 
 let db: MemoryPrisma;
 let notifications: { create: jest.Mock };
-let websocket: { broadcastToUsers: jest.Mock; evictFromRoom: jest.Mock };
+let websocket: { broadcastMessage: jest.Mock; evictFromRoom: jest.Mock };
 
 function service() {
   notifications = { create: jest.fn().mockResolvedValue("n") };
-  websocket = { broadcastToUsers: jest.fn(), evictFromRoom: jest.fn() };
+  websocket = { broadcastMessage: jest.fn(), evictFromRoom: jest.fn() };
   return createMessagingService({
     db: db as never,
     notifications: notifications as never,
@@ -56,7 +57,7 @@ async function settle() {
 
 beforeEach(async () => {
   jest.spyOn(console, "log").mockImplementation(() => undefined);
-  db = createMemoryPrisma();
+  db = answerMessagingSql(createMemoryPrisma());
   for (const id of PEOPLE) {
     await db.user.create({ data: { id, clerkUserId: clerk(id), lastSeenAt: new Date() } });
   }
@@ -112,7 +113,7 @@ describe("messages.addParticipant", () => {
     const { id } = await group(svc);
     await svc.leaveConversation(CY, { conversationId: id });
     await expect(
-      svc.addParticipant(BEN, { conversationId: id, targetUserId: CY })
+      svc.addParticipant(ANA, { conversationId: id, targetUserId: CY })
     ).resolves.toEqual({ success: true, pending: true });
     expect(await row(id, CY)).toMatchObject({ isActive: true, requestStatus: "pending" });
 
@@ -163,7 +164,7 @@ describe("sockets after leaving", () => {
       conversationId: id,
     });
 
-    await svc.addParticipant(BEN, { conversationId: id, targetUserId: CY });
+    await svc.addParticipant(ANA, { conversationId: id, targetUserId: CY });
     await svc.respondToRequest(CY, { conversationId: id, accept: false });
     expect(websocket.evictFromRoom).toHaveBeenCalledTimes(2);
   });

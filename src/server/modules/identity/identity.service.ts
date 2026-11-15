@@ -33,7 +33,11 @@ import {
 import { loadRecruitedCount } from "./identity.invites";
 import { loadRealmRoles } from "./identity.realm-roles";
 import type { IdentityCountry } from "./identity.selects";
-import { loadOwnWikiName, loadPassportHandle } from "./identity.passport-handle";
+import {
+  loadOwnWikiName,
+  loadPassportHandle,
+  type PassportHandleUser,
+} from "./identity.passport-handle";
 import { resolveIdentity, resolveIdentityNations, resolveUserIdentity } from "./identity.resolve";
 import type {
   AuthoredArticle,
@@ -323,18 +327,22 @@ async function loadCardLorewards(userId: string, shown: boolean) {
  * write. Null when the handle names no user (external wiki or forum names have no card).
  * `{ preview: false }` when the holder turned link previews off.
  */
-export async function getPassportCard(query: IdentityQuery): Promise<PassportCard | null> {
+export async function getPassportCard(
+  query: IdentityQuery,
+  opts: { owner?: boolean } = {}
+): Promise<PassportCard | null> {
   const identity = await resolveUserIdentity(query.handle, query.viewerClerkId);
   const user = identity?.user;
   if (!identity || !user) return null;
   const settings = await loadPassportSettings(user.id);
-  if (!settings.visibility.linkPreview) return { preview: false };
+  // The owner always sees their own card; the link-preview switch only governs what others are shown.
+  if (!opts.owner && !settings.visibility.linkPreview) return { preview: false };
 
   const [realms, persona, handle, lorewards] = await Promise.all([
     resolveIdentityNations(identity).then((nations) => membershipsOf(identity, nations)),
     loadPersonalPersona(user),
     loadPassportHandle(user),
-    loadCardLorewards(user.id, settings.visibility.accolades),
+    loadCardLorewards(user.id, opts.owner || settings.visibility.accolades),
   ]);
   const { primaryNation, realmCount, nationCount } = nationSummaryOf(realms);
   return {
@@ -350,6 +358,12 @@ export async function getPassportCard(query: IdentityQuery): Promise<PassportCar
     signature: settings.signature,
     bio: persona?.bio?.trim() || null,
   };
+}
+
+/** The signed-in user's own passport card (Halo's Passport side), whatever their link-preview setting. */
+export async function getOwnPassportCard(user: PassportHandleUser): Promise<PassportCard | null> {
+  const handle = await loadPassportHandle(user);
+  return getPassportCard({ handle, viewerClerkId: user.clerkUserId }, { owner: true });
 }
 
 /** Tab 2 — every realm membership and claimed country; `realm` narrows to one realm. */

@@ -86,6 +86,12 @@ scripts/
 
 ---
 
+## 🎨 Design (`scripts/design/`)
+
+| Script | Purpose |
+| --- | --- |
+| [`scripts/design/render-lens-map.mjs`](design/render-lens-map.mjs) | Renders Facet's lens displacement map (its SVG source is in the script) to `public/images/facet-lens-map.png`, the image the `#facet-lens` filter reads. Rerun after changing the map. |
+
 ## 🌐 Realms (`scripts/realms/`)
 
 | Script | Purpose & Command |

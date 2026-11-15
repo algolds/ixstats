@@ -21,6 +21,7 @@ jest.mock("~/trpc/react", () => {
         getAllianceInvites: query(),
         getOutgoingForeignPolicyProposals: query(),
         getOutgoingAllianceInvites: query(),
+        getSummits: query(),
         getActiveForeignPolicies: {
           useQuery: () => ({ data: mockActive, isLoading: false, error: null }),
         },

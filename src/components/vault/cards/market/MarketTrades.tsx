@@ -1,29 +1,27 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { Plus } from "iconoir-react";
+import { DataTransferBoth, Plus, WarningCircle } from "iconoir-react";
 import { api } from "~/trpc/react";
-import { Button } from "~/components/ui/button";
+import { Button, focusRing, hitSlop } from "~/components/ui/button";
+import { Card } from "~/components/ui/card";
 import { EmptyState } from "~/components/ui/empty-state";
-import { SegmentedControl } from "~/components/ui/segmented-control";
+import { Skeleton } from "~/components/ui/skeleton";
 import { TradeBuilderHost, type TradeAddress } from "~/components/cards/trade/TradeBuilderHost";
 import type { SheetFrom } from "~/lib/cards/face/sheet-link";
 import { tradeBuilderHref } from "~/lib/cards/hub-routes";
+import { cn } from "~/lib/utils/cn";
 import { MarketHistory } from "./MarketHistory";
 
 type TradesView = "incoming" | "sent" | "history";
 
-const VIEW_LABEL: Record<TradesView, string> = {
-  incoming: "Incoming",
-  sent: "Sent",
-  history: "History",
-};
-
-/** A segment's offer count: shown as a badge, read as "2 offers". */
-const offerCount = (count: number) =>
-  count > 0 ? { badge: count, badgeLabel: count === 1 ? "1 offer" : `${count} offers` } : {};
+const VIEWS: ReadonlyArray<{ value: TradesView; label: string }> = [
+  { value: "incoming", label: "Incoming" },
+  { value: "sent", label: "Sent" },
+  { value: "history", label: "History" },
+];
 
 interface TradeRowParty {
   clerkUserId?: string | null;
@@ -57,38 +55,54 @@ interface MarketTradesProps {
 export function MarketTrades({ onOpenCard, trade, onCloseTrade }: MarketTradesProps) {
   const { userId } = useAuth();
   const [view, setView] = useState<TradesView>("incoming");
-  const panelPrefix = useId();
-  const panelId = (tab: string) => `${panelPrefix}-trades-${tab}`;
 
   const active = api.trading.getActiveTrades.useQuery();
   const trades = (active.data ?? []) as TradeRowData[];
   const incoming = trades.filter((t) => waitsOnViewer(t, userId));
   const sent = trades.filter((t) => !waitsOnViewer(t, userId));
   const list = view === "incoming" ? incoming : sent;
+  const countFor = (option: TradesView) =>
+    option === "incoming" ? incoming.length : option === "sent" ? sent.length : 0;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <SegmentedControl
-          asTabs
-          aria-label="Trades"
-          value={view}
-          onValueChange={setView}
-          getTabPanelId={panelId}
-          options={[
-            {
-              value: "incoming",
-              label: "Incoming",
-              ...offerCount(incoming.length),
-            },
-            {
-              value: "sent",
-              label: "Sent",
-              ...offerCount(sent.length),
-            },
-            { value: "history", label: "History" },
-          ]}
-        />
+        <div
+          role="group"
+          aria-label="Filter trades"
+          className="flex flex-wrap items-center gap-1.5"
+        >
+          {VIEWS.map((option) => {
+            const selected = view === option.value;
+            const count = countFor(option.value);
+            return (
+              <button
+                key={option.value}
+                type="button"
+                aria-pressed={selected}
+                onClick={() => setView(option.value)}
+                className={cn(
+                  "rounded-pill text-subhead facet-press relative inline-flex min-h-8 cursor-pointer items-center gap-1.5 px-3 py-1 font-medium transition-colors",
+                  hitSlop,
+                  focusRing,
+                  selected
+                    ? "bg-fill-3 text-label"
+                    : "text-label-secondary hover:bg-fill-4 hover:text-label"
+                )}
+              >
+                <span>{option.label}</span>
+                {count > 0 && (
+                  <span
+                    aria-label={count === 1 ? "1 offer" : `${count} offers`}
+                    className="bg-tint-fill text-tint text-caption min-w-5 rounded-full px-1.5 text-center tabular-nums"
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
         <Button size="sm" asChild>
           <Link href={tradeBuilderHref({})}>
             <Plus aria-hidden />
@@ -99,14 +113,34 @@ export function MarketTrades({ onOpenCard, trade, onCloseTrade }: MarketTradesPr
 
       {view === "history" ? (
         <MarketHistory onOpenCard={onOpenCard} />
+      ) : active.isLoading ? (
+        <Skeleton className="rounded-card h-32" />
+      ) : active.isError && !active.data ? (
+        <Card>
+          <EmptyState
+            compact
+            role="alert"
+            icon={<WarningCircle />}
+            title="Your trades did not load"
+            message="Try loading your trade offers again."
+            action={
+              <Button variant="secondary" onClick={() => void active.refetch()}>
+                Try again
+              </Button>
+            }
+          />
+        </Card>
       ) : list.length === 0 ? (
-        <EmptyState
-          compact
-          title={view === "incoming" ? "No offers waiting for you" : "You have no offers out"}
-          message="Start one with New trade."
-        />
+        <Card>
+          <EmptyState
+            compact
+            icon={<DataTransferBoth />}
+            title={view === "incoming" ? "No offers waiting for you" : "You have no offers out"}
+            message="Start one with New trade."
+          />
+        </Card>
       ) : (
-        <div role="tabpanel" id={panelId(view)} aria-label={VIEW_LABEL[view]}>
+        <Card content="data" padding="none">
           <ul className="divide-separator divide-y">
             {list.map((item) => {
               const partner =
@@ -114,7 +148,11 @@ export function MarketTrades({ onOpenCard, trade, onCloseTrade }: MarketTradesPr
               const partnerName =
                 partner?.displayName ?? (partner?.handle ? `@${partner.handle}` : "a player");
               return (
-                <li key={item.id} className="flex items-center justify-between gap-3 py-3">
+                <li
+                  key={item.id}
+                  data-row
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
                   <span className="min-w-0">
                     <span className="text-callout block truncate">Trade with {partnerName}</span>
                     <span className="text-footnote text-label-secondary block">
@@ -128,7 +166,7 @@ export function MarketTrades({ onOpenCard, trade, onCloseTrade }: MarketTradesPr
               );
             })}
           </ul>
-        </div>
+        </Card>
       )}
       <TradeBuilderHost address={trade} onClose={onCloseTrade} />
     </div>

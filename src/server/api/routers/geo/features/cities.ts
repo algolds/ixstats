@@ -9,6 +9,11 @@ import {
 } from "~/lib/maps/geo-validation";
 
 import { syncGeographicDemographics } from "~/lib/country-geo/sync";
+import {
+  normalizeFeatureWikiCreate,
+  normalizeFeatureWikiUpdate,
+} from "~/lib/maps/wiki-link-fields";
+import { wikiSourceSchema } from "~/lib/wiki-os/wiki-source-availability";
 import { assertFound, assertOwnCountry, coordinatesSchema } from "../core/shared";
 import { assertOwnerMayEdit } from "~/server/shared/map-feature-lock";
 
@@ -29,6 +34,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
         isSubdivisionCapital: z.boolean().default(false),
         subdivisionId: z.string().optional(),
         wikiPageTitle: z.string().max(200).optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -70,7 +76,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
           isNationalCapital: input.isNationalCapital,
           isSubdivisionCapital: input.isSubdivisionCapital,
           subdivisionId: input.subdivisionId,
-          wikiPageTitle: input.wikiPageTitle,
+          ...normalizeFeatureWikiCreate(input),
           status: "approved",
           submittedBy: ctx.auth?.userId ?? ctx.user?.clerkUserId ?? "system",
         },
@@ -105,6 +111,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
         isNationalCapital: z.boolean().optional(),
         isSubdivisionCapital: z.boolean().optional(),
         wikiPageTitle: z.string().max(200).nullable().optional(),
+        wikiSource: wikiSourceSchema.nullish(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -154,7 +161,7 @@ export const geoFeaturesCitiesRouter = createTRPCRouter({
           ...(input.isSubdivisionCapital !== undefined && {
             isSubdivisionCapital: input.isSubdivisionCapital,
           }),
-          ...(input.wikiPageTitle !== undefined && { wikiPageTitle: input.wikiPageTitle }),
+          ...normalizeFeatureWikiUpdate(input, existing),
         },
       });
 
