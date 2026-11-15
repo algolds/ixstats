@@ -13,6 +13,7 @@ let mockPlugin: unknown = null;
 jest.mock("~/trpc/react", () => ({
   api: {
     countries: { getSelectList: { useQuery: () => mockQuery } },
+    realms: { getSelectList: { useQuery: () => mockQuery } },
     wikios: { advancedSearch: { useQuery: () => mockQuery } },
   },
 }));

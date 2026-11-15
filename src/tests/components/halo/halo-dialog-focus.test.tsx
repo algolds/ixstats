@@ -41,6 +41,7 @@ jest.mock("~/trpc/react", () => ({
       },
     },
     wikios: { advancedSearch: { useQuery: () => ({ data: undefined }) } },
+    realms: { getSelectList: { useQuery: () => ({ data: undefined, isLoading: false }) } },
     notifications: { getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) } },
     users: {
       getProfile: {

@@ -12,6 +12,7 @@ const mockTheme = { toggleTheme: jest.fn(), toggleCompactMode: jest.fn() };
 jest.mock("~/trpc/react", () => ({
   api: {
     countries: { getSelectList: { useQuery: () => mockQuery } },
+    realms: { getSelectList: { useQuery: () => mockQuery } },
     wikios: { advancedSearch: { useQuery: () => mockQuery } },
   },
 }));

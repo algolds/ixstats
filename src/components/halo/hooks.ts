@@ -19,6 +19,8 @@ import { haloReducer, INITIAL_HALO_STATE } from "~/lib/halo/halo-state";
 import {
   buildIndex,
   commandEntriesFor,
+  indexPluginCommands,
+  indexRealms,
   searchCatalog,
   type CatalogDescriptor,
 } from "~/lib/halo/search";
@@ -64,7 +66,7 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     });
   }
 
-  // Countries are only needed while the search view can list them
+  // Countries and open realms are only needed while the search view can list them
   const countriesEnabled =
     isExpanded &&
     expandedMode === "search" &&
@@ -72,6 +74,12 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
   const { data: countriesData, isLoading: countriesLoading } = api.countries.getSelectList.useQuery(
     { limit: 500 },
     { staleTime: 30 * 60 * 1000, enabled: countriesEnabled }
+  );
+
+  const realmsEnabled = isExpanded && expandedMode === "search" && searchFilter === "all";
+  const { data: realmsData, isLoading: realmsLoading } = api.realms.getSelectList.useQuery(
+    undefined,
+    { staleTime: 30 * 60 * 1000, enabled: realmsEnabled }
   );
 
   // Wiki search query
@@ -82,7 +90,10 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     { enabled: wikiEnabled, staleTime: 60_000 }
   );
   const isSearchPending =
-    searchQuery !== debouncedSearchQuery || countriesLoading || (wikiEnabled && wikiFetching);
+    searchQuery !== debouncedSearchQuery ||
+    countriesLoading ||
+    realmsLoading ||
+    (wikiEnabled && wikiFetching);
 
   const applyInitialSearchFilter = () => {
     let isDynamicWikiSearchEnabled = true;
@@ -119,6 +130,8 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
   );
   const featureIndex = buildIndex(CORE_FEATURES);
   const countryIndex = buildIndex(extractCountriesList(countriesData as CountriesData | undefined));
+  const pluginCommandIndex = indexPluginCommands(activePlugin?.commands ?? []);
+  const realmIndex = indexRealms(realmsData ?? []);
 
   const executeCommand = (actionId?: SystemActionId, targetPath?: string) => {
     if (actionId) {
@@ -175,6 +188,49 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
   };
 
   const toSearchResult = (descriptor: CatalogDescriptor): SearchResult => {
+    if (descriptor.pluginCommandKey) {
+      return {
+        id: descriptor.key,
+        type: "command",
+        title: descriptor.title,
+        description: descriptor.description,
+        icon: descriptor.icon,
+        metadata: {
+          category: descriptor.category,
+        },
+        action: () => {
+          const cmd = activePlugin?.commands?.find((c) => c.key === descriptor.pluginCommandKey);
+          if (cmd?.run) {
+            cmd.run();
+            return;
+          }
+          if (cmd?.pluginView) {
+            switchMode(`plugin:${cmd.pluginView}`);
+            return;
+          }
+          const dest = cmd?.path ?? descriptor.path;
+          if (dest) navigateWithBasePath(dest, router);
+        },
+      };
+    }
+
+    if (descriptor.kind === "realm") {
+      return {
+        id: descriptor.key,
+        type: "realm",
+        title: descriptor.title,
+        description: descriptor.description,
+        icon: descriptor.icon,
+        metadata: {
+          category: descriptor.category,
+          thumbnail: descriptor.thumbnail,
+        },
+        action: () => {
+          if (descriptor.path) navigateWithBasePath(descriptor.path, router);
+        },
+      };
+    }
+
     if (descriptor.kind === "country") {
       return {
         id: descriptor.key,
@@ -210,12 +266,14 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     debouncedSearchQuery,
     searchFilter,
     {
+      pluginCommands: pluginCommandIndex,
+      realms: realmIndex,
       countries: countryIndex,
       commands: commandIndex,
       features: featureIndex,
       wiki: wikiSearchData?.results ?? [],
     },
-    { wikiFirst: isWikiActive }
+    { wikiFirst: isWikiActive, pluginId: activePlugin?.id }
   ).map(toSearchResult);
 
   // Global Keyboard Shortcuts (Cmd+K, Cmd+comma, Esc). Never preventDefault keys we do not handle.

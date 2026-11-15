@@ -7,6 +7,7 @@ const mockUser = { user: null, isLoaded: true, isSignedIn: false };
 const mockAuth = { signOut: jest.fn() };
 const mockTheme = { toggleTheme: jest.fn(), toggleCompactMode: jest.fn() };
 const countriesEnabled: Array<boolean | undefined> = [];
+const realmsEnabled: Array<boolean | undefined> = [];
 
 jest.mock("~/trpc/react", () => ({
   api: {
@@ -14,6 +15,14 @@ jest.mock("~/trpc/react", () => ({
       getSelectList: {
         useQuery: (_input: unknown, options: { enabled?: boolean }) => {
           countriesEnabled.push(options.enabled);
+          return mockQuery;
+        },
+      },
+    },
+    realms: {
+      getSelectList: {
+        useQuery: (_input: unknown, options: { enabled?: boolean }) => {
+          realmsEnabled.push(options.enabled);
           return mockQuery;
         },
       },
@@ -37,9 +46,11 @@ jest.mock("~/components/halo/plugin-context", () => ({ useActiveDIPlugin: () => 
 
 beforeEach(() => {
   countriesEnabled.length = 0;
+  realmsEnabled.length = 0;
 });
 
 const lastEnabled = () => countriesEnabled[countriesEnabled.length - 1];
+const lastRealmsEnabled = () => realmsEnabled[realmsEnabled.length - 1];
 
 describe("Halo countries query gating", () => {
   it("stays off while the Halo is closed", () => {
@@ -77,5 +88,25 @@ describe("Halo countries query gating", () => {
       result.current.setSearchFilter("wiki");
     });
     expect(lastEnabled()).toBe(false);
+  });
+
+  it("enables realms.getSelectList only in search with the all filter", () => {
+    const { result } = renderHook(() => useDynamicIslandState());
+    expect(lastRealmsEnabled()).toBe(false);
+
+    act(() => {
+      result.current.switchMode("notifications");
+    });
+    expect(lastRealmsEnabled()).toBe(false);
+
+    act(() => {
+      result.current.switchMode("search");
+    });
+    expect(lastRealmsEnabled()).toBe(true);
+
+    act(() => {
+      result.current.setSearchFilter("countries");
+    });
+    expect(lastRealmsEnabled()).toBe(false);
   });
 });

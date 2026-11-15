@@ -1,6 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from "react";
-import { Search, Xmark, NavArrowRight } from "iconoir-react";
+import { Globe, Search, Xmark, NavArrowRight } from "iconoir-react";
 import { UnifiedCountryFlag } from "~/components/shared/flags/UnifiedCountryFlag";
+import { assetUrl } from "~/lib/base-path";
 import type { SearchViewProps, SearchFilter, SearchResult } from "../types";
 import { PreText } from "~/components/ui/pretext";
 import { Button } from "~/components/ui/button";
@@ -19,6 +20,7 @@ const FILTERS: { value: SearchFilter; label: string }[] = [
 
 /** Result category → Badge colour: system colours for categories that span several apps. */
 const CATEGORY_BADGE: Record<string, BadgeVariant> = {
+  "On this page": "info",
   Geography: "success",
   Knowledge: "info",
   Community: "info",
@@ -33,10 +35,13 @@ const CATEGORY_APP: Record<string, string> = {
   Sports: "labs",
   Labs: "labs",
   Wiki: "wiki",
+  Realm: "realms",
 };
 
 /** Badge text: the app name users see in the sidebar, in place of the internal category. */
 const CATEGORY_LABEL: Record<string, string> = {
+  "On this page": "On this page",
+  Realm: "Realm",
   Statecraft: "MyCountry",
   Geography: "Maps",
   Knowledge: "Wiki",
@@ -200,7 +205,7 @@ export function SearchView({
                     i === activeIndex ? "bg-fill-3" : ""
                   }`}
                 >
-                  {/* Icon or Flag */}
+                  {/* Icon, Realm Crest, or Flag */}
                   <div className="rounded-control bg-fill-4 flex h-9 w-9 shrink-0 items-center justify-center">
                     {result.type === "country" && result.metadata?.flagUrl ? (
                       <UnifiedCountryFlag
@@ -208,6 +213,14 @@ export function SearchView({
                         countryName={result.title}
                         className="rounded-control-sm h-5 w-7 object-cover"
                       />
+                    ) : result.type === "realm" && result.metadata?.thumbnail ? (
+                      <img
+                        src={assetUrl(result.metadata.thumbnail as string)}
+                        alt=""
+                        className="rounded-control-sm h-6 w-6 object-cover"
+                      />
+                    ) : result.type === "realm" ? (
+                      <Globe className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
                     ) : Icon ? (
                       <Icon className="text-label-secondary group-hover:text-label h-4 w-4 transition-colors" />
                     ) : (
@@ -272,7 +285,7 @@ export function SearchView({
         ) : (
           /* ── Empty state ────────────────────────────────────────── */
           <HaloEmpty
-            title={`Type to search ${searchFilter === "all" ? "countries, commands, and features" : searchFilter}`}
+            title={`Type to search ${searchFilter === "all" ? "realms, countries, commands, and features" : searchFilter}`}
             message={
               <span className="text-label-secondary text-footnote inline-flex items-center justify-center gap-3">
                 <span className="flex items-center gap-1">

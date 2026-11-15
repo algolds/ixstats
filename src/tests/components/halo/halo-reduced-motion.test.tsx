@@ -19,6 +19,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("~/trpc/react", () => ({
   api: {
     countries: { getSelectList: { useQuery: () => ({ data: undefined }) } },
+    realms: { getSelectList: { useQuery: () => ({ data: undefined, isLoading: false }) } },
     wikios: { advancedSearch: { useQuery: () => ({ data: undefined }) } },
     notifications: { getUnreadCount: { useQuery: () => ({ data: { count: 0 } }) } },
   },

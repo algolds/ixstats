@@ -17,6 +17,15 @@ interface MockWikiResult {
   title: string;
   snippet?: string;
 }
+interface MockRealm {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  thumbnail: string | null;
+  tags: string[];
+  nationCount: number;
+}
 
 const mockSignedOut = { user: null, isLoaded: true, isSignedIn: false };
 const mockSignedIn = { user: { id: "user-1" }, isLoaded: true, isSignedIn: true };
@@ -28,6 +37,7 @@ let mockIsAdmin = false;
 let mockPathname = "/";
 let mockPlugin: DIPlugin | null = null;
 let mockCountries: MockCountry[] = [];
+let mockRealms: MockRealm[] = [];
 let mockWikiResults: MockWikiResult[] = [];
 
 jest.mock("~/trpc/react", () => ({
@@ -36,6 +46,14 @@ jest.mock("~/trpc/react", () => ({
       getSelectList: {
         useQuery: (_input: unknown, options: { enabled?: boolean }) => ({
           data: options.enabled ? mockCountries : undefined,
+          isLoading: false,
+        }),
+      },
+    },
+    realms: {
+      getSelectList: {
+        useQuery: (_input: unknown, options: { enabled?: boolean }) => ({
+          data: options.enabled ? mockRealms : undefined,
           isLoading: false,
         }),
       },
@@ -89,6 +107,20 @@ function buildWiki(count: number): MockWikiResult[] {
   }));
 }
 
+function buildRealms(): MockRealm[] {
+  return [
+    {
+      id: "r1",
+      slug: "aurora-reach",
+      name: "Aurora Reach",
+      description: "Maritime trade leagues",
+      thumbnail: "/uploads/aurora.png",
+      tags: ["maritime", "archipelago"],
+      nationCount: 18,
+    },
+  ];
+}
+
 beforeEach(() => {
   jest.useFakeTimers();
   mockPush.mockReset();
@@ -97,6 +129,7 @@ beforeEach(() => {
   mockPathname = "/";
   mockPlugin = null;
   mockCountries = buildCountries();
+  mockRealms = buildRealms();
   mockWikiResults = buildWiki(5);
   localStorage.clear();
 });
@@ -340,5 +373,53 @@ describe("Halo search result router navigation", () => {
     } finally {
       consoleErrorSpy.mockRestore();
     }
+  });
+
+  it("matches open realms under all and routes to /r/<slug>", () => {
+    const results = search(openSearch(), "aurora");
+    const realm = results.find((r) => r.type === "realm");
+    expect(realm).toMatchObject({
+      id: "realm-r1",
+      type: "realm",
+      title: "Aurora Reach",
+      description: "18 nations · Maritime trade leagues",
+      metadata: { category: "Realm", thumbnail: "/uploads/aurora.png" },
+    });
+    realm!.action();
+    expect(mockPush).toHaveBeenCalledWith("/r/aurora-reach");
+  });
+
+  it("ranks active plugin commands first and executes run, path, and pluginView actions", () => {
+    const onRun = jest.fn();
+    mockPlugin = {
+      id: "wiki",
+      expandedViews: { narrator: () => null },
+      commands: [
+        { key: "jump-intro", title: "Jump to Overview", keywords: ["heading"], run: onRun },
+        { key: "open-live", title: "Watch live broadcast", pluginView: "narrator" },
+        { key: "open-standings", title: "Open league standings", path: "/myleague" },
+      ],
+    };
+
+    const hook = openSearch();
+    // Wiki opens on the "wiki" filter by default, where WikiHalo's heading commands rank first.
+    const onWikiFilter = search(hook, "overview", "wiki");
+    expect(onWikiFilter[0]).toMatchObject({
+      id: "plugin-wiki-jump-intro",
+      title: "Jump to Overview",
+      metadata: { category: "On this page" },
+    });
+    onWikiFilter[0]!.action();
+    expect(onRun).toHaveBeenCalledTimes(1);
+
+    const viewMatches = search(hook, "broadcast", "all");
+    act(() => {
+      viewMatches[0]!.action();
+    });
+    expect(hook.result.current.mode).toBe("plugin:narrator");
+
+    const pathMatches = search(hook, "standings", "commands");
+    pathMatches[0]!.action();
+    expect(mockPush).toHaveBeenCalledWith("/myleague");
   });
 });
