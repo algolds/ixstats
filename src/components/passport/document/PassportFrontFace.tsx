@@ -11,7 +11,7 @@ import { assetUrl } from "~/lib/base-path";
 import { REALM_ROLE_LABEL } from "~/lib/passport/passport-labels";
 import type { PublicCosmetics } from "~/lib/vault/public-cosmetics";
 import { PassportGuilloche } from "./PassportGuilloche";
-import { PassportMasthead } from "./PassportMasthead";
+import { PassportMasthead, PassportMastheadBrand } from "./PassportMasthead";
 import { PassportPortrait } from "./PassportPortrait";
 import { PassportStatRow } from "./PassportStatRow";
 
@@ -196,5 +196,74 @@ export const PassportFrontFace = React.memo(function PassportFrontFace({
         )}
       </div>
     </div>
+  );
+});
+
+export interface PassportCompactFaceProps {
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+  cosmetics: PublicCosmetics | null;
+  /** Platform role display name when above the unlabelled base Member role. */
+  roleBadge?: string | null;
+  signature: string | null;
+  lorewards: { totalScore: number; rank: number | null } | null;
+  realmCount: number;
+  nationCount: number;
+  joinedAt: string | null;
+}
+
+/**
+ * Compact static Passport front face (Halo's Passport side). Shares the guilloché, masthead brand,
+ * portrait cosmetics, signature and stat row with `PassportFrontFace`, with no interactive children
+ * so the whole card can be one link to the holder's Passport.
+ */
+export const PassportCompactFace = React.memo(function PassportCompactFace({
+  handle,
+  displayName,
+  avatarUrl,
+  cosmetics,
+  roleBadge,
+  signature,
+  lorewards,
+  realmCount,
+  nationCount,
+  joinedAt,
+}: PassportCompactFaceProps) {
+  return (
+    <>
+      <PassportGuilloche />
+      <div className="relative space-y-3 p-3">
+        <PassportMastheadBrand size="compact" />
+        <div className="flex items-center gap-3">
+          <PassportPortrait
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            cosmetics={cosmetics}
+            size="compact"
+          />
+          <div className="min-w-0 flex-1 space-y-0.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+              <span className="text-headline text-label truncate">{displayName}</span>
+              <CosmeticChatBadge badge={cosmetics?.chatBadge} className="size-4" />
+              {roleBadge && <Badge variant="secondary">{roleBadge}</Badge>}
+            </div>
+            <p className="text-footnote text-label-secondary truncate">@{handle}</p>
+            {signature && (
+              <p className="text-callout text-label truncate font-serif italic select-none">
+                {signature}
+              </p>
+            )}
+          </div>
+        </div>
+        <PassportStatRow
+          size="compact"
+          lorewards={lorewards}
+          realmCount={realmCount}
+          nationCount={nationCount}
+          joinedAt={joinedAt}
+        />
+      </div>
+    </>
   );
 });

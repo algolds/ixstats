@@ -116,6 +116,9 @@ export function PosterHeader({
   isOwnCountry,
   enabled,
   onNavigate,
+  size = "sheet",
+  badges,
+  corner,
   children,
 }: {
   countryId: string;
@@ -124,6 +127,12 @@ export function PosterHeader({
   enabled: boolean;
   /** A link in the header closes the sheet as it navigates. */
   onNavigate: () => void;
+  /** `sheet` bleeds to a Sheet's edges and titles the dialog; `halo` is a rounded panel inside Halo's island. */
+  size?: "sheet" | "halo";
+  /** Extra badges after the realm and leader (Halo shows the membership tier). */
+  badges?: React.ReactNode;
+  /** Controls pinned to the poster's top corner (Halo's Edit and Share; the sheet keeps its own corner). */
+  corner?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { data: country } = api.countries.getByIdBasic.useQuery({ id: countryId }, { enabled });
@@ -133,10 +142,38 @@ export function PosterHeader({
       ? `@${country.ownerHandle}`
       : null;
 
+  const inSheet = size === "sheet";
+  const meta = (
+    <div className="text-footnote text-label-secondary flex min-w-0 flex-wrap items-center gap-2">
+      {/* A nation's realm is part of its identity, so it wears the ink like the passport's, not the Realms tint. */}
+      {country?.realm && (
+        <Link
+          href={`/r/${country.realm.slug}`}
+          onClick={onNavigate}
+          className={cn(
+            badgeVariants({ variant: "secondary" }),
+            "duration-fast transition-opacity active:opacity-70",
+            focusRing
+          )}
+        >
+          <Crown aria-hidden className="size-3" />
+          {country.realm.name}
+        </Link>
+      )}
+      {leader && <span className="truncate">{leader}</span>}
+      {badges}
+    </div>
+  );
+
   return (
-    // Bleeds to the sheet's edges (the side sheet pads its top, the bottom sheet's grabber sits above). Clip, not
+    // In a sheet it bleeds to the edges (the side sheet pads its top, the bottom sheet's grabber sits above). Clip, not
     // hidden: the blurred flag overhangs, and a hidden box still scrolls when focus brings a button into view.
-    <div className="relative -mx-6 shrink-0 space-y-4 overflow-clip px-6 pt-36 pb-4 md:-mt-6">
+    <div
+      className={cn(
+        "relative shrink-0 space-y-4 overflow-clip",
+        inSheet ? "-mx-6 px-6 pt-36 pb-4 md:-mt-6" : "rounded-row px-4 pt-20 pb-3"
+      )}
+    >
       {/* A blurred copy carries the flag's colours down behind the actions and the strip. */}
       <PosterFlag
         name={name}
@@ -153,31 +190,22 @@ export function PosterHeader({
         aria-hidden
         className="via-surface-elevated/60 absolute inset-0 bg-linear-to-b from-transparent from-20% via-50% to-transparent"
       />
-      <SheetHeader data-content="entity" className="relative gap-1.5 text-left">
-        <SheetTitle className="text-title-1 truncate font-semibold tracking-tight">
-          {name}
-        </SheetTitle>
-        <SheetDescription asChild>
-          <div className="text-footnote text-label-secondary flex min-w-0 items-center gap-2">
-            {/* A nation's realm is part of its identity, so it wears the ink like the passport's, not the Realms tint. */}
-            {country?.realm && (
-              <Link
-                href={`/r/${country.realm.slug}`}
-                onClick={onNavigate}
-                className={cn(
-                  badgeVariants({ variant: "secondary" }),
-                  "duration-fast transition-opacity active:opacity-70",
-                  focusRing
-                )}
-              >
-                <Crown aria-hidden className="size-3" />
-                {country.realm.name}
-              </Link>
-            )}
-            {leader && <span className="truncate">{leader}</span>}
-          </div>
-        </SheetDescription>
-      </SheetHeader>
+      {corner && (
+        <div className="z-raised absolute top-3 right-3 flex items-center gap-1.5">{corner}</div>
+      )}
+      {inSheet ? (
+        <SheetHeader data-content="entity" className="relative gap-1.5 text-left">
+          <SheetTitle className="text-title-1 truncate font-semibold tracking-tight">
+            {name}
+          </SheetTitle>
+          <SheetDescription asChild>{meta}</SheetDescription>
+        </SheetHeader>
+      ) : (
+        <div data-content="entity" className="relative flex flex-col gap-1.5 text-left">
+          <h2 className="text-title-2 text-label truncate font-semibold tracking-tight">{name}</h2>
+          {meta}
+        </div>
+      )}
       <div className="relative space-y-4">{children}</div>
     </div>
   );
@@ -332,7 +360,7 @@ export function OpenIn({
       <h3 id="country-open-in" className="text-subhead text-label-secondary px-1">
         Open in
       </h3>
-      <ul className="grid grid-cols-5 gap-1">
+      <ul className={cn("grid gap-1", destinations.length > 4 ? "grid-cols-5" : "grid-cols-4")}>
         {destinations.map((d) => (
           <li key={d.label}>
             <Link

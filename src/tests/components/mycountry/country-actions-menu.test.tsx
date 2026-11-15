@@ -115,10 +115,20 @@ it("shows your own nation's management instead of diplomacy", () => {
       onClose={jest.fn()}
     />
   );
-  expect(screen.getByRole("button", { name: "Editor" })).toBeInTheDocument();
+  const editBtn = screen.getByRole("button", { name: "Edit" });
+  expect(editBtn).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Share Beta" })).toBeInTheDocument();
+  for (const tile of ["Dashboard", "Executive", "Diplomacy", "Politics"]) {
+    expect(screen.getByRole("button", { name: tile })).toBeInTheDocument();
+  }
   expect(screen.queryByRole("button", { name: "Follow" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /^Construct embassy/ })).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Wiki" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Passport" })).toHaveAttribute("href", "/id/beta_lead");
+
+  fireEvent.keyDown(editBtn, { key: "Enter" });
+  expect(screen.getByRole("menuitem", { name: /^Country editor/ })).toBeInTheDocument();
+  expect(screen.getByRole("menuitem", { name: /^Map editor/ })).toBeInTheDocument();
 });
 
 it("shows the realm as a pill, and population and GDP under the quick actions", () => {

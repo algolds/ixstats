@@ -6,7 +6,6 @@ import {
   UserXmark,
   ChatBubble,
   Calendar,
-  ShareIos,
   City,
   Community,
   Shield,
@@ -14,17 +13,12 @@ import {
   Tournament,
   NavArrowDown,
   NavArrowRight,
-  Page,
-  Map,
-  EditPencil,
 } from "iconoir-react";
 import { useRouter } from "next/navigation";
-import { editorHref, MYCOUNTRY_MAP_EDITOR_PATH } from "~/lib/mycountry/routes";
 import { api } from "~/trpc/react";
-import { useNotify } from "~/hooks/useNotify";
 import { useCountryDiplomacyActions } from "./useCountryDiplomacyActions";
 import { SAME_REALM_MESSAGE } from "~/lib/realms/same-realm";
-import { cn, createUrl } from "~/lib/utils";
+import { cn } from "~/lib/utils";
 import { Button, buttonVariants } from "~/components/ui/button";
 import { ProposeSummitForm } from "./ProposeSummitForm";
 import type { HeroModal } from "~/components/shared/country-hero/HeroSnapshotPanels";
@@ -43,7 +37,6 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Sheet, SheetContent } from "~/components/ui/sheet";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/components/ui/collapsible";
-import { dismissButtonClassName } from "~/components/ui/dialog";
 import {
   destinationsFor,
   type IconType,
@@ -54,6 +47,7 @@ import {
   ToneTile,
   VitalityStrip,
 } from "./CountryActionsHeader";
+import { EditNationMenu, ManageGrid, ShareCountryButton } from "./CountryActionsParts";
 
 interface CountryActionsMenuProps {
   targetCountryId: string;
@@ -68,15 +62,6 @@ interface CountryActionsMenuProps {
 
 type DiplomacyActions = ReturnType<typeof useCountryDiplomacyActions>;
 type ForeignPolicy = Parameters<DiplomacyActions["proposeForeignPolicy"]>[0];
-
-const MANAGEMENT_LINKS: Array<[icon: IconType, label: string, path: string, tone: Tone]> = [
-  [City, "Dashboard", "/mycountry", "yellow"],
-  [Page, "Executive", "/mycountry/executive", "orange"],
-  [Community, "Diplomacy", "/mycountry/diplomacy", "green"],
-  [EditPencil, "Editor", editorHref("identity"), "blue"],
-  [Map, "Map editor", MYCOUNTRY_MAP_EDITOR_PATH, "teal"],
-  [ScaleFrameEnlarge, "Politics", "/mycountry/politics", "cyan"],
-];
 
 /** Where every act's result is kept: proposals, agreements, embassies and measures in force. */
 const DIPLOMACY_PATH = "/mycountry/diplomacy";
@@ -151,9 +136,6 @@ function standingLabel(act: Act, state: Exclude<PolicyState, "open">, targetName
   return `Answer ${targetName}'s ${act.noun.toLowerCase()} offer`;
 }
 
-const profileUrl = (slugOrId: string) =>
-  `${window.location.origin}${createUrl(`/countries/${slugOrId}`)}`;
-
 export function CountryActionsMenu({
   targetCountryId,
   targetCountryName,
@@ -163,7 +145,6 @@ export function CountryActionsMenu({
   onClose,
   isOwnCountry = false,
 }: CountryActionsMenuProps) {
-  const notify = useNotify();
   const router = useRouter();
   const [summitOpen, setSummitOpen] = useState(false);
   const [detail, setDetail] = useState<HeroModal | null>(null);
@@ -188,16 +169,6 @@ export function CountryActionsMenu({
   const go = (path: string) => {
     router.push(path);
     onClose();
-  };
-
-  // The system share sheet where there is one, else the link on the clipboard.
-  const share = () => {
-    const url = profileUrl(facts?.slug ?? targetCountryId);
-    if (navigator.share) {
-      void navigator.share({ title: targetCountryName, url }).catch(() => undefined);
-      return;
-    }
-    void navigator.clipboard.writeText(url).then(() => notify.success("Link copied"));
   };
 
   // An act in flight locks the rows so nothing is double-submitted.
@@ -245,16 +216,13 @@ export function CountryActionsMenu({
             <VitalityStrip countryId={targetCountryId} enabled={isOpen} onOpen={setDetail} />
           </PosterHeader>
 
-          {/* Beside Close, in the sheet's own corner, as on a Maps place card. */}
-          <button
-            type="button"
-            onClick={share}
-            aria-label={`Share ${targetCountryName}`}
-            title="Share"
-            className={cn(dismissButtonClassName, "right-13")}
-          >
-            <ShareIos />
-          </button>
+          {/* Beside Close, in the sheet's own corner, as on a Maps place card; your own nation adds Edit. */}
+          <ShareCountryButton
+            name={targetCountryName}
+            slugOrId={facts?.slug ?? targetCountryId}
+            className="absolute top-4 right-13"
+          />
+          {isOwnCountry && <EditNationMenu onNavigate={go} className="absolute top-4 right-22" />}
 
           {summitOpen && !isOwnCountry && (
             <ProposeSummitForm
@@ -264,24 +232,7 @@ export function CountryActionsMenu({
             />
           )}
 
-          {isOwnCountry && (
-            <section aria-labelledby="country-manage" className="space-y-2">
-              <h3 id="country-manage" className="text-subhead text-label-secondary px-1">
-                Manage
-              </h3>
-              <div className="grid grid-cols-3 gap-1">
-                {MANAGEMENT_LINKS.map(([icon, label, path, tone]) => (
-                  <QuickAction
-                    key={path}
-                    icon={icon}
-                    label={label}
-                    tone={tone}
-                    onClick={() => go(path)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
+          {isOwnCountry && <ManageGrid onNavigate={go} />}
 
           <OpenIn
             destinations={destinationsFor(targetCountryId, targetCountryName, facts ?? null)}
