@@ -107,6 +107,16 @@ it.each([
   expect(resolve($(selector))).toBeNull();
 });
 
+it("a map on a context surface takes the menu, about the surface rather than the page", () => {
+  const $ = mount(
+    '<div data-context-area="map" data-context-surface><div class="maplibregl-map"><canvas></canvas><input /></div></div>'
+  );
+  expect(resolve($("canvas"))).toMatchObject({ areas: ["map"], page: false });
+  expect(resolve($("canvas"), { pointerType: "touch" })).not.toBeNull();
+  expect(resolve($("canvas"), { defaultPrevented: true })).not.toBeNull();
+  expect(resolve($("input"))).toBeNull();
+});
+
 it("a read-only island inside an editor is still part of the editor", () => {
   const $ = mount('<div contenteditable="true"><span contenteditable="false">chip</span></div>');
   expect(resolve($("span"))).toBeNull();

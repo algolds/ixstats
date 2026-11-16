@@ -4,6 +4,7 @@ import type {
   Map as MapLibreMap,
   MapGeoJSONFeature,
   MapMouseEvent,
+  PointLike,
   Popup,
 } from "maplibre-gl";
 import type { Point as GeoPoint } from "geojson";
@@ -293,10 +294,7 @@ export function pickOverlayFeature(
 }
 
 /** The political country polygon under a click, if any. */
-export function pickCountry(
-  map: MapLibreMap,
-  point: MapMouseEvent["point"]
-): SelectedCountry | null {
+export function pickCountry(map: MapLibreMap, point: PointLike): SelectedCountry | null {
   const feature = map.queryRenderedFeatures(point, { layers: ["fill-political"] })[0];
   return feature ? toCountry(feature.properties) : null;
 }

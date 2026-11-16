@@ -1,15 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Settings,
-  SunLight as Sun,
-  HalfMoon as Moon,
-  ModernTv as Monitor,
-  User,
-  Dashboard as LayoutDashboard,
-  Magnet,
-} from "iconoir-react";
+import { Settings, Magnet } from "iconoir-react";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -17,21 +9,12 @@ import { SegmentedControl } from "~/components/ui/segmented-control";
 import { Slider } from "~/components/ui/slider";
 import { Switch } from "~/components/ui/switch";
 import type { ProjectionMode } from "~/lib/maps/map-config";
-import type { Theme } from "~/context/theme-context";
-import { useRouter } from "next/navigation";
-import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import {
   getSnapEnabled,
   setSnapEnabled,
   getSnapTolerance,
   setSnapTolerance,
 } from "~/lib/maps/editor-prefs";
-
-const THEME_OPTIONS = [
-  { value: "light", label: "Light", icon: <Sun aria-hidden /> },
-  { value: "dark", label: "Dark", icon: <Moon aria-hidden /> },
-  { value: "system", label: "System", icon: <Monitor aria-hidden /> },
-];
 
 const PROJECTION_OPTIONS = [
   { value: "globe", label: "Globe" },
@@ -42,58 +25,39 @@ const PROJECTION_OPTIONS = [
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
-  theme: Theme;
-  setTheme: (t: Theme) => void;
 }
+
+/** The map's own settings (projection, editor snapping); theme and account live in Halo. */
 
 export function MapSettingsPopover({
   projectionMode,
   onProjectionChange,
-  theme,
-  setTheme,
 }: MapSettingsPopoverProps) {
-  const router = useRouter();
-  const isAdmin = useCanOpenAdmin();
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
   const [snapTol, setSnapTolState] = useState(getSnapTolerance);
 
   return (
     <Popover>
-      {/* An island icon button like its siblings in MapDynamicIsland: the focus ring sits just
-          inside the control (the acrylic pill clips at its edge), 44pt hit slop on touch. */}
+      {/* A map toolbar button like its siblings in MapControls */}
       <PopoverTrigger asChild>
         <Button
           type="button"
           variant="ghost"
-          size="icon-sm"
-          className="text-label-secondary hover:text-label shrink-0 rounded-full focus-visible:-outline-offset-2"
-          title="Settings"
+          size="icon"
+          className="rounded-control text-label-secondary h-11 w-11 sm:h-9 sm:w-9"
+          title="Map settings"
           aria-label="Map settings"
         >
-          <Settings aria-hidden className="size-3.5" />
+          <Settings aria-hidden className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         side="bottom"
-        align="end"
+        align="start"
         className="rounded-card mt-2 w-60 p-3"
         sideOffset={8}
       >
         <div className="space-y-2">
-          <Eyebrow id="map-settings-theme" className="block">
-            Theme
-          </Eyebrow>
-          <SegmentedControl
-            aria-labelledby="map-settings-theme"
-            options={THEME_OPTIONS}
-            value={theme}
-            onValueChange={(t) => setTheme(t as Theme)}
-            size="sm"
-            fullWidth
-          />
-        </div>
-
-        <div className="mt-3 space-y-2">
           <Eyebrow id="map-settings-projection" className="block">
             Projection
           </Eyebrow>
@@ -141,29 +105,6 @@ export function MapSettingsPopover({
                 {snapTol.toFixed(3)}°
               </span>
             </div>
-          )}
-        </div>
-
-        <div className="border-separator mt-3 border-t pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/settings")}
-            className="text-label-secondary w-full justify-start"
-          >
-            <User aria-hidden />
-            User settings
-          </Button>
-          {isAdmin && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/admin")}
-              className="text-label-secondary w-full justify-start"
-            >
-              <LayoutDashboard aria-hidden />
-              Admin dashboard
-            </Button>
           )}
         </div>
       </PopoverContent>

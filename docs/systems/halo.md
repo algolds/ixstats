@@ -4,7 +4,7 @@ Halo is the contextual floating island and command palette for IxStates, providi
 
 ## What Halo is
 
-`ShellHalo` mounts Halo top-centre above the content column (`left: var(--shell-sidebar-width)`, `right: var(--shell-inspector-width)`), leaving primary navigation to `AppSidebar` and `TabBar`. In its collapsed pill it shows the IxTime clock, greeting or active plugin breadcrumb, navigation loading feedback, and triggers for Search, Notifications, Settings, and the viewer's Account panel (`"mycountry"` mode). Expanding Halo morphs the frosted Lens capsule (`facet-lens facet-lens-frosted`) into a non-modal dialog (`role="dialog"`, `aria-modal="false"`) whose sections sit on solid wells (`HaloWell`) across built-in views and route-registered plugin views. Halo hides itself on `/maps`, where `MapDynamicIsland` owns the floating map controls.
+`ShellHalo` mounts Halo top-centre above the content column (`left: var(--shell-sidebar-width)`, `right: var(--shell-inspector-width)`), leaving primary navigation to `AppSidebar` and `TabBar`. In its collapsed pill it shows the IxTime clock, greeting or active plugin breadcrumb, navigation loading feedback, and triggers for Search, Notifications, Settings, and the viewer's Account panel (`"mycountry"` mode). Expanding Halo morphs the frosted Lens capsule (`facet-lens facet-lens-frosted`) into a non-modal dialog (`role="dialog"`, `aria-modal="false"`) whose sections sit on solid wells (`HaloWell`) across built-in views and route-registered plugin views. On `/maps` the maps plugin (`src/components/halo/plugins/maps/MapsHalo.tsx`) adds the map's commands and a place search (a plugin's async `search`, listed after its commands); embedded maps (`?embed=true`) show no Halo.
 
 ## Versions
 

@@ -235,12 +235,6 @@ function CommandPaletteContent({
 }
 
 export function CommandPalette({ className, trayApps, searchApps }: CommandPaletteProps) {
-  const pathname = usePathname();
-  const normalizedPath = stripBasePath(pathname || "/");
-
-  // On /maps pages, the MapDynamicIsland provides a dedicated map-specific DI.
-  if (normalizedPath.startsWith("/maps")) return null;
-
   return (
     <HaloTourProvider>
       <HaloProvider initialSize={SIZE_PRESETS.COMPACT_TALL}>

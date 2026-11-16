@@ -30,8 +30,14 @@ import {
   type ContextTarget,
 } from "~/lib/navigation/context-target";
 
+/** Where the menu opened, in viewport pixels (a drawn surface reads what is under it). */
+export interface ContextPoint {
+  x: number;
+  y: number;
+}
+
 /** An area's own items for the system menu: `DropdownMenuItem`s, or nothing for this target. */
-export type ContextAreaItems = (target: ContextTarget) => React.ReactNode;
+export type ContextAreaItems = (target: ContextTarget, point: ContextPoint) => React.ReactNode;
 
 type AreaRegistry = Map<string, ContextAreaItems>;
 
@@ -133,7 +139,7 @@ function SystemMenu({
 
   const { link, country, image, selection } = target;
   const groups: { key: string; items: React.ReactNode }[] = target.areas.flatMap((id) => {
-    const items = registry.get(id)?.(target);
+    const items = registry.get(id)?.(target, { x, y });
     return items ? [{ key: id, items }] : [];
   });
   if (selection) {

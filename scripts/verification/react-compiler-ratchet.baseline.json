@@ -64,7 +64,6 @@
   "src/components/dashboard/accounts/AccountCreationModal.tsx": 1,
   "src/components/executive/politics/ParliamentHemicycle.tsx": 1,
   "src/components/halo/HaloTourContext.tsx": 1,
-  "src/components/maps/core/hooks/useDynamicIslandState.tsx": 1,
   "src/components/maps/core/hooks/useMapState.ts": 2,
   "src/components/maps/core/hooks/useMeasureToolState.ts": 2,
   "src/components/maps/core/hooks/useRealmMapLayers.ts": 1,

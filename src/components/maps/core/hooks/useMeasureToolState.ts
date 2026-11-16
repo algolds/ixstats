@@ -86,12 +86,16 @@ export function useMeasureToolState({
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    if (active) addMeasureLayers(map);
+    if (active) {
+      addMeasureLayers(map);
+      // A measurement started at a point (startAt) has its first point before the layers exist
+      updateMapLayers(pointsRef.current);
+    }
 
     return () => {
       if (map.getStyle() && !active) removeLayers();
     };
-  }, [active, mapRef, removeLayers]);
+  }, [active, mapRef, removeLayers, updateMapLayers]);
 
   // Click + drag handlers
   useEffect(() => {
@@ -148,6 +152,14 @@ export function useMeasureToolState({
     else setActive(true);
   }, [active, deactivate]);
 
+  /** Start a new measurement with `start` as its first point (the map's "Measure from here"). */
+  const startAt = (start: Coord) => {
+    pointsRef.current = [start];
+    setPoints([start]);
+    if (active) updateMapLayers([start]);
+    else setActive(true);
+  };
+
   return {
     active,
     mode,
@@ -158,5 +170,6 @@ export function useMeasureToolState({
     perimeterKm,
     clearPoints,
     handleToggle,
+    startAt,
   };
 }

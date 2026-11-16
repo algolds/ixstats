@@ -31,6 +31,11 @@ export interface ContextEventLike {
 export const NATIVE_CONTEXT_ATTR = "data-native-context-menu";
 /** Marks an area that registered its own items with the system menu. */
 export const CONTEXT_AREA_ATTR = "data-context-area";
+/**
+ * Marks a drawn surface (a map, a canvas) that answers right-clicks through its context area instead of
+ * keeping the browser's menu. Text fields and dialogs inside it still keep the browser's.
+ */
+export const CONTEXT_SURFACE_ATTR = "data-context-surface";
 /** The attributes `CountryLink` writes so the menu knows which nation a link is. */
 export const COUNTRY_ATTRS = {
   id: "data-country-id",
@@ -58,6 +63,26 @@ const KEEPS_NATIVE_MENU = [
   "[role='alertdialog']",
   `[${NATIVE_CONTEXT_ATTR}]`,
 ].join(", ");
+
+/** The parts of KEEPS_NATIVE_MENU a context surface takes over. */
+const DRAWN = "canvas, .maplibregl-map";
+
+/** The surface the element is drawn on, when it sits on one; null otherwise. */
+function surfaceOf(el: Element): Element | null {
+  return el.closest(`[${CONTEXT_SURFACE_ATTR}]`);
+}
+
+/** Whether something around `el` keeps the browser's menu: a drawn element counts only off a surface. */
+function keepsNativeMenu(el: Element): boolean {
+  for (
+    let n = el.closest(KEEPS_NATIVE_MENU);
+    n;
+    n = n.parentElement?.closest(KEEPS_NATIVE_MENU) ?? null
+  ) {
+    if (!n.matches(DRAWN) || !surfaceOf(n)) return true;
+  }
+  return false;
+}
 
 const COUNTRY_LINK = `a[${COUNTRY_ATTRS.id}], a[${COUNTRY_ATTRS.slug}]`;
 
@@ -100,24 +125,27 @@ function selectionAt(el: Element, selection: Selection | null): string | null {
 
 /**
  * Resolves a `contextmenu` event to what the system menu should offer, or `null` to leave the browser's
- * own menu alone: Shift+right-click, text fields, canvases and maps, media, overlays, an event a feature's
+ * own menu alone: Shift+right-click, text fields, canvases and maps (unless on a context surface), media, overlays, an event a feature's
  * own context menu already took, and a touch long-press on plain text (which selects a word).
  */
 export function resolveContextTarget(
   event: ContextEventLike,
   selection: Selection | null
 ): ContextTarget | null {
-  if (event.defaultPrevented) return null;
   if (event.shiftKey && event.button === 2) return null;
   const el = elementOf(event.target);
-  if (!el || el.closest(KEEPS_NATIVE_MENU)) return null;
+  if (!el || keepsNativeMenu(el)) return null;
+  const surface = !!surfaceOf(el);
+  // A drawing library prevents the default on every right-click (MapLibre, for right-drag rotate), so on a
+  // surface it says nothing about a feature having taken the event.
+  if (event.defaultPrevented && !surface) return null;
 
   const anchor = el.closest<HTMLAnchorElement>("a[href]");
   const img = el.closest("img");
   const link = anchor?.href || null;
   const image = img?.currentSrc || img?.src || null;
   const selected = selectionAt(el, selection);
-  if (event.pointerType === "touch" && !link && !image) return null;
+  if (event.pointerType === "touch" && !link && !image && !surface) return null;
 
   return {
     selection: selected,
@@ -126,7 +154,7 @@ export function resolveContextTarget(
     country: countryOf(anchor),
     image,
     areas: areasOf(el),
-    page: !link && !image && !selected,
+    page: !link && !image && !selected && !surface,
   };
 }
 

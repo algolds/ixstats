@@ -44,6 +44,8 @@ export interface SearchSources {
   commands: ReadonlyArray<IndexedEntry<CommandEntry>>;
   wiki: ReadonlyArray<WikiSearchItem>;
   pluginCommands?: ReadonlyArray<IndexedPluginCommand>;
+  /** The active plugin's own search results for the query, matched by the plugin. */
+  pluginHits?: ReadonlyArray<IndexedPluginCommand>;
   realms?: ReadonlyArray<IndexedRealm>;
 }
 
@@ -442,6 +444,13 @@ export function searchCatalog(
       ? matchPluginCommands(sources.pluginCommands, opts.pluginId ?? "active", needle, pluginLimit)
       : [];
 
+  const hits =
+    filter === "all" || filter === "countries"
+      ? (sources.pluginHits ?? [])
+          .slice(0, filter === "all" ? 5 : 12)
+          .map((hit) => pluginCommandToDescriptor(hit, opts.pluginId ?? "active"))
+      : [];
+
   const realms =
     (filter === "all" || filter === "realms") && sources.realms?.length
       ? matchRealms(sources.realms, needle, limit)
@@ -461,7 +470,7 @@ export function searchCatalog(
     return realms;
   }
   if (filter === "countries") {
-    return countries;
+    return [...hits, ...countries].slice(0, 12);
   }
   if (filter === "commands") {
     return [...pluginMatches, ...commands].slice(0, 12);
@@ -470,8 +479,8 @@ export function searchCatalog(
     return [...pluginMatches, ...wiki].slice(0, 12);
   }
   if (filter === "all" && opts.wikiFirst) {
-    return [...pluginMatches, ...wiki, ...realms, ...countries, ...commands].slice(0, 12);
+    return [...pluginMatches, ...hits, ...wiki, ...realms, ...countries, ...commands].slice(0, 12);
   }
 
-  return [...pluginMatches, ...realms, ...countries, ...commands, ...wiki].slice(0, 12);
+  return [...pluginMatches, ...hits, ...realms, ...countries, ...commands, ...wiki].slice(0, 12);
 }

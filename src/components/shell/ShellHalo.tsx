@@ -5,7 +5,7 @@
  * floating top-centre over the content area, clear of the sidebar (`--shell-sidebar-width`) and the
  * Inspector gutter (`--shell-inspector-width`, zero on pages without one). Page toolbars reserve
  * their middle in that same column, so Halo sits over the reserve on every page. It is not the
- * primary navigation. Halo hides itself on /maps, where MapDynamicIsland takes over.
+ * primary navigation. On /maps the maps plugin adds places and map commands (MapsHalo).
  */
 
 import { CommandPalette } from "~/components/halo";

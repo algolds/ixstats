@@ -197,7 +197,7 @@ row and the current app discloses its sections; Admin and Settings use area mode
 rails or hidden sub-navigation.
 
 - **Chromeless routes:** `/maps`, `/mycountry/map-editor`, `/admin/maps/editor`, `/admin/maps/style-editor` and `/admin/maps/studio`
-  (`isChromelessPath`) get no canvas wash; Halo hides on `/maps`, where `MapDynamicIsland` takes over.
+  (`isChromelessPath`) get no canvas wash; on `/maps` Halo carries the maps plugin (commands and place search).
 - **Page titles:** `PageHeader` (`~/components/shell`) renders the one `<h1>`, a back button and trailing actions in
   a sticky toolbar that collapses to a compact title on scroll.
 - **Sticky rails** use `top-(--shell-top-offset)`; read the shell layout variables (`--shell-sidebar-width`,

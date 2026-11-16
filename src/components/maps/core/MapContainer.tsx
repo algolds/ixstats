@@ -19,9 +19,10 @@ import { useMapLiveSync } from "~/hooks/useMapLiveSync";
 import { api } from "~/trpc/react";
 import { MapControls, type RasterControls } from "./MapControls";
 import { useIsMobile } from "~/hooks/useIsMobile";
-import { MapDynamicIsland } from "./MapDynamicIsland";
+import { MapsHalo } from "~/components/halo/plugins/maps/MapsHalo";
+import { useMapContextArea } from "./MapContextMenu";
 import { AnalyticsLegend } from "./AnalyticsLegend";
-import { MeasureTool } from "./MeasureTool";
+import { MeasureTool, type MeasureToolRef } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
 import { MapLoadingScreen } from "./MapLoadingScreen";
 import { MapWelcomeModal } from "./MapWelcomeModal";
@@ -29,7 +30,7 @@ import { TimelineScrubber, type TimelineScrubberProps } from "./TimelineScrubber
 import { MapRealmProvider } from "./MapRealmContext";
 import type { MapLayerType, ProjectionMode } from "~/lib/maps/map-config";
 import type { ClimateKey } from "~/lib/maps/realm-map-settings";
-import { mapHomeCenter } from "~/lib/maps/map-config";
+import { MAP_DEFAULTS, mapHomeCenter } from "~/lib/maps/map-config";
 import type { SelectedCountry, IxWorldMapRef, MapLayerData } from "./IxWorldMap";
 
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -142,7 +143,7 @@ interface MapToolbarsProps {
   state: MapState;
   pin: MapPin;
   mapRef: RefObject<IxWorldMapRef | null>;
-  measureToolRef: RefObject<{ toggle: () => void } | null>;
+  measureToolRef: RefObject<MeasureToolRef | null>;
   showControls: boolean;
   toolsVisible: boolean;
   tourIdle: boolean;
@@ -156,8 +157,6 @@ interface MapToolbarsProps {
   onEditMap: () => void;
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
-  onOpenWelcome: () => void;
-  realm: string | undefined;
   /** The realm's planet radius (km), for the measure tool. */
   radiusKm: number | undefined;
   /** The realm's vector layer types (undefined on Ixnay: every switch), climate key and raster art switches. */
@@ -183,8 +182,6 @@ function MapToolbars({
   onEditMap,
   projectionMode,
   onProjectionChange,
-  onOpenWelcome,
-  realm,
   radiusKm,
   layerTypes,
   climateKey,
@@ -216,6 +213,8 @@ function MapToolbars({
           layerTypes={layerTypes}
           climateKey={climateKey}
           raster={raster}
+          projectionMode={projectionMode}
+          onProjectionChange={onProjectionChange}
         />
       )}
 
@@ -226,16 +225,6 @@ function MapToolbars({
           onActiveChange={state.setIsMeasuring}
           headless
           radiusKm={radiusKm}
-        />
-      )}
-
-      {toolsVisible && tourIdle && (
-        <MapDynamicIsland
-          projectionMode={projectionMode}
-          onProjectionChange={onProjectionChange}
-          onSearchResult={state.handleSearchResult}
-          onOpenWelcome={onOpenWelcome}
-          realm={realm}
         />
       )}
     </>
@@ -330,7 +319,7 @@ export function MapContainer({
   const isAdmin = useIsAdmin();
   const toolsVisible = showTools ?? showControls;
   const mapRef = useRef<IxWorldMapRef>(null);
-  const measureToolRef = useRef<{ toggle: () => void }>(null);
+  const measureToolRef = useRef<MeasureToolRef>(null);
 
   useMapLiveSync(realm);
 
@@ -489,6 +478,31 @@ export function MapContainer({
     }
   };
 
+  const homeCenter = realmDisplay?.defaultView?.center ?? mapHomeCenter(ixnay);
+  const resetView = () =>
+    mapRef.current
+      ?.getMap()
+      ?.flyTo({ center: homeCenter, zoom: MAP_DEFAULTS.zoom, duration: 1200 });
+  const toggleMeasure = () => measureToolRef.current?.toggle();
+  // "What's here": the pin tool's readout for a point, read against the loaded layers
+  const whatsHere = (lng: number, lat: number) => {
+    if (!pin.isPinToolActive) pin.togglePinTool();
+    pin.dropPin(lng, lat, Object.fromEntries(mapLayersRef.current.map((l) => [l.type, l.data])));
+  };
+  const editAllowed = toolsVisible && !hideEditButtons && !isEditing && !state.isWorldEditing;
+  const onEditMapHere = whenTrue(editAllowed && !!userCountryId, handleOpenMyEditor);
+  const onOpenWorldEditor = whenTrue(editAllowed && mayEditRealmMap, state.handleOpenWorldEditor);
+  const mapArea = useMapContextArea({
+    mapRef,
+    visibleLayers: effectiveVisibleLayers,
+    onWhatsHere: whatsHere,
+    onMeasureFrom: (start) => measureToolRef.current?.startAt(start),
+    onSelectCountry: state.handleCountryClick,
+    onResetView: resetView,
+    onEditMap: onEditMapHere,
+    onOpenWorldEditor,
+  });
+
   if (error) {
     return <MapLoadError className={className} message={error.message} onRetry={retryMapLayers} />;
   }
@@ -504,36 +518,60 @@ export function MapContainer({
 
   return (
     <div className={`absolute inset-0 pb-[env(safe-area-inset-bottom)] ${className}`}>
-      <IxWorldMap
-        ref={mapRef}
-        layers={activeMapLayers}
-        capitals={capitalsGeoJson}
-        overlayFeatures={overlayFeatures}
-        overlayVisibility={state.overlayVisibility}
-        onCountryClick={whenTrue(tourIdle && !disableCountrySelect, state.handleCountryClick)}
-        onCountryHover={whenTrue(tourIdle, state.handleCountryHover)}
-        onMapClick={state.handleMapClick}
-        onFeatureClick={whenTrue(tourIdle, state.handleFeatureClick)}
-        onReady={handleMapReady}
-        selectedCountryId={selectedMapId(selectedCountry)}
-        isMeasuring={state.isMeasuring}
-        geographyFilter={state.geographyFilter}
-        projectionMode={effectiveProjection}
-        topCountryNames={topCountrySet}
-        labelsVisible={state.labelsVisible}
-        onZoomChange={handleZoomChange}
-        initialCenter={initialCenter}
-        initialZoom={initialZoom}
-        overlayData={deferredOverlayData}
-        onRouteClick={state.setSelectedRouteId}
-        showOceanLabels={ixnay}
-        ixnay={ixnay}
-        baseImageUrl={realmDisplay?.baseImage}
-        tileSource={tileSource}
-        rasterRealmId={realmDisplay?.realmId}
-        rasterLayers={raster.shown}
-        artMode={raster.artMode}
-      />
+      {toolsVisible && tourIdle && (
+        <MapsHalo
+          realm={realm}
+          projectionMode={effectiveProjection}
+          onProjectionChange={handleProjectionChange}
+          labelsVisible={state.labelsVisible}
+          onToggleLabels={state.toggleLabels}
+          onToggleMeasure={toggleMeasure}
+          onTogglePin={pin.togglePinTool}
+          onResetView={resetView}
+          onOpenHelp={handleOpenWelcome}
+          onSearchResult={state.handleSearchResult}
+          onStartTour={whenTrue(ixnay, tour.startTour)}
+          onEditMap={onEditMapHere}
+          onOpenWorldEditor={onOpenWorldEditor}
+        />
+      )}
+      {/* The map itself answers right-clicks (MapContextMenu), except while an editor owns them; the
+          controls and panels around it keep the ordinary menu */}
+      <div
+        className="absolute inset-0"
+        {...(toolsVisible && !isEditing && !state.isWorldEditing ? mapArea : {})}
+      >
+        <IxWorldMap
+          ref={mapRef}
+          layers={activeMapLayers}
+          capitals={capitalsGeoJson}
+          overlayFeatures={overlayFeatures}
+          overlayVisibility={state.overlayVisibility}
+          onCountryClick={whenTrue(tourIdle && !disableCountrySelect, state.handleCountryClick)}
+          onCountryHover={whenTrue(tourIdle, state.handleCountryHover)}
+          onMapClick={state.handleMapClick}
+          onFeatureClick={whenTrue(tourIdle, state.handleFeatureClick)}
+          onReady={handleMapReady}
+          selectedCountryId={selectedMapId(selectedCountry)}
+          isMeasuring={state.isMeasuring}
+          geographyFilter={state.geographyFilter}
+          projectionMode={effectiveProjection}
+          topCountryNames={topCountrySet}
+          labelsVisible={state.labelsVisible}
+          onZoomChange={handleZoomChange}
+          initialCenter={initialCenter}
+          initialZoom={initialZoom}
+          overlayData={deferredOverlayData}
+          onRouteClick={state.setSelectedRouteId}
+          showOceanLabels={ixnay}
+          ixnay={ixnay}
+          baseImageUrl={realmDisplay?.baseImage}
+          tileSource={tileSource}
+          rasterRealmId={realmDisplay?.realmId}
+          rasterLayers={raster.shown}
+          artMode={raster.artMode}
+        />
+      </div>
 
       <MapToolbars
         state={state}
@@ -552,8 +590,6 @@ export function MapContainer({
         onEditMap={handleOpenMyEditorWithUser}
         projectionMode={effectiveProjection}
         onProjectionChange={handleProjectionChange}
-        onOpenWelcome={handleOpenWelcome}
-        realm={realm}
         radiusKm={realmDisplay?.radiusKm}
         layerTypes={realmDisplay?.isIxnay ? undefined : realmDisplay?.layerTypes}
         climateKey={realmDisplay?.climateKey}
@@ -584,7 +620,7 @@ export function MapContainer({
         onProjectionChange={handleProjectionChange}
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
-        homeCenter={realmDisplay?.defaultView?.center ?? mapHomeCenter(ixnay)}
+        homeCenter={homeCenter}
         attribution={realmDisplay?.attribution}
       />
 

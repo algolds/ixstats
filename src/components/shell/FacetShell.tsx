@@ -187,7 +187,10 @@ export function FacetShell() {
           />
         </>
       )}
-      <ShellHalo trayApps={apps} searchApps={searchApps} />
+      {/* An embedded map (an iframe on the wiki) shows the map alone */}
+      {searchParams?.get("embed") !== "true" && (
+        <ShellHalo trayApps={apps} searchApps={searchApps} />
+      )}
       {signedIn && (
         <Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
           <DialogContent>

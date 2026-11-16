@@ -14,6 +14,7 @@ import { extractCountriesList } from "./types";
 import type { AppDefinition } from "~/lib/navigation/app-sections";
 import { toggleSidebarCollapsed } from "~/lib/navigation/use-sidebar-collapsed";
 import { useActiveDIPlugin } from "./plugin-context";
+import { usePluginSearch } from "./usePluginSearch";
 import { useCanOpenAdmin } from "~/hooks/usePermissions";
 import type { SystemActionId } from "./halo-registry";
 import { haloReducer, INITIAL_HALO_STATE } from "~/lib/halo/halo-state";
@@ -102,11 +103,19 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     { query: debouncedSearchQuery.trim(), limit: searchFilter === "wiki" ? 12 : 5 },
     { enabled: wikiEnabled, staleTime: 60_000 }
   );
+  // The page's own search (the map's places): keyed by plugin, so another page never shows its hits.
+  const pluginQuery = debouncedSearchQuery.trim();
+  const pluginSearch = usePluginSearch(
+    activePlugin,
+    pluginQuery,
+    pluginQuery.length >= 2 && (searchFilter === "all" || searchFilter === "countries")
+  );
   const isSearchPending =
     searchQuery !== debouncedSearchQuery ||
     countriesLoading ||
     realmsLoading ||
-    (wikiEnabled && wikiFetching);
+    (wikiEnabled && wikiFetching) ||
+    pluginSearch.pending;
 
   const applyInitialSearchFilter = () => {
     let isDynamicWikiSearchEnabled = true;
@@ -143,6 +152,7 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
   );
   const countryIndex = buildIndex(extractCountriesList(countriesData as CountriesData | undefined));
   const pluginCommandIndex = indexPluginCommands(activePlugin?.commands ?? []);
+  const shownPluginHits = pluginSearch.hits;
   const realmIndex = indexRealms(realmsData ?? []);
 
   const executeCommand = (actionId?: SystemActionId, targetPath?: string) => {
@@ -243,7 +253,10 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
           category: descriptor.category,
         },
         action: () => {
-          const cmd = activePlugin?.commands?.find((c) => c.key === descriptor.pluginCommandKey);
+          const key = descriptor.pluginCommandKey;
+          const cmd =
+            activePlugin?.commands?.find((c) => c.key === key) ??
+            shownPluginHits.find((c) => c.key === key);
           if (cmd?.run) {
             cmd.run();
             return;
@@ -311,6 +324,7 @@ export function useDynamicIslandState(options?: { searchApps?: readonly AppDefin
     searchFilter,
     {
       pluginCommands: pluginCommandIndex,
+      pluginHits: indexPluginCommands(shownPluginHits),
       realms: realmIndex,
       countries: countryIndex,
       commands: commandIndex,

@@ -229,3 +229,31 @@ describe("Halo pure search (src/lib/halo/search)", () => {
     }
   });
 });
+
+describe("plugin search hits", () => {
+  const OPTS = { pluginId: "maps", wikiFirst: false };
+  const hits = indexPluginCommands(
+    Array.from({ length: 8 }, (_, i) => ({
+      key: `place-${i}`,
+      title: `Port ${i}`,
+      description: "City",
+    }))
+  );
+  const sources: SearchSources = {
+    ...makeSources({ signedIn: true }),
+    pluginCommands: indexPluginCommands([{ key: "measure", title: "Measure distance" }]),
+    pluginHits: hits,
+  };
+
+  it("lists the page's own hits as returned, after its commands, five under all", () => {
+    const all = searchCatalog("port", "all", sources, OPTS);
+    expect(titles(all).slice(0, 5)).toEqual(["Port 0", "Port 1", "Port 2", "Port 3", "Port 4"]);
+    expect(all[0]).toMatchObject({ category: "On this page", pluginCommandKey: "place-0" });
+    expect(titles(searchCatalog("measure", "all", sources, OPTS))[0]).toBe("Measure distance");
+  });
+
+  it("puts hits before countries under the countries filter and keeps them out of the others", () => {
+    expect(titles(searchCatalog("port", "countries", sources, OPTS))).toHaveLength(8);
+    expect(titles(searchCatalog("port", "wiki", sources, OPTS))).not.toContain("Port 0");
+  });
+});

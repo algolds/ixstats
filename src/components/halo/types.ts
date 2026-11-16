@@ -76,6 +76,11 @@ export interface DIPlugin<F = unknown, C = unknown> {
   badge?: DIBadge;
   actions?: DIAction[];
   commands?: readonly PluginCommand[];
+  /**
+   * Places or records the page can find for a query (two characters or more), listed after its commands.
+   * Already matched by the source, so Halo shows them as returned.
+   */
+  search?: (query: string) => Promise<readonly PluginCommand[]>;
   accentColor?: string;
   filter?: F;
   context?: C;

@@ -51,8 +51,10 @@ function MeasureReadout({
   );
 }
 
-interface MeasureToolRef {
+export interface MeasureToolRef {
   toggle: () => void;
+  /** Start a new measurement at [lng, lat]. */
+  startAt: (start: [number, number]) => void;
 }
 
 interface MeasureToolProps {
@@ -78,14 +80,15 @@ export const MeasureTool = forwardRef<MeasureToolRef, MeasureToolProps>(function
     perimeterKm,
     clearPoints,
     handleToggle,
+    startAt,
   } = useMeasureToolState({
     mapRef,
     onActiveChange,
     radiusKm,
   });
 
-  // Expose toggle via ref for external control (headless mode)
-  useImperativeHandle(ref, () => ({ toggle: handleToggle }), [handleToggle]);
+  // Expose toggle and startAt via ref for external control (headless mode, the map's context menu)
+  useImperativeHandle(ref, () => ({ toggle: handleToggle, startAt }));
 
   return (
     <>

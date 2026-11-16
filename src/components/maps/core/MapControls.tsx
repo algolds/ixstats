@@ -24,6 +24,8 @@ import { overlaysByCategory } from "~/lib/maps/overlay-registry";
 import { rasterLegendPath } from "~/lib/maps/raster-tiles";
 import { withBasePath } from "~/lib/base-path";
 import type { OverlayVisibility } from "./IxWorldMap";
+import type { ProjectionMode } from "~/lib/maps/map-config";
+import { MapSettingsPopover } from "./components/MapSettingsPopover";
 import type { RasterSelection } from "./hooks/useRealmMapDisplay";
 
 /** A realm's raster art switches: one base map (or none) and the overlays. */
@@ -67,6 +69,9 @@ interface MapControlsProps {
   climateKey?: ClimateKey | null;
   /** The realm's raster art switches, when it has any. */
   raster?: RasterControls;
+  /** Projection, for the settings popover (absent: no settings button). */
+  projectionMode?: ProjectionMode;
+  onProjectionChange?: (mode: ProjectionMode) => void;
 }
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes", "icecaps"];
@@ -124,6 +129,8 @@ export function MapControls({
   layerTypes,
   climateKey,
   raster,
+  projectionMode,
+  onProjectionChange,
 }: MapControlsProps) {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -238,6 +245,13 @@ export function MapControls({
             isActive={false}
             variant="default"
             onClick={onOpenWorldEditor}
+          />
+        )}
+
+        {projectionMode && onProjectionChange && (
+          <MapSettingsPopover
+            projectionMode={projectionMode}
+            onProjectionChange={onProjectionChange}
           />
         )}
       </FacetMaterial>
