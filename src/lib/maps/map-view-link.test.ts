@@ -17,6 +17,22 @@ it("links the view, keeping the realm and dropping a picked country", () => {
   });
 });
 
+it("carries a tilted camera, and drops a flat one", () => {
+  const tilted = new URL(
+    mapViewLink("https://x.test/maps?pitch=30", {
+      lng: 0,
+      lat: 0,
+      zoom: 5,
+      pitch: 44.6,
+      bearing: -12.2,
+    })
+  ).searchParams;
+  expect([tilted.get("pitch"), tilted.get("bearing")]).toEqual(["45", "-12"]);
+  const flat = new URL(mapViewLink("https://x.test/maps?pitch=30", { lng: 0, lat: 0, zoom: 5 }))
+    .searchParams;
+  expect(flat.has("pitch")).toBe(false);
+});
+
 it("drops an old layers list when no layer shows", () => {
   const link = mapViewLink("https://x.test/maps?layers=climate", {
     lng: 0,

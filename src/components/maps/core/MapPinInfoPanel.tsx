@@ -26,6 +26,8 @@ interface PointInfoServerResult {
     elevationLabel: string | null;
     color: string | null;
   } | null;
+  /** Metres from the realm's elevation model (negative under the sea); absent or null without one. */
+  elevationMetres?: number | null;
   climate: {
     climateId: string | null;
     climateName: string | null;
@@ -147,12 +149,20 @@ export default function MapPinInfoPanel({
   const countryName = resolveCountryName(serverResult, clientResult?.political?.properties);
   const subdivision = serverResult?.subdivision;
   const { zoneName, label } = elevation;
+  const metres = serverResult?.elevationMetres;
+  const height = metres == null ? null : `${Math.round(metres).toLocaleString()} m`;
+  const elevationValue =
+    metres != null && metres < 0
+      ? `Sea floor (${height})`
+      : zoneName
+        ? `${zoneName} (${height ?? label ?? ""})`.replace(" ()", "")
+        : height;
 
   const rows = [
     {
       icon: Mountain,
       label: "Elevation",
-      value: zoneName ? `${zoneName}${label ? ` (${label})` : ""}` : null,
+      value: elevationValue,
       color: elevation.color,
     },
     { icon: Cloud, label: "Climate", value: climate.name, color: climate.color },

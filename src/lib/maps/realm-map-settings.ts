@@ -86,7 +86,8 @@ export const MAX_RASTER_ZOOM = 8;
 export const RealmRasterLayerSchema = z.object({
   id: z.string().regex(RASTER_LAYER_ID),
   label: z.string().trim().min(1).max(40),
-  kind: z.enum(["base", "overlay"]),
+  /** `dem`: the elevation model (Terrarium tiles a `raster-dem` source reads), never drawn as a picture. */
+  kind: z.enum(["base", "overlay", "dem"]),
   version: z.string().regex(/^[a-f0-9]{8,64}$/),
   maxZoom: z.number().int().min(0).max(MAX_RASTER_ZOOM),
   /** Overlays: drawing order, lowest first. */

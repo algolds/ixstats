@@ -97,7 +97,7 @@ export type ReliefRunner = (
 ) => Promise<ReliefEntry>;
 
 export interface WorldImportDeps {
-  /** Builds the relief tiles (default: realm-relief.ts `buildRealmRelief`). Tests replace it. */
+  /** Builds the relief and elevation tiles (default: `buildRealmRelief`, then `buildRealmDem`). Tests replace it. */
   runRelief?: ReliefRunner;
   /** How often a long step reports progress (default 30 s). Tests shorten it. */
   heartbeatMs?: number;
@@ -107,7 +107,9 @@ export interface WorldImportDeps {
 const HEARTBEAT_MS = 30_000;
 
 async function defaultRelief(db: PrismaClient, realmId: string, source: ReliefSource) {
-  return (await import("./realm-relief")).buildRealmRelief(db, realmId, source);
+  const entry = await (await import("./realm-relief")).buildRealmRelief(db, realmId, source);
+  await (await import("./realm-dem")).buildRealmDem(db, realmId, source);
+  return entry;
 }
 
 // The dry run

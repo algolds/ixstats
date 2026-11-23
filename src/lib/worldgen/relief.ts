@@ -388,8 +388,15 @@ export function heightsFromBands(
 // Detail
 // ---------------------------------------------------------------------------------------------------------------------
 
-/** The detail tile spans an eighth of the world's width at this reference resolution, at any grid size. */
-const DETAIL_REFERENCE_WIDTH = 2048;
+/**
+ * The detail tile repeats this many times round the world, and a second, coarser layer of it this many times: the
+ * counts share no factor, so the sum repeats only once round the world and the seam still joins.
+ */
+const DETAIL_REPEATS = 8;
+const DETAIL_COARSE_REPEATS = 3;
+/** The coarse layer's share of the detail, and its offset down the tile (so its rows are not the fine layer's). */
+const DETAIL_COARSE_SHARE = 0.45;
+const DETAIL_COARSE_OFFSET = 101.5;
 /** Detail amplitude in metres at ruggedness 1: a few metres everywhere, 60 % of the height on hills and mountains. */
 const DETAIL_LOWLAND_METRES = 5;
 const DETAIL_HIGHLAND_SHARE = 0.6;
@@ -406,31 +413,87 @@ function detailAmplitude(m: number): number {
   return DETAIL_LOWLAND_METRES + DETAIL_HIGHLAND_SHARE * m * t * t * (3 - 2 * t);
 }
 
+/** The periodic tile at texel (u, v), bilinear, wrapping both ways. */
+function sampleTile(tile: Float32Array, u: number, v: number): number {
+  const u0 = Math.floor(u);
+  const v0 = Math.floor(v);
+  const fu = u - u0;
+  const fv = v - v0;
+  const x0 = ((u0 % DETAIL_SIZE) + DETAIL_SIZE) % DETAIL_SIZE;
+  const y0 = ((v0 % DETAIL_SIZE) + DETAIL_SIZE) % DETAIL_SIZE;
+  const x1 = (x0 + 1) % DETAIL_SIZE;
+  const r0 = y0 * DETAIL_SIZE;
+  const r1 = ((y0 + 1) % DETAIL_SIZE) * DETAIL_SIZE;
+  const top = tile[r0 + x0]! * (1 - fu) + tile[r0 + x1]! * fu;
+  const bottom = tile[r1 + x0]! * (1 - fu) + tile[r1 + x1]! * fu;
+  return top * (1 - fv) + bottom * fv;
+}
+
 /**
  * Add fractal detail to the land of `grid` in place. `ruggedness` scales it: 0 adds nothing, 1 is the full amount.
  * The amplitude grows with altitude: lowland (under ~100 m) gets a few metres, so it stays flat under the
- * hillshade, while hills and mountains get a texture the shading can show. The tile is placed in world space, so a
- * 1024 px preview and the 2048 px tiles show the same hills. Sea is untouched and land stays above sea level.
+ * hillshade, while hills and mountains get a texture the shading can show. The tile is placed in world space and
+ * sampled bilinearly, so a 1024 px preview, the 2048 px relief and the 8192 px elevation model show the same hills
+ * (the large grid smooth, not in blocks). Sea is untouched and land stays above sea level.
  */
 export function addDetail(grid: HeightGrid, ruggedness: number): void {
   if (!(ruggedness > 0)) return;
   const { width, height, metres } = grid;
   const tile = detailTexture();
-  const step = DETAIL_REFERENCE_WIDTH / width;
-  const columns = new Uint16Array(width);
-  for (let x = 0; x < width; x++) columns[x] = Math.floor(x * step) % DETAIL_SIZE;
+  const fine = (DETAIL_REPEATS * DETAIL_SIZE) / width;
+  const coarse = (DETAIL_COARSE_REPEATS * DETAIL_SIZE) / width;
+  const norm = 1 / (1 + DETAIL_COARSE_SHARE);
   for (let y = 0; y < height; y++) {
-    const tileRow = (Math.floor(y * step) % DETAIL_SIZE) * DETAIL_SIZE;
     const row = y * width;
     for (let x = 0; x < width; x++) {
       const m = metres[row + x]!;
       if (m <= 0) continue;
-      metres[row + x] = Math.max(
-        1,
-        m + tile[tileRow + columns[x]!]! * ruggedness * detailAmplitude(m)
-      );
+      const texel =
+        (sampleTile(tile, x * fine, y * fine) +
+          DETAIL_COARSE_SHARE * sampleTile(tile, x * coarse, y * coarse + DETAIL_COARSE_OFFSET)) *
+        norm;
+      metres[row + x] = Math.max(1, m + texel * ruggedness * detailAmplitude(m));
     }
   }
+}
+
+/** Kilometres per pixel of the coast distance (`chamfer` counts 5 a pixel) at the equator, for a grid `width` wide. */
+const kmPerChamfer = (width: number) => (kmPerDegree() * 360) / width / AXIS;
+/** Sea floor profile: a shelf to its break, then the slope easing down to the abyssal plain. */
+const SHELF_KM = 80;
+const SHELF_BREAK_METRES = 180;
+const ABYSS_METRES = 4600;
+const SLOPE_KM = 450;
+
+/** Depth (metres, positive) of sea `km` from the nearest land. */
+export function seaDepth(km: number): number {
+  if (km <= SHELF_KM) return 20 + (SHELF_BREAK_METRES - 20) * (km / SHELF_KM);
+  return (
+    SHELF_BREAK_METRES +
+    (ABYSS_METRES - SHELF_BREAK_METRES) * (1 - Math.exp(-(km - SHELF_KM) / SLOPE_KM))
+  );
+}
+
+/**
+ * Give the sea of a band-made grid a floor: each sea pixel (`zoneGrid` 0) sinks by its distance to the nearest land
+ * (`seaDepth`), and land is lifted to at least 1 m so the coast reads as the change of sign. A generated world has
+ * its own ocean depths and does not need this.
+ */
+export function addSeaFloor(grid: HeightGrid, zoneGrid: Uint8Array): void {
+  const { width, height, metres } = grid;
+  const d = new Uint16Array(width * height);
+  let land = 0;
+  for (let i = 0; i < d.length; i++) {
+    if (zoneGrid[i]! > 0) {
+      d[i] = 0;
+      land++;
+      if (metres[i]! < 1) metres[i] = 1;
+    } else d[i] = UNREACHED;
+  }
+  if (land === 0) return;
+  chamfer(d, width, height);
+  const km = kmPerChamfer(width);
+  for (let i = 0; i < d.length; i++) if (zoneGrid[i] === 0) metres[i] = -seaDepth(d[i]! * km);
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

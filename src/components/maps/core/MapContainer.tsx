@@ -21,6 +21,8 @@ import { MapControls, type RasterControls } from "./MapControls";
 import { useIsMobile } from "~/hooks/useIsMobile";
 import { MapsHalo } from "~/components/halo/plugins/maps/MapsHalo";
 import { useMapContextArea } from "./MapContextMenu";
+import { toggleTerrain, useTerrainPrefs } from "./hooks/useTerrainPrefs";
+import { RELIEF_LAYER_ID } from "~/lib/maps/raster-tiles";
 import { AnalyticsLegend } from "./AnalyticsLegend";
 import { MeasureTool, type MeasureToolRef } from "./MeasureTool";
 import { MapKeyboardControls } from "./MapKeyboardControls";
@@ -74,6 +76,9 @@ interface MapContainerProps {
   selectedCountryId?: string | null;
   initialCenter?: [number, number];
   initialZoom?: number;
+  /** Camera tilt and rotation to open with (a shared 3D view: `?pitch=&bearing=`). */
+  initialPitch?: number;
+  initialBearing?: number;
   onCountrySelect?: (country: SelectedCountry | null) => void;
   forceFlatProjection?: boolean;
   controlledVisibleLayers?: Set<MapLayerType>;
@@ -163,6 +168,8 @@ interface MapToolbarsProps {
   layerTypes: readonly string[] | undefined;
   climateKey: ClimateKey | null | undefined;
   raster: RasterControls | undefined;
+  /** The realm has an elevation model: offer the 3D terrain settings. */
+  hasTerrain: boolean;
 }
 
 function MapToolbars({
@@ -186,6 +193,7 @@ function MapToolbars({
   layerTypes,
   climateKey,
   raster,
+  hasTerrain,
 }: MapToolbarsProps) {
   const isMobile = useIsMobile();
   const editAllowed = !hideEditButtons && !state.isEditing && !state.isWorldEditing;
@@ -215,6 +223,7 @@ function MapToolbars({
           raster={raster}
           projectionMode={projectionMode}
           onProjectionChange={onProjectionChange}
+          hasTerrain={hasTerrain}
         />
       )}
 
@@ -306,6 +315,8 @@ export function MapContainer({
   selectedCountryId,
   initialCenter,
   initialZoom,
+  initialPitch,
+  initialBearing,
   onCountrySelect,
   forceFlatProjection = false,
   controlledVisibleLayers,
@@ -417,6 +428,16 @@ export function MapContainer({
 
   const deferredOverlayData = useDeferredValue(overlayData);
 
+  // A shared 3D view opens tilted, once the map is up
+  const tiltedOnce = useRef(false);
+  useEffect(() => {
+    if (tiltedOnce.current || !state.mapEngineReady) return;
+    tiltedOnce.current = true;
+    if (initialPitch || initialBearing) {
+      mapRef.current?.getMap()?.jumpTo({ pitch: initialPitch ?? 0, bearing: initialBearing ?? 0 });
+    }
+  }, [state.mapEngineReady, initialPitch, initialBearing]);
+
   useRealmDefaultView(mapRef, realmDisplay, {
     mapReady: state.mapEngineReady,
     explicitView: !!initialCenter || initialZoom !== undefined || !!initialCountryId,
@@ -479,10 +500,19 @@ export function MapContainer({
   };
 
   const homeCenter = realmDisplay?.defaultView?.center ?? mapHomeCenter(ixnay);
+  // The realm's elevation model draws the relief on the GPU (hillshade, colour relief, 3D terrain)
+  const demLayer = rasterLayers.find((l) => l.kind === "dem") ?? null;
+  const terrain = useTerrainPrefs();
   const resetView = () =>
     mapRef.current
       ?.getMap()
-      ?.flyTo({ center: homeCenter, zoom: MAP_DEFAULTS.zoom, duration: 1200 });
+      ?.flyTo({
+        center: homeCenter,
+        zoom: MAP_DEFAULTS.zoom,
+        pitch: 0,
+        bearing: 0,
+        duration: 1200,
+      });
   const toggleMeasure = () => measureToolRef.current?.toggle();
   // "What's here": the pin tool's readout for a point, read against the loaded layers
   const whatsHere = (lng: number, lat: number) => {
@@ -533,6 +563,8 @@ export function MapContainer({
           onStartTour={whenTrue(ixnay, tour.startTour)}
           onEditMap={onEditMapHere}
           onOpenWorldEditor={onOpenWorldEditor}
+          terrainOn={whenTrue(!!demLayer, terrain.mode !== "off")}
+          onToggleTerrain={toggleTerrain}
         />
       )}
       {/* The map itself answers right-clicks (MapContextMenu), except while an editor owns them; the
@@ -568,8 +600,13 @@ export function MapContainer({
           baseImageUrl={realmDisplay?.baseImage}
           tileSource={tileSource}
           rasterRealmId={realmDisplay?.realmId}
-          rasterLayers={raster.shown}
+          rasterLayers={
+            demLayer ? raster.shown.filter((l) => l.id !== RELIEF_LAYER_ID) : raster.shown
+          }
           artMode={raster.artMode}
+          demLayer={demLayer}
+          hillshade={rasterSelection.overlays.includes(RELIEF_LAYER_ID)}
+          terrain={terrain}
         />
       </div>
 
@@ -594,6 +631,7 @@ export function MapContainer({
         layerTypes={realmDisplay?.isIxnay ? undefined : realmDisplay?.layerTypes}
         climateKey={realmDisplay?.climateKey}
         raster={rasterControls}
+        hasTerrain={!!demLayer}
       />
 
       {/* Bottom-left stack: analytics legend and the scale with the cursor's coordinates; hidden on
@@ -621,6 +659,7 @@ export function MapContainer({
         measureAvailable={toolsVisible}
         sidePanelOpen={sidePanelOpen}
         homeCenter={homeCenter}
+        onToggleTerrain={whenTrue(!!demLayer, toggleTerrain)}
         attribution={realmDisplay?.attribution}
       />
 

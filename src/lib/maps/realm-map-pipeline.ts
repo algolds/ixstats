@@ -63,6 +63,8 @@ const pipelineRasterSchema = RealmRasterLayerSchema.pick({
   kind: true,
   order: true,
 }).extend({
+  /** Art is a picture: a base map or an overlay (the elevation model is built from heights, not art). */
+  kind: z.enum(["base", "overlay"]),
   /** A full-globe equirectangular image (2:1). */
   art: artKeySchema,
   /** The layer's key image, shown while the layer is on. */

@@ -14,6 +14,10 @@ jest.mock("~/server/modules/maps/realm-relief", () => ({
   planRealmRelief: jest.fn().mockResolvedValue(null),
   applyRealmRelief: jest.fn(),
 }));
+jest.mock("~/server/modules/maps/realm-dem", () => ({
+  planRealmDem: jest.fn().mockResolvedValue(null),
+  applyRealmDem: jest.fn(),
+}));
 jest.mock("~/lib/system/job-lock", () => ({
   withJobLock: jest.fn(async (_db: unknown, _name: string, fn: () => Promise<unknown>) => ({
     ran: true,
@@ -48,6 +52,7 @@ import { realmLabelSeedFileSchema } from "~/lib/maps/realm-labels";
 import { seedRealmLabels } from "~/server/modules/maps/realm-labels";
 import type { PrismaClient } from "@prisma/client";
 import { runReliefStep } from "~/server/modules/maps/realm-map-pipeline.relief";
+import { applyRealmDem, planRealmDem } from "~/server/modules/maps/realm-dem";
 import {
   applyRealmRelief,
   planRealmRelief,
@@ -509,6 +514,32 @@ describe("the relief step", () => {
       expect(record).toMatchObject({ status: "would-change" });
       expect(record.summary).toMatch(/entry changes/);
       expect(applyRealmRelief).not.toHaveBeenCalled();
+    });
+
+    it("builds the elevation model with the relief, even when the relief has not changed", async () => {
+      jest.mocked(planRealmRelief).mockResolvedValue(plan({ built: true, changed: false }));
+      const dem = {
+        entry: {
+          id: "dem",
+          label: "Elevation",
+          kind: "dem" as const,
+          version: "abcdef0123456789",
+          maxZoom: 6,
+        },
+        built: false,
+        changed: true,
+        previous: undefined,
+        grid: { width: 0, height: 0, metres: new Float32Array() },
+      };
+      jest.mocked(planRealmDem).mockResolvedValue(dem);
+      jest
+        .mocked(applyRealmRelief)
+        .mockResolvedValue({ ...plan().entry, built: false, tiles: 0, skipped: 0 });
+      jest.mocked(applyRealmDem).mockResolvedValue({ ...dem.entry, built: true, tiles: 5461 });
+      const report = await runReliefStep(context(false));
+      expect(report.status).toBe("changed");
+      expect(applyRealmDem).toHaveBeenCalledWith(db, "r1", dem);
+      expect(report.details.join("\n")).toMatch(/elevation: .*5461 tiles/);
     });
   });
 });

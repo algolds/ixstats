@@ -17,6 +17,8 @@ import { measureWorld } from "~/lib/worldgen/measure-world";
 import { drawSegment, fillRing, newRaster } from "~/lib/worldgen/raster-draw";
 import {
   addDetail,
+  addSeaFloor,
+  seaDepth,
   heightsFromBands,
   heightsFromCells,
   hillshade,
@@ -458,12 +460,17 @@ describe("the relief", () => {
     expect(Buffer.from(a.buffer).equals(Buffer.from(detailed().buffer))).toBe(true);
     expect(a.every((v) => v > 0)).toBe(true);
     expect(a.filter((v) => v !== 30).length).toBeGreaterThan(a.length / 2);
-    // The texture repeats every eighth of the width, so its last column runs on into its first
+    // Two layers that repeat 8 and 3 times round the world: no shorter period, and the seam joins like any
+    // neighbouring pair of columns
     const row = 400 * 2048;
-    const repeats = Array.from({ length: 48 }, (_, k) => k * 37).filter(
+    const shifted = Array.from({ length: 48 }, (_, k) => k * 37).filter(
       (x) => Math.abs(a[row + x + 256]! - a[row + x]!) >= 5e-4
     );
-    expect(repeats).toEqual([]);
+    expect(shifted.length).toBeGreaterThan(24);
+    let steepest = 0;
+    for (let x = 1; x < 2048; x++)
+      steepest = Math.max(steepest, Math.abs(a[row + x]! - a[row + x - 1]!));
+    expect(Math.abs(a[row]! - a[row + 2047]!)).toBeLessThanOrEqual(steepest);
 
     // A cone 12 pixels across, on the seam and in the middle of the map: the same shading, shifted
     const cone = (centre: number) =>
@@ -481,5 +488,29 @@ describe("the relief", () => {
             mismatches++;
     expect(mismatches).toBe(0);
     expect(seamed[(512 * 2048 + 5) * 4 + 3]!).toBeGreaterThan(0);
+  });
+});
+
+describe("sea floor", () => {
+  it("deepens from a shallow shelf to the abyss and never rises", () => {
+    const depths = [0, 40, 80, 200, 600, 2000].map(seaDepth);
+    expect(depths[0]).toBe(20);
+    expect(depths[2]).toBeCloseTo(180);
+    for (let i = 1; i < depths.length; i++) expect(depths[i]!).toBeGreaterThan(depths[i - 1]!);
+    expect(depths[5]!).toBeLessThan(4600);
+  });
+
+  it("sinks the sea by its distance to land and lifts the coast above sea level", () => {
+    const width = 256;
+    const height = 128;
+    const zoneGrid = new Uint8Array(width * height);
+    for (let y = 60; y < 68; y++) zoneGrid.fill(1, y * width + 100, y * width + 108);
+    const grid = { width, height, metres: new Float32Array(width * height) };
+    addSeaFloor(grid, zoneGrid);
+    expect(grid.metres[64 * width + 104]).toBe(1);
+    const near = grid.metres[64 * width + 110]!;
+    const far = grid.metres[64 * width + 200]!;
+    expect(near).toBeLessThan(0);
+    expect(far).toBeLessThan(near);
   });
 });

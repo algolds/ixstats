@@ -69,13 +69,16 @@ async function keepFile(file: string, bytes: Uint8Array): Promise<void> {
  * A flat map's raster tile z/x/y (Plate Carrée, flat-projection.ts), composed from the version's Web Mercator
  * tiles at the same zoom: columns are the same in both, and each row reads the Mercator row at its latitude.
  * Missing Mercator tiles (a layer built without its empty ones) read as transparent. Kept in `flat/` once built.
+ * An elevation model (`dem`) is copied exact: lossless, and its rows past ±85.05° repeat the last Mercator row
+ * (blank would read as 32 km down).
  */
 // ponytail: rows past ±85.05° stay blank, as the Mercator tiles end there; build flat pyramids from the source image if the polar strips of art matter
 export async function composeFlatRasterTile(
   dir: string,
   z: number,
   x: number,
-  y: number
+  y: number,
+  dem = false
 ): Promise<Uint8Array | null> {
   const out = flatRasterTileFile(dir, z, x, y);
   if (!out) return null;
@@ -98,8 +101,10 @@ export async function composeFlatRasterTile(
   const pixels = Buffer.alloc(size * size * 4);
   for (let r = 0; r < size; r++) {
     // In carrier space a row's Mercator y is its true latitude, in radians
-    const lat = Math.PI * (1 - (2 * (y * size + r + 0.5)) / worldPx);
-    if (Math.abs((lat * 180) / Math.PI) >= MERCATOR_MAX_LAT) continue;
+    const trueLat = Math.PI * (1 - (2 * (y * size + r + 0.5)) / worldPx);
+    const edge = (MERCATOR_MAX_LAT * Math.PI) / 180 - 1e-6;
+    if (Math.abs(trueLat) >= edge && !dem) continue;
+    const lat = Math.max(-edge, Math.min(edge, trueLat));
     const mercatorY = ((1 - Math.log(Math.tan(Math.PI / 4 + lat / 2)) / Math.PI) / 2) * worldPx;
     const ty = Math.floor(mercatorY / size);
     const row = Math.floor(mercatorY) - ty * size;
@@ -108,7 +113,7 @@ export async function composeFlatRasterTile(
   }
   const bytes = new Uint8Array(
     await sharp(pixels, { raw: { width: size, height: size, channels: 4 } })
-      .webp({ quality: 90, alphaQuality: 100, effort: 4 })
+      .webp(dem ? { lossless: true, effort: 2 } : { quality: 90, alphaQuality: 100, effort: 4 })
       .toBuffer()
   );
   await keepFile(out, bytes);

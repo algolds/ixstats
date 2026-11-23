@@ -19,6 +19,10 @@ import { useWorldMapInteractions } from "./hooks/useWorldMapInteractions";
 import { useWorldMapOverlayFeatures } from "./hooks/useWorldMapOverlayFeatures";
 import { useWorldMapDataOverlays } from "./hooks/useWorldMapDataOverlays";
 import { useRealmMapLayers } from "./hooks/useRealmMapLayers";
+import { useRealmTerrain } from "./hooks/useRealmTerrain";
+import { DEFAULT_TERRAIN, type TerrainPrefs } from "~/lib/maps/terrain";
+import { FLAT_RASTER_QUERY, rasterTilePath } from "~/lib/maps/raster-tiles";
+import { withBasePath } from "~/lib/base-path";
 import { Card } from "~/components/ui/card";
 
 // MapLibre types imported dynamically since the module requires browser APIs
@@ -139,6 +143,12 @@ interface IxWorldMapProps {
   rasterLayers?: readonly RealmRasterLayer[];
   /** A base map's art is shown: political fills and borders give way to it. */
   artMode?: boolean;
+  /** The realm's elevation model (raster layer of kind `dem`): hillshade, colour relief and 3D terrain read it. */
+  demLayer?: RealmRasterLayer | null;
+  /** Shade the land from the elevation model (the Relief switch). */
+  hillshade?: boolean;
+  /** The viewer's 3D terrain choice. */
+  terrain?: TerrainPrefs;
 }
 
 export interface IxWorldMapRef {
@@ -179,6 +189,9 @@ const IxWorldMap = memo(
       rasterRealmId,
       rasterLayers,
       artMode = false,
+      demLayer = null,
+      hillshade = true,
+      terrain = DEFAULT_TERRAIN,
     },
     ref
   ) {
@@ -266,6 +279,22 @@ const IxWorldMap = memo(
       rasterRealmId,
       rasterLayers,
       flat: projectionMode === "mercator",
+    });
+
+    // Absolute, like the raster art: MapLibre fetches DEM tiles from its worker
+    const demUrl =
+      demLayer && rasterRealmId
+        ? `${window.location.origin}${withBasePath(rasterTilePath(rasterRealmId, demLayer))}${projectionMode === "mercator" ? FLAT_RASTER_QUERY : ""}`
+        : null;
+    useRealmTerrain({
+      map: mapRef.current,
+      isLoaded,
+      demUrl,
+      hillshade,
+      colorRelief: !artMode,
+      prefs: terrain,
+      theme,
+      layers,
     });
 
     useWorldMapOverlayFeatures({

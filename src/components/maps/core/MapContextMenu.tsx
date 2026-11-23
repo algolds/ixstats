@@ -91,6 +91,8 @@ export function useMapContextArea(o: MapContextOptions) {
         lng,
         lat,
         zoom: map.getZoom(),
+        pitch: map.getPitch(),
+        bearing: map.getBearing(),
         layers: [...o.visibleLayers],
       });
 

@@ -10,6 +10,7 @@
  *   R                 — Reset view (zoom to world)
  *   M                 — Toggle the measure tool (handled by the measure tool itself)
  *   P                 — Cycle projection
+ *   T                 — Toggle 3D terrain (realms with an elevation model)
  *   ?                 — Toggle shortcut help overlay
  *
  * Shortcuts are ignored while typing, while focus is inside a dialog/slider/menu/listbox
@@ -38,6 +39,8 @@ interface MapKeyboardControlsProps {
   homeCenter?: [number, number];
   /** The realm's credit line (its map or art), shown with IxStates' own. */
   attribution?: string | null;
+  /** Present when the realm has an elevation model: T toggles 3D terrain. */
+  onToggleTerrain?: () => void;
 }
 
 /** Focus targets whose own keyboard handling must win over map shortcuts. */
@@ -56,6 +59,7 @@ const SHORTCUTS = [
   { keys: "R", desc: "Reset view" },
   { keys: "M", desc: "Toggle measure" },
   { keys: "P", desc: "Cycle projection" },
+  { keys: "T", desc: "Toggle 3D terrain" },
   { keys: "Esc", desc: "Clear / close" },
   { keys: "?", desc: "Show shortcuts" },
 ];
@@ -76,7 +80,7 @@ const MAP_ACTIONS: Record<string, MapAction> = Object.fromEntries([
   ...keyed<MapAction>(["+", "="], (map) => map.zoomIn({ duration: 200 })),
   ...keyed<MapAction>(["-", "_"], (map) => map.zoomOut({ duration: 200 })),
   ...keyed<MapAction>(["r", "R"], (map, homeCenter) =>
-    map.flyTo({ center: homeCenter, zoom: MAP_DEFAULTS.zoom, duration: 1200 })
+    map.flyTo({ center: homeCenter, zoom: MAP_DEFAULTS.zoom, pitch: 0, bearing: 0, duration: 1200 })
   ),
 ]);
 
@@ -91,6 +95,7 @@ export function MapKeyboardControls({
   sidePanelOpen = false,
   homeCenter = MAP_DEFAULTS.center,
   attribution,
+  onToggleTerrain,
 }: MapKeyboardControlsProps) {
   const [showHelp, setShowHelp] = useState(false);
 
@@ -117,6 +122,7 @@ export function MapKeyboardControls({
         P: cycleProjection,
         "?": () => setShowHelp((v) => !v),
         Escape: escape,
+        ...(onToggleTerrain && { t: onToggleTerrain, T: onToggleTerrain }),
       };
 
       if (pan) {
@@ -130,7 +136,15 @@ export function MapKeyboardControls({
         stateActions[e.key]!();
       }
     },
-    [mapRef, showHelp, onEscapePress, projectionMode, onProjectionChange, homeCenter]
+    [
+      mapRef,
+      showHelp,
+      onEscapePress,
+      projectionMode,
+      onProjectionChange,
+      homeCenter,
+      onToggleTerrain,
+    ]
   );
 
   useEffect(() => {
@@ -200,16 +214,17 @@ export function MapKeyboardControls({
               </Button>
             </div>
             <div className="space-y-1">
-              {SHORTCUTS.filter((sc) => sc.keys !== "M" || measureAvailable).map(
-                ({ keys, desc }) => (
-                  <div key={keys} className="text-footnote flex items-center justify-between">
-                    <kbd className="bg-fill-3 text-label text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
-                      {keys}
-                    </kbd>
-                    <span className="text-label-secondary">{desc}</span>
-                  </div>
-                )
-              )}
+              {SHORTCUTS.filter(
+                (sc) =>
+                  (sc.keys !== "M" || measureAvailable) && (sc.keys !== "T" || onToggleTerrain)
+              ).map(({ keys, desc }) => (
+                <div key={keys} className="text-footnote flex items-center justify-between">
+                  <kbd className="bg-fill-3 text-label text-footnote rounded-control-sm px-2 py-0.5 tabular-nums">
+                    {keys}
+                  </kbd>
+                  <span className="text-label-secondary">{desc}</span>
+                </div>
+              ))}
             </div>
           </FacetMaterial>
         </div>

@@ -16,6 +16,7 @@ import {
   Label,
   Map as MapIcon,
   MapPin,
+  SelectFace3d,
   Play,
   Position,
   Ruler,
@@ -67,6 +68,9 @@ export interface MapsHaloProps {
   onEditMap?: () => void;
   /** Present when the viewer may edit this realm's world. */
   onOpenWorldEditor?: () => void;
+  /** Present when the realm has an elevation model: whether 3D terrain is on. */
+  terrainOn?: boolean;
+  onToggleTerrain?: () => void;
 }
 
 const cmd = (
@@ -111,6 +115,17 @@ export function mapCommands(p: Omit<MapsHaloProps, "realm" | "onSearchResult">):
     ),
     cmd("help", "Map help", HelpCircle, p.onOpenHelp, ["help", "welcome", "guide"]),
   ];
+  if (p.terrainOn !== undefined && p.onToggleTerrain) {
+    commands.push(
+      cmd(
+        "terrain",
+        p.terrainOn ? "Turn off 3D terrain" : "Turn on 3D terrain",
+        SelectFace3d,
+        p.onToggleTerrain,
+        ["3d", "terrain", "relief", "tilt", "elevation", "mountains"]
+      )
+    );
+  }
   if (p.onStartTour)
     commands.push(cmd("tour", "Take the tour", Play, p.onStartTour, ["tour", "guide", "showcase"]));
   if (p.onEditMap)

@@ -8,6 +8,7 @@ import { climateZoneLabel, climateZoneOf } from "~/lib/maps/climate-zones";
 import { parseRealmMapSettings, type ClimateKey } from "~/lib/maps/realm-map-settings";
 import { normalizeFlagUrl } from "~/lib/flags/normalization";
 import { CLIMATE_COLOR_MAP } from "./shared";
+import { realmDemElevation } from "~/server/modules/maps/realm-dem";
 
 /**
  * Hard ceiling (ms) for point-in-polygon lookups. A slow/unindexed ST_Contains
@@ -160,6 +161,10 @@ export const pointQueryProcedures = {
         return {
           coordinates: { lng: input.lng, lat: input.lat },
           elevation: elevationInfo(layerResults.find((r) => r.layerType === "altitudes")),
+          /** Metres from the realm's elevation model (negative under the sea); null without one. */
+          elevationMetres: await realmDemElevation(ctx.db, realmId, input.lng, input.lat).catch(
+            () => null
+          ),
           climate: climateInfo(climate, climateKey),
           country: political
             ? {

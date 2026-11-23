@@ -182,8 +182,15 @@ describe("buildRealmRelief from altitude bands", () => {
     expect(shaded(1988, 2048, 440, 590)).toBeGreaterThan(200);
     expect(shaded(100, 1948, 0, 1024)).toBe(0); // no streak round the world
     expect(shaded(0, 2048, 0, 440) + shaded(0, 2048, 590, 1024)).toBe(0);
-    // Either side of the seam is one slope: the shading does not jump across the edge of the grid
-    for (let y = 480; y < 545; y += 8)
-      expect(Math.abs(alpha(0, y) - alpha(2047, y))).toBeLessThan(30);
+    // Either side of the seam is one slope: the shading steps across the edge of the grid no more than it does
+    // between neighbouring columns on the mountain
+    for (let y = 480; y < 545; y += 8) {
+      let steepest = 0;
+      for (let x = 1; x < 50; x++)
+        steepest = Math.max(steepest, Math.abs(alpha(x, y) - alpha(x - 1, y)));
+      for (let x = 2000; x < 2048; x++)
+        steepest = Math.max(steepest, Math.abs(alpha(x, y) - alpha(x - 1, y)));
+      expect(Math.abs(alpha(0, y) - alpha(2047, y))).toBeLessThanOrEqual(Math.max(30, steepest));
+    }
   });
 });

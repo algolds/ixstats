@@ -72,6 +72,8 @@ interface MapControlsProps {
   /** Projection, for the settings popover (absent: no settings button). */
   projectionMode?: ProjectionMode;
   onProjectionChange?: (mode: ProjectionMode) => void;
+  /** The realm has an elevation model: the settings offer 3D terrain. */
+  hasTerrain?: boolean;
 }
 
 const TOGGLEABLE_LAYERS: MapLayerType[] = ["political", "climate", "rivers", "lakes", "icecaps"];
@@ -131,6 +133,7 @@ export function MapControls({
   raster,
   projectionMode,
   onProjectionChange,
+  hasTerrain = false,
 }: MapControlsProps) {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
   const containerRef = useRef<HTMLDivElement>(null);

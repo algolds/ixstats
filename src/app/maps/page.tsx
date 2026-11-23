@@ -11,7 +11,7 @@
  * - Deep linking via URL params:
  *   ?country=<countryId>  — auto-select by database ID
  *   ?name=<countryName>   — auto-select by country name (wiki-friendly)
- *   ?lat=X&lng=Y&zoom=Z   — coordinate deep-link
+ *   ?lat=X&lng=Y&zoom=Z   — coordinate deep-link (&pitch=P&bearing=B for a tilted 3D camera)
  *   ?layer=climate         — show a specific layer on load
  *   ?layers=political,POIs — comma-separated initial layers
  *   ?embed=true            — chromeless mode for iframe embedding (no nav, no controls)
@@ -58,6 +58,10 @@ export default function WorldMapPage() {
   const lngParam = searchParams.get("lng");
   const zoomParam = searchParams.get("zoom");
   const initialZoom = zoomParam ? parseFloat(zoomParam) : undefined;
+  const angle = (name: string) => {
+    const value = parseFloat(searchParams.get(name) ?? "");
+    return Number.isFinite(value) ? value : undefined;
+  };
   const initialCenter = useMemo(() => {
     const lat = latParam ? parseFloat(latParam) : NaN;
     const lng = lngParam ? parseFloat(lngParam) : NaN;
@@ -93,6 +97,8 @@ export default function WorldMapPage() {
         initialCountryId={initialCountryId}
         initialCenter={initialCenter}
         initialZoom={initialZoom}
+        initialPitch={angle("pitch")}
+        initialBearing={angle("bearing")}
         initialLayers={initialLayers}
         realm={realm}
       />

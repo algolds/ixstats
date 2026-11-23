@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Settings, Magnet } from "iconoir-react";
+import { EXAGGERATION_RANGE } from "~/lib/maps/terrain";
+import { setTerrainPrefs, useTerrainPrefs } from "../hooks/useTerrainPrefs";
 import { Popover, PopoverTrigger, PopoverContent } from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import { Eyebrow } from "~/components/ui/eyebrow";
@@ -25,6 +27,8 @@ const PROJECTION_OPTIONS = [
 interface MapSettingsPopoverProps {
   projectionMode: ProjectionMode;
   onProjectionChange: (mode: ProjectionMode) => void;
+  /** The realm has an elevation model: offer 3D terrain and its exaggeration. */
+  hasTerrain?: boolean;
 }
 
 /** The map's own settings (projection, editor snapping); theme and account live in Halo. */
@@ -32,7 +36,9 @@ interface MapSettingsPopoverProps {
 export function MapSettingsPopover({
   projectionMode,
   onProjectionChange,
+  hasTerrain = false,
 }: MapSettingsPopoverProps) {
+  const terrain = useTerrainPrefs();
   const [snapEnabled, setSnapEnabledState] = useState(getSnapEnabled);
   const [snapTol, setSnapTolState] = useState(getSnapTolerance);
 
@@ -70,6 +76,37 @@ export function MapSettingsPopover({
             fullWidth
           />
         </div>
+
+        {hasTerrain && (
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span id="map-settings-terrain" className="text-label text-footnote font-medium">
+                3D terrain
+              </span>
+              <Switch
+                checked={terrain.mode !== "off"}
+                aria-labelledby="map-settings-terrain"
+                onCheckedChange={(on) => setTerrainPrefs({ mode: on ? "auto" : "off" })}
+              />
+            </div>
+            {terrain.mode !== "off" && (
+              <div className="flex items-center gap-2">
+                <Slider
+                  aria-label="Terrain exaggeration"
+                  min={EXAGGERATION_RANGE.min}
+                  max={EXAGGERATION_RANGE.max}
+                  step={EXAGGERATION_RANGE.step}
+                  value={[terrain.exaggeration]}
+                  onValueChange={([v]) => v !== undefined && setTerrainPrefs({ exaggeration: v })}
+                  className="flex-1 py-2"
+                />
+                <span className="text-label-secondary text-footnote w-10 text-right tabular-nums">
+                  {terrain.exaggeration.toFixed(2)}×
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="mt-3 space-y-2">
           <div className="flex items-center justify-between">
